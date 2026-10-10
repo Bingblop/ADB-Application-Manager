@@ -65,6 +65,7 @@ public final class AgentRules {
             new Provider("muse", "api.llama.com", "Authorization", "Bearer ", "https://api.llama.com/v1/models", null, "LLAMA_API_KEY"),
             new Provider("deepseek", "api.deepseek.com", "Authorization", "Bearer ", "https://api.deepseek.com/v1/models", null, "DEEPSEEK_API_KEY"),
             new Provider("crawl4ai", "api.crawl4ai.com", "Authorization", "Bearer ", "https://api.crawl4ai.com/search?q=android", null, "CRAWL4AI_KEY"),
+            new Provider("exa", "api.exa.ai", "x-api-key", "", "https://api.exa.ai/search", null, "EXA_API_KEY"),
             new Provider("browseruse", "api.browser-use.com", "X-Browser-Use-API-Key", "", "https://api.browser-use.com/api/v2/billing/account", null, "BROWSER_USE_API_KEY"),
             new Provider("jan", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("anythingllm", null, "Authorization", "Bearer ", "/models", null, null),
@@ -137,6 +138,11 @@ public final class AgentRules {
     public static String testUrl(Provider p, String base) {
         if (!p.ownServer()) return p.test;
         return normalizeBase(base) + p.test;
+    }
+
+    /** The body of the call that tests a key, for a provider that has no GET to test with (Exa: one small search); null means a plain GET. */
+    public static String testBody(Provider p) {
+        return "exa".equals(p.id) ? "{\"query\":\"android\",\"numResults\":1}" : null;
     }
 
     /** How a saved key is shown: the start that names its kind and the last four, never the rest. */

@@ -62,7 +62,7 @@
     <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
     <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
   </ol>
-  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Ask agent</b> (asks your <a href="#prefs">Default agent</a> what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess; with no default agent chosen the button opens Settings instead), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
+  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Ask agent</b> (asks your <a href="#prefs">Default Ask Agent</a> what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess; until the agent has its key, or with <b>No default</b> chosen, the built-in web lookup answers instead), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
 
   <h4>Flip a switch</h4>
   <ol class="hg-steps">
@@ -351,7 +351,7 @@
       <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> and <b>Command-Line Interface</b> have none, so this button is how you reach the guide from them.</td></tr>
       <tr><td><b>What's new</b></td><td>Opens a sheet titled <b>What's New</b> with the release notes of the newest three versions. At the bottom, <b>Full changelog</b> opens the whole file on GitHub and <b>Got it</b> closes the sheet. The same sheet also opens once by itself after the app has been updated. If the build has no notes, a message says <i>No release notes in this build</i>.</td></tr>
       <tr><td><b>Permissions</b></td><td>Opens the <b>Permissions</b> sheet: All files access, Usage access, Display over other apps, Install unknown apps and, while a working mode is active, three more. Each row has an <b>Allow</b> button or shows "Allowed". Allow what you like and skip the rest. See <a href="#app-permissions">App permissions</a>.</td></tr>
-      <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">App Updater</a> tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the App Updater tab is switched off, a message says <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
+      <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">Application Updater</a> box of the APK Installer/Updater tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the APK Installer/Updater tab is switched off, a message says <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
     </tbody>
   </table>
   <p>To update the app, see <a href="#install-and-update">Installing and updating</a>.</p>
@@ -388,6 +388,18 @@
   </table>
   <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
 
+  <h4>Authorization Manager</h4>
+  <p>A card between <b>This build</b> and <b>Device Specs</b>. It shows the app's own <b>authorization code</b>, a secret code that belongs to this app. <b>Nothing accepts the code yet</b>: it is kept here for later, so there is nothing for you to set up or to switch on. Nothing here needs a working mode, and the code never leaves the phone.</p>
+  <p>The code is 25 letters and digits in five groups of five, for example <code>ABCDE-FGHJK-MNPQR-STVWX-YZ012</code>. It never uses the letters I, L, O or U, so it is easy to read. It is made on your phone the first time and kept in the app's private storage, which other apps cannot read.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>The code, with a <b>copy</b> icon button</td><td>Shows the code. The copy button copies it to the clipboard; a message says <i>Copied the code</i>.</td></tr>
+      <tr><td>The round <b>refresh</b> icon button</td><td>Asks <i>Make a new code?</i> first. If you confirm, it replaces the code with a new one; the old code is gone.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> Treat the code like a password. Do not post it. If you shared it by mistake, press the refresh button to replace it.</div>
+
   <h4>Device Specs</h4>
   <p>Everything the phone will say about itself, <b>with no working mode needed</b>. It is read when the tab opens, and the <b>Refresh</b> button reads it again. A line appears only when your phone reports it. The groups are:</p>
   <ul>
@@ -410,7 +422,7 @@
   <h4>If something does not work</h4>
   <ul>
     <li><b>A web button does nothing.</b> Your phone has no browser, or no internet. Check both.</li>
-    <li><b>Check for update only shows a message.</b> The App Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
+    <li><b>Check for update only shows a message.</b> The APK Installer/Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
   </ul>
 </section>
 <section id="prefs" data-title="Settings (the gear)" data-group="Settings and looks">
@@ -421,9 +433,9 @@
   <ul>
     <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Default agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
-  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
+  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
   <h4>Language</h4>
   <p>A drop-down list, under the words "The text of this app. Names of apps, files and commands are not translated."</p>
@@ -435,16 +447,18 @@
   </table>
   <p><b>What you will see:</b> the whole app is redrawn in the new language and a message says <i>Language: ...</i>. If the language file cannot be loaded, a message says <i>That language could not be loaded. The text stays in</i> and the name of the language you had, and the list returns to that language.</p>
 
-  <h4>Default agent</h4>
-  <p>A drop-down list under the Language card, with a line under it saying whether the agent you chose is ready.</p>
+  <h4>Default Ask Agent</h4>
+  <p>A drop-down list under the Language card, with a line under it saying whether the agent you chose is ready, and a button <b>Test the Default Ask Agent</b>. The card was called <i>Default agent</i> in earlier versions.</p>
+  <p>The Default Ask Agent is a <b>research</b> agent: it reads the web and works out an answer. It answers every <b>Ask agent</b> button in the app, and it is the agent the <b>Find and download an app</b> card of the <a href="#tab-updates">Application Updater</a> uses when you tick <b>Use the Default Ask Agent to search as well</b>. It is not a coding agent and it never changes anything on your phone: it only returns text.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
-      <tr><td><b>Default agent</b> (drop-down)</td><td>Chooses the Coding Agent that answers every <b>Ask agent</b> button in the app. The list is the one of the <a href="#tab-terminal">Command-Line Interface</a> tab (Claude, Gemini, ChatGPT, Grok and the others that can answer, and Crawl4AI and Browser Use, which answer only these buttons and have a free tier); the key or sign-in and the model are the ones set up there. <b>Test the default agent</b> under the drop-down asks the chosen agent one sample question (only that is sent) and says whether it works and how long it took. It is a separate choice from the agent the terminal opens with, so you can chat with one agent and ask the other.</td><td>No default agent chosen</td><td>Once, before you first press an <b>Ask agent</b> button.</td></tr>
+      <tr><td><b>Default Ask Agent</b> (drop-down)</td><td>Chooses the agent that answers. The list is grouped: <b>No default (free web lookup only)</b>; <b>Web research (recommended)</b>: Perplexity, Exa, Browser Use, Crawl4AI; <b>Chat models with an API key</b>: Gemini, Claude, ChatGPT, Grok, Muse, Deepseek; <b>Free Open-Source</b>: Jan.ai, AnythingLLM, Ollama, Own server. The coding agents (Cursor, Copilot, OpenCode) are not in this list. The key or sign-in and the model are the ones set up in the <a href="#tab-terminal">Command-Line Interface</a> tab. It is a separate choice from the agent the terminal opens with, so you can chat with one agent and ask the other. Choosing <b>No default</b> is remembered.</td><td><b>Perplexity</b>, until you choose (it searches the web by itself and names its sources)</td><td>To use another agent, or none.</td></tr>
+      <tr><td><b>Test the Default Ask Agent</b> (button)</td><td>Asks the chosen agent one sample question (only that is sent) and says whether it works and how long it took, or why it did not. It has a progress bar and <b>Stop</b>.</td><td>-</td><td>After you add a key.</td></tr>
     </tbody>
   </table>
   <p><b>Where the Ask agent buttons are.</b> Wherever you may want to know what something is: on every row of <a href="#tab-settings">Hidden Settings</a> (a setting without a description says <i>No description yet</i> next to its button) and in the editor sheet; in the app menu on the permissions, app ops, activities, services, receivers, providers, features and libraries lists, and in place of the classification chip of an app the UAD-NG list does not know; on the rows of the <a href="#tab-overlays">overlays</a>; on the processes of the <a href="#tab-taskmgr">Task Manager</a>; on UAD-NG Debloater rows that have no description; on the trackers in the Trackers box; on what <a href="#tab-sdm">SD Maid</a> found; and on a log entry in the <a href="#tab-logcat">Logcat Viewer</a>. A button opens a box that shows exactly what will be sent and asks at once; <b>Ask again</b> asks once more, <b>Web search</b> looks it up instead, and <b>Copy the answer</b> copies it.</p>
-  <p><b>If no agent is chosen</b>, or the one chosen is not connected yet (no key or sign-in), nothing is sent to an agent. The Ask agent window still opens and the app's built-in <b>web lookup</b> answers: it searches the web (Bing, then Wikipedia) for a few words about the entry, such as the package name, and only those words leave the phone; it reads the first result pages and shows the passages that mention the entry, with the sites as buttons. It needs no key and no account, but it is not an AI answer, only what the pages say. An <b>Open Settings</b> link opens this screen on the Default agent card (outlined for a moment) for an explanation written for you, and <b>Web search</b> still opens a search in your browser. The line under the drop-down reads <i>No agent is chosen yet</i> or <i>... is not connected yet</i>. An agent can be wrong: treat an answer as a hint.</p>
+  <p><b>Until the agent has its key</b>, or when <b>No default</b> is chosen, nothing is sent to an agent. Perplexity is the default, but it needs its key (add it in the Command-Line Interface tab; Exa is the same kind of agent, with a key from dashboard.exa.ai/api-keys); until then the Ask agent window still opens and the app's built-in <b>web lookup</b> answers: it searches the web (Bing, then Wikipedia) for a few words about the entry, such as the package name, and only those words leave the phone; it reads the first result pages and shows the passages that mention the entry, with the sites as buttons. It needs no key and no account, but it is not an AI answer, only what the pages say. An <b>Open Settings</b> link opens this screen on the Default Ask Agent card (outlined for a moment), and <b>Web search</b> still opens a search in your browser. The line under the drop-down reads <i>No agent is chosen, so an Ask agent button reads the web for you</i> or <i>... is not connected yet</i>. An agent can be wrong: treat an answer as a hint.</p>
 
   <h4>Appearance</h4>
   <p>Light, dark, or follow your phone. Details and the colour rules are in <a href="#themes">Themes and colours</a>.</p>
@@ -570,7 +584,7 @@
   <p>One switch, <b>Say what is going on</b>, <b>on by default</b>. While an app is uninstalled, frozen, suspended, cleared and so on (from the app menu, the action button, a batch or the Connected Devices apps), the app shows small messages while it works: <i>Working on it&hellip;</i>, then <i>Checking the phone&hellip;</i> (or <i>Checking the device&hellip;</i>) while it asks the phone what became of the app. Turn the switch off if they are noise. What stays: the result (for example <i>Alpha: Uninstalled</i> or <i>Bravo: Still installed</i>), every problem and its result window, and the line on a batch's progress sheet.</p>
 
   <h4>VirusTotal API key</h4>
-  <p>The one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
+  <p>The one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer/Updater</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
   <p><b>What is left today.</b> Once the key is approved, a line under the box says how many lookups are left in VirusTotal's day, for example <i>377 of 500 lookups left today (123 used)</i>, and when the day ends (00:00 UTC). The numbers come from VirusTotal itself, so scans made in the Installer and in Morphe Helper count together. <b>Refresh</b> asks again; the card asks on its own at most once a minute and after each scan. If VirusTotal gives no counter, the line shows this app's own count and says so. The same line is in the Installer's VirusTotal card.</p>
 
   <h4>Reconnecting devices</h4>
@@ -630,7 +644,7 @@
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
-      <tr><td>A <b>switch</b> on each of the 12 movable tabs</td><td>On: the tab is on the bar. Off: it is taken off the bar.</td><td>All on</td><td>To hide tabs you do not use.</td></tr>
+      <tr><td>A <b>switch</b> on each of the 13 movable tabs</td><td>On: the tab is on the bar. Off: it is taken off the bar.</td><td>All on</td><td>To hide tabs you do not use.</td></tr>
       <tr><td>The <b>up</b> and <b>down arrows</b> on each row</td><td>Move the tab one place earlier or later on the bar.</td><td>The default order</td><td>To put your favourite tabs first.</td></tr>
       <tr><td><b>Reset to Default</b></td><td>Switches every tab on and puts them back in the default order. A message says <i>Tabs are back in their default order, all turned on</i>.</td><td>-</td><td>To start over.</td></tr>
     </tbody>
@@ -677,23 +691,24 @@
   <p><b>Application Manager</b> is always the first tab and <b>About</b> is always the last. They have no switch or arrows in the list because they cannot be turned off or moved. Everything between them can be switched off and moved.</p>
 
   <h4>The list and the default order</h4>
-  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the twelve movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
+  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the thirteen movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
   <table class="hg-table">
     <thead><tr><th>#</th><th>Name in the list</th><th>What it is</th></tr></thead>
     <tbody>
       <tr><td></td><td><b>Application Manager</b> (fixed, always first)</td><td><a href="#tab-apps">Application Manager</a></td></tr>
       <tr><td>1</td><td><b>Saved Applications</b></td><td><a href="#tab-saved-lists">Saved Applications</a></td></tr>
       <tr><td>2</td><td><b>UAD-NG Debloater</b></td><td><a href="#tab-debloater">UAD-NG Debloater</a></td></tr>
-      <tr><td>3</td><td><b>APK Installer</b></td><td><a href="#tab-installer">APK Installer</a></td></tr>
+      <tr><td>3</td><td><b>APK Installer/Updater</b></td><td><a href="#tab-installer">APK Installer/Updater</a> (two boxes at the top: <b>Application Installer</b> and <a href="#tab-updates">Application Updater</a>)</td></tr>
       <tr><td>4</td><td><b>File Manager</b></td><td><a href="#tab-files">File Manager</a></td></tr>
       <tr><td>5</td><td><b>Command-Line Interface</b></td><td><a href="#tab-terminal">Command-Line Interface</a> (with the ADB Console)</td></tr>
       <tr><td>6</td><td><b>Hidden Settings</b></td><td><a href="#tab-settings">Hidden Settings</a></td></tr>
       <tr><td>7</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
-      <tr><td>8</td><td><b>App Updater</b></td><td><a href="#tab-updates">App Updater</a></td></tr>
-      <tr><td>9</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
-      <tr><td>10</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
-      <tr><td>11</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
-      <tr><td>12</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+      <tr><td>8</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
+      <tr><td>9</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
+      <tr><td>10</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
+      <tr><td>11</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+      <tr><td>12</td><td><b>Morphe Patcher</b></td><td><a href="#tab-morphe">Morphe Patcher</a></td></tr>
+      <tr><td>13</td><td><b>SD Maid</b></td><td><a href="#tab-sdm">SD Maid</a></td></tr>
       <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
     </tbody>
   </table>
@@ -708,9 +723,9 @@
   <p><b>What happens to a tab you switch off:</b></p>
   <ul>
     <li>It leaves the tab bar at once, and Back no longer goes to it.</li>
-    <li>Anything inside the app that points at it does not open it. A message says, for example, <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (App Updater), the update button in an app's menu (App Updater) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
-    <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
-    <li>You can switch off every one of the twelve if you like. The bar then shows only Application Manager and About.</li>
+    <li>Anything inside the app that points at it does not open it. A message says, for example, <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (the Application Updater box of the APK Installer/Updater tab), the update button in an app's menu (the same box) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
+    <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer/Updater</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
+    <li>You can switch off every one of the thirteen if you like. The bar then shows only Application Manager and About.</li>
   </ul>
 
   <h4>Get a tab back</h4>
@@ -729,7 +744,7 @@
   <p>A tab that is switched off still keeps its place in the list. If you switch it on again later, it returns to that place. Moving a tab never changes the position of Application Manager or About.</p>
 
   <h4>Reset to Default</h4>
-  <p>The <b>Reset to Default</b> button under the list switches all twelve tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
+  <p>The <b>Reset to Default</b> button under the list switches all thirteen tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
 
   <h4>When the app is updated</h4>
   <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working.</p>

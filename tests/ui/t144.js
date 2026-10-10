@@ -52,7 +52,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // the Settings card: right after Language
   const card = await ev(() => { const l = document.getElementById('languageCard'), c = document.getElementById('agentCard'); return { after: l.nextElementSibling === c, opts: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value), val: document.getElementById('askAgentSelect').value, note: document.getElementById('askAgentNote').innerText }; });
-  check('4. the Default agent card follows the Language card; no agent is chosen, and the agents can be picked', card.after && card.val === '' && card.opts[0] === '' && card.opts.includes('claude') && card.opts.includes('gemini') && !card.opts.includes('none') && /No agent is chosen/.test(card.note), JSON.stringify(card));
+  check('4. the Default Ask Agent card follows the Language card; nothing chosen yet means Perplexity (not connected, so the web lookup answers), and the agents can be picked', card.after && card.val === 'perplexity' && card.opts[0] === '' && card.opts.includes('claude') && card.opts.includes('gemini') && !card.opts.includes('none') && !card.opts.includes('opencode') && !card.opts.includes('copilot') && !card.opts.includes('cursor') && /not connected yet/.test(card.note), JSON.stringify(card));
   const oss = await ev(() => { txBuildAgentSelect(); return ({ bu: txAgentDef('browseruse'), c4: txAgentDef('crawl4ai'), inDefault: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai'), inCli: [...document.querySelectorAll('#txAgent option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai') }); });
   check('4b. Browser Use and Crawl4AI are agents of the free open-source list that only answer the Ask agent buttons: in the Command-Line Interface list and in the Default agent choice', oss.bu && oss.c4 && oss.bu.askOnly && oss.c4.askOnly && oss.bu.api === 'browseruse' && oss.c4.api === 'crawl4ai' && oss.bu.group === 'oss' && oss.c4.group === 'oss' && oss.inDefault.length === 2 && oss.inCli.length === 2, JSON.stringify(oss));
   await ev(() => { const s = document.getElementById('askAgentSelect'); s.value = 'claude'; s.dispatchEvent(new Event('change')); }); await sleep(100);
@@ -60,7 +60,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('5. choosing an agent saves it; one that is not connected yet says so', picked.id === 'claude' && picked.saved === 'claude' && /not connected yet/.test(picked.note), JSON.stringify(picked));
   await ev(() => { switchView('apps'); openInspector('com.example.unknown'); }); await sleep(250);
   await ev(() => document.getElementById('sheetAsk').click()); await sleep(450);
-  check('   pressing Ask agent with an agent that is not connected also opens the window with the same message, and nothing is sent', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && /choose a default agent/.test(document.getElementById('agentAskAi').innerText) && window.__sent.length === 0));
+  check('   pressing Ask agent with an agent that is not connected also opens the window with the same message, and nothing is sent', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && /choose a Default Ask Agent/.test(document.getElementById('agentAskAi').innerText) && window.__sent.length === 0));
   await ev(() => { agentAskClose(); closeInspector(); });
 
   // with an agent that works

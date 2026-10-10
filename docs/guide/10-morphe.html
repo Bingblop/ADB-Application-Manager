@@ -81,13 +81,14 @@
       <tr><td><b>Strip unused native libraries</b></td><td>Keeps only the libraries for this phone's CPU: less memory, a smaller APK.</td></tr>
       <tr><td><b>Stop when a patch fails</b></td><td>Off: the patches that work are applied and the failed ones are reported.</td></tr>
       <tr><td><b>Patch unsupported versions</b></td><td>Applies patches even to a version they do not list. It may fail or break the app.</td></tr>
-      <tr><td><b>Signer name</b>, <b>Signing key</b></td><td>Patched apps are signed with a key made on this phone the first time. Keep using the same key to update a patched app in place: <b>Export the key</b>, <b>Import a key</b> or make <b>New key</b>.</td></tr>
+      <tr><td><b>Signer name</b>, <b>Signing key</b></td><td>Patched apps are signed with a key made on this phone the first time. Keep using the same key to update a patched app in place: <b>Export the key</b>, <b>Import a key</b> or make <b>New key</b>. The same three buttons are on the <b>KeyStore</b> card of the <a href="#tab-updates">Application Updater</a> box: it is the same key.</td></tr>
     </tbody>
   </table>
 </section>
 
 <section id="morphe-helper" data-title="Morphe Helper" data-group="The tabs">
   <p class="hg-lead">Most patches need one exact version of the original app. <b>Morphe Helper</b> finds that APK on the sources you choose, downloads it, checks it, and lets you install it or patch it. It follows the open-source app <b>Helper for Morphe</b> by rushiranpise, built into this app.</p>
+  <div class="hg-note"><b>Not patching?</b> The same engine also powers the card <b>Find and download an app</b> in the <a href="#tab-updates">Application Updater</a> box, where you search by app name and download the original file for any reason.</div>
   <h4>Download</h4>
   <p>Enter the package and the version (empty: the newest), choose the CPU and the source, then: (a version may carry its build flavour, such as Gboard's <code>18.0.3.954559732-release-arm64-v8a</code>; Helper finds the release the source lists as <code>18.0.3.954559732</code>)</p>
   <ul>

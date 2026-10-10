@@ -14,7 +14,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const sleep = ms => page.waitForTimeout(ms);
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 5000)) { if (await page.evaluate(fn)) return true; await sleep(25); } return false; };
-  await ev(() => { txBuPollMs = 30; });
+  await ev(() => { txBuPollMs = 30; askAgentChoose(''); });          // 'No default' chosen: an agent that works then becomes the default
 
   // ---- Crawl4AI ----
   await ev(() => switchView('terminal')); await sleep(300);

@@ -118,7 +118,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   console.log('7. What\'s new opens the release notes:', await ev(() => document.getElementById('whatsNewModal').classList.contains('show')));
   await ev(() => closeWhatsNew());
   await page.locator('#view-about button', { hasText: 'Check for update' }).click(); await sleep(150);
-  console.log('   Check for update goes to the app-update card and checks:', (await ev(() => currentViewName())) === 'updates' && (await ev(() => window.__selfUpd || 0)) >= 1);
+  console.log('   Check for update goes to the app-update card and checks:', (await ev(() => currentViewName())) === 'installer' && (await ev(() => window.__selfUpd || 0)) >= 1);
 
   // 8) Back from About returns to where it came from
   await ev(() => switchView('files')); await sleep(60);

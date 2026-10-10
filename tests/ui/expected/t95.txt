@@ -1,4 +1,4 @@
-1. Grok, Muse and Deepseek are in API Key Required; Kilo Code is in Free Open-Source: ["None","API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek","Free Open-Source: DroidMind, OpenCode, Kilo Code, Leon.ai, Browser Use, Crawl4AI, Jan.ai, AnythingLLM, Ollama (on-device), Own server (OpenAI-compatible)"]
+1. Grok, Muse and Deepseek are in API Key Required; Kilo Code is in Free Open-Source: ["None","API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek, Exa","Free Open-Source: DroidMind, OpenCode, Kilo Code, Leon.ai, Browser Use, Crawl4AI, Jan.ai, AnythingLLM, Ollama (on-device), Own server (OpenAI-compatible)"]
 2. Kilo Code opens an explainer, not a Connect sheet for chatting: true true
 3. grok: its Connect sheet names its own host (api.x.ai): true
    a good key connects it: true

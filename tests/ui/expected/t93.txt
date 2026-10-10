@@ -1,4 +1,4 @@
-1. ChatGPT and Perplexity are both in API Key Required: "API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek"
+1. ChatGPT and Perplexity are both in API Key Required: "API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek, Exa"
 2. choosing it opens its Connect sheet, with no tab bar (no CLI to sign in with): true true
    it says where the key goes: true
 3. a refused key is explained: Perplexity: the test failed

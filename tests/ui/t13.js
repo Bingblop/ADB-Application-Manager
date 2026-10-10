@@ -69,7 +69,7 @@ function bridgeInit([mock, store]) {
   console.log('debloat calls:', calls1.join(', '));
 
   // ---- 3. Updates ----
-  await page.click('.tab-btn[data-tab="updates"]'); await page.waitForTimeout(100);
+  await page.click('.tab-btn[data-tab="installer"]'); await page.click('#instSwitchUpdater'); await page.waitForTimeout(100);
   await page.waitForFunction(() => /40\/120/.test(document.getElementById('updStatus').innerText), null, { timeout: 5000 });
   console.log('auto-check status:', await page.locator('#updStatus').innerText());
   await page.waitForFunction(() => /updates? available/.test(document.getElementById('updStatus').innerText), null, { timeout: 5000 });

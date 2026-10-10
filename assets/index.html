@@ -2168,6 +2168,10 @@
         .agent-ask-prog-txt { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
         .agent-ask-hist { margin-top: 10px; border: 1px solid var(--border-glass); border-radius: 12px; overflow: hidden; }
         .agent-ask-hist-row { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--border-glass); color: var(--text-main); padding: 9px 12px; cursor: pointer; font: inherit; }
+        .agent-ask-hist-item { display: flex; align-items: stretch; border-bottom: 1px solid var(--border-glass); }
+        .agent-ask-hist-item .agent-ask-hist-row { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+        .agent-ask-hist-pin { flex: 0 0 auto; background: transparent; border: 0; border-left: 1px solid var(--border-glass); color: var(--text-muted); padding: 0 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .agent-ask-hist-pin.on { color: var(--accent); }
         .agent-ask-hist-row:last-child { border-bottom: 0; }
         .agent-ask-hist-row:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .agent-ask-hist-row b { display: block; font-size: 13px; overflow-wrap: anywhere; }
@@ -3774,6 +3778,12 @@
                 .apk-scan-name { font-size:13px; font-weight:800; color:var(--text-main); word-break:break-word; }
                 .apk-scan-meta { font-size:10.5px; color:var(--text-muted); word-break:break-all; margin-top:2px; }
             </style>
+            <!-- The two boxes at the top: Application Installer (the default) and Application Updater -->
+            <div class="tx-switch" id="instSwitch" role="tablist">
+                <button class="tx-switch-btn active" id="instSwitchInstall" role="tab" aria-selected="true" onclick="instPaneShow('install')">Application Installer</button>
+                <button class="tx-switch-btn" id="instSwitchUpdater" role="tab" aria-selected="false" onclick="instPaneShow('updater')">Application Updater</button>
+            </div>
+            <div id="instPaneInstall">
             <div class="color-card">
                 <div class="color-card-title">Install a package</div>
                 <div class="color-card-subtitle">APK, APKS, APKM or XAPK — base plus splits (and OBB game data), with full install control</div>
@@ -3988,6 +3998,137 @@
                 <div id="installProgress" class="uad-status" style="display:none;margin-top:10px;"></div>
                 <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
+            </div>
+
+            <div id="instPaneUpdater" style="display:none;">
+            <style>
+                .us-row1 { display:flex; gap:8px; align-items:center; margin-top:10px; }
+                .us-row1 .list-search { flex:1 1 auto; min-width:0; }
+                .us-row2 { display:flex; gap:8px; margin-top:8px; align-items:center; }
+                .us-row2 .op-select { flex:1 1 auto; min-width:0; }
+                .us-row2 .us-ver { flex:0 0 34%; max-width:150px; min-width:88px; }
+                .us-srcnote { font-size:11px; color:var(--text-muted); margin-top:6px; }
+                .us-chks { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 12px; margin-top:12px; }
+                .us-chk { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
+                .us-chk input { flex:0 0 auto; width:17px; height:17px; margin:1px 0 0; accent-color:var(--accent); }
+                .us-chk small { display:block; font-size:10.5px; font-weight:500; color:var(--text-muted); margin-top:1px; }
+                .us-save { margin-top:12px; }
+                .us-save .op-select { width:100%; margin-top:4px; }
+                .us-savepath { display:flex; gap:8px; align-items:center; margin-top:6px; }
+                .us-savepath span { flex:1 1 auto; min-width:0; font-size:12px; color:var(--text-muted); word-break:break-word; }
+                .us-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+                .us-app { display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:14px; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); min-width:0; }
+                .us-app .us-ic { flex:0 0 auto; width:40px; height:40px; border-radius:11px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); font-weight:800; }
+                .us-app .us-ic img { width:100%; height:100%; object-fit:cover; }
+                .us-app .us-main { flex:1 1 auto; min-width:0; }
+                .us-app .us-name { font-size:14px; font-weight:800; color:var(--text-main); overflow-wrap:anywhere; }
+                .us-app .us-pkg { font-size:11px; color:var(--text-muted); overflow-wrap:anywhere; }
+                .us-app .us-acts { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+                .us-app .us-acts .mode-action-btn { flex:0 0 auto; min-height:34px; padding:6px 12px; font-size:12.5px; }
+                .us-vers { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+                .us-ver-row { display:flex; gap:8px; align-items:center; padding:7px 9px; border-radius:10px; background:rgba(var(--ov),0.05); font-size:12px; }
+                .us-ver-row > span { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+                .us-agent { margin-top:10px; }
+                .us-got { margin-top:10px; padding:10px; border-radius:12px; border:1px solid var(--accent); background:rgba(var(--ov),0.05); font-size:12px; }
+                .us-got b { word-break:break-all; }
+                .us-key-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+            </style>
+            <div class="color-card" id="usCard">
+                <div class="color-card-title">Find and download an app</div>
+                <div class="color-card-subtitle">Search by app name or package name. APKMirror is the default. Every source in the list serves the original file the developer signed, never a modified one.</div>
+                <div class="us-row1">
+                    <input type="text" class="list-search" id="usQuery" placeholder="App name or package name" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')usSearch()">
+                    <button class="mode-action-btn primary" id="usSearchBtn" onclick="usSearch()">Search</button>
+                </div>
+                <div class="us-row2">
+                    <select class="op-select" id="usSource" onchange="usSrcChanged()" aria-label="Source">
+                        <option value="apkmirror">APKMirror (default)</option>
+                        <option value="uptodown">Uptodown</option>
+                        <option value="aptoide">Aptoide</option>
+                        <option value="fdroid">F-Droid (open source)</option>
+                        <option value="izzy">IzzyOnDroid (open source)</option>
+                        <option value="play">Google Play (opens the Play Store)</option>
+                    </select>
+                    <input type="text" class="list-search us-ver" id="usVersion" placeholder="Version" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Version" onchange="usSave()">
+                </div>
+                <div class="us-srcnote" id="usSrcNote"></div>
+                <div class="us-chks">
+                    <label class="us-chk"><input type="checkbox" id="usSplit" onchange="usSave()"><span>Allow split APK<small>APKM, APKS and XAPK bundles, not only a single APK</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usExact" onchange="usSave()"><span>Exact version only<small>Never fall back to another version</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usNear" onchange="usSave()"><span>Allow closest nearby version<small>If the version you typed is missing, take the closest one</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usStable" onchange="usSave()"><span>Skip alpha and beta builds<small>Only when no version is typed</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usVt" onchange="usSave()"><span>VirusTotal scan<small>Checks the file by its hash after it downloads</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usInstall" onchange="usSave()"><span>Install on download<small>Installs the file as soon as it is saved</small></span></label>
+                    <label class="us-chk"><input type="checkbox" id="usAgent" onchange="usSave()"><span>Use the Default Ask Agent to search as well<small>It looks up the package name and the official page</small></span></label>
+                </div>
+                <div class="us-save">
+                    <div class="switch-title">Save downloads to</div>
+                    <select class="op-select" id="usSave" onchange="usSaveChanged()" aria-label="Save downloads to">
+                        <option value="cache">This app's own storage (private)</option>
+                        <option value="updater">Downloads/App Updater</option>
+                        <option value="custom">A folder I choose</option>
+                    </select>
+                    <div class="us-savepath" id="usSavePathRow" style="display:none;">
+                        <span id="usSavePathText">No folder chosen yet.</span>
+                        <button class="mode-action-btn" onclick="usChooseFolder()">Choose folder</button>
+                    </div>
+                </div>
+                <div class="uad-status" id="usStatus" style="margin-top:10px;display:none;"></div>
+                <div class="upd-bar" id="usBar" style="display:none;"><div style="width:2%"></div></div>
+                <div class="us-agent" id="usAgentBox" style="display:none;"></div>
+                <div class="us-list" id="usResults"></div>
+                <div id="usGot"></div>
+            </div>
+            <div class="color-card" id="selfUpdateCard">
+                <div class="color-card-title">App update</div>
+                <div class="color-card-subtitle">Update ADB Application Manager Pro itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
+                <div class="uad-status" id="selfUpdStatus">Checking this app's version…</div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn primary" id="selfUpdCheckBtn" onclick="checkSelfUpdateUI()">Check for app update</button>
+                    <button class="mode-action-btn primary" id="selfUpdInstallBtn" onclick="installSelfUpdateUI()" style="display:none;">Update now</button>
+                    <button class="mode-action-btn" id="selfUpdPageBtn" onclick="openSelfUpdatePage()" style="display:none;">Release notes</button>
+                </div>
+                <div class="upd-bar" id="selfUpdBar" style="display:none;"><div style="width:2%"></div></div>
+                <div class="upd-msg" id="selfUpdNotes" style="display:none;"></div>
+            </div>
+            <div class="color-card">
+                <div class="color-card-title">Updates Available</div>
+                <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
+                <div class="uad-status" id="updStatus">Not checked yet.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">Check for Updates</button>
+                    <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">Update All</button>
+                </div>
+                <div class="mode-btn-row" style="margin-top:8px;">
+                    <button class="mode-action-btn" onclick="importObtainiumUI()">Import Obtainium List</button>
+                    <button class="mode-action-btn" id="ghTokenBtn" onclick="setGithubTokenUI()">GitHub Token</button>
+                </div>
+                <div class="uad-credit" style="margin-top:10px;">Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.</div>
+            </div>
+            <div class="color-card" id="playUpdateCard">
+                <div class="color-card-title">Play Store apps (via Aurora)</div>
+                <div class="color-card-subtitle" id="playStoreStatus">Play Store apps update through the Play Store or Aurora Store.</div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn primary" id="openAuroraBtn" onclick="openAuroraStore()">Open Aurora Store</button>
+                    <button class="mode-action-btn" onclick="listPlayApps()">List installed apps</button>
+                </div>
+                <div id="playAppsList" style="margin-top:8px;"></div>
+                <div class="uad-credit" style="margin-top:8px;">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
+            </div>
+            <div id="updContainer">
+                <div class="list-empty">Tap Check for Updates.</div>
+            </div>
+            <div id="updExtraContainer"></div>
+            <div class="color-card" id="usKeyCard">
+                <div class="color-card-title">KeyStore</div>
+                <div class="color-card-subtitle">The signing key that apps patched or re-signed here are signed with. Export it to keep a copy, and import it on another phone, so those apps keep updating in place.</div>
+                <div class="us-key-actions">
+                    <button class="mode-action-btn primary" id="usKeyExportBtn" onclick="mpKeyExport()">Export KeyStore</button>
+                    <button class="mode-action-btn" id="usKeyImportBtn" onclick="mpKeyImport()">Import KeyStore</button>
+                    <button class="mode-action-btn" id="usKeyResetBtn" onclick="mpKeyReset()">New key</button>
+                </div>
+            </div>
+            </div>
         </section>
 
         <!-- VIEW: FILE MANAGER -->
@@ -4174,7 +4315,9 @@
                 .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act:disabled { opacity: 0.45; }
-                .cd-row-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
+                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); }
+                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); }
+                .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
                 .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
                 .cd-batch { position: sticky; bottom: 10px; z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
@@ -4309,7 +4452,7 @@
                     <div class="cd-batch" id="cdBatch">
                         <b id="cdBatchCount">0 selected</b>
                         <button class="cd-row-act green" onclick="cdBatch('enable')">Enable</button>
-                        <button class="cd-row-act" onclick="cdBatch('disable')">Disable</button>
+                        <button class="cd-row-act blue" onclick="cdBatch('disable')">Disable</button>
                         <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
                         <button class="cd-row-act green" onclick="cdBatch('reinstall')">Reinstall</button>
                         <button class="cd-x" onclick="cdSelClear()" aria-label="Clear selection">&#10005;</button>
@@ -5061,51 +5204,11 @@
             <!-- Sub-tabs the person added with the + tab (a repository address, or a GitHub or Codeberg user or project) -->
             <div id="storeCustomPanels"></div>
 
+
         </section>
 
         <!-- VIEW: UPDATES -->
-        <section id="view-updates" class="view-content">
-            <div class="color-card" id="selfUpdateCard">
-                <div class="color-card-title">App update</div>
-                <div class="color-card-subtitle">Update ADB Application Manager Pro itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
-                <div class="uad-status" id="selfUpdStatus">Checking this app's version…</div>
-                <div class="mode-btn-row" style="margin-top:6px;">
-                    <button class="mode-action-btn primary" id="selfUpdCheckBtn" onclick="checkSelfUpdateUI()">Check for app update</button>
-                    <button class="mode-action-btn primary" id="selfUpdInstallBtn" onclick="installSelfUpdateUI()" style="display:none;">Update now</button>
-                    <button class="mode-action-btn" id="selfUpdPageBtn" onclick="openSelfUpdatePage()" style="display:none;">Release notes</button>
-                </div>
-                <div class="upd-bar" id="selfUpdBar" style="display:none;"><div style="width:2%"></div></div>
-                <div class="upd-msg" id="selfUpdNotes" style="display:none;"></div>
-            </div>
-            <div class="color-card">
-                <div class="color-card-title">Updates Available</div>
-                <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
-                <div class="uad-status" id="updStatus">Not checked yet.</div>
-                <div class="mode-btn-row">
-                    <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">Check for Updates</button>
-                    <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">Update All</button>
-                </div>
-                <div class="mode-btn-row" style="margin-top:8px;">
-                    <button class="mode-action-btn" onclick="importObtainiumUI()">Import Obtainium List</button>
-                    <button class="mode-action-btn" id="ghTokenBtn" onclick="setGithubTokenUI()">GitHub Token</button>
-                </div>
-                <div class="uad-credit" style="margin-top:10px;">Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.</div>
-            </div>
-            <div class="color-card" id="playUpdateCard">
-                <div class="color-card-title">Play Store apps (via Aurora)</div>
-                <div class="color-card-subtitle" id="playStoreStatus">Play Store apps update through the Play Store or Aurora Store.</div>
-                <div class="mode-btn-row" style="margin-top:6px;">
-                    <button class="mode-action-btn primary" id="openAuroraBtn" onclick="openAuroraStore()">Open Aurora Store</button>
-                    <button class="mode-action-btn" onclick="listPlayApps()">List installed apps</button>
-                </div>
-                <div id="playAppsList" style="margin-top:8px;"></div>
-                <div class="uad-credit" style="margin-top:8px;">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
-            </div>
-            <div id="updContainer">
-                <div class="list-empty">Tap Check for Updates.</div>
-            </div>
-            <div id="updExtraContainer"></div>
-        </section>
+
 
         <section id="view-saved-lists" class="view-content">
             <div class="color-card" id="quickActionsHelp">
@@ -5168,12 +5271,12 @@
             </div>
 
             <div class="color-card" id="agentCard">
-                <div class="color-card-title">Default agent</div>
-                <div class="color-card-subtitle">The Coding Agent that answers every Ask agent button: what a hidden setting, a permission, a process, a log line or an app is. Its key or sign-in is set up in the Command-Line Interface tab.</div>
-                <select class="op-select lang-select" id="askAgentSelect" aria-label="Default agent" onchange="askAgentChoose(this.value)"></select>
+                <div class="color-card-title">Default Ask Agent</div>
+                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Command-Line Interface tab.</div>
+                <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="mode-action-btn" id="askTestBtn" onclick="askAgentTest()">Test the default agent</button>
+                    <button class="mode-action-btn" id="askTestBtn" onclick="askAgentTest()">Test the Default Ask Agent</button>
                     <button class="mode-action-btn" id="askTestStop" style="display:none;" onclick="askStopRun('askTest')">Stop</button>
                 </div>
                 <div class="agent-ask-prog" id="askTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="askTestBar"><i id="askTestBarFill"></i></div><div class="agent-ask-prog-txt" id="askTestProgTxt"></div></div>
@@ -5937,6 +6040,14 @@
         </section>
 <!-- SDM:VIEW:END -->
         <section id="view-about" class="view-content">
+            <style>
+                .auth-code-row { display:flex; gap:8px; align-items:center; margin-top:12px; }
+                .auth-code { flex:1 1 auto; min-width:0; font-family:monospace; font-size:16px; font-weight:800; letter-spacing:1px; padding:11px 12px; border-radius:12px; background:rgba(var(--ov),0.07); border:1px solid var(--border-glass); color:var(--text-main); word-break:break-all; user-select:all; }
+                .auth-icon-btn { flex:0 0 auto; width:44px; height:44px; border-radius:12px; border:1px solid var(--border-glass); background:rgba(var(--ov),0.07); color:var(--accent); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+                .auth-icon-btn:active { background:rgba(var(--ov),0.16); }
+                .auth-icon-btn.spin svg { animation:authSpin .5s linear; }
+                @keyframes authSpin { to { transform:rotate(360deg); } }
+            </style>
             <div class="color-card about-hero">
                 <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
                 <div class="about-name">ADB Application Manager Pro</div>
@@ -5989,6 +6100,16 @@
                     <button class="mode-action-btn" onclick="aboutCopyDebug()">Copy debug info</button>
                     <button class="mode-action-btn" onclick="aboutShareDebug()">Share it</button>
                     <button class="mode-action-btn" onclick="aboutCopyFingerprint()">Copy fingerprint</button>
+                </div>
+            </div>
+
+            <div class="color-card" id="authCard">
+                <div class="color-card-title">Authorization Manager</div>
+                <div class="color-card-subtitle">This app's own authorization code. Nothing accepts it yet: it is kept here for later. It is made on this phone, stays on this phone, and you can replace it at any time.</div>
+                <div class="auth-code-row">
+                    <div class="auth-code" id="authCode" translate="no" aria-label="Authorization code">-----</div>
+                    <button class="auth-icon-btn" id="authCopyBtn" onclick="authCopy()" aria-label="Copy the code" title="Copy the code"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg></button>
+                    <button class="auth-icon-btn" id="authRefreshBtn" onclick="authRefresh()" aria-label="Make a new code" title="Make a new code"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
                 </div>
             </div>
 
@@ -7738,7 +7859,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" id="lcEntCopy" onclick="lcEntryCopy()">Copy</button>
                 <button class="mode-action-btn" id="lcEntMore" onclick="lcEntryMore()">Ask agent</button>
                 <button class="mode-action-btn" id="lcEntWeb" onclick="lcEntryWeb()">Web search</button>
+                <button class="mode-action-btn" id="lcEntHistBtn" onclick="askHistToggle('lcEnt')">History</button>
             </div>
+            <div class="agent-ask-hist" id="lcEntHist" style="display:none;"></div>
             <div id="lcEntAiWrap" style="display:none;">
                 <div class="lc-ent-ai" id="lcEntAi"></div>
                 <div class="agent-ask-prog" id="lcEntProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="lcEntBar"><i id="lcEntBarFill"></i></div><div class="agent-ask-prog-txt" id="lcEntProgTxt"></div></div>
@@ -7770,12 +7893,14 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" id="sdbEditSaveBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbEditSave()">Save</button>
                 <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">Flip</button>
             </div>
+            <div class="agent-ask-hist" id="sdbEditHist" style="display:none;"></div>
             <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
             <div class="agent-ask-prog" id="sdbEditProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="sdbEditBar"><i id="sdbEditBarFill"></i></div><div class="agent-ask-prog-txt" id="sdbEditProgTxt"></div></div>
             <div class="lc-ent-btns" style="margin-top:6px;"><button class="mode-action-btn" id="sdbEditStop" style="display:none;" onclick="askStopRun('sdbEdit')">Stop</button></div>
             <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
                 <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
                 <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Ask agent</button>
+                <button class="batch-tool-link" id="sdbEditHistBtn" onclick="askHistToggle('sdbEdit')">History</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('name')">Copy name</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('value')">Copy value</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">Copy command</button>
@@ -8463,7 +8588,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn" id="agentAskStop" style="display:none;" onclick="agentAskStop()">Stop</button>
                 <button class="mode-action-btn" id="agentAskWebBtn" onclick="agentAskWeb()">Web search</button>
                 <button class="mode-action-btn" id="agentAskCopy" onclick="agentAskCopy()">Copy the answer</button>
-                <button class="mode-action-btn" id="agentAskHistBtn" onclick="askHistToggle()">History</button>
+                <button class="mode-action-btn" id="agentAskHistBtn" onclick="askHistToggle('agentAsk')">History</button>
             </div>
             <div class="agent-ask-hist" id="agentAskHist" style="display:none;"></div>
             <div class="agent-ask-foot">An agent can be wrong, so treat the answer as a hint: for anything that changes the phone, try the step that can be undone first (freeze rather than uninstall) and check that the phone still works. <a href="#" onclick="agentAskToSettings(); return false;">Change the default agent</a></div>
@@ -8955,12 +9080,11 @@ Type any command below (e.g. pm list packages -d)
             { key: 'apps', label: 'Application\nManager', name: 'Application Manager', fixed: true },
             { key: 'saved-lists', label: 'Saved\nApplications', name: 'Saved Applications' },
             { key: 'debloater', label: 'UAD-NG\nDebloater', name: 'UAD-NG Debloater' },
-            { key: 'installer', label: 'APK\nInstaller', name: 'APK Installer' },
+            { key: 'installer', label: 'Installer/\nUpdater', name: 'APK Installer/Updater' },
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
             { key: 'terminal', label: 'Command-Line\nInterface', name: 'Command-Line Interface' },
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
-            { key: 'updates', label: 'App\nUpdater', name: 'App Updater' },
             { key: 'store', label: 'App\nStores', name: 'App Stores' },
             { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
             { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
@@ -8970,7 +9094,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
-        const tabDef = key => TAB_DEFS.find(t => t.key === key);
+        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key));          // the updater is a box of the APK Installer/Updater tab now
         let tabConfig = { order: TAB_MOVABLE.slice(), off: [] };
 
         // The saved choice (kv 'tab_config') is checked against the tabs this version has: unknown keys go, a tab it has never
@@ -8990,13 +9114,13 @@ Type any command below (e.g. pm list packages -d)
 
         // The tabs on the bar, left to right
         function tabsShown() { return ['apps'].concat(tabConfig.order.filter(k => !tabConfig.off.includes(k)), ['about']); }
-        function tabIsOn(key) { return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
+        function tabIsOn(key) { if (key === 'updates') key = 'installer'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
 
         function renderTabBar() {
             const bar = document.getElementById('tabBar');
             if (!bar) return;
             const cur = currentViewName();
-            bar.innerHTML = tabsShown().map(k => '<button class="tab-btn' + (k === cur ? ' active' : '') + '" data-tab="' + k + '"' + (k === 'updates' ? ' id="updatesTabBtn"' : '') + ' onclick="switchView(\'' + k + '\')">' + escapeHtml(tabDef(k).label) + '</button>').join('');
+            bar.innerHTML = tabsShown().map(k => '<button class="tab-btn' + (k === cur ? ' active' : '') + '" data-tab="' + k + '"' + (k === 'installer' ? ' id="updatesTabBtn"' : '') + ' onclick="switchView(\'' + k + '\')">' + escapeHtml(tabDef(k).label) + '</button>').join('');
             if (typeof updateUpdatesTabBadge === 'function') updateUpdatesTabBadge();
         }
 
@@ -9025,6 +9149,12 @@ Type any command below (e.g. pm list packages -d)
 
         // Returns false when it did not go anywhere (an unknown tab, or one that is switched off)
         function switchView(viewName) {
+            if (viewName === 'updates') {                                  // the App Updater is the right-hand box of the APK Installer/Updater tab
+                instPane = 'updater'; instKeep = true;
+                const ok = switchView('installer');
+                instKeep = false;
+                return ok;
+            }
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
@@ -9063,8 +9193,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
-            if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
-            if (viewName === 'installer') onInstallerShown();
+            if (viewName === 'installer') { if (!instKeep && fromView !== 'installer') instPane = 'install'; onInstallerShown(); instPaneShow(instPane, true); }
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
             if (viewName === 'taskmgr') onTaskMgrShown();
@@ -9568,6 +9697,7 @@ Type any command below (e.g. pm list packages -d)
             window.AndroidBridge.pickBackupFolder('lists');
         }
         window.onBackupFolderPicked = function (r) {
+            if (r && r.tag === 'us') { usFolderPicked(r); return; }
             if (!r || r.tag !== 'lists' || r.cancelled || !r.uri) return;
             const k = lbState(); k.uri = r.uri; k.label = r.label || 'you chose'; lbSave(k);
             listsBkRender();
@@ -10732,19 +10862,25 @@ Type any command below (e.g. pm list packages -d)
             haptic();
         }
         rowTintApply();
-        let askAgentId = String(kvGet('ask_agent', '') || '');
+        let askAgentId = String(kvGet('ask_agent', 'perplexity') || '');          // Perplexity until the person chooses (or chooses none): it searches the web itself and cites what it found
         function askAgentDef() {
             const ag = askAgentId ? txAgentDef(askAgentId) : null;
-            return ag && ag.id !== 'none' && ag.api !== 'info' ? ag : null;
+            return ag && askAgentOk(ag) ? ag : null;
         }
+        // The Default Ask Agent is a research agent: it reads the web and works out an answer. A coding agent (Cursor, Copilot, OpenCode) is not offered here.
+        const ASK_RESEARCH = ['perplexity', 'exa', 'browseruse', 'crawl4ai'];
+        function askAgentOk(a) { return a.id !== 'none' && a.api !== 'info' && a.api !== 'cli' && a.id !== 'cursor'; }
         function askAgentBuild() {
             const sel = document.getElementById('askAgentSelect');
             if (!sel) return;
             const opt = a => '<option value="' + a.id + '" translate="no">' + escapeHtml(a.name) + '</option>';
-            const ok = a => a.id !== 'none' && a.api !== 'info';
-            sel.innerHTML = '<option value="">No default agent chosen</option>'
-                + '<optgroup label="' + escapeHtml('API Key Required') + '">' + TX_AGENTS.filter(a => a.group === 'key' && ok(a)).map(opt).join('') + '</optgroup>'
-                + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss' && ok(a)).map(opt).join('') + '</optgroup>';
+            const research = TX_AGENTS.filter(a => askAgentOk(a) && ASK_RESEARCH.includes(a.id)).sort((a, b) => ASK_RESEARCH.indexOf(a.id) - ASK_RESEARCH.indexOf(b.id));
+            const chat = TX_AGENTS.filter(a => askAgentOk(a) && a.group === 'key' && !ASK_RESEARCH.includes(a.id));
+            const own = TX_AGENTS.filter(a => askAgentOk(a) && a.group === 'oss' && !ASK_RESEARCH.includes(a.id));
+            sel.innerHTML = '<option value="">No default (free web lookup only)</option>'
+                + '<optgroup label="' + escapeHtml('Web research (recommended)') + '">' + research.map(opt).join('') + '</optgroup>'
+                + '<optgroup label="' + escapeHtml('Chat models with an API key') + '">' + chat.map(opt).join('') + '</optgroup>'
+                + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + own.map(opt).join('') + '</optgroup>';
             sel.value = askAgentDef() ? askAgentId : '';
             askAgentNote();
         }
@@ -10752,9 +10888,9 @@ Type any command below (e.g. pm list packages -d)
             const el = document.getElementById('askAgentNote');
             if (!el) return;
             const ag = askAgentDef();
-            if (!ag) { el.textContent = 'No agent is chosen yet, so an Ask agent button reads the web for you (free, no key). Choose an agent for an explanation written for you.'; return; }
+            if (!ag) { el.textContent = 'No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you.'; return; }
             txRefreshVault();
-            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet. Add its key or sign-in in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
             el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
         }
@@ -10764,41 +10900,48 @@ Type any command below (e.g. pm list packages -d)
             kvSet('ask_agent', askAgentId);
             askAgentBuild();
             const ag = askAgentDef();
-            showToast(ag ? 'Default agent: ' + ag.name : 'No default agent');
+            showToast(ag ? 'Default Ask Agent: ' + ag.name : 'No Default Ask Agent');
         }
-        // "Test the default agent" in Settings: one sample question, the same way an Ask agent button asks
+        // "Test the Default Ask Agent" in Settings and "Test" in an agent's Connect sheet: one sample question, asked the way an Ask agent button asks
         let askTestBusy = false;
         function askTestSample() { return 'Android ?\nPackage: com.android.calculator2\nApp name: Calculator\nType: system app\nState: enabled'; }          // the text sent, not shown
-        async function askAgentTest() {
+        // ui names the pieces: uiOut (the answer), uiRes (the result line), uiBtn, and the progress bar and Stop of askProgressShow
+        async function agentTestRun(ag, ui) {
             if (askTestBusy) return;
             haptic();
-            const out = document.getElementById('askTestOut'), res = document.getElementById('askTestRes'), btn = document.getElementById('askTestBtn');
+            const out = document.getElementById(ui + 'Out'), res = document.getElementById(ui + 'Res'), btn = document.getElementById(ui + 'Btn');
+            if (!out || !res || !btn) return;
             res.textContent = ''; res.classList.remove('is-err');
-            const ag = askAgentDef();
             txRefreshVault();
             if (!ag || !txAgentReady(ag)) {
                 out.style.display = 'none';
                 res.classList.add('is-err');
-                res.textContent = !ag ? txT('No default agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
+                res.textContent = !ag ? txT('No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
                     : txF('{0} is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.', ag.name);
+                return;
+            }
+            if (txEngine(ag) === 'cli' || ag.api === 'cli') {
+                out.style.display = 'none';
+                res.textContent = txF('{0} works through its own tool in Termux: test it by sending a message in the Terminal.', ag.name);
                 return;
             }
             askTestBusy = true; btn.disabled = true;
             out.style.display = '';
             const t0 = Date.now();
-            const q = askTestSample();
-            const ans = await aiExplainInto(out, agentSystem('package'), q, () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, 'askTest');
+            const ans = await aiExplainInto(out, agentSystem('package'), askTestSample(), () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, ui, ag);
             const ok = !!ans && !out.classList.contains('is-err');
             res.classList.toggle('is-err', !ok);
             res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
                 : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
             askTestBusy = false; btn.disabled = false;
         }
+        function askAgentTest() { return agentTestRun(askAgentDef(), 'askTest'); }
+        function txConnectTest() { return agentTestRun(txAgentDef(txConnectAgent), 'txConnTest'); }
         // The agent when there is one that can answer; otherwise Settings opens on the choice (nothing is sent anywhere).
         function askAgentGate() {
             const ag = askAgentDef();
             if (ag) { txRefreshVault(); if (txAgentReady(ag)) return ag; }
-            agentAskToSettings(ag ? ag.name + ' is not connected yet: finish its setup or choose another default agent' : 'Choose a default agent first');
+            agentAskToSettings(ag ? ag.name + ' is not connected yet: finish its setup or choose another Default Ask Agent' : 'Choose a Default Ask Agent first');
             return null;
         }
         function agentAskToSettings(why) {
@@ -10872,53 +11015,86 @@ Type any command below (e.g. pm list packages -d)
             const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
             cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
-            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd(cur, wasAgent);
+            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent });
         }
-        // ---- a short history of the answers of the Ask agent window (kept on this phone only; Clear history removes them) ----
-        const ASK_HIST_MAX = 12;
-        function askHistGet() { const h = kvGet('ask_history', []); return Array.isArray(h) ? h.filter(e => e && e.kind && e.name && e.answer) : []; }
-        function askHistAdd(cur, agentName) {
-            const e = { kind: cur.kind, name: cur.name, text: String(cur.text || '').slice(0, 3000), web: cur.web || '', answer: String(cur.answer).slice(0, 6000), agent: agentName || '', at: Date.now() };
-            const list = askHistGet().filter(x => !(x.kind === e.kind && x.name === e.name));
-            list.unshift(e);
-            kvSet('ask_history', list.slice(0, ASK_HIST_MAX));
-            if (document.getElementById('agentAskHist').style.display !== 'none') askHistRender();
+        // ---- a short history of the answers of the three windows that ask (Ask agent, log entry, Hidden Settings; kept on this phone only) ----
+        // The last 12 answers of each window; an answer can be pinned, and a pinned answer stays when newer ones push the others out (up to 30 pins).
+        // Clear history removes the ones that are not pinned. Entry: { id, kind, name, label, text, web, answer, agent, at, pinned }
+        const ASK_HIST = {
+            agentAsk: { key: 'ask_history', box: 'agentAskAi' },
+            lcEnt: { key: 'ask_history_log', box: 'lcEntAi' },
+            sdbEdit: { key: 'ask_history_sdb', box: 'sdbEditAi' }
+        };
+        const ASK_HIST_MAX = 12, ASK_HIST_PINS = 30;
+        function askHistGet(ui) { const h = kvGet(ASK_HIST[ui].key, []); return Array.isArray(h) ? h.filter(e => e && e.id && e.name && e.answer) : []; }
+        function askHistWhen(e) { return new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' }); }
+        function askHistAdd(ui, e) {
+            const old = askHistGet(ui).find(x => x.id === e.id);
+            e.at = Date.now();
+            e.pinned = !!(old && old.pinned);
+            e.answer = String(e.answer).slice(0, 6000);
+            e.text = String(e.text || '').slice(0, 3000);
+            const rest = askHistGet(ui).filter(x => x.id !== e.id);
+            const pinned = [e].concat(rest).filter(x => x.pinned).sort((a, b) => b.at - a.at).slice(0, ASK_HIST_PINS);
+            const others = [e].concat(rest).filter(x => !x.pinned).sort((a, b) => b.at - a.at).slice(0, ASK_HIST_MAX);
+            kvSet(ASK_HIST[ui].key, pinned.concat(others));
+            const panel = document.getElementById(ui + 'Hist');
+            if (panel && panel.style.display !== 'none') askHistRender(ui);
         }
-        function askHistToggle() {
+        function askHistSorted(ui) { const l = askHistGet(ui); return l.filter(x => x.pinned).concat(l.filter(x => !x.pinned)); }
+        function askHistToggle(ui) {
             haptic();
-            const h = document.getElementById('agentAskHist');
+            const h = document.getElementById(ui + 'Hist');
             const open = h.style.display === 'none';
             h.style.display = open ? '' : 'none';
-            if (open) askHistRender();
+            if (open) askHistRender(ui);
         }
-        function askHistRender() {
-            const h = document.getElementById('agentAskHist'), list = askHistGet();
+        function askHistRender(ui) {
+            const h = document.getElementById(ui + 'Hist'), list = askHistSorted(ui);
             if (!list.length) { h.innerHTML = '<div class="agent-ask-hist-empty">' + escapeHtml(txT('No answers are kept yet.')) + '</div>'; return; }
-            h.innerHTML = list.map((e, i) => '<button class="agent-ask-hist-row" type="button" onclick="askHistOpen(' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
-                + escapeHtml((AGENT_KINDS[e.kind] || AGENT_KINDS.item).label) + ' · <span style="display:inline" translate="no">' + escapeHtml(new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' })) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>').join('')
-                + '<button class="agent-ask-hist-row" type="button" onclick="askHistClear()"><b>' + escapeHtml(txT('Clear history')) + '</b><span>' + escapeHtml(txT('Answers are kept on this phone only.')) + '</span></button>';
+            h.innerHTML = list.map((e, i) => '<div class="agent-ask-hist-item"><button class="agent-ask-hist-row" type="button" onclick="askHistOpen(\'' + ui + '\',' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
+                + escapeHtml(e.label || '') + ' · <span style="display:inline" translate="no">' + escapeHtml(askHistWhen(e)) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>'
+                + '<button class="agent-ask-hist-pin' + (e.pinned ? ' on' : '') + '" type="button" aria-pressed="' + (e.pinned ? 'true' : 'false') + '" onclick="askHistPin(\'' + ui + '\',' + i + ')">' + escapeHtml(e.pinned ? txT('Pinned') : txT('Pin')) + '</button></div>').join('')
+                + '<button class="agent-ask-hist-row" type="button" onclick="askHistClear(\'' + ui + '\')"><b>' + escapeHtml(txT('Clear history')) + '</b><span>' + escapeHtml(txT('Pinned answers stay. Answers are kept on this phone only.')) + '</span></button>';
         }
-        function askHistOpen(i) {
-            const e = askHistGet()[i];
+        function askHistPin(ui, i) {
+            const list = askHistSorted(ui), e = list[i];
             if (!e) return;
             haptic();
-            askStopRun('agentAsk');
-            const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
-            agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
-            document.getElementById('agentAskTitle').innerText = k.title;
-            document.getElementById('agentAskSubject').innerText = e.name;
-            document.getElementById('agentAskSent').innerText = e.text;
-            const box = document.getElementById('agentAskAi');
+            if (!e.pinned && list.filter(x => x.pinned).length >= ASK_HIST_PINS) { showToast(txF('At most {0} answers can be pinned', ASK_HIST_PINS)); return; }
+            e.pinned = !e.pinned;
+            // an unpinned answer is an ordinary one at once: both groups are cut to their limits again
+            const byNew = (a, b) => b.at - a.at;
+            kvSet(ASK_HIST[ui].key, list.filter(x => x.pinned).sort(byNew).slice(0, ASK_HIST_PINS).concat(list.filter(x => !x.pinned).sort(byNew).slice(0, ASK_HIST_MAX)));
+            askHistRender(ui);
+        }
+        function askHistOpen(ui, i) {
+            const e = askHistSorted(ui)[i];
+            if (!e) return;
+            haptic();
+            document.getElementById(ui + 'Hist').style.display = 'none';
+            const box = document.getElementById(ASK_HIST[ui].box);
+            if (ui === 'agentAsk') {
+                askStopRun('agentAsk');
+                const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
+                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
+                document.getElementById('agentAskTitle').innerText = k.title;
+                document.getElementById('agentAskSubject').innerText = e.name;
+                document.getElementById('agentAskSent').innerText = e.text;
+            } else {
+                box.parentNode.style.display = box.parentNode.id === 'lcEntAiWrap' ? '' : box.parentNode.style.display;
+                box.style.display = '';
+            }
             box.classList.remove('is-err');
             box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out"></span>';
-            box.firstChild.textContent = txF('Saved answer from {0}. Ask again for a new one.', new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' }));
+            box.firstChild.textContent = ui === 'agentAsk' ? txF('Saved answer from {0}. Ask again for a new one.', askHistWhen(e)) : txF('Saved answer about {0} from {1}.', e.name, askHistWhen(e));
             box.querySelector('.ai-out').textContent = e.answer;
-            document.getElementById('agentAskHist').style.display = 'none';
+            if (ui === 'lcEnt') lcEntAiText = e.answer;
         }
-        function askHistClear() {
+        function askHistClear(ui) {
             haptic();
-            kvSet('ask_history', []);
-            askHistRender();
+            kvSet(ASK_HIST[ui].key, askHistGet(ui).filter(x => x.pinned));
+            askHistRender(ui);
         }
         // A progress bar and a Stop button while an answer is on its way (an agent that streams, a cloud agent's task, the web lookup). Every window that asks
         // has the same four pieces with a shared name start: KEYProg, KEYBar, KEYBarFill, KEYProgTxt and the button KEYStop.
@@ -11363,7 +11539,9 @@ Type any command below (e.g. pm list packages -d)
         function updateUpdatesTabBadge() {
             const btn = document.getElementById('updatesTabBtn');
             const pending = updList.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done')).length;
-            if (btn) btn.innerText = pending ? `${tabDef('updates').label} (${pending})` : tabDef('updates').label;
+            if (btn) btn.innerText = pending ? `${tabDef('installer').label} (${pending})` : tabDef('installer').label;
+            const sw = document.getElementById('instSwitchUpdater');
+            if (sw) sw.innerText = pending ? txF('Application Updater ({0})', pending) : txT('Application Updater');
         }
 
         function renderUpdates(st) {
@@ -12092,6 +12270,17 @@ Type any command below (e.g. pm list packages -d)
             return s ? s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Other';
         }
 
+        // The two boxes at the top of the APK Installer/Updater tab: Application Installer (the default, left) and Application Updater (right)
+        let instPane = 'install', instKeep = false;
+        function instPaneShow(which, quiet) {
+            instPane = which === 'updater' ? 'updater' : 'install';
+            const up = instPane === 'updater';
+            document.getElementById('instPaneInstall').style.display = up ? 'none' : '';
+            document.getElementById('instPaneUpdater').style.display = up ? '' : 'none';
+            [['instSwitchInstall', !up], ['instSwitchUpdater', up]].forEach(([id, on]) => { const b = document.getElementById(id); b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+            if (!quiet) haptic();
+            if (up) { onUpdatesShown(); refreshStoreStatus(); usInit(); }
+        }
         function onStoreShown() {
             storeCustomRestore();
             switchStoreTab(storeSrc[currentStoreTab] || ['shizu', 'github', 'fdroid', 'orion'].indexOf(currentStoreTab) >= 0 ? currentStoreTab : 'shizu');
@@ -15120,6 +15309,386 @@ Type any command below (e.g. pm list packages -d)
             if (n < 1024) return n + ' B';
             if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
             return (n / 1048576).toFixed(1) + ' MB';
+        }
+
+        // ---- Application Updater: find an app by name or package and download it (APKMirror by default) ----
+        // Uses the same engine as Morphe Helper (the bridge ops helperVersions / helperGet / helperBrowse), with its own settings.
+        const US_DEF = { source: 'apkmirror', split: true, exact: false, near: true, stable: true, vt: false, install: false, agent: false, save: 'cache', tree: '', treeLabel: '' };
+        const US_WEB = {
+            play: pkg => 'https://play.google.com/store/apps/details?id=' + pkg
+        };
+        const US_REPO = { fdroid: true, izzy: true };          // repositories whose version codes are exact: a picked build is asked for by name and code
+        const US_NOTE = {
+            apkmirror: 'APKMirror checks each upload against the developer\'s signature. From some networks it asks for a browser check: then the page opens in the app and the download starts from there.',
+            uptodown: 'Uptodown lists the original files. Its download button needs a browser check, so the file is fetched in the app\'s own browser.',
+            aptoide: 'Aptoide\'s own catalog. The file is downloaded here and checked against the hash Aptoide publishes.',
+            fdroid: 'F-Droid builds open-source apps itself and signs them with its own key, so the file is F-Droid\'s build, not the developer\'s own. The file is downloaded here.',
+            izzy: 'IzzyOnDroid serves the developer\'s own release builds of open-source apps. The file is downloaded here.',
+            play: 'The Play Store gives no download to other apps. This opens the app\'s page in the Play Store.'
+        };
+        let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0, lockTok: 0, tokN: 0, browseFor: null, browseRun: -1, browseVer: '' };
+
+        function usEl(id) { return document.getElementById(id); }
+        function usLoad() {
+            let c = {};
+            try { c = kvGet('us_cfg', {}) || {}; } catch (e) { c = {}; }
+            us.cfg = Object.assign({}, US_DEF, c);
+            if (!usEl('usSource') || ![].some.call(usEl('usSource').options, o => o.value === us.cfg.source)) us.cfg.source = US_DEF.source;
+            return us.cfg;
+        }
+        function usApply() {
+            const c = us.cfg;
+            usEl('usSource').value = c.source;
+            ['split', 'exact', 'near', 'stable', 'vt', 'install', 'agent'].forEach(k => { usEl('us' + k.charAt(0).toUpperCase() + k.slice(1)).checked = !!c[k]; });
+            usEl('usSave').value = c.save;
+            usSaveRefresh();
+        }
+        function usRead() {
+            if (!us.cfg) usLoad();
+            const c = us.cfg;
+            c.source = usEl('usSource').value;
+            ['split', 'exact', 'near', 'stable', 'vt', 'install', 'agent'].forEach(k => { c[k] = usEl('us' + k.charAt(0).toUpperCase() + k.slice(1)).checked; });
+            c.save = usEl('usSave').value;
+            return c;
+        }
+        function usSave() { try { kvSet('us_cfg', usRead()); } catch (e) {} }
+        async function usInit() {
+            if (!us.cfg) { usLoad(); usApply(); }
+            usSrcChanged(true);
+            if (!us.helper) {
+                const r = await mpCall('helperSources', {});
+                us.helper = r.ok && r.data ? r.data : { sources: [] };
+                us.abi = (r.ok && r.data && r.data.abi) || '';
+            }
+        }
+        function usSrcChanged(quiet) {
+            const src = usEl('usSource').value;
+            const n = usEl('usSrcNote');
+            n.textContent = txT(US_NOTE[src] || '');
+            if (!quiet) { usSave(); usReset(); }
+        }
+        function usSaveChanged() {
+            usSave();
+            usSaveRefresh();
+        }
+        function usSaveRefresh() {
+            const c = us.cfg || US_DEF;
+            const custom = usEl('usSave').value === 'custom';
+            usEl('usSavePathRow').style.display = custom ? '' : 'none';
+            usEl('usSavePathText').textContent = c.tree ? txF('Copies go to {0}', c.treeLabel || txT('the folder you chose')) : txT('No folder chosen yet.');
+        }
+        function usChooseFolder() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickBackupFolder) { showToast('Choosing a folder needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickBackupFolder('us');
+        }
+        function usFolderPicked(r) {
+            if (!r || r.cancelled || !r.uri) return;
+            usRead(); us.cfg.tree = r.uri; us.cfg.treeLabel = r.label || '';
+            usSave(); usSaveRefresh();
+            showToast(txF('Downloads are copied to {0}', us.cfg.treeLabel || txT('the folder')));
+        }
+        function usStatus(text, err) {
+            const el = usEl('usStatus');
+            if (!text) { el.style.display = 'none'; el.textContent = ''; return; }
+            el.style.display = ''; el.textContent = text; el.classList.toggle('is-err', !!err);
+            el.style.color = err ? '#FF5252' : '';
+        }
+        function usBar(pct) {
+            const b = usEl('usBar');
+            if (pct === null || pct === undefined) { b.style.display = 'none'; return; }
+            b.style.display = ''; b.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
+        }
+        function usLock() { if (us.busy) return 0; us.busy = true; us.lockTok = ++us.tokN; return us.lockTok; }
+        function usUnlock(tok) { if (tok && us.lockTok === tok) { us.busy = false; us.lockTok = 0; } }
+        function usReset() { us.run++; us.browseFor = null;                  // a download that is already running keeps its lock until it really ends: only the operation that took it lets it go
+             us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
+
+        // The pure parts (tested on their own): which of the listed versions to take
+        function usVerNorm(v) { return String(v || '').trim().replace(/^v/i, '').replace(/\s*\(\d+\)\s*$/, ''); }
+        function usVerDist(a, b) {
+            const pa = usVerNorm(a).split(/[.\-+]/).map(x => (/^\d+$/.test(x) ? +x : -1)), pb = usVerNorm(b).split(/[.\-+]/).map(x => (/^\d+$/.test(x) ? +x : -1));
+            for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+                const x = pa[i] === undefined ? 0 : pa[i], y = pb[i] === undefined ? 0 : pb[i];
+                if (x !== y) return [i, Math.abs(x - y)];              // the later two versions part ways, the closer they are
+            }
+            return [99, 0];
+        }
+        function usPickVersion(items, ver, cfg) {
+            let list = (items || []).filter(x => x && x.version);
+            if (!cfg.split) list = list.filter(x => !/^(apkm|apks|xapk)$/i.test(x.format || ''));
+            if (!list.length) return { error: cfg.split ? 'No version is listed for this app.' : 'Only split bundles are listed for this app. Turn on Allow split APK.' };
+            const want = usVerNorm(ver);
+            if (!want) {
+                const rec = cfg.stable ? list.filter(x => x.suggested) : [];            // the repository's own recommended build (F-Droid, IzzyOnDroid)
+                if (rec.length) return { item: rec[0], how: 'newest' };
+                let cand = cfg.stable ? list.filter(x => !/alpha|beta/i.test(x.version)) : list;
+                if (!cand.length) cand = list;
+                cand = cand.slice().sort((a, b) => mpVerCmp(usVerNorm(b.version), usVerNorm(a.version)));
+                return { item: cand[0], how: 'newest' };
+            }
+            const exact = list.filter(x => usVerNorm(x.version) === want);
+            if (exact.length) return { item: exact[0], how: 'exact' };
+            if (cfg.exact || !cfg.near) return { error: txF('Version {0} is not listed.', ver) };
+            let best = null, bd = null;
+            let near = cfg.stable && !/alpha|beta/i.test(want) ? list.filter(x => !/alpha|beta/i.test(x.version)) : list;
+            if (!near.length) near = list;
+            near.forEach(x => {
+                const d = usVerDist(x.version, want);
+                const better = !bd || d[0] > bd[0] || (d[0] === bd[0] && (d[1] < bd[1] || (d[1] === bd[1] && mpVerCmp(usVerNorm(x.version), usVerNorm(best.version)) > 0)));
+                if (better) { best = x; bd = d; }
+            });
+            return { item: best, how: 'near' };
+        }
+
+        // ---- searching ----
+        const US_PKG = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;          // a package name: two or more parts (com.whatsapp is one)
+        // only the labelled line of the agent's answer counts, so a web address in the text is never taken for a package
+        function usAgentPackages(answer) {
+            const out = [], re = /^[ \t>*_-]*(?:\*\*)?package(?: name)?(?:\*\*)?[ \t]*:(?:\*\*)?[ \t]*`?([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+)`?/gim;
+            let m;
+            while ((m = re.exec(String(answer || '')))) { if (US_PKG.test(m[1]) && !out.includes(m[1])) out.push(m[1]); }
+            return out.slice(0, 4);
+        }
+        async function usSearch() {
+            const cfg = usRead(); usSave();
+            const q = usEl('usQuery').value.trim();
+            if (!q) { usStatus(txT('Type an app name or package name.'), true); return; }
+            usReset();
+            const run = us.run;
+            const PKG = US_PKG;
+            const ql = q.toLowerCase();
+            const cands = [];
+            const add = c => { if (c.pkg && PKG.test(c.pkg) && !cands.some(x => x.pkg === c.pkg)) cands.push(c); };
+            const inst = pkg => (typeof allApps !== 'undefined' && allApps.find(a => a.pkg === pkg)) || null;
+            if (PKG.test(q)) { const a = inst(q); add({ pkg: q, name: a ? a.name : q, inst: a ? a.version || '' : null, installed: !!a }); }
+            else {
+                (typeof allApps !== 'undefined' ? allApps : []).filter(a => String(a.name).toLowerCase().includes(ql) || a.pkg.toLowerCase().includes(ql)).slice(0, 6)
+                    .forEach(a => add({ pkg: a.pkg, name: a.name, inst: a.version || '', installed: true }));
+            }
+            us.cands = cands;
+            usStatus(txT('Searching...'), false);
+            if (cfg.agent) usAgentSearch(q, run);
+            if (!PKG.test(q)) {
+                const r = await mpCall('helperFind', { query: q });
+                if (run !== us.run) return;
+                if (r.ok && r.data && r.data.items) r.data.items.forEach(it => { const a = inst(it.pkg); add({ pkg: it.pkg, name: it.name || it.pkg, icon: it.icon || '', ver: it.version || '', inst: a ? a.version || '' : null, installed: !!a }); });
+                else if (!cands.length) { usStatus(r.error || txT('The search did not work.'), true); return; }
+            }
+            usStatus(cands.length ? txF('{0} found. Pick the app.', cands.length) : txT('Nothing matched. Try the package name, for example com.example.app.'), !cands.length);
+            usRender();
+        }
+        function usRender() {
+            const box = usEl('usResults');
+            const cfg = us.cfg, web = !!US_WEB[cfg.source];
+            box.innerHTML = us.cands.map((c, i) => {
+                const lists = !web && usLists(cfg.source);
+                return '<div class="us-app" data-i="' + i + '"><div class="us-ic">' + mpIcon(c.pkg, c.name, c.icon) + '</div><div class="us-main">' +
+                    '<div class="us-name" translate="no">' + escapeHtml(c.name) + '</div><div class="us-pkg" translate="no">' + escapeHtml(c.pkg) + '</div>' +
+                    (c.installed ? '<div class="us-pkg">' + escapeHtml(c.inst ? txF('Installed: {0}', c.inst) : txT('Installed')) + '</div>' : '') +
+                    '<div class="us-acts"><button class="mode-action-btn primary" onclick="usGet(' + i + ')">' + (web ? 'Open the page' : 'Download') + '</button>' +
+                    (lists ? '<button class="mode-action-btn" onclick="usVersions(' + i + ')">Versions</button>' : '') +
+                    (web ? '' : '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button>') + '</div>' +
+                    '<div class="us-vers" id="usV' + i + '"></div></div></div>';
+            }).join('');
+        }
+        function usLists(src) {
+            const s = us.helper && us.helper.sources && us.helper.sources.find(x => x.id === src);
+            return s ? !!(s.recommended || s.latest || s.history) : true;
+        }
+        function usWebUrl(c) {
+            const src = usEl('usSource').value;
+            if (US_WEB[src]) return Promise.resolve(US_WEB[src](c.pkg));
+            return mpCall('helperManual', { source: src, pkg: c.pkg, version: (usEl('usVersion').value || '').trim() }).then(r => (r.ok && r.data && r.data.url) || '');
+        }
+        async function usWeb(i) {
+            const c = us.cands[i];
+            if (!c) return;
+            haptic();
+            const url = await usWebUrl(c);
+            if (url) openUrlExternal(url); else showToast('No page for that');
+        }
+        async function usBrowse(i, url) {
+            const c = us.cands[i] || us.cands[0];
+            const cfg = usRead();
+            if (!window.AndroidBridge || !window.AndroidBridge.morphe) { const u = url || await usWebUrl(c); if (u) openUrlExternal(u); return; }
+            const r = await mpCall('helperBrowse', { url: url || '', source: cfg.source, pkg: c.pkg, version: (usEl('usVersion').value || '').trim(), save: usDir(cfg) });
+            if (!r.ok) { usStatus(r.error || txT('The browser did not open.'), true); return; }
+            us.browseFor = c; us.browseRun = us.run; us.browseVer = (usEl('usVersion').value || '').trim() && cfg.exact ? (usEl('usVersion').value || '').trim() : '';
+            usStatus(txT('Choose the version and tap its download button. The file is saved here and the browser closes by itself.'), false);
+        }
+        function usDir(cfg) { return cfg.save === 'cache' ? 'cache' : 'updater'; }
+
+        // ---- the versions a source lists ----
+        async function usVersions(i) {
+            const c = us.cands[i], cfg = usRead();
+            if (!c || us.busy) return;
+            const box = usEl('usV' + i);
+            box.innerHTML = '<div class="us-pkg">' + escapeHtml(txT('Looking for versions...')) + '</div>';
+            const r = await usList(c, cfg);
+            if (!r.ok) { box.innerHTML = '<div class="us-pkg" style="color:#FF5252;">' + escapeHtml(r.error || txT('The versions could not be read.')) + '</div>' + (r.browse ? '<div class="us-acts"><button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'\')">Open it here, in the app</button></div>' : ''); us.browse = r.browse || ''; return; }
+            us.vers[i] = r.data;
+            let items = r.data.versions || [];
+            if (!cfg.split) items = items.filter(x => !/^(apkm|apks|xapk)$/i.test(x.format || ''));
+            box.innerHTML = items.slice(0, 40).map((x, j) => '<div class="us-ver-row"><span translate="no">' + escapeHtml(x.version) + ' ' + escapeHtml((x.format || '').toUpperCase()) + (x.abi ? ' ' + escapeHtml(x.abi) : '') + (x.size ? ' &middot; ' + escapeHtml(formatBytes(x.size)) : '') + '</span><button class="mode-action-btn" onclick="usGetVersion(' + i + ',' + j + ')">Download</button></div>').join('') || '<div class="us-pkg">' + escapeHtml(txT('No version is listed for this app.')) + '</div>';
+            us.shown = us.shown || {}; us.shown[i] = items;
+        }
+        async function usList(c, cfg) {
+            let r = await mpCall('helperVersions', { source: cfg.source, pkg: c.pkg });
+            if (!r.ok && r.browse) r.browse = r.browse || '';
+            return r;
+        }
+        function usGetVersion(i, j) {
+            const x = us.shown && us.shown[i] && us.shown[i][j];
+            if (x) usGet(i, x);
+        }
+
+        // ---- downloading ----
+        function usOnProgress(e) {
+            if (!us.busy) return;
+            usStatus(e.text || txT('Downloading...'), false);
+            usBar(e.pct || 0);
+        }
+        async function usFetch(c, cfg, o) {
+            const ver = o.version && o.code > 0 && US_REPO[cfg.source] ? o.version + ' (' + o.code + ')' : (o.version || '');          // two builds can share a version name
+            return mpCall('helperGet', { source: cfg.source, pkg: c.pkg, version: ver, abi: o.abi || us.abi, policy: o.policy || 'requested', sources: [cfg.source], save: usDir(cfg), conn: 'both', url: o.url || '', page: o.page || '' });
+        }
+        async function usGet(i, picked) {
+            const c = us.cands[i], cfg = usRead();
+            if (!c) return;
+            if (US_WEB[cfg.source]) { usWeb(i); return; }
+            const tok = usLock();
+            if (!tok) { usStatus(txT('Still finishing the last download...'), false); return; }
+            const ver = picked ? picked.version : (usEl('usVersion').value || '').trim();
+            us.got = null; usEl('usGot').innerHTML = '';
+            usStatus(txT('Looking for the file...'), false); usBar(2);
+            const run = us.run;
+            let r, how = '', item = picked || null;
+            try {
+                const listed = usLists(cfg.source);
+                if (item) {
+                    r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi });
+                } else if (US_REPO[cfg.source] && !ver && cfg.stable) {
+                    // F-Droid and IzzyOnDroid know which build they recommend (the newest stable one): ask for that, not for the highest number
+                    r = await usFetch(c, cfg, { version: '', policy: 'latest' });
+                } else if (listed && (!cfg.split || (!ver && cfg.stable))) {
+                    const l = await usList(c, cfg);
+                    if (!l.ok) r = l;
+                    else {
+                        const pk = usPickVersion(l.data.versions, ver, cfg);
+                        if (pk.error) r = { ok: false, error: pk.error };
+                        else { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi }); }
+                    }
+                } else {
+                    r = await usFetch(c, cfg, { version: ver, policy: ver ? 'requested' : 'latest' });
+                    if (!r.ok && ver && listed && cfg.near && !cfg.exact) {
+                        usStatus(txF('Version {0} was not found. Looking for the closest one...', ver), false);
+                        const l = await usList(c, cfg);
+                        if (l.ok) {
+                            const pk = usPickVersion(l.data.versions, ver, cfg);
+                            if (pk.item) { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi }); }
+                        }
+                    }
+                }
+            } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+            if (run !== us.run) { usUnlock(tok); return; }
+            if (!r.ok) {
+                usUnlock(tok);
+                usBar(null);
+                us.browse = r.browse || '';
+                usStatus(r.error || txT('The download did not work.'), true);
+                usEl('usGot').innerHTML = '<div class="us-acts" style="margin-top:8px;">' + (r.browse ? '<button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'' + escapeHtml(String(r.browse).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Open it here, in the app</button>' : '') + '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button></div>';
+                return;
+            }
+            us.got = r.data;
+            usBar(100);
+            usStatus(how === 'near' ? txF('The closest version is {0}; it was downloaded.', r.data.versionName || (item && item.version) || '') : txT('Downloaded.'), false);
+            try { await usAfter(r.data, cfg, i); } finally { usUnlock(tok); }          // busy until the scan, the copy and the install are done, so a second download cannot swap the file under them
+        }
+        // a file came from the browser: it goes through the same steps
+        async function usBrowseDone(e) {
+            // only the browser this updater opened, for the app it was opened for, and only while that search is still on screen
+            if (!e || !us.browseFor) return;
+            if (us.browseRun !== us.run) { us.browseFor = null; return; }
+            if (e.k === 'status') { usStatus(e.text || txT('Downloading...'), false); usBar(e.pct || 0); return; }
+            const c = us.browseFor;
+            if (e.k === 'failed') { us.browseFor = null; usStatus(txF('The download failed: {0}', e.error || ''), true); usBar(null); return; }
+            if (e.k !== 'done') return;
+            if (!e.ok || !e.info) { usStatus(txF('{0} was saved, but it is not an app file.', e.name || txT('The file')), true); return; }
+            if (e.info.pkg !== c.pkg) { usStatus(txF('That file is {0}, not {1}. Choose the right download in the browser.', e.info.pkg || '?', c.pkg), true); usBar(null); return; }
+            if (us.browseVer && usVerNorm(e.info.versionName) !== usVerNorm(us.browseVer)) { usStatus(txF('That file is version {0}, not {1}. Choose the right download in the browser.', e.info.versionName || '?', us.browseVer), true); usBar(null); return; }
+            const tok = usLock();
+            if (!tok) return;
+            const cfg = usRead();
+            us.browseFor = null;
+            us.got = e.info; usBar(100); usStatus(txT('Downloaded.'), false);
+            try { await usAfter(e.info, cfg, us.cands.indexOf(c)); } finally { usUnlock(tok); }
+        }
+        async function usAfter(g, cfg, i) {
+            const myRun = us.run;
+            let html = '<div class="us-got"><b translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + '</b><div translate="no">' + escapeHtml((g.format || '').toUpperCase()) + (g.splits ? ', ' + escapeHtml(String(g.splits)) + ' parts' : '') + ' &middot; ' + escapeHtml(formatBytes(g.size || 0)) + '</div><div class="us-pkg" translate="no">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div id="usGotMore"></div></div>';
+            usEl('usGot').innerHTML = html;
+            const more = id => usEl('usGotMore');
+            const note = t => { const m = more(); if (m) m.innerHTML += '<div>' + escapeHtml(t) + '</div>'; };
+            let verdict = '';
+            us.verdict = '';
+            if (cfg.vt) {
+                if (!vtKey()) { note(txT('VirusTotal was skipped: add your API key in Settings.')); }
+                else {
+                    note(txT('Scanning with VirusTotal...'));
+                    const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
+                    vtLoadQuota(true);
+                    if (myRun !== us.run) return;
+                    if (r.ok && r.data) { verdict = r.data.verdict || ''; us.verdict = verdict; note(r.data.found ? txF('VirusTotal: {0} malicious, {1} suspicious of {2} engines.', r.data.malicious, r.data.suspicious, r.data.total) : txT('VirusTotal has not seen this file.')); }
+                    else note(r.error || txT('The VirusTotal scan did not work.'));
+                }
+            }
+            if (cfg.save === 'custom') {
+                if (!cfg.tree) note(txT('Choose a folder first: the file stays in Downloads/App Updater until then.'));
+                else {
+                    const r = await mpCall('copyToTree', { path: g.path, tree: cfg.tree });
+                    if (myRun !== us.run) return;
+                    note(r.ok ? txF('Copied to {0}.', cfg.treeLabel || txT('the folder')) : (r.error || txT('The copy did not work.')));
+                }
+            }
+            const m = more();
+            if (m) m.innerHTML += '<div class="us-acts" style="margin-top:8px;"><button class="mode-action-btn primary" onclick="usInstallGot()">Install</button><button class="mode-action-btn" onclick="usShareGot()">Share</button></div>';
+            if (cfg.install) await usInstallGot();
+        }
+        async function usInstallGot() {
+            const g = us.got;
+            if (!g) return;
+            haptic();
+            // the VirusTotal verdict belongs to the file: every way to install it asks, the automatic one and the Install button
+            if (us.verdict === 'malicious' && !await mpAsk({ title: 'VirusTotal flags this file', text: 'Engines call it malicious. Install it anyway?', ok: 'Install anyway', danger: true })) return;
+            showToast('Installing...');
+            let r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true });
+            const d = r.data || {};
+            if (r.ok && d.ok) { showToast('Installed'); return; }
+            if (d.retry === 'uninstall' && await mpAsk({ title: 'Uninstall the installed copy first?', text: 'Android refuses to install this over the app that is on the phone, because it is signed with another key. Uninstalling the installed copy removes its data too. Back up what you need first.\n\n' + (d.output || ''), ok: 'Uninstall and install', danger: true })) {
+                r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true, uninstallFirst: true });
+                if (r.ok && r.data && r.data.ok) { showToast('Installed'); return; }
+            }
+            usStatus((r.data && (r.data.output || r.data.advice)) || r.error || txT('The install did not work.'), true);
+        }
+        function usShareGot() { const g = us.got; if (g) mpCall('shareFile', { path: g.path }).then(r => { if (!r.ok) showToast(r.error || 'Could not share it'); }); }
+
+        // ---- the default agent searches too ----
+        // what the agent is told and asked (never shown)
+        function usAgentSystem() { return 'You help find the correct Android app. Answer briefly, in plain text. Start with one line of exactly this form: "Package: <the exact Android package name>" (or "Package: unknown" when you cannot confirm it). Then give the developer, the official website or store page, and the newest stable version you can confirm from your sources. Say so when you are not sure. Never suggest a modified, cracked or unofficial build.'; }
+        function usAgentQuestion(q) { return 'Find the Android app "' + q + '". Reply with the line "Package: <package name>" first, then the developer and the official page.'; }
+        function usAgentWebQuery(q) { return q + ' android app package name'; }
+        async function usAgentSearch(q, run) {
+            const box = usEl('usAgentBox');
+            box.style.display = ''; box.className = 'us-agent agent-ask-answer'; box.textContent = txT('Asking the Default Ask Agent...');
+            const answer = await aiExplainInto(box, usAgentSystem(), usAgentQuestion(q), () => run === us.run, 'Only the app name you typed is sent.', usAgentWebQuery(q), '');
+            if (run !== us.run || !answer) return;
+            const found = usAgentPackages(answer);
+            const fresh = found.filter(p => !us.cands.some(x => x.pkg === p));
+            if (fresh.length) {
+                fresh.forEach(p => { const a = typeof allApps !== 'undefined' ? allApps.find(x => x.pkg === p) : null; us.cands.push({ pkg: p, name: a ? a.name : p, inst: a ? a.version || '' : null, installed: !!a, fromAgent: true }); });
+                usRender();
+            }
         }
 
         function onInstallerShown() {
@@ -18913,7 +19482,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -19857,7 +20426,7 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
-                '<div class="app-actions"><button class="cd-row-act' + (act[0] === 'disable' ? '' : ' green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
                 '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
                 '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
         }
@@ -21117,6 +21686,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('lcEntMeta').innerText = (e.date ? e.date + ' ' : '') + e.time + '  pid ' + e.pid + ' / tid ' + e.tid;
             document.getElementById('lcEntMsg').innerText = e.lines.join('\n');
             document.getElementById('lcEntAiWrap').style.display = 'none';
+            document.getElementById('lcEntHist').style.display = 'none';
             document.getElementById('lcEntMore').disabled = false;
             document.getElementById('lcEntryModal').classList.add('show');
         }
@@ -21148,6 +21718,10 @@ Type any command below (e.g. pm list packages -d)
             lcEntAiBusy = true; btn.disabled = true;
             lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent, undefined, lcEntryQuery(), 'lcEnt');
             lcEntAiBusy = false; btn.disabled = false;
+            if (lcEntAiText && lcEnt === ent && !document.getElementById('lcEntAi').classList.contains('is-err')) {
+                const first = (ent.lines[0] || '').slice(0, 90);
+                askHistAdd('lcEnt', { id: ent.tag + '|' + first, kind: 'log', name: ent.tag + (first ? ': ' + first : ''), label: txT('Log entry') + ' · ' + ent.lvl, text: q, web: '', answer: lcEntAiText, agent: '' });
+            }
         }
 
         // ---- recording the log to a file, and looking at a recording as a still picture ----
@@ -21432,13 +22006,13 @@ Type any command below (e.g. pm list packages -d)
             }
             const foot = document.createElement('div');
             foot.className = 'lc-ent-ai-note'; foot.style.marginTop = '10px';
-            foot.innerHTML = 'To get an explanation, choose a default agent and connect it. <a href="#" onclick="agentAskToSettings(); return false;">Open Settings</a>. Web search works without one.';
+            foot.innerHTML = 'To get an explanation, choose a Default Ask Agent and connect it. <a href="#" onclick="agentAskToSettings(); return false;">Open Settings</a>. Web search works without one.';
             box.appendChild(foot);
             return passages.join('\n') + (sources.length ? '\n' + sources.map(h => h.url).join('\n') : '');
         }
         function askAgentReadyNow() { const a = askAgentDef(); if (!a) return false; txRefreshVault(); return txAgentReady(a); }
 
-        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui) {
+        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui, agOverride) {
             box.classList.remove('is-err');
             const run = askRun = { ui: ui || '', stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
                 if (this.stopped) return;
@@ -21449,7 +22023,7 @@ Type any command below (e.g. pm list packages -d)
             const live = () => isCurrent() && !run.stopped;
             if (ui) askProgressShow(ui, true);
             try {
-                const ag = askAgentDef();
+                const ag = agOverride || askAgentDef();
                 if (!ag || !txAgentReady(ag)) {
                     const r = await webLookupInto(box, webQuery || wlQueryFromText(text), live);
                     if (run.stopped && isCurrent()) { box.classList.remove('is-err'); box.textContent = txT('Stopped.'); }
@@ -25197,6 +25771,7 @@ Type any command below (e.g. pm list packages -d)
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
             { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'browseruse', provider: 'browseruse', askOnly: true, color: '#ff9f43', site: 'https://github.com/browser-use/browser-use', keyUrl: 'https://cloud.browser-use.com/settings?tab=api-keys', keyLook: 'bu_…' },
             { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'crawl4ai', provider: 'crawl4ai', askOnly: true, color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai', keyUrl: 'https://api.crawl4ai.com/', keyLook: 'sk_live_…' },
+            { id: 'exa', name: 'Exa', group: 'key', api: 'exa', provider: 'exa', askOnly: true, color: '#4f7cff', keyUrl: 'https://dashboard.exa.ai/api-keys', keyLook: 'xxxxxxxx-xxxx-…' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
             { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true },
@@ -25749,6 +26324,16 @@ Type any command below (e.g. pm list packages -d)
                 if (!j.answered || !txt.trim()) throw { local: true, msg: 'Crawl4AI found no answer for this one. Try Web search, or another agent.' };
                 const src = ((a.sources || []).slice(0, 4).map(x => '• ' + (x.title || x.url || '') + (x.url ? ' ' + x.url : '')));
                 add(txt.trim() + (src.length ? '\n\nSources:\n' + src.join('\n') : ''));
+            } else if (ag.api === 'exa') {
+                // Exa's answer service: one POST with the question; it searches the web and writes the answer with its citations
+                const q = (system + '\n\n' + msgs[msgs.length - 1].text).slice(0, 4000);
+                const r = await txAiCall({ url: 'https://api.exa.ai/answer', method: 'POST', auth: 'exa', headers: json, body: JSON.stringify({ query: q, text: false }), readTimeoutMs: 120000 }, null, true);
+                let j = {};
+                try { j = JSON.parse(r.body || '{}'); } catch (e) {}
+                const ans = typeof j.answer === 'string' ? j.answer : (j.answer ? JSON.stringify(j.answer) : '');
+                if (!ans.trim()) throw { local: true, msg: 'Exa found no answer for this one. Try Web search, or another agent.' };
+                const src = (j.citations || []).slice(0, 4).map(x => '• ' + (x.title || x.url || '') + (x.url ? ' ' + x.url : ''));
+                add(ans.trim() + (src.length ? '\n\nSources:\n' + src.join('\n') : ''));
             } else if (ag.api === 'browseruse') {
                 // Browser Use Cloud: start a short task, then ask for it until it ends (the browser looks the question up)
                 const task = txBuTask(system, msgs[msgs.length - 1].text);
@@ -26648,6 +27233,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function txCloseConnect() {
+            askStopRun('txConnTest');
             const m = document.getElementById('txConnectModal');
             if (m) m.classList.remove('show');
             txConnectAgent = '';
@@ -26705,6 +27291,7 @@ Type any command below (e.g. pm list packages -d)
                     + (v.key || v.base ? '<button class="mode-action-btn" onclick="txForgetKey()">Forget</button>' : '') + '</div>'
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'
                     + (ag.id === 'ollama' ? '<div class="tx-sheet-sec">Install on this phone</div><p class="tx-sheet-p">Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.</p><div class="mode-btn-row"><button class="mode-action-btn primary" onclick="txInstallOllama()">Install Ollama in Termux</button><button class="mode-action-btn" onclick="txOpenTermuxSetup()">Termux setup</button></div>' : '');
+                h += txConnTestHtml(ag);
                 box.innerHTML = h;
                 return;
             }
@@ -26715,7 +27302,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<button class="sdb-tab' + (txConnectTab === 'cli' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'cli\')">Sign in with subscription</button></div>';
             }
             if (!onlyCli && txConnectTab === 'key') {
-                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com', crawl4ai: 'api.crawl4ai.com', browseruse: 'api.browser-use.com' }[ag.provider] || '';
+                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com', crawl4ai: 'api.crawl4ai.com', exa: 'api.exa.ai', browseruse: 'api.browser-use.com' }[ag.provider] || '';
                 h += '<p class="tx-sheet-p">Paste your ' + escapeHtml(ag.name.replace(/\s*\(.*\)$/, '')) + ' API key. It is tested right away, then kept encrypted on this phone and only ever sent to <span translate="no">' + escapeHtml(host) + '</span>.</p>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + escapeHtml(ag.keyLook || '') + '">'
                     + (ag.id === 'cursor' ? '<div class="tx-sheet-sec">Repository (optional)</div><input id="txCursorRepo" class="modal-text-input tx-key-input" translate="no" placeholder="https://github.com/you/project" value="' + escapeHtml(txSettings.cursorRepo || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">' : '')
@@ -26726,6 +27313,8 @@ Type any command below (e.g. pm list packages -d)
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'
                     + (ag.id === 'cursor' ? '<p class="tx-sheet-p muted">Cursor\'s agents run in Cursor\'s cloud, on a copy of a Git repository (the one above, or none): they cannot see this phone\'s files. To work on files here, sign in with the Cursor CLI instead.</p>' : '')
                     + (ag.id === 'gemini' ? '<p class="tx-sheet-p muted">Google AI Studio keys have a free tier; on the free tier Google may use what you send to improve its products.</p>' : '');
+                h += txConnTestHtml(ag);
+                if (ag.id === 'exa') h += '<p class="tx-sheet-p muted">Exa is a search engine built for AI. Its answer service searches the web and writes a short answer that names its sources. A new account gets free credits. Testing the key makes one small search (a fraction of a cent). An Ask agent button sends it the question; nothing is sent until you press one.</p>';
                 if (ag.id === 'crawl4ai') h += '<p class="tx-sheet-p muted">Crawl4AI is the open-source web crawler; this is its hosted cloud. A new account gets free credits and a free monthly allowance, no card. An Ask agent button sends the question to its answer service, which searches the web, reads the pages and writes the answer. It is for the Ask agent buttons only, not a chat. The test spends one credit.</p>';
                 if (ag.id === 'browseruse') h += '<p class="tx-sheet-p muted">Browser Use is the open-source browser agent; this is its hosted cloud, which has a free tier for new accounts. An Ask agent button starts a short browser task that looks the question up on the web: it can take a minute or two and uses a little credit. It is for the Ask agent buttons only, not a chat. Testing the key costs nothing.</p>';
             } else if (hasCli) {
@@ -26750,6 +27339,15 @@ Type any command below (e.g. pm list packages -d)
                 if (!onlyCli && using) h += '<div class="mode-btn-row"><button class="mode-action-btn" onclick="txSettings.connect[\'' + ag.id + '\']=\'key\'; txSaveSettings(); txConnectSet(\'key\')">Use the API key instead</button></div>';
             }
             box.innerHTML = h;
+        }
+
+        // The Test button of a Connect sheet: asks the agent one sample question and says whether it works
+        function txConnTestHtml(ag) {
+            if (!ag || ag.api === 'info' || ag.api === 'cli') return '';
+            return '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" id="txConnTestBtn" onclick="txConnectTest()">Test</button>'
+                + '<button class="mode-action-btn" id="txConnTestStop" style="display:none;" onclick="askStopRun(\'txConnTest\')">Stop</button></div>'
+                + '<div class="agent-ask-prog" id="txConnTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="txConnTestBar"><i id="txConnTestBarFill"></i></div><div class="agent-ask-prog-txt" id="txConnTestProgTxt"></div></div>'
+                + '<div class="lc-ent-ai" id="txConnTestOut" style="display:none; margin-top:8px;"></div><div class="appearance-note" id="txConnTestRes"></div>';
         }
 
         function txToggleKeyShown() {
@@ -26842,12 +27440,12 @@ Type any command below (e.g. pm list packages -d)
             ]);
         };
 
-        // An agent that only answers the Ask agent buttons: once it works it becomes the default agent when none is chosen yet; the Terminal is left as it was
+        // An agent that only answers the Ask agent buttons: once it works it becomes the Default Ask Agent when none is chosen yet; the Terminal is left as it was
         function txAskOnlyConnected(ag) {
             let made = false;
             if (!askAgentDef()) { askAgentId = ag.id; kvSet('ask_agent', askAgentId); made = true; }
             askAgentBuild();
-            showToast(made ? ag.name + ' works and is now the default agent for the Ask agent buttons' : ag.name + ' works. Choose it as the default agent in Settings to use it');
+            showToast(made ? ag.name + ' works and is now the Default Ask Agent for the Ask agent buttons' : ag.name + ' works. Choose it as the Default Ask Agent in Settings to use it');
         }
 
         function txSaveKeyAnyway(t) {
@@ -29173,7 +29771,7 @@ Type any command below (e.g. pm list packages -d)
             openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent('android settings ' + sdbEditing.ns + ' ' + sdbEditing.key));
         }
         let sdbAiBusy = false;
-        function sdbEditAiReset() { const b = document.getElementById('sdbEditAi'); if (b) { b.style.display = 'none'; b.textContent = ''; b.classList.remove('is-err'); } sdbAiBusy = false; const btn = document.getElementById('sdbEditAiBtn'); if (btn) btn.disabled = false; }
+        function sdbEditAiReset() { const hp = document.getElementById('sdbEditHist'); if (hp) hp.style.display = 'none'; const b = document.getElementById('sdbEditAi'); if (b) { b.style.display = 'none'; b.textContent = ''; b.classList.remove('is-err'); } sdbAiBusy = false; const btn = document.getElementById('sdbEditAiBtn'); if (btn) btn.disabled = false; }
         const SDB_AI_SYSTEM = 'You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones "settings get/put" reads and writes) to someone who is not a developer. '
             + 'Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.';
         async function sdbEditAsk() {
@@ -29187,6 +29785,9 @@ Type any command below (e.g. pm list packages -d)
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
             await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
+            if (sdbEditing === cur && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out')) {
+                askHistAdd('sdbEdit', { id: cur.ns + '/' + cur.key, kind: 'setting', name: cur.key, label: txT('Hidden Settings') + ' · ' + cur.ns, text: q, web: '', answer: box.querySelector('.ai-out').textContent, agent: '' });
+            }
         }
 
         function sdbEditClose() { askStopRun('sdbEdit'); document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
@@ -30472,7 +31073,29 @@ Type any command below (e.g. pm list packages -d)
             return ms ? new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
         }
 
-        function onAboutShown() { renderAbout(); renderDeviceSpecs(); }
+        // ---- Authorization Manager (About tab): the app's own code, shown, copied and replaced ----
+        let authSt = null;
+        function authLoad() {
+            try { authSt = JSON.parse((window.AndroidBridge && window.AndroidBridge.authStatus && window.AndroidBridge.authStatus()) || 'null'); } catch (e) { authSt = null; }
+            authRender();
+        }
+        function authRender() {
+            const el = document.getElementById('authCode');
+            if (el) el.textContent = authSt && authSt.code ? authSt.code : '-----';
+        }
+        function authCopy() { if (authSt && authSt.code) { haptic(); copyText(authSt.code); showToast('Copied the code'); } }
+        async function authRefresh() {
+            if (!authSt) return;
+            haptic();
+            if (!await mpAsk({ title: 'Make a new code?', text: 'The old code is gone. Anything you gave it to has to be given the new one.', ok: 'New code' })) return;
+            const b = document.getElementById('authRefreshBtn');
+            if (b) { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); }
+            try { authSt = JSON.parse(window.AndroidBridge.authRefresh()); } catch (e) { authSt = null; }
+            authRender();
+            showToast('A new code was made');
+        }
+
+        function onAboutShown() { renderAbout(); renderDeviceSpecs(); authLoad(); }
 
         function renderAbout() {
             let i = {};
@@ -31913,9 +32536,9 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('mpRunBar').style.width = Math.min(100, Math.round(frac * 100)) + '%';
         }
         function mpOnEvent(e) {
-            if (e && e.t === 'hb') { mpHBEvent(e); return; }
+            if (e && e.t === 'hb') { mpHBEvent(e); usBrowseDone(e); return; }
             if (e && e.t === 'hd') { mpHDEvent(e.job); return; }
-            if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
+            if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); usOnProgress(e); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
             switch (e.t) {
@@ -32206,6 +32829,7 @@ Type any command below (e.g. pm list packages -d)
         // ---- the browser inside the app: sites with a browser check (APKMirror) open here, and what is downloaded there is saved straight into the Helper ----
         async function mpHBrowse(url) {
             const h = mp.h;
+            us.browseFor = null;                 // the Helper's browser is its own: the updater does not take its downloads
             mpHRead();
             if (mp.cfg.hBrowser === 'external' || !window.AndroidBridge || !window.AndroidBridge.morphe) {
                 const r = url ? { ok: true, data: { url } } : await mpCall('helperManual', { source: h.src, pkg: h.pkg, version: h.ver });

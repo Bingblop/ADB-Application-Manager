@@ -310,7 +310,7 @@
 
 <h4>What root unlocks in this app</h4>
 <ul>
-<li><b>Every action runs as root.</b> Freeze, uninstall, permissions, app ops and the rest all go through <code>su</code>, so they are not limited to what the shell user may do. The <a href="#tab-installer">APK Installer</a>, the working-mode shell in the Terminal and the Debloater all work in this mode, and the Installer lets you choose Root as the authorizer.</li>
+<li><b>Every action runs as root.</b> Freeze, uninstall, permissions, app ops and the rest all go through <code>su</code>, so they are not limited to what the shell user may do. The <a href="#tab-installer">APK Installer/Updater</a>, the working-mode shell in the Terminal and the Debloater all work in this mode, and the Installer lets you choose Root as the authorizer.</li>
 <li><b>Backups of app data.</b> Backing up an app's APK, permissions and app ops works in any working mode, but including its <i>data</i> (logins, saved games, settings) is root-only. The Backup sheet says "Uses Root. The app is stopped while its data is copied." Without root, the switch is greyed out with the words "Needs Root, which was not found on this phone." Restoring data needs root too (<a href="#apps-backup">Backups</a>).</li>
 <li><b>Removing system apps directly.</b> With ADB or Shizuku, if Android refuses to remove a system app for your user, the app tries a fallback (a direct call to Android's package service); with root the app does not use that fallback. In every case the app's file stays in the system area.</li>
 <li>Root reaches places the shell user cannot, such as other apps' private folders. That is how data backup works.</li>

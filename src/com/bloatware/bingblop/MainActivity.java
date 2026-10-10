@@ -6930,6 +6930,20 @@ public class MainActivity extends Activity {
     private volatile String morphePickTag = "";
     private MorpheBridge morpheBridge;
 
+    private AuthManager authManagerInstance;
+
+    /** The one holder of this app's authorization code (kept in private preferences). */
+    private synchronized AuthManager authManager() {
+        if (authManagerInstance == null) {
+            final android.content.SharedPreferences sp = getApplicationContext().getSharedPreferences("auth_manager", Context.MODE_PRIVATE);
+            authManagerInstance = new AuthManager(new AuthManager.Store() {
+                @Override public String get(String k) { return sp.getString(k, null); }
+                @Override public void put(String k, String v) { sp.edit().putString(k, v).apply(); }
+            }, new java.security.SecureRandom());
+        }
+        return authManagerInstance;
+    }
+
     private synchronized MorpheBridge morphe() {
         if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
@@ -6956,6 +6970,30 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public String copyToTree(File file, String treeUri, String name) throws Exception {
+                Uri tree = Uri.parse(treeUri);
+                String safe = name == null ? "app.apk" : name.replaceAll("[^A-Za-z0-9._ ()-]", "_");
+                String lower = safe.toLowerCase(java.util.Locale.ROOT);
+                String mime = lower.endsWith(".apk") ? "application/vnd.android.package-archive" : "application/octet-stream";
+                try {
+                    Uri parent = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+                    Uri target = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, mime, safe);
+                    if (target == null) throw new IllegalStateException("the folder would not make the file");
+                    boolean whole = false;
+                    try {
+                        OutputStream out = getContentResolver().openOutputStream(target, "wt");
+                        if (out == null) throw new IllegalStateException("the folder would not open the file");
+                        try { copyFile(file, out); } finally { out.close(); }
+                        whole = true;
+                    } finally {
+                        // a copy that stopped half way must not stay behind looking like the app file
+                        if (!whole) { try { android.provider.DocumentsContract.deleteDocument(getContentResolver(), target); } catch (Throwable ignored) { } }
+                    }
+                    return safe;
+                } catch (SecurityException e) {
+                    throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");
+                }
+            }
             @Override public BrowserDownload.Cookies cookies() {
                 return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
             }
@@ -8336,6 +8374,8 @@ public class MainActivity extends Activity {
                         req.method = "GET";
                         req.url = AgentRules.testUrl(p, fb);
                         req.readTimeoutMs = 30000;
+                        String tb = AgentRules.testBody(p);
+                        if (tb != null) { req.method = "POST"; req.body = tb; req.headers.put("Content-Type", "application/json"); }
                         for (String[] h : p.extra) req.headers.put(h[0], h[1]);
                         if (!k.isEmpty()) req.headers.put(p.header, p.prefix + k);
                         AiHttp.Response r = call.execute(req, null);
@@ -8462,6 +8502,21 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        /** The authorization code (About tab): {code}. */
+        @JavascriptInterface
+        public String authStatus() {
+            JSONObject o = new JSONObject();
+            try { o.put("code", authManager().code()); } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Makes a new code; the old one is gone. */
+        @JavascriptInterface
+        public String authRefresh() {
+            authManager().refresh();
+            return authStatus();
         }
 
         /** What the About tab shows: this build, the certificate it is signed with, the phone and its WebView. */

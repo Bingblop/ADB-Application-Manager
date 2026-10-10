@@ -58,6 +58,11 @@ public class AgentRulesTest {
         && deepseek.test.equals("https://api.deepseek.com/v1/models")
         && AgentRules.allowed(deepseek, null, "https://api.deepseek.com/v1/chat/completions") && !AgentRules.allowed(deepseek, null, "https://evil.example/v1/chat/completions")
         && AgentRules.hint("sk-0123456789abcdef0123456789abcdef").equals("sk-…cdef"));
+    AgentRules.Provider exa = AgentRules.find("exa");
+    check("Exa: x-api-key to api.exa.ai only, a key test that is one small POST search, no other provider has a test body",
+        exa != null && "api.exa.ai".equals(exa.host) && "x-api-key".equals(exa.header) && "".equals(exa.prefix) && "EXA_API_KEY".equals(exa.env)
+        && AgentRules.allowed(exa, null, "https://api.exa.ai/answer") && !AgentRules.allowed(exa, null, "https://evil.example/answer") && !AgentRules.allowed(exa, null, "http://api.exa.ai/answer")
+        && AgentRules.testBody(exa) != null && AgentRules.testBody(exa).contains("\"query\"") && AgentRules.testBody(AgentRules.find("perplexity")) == null && AgentRules.testBody(AgentRules.find("crawl4ai")) == null);
     AgentRules.Provider crawl4ai = AgentRules.find("crawl4ai"), browseruse = AgentRules.find("browseruse");
     check("Crawl4AI: Bearer key to api.crawl4ai.com only, its sk_live_ key shown short and masked",
         crawl4ai != null && "api.crawl4ai.com".equals(crawl4ai.host) && "Authorization".equals(crawl4ai.header) && "Bearer ".equals(crawl4ai.prefix)

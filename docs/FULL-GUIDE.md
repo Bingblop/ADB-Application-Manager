@@ -83,7 +83,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
 | **Hidden Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Hidden settings](#hidden-settings) |
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
-| **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer · a successful install offers **Launch Application** and **Application Settings**, the same as the APK Installer |
+| **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer · a successful install offers **Launch Application** and **Application Settings**, the same as the APK Installer/Updater |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · **nine palette styles** (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone) built from a source color you pick · **My Themes** (save a look under a name, switch with a tap) · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
@@ -100,13 +100,12 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Application Manager** | Every package on the phone: search (with a menu for names, package names and regex), sort, filter, batch actions, profiles, backups, CSV export; **⋯** opens an app's menu, the gear next to it the app's Android settings |
 | **Saved Applications** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
 | **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
-| **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
+| **APK Installer/Updater** | Tab-bar label *Installer/ Updater*. Two boxes at the top: **Application Installer** (the one it opens on: install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check) and **Application Updater** (find and download an app by name or package, this app's own update, Galaxy Store apps and sideloaded open-source apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium, the Play Store card, and the KeyStore card) |
 | **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
 | **Command-Line Interface** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)), and a **Real terminal** button for a full-screen terminal on a genuine pty (vim, nano, top, htop, ssh). Termux setup has a one-tap **Set up Termux now** (vim, nano, git, python and more, with a starter .bashrc). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
-| **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
-| **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
+| **App Stores** | The catalogs only: ShizuStore, GitHub, F-Droid and Orion, and a **+** tab for stores of your own |
 | **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
@@ -118,7 +117,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.12.7 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.12.8 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -603,6 +602,7 @@ or effort keeps the conversation.
 | Cursor (SpaceX) | an API key for Cursor's Cloud Agents (they work in Cursor's cloud, optionally on a Git repository you name), or Cursor CLI in Termux |
 | Copilot (GitHub) | GitHub's Copilot CLI in Termux, signed in with GitHub or with a fine-grained token (GitHub Models was retired in July 2026) |
 | Perplexity, Grok (SpaceX), Muse (Meta), Deepseek | an API key from the provider's own website (tested first); no official sign-in tool, so no subscription option |
+| Exa | an API key from dashboard.exa.ai/api-keys (new accounts get free credits); answers the Ask agent buttons only, not a chat; the key is kept encrypted and sent only to api.exa.ai |
 | Jan.ai, AnythingLLM | the address of the computer that runs it (found by itself when it runs on the phone); AnythingLLM also needs its key |
 | Ollama (on-device) | Ollama in Termux with a small coding model, installed from the agent's sheet: free and offline |
 | OpenCode | the OpenCode CLI, installed in Termux |
@@ -665,7 +665,7 @@ description and removal level (Recommended, Advanced, Expert, Unsafe).
 
 ## Updates
 
-The **⬆️ Updates** tab checks:
+The **Application Updater** box (the right-hand box of the **APK Installer/Updater** tab) checks:
 
 - **Samsung system apps and Galaxy Store apps** against the Galaxy Store
 - **Sideloaded open-source apps** against your own sources, your imported **Obtainium** list, the Obtainium
@@ -677,6 +677,8 @@ signing key** (a mismatch such as an F-Droid build over a developer build is sto
 then installed through ADB, Shizuku or Root. Apps only Obtainium can track open in Obtainium; untracked apps
 get **＋ Set source**. Play Store apps keep updating through the Play Store, since Google gives other apps no
 way to check them.
+
+The first card of the box, **Find and download an app**, searches by app name or package name and downloads the app file from APKMirror (the default), Uptodown, Aptoide, F-Droid or IzzyOnDroid; Google Play only opens its page. The last card, **KeyStore**, exports, imports or renews the signing key shared with the Morphe Patcher (see the v7.12.8 note at the end).
 
 ## Hidden settings
 
@@ -1310,3 +1312,5 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 **Logcat** (v7.12.0): the view keeps its lines (a poll that finds nothing no longer empties it; Error-only views no longer lose their lines after a second). **Record to file** writes the log to a file in the background; **Recordings** lists them and opens one as a still picture (search, level key, pages, Copy shown, Save, Share, Delete). **SD Maid**: the two data cards come after the four tools.
 
 **Hidden Settings back up and restore, Update the tracker list** (v7.11.1): the Changes sheet has **Back up changes** (a JSON file with each changed setting's current and earlier value) and **Restore…** (checks the file, asks, puts the values back, every one into the history). The Trackers box has **Update the list**, which downloads the current Exodus Privacy list after checking it is whole.
+
+**APK Installer/Updater, Find and download an app, KeyStore, Default Ask Agent, Authorization Manager** (v7.12.8): the APK Installer tab is now **APK Installer/Updater** with two boxes at its top, **Application Installer** (left, the page the tab always opens on; the old APK Installer) and **Application Updater** (right); the **App Stores** tab keeps its name and holds only the stores. The tab label and the Updater box show the number of waiting updates in brackets. Cards of the Updater box, in order: **Find and download an app** (search by name or package; sources APKMirror (default), Uptodown, Aptoide, F-Droid and IzzyOnDroid, which download inside the app (F-Droid's file is F-Droid's own signed build; neither site publishes a checksum, so the file is checked to be a real package of the asked name and version), plus Google Play, which only opens its page; a Version box; Allow split APK, Exact version only, Allow closest nearby version, Skip alpha and beta builds, VirusTotal scan, Install on download, Use the Default Ask Agent to search as well; save to the app's own storage, Downloads/App Updater or a folder you choose; the file must be a real Android package, for the asked package and version), **App update**, **Updates Available**, **Play Store apps (via Aurora)**, the update rows, and **KeyStore** (**Export KeyStore** to `Downloads/Morphe Patcher/morphe.keystore`, **Import KeyStore**, **New key**; the key is the one that signs apps patched in the Morphe Patcher tab). The Settings card **Default agent** is now the **Default Ask Agent**: a research agent that answers every Ask agent button and the Updater search; Perplexity until you choose (**Exa**, a new research agent with a key from dashboard.exa.ai/api-keys, sits right after it), the built-in web lookup until its key is added, and no coding agents in the list. **Authorization Manager** (About tab): the app has its own authorization code of 25 letters and digits (five groups of five), made on the phone and kept in the app's private storage; the About tab shows it with a copy button and a refresh button (asks first, then replaces the code). Nothing accepts the code yet: it is kept for later. See the Help Guide and the [CHANGELOG](../CHANGELOG.md).

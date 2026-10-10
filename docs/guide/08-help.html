@@ -23,7 +23,7 @@
 <tr><td><b>Force Stop</b>, <b>Suspend</b> or <b>Freeze</b> an app you installed</td><td>Very unlikely. Nothing is deleted; unsaved work in a stopped app is lost.</td><td>Force Stop needs no undo: open the app again. For Suspend or Freeze, tap <b>Unsuspend</b> or <b>Enable</b> in the app's menu or in a batch, or use Undo in the History.</td><td><a href="#apps-menu">The app menu</a></td></tr>
 <tr><td><b>Freeze</b> (disable) a system app</td><td>Unlikely for an app you can explain. Possible for a core part: a missing feature is usual, and a vital part can cause a boot loop.</td><td>The same ways. Android's own Settings, Apps, can often switch it on too.</td><td><a href="#debloater-safety">Debloating safely</a></td></tr>
 <tr><td><b>Uninstall</b> a system app (for your user)</td><td>Possible. Its data for you is deleted, and a vital one can cause a boot loop.</td><td><b>Reinstall</b>, <b>Restore</b>, or Undo in the History. A factory reset also brings it back.</td><td><a href="#debloater-safety">Debloating safely</a></td></tr>
-<tr><td><b>Uninstall</b> an app you installed</td><td>Possible. It goes with its data, and Reinstall cannot bring it back.</td><td>Install it again; restore a backup if you made one.</td><td><a href="#tab-installer">APK Installer</a></td></tr>
+<tr><td><b>Uninstall</b> an app you installed</td><td>Possible. It goes with its data, and Reinstall cannot bring it back.</td><td>Install it again; restore a backup if you made one.</td><td><a href="#tab-installer">APK Installer/Updater</a></td></tr>
 <tr><td><b>Clear Data</b>, or restoring app data</td><td>Likely to hurt if the app held things you need. On a contacts, messages or phone app it can delete what is kept only on the phone.</td><td>No undo, except a backup that included the data (that needs Root).</td><td><a href="#apps-backup">Backups</a></td></tr>
 <tr><td><b>Rem Updates</b> (takes a system app's updates off), a <b>permission</b> or <b>app op</b>, disabling a <b>component</b></td><td>Unlikely to possible. The app may stop working or close.</td><td>Tap the same button again, press ENABLE, or update the app from its store.</td><td><a href="#apps-menu">The app menu</a></td></tr>
 <tr><td><b>Batch actions</b> and applying a <b>profile</b></td><td>Higher: one wrong tick reaches many apps.</td><td><b>Stop</b> ends a batch (apps not reached yet stay as they were). <b>Undo</b> in the Debloater's History covers Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall. Clear Data, Force Stop and typed commands cannot be undone.</td><td><a href="#apps-batch">Batch actions</a>, <a href="#apps-profiles">Profiles</a></td></tr>
@@ -33,7 +33,7 @@
 <tr><td><b>Commands</b> typed in a terminal or console</td><td>From none (commands that only read) to severe (<code>rm</code>, <code>pm clear</code>, <code>settings put</code>, <code>reboot</code>). No undo.</td><td>The opposite command, if there is one. Otherwise only a backup.</td><td><a href="#tab-terminal">Command-Line Interface</a></td></tr>
 <tr><td><b>Coding agents</b></td><td>Depends on what you approve. What you type goes to the provider.</td><td>File changes: <code>/undo</code>. Commands cannot be undone.</td><td><a href="#terminal-agents">Coding agents</a></td></tr>
 <tr><td><b>Delete</b> in the File Manager</td><td>No recycle bin. Serious in system folders: the app refuses to delete a storage's root or a top-level system folder, but the files inside them are not protected.</td><td>Only a copy made earlier.</td><td><a href="#tab-files">File Manager</a></td></tr>
-<tr><td>Installing an <b>APK file</b></td><td>Possible: an APK can do whatever an app can. The Block switches stop look-alikes.</td><td>Uninstall it. Keep both Block switches on.</td><td><a href="#tab-installer">APK Installer</a></td></tr>
+<tr><td>Installing an <b>APK file</b></td><td>Possible: an APK can do whatever an app can. The Block switches stop look-alikes.</td><td>Uninstall it. Keep both Block switches on.</td><td><a href="#tab-installer">APK Installer/Updater</a></td></tr>
 <tr><td><b>Reboot to recovery</b>, <b>Reboot to bootloader</b> or <b>Power off</b> on a connected device</td><td>Low, but this phone cannot bring that device back.</td><td>Restart the device by hand.</td><td><a href="#tab-devices">Connected Devices</a></td></tr>
 </tbody>
 </table>
@@ -87,7 +87,7 @@
 <li><b>Never remove an app rated Unsafe</b>, and treat a "Needed by" line that names apps you use as a stop sign. Do not use <b>Select shown</b> on a long list you have not read.</li>
 <li><b>Do not paste a command you do not understand</b>, even from a friendly website, and do not press <b>Always allow in this chat</b> for a coding agent unless you accept whatever follows.</li>
 <li><b>Do not apply a profile, list or command preset from someone else</b> without reading it.</li>
-<li><b>Do not switch off the two Block switches</b> in the APK Installer, or tick "Always allow" for an ADB fingerprint you do not recognise.</li>
+<li><b>Do not switch off the two Block switches</b> in the Application Installer box of the APK Installer/Updater tab, or tick "Always allow" for an ADB fingerprint you do not recognise.</li>
 <li><b>Do not change <code>adb_enabled</code>, <code>adb_wifi_enabled</code>, Wi-Fi or airplane mode</b> in Hidden Settings while the app uses ADB over that connection. You can cut yourself off.</li>
 <li><b>Do not delete in system folders</b> (<code>/system</code>, <code>/data</code>, <code>/vendor</code>) with the File Manager, or type extreme density or size numbers.</li>
 <li><b>Do not leave a door open.</b> Switch Wireless debugging off when you do not need it, and restart after using ADB over TCP: the port listens on your Wi-Fi while it is open.</li>
@@ -197,7 +197,7 @@
 </table>
 
 <h4>Installing an app fails</h4>
-<p>The result sheet quotes Android's reply, and the app adds a "Note:" for the common ones. The full table of messages and options is in <a href="#tab-installer">APK Installer</a>.</p>
+<p>The result sheet quotes Android's reply, and the app adds a "Note:" for the common ones. The full table of messages and options is in <a href="#tab-installer">APK Installer/Updater</a>.</p>
 <table class="hg-table">
 <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
 <tbody>
@@ -220,7 +220,7 @@
 <table class="hg-table">
 <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
 <tbody>
-<tr><td>"N couldn't be checked (...)"</td><td>A site did not answer, or limited you. GitHub allows 60 checks an hour without a token.</td><td>Wait, or add a <b>GitHub Token</b> (5,000 an hour), then check again (<a href="#tab-updates">App Updater</a>).</td></tr>
+<tr><td>"N couldn't be checked (...)"</td><td>A site did not answer, or limited you. GitHub allows 60 checks an hour without a token.</td><td>Wait, or add a <b>GitHub Token</b> (5,000 an hour), then check again (<a href="#tab-updates">Application Updater</a>).</td></tr>
 <tr><td>"signed with a different key than the installed app"</td><td>Another builder made that file. F-Droid, for example, signs its own builds.</td><td>Update from the source you installed from. Nothing was installed.</td></tr>
 <tr><td>"no APK for this phone in the latest release"</td><td>The newest release has no file for your processor.</td><td>Press <b>Release</b> and look by hand.</td></tr>
 <tr><td>"download failed: HTTP ...", "download incomplete"</td><td>The site or your connection failed.</td><td>Press <b>Retry</b>.</td></tr>
@@ -467,7 +467,7 @@
 <h4>Installing and updating</h4>
 
 <h5>What are APKS, APKM and XAPK?</h5>
-<p>They are bundles of several app files that belong together: a base file plus small parts for your processor, screen density and language. The <a href="#tab-installer">APK Installer</a> opens all of them and ticks the parts that fit your phone. XAPK may also carry game data (OBB), which is copied after the install (<a href="#installer-splits">Split packages, APKS, APKM, XAPK and game data</a>).</p>
+<p>They are bundles of several app files that belong together: a base file plus small parts for your processor, screen density and language. The <a href="#tab-installer">APK Installer/Updater</a> opens all of them and ticks the parts that fit your phone. XAPK may also carry game data (OBB), which is copied after the install (<a href="#installer-splits">Split packages, APKS, APKM, XAPK and game data</a>).</p>
 
 <h5>What is the 32-bit APK, and which download do I need?</h5>
 <p>Each release has three APK files: <code>arm64-v8a</code> for 64-bit phones (nearly all), <code>armeabi-v7a</code> for 32-bit phones, and <code>universal</code>, which carries both. A small <code>SHA256SUMS.txt</code> file lists their checksums. If you are not sure, take the universal one. The difference is the small ADB program inside the app. The 32-bit build is new and has been tried on far fewer phones (<a href="#install-and-update">Installing and updating the app</a>).</p>
@@ -476,7 +476,7 @@
 <p>Install the new APK over the old one: your settings, lists and profiles are kept. Or open <b>About</b>, tap <b>Check for update</b>, then <b>Update now</b>. Either way the new file must be this app, newer, and signed with the same key (<a href="#install-and-update">Installing and updating the app</a>).</p>
 
 <h5>Can I install apps from Google Play with it?</h5>
-<p>No. The app does not download from Google Play. It installs app files you give it, and the <a href="#tab-store">App Stores</a> tab browses four open-source catalogs (ShizuStore, GitHub, F-Droid and Orion) and installs from them. Play Store apps keep updating through the Play Store or Aurora Store; the <a href="#tab-updates">App Updater</a> only points you there.</p>
+<p>No. The app does not download from Google Play. It installs app files you give it, and the <a href="#tab-store">App Stores</a> tab browses four open-source catalogs (ShizuStore, GitHub, F-Droid and Orion) and installs from them. The card <b>Find and download an app</b> in the <a href="#tab-updates">Application Updater</a> box searches by name and downloads the app file from APKMirror, Uptodown, Aptoide, F-Droid or IzzyOnDroid; for Google Play it only opens the Play Store page. Play Store apps keep updating through the Play Store or Aurora Store; the Application Updater only points you there.</p>
 
 <h5>Can I move the app to the SD card?</h5>
 <p>No. By default Android keeps an app in internal storage unless the app allows otherwise, and this app does not ask for that. Your own files are different: the <a href="#files-storage">File Manager</a> can add an SD card or a USB drive, and you can move backups and downloads there with Copy and Paste.</p>
@@ -549,15 +549,16 @@
 <tr><td><b>All files access</b></td><td>Android's special permission to see all files on storage. It is optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
 <tr><td><b>AOSP</b></td><td>The Android Open Source Project: the plain Android system, without a maker's additions. It is one of the list filters of the UAD-NG Debloater. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
 <tr><td><b>API key</b></td><td>A long secret text from an AI provider that lets the app use your account with them. It is stored sealed. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
-<tr><td><b>API level</b></td><td>Android's version as a number: 26 is Android 8, 30 is Android 11, 34 is Android 14. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>API level</b></td><td>Android's version as a number: 26 is Android 8, 30 is Android 11, 34 is Android 14. See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>APK</b></td><td>The file an app is installed from, ending in .apk. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>APKM</b></td><td>The bundle format of APKMirror: a zip file of APK files that belong together. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>APKS</b></td><td>A bundle made by Google's bundletool and similar tools: a zip file of APK files. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>app op</b></td><td>A finer switch that Android keeps behind the permissions, such as running in the background. Its values are Allow, FG, Ignore, Deny and Reset. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>archive</b></td><td>One file that holds many files, such as zip, 7z, rar and tar. The File Manager can look inside one without unpacking it. See <a href="#files-archives">Archives</a>.</td></tr>
-<tr><td><b>Aurora Store</b></td><td>An open-source client for the Google Play catalog. The App Updater offers to open it for Play Store apps. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>Aurora Store</b></td><td>An open-source client for the Google Play catalog. The Application Updater offers to open it for Play Store apps. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>authorization</b></td><td>A device's approval of this phone's key. Until given, it shows as unauthorized (Not allowed yet). See <a href="#tab-devices">Connected Devices</a>.</td></tr>
-<tr><td><b>Authorizer</b></td><td>In the APK Installer, how a file is installed: ADB, Shizuku, Root or No privilege. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>authorization code</b></td><td>The app's own code of 25 letters and digits, made on the phone and shown in the About tab. Nothing accepts it yet; it is kept for later. See <a href="#tab-about">About</a>.</td></tr>
+<tr><td><b>Authorizer</b></td><td>In the Application Installer box, how a file is installed: ADB, Shizuku, Root or No privilege. See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>Auto Blocker</b></td><td>A feature on some recent Samsung phones that can block installs that do not come from a store. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
 <tr><td><b>Auto mode</b></td><td>The working mode that uses the first of ADB over TCP, Wireless Debugging or Shizuku that is ready. It never picks Root. See <a href="#mode-readonly">Auto and Read-Only mode</a>.</td></tr>
 </tbody>
@@ -590,7 +591,7 @@
 <tr><td><b>chip</b></td><td>A small rounded button that turns a filter or an option on or off, or copies a piece of text. A row of them that scrolls sideways is also called a row of pills. See <a href="#tab-apps">Application Manager</a>.</td></tr>
 <tr><td><b>clear data</b></td><td>Wipes everything an app has saved: logins, settings and files kept inside it. It cannot be undone. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>cluster</b></td><td>On the Task Manager's CPU page, a group of processor cores of similar speed, with its own lowest, current and highest speed. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
-<tr><td><b>Codeberg</b></td><td>A free website, like GitHub, where developers share code and app releases. The App Updater checks it for newer versions. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>Codeberg</b></td><td>A free website, like GitHub, where developers share code and app releases. The Application Updater checks it for newer versions. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>coding agent</b></td><td>An AI assistant you chat with inside the Terminal. It can suggest commands, read files and propose changes, and you approve each step. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
 <tr><td><b>component</b></td><td>One working part of an app: an activity, a receiver, a service or a provider. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>config split</b></td><td>A part of a split app made for one processor type, one screen density or one language. See <a href="#installer-splits">Split packages</a>.</td></tr>
@@ -615,7 +616,7 @@
 <tr><td><b>dex optimization</b></td><td>Recompiling an app's code for speed. It is what the Optimize button does. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>disable</b></td><td>Android's word for freeze. A disabled app cannot run. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>Display over other apps</b></td><td>A special access that lets this app open another app's screen from the background. Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
-<tr><td><b>downgrade</b></td><td>Installing an older version of an app over a newer one. Android refuses unless <b>Allow downgrade</b> is on in the APK Installer. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>downgrade</b></td><td>Installing an older version of an app over a newer one. Android refuses unless <b>Allow downgrade</b> is on in the APK Installer. See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>dpi</b></td><td>Dots per inch, the way screen density is counted. See <b>density</b> above and <a href="#devices-display">Screen density and size</a>.</td></tr>
 <tr><td><b>drift</b></td><td>When the phone no longer matches a watched profile, usually because a system update brought apps back. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
 <tr><td><b>dry run</b></td><td>A practice run of a batch command that only lists what it would do and runs nothing. See <a href="#apps-batch">Selecting many apps and batch actions</a>.</td></tr>
@@ -635,7 +636,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>factory reset</b></td><td>Erases everything on the phone and returns it to how it left the factory. It restores system apps you removed for your user. See <a href="#safety">Staying safe</a>.</td></tr>
-<tr><td><b>F-Droid</b></td><td>A catalog of free, open-source Android apps. The App Stores tab can browse it and many other repositories of the same kind, and the App Updater checks it. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>F-Droid</b></td><td>A catalog of free, open-source Android apps. The App Stores tab can browse it and many other repositories of the same kind, and the Application Updater checks it. See <a href="#tab-store">App Stores</a>.</td></tr>
 <tr><td><b>feature module</b></td><td>An optional part of a split app. The installer does not tick it by default; if an app crashes at once after installing, try <b>Select all</b>. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>fingerprint</b></td><td>A short code that identifies a key, such as the ADB key or the key an app is signed with. See <a href="#tab-about">About</a>.</td></tr>
 <tr><td><b>firmware</b></td><td>The phone's own built-in system software, written by the maker. This app never changes it. See <a href="#safety">Staying safe</a>.</td></tr>
@@ -650,10 +651,10 @@
 <table class="hg-table">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><b>Galaxy Store</b></td><td>Samsung's app store. The App Updater checks it for Samsung apps. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>Galaxy Store</b></td><td>Samsung's app store. The Application Updater checks it for Samsung apps. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>gist</b></td><td>A small page on GitHub where someone shares a note or a list. The ADB Cheat Sheet can load Pulimet's gist of ADB commands. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
 <tr><td><b>GitHub</b></td><td>A website where developers keep their code and publish app releases. This app's own releases, the UAD-NG list and many update sources are there. See <a href="#privacy">Privacy</a>.</td></tr>
-<tr><td><b>GitHub token</b></td><td>An optional code that raises GitHub's limit for update checks from 60 to 5,000 an hour. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>GitHub token</b></td><td>An optional code that raises GitHub's limit for update checks from 60 to 5,000 an hour. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>GPU</b></td><td>The chip that draws the picture on your screen. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 </tbody>
 </table>
@@ -675,9 +676,10 @@
 <tbody>
 <tr><td><b>icon pack</b></td><td>An installed set of app icons that the app can draw in its lists. See <a href="#prefs">Settings</a>.</td></tr>
 <tr><td><b>install-time permission</b></td><td>A permission fixed when the app is installed. Nobody can change it, and the app shows a padlock on it. See <a href="#apps-menu">The app menu</a>.</td></tr>
-<tr><td><b>intent</b></td><td>A request one part of Android sends to another, such as "open this screen" or "install this file". See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>intent</b></td><td>A request one part of Android sends to another, such as "open this screen" or "install this file". See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>IP address</b></td><td>The number that identifies a device on a network, such as 192.168.1.20. A port follows after a colon. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
-<tr><td><b>IzzyOnDroid</b></td><td>A catalog that works like F-Droid, with many apps taken from developers' own GitHub releases. The App Updater and the App Stores tab use it. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>IzzyOnDroid</b></td><td>A catalog that works like F-Droid, with many apps taken from developers' own GitHub releases. The Application Updater and the App Stores tab use it. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>keystore</b></td><td>A file that holds a signing key, the secret an app is signed with. The <b>KeyStore</b> card in the Application Updater box exports, imports and renews the key that signs apps patched here. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 </tbody>
 </table>
 
@@ -730,7 +732,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>OBB</b></td><td>Extra data files of a big game or app, kept under Android/obb. An XAPK can carry them. See <a href="#installer-splits">Split packages</a>.</td></tr>
-<tr><td><b>Obtainium</b></td><td>A separate open-source app that fetches updates from developers' pages. This app uses its community catalog. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>Obtainium</b></td><td>A separate open-source app that fetches updates from developers' pages. This app uses its community catalog. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>OEM</b></td><td>The phone's maker (original equipment manufacturer). It is one of the list filters of the UAD-NG Debloater, and shows the apps the maker added. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
 <tr><td><b>OpenGL ES</b></td><td>One of the two ways apps draw graphics on the GPU (the other is Vulkan). The Task Manager's GPU page shows which versions your phone supports. An app can also say which version it needs (see <b>uses-feature</b>), and the Features and Configurations tabs of <a href="#apps-menu">the app menu</a> compare that with your phone. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>Orion Store</b></td><td>A public catalog by RookieEnough that the <b>Orion</b> button in App Stores browses. See <a href="#credits">Credits</a>.</td></tr>
@@ -788,7 +790,7 @@
 <tr><td><b>SAF</b></td><td>Storage Access Framework: Android's own file picker, through which you give an app one folder. See <a href="#files-storage">SD cards and other storage</a>.</td></tr>
 <tr><td><b>safe mode</b></td><td>Starts the phone with only the apps that came with it. This app does not run there. See <a href="#safety">Staying safe</a>.</td></tr>
 <tr><td><b>sandbox</b></td><td>In the Terminal, the shell that runs as this app in its private folder and cannot touch other apps. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
-<tr><td><b>SDK</b></td><td>Software development kit. In the APK Installer, <b>Min SDK</b> is the oldest Android an app runs on and <b>Target SDK</b> the one it was built for; both are API levels. See <b>API level</b> above and <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>SDK</b></td><td>Software development kit. In the APK Installer, <b>Min SDK</b> is the oldest Android an app runs on and <b>Target SDK</b> the one it was built for; both are API levels. See <b>API level</b> above and <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>SDK Platform-Tools</b></td><td>Google's small download for a computer that contains the <code>adb</code> program. You need it only for the computer steps. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
 <tr><td><b>SecurityException</b></td><td>Android's way of saying that an app was not allowed to do something. Nothing was changed. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
 <tr><td><b>service</b></td><td>The part of an app that works in the background. See <a href="#apps-menu">The app menu</a>.</td></tr>
@@ -799,7 +801,7 @@
 <tr><td><b>Shizuku</b></td><td>A separate free app that starts a helper with ADB-level power and lets other apps use it. See <a href="#mode-shizuku">Shizuku</a>.</td></tr>
 <tr><td><b>ShizuStore</b></td><td>A catalog by timschneeb of apps that work with Shizuku. The <b>ShizuStore</b> button in App Stores browses it. See <a href="#credits">Credits</a>.</td></tr>
 <tr><td><b>sideload</b></td><td>To install an app from a file instead of a store. An app installed that way is called sideloaded. See <a href="#install-and-update">Installing and updating the app</a>.</td></tr>
-<tr><td><b>signature (app signature)</b></td><td>The seal an app is signed with, made with its maker's key. Android accepts an update only if it has the same one. The Signatures tab of <a href="#apps-menu">the app menu</a> shows it. See also <b>certificate fingerprint</b> above and <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>signature (app signature)</b></td><td>The seal an app is signed with, made with its maker's key. Android accepts an update only if it has the same one. The Signatures tab of <a href="#apps-menu">the app menu</a> shows it. See also <b>certificate fingerprint</b> above and <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>signature scheme (v1, v2, v3)</b></td><td>The way a signature is stored in the app's file: v1 is the old way (files in a META-INF folder), and v2, v3 and v3.1 are newer ones kept in a block inside the file, where v3 and later let the maker change the signing key. The Signatures tab of <a href="#apps-menu">the app menu</a> shows which ones an app has.</td></tr>
 <tr><td><b>SIM</b></td><td>The small card that identifies you to your mobile network. The app reads only its network codes (the country and operator numbers), and sends them only in a Samsung update check. See <a href="#privacy">Privacy</a>.</td></tr>
 <tr><td><b>SoC</b></td><td>System on a chip: the main chip of a phone, holding the processor, graphics and more. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
@@ -846,7 +848,7 @@
 <table class="hg-table">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><b>VirusTotal</b></td><td>An online service that checks files against many virus scanners. The APK Installer can use it with your own key. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>VirusTotal</b></td><td>An online service that checks files against many virus scanners. The Application Installer box, and the Find and download an app card, can use it with your own key. See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>Vulkan</b></td><td>One of the two ways apps draw graphics on the GPU (the other is OpenGL ES). The Task Manager's GPU page says whether your phone supports it. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 </tbody>
 </table>
@@ -897,12 +899,13 @@
 <thead><tr><th>Who</th><th>When</th><th>What goes out</th></tr></thead>
 <tbody>
 <tr><td><b>GitHub</b> (<code>raw.githubusercontent.com</code>): the UAD-NG list</td><td>You open the <a href="#tab-debloater">UAD-NG Debloater</a> and the app has no list or one over a week old, or tap <b>Update List</b>.</td><td>A request for one file (about 1.6 MB comes back). Nothing about your apps.</td></tr>
-<tr><td><b>GitHub</b> (<code>api.github.com</code>, <code>github.com</code>): this app's own update</td><td>You open the <a href="#tab-updates">App Updater</a> for the first time after the app starts, or tap <b>Check for update</b>, <b>Check for app update</b>, <b>Check for Updates</b> or <b>Update now</b>.</td><td>A request for the newest release and, if you update, the download of the APK for your processor. GitHub may pass the download on to its own file servers.</td></tr>
-<tr><td><b>GitHub, Codeberg, F-Droid, IzzyOnDroid, the Obtainium catalog</b> (<code>api.github.com</code>, <code>github.com</code>, <code>codeberg.org</code>, <code>f-droid.org</code>, <code>apt.izzysoft.de</code>, <code>raw.githubusercontent.com</code>): update checks for sideloaded apps</td><td>The App Updater checks other apps: on its first visit after the app starts, when you tap <b>Check for Updates</b>, and again after you set a source or import an Obtainium list.</td><td>Lookups that name each app checked: its package name, or its GitHub or Codeberg project. A saved GitHub token goes to GitHub only.</td></tr>
+<tr><td><b>GitHub</b> (<code>api.github.com</code>, <code>github.com</code>): this app's own update</td><td>You open the <a href="#tab-updates">Application Updater</a> for the first time after the app starts, or tap <b>Check for update</b>, <b>Check for app update</b>, <b>Check for Updates</b> or <b>Update now</b>.</td><td>A request for the newest release and, if you update, the download of the APK for your processor. GitHub may pass the download on to its own file servers.</td></tr>
+<tr><td><b>GitHub, Codeberg, F-Droid, IzzyOnDroid, the Obtainium catalog</b> (<code>api.github.com</code>, <code>github.com</code>, <code>codeberg.org</code>, <code>f-droid.org</code>, <code>apt.izzysoft.de</code>, <code>raw.githubusercontent.com</code>): update checks for sideloaded apps</td><td>The Application Updater checks other apps: on its first visit after the app starts, when you tap <b>Check for Updates</b>, and again after you set a source or import an Obtainium list.</td><td>Lookups that name each app checked: its package name, or its GitHub or Codeberg project. A saved GitHub token goes to GitHub only.</td></tr>
 <tr><td><b>Samsung's update service</b> (<code>vas.samsungapps.com</code>)</td><td>The same check, for Samsung apps only.</td><td>Your phone model, SIM network codes, region code and Android version, with the package name and version of each Samsung app.</td></tr>
 <tr><td><b>App Stores catalogs</b>: ShizuStore (<code>shizustore.timschneeberger.me</code>), the GitHub catalog (<code>api.github-store.org</code>, with an offline copy on <code>raw.githubusercontent.com</code>, and <code>api.github.com</code> for a GitHub project you type in), the F-Droid repository you pick (F-Droid, IzzyOnDroid or one of about 40 others, each on its own server), Orion (<code>raw.githubusercontent.com</code>)</td><td>You open the <a href="#tab-store">App Stores</a> tab (it loads ShizuStore at first, or the catalog you used last since the app started), switch catalog, refresh, search the GitHub catalog or type a GitHub project.</td><td>Catalog requests, your search words (GitHub catalog only), and pictures such as app icons and GitHub owner photos (<code>github.com</code>, <code>avatars.githubusercontent.com</code>) from those servers.</td></tr>
-<tr><td><b>Developers' download sites</b> (GitHub, GitLab, F-Droid, Samsung's servers and others)</td><td>You press <b>Install</b> or <b>Update</b> in the App Stores or the App Updater.</td><td>A download request. For a Samsung app, your phone model, SIM network codes, region code and Android version go with it. The file is checked before it installs.</td></tr>
-<tr><td><b>VirusTotal</b> (<code>www.virustotal.com</code>)</td><td>Only if you enter your own key in <b>Settings</b> and press <b>Scan this package</b> in the <a href="#tab-installer">APK Installer</a> (or scan in Morphe Helper).</td><td>The file's SHA-256 fingerprint and your key. The whole file only if you then press <b>Upload it for analysis</b>.</td></tr>
+<tr><td><b>Developers' download sites</b> (GitHub, GitLab, F-Droid, Samsung's servers and others)</td><td>You press <b>Install</b> or <b>Update</b> in the App Stores tab or the Application Updater, or <b>Download</b> in the Find and download an app card.</td><td>A download request. For a Samsung app, your phone model, SIM network codes, region code and Android version go with it. The file is checked before it installs.</td></tr>
+<tr><td><b>APKMirror, Uptodown, Aptoide, F-Droid, IzzyOnDroid</b> (their own sites), and Aptoide's public search</td><td>You search or download in the card <b>Find and download an app</b>.</td><td>The app name or package name you typed (a name is sent to Aptoide's search only to turn it into a package name), and the version you asked for. Opening a page in the browser or in the app's own browser shows that site your internet address, as any website does.</td></tr>
+<tr><td><b>VirusTotal</b> (<code>www.virustotal.com</code>)</td><td>Only if you enter your own key in <b>Settings</b> and press <b>Scan this package</b> in the Application Installer box of the <a href="#tab-installer">APK Installer/Updater</a> tab (or scan in Morphe Helper, or tick <b>VirusTotal scan</b> in Find and download an app).</td><td>The file's SHA-256 fingerprint and your key. The whole file only if you then press <b>Upload it for analysis</b>.</td></tr>
 <tr><td><b>An AI provider</b> (<code>api.anthropic.com</code>, <code>api.openai.com</code>, <code>generativelanguage.googleapis.com</code>, <code>api.cursor.com</code>, <code>api.perplexity.ai</code>, <code>api.x.ai</code>, <code>api.llama.com</code>, <code>api.deepseek.com</code>, and <code>api.github.com</code> to test a GitHub token for Copilot), or your own server (Jan.ai, AnythingLLM, Ollama)</td><td>Only after you add a key or a server address in the Terminal, and then when you test it, chat, or load the provider's list of models (at most once a day). Your own server is contacted at the address you typed; Ollama on this phone stays on the phone.</td><td>Your key (to that provider only) and what <a href="#terminal-agents">Coding agents</a> lists: your messages, a short description of your phone, and what the agent reads or runs, with key-like text hidden.</td></tr>
 <tr><td><b>GitHub's gist of ADB commands</b> (<code>gist.github.com</code>)</td><td>Only if you press <b>Load the full reference from the gist</b> in the ADB Cheat Sheet.</td><td>An ordinary request to GitHub for that page. GitHub's reply is shown inside the app.</td></tr>
 <tr><td><b>Installers and downloads run by Termux</b> (<code>claude.ai</code>, <code>gh.io</code>, <code>cursor.com</code>, <code>opencode.ai</code>, <code>astral.sh</code>, <code>github.com</code>, and the package servers that Termux and the installed tools use)</td><td>Only if you tap an <b>Install</b> step of an agent, of DroidMind or of Ollama in the Terminal.</td><td>Termux runs the commands and does the downloading, not this app. They fetch the tool's installer and packages, whatever those then download, and for Ollama a model of about 1 GB.</td></tr>
@@ -973,13 +976,13 @@
 
 <h4>Update sources and catalogs</h4>
 <ul>
-<li><b>Galaxy Store</b>, <b>GitHub</b>, <b>Codeberg</b>, <b>F-Droid</b> and <b>IzzyOnDroid</b>: where the <a href="#tab-updates">App Updater</a> looks for newer versions.</li>
+<li><b>Galaxy Store</b>, <b>GitHub</b>, <b>Codeberg</b>, <b>F-Droid</b> and <b>IzzyOnDroid</b>: where the <a href="#tab-updates">Application Updater</a> looks for newer versions.</li>
 <li><b>Obtainium</b> by ImranR98, whose community catalog says where many apps' releases live, and whose export file the app can import.</li>
 <li><b>ShizuStore</b> by timschneeb, which indexes the awesome-shizuku list. The app reads its public catalog and installs from each app's own source.</li>
 <li><b>Komi Store</b> (komi-store/komi-store), whose catalog of GitHub projects with an installable APK is what the <b>GitHub</b> catalog in <a href="#tab-store">App Stores</a> browses.</li>
 <li><b>Orion Store</b> by RookieEnough, whose public catalog the <b>Orion</b> button in App Stores browses.</li>
 <li><b>Pulimet's ADB gist</b>, from which the ADB Cheat Sheet is compiled and which it can load live.</li>
-<li><b>Termux</b>, whose documented <code>RUN_COMMAND</code> feature the Terminal's Termux shell uses (<a href="#tab-terminal">Command-Line Interface</a>), and <b>Aurora Store</b>, which the App Updater offers to open for Play Store apps.</li>
+<li><b>Termux</b>, whose documented <code>RUN_COMMAND</code> feature the Terminal's Termux shell uses (<a href="#tab-terminal">Command-Line Interface</a>), and <b>Aurora Store</b>, which the Application Updater offers to open for Play Store apps.</li>
 </ul>
 
 <h4>The 32-bit adb</h4>

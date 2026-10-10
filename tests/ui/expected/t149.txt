@@ -1,16 +1,24 @@
-ok   1. the Default agent card has a "Test the default agent" button
-ok      with no default agent it says there is nothing to test (and sends nothing): No default agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.
+ok   1. the Default Ask Agent card has a "Test the Default Ask Agent" button
+ok      with no default agent it says there is nothing to test (and sends nothing): No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.
 ok      a default agent that is not connected says so: Claude (Anthropic) is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.
 ok      a connected agent answers the sample question; the line says it works and how long it took; only the sample is sent (no phone details)
 ok      a failing agent is reported: It did not work. The message above says why.
 ok      while it waits there is a progress bar and Stop; Stop ends the test: {"hold":{"stop":"flex","prog":true},"stopped":{"out":"Stopped.","prog":false,"btn":false}}
-ok   2. Connected Devices: Enable and Reinstall (row and batch) are green, Disable and Uninstall are not: {"disabled":true,"gone":true,"plain":false,"batch":[["cdBatch('enable')","cd-row-act green"],["cdBatch('disable')","cd-row-act"],["cdBatch('uninstall')","cd-row-act danger"],["cdBatch('reinstall')","cd-row-act green"]]}
-ok   3. the answers are kept, newest first, with a Clear history row: {"rows":["zen_mode Setting · Oct 3, 2026, 4:00 AM · Own server","com.example.alpha Package · Oct 3, 2026, 4:00 AM · Own server","Clear history Answers are kept on this phone only."],"stored":2}
+ok   2. Connected Devices: Enable and Reinstall are green, Disable is blue and Uninstall red, like the app menu: ["rgb(0, 240, 80)","rgb(41, 121, 255)","rgb(255, 82, 82)","rgb(0, 240, 80)"]
+ok   3. the answers are kept, newest first, with a Clear history row: {"rows":["zen_mode Setting · Oct 3, 2026, 4:00 AM · Own server","com.example.alpha Package · Oct 3, 2026, 4:00 AM · Own server","Clear history Pinned answers stay. Answers are kept on this phone only."],"stored":2}
 ok      tapping one shows the saved answer (no new request), with its question: {"subj":"com.example.alpha","ai":"Saved answer from Oct 3, 2026, 4:00 AM. Ask again for a new one.\nFirst answer about alpha.","hidden":true,"sent":"Android 17 on samsung SM-S948U1\nPackage: com.example.alpha\nApp name: Alpha"}
 ok      asking about the same thing again replaces the old entry (no duplicates)
 ok      only the last 12 are kept
-ok      Clear history removes them
+ok      a pinned answer survives the limit (12 more are kept beside it), is listed first and says Pinned: {"n":13,"kept":true,"first":"com.pinned.one","ui":"Pinned"}
+ok      Clear history removes the others and keeps the pinned one
+ok      Unpinned, it goes with Clear history
 ok   4. the log-entry window shows the bar and Stop while asking; Stop says Stopped. and frees the Ask agent button: {"l1":{"stop":"flex","prog":true,"busy":true},"l2":{"ai":"Stopped.","prog":false,"stop":"none","busy":false,"c":1}}
 ok      the Hidden Settings window too: {"opened":true,"s1":{"stop":"flex","prog":true},"s2":{"ai":"Stopped.","prog":false,"busy":false,"c":1}}
+ok   5. the Hidden Settings window keeps its answers; History lists them and a tap shows the saved answer: {"sh":{"stored":["zen_mode|false"]},"rowTxt":["zen_mode Hidden Settings · global · Oct 3, 2026, 4:00 AM","Clear history Pinned answers stay. Answers are kept on this phone only."],"shOpen":{"ai":"Saved answer about zen_mode from Oct 3, 2026, 4:00 AM.\nZen mode silences the phone.","shown":true}}
+ok      the log-entry window too: {"lh":["AndroidRuntime: FATAL EXCEPTION: main"],"lo":{"ai":"Saved answer about AndroidRuntime: FATAL EXCEPTION: main from Oct 3, 2026, 4:00 AM.\nA null pointer crashed the app.","wrap":true}}
+ok   6. a Connect sheet has a Test button: it asks the agent the sample question and says it works: {"out":"Asking Own server (qwen2.5-7b). Only this sample question is sent to them: whether the Calculator package can be disabled.\nSafe to disable.","res":"It works: Own server (OpenAI-compatible) answered in 1 s."}
+ok      an agent without a key says it is not connected: Claude (Anthropic) is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.
+ok      explained entries (Kilo Code) have none
+ok      with 30 pinned and 12 others, unpinning one leaves 29 pinned and only the newest 12 others (the unpinned, older one is dropped): {"pins":29,"others":12}
 ok   no page errors:
 ALL PASSED
