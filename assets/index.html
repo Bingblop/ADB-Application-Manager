@@ -15399,7 +15399,7 @@ Type any command below (e.g. pm list packages -d)
             if (pct === null || pct === undefined) { b.style.display = 'none'; return; }
             b.style.display = ''; b.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
-        function usReset() { us.run++; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
+        function usReset() { us.run++; us.busy = false; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
 
         // The pure parts (tested on their own): which of the listed versions to take
         function usVerNorm(v) { return String(v || '').trim().replace(/^v/i, '').replace(/\s*\(\d+\)\s*$/, ''); }
@@ -15578,9 +15578,9 @@ Type any command below (e.g. pm list packages -d)
                     }
                 }
             } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
-            us.busy = false;
-            if (run !== us.run) return;
+            if (run !== us.run) { us.busy = false; return; }
             if (!r.ok) {
+                us.busy = false;
                 usBar(null);
                 us.browse = r.browse || '';
                 usStatus(r.error || txT('The download did not work.'), true);
@@ -15590,7 +15590,7 @@ Type any command below (e.g. pm list packages -d)
             us.got = r.data;
             usBar(100);
             usStatus(how === 'near' ? txF('The closest version is {0}; it was downloaded.', r.data.versionName || (item && item.version) || '') : txT('Downloaded.'), false);
-            await usAfter(r.data, cfg, i);
+            try { await usAfter(r.data, cfg, i); } finally { if (run === us.run) us.busy = false; }          // busy until the scan, the copy and the install are done, so a second download cannot swap the file under them
         }
         // a file came from the browser: it goes through the same steps
         async function usBrowseDone(e) {
@@ -15599,11 +15599,15 @@ Type any command below (e.g. pm list packages -d)
             if (e.k === 'failed') { usStatus(txF('The download failed: {0}', e.error || ''), true); usBar(null); return; }
             if (e.k !== 'done') return;
             if (!e.ok || !e.info) { usStatus(txF('{0} was saved, but it is not an app file.', e.name || txT('The file')), true); return; }
+            if (us.busy) return;
             const cfg = usRead();
+            us.busy = true;
+            const run = us.run;
             us.got = e.info; usBar(100); usStatus(txT('Downloaded.'), false);
-            await usAfter(e.info, cfg, us.cands.indexOf(us.browseFor));
+            try { await usAfter(e.info, cfg, us.cands.indexOf(us.browseFor)); } finally { if (run === us.run) us.busy = false; }
         }
         async function usAfter(g, cfg, i) {
+            const myRun = us.run;
             let html = '<div class="us-got"><b translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + '</b><div translate="no">' + escapeHtml((g.format || '').toUpperCase()) + (g.splits ? ', ' + escapeHtml(String(g.splits)) + ' parts' : '') + ' &middot; ' + escapeHtml(formatBytes(g.size || 0)) + '</div><div class="us-pkg" translate="no">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div id="usGotMore"></div></div>';
             usEl('usGot').innerHTML = html;
             const more = id => usEl('usGotMore');
@@ -15616,6 +15620,7 @@ Type any command below (e.g. pm list packages -d)
                     note(txT('Scanning with VirusTotal...'));
                     const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
                     vtLoadQuota(true);
+                    if (myRun !== us.run) return;
                     if (r.ok && r.data) { verdict = r.data.verdict || ''; us.verdict = verdict; note(r.data.found ? txF('VirusTotal: {0} malicious, {1} suspicious of {2} engines.', r.data.malicious, r.data.suspicious, r.data.total) : txT('VirusTotal has not seen this file.')); }
                     else note(r.error || txT('The VirusTotal scan did not work.'));
                 }
@@ -15624,6 +15629,7 @@ Type any command below (e.g. pm list packages -d)
                 if (!cfg.tree) note(txT('Choose a folder first: the file stays in Downloads/App Updater until then.'));
                 else {
                     const r = await mpCall('copyToTree', { path: g.path, tree: cfg.tree });
+                    if (myRun !== us.run) return;
                     note(r.ok ? txF('Copied to {0}.', cfg.treeLabel || txT('the folder')) : (r.error || txT('The copy did not work.')));
                 }
             }

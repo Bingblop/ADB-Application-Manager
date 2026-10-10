@@ -35,7 +35,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         else if (op === 'copyToTree') r.data = { name: 'x.apk' };
         else if (op === 'keyExport') r.data = { path: '/sdcard/Download/Morphe Patcher/morphe.keystore' };
         else if (op === 'helperManual') r.data = { url: 'https://www.apkmirror.com/?s=' + x.pkg };
-        setTimeout(() => window.onMorphe && window.onMorphe(r), 5);
+        setTimeout(() => window.onMorphe && window.onMorphe(r), op === 'vtScan' ? (window.__vtDelay || 5) : 5);
       }
     };
   }, apps);
@@ -155,6 +155,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('17b. with VirusTotal calling the file malicious, tapping Install asks first and installs nothing yet', mal.asked && /VirusTotal flags this file/.test(mal.title) && mal.installs === 0, JSON.stringify(mal));
   await ev(() => mpAskDone(false));
   await ev(() => { window.__vt = ''; document.getElementById('usVt').checked = false; usSave(); });
+
+  // ---- 17c. a second Download during the scan cannot swap the file under it ----
+  await ev(() => { window.__vt = ''; window.__vtDelay = 600; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = '2.0.0'; window.__calls.length = 0; usGet(0); }); await sleep(250);
+  await ev(() => { document.getElementById('usVersion').value = '2.4.1'; usGet(0); }); await sleep(150);
+  const busy = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length, busy: us.busy, hasInstall: !!document.querySelector('#usGot button[onclick="usInstallGot()"]') }));
+  await sleep(700);
+  const done = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length, busy: us.busy, got: us.got && us.got.versionName, hasInstall: !!document.querySelector('#usGot button[onclick="usInstallGot()"]') }));
+  check('17c. while the scan runs the updater stays busy: a second Download is ignored, Install only appears once the scan is done, and it stays bound to the first file', busy.gets === 1 && busy.busy && !busy.hasInstall && done.gets === 1 && !done.busy && done.got === '2.0.0' && done.hasInstall, JSON.stringify({ busy, done }));
+  await ev(() => { window.__vtDelay = 0; document.getElementById('usVt').checked = false; usSave(); });
 
   // ---- 18. the browser check ----
   await ev(() => { window.__vers = 'browser'; document.getElementById('usSplit').checked = false; usSave(); usGet(0); }); await sleep(400);
