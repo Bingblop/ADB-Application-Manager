@@ -14,8 +14,8 @@ Connect the phone to a computer with `adb` (USB, or Wireless Debugging) and run 
 ```sh
 adb devices                                         # the phone is listed as "device", not "unauthorized"
 export PKG=com.bloatware.bingblop                   # this app
-export APP=com.android.egg                          # REPLACE with the package of a normal app you can freeze (find one: adb shell pm list packages -3)
-export APP2=com.android.stk                           # REPLACE: a second app you do not mind (only for the batch test, step 9)
+export APP=com.example.replace.me.app1             # REPLACE with the package of a normal app you can freeze (find one: adb shell pm list packages -3)
+export APP2=com.example.replace.me.app2            # REPLACE: a second app you do not mind (only for the batch test, step 9)
 export TESTPKG=com.example.testapp                  # REPLACE: package of the test APK with a different signer (only for step 5)
 export TESTAPK=./different-signer.apk               # REPLACE: path of that test APK on the computer (only for step 5)
 adb shell getprop ro.product.model                  # write these three down for the report
@@ -25,7 +25,9 @@ adb shell getprop ro.build.version.sdk
 
 The commands are for a POSIX shell (Linux, macOS, Termux, or WSL / Git Bash on Windows): they use `grep`, `head`, `tail`, `sha256sum` and `$PKG` / `$APP`. They are **not** PowerShell commands; on Windows run them in WSL or Git Bash.
 
-Pick `APP` carefully: an app you do not mind freezing, standby-bucketing and dex-optimizing (not your launcher, keyboard or phone app).
+The `com.example.replace.me.*` values are deliberately not real packages: a command run without replacing them fails harmlessly instead of touching a real app. Pick `APP` and `APP2` carefully: apps you do not mind freezing, standby-bucketing and dex-optimizing (not a system app, your launcher, keyboard or phone app).
+
+Check that both exist before you go on: `adb shell pm path $APP` and `adb shell pm path $APP2` must each print a `package:` line.
 
 Mark each step PASS, FAIL or SKIP and keep the output of the commands for a failure.
 
@@ -37,14 +39,14 @@ Mark each step PASS, FAIL or SKIP and keep the output of the commands for a fail
 2. From the computer, look for the old loopback port 5042 on the phone:
 
    ```sh
-   adb shell "ss -ltn | grep 5042"
+   adb shell "ss -ltn | grep -E ':5042([[:space:]]|$)'"
    ```
 
    If the phone has no `ss` (the error `ss: inaccessible or not found` or `not found` appears), use the kernel table directly (5042 is `13B2` in hex;
-   state `0A` means listening):
+   the pattern requires exactly that local port and state `0A`, listening):
 
    ```sh
-   adb shell "cat /proc/net/tcp /proc/net/tcp6 | grep -i ':13B2 '"
+   adb shell "cat /proc/net/tcp /proc/net/tcp6 | grep -iE '^ *[0-9]+: [0-9A-F]+:13B2 [0-9A-F]+:[0-9A-F]+ 0A '"
    ```
 
    Errors are left visible on purpose. A probe that printed an error (command not found, permission denied) proved nothing: it is **not** a pass. Only
@@ -70,35 +72,49 @@ If `adb install -r` reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE` the APK is sign
 uninstall (that deletes the saved keys and makes this test meaningless). Install from the real release instead.
 
 On the phone: Settings. The **GitHub Token** button must still be ticked and the VirusTotal key card must still read "approved" (or ask you to
-test it once). **PASS** if nothing asks you to type either again.
+test it once). Nothing may ask you to type either again.
+
+That only shows the old values are still *readable*; the app also keeps returning an old plain value when the vault refuses to take it. To check that
+they were really **moved** into the vault, look for the old plain entries now, before step 3 overwrites them (debuggable build or a rooted phone, see
+step 3 for the commands): none of `github_token`, `kv_vt_key`, `kv_vt_key_ok`, `kv_vt_api_key` may still hold a value in `adb_app_manager_prefs.xml`.
+**PASS** if nothing asks for the keys again and (when the check can run) the old entries are gone; with the check skipped, write PASS (readable) and
+SKIP (moved).
 
 ## 3. Keystore vault, new value (checklist: Keystore vault, new value)
 
 1. On the phone: enter a new GitHub token, then a new VirusTotal key and tap **Test key**. Both must work. **Leave both saved for now.**
 2. While they are still saved, check that the old plain place does not hold them. The app used to keep them in the plain preferences file
-   `adb_app_manager_prefs.xml` under these names: `github_token`, `kv_vt_key`, `kv_vt_key_ok`, `kv_vt_api_key` (needs a debuggable build or root; on a
-   release build `run-as` is refused and this cross-check is skipped):
+   `adb_app_manager_prefs.xml` under these names: `github_token`, `kv_vt_key`, `kv_vt_key_ok`, `kv_vt_api_key` (this needs a **debuggable build**, where
+   `run-as` works, or a **rooted phone**; on a normal release build on an unrooted phone `run-as` is refused and the cross-check is skipped):
 
    ```sh
+   # debuggable build:
    adb shell run-as $PKG cat shared_prefs/adb_app_manager_prefs.xml | grep -E 'name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"'
+   # rooted phone, release build (the folder may be /data/user/0/$PKG on some phones):
+   adb shell "su -c 'cat /data/data/$PKG/shared_prefs/adb_app_manager_prefs.xml'" | grep -E 'name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"'
    ```
 
    **PASS** if it prints nothing (the file exists and none of the four names is in it). An entry with a non-empty value is a **FAIL**: a secret is in
-   the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused or the
-   file is missing, write SKIP; the on-phone result still counts.
+   the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused, `su` is not
+   available or the file is missing, write SKIP; the on-phone result still counts.
 3. Now clear both: the GitHub button loses its tick and the key card says no key. Run the command from step 2 again: still nothing.
 
 ## 4. Download safety (checklist: Download safety)
 
+By default the Updater saves into the app's private storage, which neither the SHA-256 card nor `adb` can read. For this step, **before** you download,
+choose the shared destination: in the Application Updater box, set the save location to **Downloads/App Updater**.
+
 On the phone: in the Updater, download any app from APKMirror or F-Droid. The download must complete and the SHA-256 card must show.
 Then download a Morphe bundle: it must complete.
 
-Cross-check the hash the card shows against the file (replace the path with the one the app reports):
+Cross-check the hash the card shows against the file in the shared folder:
 
 ```sh
-adb shell ls -l /sdcard/Download/ | tail -5
-adb shell sha256sum "/sdcard/Download/<file>"       # must equal the SHA-256 card
+adb shell ls -l "/sdcard/Download/App Updater/" | tail -5
+adb shell sha256sum "/sdcard/Download/App Updater/FILENAME-FROM-THE-LISTING"       # must equal the SHA-256 card
 ```
+
+If the folder does not exist, the save location was not switched: write SKIP for the cross-check (the on-phone result still counts).
 
 ## 5. Install checks (checklist: Install checks)
 
@@ -118,6 +134,8 @@ apksigner verify --print-certs "$TESTAPK"      | grep "certificate SHA-256"
 The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs and step 2 is refused with the signer message.
 
 ## 6. VirusTotal upload (checklist: VirusTotal upload)
+
+Step 3 cleared the VirusTotal key. Before this step, enter a key again in Settings and tap **Test key** until the card reads approved.
 
 On the phone: scan a small APK with the VirusTotal card. The hash lookup must show. If the file is unknown to VirusTotal and an upload is offered,
 accept: it must upload and a result must come back.
@@ -182,13 +200,26 @@ sheet and the command must agree. On a phone with no working mode the sheet must
 
 ## 11. Standby bucket: set (checklist: Standby bucket, set)
 
-On the phone, for `$APP`: pick **rare**, Apply. The toast must say "Standby bucket changed". Check from the computer after each change:
+On the phone, for `$APP`, apply the three values **one after the other**, checking from the computer after each Apply (repeating the read command alone
+changes nothing). Each Apply must toast "Standby bucket changed".
 
-```sh
-adb shell am get-standby-bucket $APP        # after "rare"        -> rare (40)
-adb shell am get-standby-bucket $APP        # after "restricted"  -> restricted (45)
-adb shell am get-standby-bucket $APP        # after "active"      -> active (10)
-```
+1. In the Standby sheet pick **rare**, Apply, then:
+
+   ```sh
+   adb shell am get-standby-bucket $APP        # -> rare (40)
+   ```
+
+2. Open the sheet again, pick **restricted**, Apply, then:
+
+   ```sh
+   adb shell am get-standby-bucket $APP        # -> restricted (45)
+   ```
+
+3. Open the sheet again, pick **active**, Apply, then:
+
+   ```sh
+   adb shell am get-standby-bucket $APP        # -> active (10)
+   ```
 
 Then open the sheet on the current launcher (find it with `adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME`).
 The bucket must be greyed out there and a set must be refused with the phone's words.
@@ -204,30 +235,33 @@ Put the app back the way it was afterwards: `adb shell am set-standby-bucket $AP
    adb shell pidof $PKG
    ```
 
-3. Close the app from Recents (swipe it away). Wait 30 seconds, then:
+3. Close the app from Recents (swipe it away). **Immediately after the swipe** and before anything else touches the app, optionally reset the battery
+   statistics, so that everything recorded afterwards happened after closing (they add up since the last charge, so without a reset the ten seconds of
+   Task Manager activity from step 1 stay in the numbers). This clears the phone's battery history; it builds up again as you use the phone. Skip the
+   reset if you do not want that, and write SKIP for the last item below.
 
    ```sh
-   adb shell pidof $PKG                                                  # prints nothing, or a cached process that does no work
-   adb shell dumpsys activity services $PKG | head -20                    # no running service from this app
-   adb shell "top -b -n 1 -m 15 2>/dev/null | grep -i bingblop"           # no CPU use
+   adb shell dumpsys batterystats --reset
+   ```
+
+   Now wait 30 seconds and check the process:
+
+   ```sh
+   adb shell pidof $PKG                                         # prints nothing, or a cached process that does no work
+   adb shell dumpsys activity services $PKG | head -20          # no running service from this app
+   adb shell "top -b -n 1 | grep -i bloatware"                  # no line with real CPU use (the whole list is searched, not only the busiest tasks)
    ```
 
    **PASS** if no activity of the app is running (a cached/empty process with 0% CPU is fine).
 
-4. Battery statistics add up since the last charge, so the ten seconds of Task Manager activity from step 1 would be in any dump taken later and could
-   not be told apart from activity after closing. To look for wakeups **after** closing, reset the statistics *after* the swipe, leave the app closed
-   for a while, and only then dump:
+4. Only if you reset in step 3: leave the app closed and the phone idle for 10 minutes (do not open the app), then dump:
 
    ```sh
-   # right after step 3's swipe, before anything else touches the app:
-   adb shell dumpsys batterystats --reset            # clears the phone's battery history; it builds up again as you use the phone
-   # keep the app closed and the phone idle for 10 minutes (do not open the app), then:
    adb shell dumpsys batterystats $PKG > after-close.txt
    ```
 
-   Read the whole file for this app's entry (do not cut it with `head`). Because the statistics started after the app was closed, any wakelock, job or alarm
-   listed for it happened after closing. **PASS** if there are none; a few seconds of "cached" process time with no wakelocks, jobs or alarms is fine.
-   If you do not want to reset the statistics, write SKIP for this item; the process checks in step 3 still count.
+   Read the whole file for this app's entry (do not cut it with `head`). Because the statistics started after the app was closed, any wakelock, job or
+   alarm listed for it happened after closing. **PASS** if there are none; a few seconds of "cached" process time with no wakelocks, jobs or alarms is fine.
 
 ## 13. Command output in the log (checklist: Command output in the log)
 
