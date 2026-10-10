@@ -4464,7 +4464,13 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Проверка VirusTotal<1>Проверяет файл по хешу после загрузки</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Слова в имени: <1>фото</1> (должны совпасть все; <2/> и <3/> — подстановочные знаки; <4>-слово</4> исключает имя; \"два слова\" в кавычках).<br> <5>ext:jpg,png</5> или <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:слово</14> ищет внутри текстовых файлов (до 4 МБ). <15>archive:имя</15> ищет по именам записей внутри архивов zip, apk, jar и подобных.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Напишите сообщение и нажмите <1>Отправить</1>: откроется ваше почтовое приложение с готовым письмом на контактный псевдоним (<2/>), который пересылает его разработчику. Тема — <3>ADB App Manager</3>. Собственного адреса разработчика в этом приложении нет, а письмо отправляется вашим почтовым приложением, а не этим.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Выберите, насколько Android ограничивает приложение, пока оно не используется. active — без ограничений, restricted — максимальные.",
+"Could not change the standby bucket": "Не удалось изменить корзину ожидания",
+"No answer from the app": "Приложение не ответило",
+"Standby": "Ожидание",
+"Standby bucket": "Корзина ожидания",
+"Standby bucket changed": "Корзина ожидания изменена"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5510,6 +5516,7 @@ p: [
 ["✓ fits this phone ({0})", "✓ подходит этому телефону ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} подписана тем же ключом, что и это приложение, поэтому обновление пройдёт поверх"],
 ["✓ {0}: done", "✓ {0}: готово"],
-["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"]
+["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
 ]
 };

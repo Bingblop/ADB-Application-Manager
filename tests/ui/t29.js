@@ -26,6 +26,8 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
       },
       executeAppAction(a, p) { window.__calls.push('action:' + a + ':' + p); return 'Success'; },
       setComponentEnabled(pkg, comp, enable) { window.__calls.push('toggle:' + comp + ':' + enable); return JSON.stringify({ ok: true, output: 'Component ' + comp + ' new state: ' + (enable ? 'enabled' : 'disabled') }); },
+      getStandbyBucket(pkg) { window.__calls.push('sbget:' + pkg); return JSON.stringify({ ok: true, bucket: window.__sb || 'rare', output: window.__sb || 'rare' }); },
+      setStandbyBucket(pkg, b) { window.__calls.push('sbset:' + pkg + ':' + b); if (window.__sbFail) return JSON.stringify({ ok: false, bucket: 'rare', output: 'The phone did not change it: it is in rare.' }); window.__sb = b; return JSON.stringify({ ok: true, bucket: b, output: b }); },
       optimizeApp(pkg, mode, force) { window.__calls.push('opt:' + pkg + ':' + mode + ':' + force); return JSON.stringify({ ok: true, output: 'Success' }); },
     };
   });
@@ -99,6 +101,25 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   await sleep(150);
   console.log('a failed single optimize still shows the result modal:', (await toastText()) === 'Failed' && await resultsShown());
   await page.evaluate(() => closeCommandResultsModal());
+
+  // ---- App standby bucket: the sheet shows what the phone says, Apply sets and reads back ----
+  await page.evaluate(() => { window.__calls.length = 0; openStandbyModal(); });
+  console.log('standby sheet shown:', await page.isVisible('#standbyModal.show'));
+  console.log('it asked the phone and shows its answer (rare):', await page.evaluate(() => JSON.stringify(window.__calls) + ' ' + document.getElementById('standbyBucket').value));
+  console.log('the title line names the app and package:', await page.evaluate(() => /com\.x/.test(document.getElementById('standbySubtitle').innerText)));
+  await page.evaluate(() => { document.getElementById('standbyBucket').value = 'restricted'; window.__calls.length = 0; confirmStandby(); });
+  console.log('apply sets the chosen bucket and closes the sheet:', await page.evaluate(() => JSON.stringify(window.__calls)), !(await page.isVisible('#standbyModal.show')));
+  console.log('success is a toast only:', (await toastText()) === 'Standby bucket changed' && !(await resultsShown()));
+  await page.evaluate(() => { openStandbyModal(); });
+  console.log('opened again it shows the bucket the phone is in now (restricted):', await page.evaluate(() => document.getElementById('standbyBucket').value));
+  await page.evaluate(() => { window.__sb = 'exempted'; openStandbyModal(); });
+  console.log('a bucket the list cannot set (exempted) is shown, and cannot be picked:', await page.evaluate(() => { const o = document.querySelector('#standbyBucket option[data-extra]'); return document.getElementById('standbyBucket').value + ' ' + (o ? o.disabled : 'no option'); }));
+  await page.evaluate(() => { window.__sb = 'rare'; openStandbyModal(); });
+  console.log('the extra option is gone the next time:', await page.evaluate(() => document.querySelectorAll('#standbyBucket option[data-extra]').length + ' ' + document.querySelectorAll('#standbyBucket option').length));
+  await page.evaluate(() => { window.__sbFail = true; document.getElementById('standbyBucket').value = 'active'; confirmStandby(); });
+  await sleep(100);
+  console.log('a refusal by the phone gives a toast and the result window with its words:', (await toastText()) === 'Could not change the standby bucket' && await resultsShown());
+  await page.evaluate(() => { window.__sbFail = false; closeCommandResultsModal(); });
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();
