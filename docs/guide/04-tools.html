@@ -377,10 +377,11 @@
     <tbody>
       <tr><td><b>APKMirror</b> (default)</td><td>Searched and downloaded from inside the app. APKMirror checks the signature of every upload.</td></tr>
       <tr><td><b>Uptodown</b>, <b>Aptoide</b></td><td>Searched and downloaded from inside the app.</td></tr>
-      <tr><td><b>F-Droid</b>, <b>IzzyOnDroid</b>, <b>Google Play</b></td><td>These are sites, not downloads: the button <b>Open the page</b> opens the app's page in your browser (Google Play opens the Play Store). Nothing is downloaded by this app.</td></tr>
+      <tr><td><b>F-Droid</b> (open source), <b>IzzyOnDroid</b> (open source)</td><td>Searched and downloaded from inside the app too; <b>Download</b> and <b>Versions</b> work. The list of versions comes from the site's public package information, and the file is the repository's <code>package_versionCode.apk</code>. <b>F-Droid</b> builds the apps itself and signs them with its own key, so you get F-Droid's build, not the developer's own. <b>IzzyOnDroid</b> serves the developer's own release builds. Neither site publishes a checksum in that information, so the check is the one in the note below, and Android checks the signature when the app is installed.</td></tr>
+      <tr><td><b>Google Play</b></td><td>The Play Store gives no download to other apps. The button <b>Open the page</b> opens the app's page in the Play Store; nothing is downloaded by this app.</td></tr>
     </tbody>
   </table>
-  <p>These sources were chosen because they serve the original file, signed by the developer, never a modified one. Sites that mix modified apps in with the real ones are not offered.</p>
+  <p>These sources were chosen because they serve the real app and never a modified one: the developer's own signed file (APKMirror, Uptodown, Aptoide and IzzyOnDroid) or, for F-Droid, an open-source build that F-Droid makes and signs itself. Sites that mix modified apps in with the real ones are not offered.</p>
 
   <h5>The check boxes</h5>
   <table class="hg-table">
@@ -409,7 +410,7 @@
   <h5>After a download</h5>
   <p>These steps run in this order: the VirusTotal scan (if on), the copy to the folder you chose (if any), then the install (if on). If Android refuses the install because the installed copy was signed with a different key, the app offers to uninstall the installed copy first. Say yes only if you accept that its data is deleted.</p>
   <p>If the site asks for a browser check before it lets a file go, the message says so and offers <b>Open it here, in the app</b> and <b>Open on the web</b>. The first opens the app's own browser: the file you download there is saved and then handled the same way as any other download.</p>
-  <div class="hg-note"><b>Same safety as Morphe Helper.</b> Before a file is accepted, the app checks that it is a real Android package, that it is for the package name you asked for, and that its version matches the request. A file that fails a check is refused and nothing is installed.</div>
+  <div class="hg-note"><b>Same safety as Morphe Helper.</b> Before a file is accepted, the app checks that it is a real Android package, that it is for the package name you asked for, and that its version matches the request. This is the only check for F-Droid and IzzyOnDroid, because their sites publish no checksum for the file. A file that fails a check is refused and nothing is installed.</div>
 
   <h4>Where updates come from</h4>
   <table class="hg-table">
@@ -483,7 +484,7 @@
     </tbody>
   </table>
 
-  <div class="hg-note"><b>Privacy.</b> Checking contacts these sites: Samsung's update service (it receives your phone model, your SIM's network codes, your region code and Android version, with the package name and version of each Samsung app), api.github.com and github.com, codeberg.org, f-droid.org, apt.izzysoft.de and raw.githubusercontent.com (for the Obtainium catalog). The lookups name the apps being checked (their package names, or their GitHub project). Installing an update also downloads the file from the address the release gives. <b>Find and download an app</b> contacts Aptoide's public search (only when you type a name, to turn it into a package name), the source you pick (APKMirror, Uptodown or Aptoide), VirusTotal if you switch its scan on, and the Default Ask Agent if you tick that box. Nothing else leaves the phone. See <a href="#privacy">Privacy</a>.</div>
+  <div class="hg-note"><b>Privacy.</b> Checking contacts these sites: Samsung's update service (it receives your phone model, your SIM's network codes, your region code and Android version, with the package name and version of each Samsung app), api.github.com and github.com, codeberg.org, f-droid.org, apt.izzysoft.de and raw.githubusercontent.com (for the Obtainium catalog). The lookups name the apps being checked (their package names, or their GitHub project). Installing an update also downloads the file from the address the release gives. <b>Find and download an app</b> contacts Aptoide's public search (only when you type a name, to turn it into a package name), the source you pick (APKMirror, Uptodown, Aptoide, F-Droid or IzzyOnDroid), VirusTotal if you switch its scan on, and the Default Ask Agent if you tick that box. Nothing else leaves the phone. See <a href="#privacy">Privacy</a>.</div>
   <div class="hg-warn"><b>Careful.</b> An update replaces the working version. If an app matters to you, back it up first (<a href="#apps-backup">Backups</a>). Every update, done or failed, is also written to the History (the button on the UAD-NG Debloater tab).</div>
 </section>
 
