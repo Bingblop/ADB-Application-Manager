@@ -59,6 +59,7 @@ const SUITES = [
   { name: 'shellargs', title: 'What the page may pass into a shell command through the bridge: install options (an allow-list), app op names and values; package and permission names', tests: ['ShellArgsTest'], main: 'com.bloatware.bingblop.ShellArgsTest', utf8: true },
   { name: 'standbybuckets', title: 'App standby buckets: the buckets a person may set, the am commands, and reading what the phone printed (a number or a name)', tests: ['StandbyBucketsTest'], main: 'com.bloatware.bingblop.StandbyBucketsTest', utf8: true },
   { name: 'assistantrestore', title: 'The saved assistant settings for the launch-through-assistant method: only plain component names are written back, and the record round-trips', tests: ['AssistantRestoreTest'], main: 'com.bloatware.bingblop.AssistantRestoreTest' },
+  { name: 'sdmshellkill', title: 'A hung process is killed: SdmShell with a real sh ends a silent hang, a cancel and a held pipe within a bounded time, kills the shell and stops calling the sink (needs sh, sleep and kill)', tests: ['SdmShellKillTest'], main: 'com.bloatware.bingblop.SdmShellKillTest', needs: ['json', 'posixtools'] },
   { name: 'shelloutcome', title: 'The verdict of a privileged command run with an exit-status marker: the status when the marker is there; an Error: line or a timeout note without it is a failure, not an "ok"', tests: ['ShellOutcomeTest'], main: 'com.bloatware.bingblop.ShellOutcomeTest' },
   { name: 'adbserverspec', title: 'Where the bundled adb server listens: a private unix socket in the app\'s folder (closed to other apps), the old loopback port only as the fallback', tests: ['AdbServerSpecTest'], main: 'com.bloatware.bingblop.AdbServerSpecTest' },
   { name: 'sdmstatframe', title: 'SD Maid stat records carry the scan\'s own random tag, so a file name with a newline cannot forge the record of another file', tests: ['SdmStatFrameTest'], main: 'com.bloatware.bingblop.SdmStatFrameTest', needs: ['json'] },
@@ -181,6 +182,7 @@ const NEEDS = {
     return err ? { skip: err } : { props: { keys: dir } };
   },
   bash: () => (which('bash') ? {} : { skip: 'needs bash' }),
+  posixtools: () => { const miss = ['sh', 'sleep', 'kill'].filter(c => !which(c)); return miss.length ? { skip: 'needs ' + miss.join(', ') + ' on PATH' } : {}; },
   // The Morphe engine built on this computer (engine/build-engine.sh leaves engine/build/engine-libs) and the official patch bundle (downloaded once into tests/.cache)
   engine: () => {
     const libs = path.join(REPO, 'engine', 'build', 'engine-libs');
