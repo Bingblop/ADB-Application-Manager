@@ -89,7 +89,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('2. there is a "Saved devices" line once a device has been connected, closed at first', await ev(() => { const t = document.getElementById('cdSavedToggle'); return !!t && /Saved devices \(\d\)/.test(t.innerText) && t.getAttribute('aria-expanded') === 'false' && !document.querySelector('#cdSaved .cd-saved'); }));
   await page.click('#cdSavedToggle'); await sleep(100);
   const rows = await ev(() => [...document.querySelectorAll('#cdSaved .cd-saved')].map(r => r.innerText.replace(/\s+/g, ' ').trim()));
-  check('   opened, it lists the devices that are up now and are saved, each with Delete', rows.length === 2 && rows.every(r => /Delete/.test(r)) && rows.some(r => /SM[ _-]R930/.test(r) && /connected now/.test(r)), JSON.stringify(rows));
+  check('   opened, it lists the devices that are up now and are saved, each with Delete', rows.length === 2 && rows.every(r => /Delete/.test(r)) && rows.some(r => /SM[ _-]R930/.test(r) && /connected now/.test(r)), JSON.stringify(rows.slice().sort()));      // the order of the two rows follows how fast the two devices answered: the check does not depend on it, so neither does the printed line
   check('   a device that is connected has no Connect button', await ev(() => [...document.querySelectorAll('#cdSaved .cd-saved')].every(r => r.classList.contains('up') ? !/Connect/.test(r.innerText.replace(/Connected now/i, '')) : true)));
   // one drops: stays saved, offers Connect
   await ev(() => { delete window.__st.up['192.168.1.30:5555']; }); await ev(() => cdRefreshDevices(false)); await sleep(300);

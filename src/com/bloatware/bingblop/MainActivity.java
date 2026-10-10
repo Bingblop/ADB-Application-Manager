@@ -617,6 +617,21 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
+    private interface Live { boolean now(); }
+
+    /** Like {@link #notifyJs}, but the script is dropped if {@code live} no longer holds on the UI thread (a restart may have happened while it waited). */
+    private void notifyJsIf(final String script, final Live live) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null && live.now()) {
+                    webView.evaluateJavascript(script, null);
+                }
+            }
+        });
+    }
+
     private void notifyJs(final String script) {
         runOnUiThread(new Runnable() {
             @Override
@@ -1557,7 +1572,7 @@ public class MainActivity extends Activity {
     }
 
     // ---- The real terminal (a pseudo-terminal through libptyexec.so, see PtyShell): the full-screen Terminal's sessions ----
-    private final Map<String, PtyShell> ptySessions = new java.util.concurrent.ConcurrentHashMap<String, PtyShell>();
+    private final SessionMap<PtyShell> ptySessions = new SessionMap<PtyShell>();
 
     private File ptyHelper() {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
@@ -1613,9 +1628,17 @@ public class MainActivity extends Activity {
         return rishSpawn(new String[]{"sh", "-c", script});
     }
 
+    /** A terminal session ended: drop it (unless the id already belongs to a newer one) and tell the page when it still waits for this end. */
+    private void ptyEnded(final String key, PtyShell sh, int code, final long token) {
+        final long gen = ptySessions.endedAt(key, sh);
+        if (gen >= 0) {
+            // told on the UI thread only while no newer session has been stored under the id since this decision
+            notifyJsIf("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + "," + token + ")", new Live() { public boolean now() { return ptySessions.generation(key) == gen; } });
+        }
+    }
+
     private void closePtySessions() {
-        for (PtyShell p : ptySessions.values()) p.close();
-        ptySessions.clear();
+        for (PtyShell p : ptySessions.drain()) p.close();
     }
 
     private void closeTermSessions() {
@@ -3188,6 +3211,16 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
 
     /**
+     * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
+     * VirusTotal or another app. Its patched APKs, Helper downloads and the cache folders for picked or downloaded files are allowed (see PrivatePaths.exportable).
+     */
+    private boolean isPrivateData(File f) {
+        return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {
+                    @Override public long count(File x) throws Exception { return android.system.Os.stat(x.getPath()).st_nlink; }
+                }, PrivatePaths.exportable(getFilesDir(), getCacheDir()));
+    }
+
+    /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
      * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
      */
@@ -3200,6 +3233,7 @@ public class MainActivity extends Activity {
                     if (path == null || path.isEmpty()) throw new IllegalStateException("Load a package first.");
                     File f = new File(path);
                     if (!f.exists()) throw new IllegalStateException("The selected package is no longer available. Pick it again.");
+                    if (isPrivateData(f)) throw new IllegalStateException("That file is part of this app's own private data and is not sent anywhere.");
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
                             .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
@@ -8148,8 +8182,9 @@ public class MainActivity extends Activity {
 
         /**
          * The full-screen terminal: a real pseudo-terminal (vim, nano, top, htop, ssh ...). {@code backend}: "app", "priv" or "termux".
-         * Answers "started" or "error: ..."; then window.onPtyStarted(id, json{ok, message}), the output as window.onPtyData(id, base64) (the page tells
-         * what it has shown with ptyAck, so a runaway program cannot flood it) and the end as window.onPtyExit(id, code).
+         * Answers "started:N" (N is the number of this start) or "error: ..."; then window.onPtyStarted(id, json{ok, message}, N), the output as
+         * window.onPtyData(id, base64, N) (the page tells what it has shown with ptyAck, so a runaway program cannot flood it) and the end as
+         * window.onPtyExit(id, code, N). The page drops a notice whose N is not the start it is running: one queued before a restart can run after it.
          */
         @JavascriptInterface
         public String ptyStart(final String id, final String backend, final int rows, final int cols) {
@@ -8157,36 +8192,91 @@ public class MainActivity extends Activity {
             final String key = id;
             PtyShell old = ptySessions.remove(key);
             if (old != null) old.close();
+            final long ticket = ptySessions.ticket(key);     // taken now, in the order the page asked: a slower older start cannot replace a newer one
             executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
+                    PtyShell started = null;
+                    Integer early = null;
+                    boolean published = false;
                     try {
                         Process proc = ptyProcess(backend, rows, cols);
+                        // The end of this session can be reported before the constructor returns, or after the page has started a new one under the same id.
+                        // Its output waits in "held" until the session is accepted (a refused one, stale, must not write into the newer terminal), then
+                        // goes out in order under the same lock as the "started" event; state: 0 not decided, 1 accepted, 2 refused.
+                        final PtyShell[] me = new PtyShell[1];
+                        final Integer[] earlyExit = new Integer[1];
+                        final int[] state = { 0 };
+                        final long[] myGen = { -1 };       // the generation of the id this session was stored under
+                        final java.util.List<String> held = new java.util.ArrayList<String>();
+                        final int[] heldChars = { 0 };
                         PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
                             @Override
                             public void onData(byte[] data, int n) {
-                                notifyJs("window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")");
+                                String js = "window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\"," + ticket + ")";
+                                synchronized (me) {
+                                    // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
+                                    // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
+                                    if (state[0] == 1) {
+                                        // accepted: its output goes to the page unless a newer start or a close of the id came in since (checked again on the
+                                        // UI thread). A session that ended on its own keeps its last output, queued before its end.
+                                        final long g = myGen[0];
+                                        if (ptySessions.generation(key) == g) notifyJsIf(js, new Live() { public boolean now() { return ptySessions.generation(key) == g; } });
+                                        return;
+                                    }
+                                    if (state[0] == 0 && heldChars[0] < (1 << 20)) { held.add(js); heldChars[0] += js.length(); }
+                                }
                             }
 
                             @Override
                             public void onExit(int code) {
-                                ptySessions.remove(key);
-                                notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+                                synchronized (me) {
+                                    if (me[0] == null) { earlyExit[0] = code; return; }
+                                }
+                                ptyEnded(key, me[0], code, ticket);
                             }
                         });
-                        ptySessions.put(key, sh);
-                        res.put("ok", true);
+                        started = sh;
+                        java.util.List<PtyShell> replaced = new java.util.ArrayList<PtyShell>();
+                        synchronized (me) {
+                            // Stored before it is published, so a listener that sees me[0] also finds it in the map; and the page is told it started under
+                            // the same lock, so an exit that follows is always queued after the start (and after the output held so far).
+                            final long gen = ptySessions.publishGen(key, ticket, sh, replaced);
+                            published = gen >= 0;
+                            state[0] = published ? 1 : 2;
+                            if (published) {
+                                myGen[0] = gen;
+                                me[0] = sh;
+                                early = earlyExit[0];
+                                res.put("ok", true);
+                                Live live = new Live() { public boolean now() { return ptySessions.generation(key) == gen; } };
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", live);
+                                for (String js : held) notifyJsIf(js, live);
+                            }
+                            held.clear();
+                        }
+                        for (PtyShell r : replaced) r.close();
+                        if (!published) sh.close();          // a newer start, a close, or the shutdown came first: nobody waits for this one
+                        // a session that was already over when it was stored: its end is told after the start
+                        if (published && early != null) ptyEnded(key, sh, early, ticket);
                     } catch (Throwable t) {
-                        try {
-                            res.put("ok", false);
-                            res.put("message", errMsg(t));
-                        } catch (Exception ignored) {}
+                        if (!published) {
+                            if (started != null) started.close();
+                            // only the start the page still waits for may tell it that starting failed
+                            if (ptySessions.isCurrent(key, ticket)) {
+                                try {
+                                    res.put("ok", false);
+                                    res.put("message", errMsg(t));
+                                } catch (Exception ignored) {}
+                                // still only if no newer start was requested by the time this runs on the UI thread
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", new Live() { public boolean now() { return ptySessions.isCurrent(key, ticket); } });
+                            }
+                        }
                     }
-                    notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
                 }
             });
-            return "started";
+            return "started:" + ticket;      // the page tags what it receives from this start with the number, and drops what carries another
         }
 
         /** Keys for the terminal: base64 of the UTF-8 bytes (escape sequences included). */
@@ -10232,7 +10322,7 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < a.length(); i++) {
                     JSONObject o = a.getJSONObject(i);
                     File src = new File(o.getString("path"));
-                    if (!src.isFile()) continue;
+                    if (!src.isFile() || isPrivateData(src)) continue;
                     File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try { copyFile(src, out); } finally { out.close(); }
@@ -10436,9 +10526,13 @@ public class MainActivity extends Activity {
         public String deleteBackup(String ref) {
             try {
                 boolean ok;
-                if (ref != null && ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
-                else ok = ref != null && new File(ref).delete();
                 JSONArray index = backupIndex();
+                // only a backup this app listed can be deleted from here, not any file the app can reach
+                java.util.List<String> listedRefs = new java.util.ArrayList<String>();
+                for (int i = 0; i < index.length(); i++) listedRefs.add(index.getJSONObject(i).optString("ref"));
+                if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
+                if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
+                else ok = new File(ref).delete();
                 JSONArray keep = new JSONArray();
                 for (int i = 0; i < index.length(); i++) {
                     if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
@@ -12746,6 +12840,7 @@ public class MainActivity extends Activity {
                     try {
                         File src = new File(fmCanonicalPath(path));
                         if (!src.isFile() || !src.canRead()) throw new IOException("The app cannot read this file. Grant All-files access for storage.");
+                        if (isPrivateData(src)) throw new IOException("This file is part of this app's own private data and is not handed to other apps.");
                         if (src.length() > 400L * 1024 * 1024) throw new IOException("This file is too big to hand over from here (over 400 MB).");
                         File copy = ShareProvider.newShareFile(MainActivity.this, src.getName());
                         java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
@@ -14809,6 +14904,7 @@ public class MainActivity extends Activity {
                     uri = Uri.parse(ref);
                 } else {
                     File src = new File(ref);
+                    if (isPrivateData(src)) return "Error: that file is part of this app's own private data and is not shared.";
                     File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try {
