@@ -7,7 +7,7 @@ This file is for anything that changes this repository: Claude, Copilot, Gemini,
 
 A single-activity Android app: the UI is a WebView page (`assets/index.html`, strings in `assets/lang/*.js`, 13 languages), the work is
 done in Java (`src/com/bloatware/bingblop/`). There is no Gradle project for the main app; `./build.sh` compiles, dexes, packages and signs it.
-`morphe-engine/` is a separate Gradle project for the Morphe patcher. The app is **one product with one UI**. Do not replace the WebView page
+`engine/` is a separate Gradle project (`engine/build-engine.sh`) that builds the Morphe patcher engine. The app is **one product with one UI**. Do not replace the WebView page
 with another UI stack in a pull request; add features to it (see "Pull requests" below).
 
 ## Build and test
