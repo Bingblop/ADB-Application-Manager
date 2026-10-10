@@ -20,12 +20,21 @@ public class PrivatePathsTest {
     File m1 = touch(new File(morphe, "patched.apk"));
     File outside = touch(new File(root, "sdcard/Download/app.apk"));
     File sibling = touch(new File(root, "data/com.example.app2/shared_prefs/x.xml"));
-    File[] ok = { cache, logs, morphe };
+    File[] ok = { logs, morphe, new File(cache, "updates"), new File(cache, "share") };
+    File c2 = touch(new File(cache, "updates/app.apk"));
+    File backup = touch(new File(cache, "backup_data_123.tar"));
+    File restore = touch(new File(cache, "restore_123/data.tar"));
+    File rootSh = touch(new File(cache, "root_1.sh"));
 
     is("shared_prefs is protected", PrivatePaths.blocked(prefs, data, ok));
     is("the adb key is protected", PrivatePaths.blocked(key, data, ok));
     is("the data folder itself is protected", PrivatePaths.blocked(data, data, ok));
-    is("the cache is not", !PrivatePaths.blocked(c1, data, ok));
+    is("an exportable cache folder is not (share)", !PrivatePaths.blocked(c1, data, ok));
+    is("an exportable cache folder is not (updates)", !PrivatePaths.blocked(c2, data, ok));
+    is("a full-data backup tar in the cache is protected", PrivatePaths.blocked(backup, data, ok));
+    is("a restore work folder in the cache is protected", PrivatePaths.blocked(restore, data, ok));
+    is("a root script in the cache is protected", PrivatePaths.blocked(rootSh, data, ok));
+    is("a look-alike cache folder (updates2) is protected", PrivatePaths.blocked(touch(new File(cache, "updates2/x.apk")), data, ok));
     is("logs are not", !PrivatePaths.blocked(l1, data, ok));
     is("patched APKs are not", !PrivatePaths.blocked(m1, data, ok));
     is("a file outside the data folder is not", !PrivatePaths.blocked(outside, data, ok));

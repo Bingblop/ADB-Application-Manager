@@ -3193,10 +3193,16 @@ public class MainActivity extends Activity {
      */
     /**
      * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
-     * VirusTotal or another app. Its cache, logs and patched APKs are allowed.
+     * VirusTotal or another app. Its logs, patched APKs and the cache folders for picked or downloaded files are allowed.
      */
     private boolean isPrivateData(File f) {
-        return PrivatePaths.blocked(f, getDataDir(), getCacheDir(), new File(getFilesDir(), "logs"), new File(getFilesDir(), "morphe"));
+        File cache = getCacheDir();
+        return PrivatePaths.blocked(f, getDataDir(),
+                new File(getFilesDir(), "logs"), new File(getFilesDir(), "morphe"),
+                // Only the cache folders that hold files the user picked or downloaded. The rest of the cache (backup_data_*.tar, restore_*,
+                // root_*.sh, archive_*.tmp) is the app's own working data and stays protected.
+                new File(cache, "updates"), new File(cache, "installer"), new File(cache, "store"), new File(cache, "saf_stage"),
+                new File(cache, "cd_pick"), new File(cache, "morphe_pick"), new File(cache, "share"));
     }
 
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
