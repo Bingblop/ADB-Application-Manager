@@ -131,6 +131,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     vtKeyCache = null; kvSet('vt_key', '');
   });
   check('   the older key is cleared after it is taken over', await ev(() => vtKey() === 'OLDKEY' && window.__st.vt_api_key === ''));
+  // the usual upgrade state: the old page wrote both places on every edit, so vt_key wins and the older copy is cleared too
+  await ev(() => { window.__st.vt_key = JSON.stringify('NEWKEY'); window.__st.vt_api_key = 'OLDKEY'; vtKeyCache = null; });
+  check('   with both places filled the key in vt_key wins and the older copy is cleared', await ev(() => vtKey() === 'NEWKEY' && window.__st.vt_api_key === ''));
   await ev(() => { vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
   check('   Helper\'s own key is moved to the one key and the plain config is emptied', await ev(() => vtKey() === 'HKEY' && mp.cfg.hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hDefault === 'apkmirror'));
   await ev(() => { window.__st.morphe_cfg = JSON.stringify({ hVtKey: 'OTHERKEY' }); window.AndroidBridge.saveSetting = (k, v) => { if (k === 'vt_key' && v !== '""') return false; window.__st[k] = v; return true; }; vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });

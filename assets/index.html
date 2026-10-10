@@ -16369,12 +16369,13 @@ Type any command below (e.g. pm list packages -d)
         let vtKeyCache = null;
         function vtKey() {
             if (vtKeyCache === null) {
-                let k = '', older = false;
+                let k = '', legacy = '';
                 try { k = String(kvGet('vt_key', '') || ''); } catch (e) {}
-                // keys entered before there was one place for them: the Installer's own box, then Morphe Helper's
-                if (!k && window.AndroidBridge && window.AndroidBridge.loadSetting) { try { k = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); older = !!k; } catch (e) {} }
-                vtKeyCache = k.trim();
-                if (vtKeyCache && older && kvSet('vt_key', vtKeyCache) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }     // moved: no second copy
+                // the older place (the Installer's own box, which until v7.12.8 was written beside vt_key on every edit)
+                if (window.AndroidBridge && window.AndroidBridge.loadSetting) { try { legacy = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
+                vtKeyCache = (k || legacy).trim();
+                // vt_key wins; the older copy is only a fallback, and goes away once the one key is kept (an older key is moved first)
+                if (legacy && vtKeyCache && (k || kvSet('vt_key', vtKeyCache)) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }
             }
             return vtKeyCache;
         }
