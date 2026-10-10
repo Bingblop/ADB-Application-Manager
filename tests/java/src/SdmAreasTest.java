@@ -396,6 +396,37 @@ public class SdmAreasTest {
             fsh.walk(R.getPath() + "/nope", new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { cnt[0]++; return true; } }, null);
             eq("walk of a missing root is empty", cnt[0], 0);
 
+            // a file name with a newline cannot forge the stat record of another file
+            String fr = R.getPath() + "/frame";
+            mk(R, "frame/ok.txt", "ok");
+            Files.write(new File(R, "frame/victim.txt").toPath(), "vv".getBytes("UTF-8"));
+            String forgedName = "x\n81a4 999 1 10000 " + fr + "/victim.txt";
+            mk(R, "frame/" + forgedName, "z");
+            final Map<String, Sdm.Entry> fm = new LinkedHashMap<String, Sdm.Entry>();
+            fsh.walk(fr, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm.put(e.path, e); return true; } }, null);
+            is("walk: the real files are listed with their real sizes", fm.containsKey(fr + "/ok.txt") && fm.get(fr + "/ok.txt").size == 2 && fm.containsKey(fr + "/victim.txt") && fm.get(fr + "/victim.txt").size == 2, true);
+            is("walk: nothing is listed with the forged size or under the forged name", fm.size() == 2, true);
+            Map<String, Sdm.Entry> frA = fsh.statAll(Arrays.asList(fr + "/victim.txt", fr + "/" + forgedName), null);
+            is("statAll: the victim keeps its real size, the file with the odd name gives nothing", frA.size() == 1 && frA.get(fr + "/victim.txt").size == 2, true);
+            is("stat: the file with the odd name gives nothing", fsh.stat(fr + "/" + forgedName) == null, true);
+
+            // ... and neither can a name that holds the shared end marker (it used to end the output early and leave "victim2" believed)
+            String fr2 = R.getPath() + "/frame2";
+            Files.createDirectories(new File(R, "frame2").toPath());
+            Files.write(new File(R, "frame2/victim2").toPath(), "vv".getBytes("UTF-8"));
+            String endName = "victim2\n__SDM_END__";
+            Files.write(new File(R, "frame2/" + endName).toPath(), "zzzzzz".getBytes("UTF-8"));
+            Files.write(new File(R, "frame2/zlast.txt").toPath(), "l".getBytes("UTF-8"));
+            final Map<String, Sdm.Entry> fm2 = new LinkedHashMap<String, Sdm.Entry>();
+            boolean cutWalk = false;
+            try { fsh.walk(fr2, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm2.put(e.path, e); return true; } }, null); } catch (IOException ex) { cutWalk = true; }
+            is("walk: a name holding the end marker does not end the walk", !cutWalk, true);
+            is("walk: 'victim2' keeps its real size, the odd name is not believed, and the files after it are still listed",
+                fm2.containsKey(fr2 + "/victim2") && fm2.get(fr2 + "/victim2").size == 2 && fm2.containsKey(fr2 + "/zlast.txt") && fm2.size() == 2, true);
+            Map<String, Sdm.Entry> frB = fsh.statAll(Arrays.asList(fr2 + "/victim2", fr2 + "/" + endName), null);
+            is("statAll: same, the real file's size is kept", frB.size() == 1 && frB.get(fr2 + "/victim2").size == 2, true);
+            is("stat: the file with the end marker in its name gives nothing", fsh.stat(fr2 + "/" + endName) == null, true);
+
             eq("sha256", fsh.sha256(tr + "/bin.dat", null), sha(bin));
             eq("sha256 of a small file", fsh.sha256(tr + "/a.txt", null), sha("hello".getBytes("UTF-8")));
             threw = false;
@@ -419,6 +450,46 @@ public class SdmAreasTest {
             threw = false;
             try { new SdmFsShell(cut).list("/x"); } catch (IOException e) { threw = true; }
             is("list without the end marker throws", threw, true);
+
+            // a name that ends in a carriage return cannot pass for the name without it
+            String fr3 = R.getPath() + "/frame3";
+            Files.createDirectories(new File(R, "frame3").toPath());
+            Files.write(new File(R, "frame3/victim3.txt").toPath(), "vv".getBytes("UTF-8"));
+            Files.write(new File(R, "frame3/victim3.txt\r").toPath(), "zzzzzz".getBytes("UTF-8"));
+            final Map<String, Sdm.Entry> fm3 = new LinkedHashMap<String, Sdm.Entry>();
+            fsh.walk(fr3, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm3.put(e.path, e); return true; } }, null);
+            is("walk: the file whose name ends in CR is not listed as the file without it", fm3.size() == 1 && fm3.get(fr3 + "/victim3.txt") != null && fm3.get(fr3 + "/victim3.txt").size == 2, true);
+            Map<String, Sdm.Entry> frC = fsh.statAll(Arrays.asList(fr3 + "/victim3.txt", fr3 + "/victim3.txt\r"), null);
+            is("statAll: same", frC.size() == 1 && frC.get(fr3 + "/victim3.txt").size == 2, true);
+
+            // a cancelled statAll does not believe its last record (it may be the first line of a longer name)
+            final boolean[] cancelNow = { false };
+            Sdm.Shell cutCancel = new Sdm.Shell() {
+                @Override public int uid() { return 2000; }
+                @Override public String run(String s, int t) { return ""; }
+                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
+                    if (!m.find()) return;
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt " + m.group(1));
+                    k.line(m.group(1) + " 81a4 7 1700000000 10000 /sdcard/victim");      // the first line of the name "victim\n..." (its rest never came)
+                    cancelNow[0] = true;
+                }
+            };
+            Map<String, Sdm.Entry> cs = new SdmFsShell(cutCancel).statAll(Arrays.asList("/sdcard/a.txt", "/sdcard/victim"), new Sdm.Cancel() { @Override public boolean cancelled() { return cancelNow[0]; } });
+            is("statAll cancelled after a record's first line gives the complete record and not the cut one", cs.size() == 1 && cs.containsKey("/sdcard/a.txt"), true);
+            cancelNow[0] = false;
+            Sdm.Shell whole = new Sdm.Shell() {
+                @Override public int uid() { return 2000; }
+                @Override public String run(String s, int t) { return ""; }
+                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
+                    java.util.regex.Matcher e = java.util.regex.Pattern.compile("echo (__SDM_END_[0-9a-f]+__)").matcher(s);
+                    if (!m.find() || !e.find()) return;
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt " + m.group(1));
+                    k.line(e.group(1));
+                }
+            };
+            eq("statAll that was not cancelled keeps its last record", new SdmFsShell(whole).statAll(Arrays.asList("/sdcard/a.txt"), new Sdm.Cancel() { @Override public boolean cancelled() { return false; } }).size(), 1);
 
             // cancel in the middle of a big tree
             for (int i = 0; i < 3000; i++) mk(R, "big/d" + (i % 30) + "/f" + i, "x");
