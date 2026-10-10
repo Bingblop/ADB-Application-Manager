@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "키를 안전하게 저장하지 못했습니다. 앱을 나갈 때까지만 유지되며 저장되지 않습니다",
 "The key works, but its approval could not be stored securely: test it again later": "키는 작동하지만 승인 상태를 안전하게 저장하지 못했습니다. 나중에 다시 테스트하세요",
 "The token could not be stored securely: not saved": "토큰을 안전하게 저장하지 못했습니다. 저장되지 않았습니다",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "앱을 사용하지 않는 동안 Android가 앱을 얼마나 제한할지 선택합니다. active는 제한이 없고 restricted는 가장 많이 제한합니다.",
+"Could not change the standby bucket": "대기 버킷을 변경하지 못했습니다",
+"Could not read the standby bucket": "대기 버킷을 읽지 못했습니다",
+"No answer from the app": "앱에서 응답이 없습니다",
+"Standby": "대기",
+"Standby bucket": "대기 버킷",
+"Standby bucket changed": "대기 버킷을 변경했습니다"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ 이 휴대전화에 맞음 ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}은(는) 이 앱의 키와 서명자가 같아 제자리에서 업데이트할 수 있습니다"],
 ["✓ {0}: done", "✓ {0}: 완료"],
-["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"]
+["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

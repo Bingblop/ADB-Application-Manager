@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "Não foi possível guardar a chave com segurança: ela fica até você sair do app, mas não é salva",
 "The key works, but its approval could not be stored securely: test it again later": "A chave funciona, mas não foi possível guardar a aprovação com segurança: teste de novo mais tarde",
 "The token could not be stored securely: not saved": "Não foi possível guardar o token com segurança: não foi salvo",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Escolha o quanto o Android limita o app enquanto ele não está em uso. active não tem limites; restricted tem o máximo.",
+"Could not change the standby bucket": "Não foi possível alterar o bucket de espera",
+"Could not read the standby bucket": "Não foi possível ler o bucket de espera",
+"No answer from the app": "O app não respondeu",
+"Standby": "Espera",
+"Standby bucket": "Bucket de espera",
+"Standby bucket changed": "Bucket de espera alterado"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatível com este telefone ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ a v{0} tem o mesmo signatário que a chave deste app, então pode ser atualizada por cima"],
 ["✓ {0}: done", "✓ {0}: concluído"],
-["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"]
+["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

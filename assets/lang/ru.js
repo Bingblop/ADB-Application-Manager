@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "Не удалось надёжно сохранить ключ: он останется, пока вы не выйдете из приложения, но не будет сохранён",
 "The key works, but its approval could not be stored securely: test it again later": "Ключ работает, но его подтверждение не удалось надёжно сохранить: проверьте его ещё раз позже",
 "The token could not be stored securely: not saved": "Не удалось надёжно сохранить токен: не сохранён",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Выберите, насколько Android ограничивает приложение, пока оно не используется. active — без ограничений, restricted — максимальные.",
+"Could not change the standby bucket": "Не удалось изменить корзину ожидания",
+"Could not read the standby bucket": "Не удалось прочитать корзину ожидания",
+"No answer from the app": "Приложение не ответило",
+"Standby": "Ожидание",
+"Standby bucket": "Корзина ожидания",
+"Standby bucket changed": "Корзина ожидания изменена"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ подходит этому телефону ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} подписана тем же ключом, что и это приложение, поэтому обновление пройдёт поверх"],
 ["✓ {0}: done", "✓ {0}: готово"],
-["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"]
+["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

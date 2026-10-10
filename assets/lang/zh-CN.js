@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "无法安全地存储该密钥：它会保留到你退出应用，不会被保存",
 "The key works, but its approval could not be stored securely: test it again later": "密钥可用，但其批准状态无法安全存储：请稍后再测试",
 "The token could not be stored securely: not saved": "无法安全地存储该令牌：未保存",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "选择 Android 在应用未使用时对其的限制程度。active 不受限制，restricted 限制最多。",
+"Could not change the standby bucket": "无法更改待机分组",
+"Could not read the standby bucket": "无法读取待机分组",
+"No answer from the app": "应用没有响应",
+"Standby": "待机",
+"Standby bucket": "待机分组",
+"Standby bucket changed": "待机分组已更改"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ 适合此手机（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} 的签名者与本应用的密钥相同，因此可以就地更新"],
 ["✓ {0}: done", "✓ {0}：已完成"],
-["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"]
+["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

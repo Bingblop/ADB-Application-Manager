@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "Anahtar güvenli biçimde saklanamadı: uygulamadan çıkana kadar tutulur, kaydedilmez",
 "The key works, but its approval could not be stored securely: test it again later": "Anahtar çalışıyor, ancak onayı güvenli biçimde saklanamadı: daha sonra yeniden test edin",
 "The token could not be stored securely: not saved": "Belirteç güvenli biçimde saklanamadı: kaydedilmedi",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Uygulama kullanılmadığı sürece Android’in onu ne kadar kısıtlayacağını seçin. active kısıtlama yapmaz; restricted en çok kısıtlar.",
+"Could not change the standby bucket": "Bekleme kovası değiştirilemedi",
+"Could not read the standby bucket": "Bekleme kovası okunamadı",
+"No answer from the app": "Uygulamadan yanıt gelmedi",
+"Standby": "Bekleme",
+"Standby bucket": "Bekleme kovası",
+"Standby bucket changed": "Bekleme kovası değiştirildi"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ bu telefona uyuyor ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
-["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"]
+["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

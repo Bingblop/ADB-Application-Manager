@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "कुंजी सुरक्षित रूप से सहेजी नहीं जा सकी: यह ऐप छोड़ने तक रखी जाएगी, सहेजी नहीं गई",
 "The key works, but its approval could not be stored securely: test it again later": "कुंजी काम करती है, लेकिन उसकी मंज़ूरी सुरक्षित रूप से सहेजी नहीं जा सकी: बाद में फिर जाँचें",
 "The token could not be stored securely: not saved": "टोकन सुरक्षित रूप से सहेजा नहीं जा सका: सहेजा नहीं गया",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "चुनें कि ऐप इस्तेमाल में न होने पर Android उसे कितना सीमित करे। active पर कोई सीमा नहीं होती; restricted पर सबसे ज़्यादा।",
+"Could not change the standby bucket": "स्टैंडबाय बकेट बदला नहीं जा सका",
+"Could not read the standby bucket": "स्टैंडबाय बकेट पढ़ा नहीं जा सका",
+"No answer from the app": "ऐप से कोई जवाब नहीं मिला",
+"Standby": "स्टैंडबाय",
+"Standby bucket": "स्टैंडबाय बकेट",
+"Standby bucket changed": "स्टैंडबाय बकेट बदल दिया गया"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ इस फ़ोन पर फ़िट बैठता है ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
-["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"]
+["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

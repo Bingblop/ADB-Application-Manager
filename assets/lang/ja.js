@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "キーを安全に保存できませんでした。アプリを閉じるまで保持され、保存はされません",
 "The key works, but its approval could not be stored securely: test it again later": "キーは使えますが、その承認を安全に保存できませんでした。後でもう一度テストしてください",
 "The token could not be stored securely: not saved": "トークンを安全に保存できませんでした。保存されていません",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "アプリを使っていない間、Android がどの程度制限するかを選びます。active は制限なし、restricted は最も厳しい制限です。",
+"Could not change the standby bucket": "スタンバイバケットを変更できませんでした",
+"Could not read the standby bucket": "スタンバイバケットを読み取れませんでした",
+"No answer from the app": "アプリから応答がありません",
+"Standby": "スタンバイ",
+"Standby bucket": "スタンバイバケット",
+"Standby bucket changed": "スタンバイバケットを変更しました"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ この端末に適合（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}はこのアプリのキーと署名者が同じため、その場で更新できます"],
 ["✓ {0}: done", "✓ {0}：完了"],
-["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"]
+["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

@@ -4468,6 +4468,13 @@ x: {
 "The key could not be stored securely: it is kept until you leave the app, not saved": "Kunci tidak dapat disimpan dengan aman: dipertahankan sampai Anda keluar dari aplikasi, tidak disimpan",
 "The key works, but its approval could not be stored securely: test it again later": "Kunci berfungsi, tetapi persetujuannya tidak dapat disimpan dengan aman: uji lagi nanti",
 "The token could not be stored securely: not saved": "Token tidak dapat disimpan dengan aman: tidak disimpan",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Pilih seberapa jauh Android membatasi aplikasi saat tidak digunakan. active tanpa batas; restricted paling terbatas.",
+"Could not change the standby bucket": "Tidak dapat mengubah bucket siaga",
+"Could not read the standby bucket": "Tidak dapat membaca bucket siaga",
+"No answer from the app": "Tidak ada jawaban dari aplikasi",
+"Standby": "Siaga",
+"Standby bucket": "Bucket siaga",
+"Standby bucket changed": "Bucket siaga diubah"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5513,6 +5520,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ cocok dengan ponsel ini ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
-["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"]
+["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };
