@@ -492,7 +492,9 @@ public class MainActivity extends Activity {
                     @Override public void run() {
                         try {
                             runProcessWithTimeout(buildAdbProcess(AdbServerSpec.args(null), "kill-server"), 3000);
-                            new File(adbHomeDir, ".legacy-port-closed").createNewFile();
+                            // runProcessWithTimeout turns a launch failure or a timeout into text, so only remember
+                            // the clean-up once the loopback port is really closed (else try again next start)
+                            if (!isPortOpen("127.0.0.1", AdbServerSpec.LEGACY_PORT, 400)) new File(adbHomeDir, ".legacy-port-closed").createNewFile();
                         } catch (Throwable ignored) {}
                     }
                 });
