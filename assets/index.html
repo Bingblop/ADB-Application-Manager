@@ -28485,40 +28485,12 @@ Type any command below (e.g. pm list packages -d)
             showToast('Command ready — edit any <placeholder>, then RUN');
         }
 
-        // Load the full command reference live from Pulimet's gist via its JSONP script src.
-        let cheatGistLoaded = false;
-        function cheatGistFallback() {
-            cheatGistLoaded = false;
-            const btn = document.getElementById('cheatGistBtn');
-            const box = document.getElementById('cheatGistBox');
-            if (btn) { btn.disabled = false; btn.innerText = 'Retry loading the gist'; }
-            if (box) box.innerHTML = '<div class="list-empty">Couldn’t load the gist (offline or blocked). <a href="#" onclick="openUrlExternal(\'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8\'); return false;">Open it on GitHub</a>.</div>';
-        }
+        // The full command reference is Pulimet's gist. It used to be loaded into this page as a script (JSONP) and its HTML put into the page, which
+        // would have let whoever controls that gist (or a compromise on the way) run code with this app's shell, file and install access. It is
+        // opened in the browser instead, the same way as any other link.
+        const CHEAT_GIST_URL = 'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8';
         function loadCheatGist() {
-            if (cheatGistLoaded) return;
-            cheatGistLoaded = true;
-            const btn = document.getElementById('cheatGistBtn');
-            const box = document.getElementById('cheatGistBox');
-            if (btn) { btn.disabled = true; btn.innerText = 'Loading from GitHub…'; }
-            if (box) box.innerHTML = '<div class="list-empty">Fetching the gist…</div>';
-            let done = false;
-            window.__onPulimetGist = function (data) {
-                done = true;
-                try {
-                    if (data && data.stylesheet) {
-                        const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = data.stylesheet; document.head.appendChild(l);
-                    }
-                    if (box) box.innerHTML = (data && data.div) ? data.div : '<div class="list-empty">The gist returned no content.</div>';
-                    if (btn) btn.style.display = 'none';
-                } catch (e) { cheatGistFallback(); }
-            };
-            try {
-                const s = document.createElement('script');
-                s.src = 'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8.json?callback=__onPulimetGist';
-                s.onerror = function () { if (!done) cheatGistFallback(); };
-                document.body.appendChild(s);
-                setTimeout(function () { if (!done) cheatGistFallback(); }, 8000);
-            } catch (e) { cheatGistFallback(); }
+            openUrlExternal(CHEAT_GIST_URL);
         }
 
         // ---------- Backup and restore ----------
