@@ -102,8 +102,9 @@ SKIP (moved).
 
 ## 4. Download safety (checklist: Download safety)
 
-By default the Updater saves into the app's private storage, which neither the SHA-256 card nor `adb` can read. For this step, **before** you download,
-choose the shared destination: in the Application Updater box, set the save location to **Downloads/App Updater**.
+The SHA-256 card shows the hash of every completed download. By default the Updater saves into the app's private storage, which `adb` cannot read, so
+the hash can be shown but not cross-checked from the computer. For this step, **before** you download, choose the shared destination so that it can be:
+in the Application Updater box, set the save location to **Downloads/App Updater**.
 
 On the phone: in the Updater, download any app from APKMirror or F-Droid. The download must complete and the SHA-256 card must show.
 Then download a Morphe bundle: it must complete.
@@ -111,7 +112,7 @@ Then download a Morphe bundle: it must complete.
 Cross-check the hash the card shows against the file in the shared folder:
 
 ```sh
-adb shell 'ls -l "/sdcard/Download/App Updater/"' | tail -5
+adb shell 'ls -lt "/sdcard/Download/App Updater/"'            # newest first: the file you just downloaded is at the top
 adb shell 'sha256sum "/sdcard/Download/App Updater/FILENAME-FROM-THE-LISTING"'       # must equal the SHA-256 card
 ```
 
