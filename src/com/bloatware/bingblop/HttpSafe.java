@@ -17,7 +17,7 @@ final class HttpSafe {
 
     static final int MAX_HOPS = 8;
 
-    /** Whether a host name or literal address means this phone: localhost (and *.localhost), 127.0.0.0/8, 0.0.0.0, ::1, ::, and the IPv4-mapped forms. */
+    /** Whether a host name or numeric address means this phone: localhost (and *.localhost) and any numeric form of 127.0.0.0/8, 0.0.0.0, ::1 or ::. No DNS lookup is made. */
     static boolean isLoopback(String host) {
         if (host == null) return false;
         String h = host.trim().toLowerCase(Locale.ROOT);
@@ -25,12 +25,41 @@ final class HttpSafe {
         while (h.endsWith(".")) h = h.substring(0, h.length() - 1);
         if (h.isEmpty()) return false;
         if (h.equals("localhost") || h.endsWith(".localhost")) return true;
-        if (h.startsWith("::ffff:")) h = h.substring(7);                                       // IPv4-mapped IPv6
-        if (h.matches("\\d{1,3}(\\.\\d{1,3}){3}")) {
-            String[] p = h.split("\\.");
-            return Integer.parseInt(p[0]) == 127 || h.equals("0.0.0.0");
+        if (h.indexOf(':') >= 0) {                                                            // an IPv6 literal (any compression, mapped IPv4 included)
+            try {
+                java.net.InetAddress a = java.net.InetAddress.getByName(h);                    // a literal: parsed, not looked up
+                return a.isLoopbackAddress() || a.isAnyLocalAddress();
+            } catch (Exception e) {
+                return false;
+            }
         }
-        return h.equals("::1") || h.equals("::") || h.matches("(0{1,4}:){7}0{0,3}[01]") || h.matches("(0{1,4}:){6}0{1,4}");
+        return numericV4IsLoopback(h);
+    }
+
+    /** inet_aton forms (what the system resolver accepts): 1 to 4 parts, each decimal, 0octal or 0xhex; the last part fills the remaining bytes. */
+    private static boolean numericV4IsLoopback(String h) {
+        if (!h.matches("(0x[0-9a-f]+|[0-9]+)(\\.(0x[0-9a-f]+|[0-9]+)){0,3}")) return false;
+        String[] parts = h.split("\\.");
+        long[] v = new long[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            String t = parts[i];
+            try {
+                if (t.startsWith("0x")) v[i] = Long.parseLong(t.substring(2), 16);
+                else if (t.length() > 1 && t.startsWith("0")) v[i] = Long.parseLong(t.substring(1), 8);
+                else v[i] = Long.parseLong(t);
+            } catch (NumberFormatException e) {
+                return false;                                                                   // not a number the resolver would take (e.g. 09, or too long)
+            }
+        }
+        long value = 0;
+        for (int i = 0; i < v.length - 1; i++) {
+            if (v[i] > 255) return false;
+            value |= v[i] << (24 - 8 * i);
+        }
+        long lastMax = (1L << (8 * (5 - v.length))) - 1;                                           // 1 part: 32 bits ... 4 parts: 8 bits
+        if (v[v.length - 1] > lastMax) return false;
+        value |= v[v.length - 1];
+        return (value >>> 24) == 127 || value == 0;
     }
 
     /** Whether a redirect from one address to another may be followed. */

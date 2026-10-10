@@ -28,6 +28,13 @@ public class HttpSafeTest {
     check("outside https to https loopback is refused too", !HttpSafe.redirectAllowed("https://a.example/x", "https://127.0.0.1/y") && !HttpSafe.redirectAllowed("https://a.example/x", "https://localhost/y"));
     check("the whole 127/8 range, localhost. and *.localhost are loopback", HttpSafe.isLoopback("127.0.0.2") && HttpSafe.isLoopback("127.255.255.254") && HttpSafe.isLoopback("localhost.") && HttpSafe.isLoopback("app.localhost") && HttpSafe.isLoopback("LOCALHOST"));
     check("0.0.0.0, ::, ::1, [::1], the long ::1 and the mapped forms are loopback", HttpSafe.isLoopback("0.0.0.0") && HttpSafe.isLoopback("::") && HttpSafe.isLoopback("::1") && HttpSafe.isLoopback("[::1]") && HttpSafe.isLoopback("0:0:0:0:0:0:0:1") && HttpSafe.isLoopback("::ffff:127.0.0.1"));
+    check("abbreviated and other numeric IPv4 forms of loopback: 127.1, 127.0.1, 2130706433, 0x7f.1, 0177.0.0.1, 0x7f000001, 0",
+        HttpSafe.isLoopback("127.1") && HttpSafe.isLoopback("127.0.1") && HttpSafe.isLoopback("2130706433") && HttpSafe.isLoopback("0x7f.1") && HttpSafe.isLoopback("0177.0.0.1") && HttpSafe.isLoopback("0x7f000001") && HttpSafe.isLoopback("0"));
+    check("compressed and mapped IPv6 forms: 0:0::1, ::0001, ::ffff:7f00:1, [0::1]",
+        HttpSafe.isLoopback("0:0::1") && HttpSafe.isLoopback("::0001") && HttpSafe.isLoopback("::ffff:7f00:1") && HttpSafe.isLoopback("[0::1]"));
+    check("numeric forms that are not loopback: 128.1, 1, 0x80.1, 3232235777, 2::1, 300.1, 09.1",
+        !HttpSafe.isLoopback("128.1") && !HttpSafe.isLoopback("1") && !HttpSafe.isLoopback("0x80.1") && !HttpSafe.isLoopback("3232235777") && !HttpSafe.isLoopback("2::1") && !HttpSafe.isLoopback("300.1") && !HttpSafe.isLoopback("09.1"));
+    check("outside http to 127.1 and to [0::1] is refused", !HttpSafe.redirectAllowed("http://a.example/x", "http://127.1:8080/y") && !HttpSafe.redirectAllowed("https://a.example/x", "https://[0:0::1]/y"));
     check("ordinary hosts and addresses are not", !HttpSafe.isLoopback("example.com") && !HttpSafe.isLoopback("128.0.0.1") && !HttpSafe.isLoopback("126.255.255.255") && !HttpSafe.isLoopback("localhost.example.com") && !HttpSafe.isLoopback("10.0.0.1") && !HttpSafe.isLoopback("") && !HttpSafe.isLoopback(null));
     check("outside http to 127.0.0.2 is refused", !HttpSafe.redirectAllowed("http://a.example/x", "http://127.0.0.2:8080/y"));
     check("same origin needs scheme, host and effective port", HttpSafe.sameOrigin("https://a.example/x", "https://A.example:443/y") && !HttpSafe.sameOrigin("https://a.example/x", "https://a.example:8443/y") && !HttpSafe.sameOrigin("https://a.example/x", "http://a.example/y") && !HttpSafe.sameOrigin("https://a.example/x", "https://b.example/y"));
