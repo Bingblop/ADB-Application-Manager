@@ -14977,6 +14977,13 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
+        try {
+            synchronized (tmLock) {
+                if (tmTask != null) { tmTask.cancel(false); tmTask = null; }
+                if (tmExec != null) { tmExec.shutdownNow(); tmExec = null; }
+            }
+        } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
             try {
                 android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
