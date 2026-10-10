@@ -104,8 +104,8 @@ function findPlaceholders(lines) {
     while ((m = re.exec(code))) {
       found.push({ line, text: m[0] });
     }
-    // the bodies start after the whole command: not while the line continues (odd trailing backslash) or a quote is still open
-    if (pending.length && !quote && !continues(text)) { bodies = pending; pending = []; }
+    // the bodies start after the whole command: not while the line continues (odd trailing backslash, or a trailing | || &&) or a quote is still open
+    if (pending.length && !quote && !continues(text) && !/(?:\|\||&&|\|)\s*$/.test(code)) { bodies = pending; pending = []; }
   }
   return found;
 }
@@ -178,9 +178,12 @@ function selfTest() {
     '```bash', 'cat <<FIRST <<SECOND', '<a>', 'SECOND', '<b>', 'FIRST', '<c>', 'SECOND', 'echo done', '```', '',
     '```bash', 'cat <<EOF \\', '  > out.txt; adb shell pm path <package> out.txt', '<html>', 'EOF', 'echo done', '```', '',
     '```bash', 'cat <<EOF; adb shell pm path <package> out.txt', '<html>', 'EOF', '```', '',
+    '```bash', 'cat <<EOF |', '  grep <pattern> out.txt', '<html>', 'EOF', 'echo done', '```', '',
+    '```bash', 'cat <<EOF && echo ok', '<html>', 'EOF', '```', '',
+    '```bash', 'cat <<EOF || \\', '  true', '<html>', 'EOF', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
