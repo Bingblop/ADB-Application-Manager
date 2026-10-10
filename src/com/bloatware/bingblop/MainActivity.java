@@ -1978,10 +1978,9 @@ public class MainActivity extends Activity {
                 String error = null;
                 java.net.HttpURLConnection conn = null;
                 try {
-                    conn = (java.net.HttpURLConnection) new java.net.URL(UAD_LIST_URL).openConnection();
-                    conn.setConnectTimeout(15000);
-                    conn.setReadTimeout(30000);
-                    conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+                    java.util.Map<String, String> uadHdr = new java.util.LinkedHashMap<String, String>();
+                    uadHdr.put("User-Agent", "ADB-Application-Manager");
+                    conn = HttpSafe.open(UAD_LIST_URL, 15000, 30000, uadHdr);
                     int code = conn.getResponseCode();
                     if (code != 200) throw new IllegalStateException("HTTP " + code);
                     InputStream in = conn.getInputStream();
@@ -3752,7 +3751,10 @@ public class MainActivity extends Activity {
 
     /** Installs the given files (base first) with a caller-built flag set, via a specific backend. */
     private String installApksOptions(List<File> apks, String createFlags, String mode) throws Exception {
-        if (createFlags == null || createFlags.trim().isEmpty()) createFlags = "-r";
+        // only the options the Installer page can build, as separate arguments; anything else stops the install
+        List<String> flagArgs = ShellArgs.installFlags(createFlags);
+        if (flagArgs == null) throw new IllegalArgumentException("Unsupported install options: not installed");
+        createFlags = ShellArgs.join(flagArgs);
         if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
             boolean tcp = "adb_tcp".equals(mode);
             String target = tcp ? tcpTarget() : wirelessTarget();
@@ -3763,7 +3765,7 @@ public class MainActivity extends Activity {
             args.add(apks.size() == 1 ? "install" : "install-multiple");
             // adb forwards -r/-g/-d/-t natively and passes the pm-only flags (--user, --install-reason,
             // --package-source, --update-ownership, --bypass-low-target-sdk-block) through to install-create.
-            for (String fl : createFlags.trim().split("\\s+")) if (!fl.isEmpty()) args.add(fl);
+            args.addAll(flagArgs);
             for (File f : apks) args.add(f.getAbsolutePath());
             return runProcessWithTimeout(buildAdbProcess(args.toArray(new String[0])), 600000);
         }
@@ -4577,6 +4579,7 @@ public class MainActivity extends Activity {
     private static final Object tmLock = new Object();
     private ScheduledExecutorService tmExec;
     private ScheduledFuture<?> tmTask;
+    private boolean tmClosed;           // set under tmLock by onDestroy: a late tmStart from the page must not bring the poll back
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
@@ -9529,7 +9532,7 @@ public class MainActivity extends Activity {
                 }
 
                 try {
-                    String appops = executeShell("cmd appops get " + pkg);
+                    String appops = BackupScripts.isPackageName(pkg) ? executeShell("cmd appops get " + pkg) : "";
                     obj.put("appopsRaw", appops != null ? appops : "");
                 } catch (Exception ignored) {}
 
@@ -11283,6 +11286,7 @@ public class MainActivity extends Activity {
             if (intervalMs < 1000) intervalMs = 1000;
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
+                if (tmClosed) return "closed";
                 if (tmTask != null) tmTask.cancel(false);
                 if (tmExec == null) {
                     tmExec = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -14683,16 +14687,19 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppOpsRaw(String pkg) {
+            if (!BackupScripts.isPackageName(pkg)) return "Error: not a package name";
             return executeShell("cmd appops get " + pkg);
         }
 
         @JavascriptInterface
         public String setAppOp(String pkg, String op, String mode) {
+            if (!BackupScripts.isPackageName(pkg) || !ShellArgs.isAppOp(op) || !ShellArgs.isAppOpMode(mode)) return flagged(false, "Error: not a valid package, app op and value");
             return runShellAction("appops set " + pkg + " " + op + " " + mode);
         }
 
         @JavascriptInterface
         public String setPermission(String pkg, String perm, boolean grant) {
+            if (!BackupScripts.isPackageName(pkg) || !BackupScripts.isPermission(perm)) return flagged(false, "Error: not a valid package and permission name");
             return runShellAction(grant ? ("pm grant " + pkg + " " + perm) : ("pm revoke " + pkg + " " + perm));
         }
 
@@ -14998,6 +15005,14 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
+        try {
+            synchronized (tmLock) {
+                tmClosed = true;
+                if (tmTask != null) { tmTask.cancel(false); tmTask = null; }
+                if (tmExec != null) { tmExec.shutdownNow(); tmExec = null; }
+            }
+        } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
             try {
                 android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
