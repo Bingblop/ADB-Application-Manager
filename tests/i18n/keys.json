@@ -3152,6 +3152,7 @@
 {"k":"Still busy with the last request. Wait a moment and try again.","ctx":"built by the code of: tx err text"},
 {"k":"Still checking the files. Try again in a moment.","ctx":"built by the code of: apk sel cleanup"},
 {"k":"Still disabled","ctx":"built by the code of: top level"},
+{"k":"Still finishing the last download...","ctx":"built by the code of: us get"},
 {"k":"Still installed","ctx":"built by the code of: top level"},
 {"k":"Still loading…","ctx":"built by the code of: refresh source"},
 {"k":"Still looking…","ctx":"built by the code of: open trackers info"},

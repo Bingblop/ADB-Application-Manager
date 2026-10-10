@@ -15326,7 +15326,7 @@ Type any command below (e.g. pm list packages -d)
             izzy: 'IzzyOnDroid serves the developer\'s own release builds of open-source apps. The file is downloaded here.',
             play: 'The Play Store gives no download to other apps. This opens the app\'s page in the Play Store.'
         };
-        let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0, browseFor: null, browseRun: -1, browseVer: '' };
+        let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0, lockTok: 0, tokN: 0, browseFor: null, browseRun: -1, browseVer: '' };
 
         function usEl(id) { return document.getElementById(id); }
         function usLoad() {
@@ -15399,7 +15399,10 @@ Type any command below (e.g. pm list packages -d)
             if (pct === null || pct === undefined) { b.style.display = 'none'; return; }
             b.style.display = ''; b.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
-        function usReset() { us.run++; us.busy = false; us.browseFor = null; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
+        function usLock() { if (us.busy) return 0; us.busy = true; us.lockTok = ++us.tokN; return us.lockTok; }
+        function usUnlock(tok) { if (tok && us.lockTok === tok) { us.busy = false; us.lockTok = 0; } }
+        function usReset() { us.run++; us.browseFor = null;                  // a download that is already running keeps its lock until it really ends: only the operation that took it lets it go
+             us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
 
         // The pure parts (tested on their own): which of the listed versions to take
         function usVerNorm(v) { return String(v || '').trim().replace(/^v/i, '').replace(/\s*\(\d+\)\s*$/, ''); }
@@ -15544,10 +15547,12 @@ Type any command below (e.g. pm list packages -d)
         }
         async function usGet(i, picked) {
             const c = us.cands[i], cfg = usRead();
-            if (!c || us.busy) return;
+            if (!c) return;
             if (US_WEB[cfg.source]) { usWeb(i); return; }
+            const tok = usLock();
+            if (!tok) { usStatus(txT('Still finishing the last download...'), false); return; }
             const ver = picked ? picked.version : (usEl('usVersion').value || '').trim();
-            us.busy = true; us.got = null; usEl('usGot').innerHTML = '';
+            us.got = null; usEl('usGot').innerHTML = '';
             usStatus(txT('Looking for the file...'), false); usBar(2);
             const run = us.run;
             let r, how = '', item = picked || null;
@@ -15578,9 +15583,9 @@ Type any command below (e.g. pm list packages -d)
                     }
                 }
             } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
-            if (run !== us.run) { us.busy = false; return; }
+            if (run !== us.run) { usUnlock(tok); return; }
             if (!r.ok) {
-                us.busy = false;
+                usUnlock(tok);
                 usBar(null);
                 us.browse = r.browse || '';
                 usStatus(r.error || txT('The download did not work.'), true);
@@ -15590,7 +15595,7 @@ Type any command below (e.g. pm list packages -d)
             us.got = r.data;
             usBar(100);
             usStatus(how === 'near' ? txF('The closest version is {0}; it was downloaded.', r.data.versionName || (item && item.version) || '') : txT('Downloaded.'), false);
-            try { await usAfter(r.data, cfg, i); } finally { if (run === us.run) us.busy = false; }          // busy until the scan, the copy and the install are done, so a second download cannot swap the file under them
+            try { await usAfter(r.data, cfg, i); } finally { usUnlock(tok); }          // busy until the scan, the copy and the install are done, so a second download cannot swap the file under them
         }
         // a file came from the browser: it goes through the same steps
         async function usBrowseDone(e) {
@@ -15604,13 +15609,12 @@ Type any command below (e.g. pm list packages -d)
             if (!e.ok || !e.info) { usStatus(txF('{0} was saved, but it is not an app file.', e.name || txT('The file')), true); return; }
             if (e.info.pkg !== c.pkg) { usStatus(txF('That file is {0}, not {1}. Choose the right download in the browser.', e.info.pkg || '?', c.pkg), true); usBar(null); return; }
             if (us.browseVer && usVerNorm(e.info.versionName) !== usVerNorm(us.browseVer)) { usStatus(txF('That file is version {0}, not {1}. Choose the right download in the browser.', e.info.versionName || '?', us.browseVer), true); usBar(null); return; }
-            if (us.busy) return;
+            const tok = usLock();
+            if (!tok) return;
             const cfg = usRead();
-            us.busy = true;
-            const run = us.run;
             us.browseFor = null;
             us.got = e.info; usBar(100); usStatus(txT('Downloaded.'), false);
-            try { await usAfter(e.info, cfg, us.cands.indexOf(c)); } finally { if (run === us.run) us.busy = false; }
+            try { await usAfter(e.info, cfg, us.cands.indexOf(c)); } finally { usUnlock(tok); }
         }
         async function usAfter(g, cfg, i) {
             const myRun = us.run;

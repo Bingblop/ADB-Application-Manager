@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "Masih memproses permintaan sebelumnya. Tunggu sebentar lalu coba lagi.",
 "Still checking the files. Try again in a moment.": "Masih memeriksa file. Coba lagi sebentar.",
 "Still disabled": "Masih nonaktif",
+"Still finishing the last download...": "Masih menyelesaikan unduhan terakhir...",
 "Still installed": "Masih terpasang",
 "Still loading…": "Masih memuat…",
 "Still looking…": "Masih mencari…",

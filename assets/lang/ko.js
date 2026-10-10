@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "아직 이전 요청을 처리하는 중입니다. 잠시 후 다시 시도하세요.",
 "Still checking the files. Try again in a moment.": "아직 파일을 확인하는 중입니다. 잠시 후 다시 시도하세요.",
 "Still disabled": "여전히 사용 중지",
+"Still finishing the last download...": "이전 다운로드를 마무리하는 중...",
 "Still installed": "여전히 설치됨",
 "Still loading…": "아직 불러오는 중…",
 "Still looking…": "아직 찾는 중…",

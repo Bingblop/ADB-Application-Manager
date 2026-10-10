@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "Hâlâ son istekle meşgul. Biraz bekleyip yeniden deneyin.",
 "Still checking the files. Try again in a moment.": "Dosyalar hâlâ denetleniyor. Biraz sonra tekrar deneyin.",
 "Still disabled": "Hâlâ devre dışı",
+"Still finishing the last download...": "Son indirme hâlâ tamamlanıyor...",
 "Still installed": "Hâlâ yüklü",
 "Still loading…": "Hâlâ yükleniyor…",
 "Still looking…": "Hâlâ aranıyor…",

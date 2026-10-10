@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "पिछला अनुरोध अभी चल रहा है। थोड़ा रुकें और फिर से कोशिश करें।",
 "Still checking the files. Try again in a moment.": "फ़ाइलों की जाँच अभी जारी है। थोड़ी देर बाद फिर कोशिश करें।",
 "Still disabled": "अब भी बंद",
+"Still finishing the last download...": "पिछला डाउनलोड अभी पूरा हो रहा है...",
 "Still installed": "अब भी इंस्टॉल",
 "Still loading…": "अभी लोड हो रहा है…",
 "Still looking…": "अब भी खोज जारी…",

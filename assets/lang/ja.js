@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "前のリクエストをまだ処理中です。少し待ってから再試行してください。",
 "Still checking the files. Try again in a moment.": "ファイルを確認中です。しばらくしてからもう一度お試しください。",
 "Still disabled": "無効のまま",
+"Still finishing the last download...": "前のダウンロードを完了しています...",
 "Still installed": "インストール済みのまま",
 "Still loading…": "まだ読み込み中です…",
 "Still looking…": "まだ探しています…",

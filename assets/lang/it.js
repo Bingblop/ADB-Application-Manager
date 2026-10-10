@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "Ancora occupato con la richiesta precedente. Attendi un momento e riprova.",
 "Still checking the files. Try again in a moment.": "Controllo dei file ancora in corso. Riprova tra un momento.",
 "Still disabled": "Ancora disattivata",
+"Still finishing the last download...": "L'ultimo download si sta ancora concludendo...",
 "Still installed": "Ancora installata",
 "Still loading…": "Caricamento ancora in corso…",
 "Still looking…": "Ancora in ricerca…",

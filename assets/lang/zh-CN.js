@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "仍在处理上一个请求。请稍候再试。",
 "Still checking the files. Try again in a moment.": "仍在检查文件，请稍后再试。",
 "Still disabled": "仍已停用",
+"Still finishing the last download...": "上一个下载仍在完成中...",
 "Still installed": "仍已安装",
 "Still loading…": "仍在加载…",
 "Still looking…": "仍在查找…",

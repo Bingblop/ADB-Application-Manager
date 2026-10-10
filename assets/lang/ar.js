@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "لا يزال مشغولًا بالطلب السابق. انتظر لحظة ثم حاول مرة أخرى.",
 "Still checking the files. Try again in a moment.": "لا يزال فحص الملفات جارياً. حاول مرة أخرى بعد قليل.",
 "Still disabled": "لا يزال معطّلًا",
+"Still finishing the last download...": "لا يزال التنزيل الأخير قيد الإنهاء...",
 "Still installed": "لا يزال مثبّتًا",
 "Still loading…": "لا يزال التحميل جاريًا…",
 "Still looking…": "لا يزال يبحث…",

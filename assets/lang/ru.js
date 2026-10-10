@@ -3155,6 +3155,7 @@ x: {
 "Still busy with the last request. Wait a moment and try again.": "Предыдущий запрос ещё обрабатывается. Подождите немного и повторите попытку.",
 "Still checking the files. Try again in a moment.": "Файлы ещё проверяются. Повторите через минуту.",
 "Still disabled": "Всё ещё отключено",
+"Still finishing the last download...": "Последняя загрузка ещё завершается...",
 "Still installed": "Всё ещё установлено",
 "Still loading…": "Загрузка ещё идёт…",
 "Still looking…": "Всё ещё ищем…",
