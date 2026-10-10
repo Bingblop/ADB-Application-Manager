@@ -3,15 +3,22 @@ package com.bloatware.bingblop;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Keeps new network code on the safe path. Every place that opens a raw HttpURLConnection (instead of HttpSafe.open) is listed here with
- * how many it may have; each one must turn automatic redirects off, because a redirect carries request headers (keys, cookies) wherever
- * the answer points. A new call site fails this test until it is either moved to HttpSafe.open or added below with a reason.
+ * how many it may have; each connection must have automatic redirects switched off on its own variable, because a redirect carries request
+ * headers (keys, cookies) wherever the answer points. A new call site fails this test until it is either moved to HttpSafe.open or added
+ * below with a reason.
+ *
+ * The scan works on the source with comments, string and character literals blanked out, and matches across any whitespace, so
+ * {@code c.openConnection ()} or a call split over two lines is seen like the plain spelling.
  */
 public class HttpSitesTest {
   static int fails = 0, n = 0;
@@ -29,6 +36,61 @@ public class HttpSitesTest {
     ALLOWED.put("VirusTotal.java", 2);          // GET and multipart POST to www.virustotal.com, redirects off
   }
 
+  /** How far after an opening its own variable has to switch redirects off. */
+  static final int WINDOW = 2500;
+
+  /** The source with comments, string literals and char literals replaced by spaces (newlines kept). */
+  static String blank(String s) {
+    StringBuilder o = new StringBuilder(s.length());
+    int i = 0, len = s.length();
+    while (i < len) {
+      char c = s.charAt(i);
+      if (c == '/' && i + 1 < len && s.charAt(i + 1) == '/') {
+        while (i < len && s.charAt(i) != '\n') { o.append(' '); i++; }
+      } else if (c == '/' && i + 1 < len && s.charAt(i + 1) == '*') {
+        o.append("  "); i += 2;
+        while (i < len && !(s.charAt(i) == '*' && i + 1 < len && s.charAt(i + 1) == '/')) { o.append(s.charAt(i) == '\n' ? '\n' : ' '); i++; }
+        if (i < len) { o.append("  "); i += 2; }
+      } else if (c == '"' || c == '\'') {
+        char q = c;
+        o.append(' '); i++;
+        while (i < len && s.charAt(i) != q) {
+          if (s.charAt(i) == '\\' && i + 1 < len) { o.append("  "); i += 2; continue; }
+          o.append(s.charAt(i) == '\n' ? '\n' : ' '); i++;
+        }
+        if (i < len) { o.append(' '); i++; }
+      } else { o.append(c); i++; }
+    }
+    return o.toString();
+  }
+
+  static final Pattern OPEN = Pattern.compile("\\bopenConnection\\s*\\(");
+  static final Pattern ON = Pattern.compile("\\bsetInstanceFollowRedirects\\s*\\(\\s*true\\s*\\)");
+  static final Pattern ASSIGN = Pattern.compile("([A-Za-z_$][\\w$]*)\\s*=\\s*[^=;{}]*$");
+
+  /** Problems in one source file: the number of raw openings goes to {@code count[0]}. */
+  static List<String> problems(String src, int[] count) {
+    List<String> out = new ArrayList<String>();
+    String t = blank(src);
+    if (ON.matcher(t).find()) out.add("switches automatic redirects on");
+    Matcher m = OPEN.matcher(t);
+    int opens = 0;
+    while (m.find()) {
+      opens++;
+      int stmtStart = Math.max(Math.max(t.lastIndexOf(';', m.start()), t.lastIndexOf('{', m.start())), t.lastIndexOf('}', m.start())) + 1;
+      Matcher a = ASSIGN.matcher(t.substring(stmtStart, m.start()));
+      if (!a.find()) { out.add("a raw connection that is not assigned to a variable, so its redirects cannot be checked"); continue; }
+      String var = a.group(1);
+      int stmtEnd = t.indexOf(';', m.end());
+      if (stmtEnd < 0) stmtEnd = m.end();
+      String after = t.substring(stmtEnd, Math.min(t.length(), stmtEnd + WINDOW));
+      Pattern off = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*setInstanceFollowRedirects\\s*\\(\\s*false\\s*\\)");
+      if (!off.matcher(after).find()) out.add("the connection '" + var + "' does not turn automatic redirects off");
+    }
+    count[0] = opens;
+    return out;
+  }
+
   static File srcDir() {
     File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
     for (int i = 0; d != null && i < 8; i++, d = d.getParentFile()) {
@@ -38,36 +100,47 @@ public class HttpSitesTest {
     return null;
   }
 
-  static boolean comment(String line) {
-    String t = line.trim();
-    return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*");
+  static boolean has(List<String> p, String part) {
+    for (String s : p) if (s.contains(part)) return true;
+    return false;
   }
 
   public static void main(String[] args) throws Exception {
+    // the scanner itself
+    int[] cnt = new int[1];
+    String ok = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.setInstanceFollowRedirects(false); } }";
+    check("a connection with redirects off is fine", problems(ok, cnt).isEmpty() && cnt[0] == 1);
+    check("odd spacing and a call split over lines are still seen as an opening", problems(ok.replace("openConnection()", "openConnection\n   ()"), cnt).isEmpty() && cnt[0] == 1
+        && problems(ok.replace("openConnection();", "openConnection ();").replace("c.setInstanceFollowRedirects(false)", "c . setInstanceFollowRedirects ( false )"), cnt).isEmpty() && cnt[0] == 1);
+    String noOff = ok.replace("c.setInstanceFollowRedirects(false);", "");
+    check("an opening without redirects off is refused (also with spaces before the bracket)", has(problems(noOff, cnt), "does not turn") && has(problems(noOff.replace("openConnection()", "openConnection ()"), cnt), "does not turn") && cnt[0] == 1);
+    check("redirects switched on are refused, however it is spelled", has(problems(ok + " class B { void g(java.net.HttpURLConnection c) { c.setInstanceFollowRedirects (true); } }", cnt), "switches automatic redirects on")
+        && has(problems("class B { void g(java.net.HttpURLConnection c) { c.setInstanceFollowRedirects\n(\ntrue\n); } }", cnt), "switches automatic redirects on"));
+    String two = "class A { void f(String u) throws Exception { java.net.HttpURLConnection a = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); java.net.HttpURLConnection b = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); a.setInstanceFollowRedirects(false); a.setInstanceFollowRedirects(false); } }";
+    check("two connections: switching one off twice does not cover the other", has(problems(two, cnt), "'b' does not turn") && !has(problems(two, cnt), "'a' does not turn") && cnt[0] == 2);
+    check("a connection that is not assigned to a variable is refused", has(problems("class A { Object f(String u) throws Exception { return new java.net.URL(u).openConnection(); } }", cnt), "not assigned"));
+    check("text in comments and strings does not count", problems("class A { String s = \"x.openConnection()\"; /* y.openConnection(); */ // z.openConnection();\n void f() {} }", cnt).isEmpty() && cnt[0] == 0
+        && problems("class A { String s = \"setInstanceFollowRedirects(true)\"; // c.setInstanceFollowRedirects(true)\n }", cnt).isEmpty());
+    check("a call to another variable's redirects does not cover this one", has(problems(ok.replace("c.setInstanceFollowRedirects(false)", "d.setInstanceFollowRedirects(false)"), cnt), "'c' does not turn"));
+
+    // the source tree
     File dir = srcDir();
-    if (dir == null) { System.out.println("SKIP src/com/bloatware/bingblop not found"); System.out.println("PASS HttpSitesTest: 0 checks"); return; }
+    if (dir == null) { System.out.println("SKIP src/com/bloatware/bingblop not found"); System.out.println("PASS HttpSitesTest: " + n + " checks"); return; }
     File[] files = dir.listFiles();
     Arrays.sort(files);
-    Map<String, Integer> opens = new TreeMap<String, Integer>();
+    Map<String, Integer> opens = new HashMap<String, Integer>();
     for (File f : files) {
       if (!f.getName().endsWith(".java")) continue;
-      int open = 0, off = 0;
-      boolean on = false;
-      for (String line : Files.readAllLines(f.toPath(), StandardCharsets.UTF_8)) {
-        if (comment(line)) continue;
-        if (line.contains("openConnection(")) open++;
-        if (line.contains("setInstanceFollowRedirects(false)")) off++;
-        if (line.contains("setInstanceFollowRedirects(true)")) on = true;
-      }
-      check(f.getName() + " must not switch automatic redirects on", !on);
+      String src = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+      List<String> p = problems(src, cnt);
+      int open = cnt[0];
+      for (String s : p) check(f.getName() + ": " + s, false);
+      if (p.isEmpty()) check(f.getName() + " is clean", true);
       if (open > 0) opens.put(f.getName(), open);
       Integer allowed = ALLOWED.get(f.getName());
       if (open > 0) {
         check(f.getName() + " opens a raw connection (" + open + ") but is not in the allowed list: use HttpSafe.open or add it here with a reason", allowed != null);
-        if (allowed != null) {
-          check(f.getName() + " has " + open + " raw connections, " + allowed + " allowed", open <= allowed);
-          check(f.getName() + " must turn automatic redirects off for each raw connection (" + off + " of " + open + ")", off >= open);
-        }
+        if (allowed != null) check(f.getName() + " has " + open + " raw connections, " + allowed + " allowed", open <= allowed);
       }
     }
     for (Map.Entry<String, Integer> e : ALLOWED.entrySet())
