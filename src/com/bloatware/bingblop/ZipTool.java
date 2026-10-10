@@ -54,6 +54,9 @@ public final class ZipTool {
     private static final int SIG_EOCD64 = 0x06064b50;
     private static final int SIG_LOC64 = 0x07064b50;
     private static final long MAX_CD_BYTES = 256L << 20;
+    /** The most entries one zip may list (a phone's heap holds a few hundred thousand entries, not millions); package-private so a test can lower it. */
+    static int maxEntries = 500000;
+    private static final byte[] NO_BYTES = new byte[0];
     private static final long U32 = 0xFFFFFFFFL;
 
     // ---------------------------------------------------------------------------------------------
@@ -382,12 +385,18 @@ public final class ZipTool {
             if (cdSize < 0 || cdSize > MAX_CD_BYTES || cdOff < 0 || cdOff + cdSize > len) {
                 throw new IOException("Corrupt zip archive (bad central directory)");
             }
-            byte[] cd = new byte[(int) cdSize];
+            if (count > maxEntries) throw new IOException("This zip archive lists too many files (" + count + ")");
+            // Read the directory one record at a time: its declared size and the entry count in the end record both come
+            // from the file, so neither may decide how much memory is taken before the real entries have been counted.
             raf.seek(cdOff);
-            raf.readFully(cd);
-            List<Entry> list = new ArrayList<Entry>((int) Math.min(Math.max(count, 16), 1000000));
-            int pos = 0;
-            while (pos + 46 <= cd.length) {
+            java.io.DataInputStream cdIn = new java.io.DataInputStream(
+                    new java.io.BufferedInputStream(java.nio.channels.Channels.newInputStream(raf.getChannel()), 65536));
+            List<Entry> list = new ArrayList<Entry>((int) Math.min(Math.max(count, 16), 4096));
+            long left = cdSize;
+            while (left >= 46) {
+                byte[] cd = new byte[46];
+                cdIn.readFully(cd);
+                final int pos = 0;
                 if (le32(cd, pos) != SIG_CENTRAL) throw new IOException("Corrupt zip archive (bad central directory entry)");
                 int madeBy = le16(cd, pos + 4);
                 int needed = le16(cd, pos + 6);
@@ -405,7 +414,10 @@ public final class ZipTool {
                 int internal = le16(cd, pos + 36);
                 long external = le32u(cd, pos + 38);
                 long lho = le32u(cd, pos + 42);
-                if (pos + 46 + nl + el + cl > cd.length) throw new IOException("Corrupt zip archive (entry runs past the directory)");
+                int recLen = 46 + nl + el + cl;
+                if (recLen > left) throw new IOException("Corrupt zip archive (entry runs past the directory)");
+                cd = Arrays.copyOf(cd, recLen);
+                cdIn.readFully(cd, 46, recLen - 46);
                 byte[] raw = Arrays.copyOfRange(cd, pos + 46, pos + 46 + nl);
                 if (size == U32 || csize == U32 || lho == U32 || disk == 0xFFFF) {
                     int xp = pos + 46 + nl;
@@ -418,6 +430,9 @@ public final class ZipTool {
                         if (id == 0x0001) {
                             if (size == U32 && dp + 8 <= xp + 4 + sz) { size = le64(cd, dp); dp += 8; }
                             if (csize == U32 && dp + 8 <= xp + 4 + sz) { csize = le64(cd, dp); dp += 8; }
+                            // a 64-bit value with the top bit set reads as negative: a size of -1 means "unknown" to the size
+                            // guard, so a native entry must never carry one
+                            if (size < 0 || csize < 0 || lho < 0) throw new IOException("Corrupt zip archive (bad size in the extra field)");
                             if (lho == U32 && dp + 8 <= xp + 4 + sz) { lho = le64(cd, dp); dp += 8; }
                             zip64 = true;
                             break;
@@ -425,13 +440,14 @@ public final class ZipTool {
                         xp += 4 + sz;
                     }
                 }
-                byte[] cmt = Arrays.copyOfRange(cd, pos + 46 + nl + el, pos + 46 + nl + el + cl);
-                byte[] ext = Arrays.copyOfRange(cd, pos + 46 + nl, pos + 46 + nl + el);
+                if (list.size() >= maxEntries) throw new IOException("This zip archive lists too many files");
+                byte[] cmt = cl == 0 ? NO_BYTES : Arrays.copyOfRange(cd, pos + 46 + nl + el, pos + 46 + nl + el + cl);
+                byte[] ext = el == 0 ? NO_BYTES : Arrays.copyOfRange(cd, pos + 46 + nl, pos + 46 + nl + el);
                 String decoded = decodeName(raw);
                 boolean fellBack = decoded == null;
                 if (fellBack) decoded = new String(raw, StandardCharsets.ISO_8859_1);
                 list.add(new Entry(raw, decoded, fellBack, madeBy, needed, flags, method, time, date, crc, csize, size, lho + prefix, internal, external, cmt, ext));
-                pos += 46 + nl + el + cl;
+                left -= recLen;
             }
             return new Archive(f, len, f.lastModified(), Collections.unmodifiableList(list), comment, zip64, cdOff, cdSize, eocdPos, prefix);
         } finally {
@@ -680,6 +696,8 @@ public final class ZipTool {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) {
+                    // never write past the size the entry declares: a small zip must not be able to fill the phone's storage
+                    if (e.size >= 0 && total + n > e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
                     out.write(buf, 0, n);
                     crc.update(buf, 0, n);
                     total += n;
