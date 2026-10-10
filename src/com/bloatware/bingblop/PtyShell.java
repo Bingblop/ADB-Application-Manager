@@ -133,7 +133,7 @@ public final class PtyShell {
                 byte[] f;
                 synchronized (queueLock) {
                     while (queue.isEmpty()) {
-                        if (closed || failed) return;
+                        if (closed || failed || ended()) return;
                         queueLock.wait(500);
                     }
                     f = queue.peekFirst();
@@ -158,6 +158,16 @@ public final class PtyShell {
         }
     }
 
+    /** Whether the program (the helper) is gone: seen here, not from the reader, which may still be waiting for the page to acknowledge output. */
+    private boolean ended() {
+        try {
+            process.exitValue();
+            return true;
+        } catch (IllegalThreadStateException running) {
+            return false;
+        }
+    }
+
     /** The page showed {@code n} more bytes. */
     public void ack(long n) {
         synchronized (flow) {
@@ -173,6 +183,9 @@ public final class PtyShell {
      */
     public void write(byte[] data, int off, int len) throws IOException {
         if (len <= 0) return;
+        // refused before anything is copied: the size on the wire is the data plus three bytes for every frame
+        long framed = (long) len + 3L * ((len + FRAME - 1) / FRAME);
+        if (framed > MAX_QUEUED) throw new IOException("the terminal is not taking input fast enough");
         List<byte[]> frames = new ArrayList<byte[]>();
         long total = 0;
         while (len > 0) {
@@ -200,7 +213,7 @@ public final class PtyShell {
 
     private void enqueue(List<byte[]> frames, long total) throws IOException {
         synchronized (queueLock) {
-            if (closed || failed) throw new IOException("the terminal is closed");
+            if (closed || failed || ended()) throw new IOException("the terminal is closed");
             if (queued + total > MAX_QUEUED) throw new IOException("the terminal is not taking input fast enough");
             for (byte[] f : frames) queue.addLast(f);
             queued += total;

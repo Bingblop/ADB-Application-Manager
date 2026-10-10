@@ -124,6 +124,35 @@ public class PtyShellTest {
         try { type(e, "x"); } catch (java.io.IOException ex) { refusedAfterEnd = true; }
         is("input for a program that ended is refused", refusedAfterEnd);
 
+        // the helper is killed (its connection dropped) while the reader still waits for the page to acknowledge output: the writer must end anyway
+        Rec g = new Rec();
+        g.autoAck = false;
+        ProcessBuilder pb3 = new ProcessBuilder(PtyShell.command(h, 24, 80, Arrays.asList("/bin/sh", "-c", "yes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        pb3.redirectErrorStream(true);
+        Process helperProc = pb3.start();
+        g.sh = new PtyShell(helperProc, g);
+        Thread.sleep(1500);                              // the reader is at the limit and waits for the page
+        helperProc.destroyForcibly();
+        Thread.sleep(1500);
+        is("the helper is gone although the page never acknowledged (the reader still waits, no end reported yet)", g.done.getCount() == 1 && g.text().length() > 100 * 1024, "got " + g.text().length());
+        int writers2 = 0;
+        for (Thread th : Thread.getAllStackTraces().keySet()) if ("pty-writer".equals(th.getName()) && th.isAlive()) writers2++;
+        is("its writer thread has ended all the same", writers2 == 0, "writers " + writers2);
+        boolean refusedFinite = false;
+        try { type(g, "x"); } catch (java.io.IOException ex) { refusedFinite = true; }
+        is("and input for it is refused", refusedFinite);
+        g.sh.ack(g.text().length());
+        g.sh.ack(1 << 20);
+        is("when the page catches up, the end is reported", g.done.await(4, TimeUnit.SECONDS), "code " + g.code);
+        // one paste larger than the queue is refused before a copy of it is made
+        final byte[] huge = new byte[8 * 1024 * 1024];
+        Rec hq = start(h, 24, 80, "/bin/sleep", "20");
+        long m0 = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        boolean refusedHuge = false;
+        try { hq.sh.write(huge, 0, huge.length); } catch (java.io.IOException ex) { refusedHuge = true; }
+        is("a paste over the limit is refused", refusedHuge);
+        hq.sh.close();
+
         // ---- input never blocks the caller (C-014) ----
         // The page's calls reach the app one after another. A program that takes no input and floods its output (the page not yet acknowledging) used to
         // block a paste in the pipe to the helper, and with it every later call (the acknowledgement that would have freed the output): a deadlock.
