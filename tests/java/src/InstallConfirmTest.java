@@ -56,6 +56,29 @@ public class InstallConfirmTest {
     is("a host with a space or an illegal character is not shown", InstallConfirm.hostOf("https://bad host.example/x").isEmpty() && InstallConfirm.hostOf("https://a_b.example/x").isEmpty());
     is("no host for text that is not an address", InstallConfirm.hostOf("not a url").isEmpty() && InstallConfirm.hostOf(null).isEmpty());
 
+    // the file the user is asked about is the file that is installed: its name never comes from the page's key (two keys can share a hash code)
+    is("two different keys can share a hash code (so a hash code is no file name)", "Aa".hashCode() == "BB".hashCode() && !"Aa".equals("BB"));
+    try {
+      java.io.File d = new java.io.File(System.getProperty("user.dir")).getAbsoluteFile();
+      java.io.File main = null;
+      for (int i = 0; d != null && i < 8 && main == null; i++, d = d.getParentFile()) {
+        java.io.File f = new java.io.File(d, "src/com/bloatware/bingblop/MainActivity.java");
+        if (f.isFile()) main = f;
+      }
+      if (main == null) System.out.println("SKIP MainActivity.java not found");
+      else {
+        String src = new String(java.nio.file.Files.readAllBytes(main.toPath()), "UTF-8");
+        int at = src.indexOf("private void downloadAndInstall(");
+        int end = at < 0 ? -1 : src.indexOf("private boolean confirmPrivilegedInstall(", at);
+        is("the download method was found", at >= 0 && end > at);
+        String body = at >= 0 && end > at ? src.substring(at, end) : "";
+        is("the downloaded file gets a name of its own for every call", body.contains("File.createTempFile(\"store-\""));
+        is("and the name is not made from the page's key", !body.contains("hashCode()"));
+      }
+    } catch (java.io.IOException e) {
+      is("MainActivity.java could be read: " + e, false);
+    }
+
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
   }

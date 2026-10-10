@@ -2715,11 +2715,16 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                // One file per item, so two installs started back to back can't overwrite each other's download
-                File apk = new File(new File(getCacheDir(), "updates"), "store-" + Integer.toHexString(key.hashCode()) + ".apk");
+                File apk = null;
                 boolean standard = "standard".equals(resolveExecMode());
                 try {
-                    apk.getParentFile().mkdirs();
+                    // One file of its own for every call, never derived from the key (the page chooses the key, and two keys can share a hash code): the file
+                    // the user is asked about is the file that is installed, and no other request can write into it in between
+                    File dir = new File(getCacheDir(), "updates");
+                    dir.mkdirs();
+                    File[] old = dir.listFiles();
+                    if (old != null) for (File f : old) if (f.getName().startsWith("store-") && f.getName().endsWith(".apk") && f.lastModified() < System.currentTimeMillis() - 24L * 3600 * 1000) f.delete();
+                    apk = File.createTempFile("store-", ".apk", dir);
                     final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
                     storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
                     final String finalUrl = UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
@@ -2770,7 +2775,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard) apk.delete();
+                    if (!standard && apk != null) apk.delete();
                     storeInstalling.remove(key);
                 }
             }

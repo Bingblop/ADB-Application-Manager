@@ -3,8 +3,9 @@ package com.bloatware.bingblop;
 /**
  * The text of the question asked before an app that was downloaded from a web address is installed with a privileged mode (adb, Shizuku, root), which
  * installs without the system installer's own confirmation. It names only what the app itself has checked: the package and version inside the downloaded
- * file, where it came from, and whether it is new or replaces an installed app. Nothing in it comes from the page except the label, which is shown as
- * text and marked as the page's name for it, and the checksum, which is said to come with the request. Pure Java, no android.* classes.
+ * file, where it came from, and whether it is new or replaces an installed app. Three things in it come from the page and are labelled so: the name it gave
+ * the app (the label), the checksum (said to come with the request), and the host of the address it gave, which is shown only when the bytes finally came
+ * from another host (requestedHost). Pure Java, no android.* classes.
  */
 final class InstallConfirm {
     private InstallConfirm() {}
