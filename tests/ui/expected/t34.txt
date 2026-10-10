@@ -10,7 +10,8 @@
 4. modal closed after insert: true
    inserted into termCmd: "getprop ro.build.version.release" | no "adb shell" prefix: true
 5. placeholder command inserted: "am force-stop <package>"
-6. gist load button present: true
-   gist content rendered via callback: true
-   load button hidden after success: true
+6. gist button present: true
+   the gist was opened in the browser, once: true
+   no script from the gist was added to the page and no JSONP callback exists: true
+   the box says so: true
 errors: []
