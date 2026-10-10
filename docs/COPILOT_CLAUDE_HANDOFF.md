@@ -114,7 +114,7 @@ Entries below come from a read-only review by a Claude subagent at commit `ac77d
 
 Status of the rows above: everything marked "in v7.12.9" is merged and has passed CI; **none of it has been run on a device**. The on-device checklist is `docs/DEVICE-TEST-CHECKLIST.md`, section 19.
 
-Open, in the order I would take them:
+Status and follow-ups (items that say "done" are done and in v7.12.9; the others are open, in the order I would take them):
 
 1. **C-005 remainder:** the shared `__SDM_END__` marker of the other `SdmFsShell` calls (`list`, `exists`, `delete`, ...): they print no stat records, but a name holding it can cut a `list` short. (The APK scan part is done: #97.)
 2. **C-011 remainder:** done and merged: shell arguments (#90), inline-`onclick` escapes (#110), the cheat-sheet gist (#108), the `cdAdb` rules (#112), the path guard for the path-taking bridge methods (`deleteBackup`, `fmOpenWith`, `shareStoredFile`, `cdBtSend`, `virusTotalUpload`; #111, merged as 4fb5796; it also records C-016: the File Manager's own routes reach the same data, and the check-then-open race). In review at the time of writing: native confirmation for `storeInstall` / `storeSourceInstall` (#109; one security thread waits for the owner's decision). Still open: a CSP with `frame-src 'none'` and a test; the VirusTotal key still comes from the page with each scan. (The audit of the page's `innerHTML` uses is done: the others were classed safe or latent.)
