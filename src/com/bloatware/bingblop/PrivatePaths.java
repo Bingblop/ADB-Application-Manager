@@ -83,6 +83,8 @@ final class PrivatePaths {
                     if (!a.accepts(file)) continue;
                     if (links == null) return true;
                     if (links.count(file) != 1) return true;
+                } else if (java.nio.file.Files.isSymbolicLink(f.toPath())) {
+                    return true;              // a link that leads to no file (a loop, a missing target, a folder): nothing to hand out, and nothing to guess about
                 }
                 return false;
             }

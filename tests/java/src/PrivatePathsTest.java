@@ -153,7 +153,11 @@ public class PrivatePathsTest {
     File loopA = new File(upd, "loopA"), loopB = new File(upd, "loopB");
     boolean loopOk;
     try { Files.createSymbolicLink(loopA.toPath(), loopB.toPath()); Files.createSymbolicLink(loopB.toPath(), loopA.toPath()); loopOk = true; } catch (Exception e) { loopOk = false; }
-    if (loopOk) { boolean r; try { r = B(loopA, data, okA); } catch (Throwable t) { r = false; } is("a link loop answers (and opens nothing: it is not a file)", !loopA.isFile() || r); }
+    if (loopOk) { boolean r; try { r = B(loopA, data, okA); } catch (Throwable t) { r = false; } is("a link loop in an allowed folder fails closed (protected), without an exception", r); }
+    File dangling = new File(upd, "dangling");
+    boolean dangOk;
+    try { Files.createSymbolicLink(dangling.toPath(), new File(data, "shared_prefs/not-there.xml").toPath()); dangOk = true; } catch (Exception e) { dangOk = false; }
+    if (dangOk) is("a link whose target is missing is protected too", B(dangling, data, okA));
     // an allowed folder that was replaced by a link to another allowed folder: its files count as the other folder's
     // an allowed folder replaced by a link to a private folder: nothing under it counts
     File swapRoot = new File(cache, "installer");
@@ -180,7 +184,7 @@ public class PrivatePathsTest {
       is("a path through the real folder is protected when the data folder is given as the link", B(prefs, dataLink, PrivatePaths.exportable(new File(dataLink, "files"), new File(dataLink, "cache"))));
     }
     // a relative path and an empty one
-    is("an empty path is not a way into the data folder", !B(new File(""), data, okA) || true);
+    is("an empty path means the working folder, which is not the data folder, so it is not protected (and opens nothing)", !B(new File(""), data, okA));
     is("a path with a NUL byte is protected or refused (never taken for the cache)", B(new File(upd.getPath() + "\u0000/../../shared_prefs/prefs.xml"), data, okA));
 
     System.out.println(n + " checks, " + fails + " failed");
