@@ -34,12 +34,8 @@ final class SessionMap<T> {
      * holds the id.
      */
     boolean ended(String id, T session) {
-        T cur = map.get(id);
-        if (cur == session) {
-            map.remove(id, session);
-            return true;
-        }
-        return cur == null;
+        if (map.remove(id, session)) return true;
+        return !map.containsKey(id);
     }
 
     /** Empties the map and returns what was in it. */

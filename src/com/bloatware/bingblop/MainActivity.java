@@ -8187,11 +8187,13 @@ public class MainActivity extends Activity {
                             }
                         });
                         Integer early;
+                        PtyShell prev;
                         synchronized (me) {
+                            // stored before it is published, so a listener that sees me[0] also finds it in the map
+                            prev = ptySessions.put(key, sh);
                             me[0] = sh;
                             early = earlyExit[0];
                         }
-                        PtyShell prev = ptySessions.put(key, sh);
                         if (prev != null && prev != sh) prev.close();
                         if (early != null) ptyEnded(key, sh, early);
                         res.put("ok", true);
