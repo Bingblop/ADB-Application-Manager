@@ -25,11 +25,12 @@ const { chromium, PAGE } = require('./lib/pw');
           app: { slug, name: slug === 'bravo' ? 'Bravo Utility' : 'Alpha Tool', packageName: 'com.' + slug, versionName: '2.1',
             fullDescription: 'Full description for ' + slug, stars: 500, downloadTotal: 5000, authorName: 'dev', license: 'GPL-3.0',
             categorySlug: 'utilities', permissions: ['android.permission.INTERNET'], screenshots: [], sourceUrl: 'https://github.com/x/' + slug },
-          download: { apkUrl: 'https://store.example/' + slug + '.apk', packageName: 'com.' + slug, versionName: '2.1', size: 5242880, source: 'GitHub' }
+          download: { apkUrl: 'https://store.example/' + slug + '.apk', packageName: 'com.' + slug, versionName: '2.1', size: 5242880, sha256: 'ab'.repeat(32), source: 'GitHub' }
         })), 0);
       },
-      storeInstall(apkUrl, pkg, label) {
+      storeInstall(apkUrl, pkg, label, sha256) {
         window.__calls.push('install:' + pkg + ':' + apkUrl);
+        window.__installSha = sha256;
         setTimeout(() => window.onStoreInstallProgress(JSON.stringify({ pkg, stage: 'downloading', percent: 50, message: '2 MB' })), 0);
         setTimeout(() => window.onStoreInstallProgress(JSON.stringify({ pkg, stage: 'done', percent: 100, message: 'Installed ' + label + ' 2.1.', installedPkg: pkg, label })), 5);
       },
@@ -73,6 +74,8 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('#storeInstallBtn'); await page.waitForTimeout(60);
   const installed = (await page.evaluate(() => window.__calls)).some(c => c.startsWith('install:'));
   const progressText = await page.locator('#storeInstallProgress').innerText();
+  const shaSent = await page.evaluate(() => window.__installSha);
+  console.log('6a. the published checksum reaches the native install:', shaSent === 'ab'.repeat(32), shaSent);
   console.log('6. install bridge called:', installed, '| progress:', JSON.stringify(progressText));
 
   // 7) A successful install also opens the result sheet, with Launch Application and Application Settings.
