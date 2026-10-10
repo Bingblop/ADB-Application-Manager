@@ -3197,7 +3197,9 @@ public class MainActivity extends Activity {
      */
     private boolean isPrivateData(File f) {
         File cache = getCacheDir();
-        return PrivatePaths.blocked(f, getDataDir(),
+        return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {
+                    @Override public long count(File x) throws Exception { return android.system.Os.stat(x.getPath()).st_nlink; }
+                },
                 new File(getFilesDir(), "logs"), new File(getFilesDir(), "morphe"),
                 // Only the cache folders that hold files the user picked or downloaded. The rest of the cache (backup_data_*.tar, restore_*,
                 // root_*.sh, archive_*.tmp) is the app's own working data and stays protected.

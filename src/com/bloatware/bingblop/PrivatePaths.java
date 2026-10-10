@@ -12,20 +12,49 @@ import java.io.IOException;
 final class PrivatePaths {
     private PrivatePaths() {}
 
-    /** True when {@code f} is inside {@code dataDir} and not inside one of the {@code allowed} sub-folders. */
-    static boolean blocked(File f, File dataDir, File... allowed) {
+    /** How many names a file has (its hard-link count); the caller supplies it because android.system.Os is not available here. */
+    interface Links { long count(File f) throws Exception; }
+
+    /**
+     * True when {@code f} is inside {@code dataDir} and not inside one of the {@code allowed} sub-folders.
+     * <ul>
+     * <li>An allowed folder only counts when it really is where it should be: textually below {@code dataDir}, and its resolved location equal to the
+     * resolved data folder plus the same relative path. A link put in its place (cache/share pointing at shared_prefs) makes it count for nothing, so
+     * everything under it stays protected.</li>
+     * <li>A regular file inside an allowed folder with more than one name is protected: a hard link made in the cache to a private file resolves to a
+     * path in the allowed tree but is the same file as the private one. A link count that cannot be read counts as protected.</li>
+     * </ul>
+     */
+    static boolean blocked(File f, File dataDir, Links links, File... allowed) {
         if (f == null || dataDir == null) return true;
         try {
             File data = dataDir.getCanonicalFile();
             File file = f.getCanonicalFile();
             if (!inside(file, data)) return false;
             if (allowed != null) for (File a : allowed) {
-                if (a != null && inside(file, a.getCanonicalFile())) return false;
+                if (a == null) continue;
+                File root = genuineRoot(a, dataDir, data);
+                if (root == null || !inside(file, root)) continue;
+                if (file.isFile()) {
+                    if (links == null) return true;
+                    if (links.count(file) != 1) return true;
+                }
+                return false;
             }
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             return true;
         }
+    }
+
+    /** The resolved {@code a} when it is the real folder below the data folder (not a link elsewhere), otherwise null. */
+    private static File genuineRoot(File a, File dataDir, File canonData) throws IOException {
+        java.nio.file.Path ap = a.toPath().toAbsolutePath().normalize();
+        java.nio.file.Path dp = dataDir.toPath().toAbsolutePath().normalize();
+        if (!ap.startsWith(dp) || ap.equals(dp)) return null;
+        File expected = new File(canonData, dp.relativize(ap).toString());
+        File actual = a.getCanonicalFile();
+        return actual.equals(expected) ? actual : null;
     }
 
     /** {@code f} is {@code dir} or below it (a whole path component, so "/data/x2" is not inside "/data/x"). */

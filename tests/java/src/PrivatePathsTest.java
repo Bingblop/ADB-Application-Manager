@@ -7,6 +7,11 @@ import java.nio.file.Files;
 public class PrivatePathsTest {
   static int fails = 0, n = 0;
   static void is(String what, boolean ok) { n++; if (!ok) { fails++; System.out.println("FAIL " + what); } }
+  /** The link count as the JDK reports it on Linux (the app uses android.system.Os.stat for the same). */
+  static final PrivatePaths.Links L = new PrivatePaths.Links() {
+    public long count(File f) throws Exception { return ((Number) Files.getAttribute(f.toPath(), "unix:nlink")).longValue(); }
+  };
+  static boolean B(File f, File data, File... allowed) { return PrivatePaths.blocked(f, data, L, allowed); }
   static File touch(File f) throws Exception { f.getParentFile().mkdirs(); Files.write(f.toPath(), new byte[]{1}); return f; }
 
   public static void main(String[] a) throws Exception {
@@ -26,37 +31,66 @@ public class PrivatePathsTest {
     File restore = touch(new File(cache, "restore_123/data.tar"));
     File rootSh = touch(new File(cache, "root_1.sh"));
 
-    is("shared_prefs is protected", PrivatePaths.blocked(prefs, data, ok));
-    is("the adb key is protected", PrivatePaths.blocked(key, data, ok));
-    is("the data folder itself is protected", PrivatePaths.blocked(data, data, ok));
-    is("an exportable cache folder is not (share)", !PrivatePaths.blocked(c1, data, ok));
-    is("an exportable cache folder is not (updates)", !PrivatePaths.blocked(c2, data, ok));
-    is("a full-data backup tar in the cache is protected", PrivatePaths.blocked(backup, data, ok));
-    is("a restore work folder in the cache is protected", PrivatePaths.blocked(restore, data, ok));
-    is("a root script in the cache is protected", PrivatePaths.blocked(rootSh, data, ok));
-    is("a look-alike cache folder (updates2) is protected", PrivatePaths.blocked(touch(new File(cache, "updates2/x.apk")), data, ok));
-    is("logs are not", !PrivatePaths.blocked(l1, data, ok));
-    is("patched APKs are not", !PrivatePaths.blocked(m1, data, ok));
-    is("a file outside the data folder is not", !PrivatePaths.blocked(outside, data, ok));
-    is("a look-alike folder (com.example.app2) is not inside com.example.app", !PrivatePaths.blocked(sibling, data, ok));
+    is("shared_prefs is protected", B(prefs, data, ok));
+    is("the adb key is protected", B(key, data, ok));
+    is("the data folder itself is protected", B(data, data, ok));
+    is("an exportable cache folder is not (share)", !B(c1, data, ok));
+    is("an exportable cache folder is not (updates)", !B(c2, data, ok));
+    is("a full-data backup tar in the cache is protected", B(backup, data, ok));
+    is("a restore work folder in the cache is protected", B(restore, data, ok));
+    is("a root script in the cache is protected", B(rootSh, data, ok));
+    is("a look-alike cache folder (updates2) is protected", B(touch(new File(cache, "updates2/x.apk")), data, ok));
+    is("logs are not", !B(l1, data, ok));
+    is("patched APKs are not", !B(m1, data, ok));
+    is("a file outside the data folder is not", !B(outside, data, ok));
+    is("a look-alike folder (com.example.app2) is not inside com.example.app", !B(sibling, data, ok));
 
-    is("'..' out of the cache into shared_prefs is protected", PrivatePaths.blocked(new File(cache, "../shared_prefs/prefs.xml"), data, ok));
-    is("'..' out of the cache into the sdcard folder is not", !PrivatePaths.blocked(new File(cache, "../../../sdcard/Download/app.apk"), data, ok));
-    is("a non-canonical path to the cache is not", !PrivatePaths.blocked(new File(data, "files/../cache/share/a/app.apk"), data, ok));
+    is("'..' out of the cache into shared_prefs is protected", B(new File(cache, "../shared_prefs/prefs.xml"), data, ok));
+    is("'..' out of the cache into the sdcard folder is not", !B(new File(cache, "../../../sdcard/Download/app.apk"), data, ok));
+    is("a non-canonical path to the cache is not", !B(new File(data, "files/../cache/share/a/app.apk"), data, ok));
 
     // a link inside the cache that points at the preferences
     File link = new File(cache, "share/innocent.apk");
     boolean linked;
     try { Files.createSymbolicLink(link.toPath(), prefs.toPath()); linked = true; } catch (Exception e) { linked = false; System.out.println("   (symbolic links not available here; link checks skipped)"); }
     if (linked) {
-      is("a symbolic link in the cache to shared_prefs is protected", PrivatePaths.blocked(link, data, ok));
+      is("a symbolic link in the cache to shared_prefs is protected", B(link, data, ok));
       File dirLink = new File(root, "sdcard/Download/shortcut");
       Files.createSymbolicLink(dirLink.toPath(), new File(data, "shared_prefs").toPath());
-      is("a link outside the data folder to its shared_prefs is protected", PrivatePaths.blocked(new File(dirLink, "prefs.xml"), data, ok));
+      is("a link outside the data folder to its shared_prefs is protected", B(new File(dirLink, "prefs.xml"), data, ok));
     }
 
-    is("null file or null data folder is protected", PrivatePaths.blocked(null, data, ok) && PrivatePaths.blocked(prefs, null, ok));
-    is("no allowed folders: everything inside is protected", PrivatePaths.blocked(c1, data));
+    // a hard link made in an allowed folder to a private file: same file, allowed-looking path
+    File hard = new File(cache, "share/leak.apk");
+    boolean hardOk;
+    try { Files.createLink(hard.toPath(), prefs.toPath()); hardOk = true; } catch (Exception e) { hardOk = false; System.out.println("   (hard links not available here; hard-link checks skipped)"); }
+    if (hardOk) {
+      is("a hard link in an allowed folder to shared_prefs is protected", B(hard, data, ok));
+      is("the original private file is still protected", B(prefs, data, ok));
+    }
+    is("a file with one name in an allowed folder is not protected", !B(c1, data, ok));
+    is("a link count that cannot be read counts as protected",
+        PrivatePaths.blocked(c1, data, new PrivatePaths.Links() { public long count(File f) throws Exception { throw new java.io.IOException("no stat"); } }, ok));
+    is("no way to read link counts counts as protected", PrivatePaths.blocked(c1, data, null, ok));
+    is("a directory in an allowed folder needs no link count", !PrivatePaths.blocked(new File(cache, "share/a"), data, null, ok));
+
+    // an allowed folder replaced by a link to a private folder is no longer an allowed folder
+    File swapped = new File(cache, "swapped");
+    File swapTarget = new File(data, "shared_prefs");
+    touch(new File(swapTarget, "solo.xml"));       // one name only: the link count alone must not be what protects it
+    boolean swapOk;
+    try { Files.createSymbolicLink(swapped.toPath(), swapTarget.toPath()); swapOk = true; } catch (Exception e) { swapOk = false; }
+    if (swapOk) {
+      File[] ok2 = { logs, morphe, swapped };
+      is("a file under an allowed folder that is a link to shared_prefs is protected", B(new File(swapped, "solo.xml"), data, ok2));
+      is("the real shared_prefs path is protected as well", B(new File(swapTarget, "solo.xml"), data, ok2));
+    }
+    File outsideRoot = new File(root, "sdcard/Download");
+    is("an allowed folder outside the data folder is ignored (nothing there to protect)", !B(outside, data, new File[] { outsideRoot }));
+    is("an allowed folder that is the data folder itself is ignored", B(prefs, data, new File[] { data }));
+
+    is("null file or null data folder is protected", B(null, data, ok) && B(prefs, null, ok));
+    is("no allowed folders: everything inside is protected", B(c1, data));
 
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
