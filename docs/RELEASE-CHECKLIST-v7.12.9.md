@@ -7,7 +7,7 @@ The release is a pull request (this one), then the `release.yml` workflow with t
 - [ ] The release pull request is merged and CI on `main` is green for that commit (build, Java suites, UI scripts, the Copilot reviewer check).
 - [ ] `CHANGELOG.md` has a `## v7.12.9-Pro (versionCode 851)` section. The workflow copies that section into the release text, so read it once as the person who will see it: every sentence must be true of this build. A pull request that was left out must not be mentioned.
 - [ ] `AndroidManifest.xml` says versionName `7.12.9-Pro` and versionCode `851`, and the README "what's new" matches the changelog.
-- [ ] The repository secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD` and `KEY_ALIAS` are set. Without them the APKs are signed with a throwaway key and will not install over the current app (the workflow only warns).
+- [ ] The repository secret `KEYSTORE_BASE64` (the release keystore, base64) is set, with `KEYSTORE_PASSWORD` and `KEY_ALIAS` if the keystore does not use the defaults (`password` and `adbmanager`). Without `KEYSTORE_BASE64` the APKs are signed with a throwaway key and will not install over the current app (the workflow only warns, and then has no certificate to check).
 - [ ] The on-device checklist (`docs/DEVICE-TEST-CHECKLIST.md`, section 19, and `docs/DEVICE-TEST-SCRIPT.md` for the adb commands) has been offered to the owner. AGENTS.md asks for that before a release.
 - [ ] If the `release.yml` patch that was handed over during the review is wanted, it goes in as its own pull request first. It is a change to release policy, so it needs the owner.
 
