@@ -108,14 +108,12 @@ public final class StoreDetail {
     private static final int MAX_README = 6000;
 
     static String get(String url, String accept, String token, int maxBytes) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", "ADB-Application-Manager");
+        if (accept != null) hdr.put("Accept", accept);
+        if (token != null && !token.isEmpty()) hdr.put("Authorization", "Bearer " + token);
+        HttpURLConnection c = HttpSafe.open(url, 15000, 30000, hdr);
         try {
-            c.setConnectTimeout(15000);
-            c.setReadTimeout(30000);
-            c.setInstanceFollowRedirects(true);
-            c.setRequestProperty("User-Agent", "ADB-Application-Manager");
-            if (accept != null) c.setRequestProperty("Accept", accept);
-            if (token != null && !token.isEmpty()) c.setRequestProperty("Authorization", "Bearer " + token);
             int code = c.getResponseCode();
             if (code == 404) throw new IllegalStateException("not found (HTTP 404)");
             if (code == 403 || code == 429) throw new IllegalStateException("the limit for requests is used up (HTTP " + code + ")");
