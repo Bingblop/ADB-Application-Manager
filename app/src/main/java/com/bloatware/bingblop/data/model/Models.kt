@@ -183,3 +183,34 @@ data class BatchDexOptSummary(
     val results: List<DexOptResult>,
     val cancelled: Boolean = false
 )
+
+enum class StandbyBucket(val arg: String, val title: String, val colorHex: Long) {
+    ACTIVE("active", "Active", 0xFF00E676),
+    WORKING_SET("working_set", "Working Set", 0xFF00E5FF),
+    FREQUENT("frequent", "Frequent", 0xFFFFB300),
+    RARE("rare", "Rare", 0xFFFF9100),
+    RESTRICTED("restricted", "Restricted", 0xFFFF5252)
+}
+
+enum class AppOpType(val opName: String, val title: String, val description: String) {
+    RUN_IN_BACKGROUND("RUN_IN_BACKGROUND", "Run In Background", "Prevent background battery drain and rogue services"),
+    BOOT_COMPLETED("BOOT_COMPLETED", "Start At Boot", "Prevent app from auto-starting on device startup"),
+    SYSTEM_ALERT_WINDOW("SYSTEM_ALERT_WINDOW", "Draw Over Apps", "Display floating windows or overlay alerts"),
+    WAKE_LOCK("WAKE_LOCK", "Wake Lock", "Prevent CPU wake locks from keeping device awake"),
+    TOAST_WINDOW("TOAST_WINDOW", "Toast Alerts", "Block spamming toast popups")
+}
+
+data class CrashLogEntry(
+    val id: String,
+    val tag: String,
+    val timestamp: String,
+    val summary: String,
+    val details: String
+)
+
+data class PowerUserApp(
+    val packageName: String,
+    val name: String,
+    val description: String,
+    val permissions: List<String>
+)

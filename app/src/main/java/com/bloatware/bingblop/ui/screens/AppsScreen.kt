@@ -87,6 +87,8 @@ import com.bloatware.bingblop.data.model.DebloatPackage
 import com.bloatware.bingblop.data.model.DexOptMode
 import com.bloatware.bingblop.data.model.DexOptResult
 import com.bloatware.bingblop.data.model.BatchDexOptSummary
+import com.bloatware.bingblop.data.model.StandbyBucket
+import com.bloatware.bingblop.data.model.AppOpType
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.InteractiveStatBadge
@@ -159,6 +161,13 @@ fun AppsScreen(
     var isDexOptBusy by remember { mutableStateOf(false) }
     var dexOptResultText by remember { mutableStateOf<String?>(null) }
     var showBatchDexOptDialog by remember { mutableStateOf(false) }
+
+    // Standby Bucket & Game Mode & AppOps state
+    var appStandbyBucket by remember { mutableStateOf<String?>(null) }
+    var appGameMode by remember { mutableStateOf<String?>(null) }
+    var appOpsStates by remember { mutableStateOf<Map<AppOpType, Boolean>>(emptyMap()) }
+    var isExtractingApk by remember { mutableStateOf(false) }
+    var extractedApkPath by remember { mutableStateOf<String?>(null) }
 
     BackHandler(enabled = isDebloatMode) {
         isDebloatMode = false
@@ -624,6 +633,10 @@ fun AppsScreen(
                                 componentFilterType = null
                                 appDexStatus = "Checking ART status..."
                                 dexOptResultText = null
+                                appStandbyBucket = "Loading..."
+                                appGameMode = "Loading..."
+                                appOpsStates = emptyMap()
+                                extractedApkPath = null
                                 scope.launch {
                                     val (perms, acts) = appRepository.getAppDetails(app.packageName)
                                     detailedPermissions = perms
@@ -632,6 +645,13 @@ fun AppsScreen(
                                     detailedComponents = comps
                                     isLoadingComponents = false
                                     appDexStatus = appRepository.getDexOptStatus(app.packageName)
+                                    appStandbyBucket = appRepository.getStandbyBucket(app.packageName)
+                                    appGameMode = appRepository.getGameMode(app.packageName)
+                                    val m = mutableMapOf<AppOpType, Boolean>()
+                                    AppOpType.values().forEach { op ->
+                                        m[op] = appRepository.getAppOpState(app.packageName, op)
+                                    }
+                                    appOpsStates = m
                                 }
                             },
                             onQuickFreezeToggle = {
@@ -856,7 +876,7 @@ fun AppsScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Segmented Tab Switcher: Overview vs DEX-Opt vs Component Disabler
+                // Segmented Tab Switcher: Overview vs DEX-Opt vs AppOps vs Component Disabler
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -866,7 +886,7 @@ fun AppsScreen(
                         .padding(3.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    listOf("Overview", "⚡ DEX-Opt", "Components (${detailedComponents.size})").forEachIndexed { index, title ->
+                    listOf("Overview", "⚡ DEX-Opt", "AppOps Privacy", "Components (${detailedComponents.size})").forEachIndexed { index, title ->
                         val isSelected = selectedSheetTab == index
                         Box(
                             modifier = Modifier
@@ -879,9 +899,10 @@ fun AppsScreen(
                         ) {
                             Text(
                                 text = title,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                color = if (isSelected) BgBase else TextMuted
+                                color = if (isSelected) BgBase else TextMuted,
+                                maxLines = 1
                             )
                         }
                     }
@@ -1099,6 +1120,99 @@ fun AppsScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                if (isExtractingApk) return@OutlinedButton
+                                isExtractingApk = true
+                                scope.launch {
+                                    val res = appRepository.extractApk(app.packageName)
+                                    isExtractingApk = false
+                                    res.fold(
+                                        onSuccess = { path ->
+                                            extractedApkPath = path
+                                            Toast.makeText(context, "✓ Saved: $path", Toast.LENGTH_LONG).show()
+                                        },
+                                        onFailure = {
+                                            Toast.makeText(context, "Extraction error: ${it.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = !isExtractingApk && !isSheetBusy,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (isExtractingApk) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = AccentCyan, strokeWidth = 2.dp)
+                            } else {
+                                Text(if (extractedApkPath != null) "✓ APK Extracted" else "Extract Base APK", fontSize = 11.sp, color = AccentCyan)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                val nextMode = when (appGameMode) {
+                                    "Performance" -> "battery"
+                                    "Battery" -> "standard"
+                                    else -> "performance"
+                                }
+                                scope.launch {
+                                    appRepository.setGameMode(app.packageName, nextMode)
+                                    appGameMode = appRepository.getGameMode(app.packageName)
+                                }
+                            },
+                            enabled = !isSheetBusy,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Game: ${appGameMode ?: "Std"}", fontSize = 11.sp, color = TextMain)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Standby Bucket (Doze & Power Limits)
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("STANDBY BUCKET (DOZE / POWER)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                Text(appStandbyBucket ?: "UNKNOWN", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                StandbyBucket.values().forEach { bucket ->
+                                    val isSelected = appStandbyBucket.equals(bucket.arg, ignoreCase = true) || appStandbyBucket.equals(bucket.title, ignoreCase = true)
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isSelected) Color(bucket.colorHex).copy(alpha = 0.25f) else BgSurface)
+                                            .border(1.dp, if (isSelected) Color(bucket.colorHex) else BorderGlass, RoundedCornerShape(6.dp))
+                                            .clickable {
+                                                scope.launch {
+                                                    appRepository.setStandbyBucket(app.packageName, bucket)
+                                                    appStandbyBucket = bucket.title
+                                                }
+                                            }
+                                            .padding(vertical = 5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = bucket.title.take(4),
+                                            fontSize = 9.sp,
+                                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Normal,
+                                            color = if (isSelected) Color(bucket.colorHex) else TextDim
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = { selectedSheetTab = 1 },
                         enabled = !isSheetBusy,
@@ -1292,6 +1406,61 @@ fun AppsScreen(
                                     color = if (out.startsWith("✓")) CleanGreen else StatusBloat,
                                     fontFamily = FontFamily.Monospace
                                 )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+                } else if (selectedSheetTab == 2) {
+                    // AppOps Privacy & Permissions Tab
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CyberCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("Android AppOps Governance", fontSize = 12.sp, fontWeight = FontWeight.Black, color = AccentCyan)
+                                Text(
+                                    "AppOps allows enforcing privacy and runtime restrictions beyond standard Android permissions. Ignored ops silently discard actions without app crashes.",
+                                    fontSize = 10.sp,
+                                    color = TextDim
+                                )
+                            }
+                        }
+
+                        Text("RUNTIME CAPABILITIES & PERMISSION GATES", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+
+                        AppOpType.values().forEach { op ->
+                            val isAllowed = appOpsStates[op] ?: true
+                            CyberCard(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(op.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                        Text(op.description, fontSize = 10.sp, color = TextMuted)
+                                    }
+                                    Switch(
+                                        checked = isAllowed,
+                                        onCheckedChange = { allow ->
+                                            val updated = appOpsStates.toMutableMap()
+                                            updated[op] = allow
+                                            appOpsStates = updated
+                                            scope.launch {
+                                                val res = appRepository.setAppOpState(app.packageName, op, allow)
+                                                Toast.makeText(context, res.getOrDefault("Updated"), Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = BgBase,
+                                            checkedTrackColor = CleanGreen,
+                                            uncheckedThumbColor = BgBase,
+                                            uncheckedTrackColor = StatusBloat
+                                        )
+                                    )
+                                }
                             }
                         }
 

@@ -147,10 +147,10 @@ fun ADBApp(
             when (selectedIndex) {
                 0 -> AppsScreen(appRepository = appRepository)
                 1 -> CleanerScreen(cleanerRepository = cleanerRepository)
-                2 -> SettingsScreen(settingsRepository = settingsRepository)
+                2 -> SettingsScreen(settingsRepository = settingsRepository, appRepository = appRepository)
                 3 -> InstallerScreen()
                 4 -> TerminalScreen(shellRepository = shellRepository, logcatRepository = logcatRepository)
-                5 -> MonitorScreen(monitorRepository = monitorRepository, shellRepository = shellRepository)
+                5 -> MonitorScreen(monitorRepository = monitorRepository, shellRepository = shellRepository, appRepository = appRepository)
             }
         }
     }

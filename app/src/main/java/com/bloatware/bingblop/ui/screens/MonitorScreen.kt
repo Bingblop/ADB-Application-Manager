@@ -59,7 +59,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bloatware.bingblop.data.model.CrashLogEntry
 import com.bloatware.bingblop.data.model.DeviceInfo
+import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.MonitorRepository
 import com.bloatware.bingblop.data.repository.PowerAction
 import com.bloatware.bingblop.data.repository.ShellRepository
@@ -83,6 +85,7 @@ import kotlinx.coroutines.launch
 fun MonitorScreen(
     monitorRepository: MonitorRepository,
     shellRepository: ShellRepository,
+    appRepository: AppRepository,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -93,10 +96,14 @@ fun MonitorScreen(
     var pendingPowerAction by remember { mutableStateOf<PowerAction?>(null) }
     var isExecutingPowerAction by remember { mutableStateOf(false) }
 
+    var crashLogs by remember { mutableStateOf<List<CrashLogEntry>>(emptyList()) }
+    var expandedCrashId by remember { mutableStateOf<String?>(null) }
+
     fun refreshMetrics() {
         isLoading = true
         scope.launch {
             deviceInfo = monitorRepository.getDeviceInfo()
+            crashLogs = appRepository.getDropboxCrashLogs()
             isLoading = false
         }
     }
@@ -392,6 +399,77 @@ fun MonitorScreen(
                             SpecRow("Security Patch", info.securityPatch)
                             SpecRow("Linux Kernel", info.kernelVersion)
                             SpecRow("System Uptime", if (uptimeDays > 0) "${uptimeDays}d ${uptimeHours % 24}h" else "${uptimeHours}h")
+                        }
+                    }
+                }
+
+                // Dropbox Crash & ANR Telemetry (dumpsys dropbox)
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = StatusBloat, modifier = Modifier.size(18.dp))
+                                    Text("SYSTEM CRASH & ANR LOGS (DROPBOX)", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill("${crashLogs.size} EVENTS", if (crashLogs.isEmpty()) CleanGreen else StatusBloat)
+                            }
+
+                            if (crashLogs.isEmpty()) {
+                                Text("No recent fatal crashes or ANR events recorded in Android Dropbox.", fontSize = 11.sp, color = TextDim)
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    crashLogs.forEach { log ->
+                                        val isExpanded = expandedCrashId == log.id
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(BgSurface)
+                                                .border(1.dp, if (log.tag.contains("ANR")) Color(0xFFFFB300) else StatusBloat, RoundedCornerShape(8.dp))
+                                                .clickable { expandedCrashId = if (isExpanded) null else log.id }
+                                                .padding(8.dp)
+                                        ) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    StatusPill(log.tag, if (log.tag.contains("ANR")) Color(0xFFFFB300) else StatusBloat)
+                                                    Text(log.timestamp, fontSize = 10.sp, color = TextMuted)
+                                                }
+                                                Text(log.summary, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                                if (isExpanded) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .clip(RoundedCornerShape(6.dp))
+                                                            .background(BgBase)
+                                                            .padding(6.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = log.details,
+                                                            fontSize = 10.sp,
+                                                            color = AccentCyan,
+                                                            fontFamily = FontFamily.Monospace
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    text = if (isExpanded) "Tap to collapse ▲" else "Tap to view stack trace ▼",
+                                                    fontSize = 9.sp,
+                                                    color = AccentCyan
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

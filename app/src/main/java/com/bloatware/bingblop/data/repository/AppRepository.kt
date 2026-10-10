@@ -17,6 +17,10 @@ import com.bloatware.bingblop.data.model.DebloatPackage
 import com.bloatware.bingblop.data.model.DexOptMode
 import com.bloatware.bingblop.data.model.DexOptResult
 import com.bloatware.bingblop.data.model.BatchDexOptSummary
+import com.bloatware.bingblop.data.model.StandbyBucket
+import com.bloatware.bingblop.data.model.AppOpType
+import com.bloatware.bingblop.data.model.CrashLogEntry
+import com.bloatware.bingblop.data.model.PowerUserApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -375,18 +379,27 @@ class AppRepository(private val context: Context) {
         compileSecondaryDex: Boolean = true
     ): DexOptResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
-        val cmd = if (mode.isReset) {
-            "cmd package compile --reset $packageName 2>&1 || pm compile --reset $packageName 2>&1"
+        val outText = if (mode.isReset) {
+            val cmd = "cmd package compile --reset $packageName 2>&1 || pm compile --reset $packageName 2>&1"
+            val output = runShellCommand(cmd)
+            output.stdout.ifEmpty { output.stderr }.ifEmpty { "Reset complete" }
         } else {
             val forceFlag = if (force) "-f " else ""
-            val secFlag = if (compileSecondaryDex) "--secondary-dex " else ""
             val m = mode.arg
-            "cmd package compile -m $m $forceFlag$secFlag$packageName 2>&1 || pm compile -m $m $forceFlag$packageName 2>&1"
+            // 1. Compile base APK primary code
+            val baseCmd = "cmd package compile -m $m $forceFlag$packageName 2>&1 || pm compile -m $m $forceFlag$packageName 2>&1"
+            val baseOutput = runShellCommand(baseCmd)
+            val baseText = baseOutput.stdout.ifEmpty { baseOutput.stderr }.ifEmpty { "Success" }
+
+            // 2. If secondary DEX optimization requested, also compile split modules / secondary dex
+            if (compileSecondaryDex) {
+                val secCmd = "cmd package compile --secondary-dex -m $m $forceFlag$packageName 2>&1 || pm compile --secondary-dex -m $m $forceFlag$packageName 2>&1"
+                runShellCommand(secCmd)
+            }
+            baseText
         }
-        val output = runShellCommand(cmd)
         val duration = System.currentTimeMillis() - startTime
-        val outText = output.stdout.ifEmpty { output.stderr }.ifEmpty { "Finished" }
-        val isSuccess = output.exitCode == 0 || outText.contains("Success", ignoreCase = true) || (!outText.contains("Failure", ignoreCase = true) && !outText.contains("Error", ignoreCase = true))
+        val isSuccess = outText.contains("Success", ignoreCase = true) || (!outText.contains("Failure", ignoreCase = true) && !outText.contains("Error", ignoreCase = true))
         DexOptResult(
             packageName = packageName,
             mode = mode.arg,
@@ -428,6 +441,190 @@ class AppRepository(private val context: Context) {
             results = results,
             cancelled = wasCancelled
         )
+    }
+
+    suspend fun getStandbyBucket(packageName: String): String = withContext(Dispatchers.IO) {
+        val res = runShellCommand("am get-standby-bucket $packageName")
+        val out = res.stdout.trim()
+        when (out) {
+            "10" -> "ACTIVE"
+            "20" -> "WORKING_SET"
+            "30" -> "FREQUENT"
+            "40" -> "RARE"
+            "45" -> "RESTRICTED"
+            else -> if (out.isNotEmpty()) out.uppercase() else "UNKNOWN"
+        }
+    }
+
+    suspend fun setStandbyBucket(packageName: String, bucket: StandbyBucket): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("am set-standby-bucket $packageName ${bucket.arg}")
+        if (res.exitCode == 0 || res.stdout.isEmpty()) {
+            Result.success("Standby bucket set to ${bucket.title}")
+        } else {
+            Result.success("Standby bucket: ${res.stdout.ifEmpty { res.stderr }}")
+        }
+    }
+
+    suspend fun getAppOpState(packageName: String, op: AppOpType): Boolean = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd appops get $packageName ${op.opName}")
+        val out = res.stdout.lowercase()
+        !out.contains("ignore") && !out.contains("deny") && !out.contains("reject")
+    }
+
+    suspend fun setAppOpState(packageName: String, op: AppOpType, allow: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val mode = if (allow) "allow" else "ignore"
+        val res = runShellCommand("cmd appops set $packageName ${op.opName} $mode")
+        if (res.exitCode == 0 || res.stdout.isEmpty()) {
+            Result.success("${op.title} set to ${if (allow) "Allowed" else "Restricted"}")
+        } else {
+            Result.success("AppOp result: ${res.stdout.ifEmpty { res.stderr }}")
+        }
+    }
+
+    suspend fun getGameMode(packageName: String): String = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd game mode $packageName")
+        val out = res.stdout.trim()
+        when {
+            out.contains("performance", ignoreCase = true) -> "Performance"
+            out.contains("battery", ignoreCase = true) -> "Battery"
+            out.contains("custom", ignoreCase = true) -> "Custom"
+            else -> "Standard"
+        }
+    }
+
+    suspend fun setGameMode(packageName: String, mode: String): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd game mode $mode $packageName")
+        Result.success("Game mode set to $mode (${res.stdout.ifEmpty { "Success" }})")
+    }
+
+    suspend fun extractApk(packageName: String): Result<String> = withContext(Dispatchers.IO) {
+        val pathRes = runShellCommand("pm path $packageName")
+        val rawPaths = pathRes.stdout.lines().filter { it.startsWith("package:") }.map { it.removePrefix("package:").trim() }
+        if (rawPaths.isEmpty()) {
+            return@withContext Result.failure(Exception("Cannot resolve APK path for $packageName"))
+        }
+        val targetDir = "/sdcard/Download/ADBManager"
+        runShellCommand("mkdir -p $targetDir")
+        val baseApk = rawPaths.first()
+        val destFile = "$targetDir/${packageName}_base.apk"
+        val copyRes = runShellCommand("cp $baseApk $destFile || cat $baseApk > $destFile")
+        if (copyRes.exitCode == 0 || runShellCommand("ls $destFile").stdout.contains(destFile)) {
+            Result.success(destFile)
+        } else {
+            Result.success(baseApk)
+        }
+    }
+
+    suspend fun getDropboxCrashLogs(): List<CrashLogEntry> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("dumpsys dropbox --print data_app_crash data_app_anr system_app_crash system_server_crash 2>/dev/null | tail -n 120")
+        val text = res.stdout
+        if (text.isEmpty()) return@withContext emptyList()
+        val entries = mutableListOf<CrashLogEntry>()
+        val blocks = text.split("========================================")
+        blocks.filter { it.isNotBlank() }.takeLast(10).reversed().forEachIndexed { index, block ->
+            val lines = block.lines().filter { it.isNotBlank() }
+            val firstLine = lines.firstOrNull() ?: "Crash Record"
+            val summary = lines.find { it.contains("Package:") || it.contains("Process:") } ?: firstLine
+            entries.add(
+                CrashLogEntry(
+                    id = "crash_$index",
+                    tag = if (block.contains("anr", ignoreCase = true)) "ANR (Freeze)" else "FATAL CRASH",
+                    timestamp = lines.find { it.matches(Regex("""\d{4}-\d{2}-\d{2}.*""")) } ?: "Recent",
+                    summary = summary.trim(),
+                    details = block.trim()
+                )
+            )
+        }
+        entries
+    }
+
+    suspend fun setScreenResolution(width: Int, height: Int): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("wm size ${width}x${height}")
+        Result.success("Resolution set to ${width}x${height}")
+    }
+
+    suspend fun resetScreenResolution(): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("wm size reset")
+        Result.success("Resolution reset to default")
+    }
+
+    suspend fun setScreenDensity(dpi: Int): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("wm density $dpi")
+        Result.success("DPI set to $dpi")
+    }
+
+    suspend fun resetScreenDensity(): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("wm density reset")
+        Result.success("DPI reset to default")
+    }
+
+    suspend fun setRefreshRate(fps: Float): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("settings put system min_refresh_rate $fps && settings put system peak_refresh_rate $fps")
+        Result.success("Refresh rate set to ${fps.toInt()}Hz")
+    }
+
+    suspend fun getBlacklistedIcons(): List<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("settings get secure icon_blacklist")
+        val out = res.stdout.trim()
+        if (out.isNotEmpty() && out != "null") out.split(",").map { it.trim() } else emptyList()
+    }
+
+    suspend fun toggleStatusIconBlacklist(iconKey: String, hide: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val current = getBlacklistedIcons().toMutableSet()
+        if (hide) current.add(iconKey) else current.remove(iconKey)
+        val value = current.joinToString(",")
+        runShellCommand("settings put secure icon_blacklist \"$value\"")
+        Result.success(if (hide) "Hidden $iconKey" else "Restored $iconKey")
+    }
+
+    fun getKnownPowerUserApps(): List<PowerUserApp> {
+        return listOf(
+            PowerUserApp(
+                packageName = "moe.shizuku.privileged.api",
+                name = "Shizuku",
+                description = "System API binder proxy service",
+                permissions = listOf("android.permission.WRITE_SECURE_SETTINGS", "android.permission.DUMP")
+            ),
+            PowerUserApp(
+                packageName = "net.dinglisch.android.taskerm",
+                name = "Tasker",
+                description = "Advanced system automation engine",
+                permissions = listOf("android.permission.WRITE_SECURE_SETTINGS", "android.permission.DUMP", "android.permission.READ_LOGS")
+            ),
+            PowerUserApp(
+                packageName = "com.arlosoft.macrodroid",
+                name = "MacroDroid",
+                description = "Macro automation and trigger service",
+                permissions = listOf("android.permission.WRITE_SECURE_SETTINGS", "android.permission.DUMP")
+            ),
+            PowerUserApp(
+                packageName = "com.termux",
+                name = "Termux",
+                description = "Terminal emulator and Linux environment",
+                permissions = listOf("android.permission.WRITE_SECURE_SETTINGS", "android.permission.DUMP")
+            ),
+            PowerUserApp(
+                packageName = "com.asksven.betterbatterystats",
+                name = "BetterBatteryStats",
+                description = "Deep wake lock telemetry",
+                permissions = listOf("android.permission.BATTERY_STATS", "android.permission.DUMP", "android.permission.PACKAGE_USAGE_STATS")
+            ),
+            PowerUserApp(
+                packageName = "com.zacharee1.systemuituner",
+                name = "SystemUI Tuner",
+                description = "Status bar and system UI customizer",
+                permissions = listOf("android.permission.WRITE_SECURE_SETTINGS", "android.permission.DUMP")
+            )
+        )
+    }
+
+    suspend fun grantPermission(packageName: String, permission: String): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("pm grant $packageName $permission")
+        if (res.exitCode == 0 || res.stdout.isEmpty()) {
+            Result.success("Granted: ${permission.substringAfterLast('.')}")
+        } else {
+            Result.success("Grant: ${res.stdout.ifEmpty { res.stderr }}")
+        }
     }
 
     private suspend fun runShellCommand(cmd: String): CommandResult = withContext(Dispatchers.IO) {

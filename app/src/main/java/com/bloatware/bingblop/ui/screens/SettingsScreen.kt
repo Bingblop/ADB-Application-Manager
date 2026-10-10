@@ -22,12 +22,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +46,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -63,8 +71,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bloatware.bingblop.data.model.PowerUserApp
 import com.bloatware.bingblop.data.model.SettingNamespace
 import com.bloatware.bingblop.data.model.SystemSettingItem
+import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.StatusPill
@@ -84,6 +94,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     settingsRepository: SettingsRepository,
+    appRepository: AppRepository,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -98,6 +109,15 @@ fun SettingsScreen(
 
     var editingItem by remember { mutableStateOf<SystemSettingItem?>(null) }
     var editValueText by remember { mutableStateOf("") }
+
+    // Display & App Grants state
+    var blacklistedIcons by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedRefreshRate by remember { mutableStateOf("Default") }
+    var customWidth by remember { mutableStateOf("1080") }
+    var customHeight by remember { mutableStateOf("2400") }
+    var customDpi by remember { mutableStateOf("420") }
+    val powerApps = remember { appRepository.getKnownPowerUserApps() }
+    var grantingAppPkg by remember { mutableStateOf<String?>(null) }
 
     fun refreshSettings() {
         isLoading = true
@@ -217,7 +237,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Namespace Switcher Tabs
-        val tabs = listOf("Global", "Secure", "System")
+        val tabs = listOf("Global", "Secure", "System", "Display & WM", "App Grants")
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = BgSurface,
@@ -238,17 +258,19 @@ fun SettingsScreen(
                     onClick = {
                         selectedTab = index
                         selectedCategory = "All"
-                        currentNamespace = when (index) {
-                            0 -> SettingNamespace.GLOBAL
-                            1 -> SettingNamespace.SECURE
-                            else -> SettingNamespace.SYSTEM
+                        when (index) {
+                            0 -> currentNamespace = SettingNamespace.GLOBAL
+                            1 -> currentNamespace = SettingNamespace.SECURE
+                            2 -> currentNamespace = SettingNamespace.SYSTEM
+                            3 -> scope.launch { blacklistedIcons = appRepository.getBlacklistedIcons() }
                         }
                     },
                     text = {
                         Text(
                             text = title,
-                            fontSize = 13.sp,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                            fontSize = 10.sp,
+                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1
                         )
                     }
                 )
@@ -257,166 +279,422 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Search Bar with Undo Button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Filter setting keys...", color = TextDim, fontSize = 13.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccentCyan) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted)
+        if (selectedTab < 3) {
+            // Search Bar with Undo Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Filter setting keys...", color = TextDim, fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccentCyan) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted)
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("settings_search_field"),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AccentCyan,
-                    unfocusedBorderColor = BorderGlass,
-                    focusedContainerColor = BgSurface,
-                    unfocusedContainerColor = BgSurface,
-                    focusedTextColor = TextMain,
-                    unfocusedTextColor = TextMain
-                )
-            )
-
-            Button(
-                onClick = {
-                    scope.launch {
-                        val res = settingsRepository.undoLastChange()
-                        Toast.makeText(context, res.fold(onSuccess = { it }, onFailure = { it.message ?: "Failed" }), Toast.LENGTH_SHORT).show()
-                        refreshSettings()
-                    }
-                },
-                enabled = settingsRepository.canUndo(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SecondaryPurple,
-                    disabledContainerColor = BgCard
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.testTag("undo_settings_btn")
-            ) {
-                Icon(Icons.Default.Undo, contentDescription = "Undo", tint = TextMain, modifier = Modifier.size(18.dp))
-            }
-        }
-
-        // Category Filter Chips
-        if (categories.size > 2) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(categories) { cat ->
-                    val isSelected = selectedCategory == cat
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedCategory = cat },
-                        label = {
-                            Text(
-                                text = cat,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AccentCyan.copy(alpha = 0.2f),
-                            selectedLabelColor = AccentCyan,
-                            containerColor = BgCard,
-                            labelColor = TextMuted
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = if (isSelected) AccentCyan else BorderGlass,
-                            enabled = true,
-                            selected = isSelected
-                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("settings_search_field"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentCyan,
+                        unfocusedBorderColor = BorderGlass,
+                        focusedContainerColor = BgSurface,
+                        unfocusedContainerColor = BgSurface,
+                        focusedTextColor = TextMain,
+                        unfocusedTextColor = TextMain
                     )
+                )
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            val res = settingsRepository.undoLastChange()
+                            Toast.makeText(context, res.fold(onSuccess = { it }, onFailure = { it.message ?: "Failed" }), Toast.LENGTH_SHORT).show()
+                            refreshSettings()
+                        }
+                    },
+                    enabled = settingsRepository.canUndo(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SecondaryPurple,
+                        disabledContainerColor = BgCard
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.testTag("undo_settings_btn")
+                ) {
+                    Icon(Icons.Default.Undo, contentDescription = "Undo", tint = TextMain, modifier = Modifier.size(18.dp))
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = AccentCyan)
+            // Category Filter Chips
+            if (categories.size > 2) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(categories) { cat ->
+                        val isSelected = selectedCategory == cat
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedCategory = cat },
+                            label = {
+                                Text(
+                                    text = cat,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = AccentCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = AccentCyan,
+                                containerColor = BgCard,
+                                labelColor = TextMuted
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = if (isSelected) AccentCyan else BorderGlass,
+                                enabled = true,
+                                selected = isSelected
+                            )
+                        )
+                    }
+                }
             }
-        } else {
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = AccentCyan)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredList, key = { it.key }) { setting ->
+                        CyberCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    editingItem = setting
+                                    editValueText = setting.currentValue
+                                }
+                        ) {
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = setting.title,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextMain
+                                    )
+                                    StatusPill(
+                                        text = setting.currentValue.ifEmpty { "0" },
+                                        color = AccentCyan
+                                    )
+                                }
+
+                                Text(
+                                    text = "${setting.namespace.name.lowercase()}:${setting.key}",
+                                    fontSize = 11.sp,
+                                    color = AccentCyan.copy(alpha = 0.8f),
+                                    fontFamily = FontFamily.Monospace
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = setting.description,
+                                    fontSize = 11.sp,
+                                    color = TextMuted
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = setting.category,
+                                        fontSize = 10.sp,
+                                        color = TextDim
+                                    )
+                                    Text(
+                                        text = "Tap to edit ✎",
+                                        fontSize = 10.sp,
+                                        color = AccentCyan
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(100.dp))
+                    }
+                }
+            }
+        } else if (selectedTab == 3) {
+            // Display & Window Manager Customizer
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(filteredList, key = { it.key }) { setting ->
-                    CyberCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                editingItem = setting
-                                editValueText = setting.currentValue
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Screen Resolution (wm size)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                            Text("Overrides the virtual display framebuffer resolution via WindowManager.", fontSize = 11.sp, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = customWidth,
+                                    onValueChange = { customWidth = it },
+                                    label = { Text("Width (px)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = customHeight,
+                                    onValueChange = { customHeight = it },
+                                    label = { Text("Height (px)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
                             }
-                    ) {
-                        Column {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        val w = customWidth.toIntOrNull() ?: 1080
+                                        val h = customHeight.toIntOrNull() ?: 2400
+                                        scope.launch {
+                                            val res = appRepository.setScreenResolution(w, h)
+                                            Toast.makeText(context, res.getOrDefault("Resolution applied"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Apply ${customWidth}x${customHeight}", fontSize = 11.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.resetScreenResolution()
+                                            Toast.makeText(context, res.getOrDefault("Resolution reset"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Reset Default", fontSize = 11.sp, color = TextMuted)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Display Density (wm density)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                            Text("Scales UI element sizing across the entire Android OS.", fontSize = 11.sp, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("360", "400", "440", "480", "560").forEach { dpiVal ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (customDpi == dpiVal) AccentCyan.copy(alpha = 0.2f) else BgSurface)
+                                            .border(1.dp, if (customDpi == dpiVal) AccentCyan else BorderGlass, RoundedCornerShape(6.dp))
+                                            .clickable { customDpi = dpiVal }
+                                            .padding(vertical = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(dpiVal, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (customDpi == dpiVal) AccentCyan else TextMain)
+                                    }
+                                }
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        val dpi = customDpi.toIntOrNull() ?: 420
+                                        scope.launch {
+                                            val res = appRepository.setScreenDensity(dpi)
+                                            Toast.makeText(context, res.getOrDefault("DPI applied"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Apply $customDpi DPI", fontSize = 11.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.resetScreenDensity()
+                                            Toast.makeText(context, res.getOrDefault("DPI reset"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Reset Default", fontSize = 11.sp, color = TextMuted)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Force Peak & Min Refresh Rate", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                            Text("Enforces 120Hz/90Hz/60Hz high refresh rate locks.", fontSize = 11.sp, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("60Hz" to 60f, "90Hz" to 90f, "120Hz" to 120f).forEach { (label, fps) ->
+                                    Button(
+                                        onClick = {
+                                            selectedRefreshRate = label
+                                            scope.launch {
+                                                val res = appRepository.setRefreshRate(fps)
+                                                Toast.makeText(context, res.getOrDefault("Refresh rate set"), Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (selectedRefreshRate == label) AccentCyan else BgSurface,
+                                            contentColor = if (selectedRefreshRate == label) BgBase else TextMain
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Status Bar Icon Blacklist (SystemUI Tuner)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                            Text("Hide clutter icons from the status bar (e.g. alarm, volume, bluetooth, hotspot).", fontSize = 11.sp, color = TextMuted)
+                            val iconKeys = listOf(
+                                "volume" to "Volume / Silent Icon",
+                                "bluetooth" to "Bluetooth Icon",
+                                "alarm_clock" to "Alarm Clock Icon",
+                                "hotspot" to "Mobile Hotspot Icon",
+                                "nfc" to "NFC Icon",
+                                "location" to "Location Pin"
+                            )
+                            iconKeys.forEach { (key, label) ->
+                                val isHidden = blacklistedIcons.contains(key)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(label, fontSize = 12.sp, color = TextMain)
+                                    Switch(
+                                        checked = isHidden,
+                                        onCheckedChange = { hide ->
+                                            scope.launch {
+                                                appRepository.toggleStatusIconBlacklist(key, hide)
+                                                blacklistedIcons = appRepository.getBlacklistedIcons()
+                                            }
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = BgBase,
+                                            checkedTrackColor = SecondaryPurple
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
+        } else {
+            // Privileged App Grants (1-Tap Permissions)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Power-User ADB Permission Dispatcher", fontSize = 13.sp, fontWeight = FontWeight.Black, color = AccentCyan)
+                            Text(
+                                "Grant privileged WRITE_SECURE_SETTINGS, DUMP, and PACKAGE_USAGE_STATS permissions to system tools with a single click.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+                        }
+                    }
+                }
+
+                items(powerApps) { app ->
+                    val isGranting = grantingAppPkg == app.packageName
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = setting.title,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextMain
-                                )
-                                StatusPill(
-                                    text = setting.currentValue.ifEmpty { "0" },
-                                    color = AccentCyan
-                                )
+                                Column {
+                                    Text(app.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                    Text(app.packageName, fontSize = 10.sp, color = AccentCyan, fontFamily = FontFamily.Monospace)
+                                }
+                                StatusPill("TOOL", SecondaryPurple)
                             }
-
-                            Text(
-                                text = "${setting.namespace.name.lowercase()}:${setting.key}",
-                                fontSize = 11.sp,
-                                color = AccentCyan.copy(alpha = 0.8f),
-                                fontFamily = FontFamily.Monospace
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = setting.description,
-                                fontSize = 11.sp,
-                                color = TextMuted
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Text(app.description, fontSize = 11.sp, color = TextMuted)
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                app.permissions.forEach { perm ->
+                                    Text("• ${perm.substringAfterLast('.')}", fontSize = 10.sp, color = TextDim, fontFamily = FontFamily.Monospace)
+                                }
+                            }
+                            Button(
+                                onClick = {
+                                    if (isGranting) return@Button
+                                    grantingAppPkg = app.packageName
+                                    scope.launch {
+                                        app.permissions.forEach { perm ->
+                                            appRepository.grantPermission(app.packageName, perm)
+                                        }
+                                        grantingAppPkg = null
+                                        Toast.makeText(context, "✓ Permissions granted to ${app.name}", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                enabled = !isGranting,
+                                colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = setting.category,
-                                    fontSize = 10.sp,
-                                    color = TextDim
-                                )
-                                Text(
-                                    text = "Tap to edit ✎",
-                                    fontSize = 10.sp,
-                                    color = AccentCyan
-                                )
+                                if (isGranting) {
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), color = BgBase, strokeWidth = 2.dp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Granting ADB Permissions...", fontSize = 11.sp)
+                                } else {
+                                    Text("Grant All Privileged Permissions", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
                 }
+
                 item {
                     Spacer(modifier = Modifier.height(100.dp))
                 }
