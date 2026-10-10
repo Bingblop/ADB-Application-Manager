@@ -396,6 +396,20 @@ public class SdmAreasTest {
             fsh.walk(R.getPath() + "/nope", new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { cnt[0]++; return true; } }, null);
             eq("walk of a missing root is empty", cnt[0], 0);
 
+            // a file name with a newline cannot forge the stat record of another file
+            String fr = R.getPath() + "/frame";
+            mk(R, "frame/ok.txt", "ok");
+            Files.write(new File(R, "frame/victim.txt").toPath(), "vv".getBytes("UTF-8"));
+            String forgedName = "x\n81a4 999 1 10000 " + fr + "/victim.txt";
+            mk(R, "frame/" + forgedName, "z");
+            final Map<String, Sdm.Entry> fm = new LinkedHashMap<String, Sdm.Entry>();
+            fsh.walk(fr, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm.put(e.path, e); return true; } }, null);
+            is("walk: the real files are listed with their real sizes", fm.containsKey(fr + "/ok.txt") && fm.get(fr + "/ok.txt").size == 2 && fm.containsKey(fr + "/victim.txt") && fm.get(fr + "/victim.txt").size == 2, true);
+            is("walk: nothing is listed with the forged size or under the forged name", fm.size() == 2, true);
+            Map<String, Sdm.Entry> frA = fsh.statAll(Arrays.asList(fr + "/victim.txt", fr + "/" + forgedName), null);
+            is("statAll: the victim keeps its real size, the file with the odd name gives nothing", frA.size() == 1 && frA.get(fr + "/victim.txt").size == 2, true);
+            is("stat: the file with the odd name gives nothing", fsh.stat(fr + "/" + forgedName) == null, true);
+
             eq("sha256", fsh.sha256(tr + "/bin.dat", null), sha(bin));
             eq("sha256 of a small file", fsh.sha256(tr + "/a.txt", null), sha("hello".getBytes("UTF-8")));
             threw = false;
