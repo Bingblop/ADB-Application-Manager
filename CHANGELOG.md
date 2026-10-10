@@ -1,5 +1,21 @@
 # Changelog
 
+## v7.12.9-Pro (versionCode 851)
+
+A security and stability release: no new tabs. Two small additions (below) came in with it; everything else hardens what was already there.
+
+- **The bundled adb no longer listens on a TCP port.** The app talks to its own adb server over a private socket that only the app can reach (port 5042 is closed), so nothing else on the phone or the network can use that server.
+- **Downloads are safer.** Every download that carries a key or saves a file follows redirects by hand and refuses an `https` to `http` downgrade or a hop from an outside address to a local one; credentials are dropped when the host changes. The Morphe patch and bundle downloads stop at their size cap before writing the chunk that would pass it. A test now fails the build if new code opens a connection without these checks.
+- **Installs fail closed.** A store or updater install checks the published SHA-256 and compares the signers of the installed and the downloaded app; a value that cannot be read or verified now stops the install instead of being skipped.
+- **VirusTotal uploads only go to VirusTotal.** The upload address is checked against the host before the file is sent.
+- **Keys live in the Keystore vault.** The GitHub token and the VirusTotal key (and its approval) are sealed with a Keystore key instead of sitting in plain preferences; older plain copies are moved on first use. If the Keystore refuses, the app says "could not be stored securely" and does not write the secret in the clear.
+- **The page's calls into the app are checked.** Install options, app-op names and modes, and dex compile modes are matched against allow-lists in the app before any command is built, and bad package names get their own message.
+- **Smaller fixes:** launching an app through the assistant slot now saves your assistant setting first and puts it back at the next start if the app was killed halfway; ZIP extraction stops at an entry's declared size and a zip's entry count is capped; a newline in a file name can no longer inject phantom entries into SD Maid listings (records carry their own framing and end marker); a command that finishes without its exit marker (timeout, start failure, unauthorised Shizuku) is no longer reported as done; release builds log only the mode and sizes of a command, not its text; background workers (SD Maid, Connected Devices, trackers, the Task Manager poll) are stopped when the app closes.
+- **Dex optimization: two more modes.** The Dex optimization sheet (single app and batch) now offers **space** and **reset**. Reset puts the app's dex optimization back to the state Android uses after an install (`pm compile --reset`); the exact result depends on the Android version, and the sheet says so.
+- **Standby bucket.** A **Standby** button in the app menu shows the bucket the phone has an app in (`am get-standby-bucket`) and sets it to active, working set, frequent, rare or restricted. It reads the bucket back and only reports success when the phone shows the one you asked for.
+- **For people changing the code:** AGENTS.md describes how to build, test and send changes (one finding per pull request, tests, the human-approval list). CI also checks the signing certificate of a release.
+- **Not run on a device:** none of the above has been run on a phone by the people and tools that wrote it. The device checklist has a new section (19) for exactly these items.
+
 ## v7.12.8-Pro (versionCode 850)
 
 - **The APK Installer tab is now APK Installer/Updater** (tab bar: Installer/ over Updater). Two boxes sit at its top, like the Terminal and the ADB Console: **Application Installer** on the left (the old APK Installer, shown every time you tap the tab) and **Application Updater** on the right (this app's own update, Galaxy Store and open-source updates, the Play Store card, and the two new cards below). The **App Stores** tab keeps its name and holds only the stores. There is no App Updater tab; the update count shows on the tab and on the Application Updater box, and everything that used to open the App Updater (an app's Update button, About, Download) opens that box. A saved tab choice from an older version is made to fit. Test: `t150`.
