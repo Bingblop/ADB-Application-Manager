@@ -681,6 +681,7 @@ public class RarReaderTest {
       testRar5Hashes(r);
       testRar5Limits(r);
       testRar5Damage(r);
+      testRar5SolidStartFailure();
       testRar4(r);
       testSfxAndMagic(r);
       testFixtures();
@@ -1550,6 +1551,43 @@ public class RarReaderTest {
       if (exp.isFile() && werr == null) checkExp(f, exp, info);
     }
     check("real fixtures of both generations were present (" + real4 + " RAR 1.5-4.x, " + real5 + " RAR 5)", real4 > 0 && real5 > 0);
+  }
+
+  /**
+   * A solid RAR5 archive whose first entry cannot start (an unsupported compression version) used to end the whole walk with a NullPointerException:
+   * the visitor met the error, then the walk read the same stream again to keep the solid state, and the source was still null. Now the entry fails with
+   * an IOException the visitor sees, and the walk goes on to the next entry (which fails on its own, as the decoder state is gone).
+   */
+  static void testRar5SolidStartFailure() throws Exception {
+    Lz5 z = new Lz5(true);
+    z.beginFile(false); z.block(true); for (int i = 0; i < 50; i++) z.lit('a' + i % 20); z.endBlock(true);
+    F5 a = new F5("a.bin").lz(z, false, 1);
+    a.ver = 9;                                              // an unsupported compression version: listed, but start() throws
+    z.beginFile(true); z.block(false); for (int i = 0; i < 20; i++) z.match(10, 5); z.endBlock(true);
+    F5 b = new F5("b.bin").lz(z, true, 1);
+    W5 w = new W5(); w.main(true); w.file(a); w.file(b); w.end();
+    File f = new File(tmp, "solid-start-failure.rar");
+    Files.write(f.toPath(), w.bytes());
+    final List<String> seen = new ArrayList<String>();
+    final List<String> errs = new ArrayList<String>();
+    Throwable thrown = null;
+    try {
+      RarReader.walk(f, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream d) throws IOException {
+          seen.add(it.name);
+          try { readAll(d); errs.add(it.name + ": read"); } catch (IOException e) { errs.add(it.name + ": IOException"); }
+          return true;
+        }
+      });
+    } catch (Throwable t) { thrown = t; }
+    check("a solid entry that cannot start does not end the walk with an exception (" + thrown + ")", thrown == null);
+    check("both entries are visited and fail with an IOException (" + errs + ")", seen.size() == 2 && errs.size() == 2 && errs.get(0).endsWith("IOException") && errs.get(1).endsWith("IOException"));
+    ZipTool.Archive ar = RarSource.open(f, null);
+    List<String> problems = new ArrayList<String>();
+    Throwable t2 = null;
+    long[] res = null;
+    try { res = ZipTool.extractTree(ar, "", new File(tmp, "solid-start-failure-out"), null, problems, null, FileOps.REPLACE); } catch (Throwable t) { t2 = t; }
+    check("extracting it reports the entries as problems instead of crashing (" + t2 + ")", t2 == null && res != null && res[0] == 0 && problems.size() == 2);
   }
 
   /** The .exp files of the rarfile project: "File: name" lines, or plain lists of names; every name must appear in the listing. */

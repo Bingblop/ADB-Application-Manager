@@ -1296,6 +1296,7 @@ public final class RarReader {
             if (closed) throw new IOException("closed");
             try {
                 if (!started) start();
+                else if (src == null) throw new IOException("corrupt");   // start() failed on an earlier call
                 if (eof) return -1;
                 if (left == 0) { verify(); eof = true; return -1; }
                 int want = left < 0 ? len : (int) Math.min(len, left);
@@ -1344,6 +1345,8 @@ public final class RarReader {
                 // a later entry continues from the state this one leaves (solid): decode and check what is left
                 byte[] sink = new byte[65536];
                 while (read(sink, 0, sink.length) >= 0) { /* drain */ }
+            } catch (IOException ignored) {
+                // the visitor met this error in its own read; the entries after it fail on their own (the decoder is marked broken)
             } finally {
                 closed = true;
             }
