@@ -123,9 +123,13 @@ public class SessionMapTest {
 
     // shutdown: drained sessions are returned once, and nothing can be published afterwards
     long tl = m.ticket("late");
+    long genX = m.generation("x"), genY = m.generation("y");
     List<String> all = m.drain();
     is("drain returns what was open and empties the map", all.size() == 3 && m.get("y") == null);
     is("a start that finishes after the shutdown is refused", !m.publish("late", tl, "L", new ArrayList<String>()) && m.get("late") == null);
+    // after the shutdown nothing queued before it is current, and no end of a drained session is told
+    is("the shutdown moves the generation of every id (notices queued before it are stale)", m.generation("x") > genX && m.generation("y") > genY);
+    is("a drained session's end is not told after the shutdown", m.endedAt("x", "X1") == -1 && m.endedAt("never", "Z") == -1);
     is("after the shutdown no start is current", !m.isCurrent("late", tl));
     is("a fresh ticket after the shutdown is refused too", !m.publish("z", m.ticket("z"), "Z", new ArrayList<String>()));
     is("a second drain returns nothing", m.drain().isEmpty());

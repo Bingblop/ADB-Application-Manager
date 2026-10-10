@@ -96,6 +96,7 @@ final class SessionMap<T> {
      * (otherwise the page would see "started B" followed by "A ended" and take B for ended).
      */
     synchronized long endedAt(String id, T session) {
+        if (closed) return -1;          // shut down: nothing more is told to the page
         if (session != null && gone.containsKey(session)) {
             long at = gone.remove(session);
             return at >= 0 && at == generation(id) ? at : -1;
@@ -123,9 +124,13 @@ final class SessionMap<T> {
         return n;
     }
 
-    /** Shuts the map: returns what was in it, and every later {@link #publish} is refused. */
+    /**
+     * Shuts the map: returns what was in it, every later {@link #publish} is refused, and every generation moves on, so what was queued for the page
+     * before the shutdown (a start, output, an end) is stale and nothing about a drained session is told afterwards.
+     */
     synchronized List<T> drain() {
         closed = true;
+        for (String id : new ArrayList<String>(generations.keySet())) bump(id);
         List<T> all = new ArrayList<T>(map.values());
         map.clear();
         gone.clear();
