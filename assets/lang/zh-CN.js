@@ -775,7 +775,7 @@ x: {
 "Comparing…": "正在比较…",
 "Compatible width limit": "兼容宽度上限",
 "Compile mode": "编译模式",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "重置会删除已编译的代码（pm compile --reset）。在 Android 再次编译之前，应用将以解释模式运行。",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "重置会把应用的 dex 优化恢复到 Android 安装后使用的状态（pm compile --reset）。具体结果取决于 Android 版本。",
 "Compiled against": "编译所针对的版本",
 "Complementary colors in a balanced blend": "互补色均衡搭配",
 "Complete a file name": "补全文件名",

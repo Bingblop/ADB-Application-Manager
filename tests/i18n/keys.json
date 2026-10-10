@@ -2726,7 +2726,7 @@
 {"k":"Reset all?","ctx":"built by the code of: sd history reset"},
 {"k":"Reset battery simulation","ctx":"built by the code of: top level"},
 {"k":"Reset density","ctx":"built by the code of: top level"},
-{"k":"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.","ctx":"in a sheet (optimize)"},
+{"k":"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.","ctx":"in a sheet (optimize)"},
 {"k":"Reset resolution","ctx":"built by the code of: top level"},
 {"k":"Reset to Default","ctx":"in the Settings (the gear in the header)"},
 {"k":"Reset to default","ctx":"in the view-devices"},

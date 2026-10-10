@@ -7460,7 +7460,7 @@ Type any command below (e.g. pm list packages -d)
                 <div><div class="switch-title">Force</div><div class="switch-sub">Recompile even if already optimized (-f)</div></div>
                 <input type="checkbox" class="switch-input" id="optimizeForce" checked><span class="switch-track"></span>
             </label>
-            <div class="switch-sub" id="optimizeResetNote" style="display:none; margin:6px 2px;">Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.</div>
+            <div class="switch-sub" id="optimizeResetNote" style="display:none; margin:6px 2px;">Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.</div>
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
@@ -22835,7 +22835,7 @@ Type any command below (e.g. pm list packages -d)
                 : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.';
             document.getElementById('optimizeModal').classList.add('show');
         }
-        // "reset" takes the compiled code away (pm compile --reset): no Force switch for it, and a line that says what it does
+        // "reset" is pm compile --reset: no Force switch for it, and a line that says what it does (the result varies by Android version)
         function optimizeModeChanged() {
             const reset = document.getElementById('optimizeMode').value === 'reset';
             document.getElementById('optimizeForceRow').style.display = reset ? 'none' : '';

@@ -775,7 +775,7 @@ x: {
 "Comparing…": "Membandingkan…",
 "Compatible width limit": "Batas lebar yang kompatibel",
 "Compile mode": "Mode kompilasi",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "Reset menghapus kode yang sudah dikompilasi (pm compile --reset). Aplikasi berjalan dalam mode interpretasi sampai Android mengompilasinya lagi.",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "Reset mengembalikan optimasi dex aplikasi ke kondisi yang dipakai Android setelah instalasi (pm compile --reset). Hasil persisnya bergantung pada versi Android.",
 "Compiled against": "Dikompilasi terhadap",
 "Complementary colors in a balanced blend": "Warna komplementer dalam perpaduan seimbang",
 "Complete a file name": "Lengkapi nama file",

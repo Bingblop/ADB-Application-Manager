@@ -775,7 +775,7 @@ x: {
 "Comparing…": "तुलना हो रही है…",
 "Compatible width limit": "संगत चौड़ाई की सीमा",
 "Compile mode": "कंपाइल मोड",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "रीसेट करने पर कंपाइल किया गया कोड हट जाता है (pm compile --reset)। जब तक Android उसे दोबारा कंपाइल नहीं करता, ऐप इंटरप्रेटेड मोड में चलता है।",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "रीसेट करने पर ऐप का dex ऑप्टिमाइज़ेशन उस स्थिति में लौट जाता है जो Android इंस्टॉल के बाद इस्तेमाल करता है (pm compile --reset)। सटीक नतीजा Android के वर्शन पर निर्भर करता है।",
 "Compiled against": "जिसके लिए कंपाइल किया गया",
 "Complementary colors in a balanced blend": "संतुलित मिश्रण में पूरक रंग",
 "Complete a file name": "फ़ाइल का नाम पूरा करें",

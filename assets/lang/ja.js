@@ -775,7 +775,7 @@ x: {
 "Comparing…": "比較中…",
 "Compatible width limit": "互換性のある幅の上限",
 "Compile mode": "コンパイルモード",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "リセットするとコンパイル済みのコードが削除されます（pm compile --reset）。Android が再度コンパイルするまで、アプリはインタプリタで実行されます。",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "リセットすると、アプリの dex 最適化がインストール直後に Android が使う状態に戻ります（pm compile --reset）。正確な結果は Android のバージョンによって異なります。",
 "Compiled against": "コンパイル対象",
 "Complementary colors in a balanced blend": "補色をバランスよくブレンド",
 "Complete a file name": "ファイル名を補完",

@@ -775,7 +775,7 @@ x: {
 "Comparing…": "비교 중…",
 "Compatible width limit": "호환 너비 한계",
 "Compile mode": "컴파일 모드",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "초기화하면 컴파일된 코드가 삭제됩니다(pm compile --reset). Android가 다시 컴파일할 때까지 앱은 인터프리터 모드로 실행됩니다.",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "초기화하면 앱의 dex 최적화가 설치 직후 Android가 사용하는 상태로 돌아갑니다(pm compile --reset). 정확한 결과는 Android 버전에 따라 다릅니다.",
 "Compiled against": "컴파일 대상",
 "Complementary colors in a balanced blend": "보색을 균형 있게 섞은 조합",
 "Complete a file name": "파일 이름 자동 완성",

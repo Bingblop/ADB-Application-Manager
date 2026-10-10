@@ -775,7 +775,7 @@ x: {
 "Comparing…": "جارٍ المقارنة…",
 "Compatible width limit": "حد العرض المتوافق",
 "Compile mode": "وضع التجميع",
-"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "تؤدي إعادة الضبط إلى إزالة الشيفرة المترجمة (pm compile --reset). يعمل التطبيق في وضع التفسير إلى أن يعيد Android ترجمته.",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "تعيد إعادة الضبط تحسين dex للتطبيق إلى الحالة التي يستخدمها Android بعد التثبيت (pm compile --reset). تعتمد النتيجة الدقيقة على إصدار Android.",
 "Compiled against": "مُجمَّع مقابل",
 "Complementary colors in a balanced blend": "ألوان متتامّة في مزيج متوازن",
 "Complete a file name": "إكمال اسم الملف",
