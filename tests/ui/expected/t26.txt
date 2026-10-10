@@ -1,9 +1,0 @@
-legacy-shape activities data-exported attrs: ["false","false"]
-all default to false (unexported, safe): true
-blocked by guardPrivilege (bridge not called): true
-privilege-required modal shown instead: true
-real activityInfo data-exported attrs (true, false expected): ["true","false"]
-real per-activity detail respected, not overridden: true
-launchComponent(comp, undefined) call: {"pkg":"com.real.app","cls":"com.real.app.SomeActivity","exported":false}
-defaults exported to false when omitted: true
-errors: []

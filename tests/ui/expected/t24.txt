@@ -1,5 +1,0 @@
-delete non-watched -> bridge calls: []
-watched profile still present: true
-delete watched -> bridge calls: ["watch:\"\""]
-profiles left: 0
-errors: []

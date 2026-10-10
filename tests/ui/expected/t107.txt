@@ -1,4 +1,0 @@
-without a working mode: {"perms":[[true,"🔒 GRANTED"],[true,"🔒 GRANTED"]],"ops":[[true,"🔒 Allow"],[true,"FG"],[true,"Ignore"],[true,"Deny"],[true,"Reset"],[true,"Allow"],[true,"FG"],[true,"🔒 Ignore"],[true,"Deny"],[true,"Reset"]],"acts":[[false,"LAUNCH"],[true,"🔒 DISABLE"],[true,"🔒 LAUNCH (SHELL)"],[true,"🔒 DISABLE"]],"comps":[[true,"🔒 DISABLE"],[true,"🔒 STOP"],[true,"🔒 DISABLE"],[true,"🔒 DISABLE"]]}
-with a working mode: {"perms":[[false,"GRANTED"],[true,"🔒 GRANTED"]],"ops":[[false,"Allow"],[false,"Ignore"]],"acts":[[false,"LAUNCH"],[false,"DISABLE"],[true,"LAUNCH (SHELL)"],[false,"DISABLE"]],"comps":[[false,"DISABLE"],[false,"STOP"],[false,"DISABLE"],[false,"DISABLE"]]}
-the lock is written once in the page (LOCK_ICON): true
-errors: []

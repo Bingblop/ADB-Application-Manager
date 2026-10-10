@@ -1,9 +1,0 @@
-ok   1. the results list opens
-ok      each row says what the phone found: Uninstalled, Uninstalled, Still installed: UNINSTALLED,UNINSTALLED,STILL INSTALLED
-ok      rows are coloured by that (two succeeded, one failed), not by the commands: success,success,failed
-ok      "Run again on the 1 that failed" is offered for the app that is still installed: Run again | Run again on the 1 that failed | Share CSV
-ok      the toast counts from the phone's answer: 2 succeeded, 1 failed: Batch Done: 2 succeeded, 1 failed
-ok      the first row says the command reported a failure but the phone says it worked: Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked.
-
-Failure [x]
-ok   no page errors:
