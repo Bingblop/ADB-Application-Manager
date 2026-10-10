@@ -7450,17 +7450,20 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <label class="switch-row" style="margin-top:4px;">
                 <div><div class="switch-title">Compile mode</div><div class="switch-sub">pm compile -m</div></div>
-                <select class="op-select" id="optimizeMode">
+                <select class="op-select" id="optimizeMode" onchange="optimizeModeChanged()">
                     <option value="verify">verify</option>
                     <option value="speed-profile">speed-profile</option>
                     <option value="speed" selected>speed</option>
+                    <option value="space">space</option>
                     <option value="everything">everything</option>
+                    <option value="reset">reset</option>
                 </select>
             </label>
-            <label class="switch-row">
+            <label class="switch-row" id="optimizeForceRow">
                 <div><div class="switch-title">Force</div><div class="switch-sub">Recompile even if already optimized (-f)</div></div>
                 <input type="checkbox" class="switch-input" id="optimizeForce" checked><span class="switch-track"></span>
             </label>
+            <div class="switch-sub" id="optimizeResetNote" style="display:none; margin:6px 2px;">Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.</div>
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
@@ -22902,10 +22905,19 @@ Type any command below (e.g. pm list packages -d)
             if (target === 'single' && !inspectedPkg) return;
             if (!guardPrivilege('Dex optimization')) return;
             haptic();
-            document.getElementById('optimizeSubtitle').innerText = target === 'batch'
-                ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.`
-                : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.';
+            optimizeModeChanged();
             document.getElementById('optimizeModal').classList.add('show');
+        }
+        // "reset" is pm compile --reset: no Force switch for it, a line that says what it does (the result varies by Android version),
+        // and a subtitle that says "reset", not "recompile" or "faster"
+        function optimizeModeChanged() {
+            const reset = document.getElementById('optimizeMode').value === 'reset';
+            document.getElementById('optimizeForceRow').style.display = reset ? 'none' : '';
+            document.getElementById('optimizeResetNote').style.display = reset ? '' : 'none';
+            const batch = pendingOptimizeTarget === 'batch';
+            document.getElementById('optimizeSubtitle').innerText = reset
+                ? (batch ? `Reset the dex optimization of ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Reset the dex optimization of ' + (inspectedPkg || 'this app') + '.')
+                : (batch ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.');
         }
         function closeOptimizeModal() {
             haptic();
@@ -22929,7 +22941,7 @@ Type any command below (e.g. pm list packages -d)
             const pkgs = pendingOptimizeTarget === 'batch' ? Array.from(selectedPkgs) : (inspectedPkg ? [inspectedPkg] : []);
             if (!pkgs.length) return;
             haptic();
-            optimizeSubLabel = 'compile -m ' + mode + (force ? ' -f' : '');
+            optimizeSubLabel = mode === 'reset' ? 'compile --reset' : 'compile -m ' + mode + (force ? ' -f' : '');
             document.getElementById('batchConfirmTitle').innerText = 'Optimizing ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's');
             document.getElementById('batchConfirmSubtitle').innerText = '';
             document.getElementById('batchProgressText').innerText = '';

@@ -96,6 +96,22 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   console.log('batch keeps the per-app breakdown modal even on success:', await resultsShown());
   await page.evaluate(() => closeCommandResultsModal());
 
+  // ---- "reset" (pm compile --reset) restores the platform's post-install state: no Force switch, a note says what it does, the mode reaches the bridge ----
+  await page.evaluate(() => { window.__calls.length = 0; clearBatchSelection(); openOptimizeModal('single'); });
+  console.log('the mode list offers space and reset:', await page.evaluate(() => Array.from(document.querySelectorAll('#optimizeMode option')).map(o => o.value).join(',')));
+  console.log('speed: the Force switch shows, no reset note:', await page.evaluate(() => document.getElementById('optimizeForceRow').style.display === '' && document.getElementById('optimizeResetNote').style.display === 'none'));
+  await page.evaluate(() => { const s = document.getElementById('optimizeMode'); s.value = 'reset'; s.dispatchEvent(new Event('change')); });
+  console.log('reset: the Force switch is hidden and the note shows:', await page.evaluate(() => document.getElementById('optimizeForceRow').style.display === 'none' && document.getElementById('optimizeResetNote').style.display === '' && /pm compile --reset/.test(document.getElementById('optimizeResetNote').innerText)));
+  await page.evaluate(() => confirmOptimize());
+  await sleep(150);
+  console.log('reset reaches the bridge as mode reset:', await page.evaluate(() => JSON.stringify(window.__calls)));
+  console.log('the sub label names the reset command:', await page.evaluate(() => optimizeSubLabel));
+  await page.evaluate(() => { openOptimizeModal('single'); });
+  console.log('opening the sheet again re-reads the mode (reset still chosen -> note still shown):', await page.evaluate(() => document.getElementById('optimizeResetNote').style.display === ''));
+  console.log('reset: the subtitle says reset, not recompile or faster:', await page.evaluate(() => document.getElementById('optimizeSubtitle').innerText));
+  console.log('speed: the subtitle goes back to recompile:', await page.evaluate(() => { const s = document.getElementById('optimizeMode'); s.value = 'speed'; s.dispatchEvent(new Event('change')); const t = document.getElementById('optimizeSubtitle').innerText; s.value = 'reset'; s.dispatchEvent(new Event('change')); return t; }));
+  await page.evaluate(() => { const s = document.getElementById('optimizeMode'); s.value = 'speed'; s.dispatchEvent(new Event('change')); closeOptimizeModal(); });
+
   // ---- A failed single optimize still gets the modal (the toast alone wouldn't explain why) ----
   await page.evaluate(() => { window.AndroidBridge.optimizeApp = (pkg) => JSON.stringify({ ok: false, output: 'pm compile: Failed to optimize package' }); clearBatchSelection(); window.__calls.length = 0; openOptimizeModal('single'); confirmOptimize(); });
   await sleep(150);
