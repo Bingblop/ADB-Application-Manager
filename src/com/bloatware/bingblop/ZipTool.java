@@ -77,6 +77,8 @@ public final class ZipTool {
         final long foreignMtime;
         final boolean foreignEncrypted;
         public final String linkTarget;       // a symbolic link's target (other formats only), else null
+        /** A hard link (tar) or file copy (RAR5): the name, inside the archive, of the entry whose content this one shares; it has no data of its own. Else null. */
+        public String hardLink;
         public final int mode;                // Unix permission bits when the format keeps them, else -1
 
         /** An entry of a non-zip archive. */
@@ -663,6 +665,7 @@ public final class ZipTool {
     /** As {@link #extractTo(Archive, Entry, File)}; {@code protect} is another file that must not be overwritten (the real file of a staged copy). */
     public static long extractTo(Archive a, Entry e, File dest, File protect) throws IOException {
         checkTarget(a, dest, protect);
+        if (e.hardLink != null) throw new IOException("\"" + e.name + "\" is a hard link to \"" + e.hardLink + "\" and holds no data of its own: extract that one");
         InputStream in = a.open(e);
         try {
             return writeStream(e, in, dest);
@@ -818,6 +821,7 @@ public final class ZipTool {
         for (Entry e : under(a, path)) if (!e.dir) wanted.add(e.name);
         final int total = wanted.size();
         final int[] seen = {0};
+        final java.util.HashMap<String, File> extracted = new java.util.HashMap<String, File>();      // archive name -> where it was written, for the hard links that follow
         a.src.walk(a, a.password(), new Walker() {
             @Override
             public boolean entry(Entry e, InputStream data) throws IOException {
@@ -837,7 +841,21 @@ public final class ZipTool {
                 }
                 try {
                     checkTarget(a, out, protect);
-                    st[0] += writeStream(e, data, out);
+                    if (e.hardLink != null) {
+                        // a hard link has no data in the archive: it is the same file as an earlier entry, so it is copied from where that one was written
+                        File from = extracted.get(linkKey(e.hardLink));
+                        if (from == null || !from.isFile()) {
+                            st[2]++;
+                            note(problems, e.name + ": hard link to " + e.hardLink + " (not extracted: that file is not part of this extraction)");
+                            return true;
+                        }
+                        Entry copy = new Entry(e.name, false, from.length(), from.length(), e.mtime(), e.mode, false, null);
+                        java.io.FileInputStream fin = new java.io.FileInputStream(from);
+                        try { st[0] += writeStream(copy, fin, out); } finally { fin.close(); }
+                    } else {
+                        st[0] += writeStream(e, data, out);
+                    }
+                    extracted.put(linkKey(e.name), out);
                     st[1]++;
                 } catch (NeedPassword np) {
                     throw np;
@@ -852,6 +870,14 @@ public final class ZipTool {
         });
         if (cb != null) cb.onProgress(st[0], (int) st[1], "");
         return new long[]{st[1], st[0], st[2], st[3]};
+    }
+
+    /** The name of an entry as a hard link names it: without a leading "./" or "/". */
+    private static String linkKey(String name) {
+        String n = name;
+        while (n.startsWith("./")) n = n.substring(2);
+        while (n.startsWith("/")) n = n.substring(1);
+        return n;
     }
 
     /** The decrypted, decompressed bytes of a password-protected zip entry (ZipCrypto, or WinZip AES-128/192/256). */
