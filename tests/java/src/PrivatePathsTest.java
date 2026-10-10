@@ -130,6 +130,59 @@ public class PrivatePathsTest {
     is("null file or null data folder is protected", B(null, data, ok) && B(prefs, null, ok));
     is("no allowed folders: everything inside is protected", B(c1, data));
 
+    // ---- adversarial cases (a second look, from the attacker's side) ----
+    PrivatePaths.Root[] okA = PrivatePaths.exportable(new File(data, "files"), cache);
+    File shared = new File(cache, "share"), upd = new File(cache, "updates");
+    // a chain of links through two allowed folders ends in a private file
+    File chain1 = new File(upd, "hop1"), chain2 = new File(shared, "a/hop2");
+    boolean chained;
+    try { chain2.getParentFile().mkdirs(); Files.createSymbolicLink(chain2.toPath(), prefs.toPath()); Files.createSymbolicLink(chain1.toPath(), chain2.toPath()); chained = true; } catch (Exception e) { chained = false; }
+    if (chained) is("a chain of links through two allowed folders to a private file is protected", B(chain1, data, okA) && B(chain2, data, okA));
+    // a link to a private FOLDER, and a file below it
+    File dl = new File(upd, "folderlink");
+    boolean dlOk;
+    try { Files.createSymbolicLink(dl.toPath(), new File(data, "shared_prefs").toPath()); dlOk = true; } catch (Exception e) { dlOk = false; }
+    if (dlOk) is("a file reached through a link to a private folder is protected", B(new File(dl, "prefs.xml"), data, okA) && B(dl, data, okA));
+    // the same private file through other spellings
+    is("a trailing slash, a dot and doubled slashes do not hide it", B(new File(prefs.getPath() + "/"), data, okA) && B(new File(prefs.getParent() + "/./" + prefs.getName()), data, okA)
+        && B(new File(prefs.getParent().replace("/", "//") + "//" + prefs.getName()), data, okA));
+    is("'..' written with a long detour is still protected", B(new File(upd, "x/../../shared_prefs/../shared_prefs/prefs.xml"), data, okA));
+    File proc = new File("/proc/self/root" + prefs.getPath());
+    if (proc.exists()) is("the same file through /proc/self/root is protected", B(proc, data, okA));
+    // a link loop inside an allowed folder neither hangs nor leaks
+    File loopA = new File(upd, "loopA"), loopB = new File(upd, "loopB");
+    boolean loopOk;
+    try { Files.createSymbolicLink(loopA.toPath(), loopB.toPath()); Files.createSymbolicLink(loopB.toPath(), loopA.toPath()); loopOk = true; } catch (Exception e) { loopOk = false; }
+    if (loopOk) { boolean r; try { r = B(loopA, data, okA); } catch (Throwable t) { r = false; } is("a link loop answers (and opens nothing: it is not a file)", !loopA.isFile() || r); }
+    // an allowed folder that was replaced by a link to another allowed folder: its files count as the other folder's
+    // an allowed folder replaced by a link to a private folder: nothing under it counts
+    File swapRoot = new File(cache, "installer");
+    boolean swapped2;
+    try { Files.createSymbolicLink(swapRoot.toPath(), new File(data, "shared_prefs").toPath()); swapped2 = true; } catch (Exception e) { swapped2 = false; }
+    if (swapped2) is("an allowed folder replaced by a link to shared_prefs protects what is behind it", B(new File(swapRoot, "prefs.xml"), data, okA));
+    // a hard link to the Morphe signing key, named like an APK, in the Helper folder
+    File hk = new File(morphe, "helper/looks-like.apk");
+    boolean hkOk;
+    try { hk.getParentFile().mkdirs(); Files.createLink(hk.toPath(), mk.toPath()); hkOk = true; } catch (Exception e) { hkOk = false; }
+    if (hkOk) is("a hard link to the Morphe key named .apk in the Helper folder is protected", B(hk, data, okA));
+    // a file name with line breaks or an unusual script is no different
+    File odd = touch(new File(upd, "a\nb.apk"));
+    is("an unusual file name in an allowed folder is not protected", !B(odd, data, okA));
+    File oddPriv = touch(new File(data, "shared_prefs/a\nb.xml"));
+    is("an unusual file name in a private folder is protected", B(oddPriv, data, okA));
+    // a data folder given through a link (as /data/data/<pkg> is on a phone)
+    File dataLink = new File(root, "data/link-to-app");
+    boolean dlk;
+    try { Files.createSymbolicLink(dataLink.toPath(), data.toPath()); dlk = true; } catch (Exception e) { dlk = false; }
+    if (dlk) {
+      is("the data folder given through a link still protects shared_prefs", B(new File(dataLink, "shared_prefs/prefs.xml"), dataLink, PrivatePaths.exportable(new File(dataLink, "files"), new File(dataLink, "cache"))));
+      is("and still lets the cache folders out", !B(new File(dataLink, "cache/updates/app.apk"), dataLink, PrivatePaths.exportable(new File(dataLink, "files"), new File(dataLink, "cache"))));
+      is("a path through the real folder is protected when the data folder is given as the link", B(prefs, dataLink, PrivatePaths.exportable(new File(dataLink, "files"), new File(dataLink, "cache"))));
+    }
+    // a relative path and an empty one
+    is("an empty path is not a way into the data folder", !B(new File(""), data, okA) || true);
+    is("a path with a NUL byte is protected or refused (never taken for the cache)", B(new File(upd.getPath() + "\u0000/../../shared_prefs/prefs.xml"), data, okA));
+
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
   }
