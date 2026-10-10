@@ -46,9 +46,10 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
 - **Shell commands:** build them with the quoting helpers; package, file and setting names are untrusted input. Success is decided by reading the
   state back, not by the command's exit text.
 - **Installs:** check the repository's published SHA-256 and compare the signers of the installed and the downloaded APK before installing; a value that cannot be read or verified stops the install (fail closed), it is never skipped.
-- **Secrets:** API keys and tokens belong in the Keystore vault, not in `SharedPreferences`, logs, exports or pull request text. Release builds
-  must not log command output.
-- **Executors and threads:** anything a `MainActivity` field starts is shut down in `onDestroy`.
+- **Secrets (a requirement for new code):** API keys and tokens go into the Keystore vault (`AgentVault`, or `SecretSettings` for the page's small settings), never into
+  `SharedPreferences`, logs, exports or pull request text. Release builds must not log command output. Known exceptions that are being moved:
+  the GitHub token and the VirusTotal key (C-008 in the handoff, until its pull request is merged) - do not copy that pattern.
+- **Executors and threads (a requirement for new code):** anything a `MainActivity` field or a bridge call starts is stopped in `onDestroy`. Check this when you add one; the Task Manager poll (`tmExec`) was an exception that is being fixed (C-010 in the handoff).
 - **File modes:** `build.sh`, `tests/**/*.sh` and similar scripts keep their executable bit; check `git diff --summary` for mode changes.
 
 ## What needs a human
