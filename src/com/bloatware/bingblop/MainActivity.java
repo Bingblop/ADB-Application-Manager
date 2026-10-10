@@ -740,8 +740,10 @@ public class MainActivity extends Activity {
     // ---- SD Maid SE tab: the host of the four tools (see SdmHost) ----
     private final java.util.concurrent.ExecutorService sdmCalls = java.util.concurrent.Executors.newFixedThreadPool(3);
     private SdmHost sdmHostInstance;
+    private boolean sdmClosed;      // set in onDestroy: a call that was already running must not build a new host (and engine threads) afterwards
 
     private synchronized SdmHost sdmHost() {
+        if (sdmClosed) throw new IllegalStateException("the app is closing");
         if (sdmHostInstance == null) {
             sdmHostInstance = new SdmHost(this, new SdmHost.Hooks() {
                 @Override public String mode() { return resolveExecMode(); }
@@ -802,6 +804,10 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
     // Process helpers
     // ---------------------------------------------------------------------------------------------
+
+    private boolean isDebuggableBuild() {
+        return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
 
     private ProcessBuilder buildAdbProcess(String... args) {
         List<String> cmd = new ArrayList<String>();
@@ -7769,7 +7775,10 @@ public class MainActivity extends Activity {
                 output = runProcessWithTimeout(pb, 6000);
             }
 
-            Log.d(TAG, "executeShell [" + mode + "]: " + cmd + " -> " + (output != null ? output.trim() : ""));
+            // the command and its output can hold settings values, file contents or a token typed into a custom command: a release build
+            // logs only the mode and the sizes, a debuggable build the whole line
+            if (isDebuggableBuild()) Log.d(TAG, "executeShell [" + mode + "]: " + cmd + " -> " + (output != null ? output.trim() : ""));
+            else Log.d(TAG, "executeShell [" + mode + "]: " + cmd.length() + " chars -> " + (output != null ? output.length() : 0) + " chars");
             return output != null ? output : "";
         }
 
@@ -14941,6 +14950,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
+        // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
+        // activity, and the page that would show their results is gone). Only when the tab was ever used.
+        try { sdmCalls.shutdownNow(); } catch (Throwable ignored) {}
+        try {
+            SdmHost sdm;
+            synchronized (this) { sdmClosed = true; sdm = sdmHostInstance; }
+            if (sdm != null) sdm.bridge().shutdown();
+        } catch (Throwable ignored) {}
+        try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
             try {
                 android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
