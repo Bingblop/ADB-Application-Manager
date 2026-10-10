@@ -2,7 +2,8 @@
 
 This is section 19 of [DEVICE-TEST-CHECKLIST.md](DEVICE-TEST-CHECKLIST.md) turned into steps you can paste from a computer.
 The checklist says what to look for on the phone; this script adds the `adb` commands that read the result from outside the app, so
-you are not trusting the app's own words about itself.
+you are not trusting the app's own words about itself. Sections 1 to 13 follow checklist section 19; section 14 is an addition for the full-screen
+terminal fixes of PR #105 (it is not in the checklist).
 
 **Nothing in this script has been run on a phone yet.** If a command prints something different from what a step says, that
 is a result worth reporting, not necessarily a failed app. Android versions and makers differ, so write down what you saw.
@@ -130,8 +131,9 @@ To check that the two copies really have different signing certificates (so the 
 `apksigner` digest of both. `dumpsys package` shows only an internal signature hash, not the SHA-256 certificate digest, so do not use it for this:
 
 ```sh
-adb shell pm path $TESTPKG                                  # prints package:/data/app/.../base.apk
-adb pull /data/app/.../base.apk installed-copy.apk                # use the path printed above
+BASEAPK=$(adb shell pm path $TESTPKG | head -n 1 | sed 's/^package://' | tr -d '\r')    # the installed base APK on the phone
+echo "$BASEAPK"                                         # prints /data/app/.../base.apk
+MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' adb pull "$BASEAPK" installed-copy.apk   # the two variables stop Git Bash from turning /data/... into a Windows path
 apksigner verify --print-certs installed-copy.apk | grep "certificate SHA-256"
 apksigner verify --print-certs "$TESTAPK"      | grep "certificate SHA-256"
 ```
@@ -291,23 +293,34 @@ Release build only (a debuggable build logs the whole line by design).
 
 3. Un-freeze `$APP` again in the app (or `adb shell pm enable $APP`).
 
-## 14. Full-screen terminal lifecycle (not in checklist section 19: new fixes to the terminal's start, restart and close)
+## 14. Full-screen terminal lifecycle (addition: not in checklist section 19; it covers the terminal fixes of PR #105)
 
-The full-screen terminal keeps one session under one name and is restarted by closing it and starting a new one at once. This checks that a late end or late
-output of the **old** shell never lands on the **new** one. Nothing here needs `adb`; watch the phone.
+This section is an addition to the checklist: the full-screen terminal keeps one session under one name. Closing it with **X** or **Back** only hides it and the
+session goes on; **Restart**, changing the shell, `exit` and closing the app end it. Restart closes the old session and starts a new one at once. This checks
+that a late end or late output of the **old** shell never lands on the **new** one. Nothing here needs `adb` except step 6; watch the phone.
 
 1. Open the full-screen terminal with the **App** shell. Run `echo hello` (it answers `hello`), then `exit`: the terminal says the process ended, and
    pressing Enter starts a new shell that answers again. **PASS** if no second "[process ended]" appears later.
-2. Start `sleep 1000 &` and then `while true; do echo OLD; sleep 0.2; done`. Restart the terminal (the shell picker, or the restart button). **PASS** if
-   the new terminal shows a fresh prompt and **no `OLD` line appears in it**, not even one.
-3. Restart it five times quickly in a row. **PASS** if the last one is a working shell (type `echo ok`: it answers) and the screen never shows
+2. Run `while true; do echo OLD; sleep 0.2; done`, then tap **Restart**. **PASS** if the new terminal shows a fresh prompt and **no `OLD` line appears in it**,
+   not even one.
+3. Tap **Restart** five times quickly in a row. **PASS** if the last one is a working shell (type `echo ok`: it answers) and the screen never shows
    "[process ended]" for it while it is running.
-4. Start a shell, run `ssh localhost` or `su` (anything that waits for input and outlives its hang-up), then close the terminal and open it again at once.
+4. Hiding keeps the session: run `echo $$` and write the number down, close the terminal with **X**, open it again. **PASS** if the same screen is back and
+   `echo $$` prints the same number. Then run `su` or `ssh localhost` (anything that waits for input and outlives its hang-up) and tap **Restart** at once.
    **PASS** if the new terminal works (type `echo ok`) and does not print "[process ended]" by itself a few seconds later.
-5. Run a command that exits at once, for example `true` as the shell command (or pick a shell whose program is missing): the terminal must **not** be left
-   showing a running shell that cannot be typed into. **PASS** if it says the process ended, or that it could not start, and Enter starts a new one.
-6. Close the whole app from Recents while a terminal is open, then open the app again and the terminal. **PASS** if it starts normally and
-   `adb shell ps -A | grep -c sleep` shows no `sleep 1000` left over from step 2 after a minute (a SIGHUP-ignoring program may survive: write what you see).
+5. A shell that ends at once: in the running shell type `exec true` (it replaces the shell with `true`, which exits immediately). **PASS** if the terminal says
+   the process ended, and is not left showing a running shell that cannot be typed into; Enter starts a new one. (The same for a shell whose program is
+   missing, if you can set one up: it must say it could not start.)
+6. Closing the app ends the session: in the terminal run `sleep 1234 & echo $!` and write the number down. Close the whole app from Recents (swipe it away),
+   wait a minute, then on the computer (replace `12345` with the number):
+
+   ```sh
+   P=12345                                             # REPLACE with the number you wrote down
+   adb shell "ps -A | grep sleep | grep -w $P"         # prints nothing when the process is gone
+   ```
+
+   **PASS** if it prints nothing. If a line shows, the shell outlived the app (a program that ignores SIGHUP can do that): write what you see.
+   Then open the app and the terminal again: **PASS** if it starts normally with a fresh prompt.
 
 If a step fails, write the step number, which shell, and what the screen showed.
 
