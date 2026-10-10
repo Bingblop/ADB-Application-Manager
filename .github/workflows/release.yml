@@ -82,6 +82,19 @@ jobs:
           done
           ( cd out && sha256sum *.apk > SHA256SUMS.txt )
 
+      - name: Check the signing certificate
+        env:
+          HAVE_RELEASE_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
+          # SHA-256 of the release certificate (also in the README). Change it only when the signing key is replaced on purpose:
+          # phones refuse to update an app over one signed with a different certificate.
+          EXPECTED_CERT_SHA256: 9461870f7cd2406406a119f4d37533c23bb7d1ed850506bad7ea3e6b4bd26d17
+        run: |
+          if [ "$HAVE_RELEASE_KEY" != "true" ]; then
+            echo "::warning::No release key is set, so there is no certificate to check (the APKs carry a throwaway key)."
+            exit 0
+          fi
+          bash tools/check-signing-cert.sh "$EXPECTED_CERT_SHA256" out/*.apk
+
       - name: Extract release notes
         run: awk '/^## v${{ steps.v.outputs.version }}/{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md || true
 
