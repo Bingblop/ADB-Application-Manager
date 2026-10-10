@@ -75,12 +75,13 @@ function shellLines(block) {
 // quotes or a comment), and its delimiter may be quoted.
 function findPlaceholders(lines) {
   const found = [];
-  let heredoc = null;
+  let bodies = [];     // here-documents whose body is being read, in the order declared
+  let pending = [];    // declared on the current command; their bodies start on the line after the command ends
   let quote = null;
   let arith = 0;
   for (const { text, line } of lines) {
     // the terminator is the delimiter alone on the line: exact, except that <<- ignores leading tabs
-    if (heredoc) { if ((heredoc.dash ? text.replace(/^\t+/, '') : text) === heredoc.word) heredoc = null; continue; }
+    if (bodies.length) { const h = bodies[0]; if ((h.dash ? text.replace(/^\t+/, '') : text) === h.word) bodies.shift(); continue; }
     let code = '';
     for (let i = 0; i < text.length; i++) {
       const c = text[i];
@@ -94,7 +95,7 @@ function findPlaceholders(lines) {
       if (c === ')' && text[i + 1] === ')' && arith > 0) { arith--; i++; continue; }
       if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && arith === 0) {      // <<< is a here-string, not a here-document
         const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
-        if (hd) { heredoc = { word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }; i += hd[0].length - 1; continue; }
+        if (hd) { pending.push({ word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }); i += hd[0].length - 1; continue; }
       }
       code += c;
     }
@@ -103,6 +104,8 @@ function findPlaceholders(lines) {
     while ((m = re.exec(code))) {
       found.push({ line, text: m[0] });
     }
+    // the bodies start after the whole command: not while the line continues (odd trailing backslash) or a quote is still open
+    if (pending.length && !quote && !continues(text)) { bodies = pending; pending = []; }
   }
   return found;
 }
@@ -172,9 +175,12 @@ function selfTest() {
     '```bash', 'cat <<EOF', '  EOF', '<html>', 'EOF', 'echo done', '```', '',
     '```bash', 'cat <<-EOF', '\t<html>', '\tEOF', 'echo done', '```', '',
     '```bash', 'cat <<EOF', '<html>', 'EOF ', 'adb shell pm path <package>', 'EOF', '```', '',
+    '```bash', 'cat <<FIRST <<SECOND', '<a>', 'SECOND', '<b>', 'FIRST', '<c>', 'SECOND', 'echo done', '```', '',
+    '```bash', 'cat <<EOF \\', '  > out.txt; adb shell pm path <package> out.txt', '<html>', 'EOF', 'echo done', '```', '',
+    '```bash', 'cat <<EOF; adb shell pm path <package> out.txt', '<html>', 'EOF', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
