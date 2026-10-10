@@ -1,6 +1,5 @@
 package com.bloatware.bingblop;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * A hung process is killed: SdmShell.stream / run start a real sh through a ModeRunner, and a timeout or a cancel must end the call within a bounded time,
  * kill the shell, and never call the sink again afterwards. (ShellOutcomeTest only covers the text a timeout leaves; this one starts processes.)
- * Needs sh and sleep; without them the test says so and passes.
+ * Needs sh, sleep and kill: the harness (run.js, prerequisite posixtools) skips the suite without them.
  */
 public class SdmShellKillTest {
     static int fails = 0, n = 0;
@@ -27,14 +26,17 @@ public class SdmShellKillTest {
         }
     }
 
-    static boolean dead(Process p) throws Exception { return p.waitFor(5, TimeUnit.SECONDS); }
+    /** True when the process ended within 5 s. A process that did not is killed here, so a failing run does not leave a sleep 300 behind. */
+    static boolean dead(Process p) throws Exception {
+        boolean ended = p.waitFor(5, TimeUnit.SECONDS);
+        if (!ended) {
+            p.destroyForcibly();
+            p.waitFor(5, TimeUnit.SECONDS);
+        }
+        return ended;
+    }
 
     public static void main(String[] args) throws Exception {
-        if (!new File("/bin/sh").exists()) {
-            System.out.println("skipped: sh is not available");
-            System.out.println("0 checks, 0 failed");
-            return;
-        }
         final Runner r = new Runner();
         final SdmShell sh = new SdmShell(r);
         if (!sh.privileged()) { System.out.println("FAIL setup: mode root is not treated as privileged"); System.exit(1); }
