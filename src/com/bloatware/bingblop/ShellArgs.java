@@ -32,7 +32,7 @@ final class ShellArgs {
     static boolean isCompileMode(String s) { return s != null && COMPILE_MODES.contains(s); }
 
     /**
-     * The command that recompiles (or, for {@code reset}, un-compiles) one app: {@code pm compile -m <mode> [-f] <pkg>}, or
+     * The command that recompiles (or, for {@code reset}, restores the platform's post-install dex-optimization state of) one app: {@code pm compile -m <mode> [-f] <pkg>}, or
      * {@code pm compile --reset <pkg>}. Null when the package or the mode is not valid; an empty or null mode means {@code speed}.
      */
     static String compileCommand(String pkg, String mode, boolean force) {

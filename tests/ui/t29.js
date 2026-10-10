@@ -94,7 +94,7 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   console.log('batch keeps the per-app breakdown modal even on success:', await resultsShown());
   await page.evaluate(() => closeCommandResultsModal());
 
-  // ---- "reset" (pm compile --reset) un-compiles: no Force switch, a note says what it does, the mode reaches the bridge ----
+  // ---- "reset" (pm compile --reset) restores the platform's post-install state: no Force switch, a note says what it does, the mode reaches the bridge ----
   await page.evaluate(() => { window.__calls.length = 0; clearBatchSelection(); openOptimizeModal('single'); });
   console.log('the mode list offers space and reset:', await page.evaluate(() => Array.from(document.querySelectorAll('#optimizeMode option')).map(o => o.value).join(',')));
   console.log('speed: the Force switch shows, no reset note:', await page.evaluate(() => document.getElementById('optimizeForceRow').style.display === '' && document.getElementById('optimizeResetNote').style.display === 'none'));
