@@ -16,6 +16,10 @@ import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The part of the Termux connection that needs no Android classes (unit-tested off-device against a real bash).
@@ -162,6 +166,16 @@ public final class TermuxLink {
         final LinkedList<Socket> pending = new LinkedList<Socket>();
         final BlockingQueue<Socket> good = new ArrayBlockingQueue<Socket>(1);
         final boolean[] finished = { false };     // guarded by pending: set once the session is set up or has failed
+        // at most MAX_PENDING_HELLOS threads, however many peers connect; a connection dropped from "pending" is closed, so its queued check ends at once
+        final ThreadPoolExecutor hellos = new ThreadPoolExecutor(MAX_PENDING_HELLOS, MAX_PENDING_HELLOS, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "termux-hello");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        hellos.allowCoreThreadTimeOut(true);
         Socket sock = null;
         try {
             server.setSoTimeout(250);
@@ -192,7 +206,7 @@ public final class TermuxLink {
                         pending.add(cs);
                         while (pending.size() > MAX_PENDING_HELLOS) closeQuietly(pending.removeFirst());
                     }
-                    Thread t = new Thread(new Runnable() {
+                    hellos.execute(new Runnable() {
                         @Override
                         public void run() {
                             boolean ok = hello(cs, token);
@@ -204,9 +218,7 @@ public final class TermuxLink {
                             }
                             if (!kept) closeQuietly(cs);
                         }
-                    }, "termux-hello");
-                    t.setDaemon(true);
-                    t.start();
+                    });
                 }
                 sock = good.poll();
             }
@@ -220,6 +232,7 @@ public final class TermuxLink {
                 server.close();
             } catch (IOException ignored) {
             }
+            hellos.shutdown();
             // connections still being checked, and a valid one that arrived after the winner, are closed
             synchronized (pending) {
                 finished[0] = true;

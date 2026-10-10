@@ -274,6 +274,18 @@ public class TermuxLinkTest {
         return super.launch(script, label, cb);
       }
     };
+    // the number of threads checking a hello at once is counted all the while
+    final int[] peakHello = { 0 };
+    Thread sampler = new Thread(new Runnable() { public void run() {
+      while (!stopFlood.get()) {
+        int n = 0;
+        for (Thread t : Thread.getAllStackTraces().keySet()) if ("termux-hello".equals(t.getName()) && t.isAlive()) n++;
+        if (n > peakHello[0]) peakHello[0] = n;
+        try { Thread.sleep(5); } catch (InterruptedException e) { return; }
+      }
+    } });
+    sampler.setDaemon(true);
+    sampler.start();
     long tf = System.currentTimeMillis();
     String floodErr = null;
     Process fp = null;
@@ -281,6 +293,7 @@ public class TermuxLinkTest {
     long floodMs = System.currentTimeMillis() - tf;
     stopFlood.set(true);
     check("silent connections do not keep the real bridge out (opened in " + floodMs + " ms, error " + floodErr + ")", fp != null && floodMs < 8000);
+    check("no more than " + TermuxLink.MAX_PENDING_HELLOS + " hello threads at once, however many peers connect (peak " + peakHello[0] + " with " + flood.size() + " connections)", peakHello[0] <= TermuxLink.MAX_PENDING_HELLOS && flood.size() > TermuxLink.MAX_PENDING_HELLOS);
     if (fp != null) fp.destroy();
     for (Socket fs : new ArrayList<Socket>(flood)) { try { fs.close(); } catch (IOException ignored) {} }
 
