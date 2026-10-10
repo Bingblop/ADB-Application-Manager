@@ -1,5 +1,22 @@
 # Changelog
 
+## v7.12.10-Pro (versionCode 852)
+
+TODO: DRAFT. This is the skeleton for the patch release after v7.12.9. Fill it from `docs/PHONE-CHECK-RESULTS-v7.12.9.md` (what the phone check found), keep only what is merged and true of the build, and delete every line that starts with TODO before the release pull request is merged.
+
+TODO: one sentence on what this release is (for example "A patch release: fixes for what the first phone check of v7.12.9 found, and four fixes from the read-only audits").
+
+TODO: bullets for what the phone check found (one per finding, in words a user can follow; say which phones and modes).
+
+TODO: candidate bullets for the four audit fixes. Keep a bullet only when its pull request is merged into `main`:
+
+- **Archives: an entry is capped by the free space (#121, audit Z-1).** Extracting a zip, tar, 7z or RAR archive could write far more than the archive's file size suggests (a 10 KB sparse tar that declares 6 GiB, a small 7z of zeros) and fill the phone's storage. Each entry may now write only what is free less a 64 MB reserve, and one that declares more is refused in words before anything is written. Tested on a computer; not run on a device.
+- **Archives: tar hard links (#122, audit Z-2).** A hard link in a tar was extracted as an empty file and counted as done. It is now a copy of the file it shares, or skipped with a note when that file is not part of the extraction. Tested on a computer; not run on a device.
+- **Morphe Patcher: a job id that names a folder (#119, audit M-8).** A patch started with the job id `..` emptied the whole Morphe folder (sources, signing key, patched APKs). Job ids are now 1 to 40 letters, digits, dashes and underscores. Tested on a computer; not run on a device.
+- **Morphe Patcher: importing a signing key (#120, audit M-5).** Importing a text file, or a keystore with the wrong password, replaced the signing key and the failure only showed at the next patch. The file is now opened with the password and must hold a key named Morphe first; the old key is kept as a backup file. Tested on a computer; not run on a device.
+
+TODO: "Not run on a device" line for the whole release (what was and was not checked on a phone), and the "Known gaps" line (the remaining audit findings are items 11 and 12 of `docs/COPILOT_CLAUDE_HANDOFF.md`; the native install confirmation #109 if it is still open).
+
 ## v7.12.9-Pro (versionCode 851)
 
 A security and stability release: no new tabs. Two small additions (below) came in with it; everything else hardens what was already there.
