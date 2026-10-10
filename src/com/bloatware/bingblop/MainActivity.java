@@ -3189,7 +3189,7 @@ public class MainActivity extends Activity {
 
     /**
      * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
-     * VirusTotal or another app. Its logs, patched APKs, Helper downloads and the cache folders for picked or downloaded files are allowed.
+     * VirusTotal or another app. Its patched APKs, Helper downloads and the cache folders for picked or downloaded files are allowed (see PrivatePaths.exportable).
      */
     private boolean isPrivateData(File f) {
         return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {

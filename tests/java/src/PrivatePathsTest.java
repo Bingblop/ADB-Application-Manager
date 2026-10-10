@@ -11,7 +11,12 @@ public class PrivatePathsTest {
   static final PrivatePaths.Links L = new PrivatePaths.Links() {
     public long count(File f) throws Exception { return ((Number) Files.getAttribute(f.toPath(), "unix:nlink")).longValue(); }
   };
-  static boolean B(File f, File data, File... allowed) { return PrivatePaths.blocked(f, data, L, allowed); }
+  static PrivatePaths.Root[] R(File... dirs) {
+    PrivatePaths.Root[] r = new PrivatePaths.Root[dirs.length];
+    for (int i = 0; i < dirs.length; i++) r[i] = new PrivatePaths.Root(dirs[i]);
+    return r;
+  }
+  static boolean B(File f, File data, PrivatePaths.Root... allowed) { return PrivatePaths.blocked(f, data, L, allowed); }
   static File touch(File f) throws Exception { f.getParentFile().mkdirs(); Files.write(f.toPath(), new byte[]{1}); return f; }
 
   public static void main(String[] a) throws Exception {
@@ -25,7 +30,7 @@ public class PrivatePathsTest {
     File m1 = touch(new File(morphe, "patched.apk"));
     File outside = touch(new File(root, "sdcard/Download/app.apk"));
     File sibling = touch(new File(root, "data/com.example.app2/shared_prefs/x.xml"));
-    File[] ok = { logs, morphe, new File(cache, "updates"), new File(cache, "share") };
+    PrivatePaths.Root[] ok = R(logs, morphe, new File(cache, "updates"), new File(cache, "share"));
     File c2 = touch(new File(cache, "updates/app.apk"));
     File backup = touch(new File(cache, "backup_data_123.tar"));
     File restore = touch(new File(cache, "restore_123/data.tar"));
@@ -43,18 +48,27 @@ public class PrivatePathsTest {
     is("logs are not", !B(l1, data, ok));
     is("patched APKs are not", !B(m1, data, ok));
     // the Morphe folder holds the signing key next to the patched APKs: only the subfolders are allowed, as the app lists them
-    File[] okApp = PrivatePaths.exportable(new File(data, "files"), cache);      // the very list the app uses
+    PrivatePaths.Root[] okApp = PrivatePaths.exportable(new File(data, "files"), cache);      // the very list the app uses
     File mk = touch(new File(morphe, "morphe.keystore")), mj = touch(new File(morphe, "morphe_key.json")), mv = touch(new File(morphe, "vt_state.json"));
     File mp = touch(new File(morphe, "patched/abc/app-patched.apk")), mh = touch(new File(morphe, "helper/download.apk"));
     is("the Morphe signing key is protected", B(mk, data, okApp));
     is("the Morphe key info (with the password) is protected", B(mj, data, okApp));
     is("the Morphe VirusTotal state is protected", B(mv, data, okApp));
     is("a patched APK is not", !B(mp, data, okApp));
+    File meta = touch(new File(morphe, "patched/abc/meta.json")), plog = touch(new File(morphe, "patched/abc/log.txt"));
+    is("the run's meta.json next to a patched APK is protected", B(meta, data, okApp));
+    is("the run's log.txt next to a patched APK is protected", B(plog, data, okApp));
+    File storeCat = touch(new File(cache, "store/f-droid.json")), appLog = touch(new File(data, "files/logs/recording.log"));
+    is("the store catalog cache is protected", B(storeCat, data, okApp));
+    is("the app's own logs are protected", B(appLog, data, okApp));
+    is("a Helper download of a split bundle is not", !B(touch(new File(morphe, "helper/app.apkm")), data, okApp));
+    is("an unrelated file in the Helper folder is protected", B(touch(new File(morphe, "helper/notes.txt")), data, okApp));
+    is("an extension check does not follow the case", !B(touch(new File(morphe, "patched/abc/APP.APK")), data, okApp));
     is("the cache's backup tar and restore folder are protected with the app's own list",
         B(backup, data, okApp) && B(restore, data, okApp) && B(rootSh, data, okApp));
     is("a picked file in the app's cache folders is not", !B(touch(new File(cache, "saf_stage/pick.apk")), data, okApp) && !B(touch(new File(cache, "cd_pick/x.bin")), data, okApp));
     is("a Helper download is not", !B(mh, data, okApp));
-    is("with the whole Morphe folder allowed the key would leak (why only subfolders)", !B(mk, data, new File[] { morphe }));
+    is("with the whole Morphe folder allowed the key would leak (why only subfolders)", !B(mk, data, R(morphe)));
     is("a file outside the data folder is not", !B(outside, data, ok));
     is("a look-alike folder (com.example.app2) is not inside com.example.app", !B(sibling, data, ok));
 
@@ -94,13 +108,13 @@ public class PrivatePathsTest {
     boolean swapOk;
     try { Files.createSymbolicLink(swapped.toPath(), swapTarget.toPath()); swapOk = true; } catch (Exception e) { swapOk = false; }
     if (swapOk) {
-      File[] ok2 = { logs, morphe, swapped };
+      PrivatePaths.Root[] ok2 = R(logs, morphe, swapped);
       is("a file under an allowed folder that is a link to shared_prefs is protected", B(new File(swapped, "solo.xml"), data, ok2));
       is("the real shared_prefs path is protected as well", B(new File(swapTarget, "solo.xml"), data, ok2));
     }
     File outsideRoot = new File(root, "sdcard/Download");
-    is("an allowed folder outside the data folder is ignored (nothing there to protect)", !B(outside, data, new File[] { outsideRoot }));
-    is("an allowed folder that is the data folder itself is ignored", B(prefs, data, new File[] { data }));
+    is("an allowed folder outside the data folder is ignored (nothing there to protect)", !B(outside, data, R(outsideRoot)));
+    is("an allowed folder that is the data folder itself is ignored", B(prefs, data, R(data)));
 
     is("null file or null data folder is protected", B(null, data, ok) && B(prefs, null, ok));
     is("no allowed folders: everything inside is protected", B(c1, data));

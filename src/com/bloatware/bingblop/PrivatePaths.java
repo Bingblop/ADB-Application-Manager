@@ -12,16 +12,34 @@ import java.io.IOException;
 final class PrivatePaths {
     private PrivatePaths() {}
 
+    /** A folder of the app's data that may leave, optionally only files with these extensions (lower case, no dot); none listed means any file. */
+    static final class Root {
+        final File dir;
+        final java.util.Set<String> exts;
+        Root(File dir, String... exts) {
+            this.dir = dir;
+            this.exts = new java.util.HashSet<String>(java.util.Arrays.asList(exts));
+        }
+        boolean accepts(File f) {
+            if (exts.isEmpty()) return true;
+            String n = f.getName().toLowerCase(java.util.Locale.ROOT);
+            int dot = n.lastIndexOf('.');
+            return dot >= 0 && exts.contains(n.substring(dot + 1));
+        }
+    }
+
     /**
-     * The folders of the app's data that may leave: its logs, its patched APKs and the Morphe Helper's downloads (not the Morphe folder itself: the
-     * signing key and its password are in it), and the cache folders for files the user picked or downloaded. The rest of the cache
-     * (backup_data_*.tar, restore_*, root scripts, temporary files) is the app's own working data and stays protected.
+     * What may leave the app's data folder: only files the user picked or downloaded, or APKs the app made. Patched APKs (not the run's meta.json and
+     * log.txt next to them) and the Morphe Helper's downloads (not the Morphe folder itself, which holds the signing key and its password), and the cache
+     * folders for files the user picked or downloaded. The rest of the cache (backup_data_*.tar, restore_*, root scripts, temporary files and the store
+     * catalog) and the app's logs are its own working data and stay protected.
      */
-    static File[] exportable(File filesDir, File cacheDir) {
-        return new File[] {
-            new File(filesDir, "logs"), new File(filesDir, "morphe/patched"), new File(filesDir, "morphe/helper"),
-            new File(cacheDir, "updates"), new File(cacheDir, "installer"), new File(cacheDir, "store"), new File(cacheDir, "saf_stage"),
-            new File(cacheDir, "cd_pick"), new File(cacheDir, "morphe_pick"), new File(cacheDir, "share"),
+    static Root[] exportable(File filesDir, File cacheDir) {
+        return new Root[] {
+            new Root(new File(filesDir, "morphe/patched"), "apk"),
+            new Root(new File(filesDir, "morphe/helper"), "apk", "apks", "apkm", "xapk"),
+            new Root(new File(cacheDir, "updates")), new Root(new File(cacheDir, "installer")), new Root(new File(cacheDir, "saf_stage")),
+            new Root(new File(cacheDir, "cd_pick")), new Root(new File(cacheDir, "morphe_pick")), new Root(new File(cacheDir, "share")),
         };
     }
 
@@ -38,17 +56,18 @@ final class PrivatePaths {
      * path in the allowed tree but is the same file as the private one. A link count that cannot be read counts as protected.</li>
      * </ul>
      */
-    static boolean blocked(File f, File dataDir, Links links, File... allowed) {
+    static boolean blocked(File f, File dataDir, Links links, Root... allowed) {
         if (f == null || dataDir == null) return true;
         try {
             File data = dataDir.getCanonicalFile();
             File file = f.getCanonicalFile();
             if (!inside(file, data)) return false;
-            if (allowed != null) for (File a : allowed) {
+            if (allowed != null) for (Root a : allowed) {
                 if (a == null) continue;
-                File root = genuineRoot(a, dataDir, data);
+                File root = genuineRoot(a.dir, dataDir, data);
                 if (root == null || !inside(file, root)) continue;
                 if (file.isFile()) {
+                    if (!a.accepts(file)) continue;
                     if (links == null) return true;
                     if (links.count(file) != 1) return true;
                 }
