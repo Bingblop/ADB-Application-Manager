@@ -332,7 +332,7 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Standby bucket, read: app menu > **Standby** on a normal app: the sheet opens with the bucket the phone reports (`adb shell am get-standby-bucket <pkg>` shows the same). On a phone with no working mode the sheet does not open and says why.
 - [ ] Standby bucket, set: pick **rare**, Apply: the toast says "Standby bucket changed" and `am get-standby-bucket <pkg>` reports rare. Pick **restricted**, then **active**: same. On the current launcher or another exempted app the sheet shows the bucket greyed out and a set is refused with the phone's words.
 - [ ] Task Manager: open the Task Manager tab, then close the app from Recents: the phone shows no leftover activity from the app (battery stats show no polling after closing).
-- [ ] Log recording: a release build writes no command output to `logcat` (`adb logcat -d | grep -i bloatware` shows no command text).
+- [ ] Command output in the log: on a release build, run a privileged action (for example Freeze an app), then from a computer `adb logcat -d -s ADBAppManager`. The tag lines show the mode and sizes of a command, not its text or output. (A debuggable build still logs the whole line, by design.)
 
 ## Report
 
