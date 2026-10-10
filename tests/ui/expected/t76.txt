@@ -1,5 +1,5 @@
 1. fifteen tabs in the new order: true ["apps","saved-lists","debloater","installer","files","terminal","settings","overlays","store","logcat","taskmgr","devices","morphe","sdm","about"]
-   named as asked, two lines where it reads better: true ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","Command-Line\nInterface","Hidden\nSettings","RRO/Monet\nCustomization","Third Party\nStores/Updater","Logcat\nViewer","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
+   named as asked, two lines where it reads better: true ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","Installer/\nUpdater","File\nManager","Command-Line\nInterface","Hidden\nSettings","RRO/Monet\nCustomization","App\nStores","Logcat\nViewer","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
    Application Manager is active at the start: true
    every tab is at least 44 px tall and no label is cut off: true ["44","44","44","44","44","44","44","44","44","44","44","44","44","44","44"]
    the text is a little larger than before (13.5 px, it was 12 px): true 13.5px
@@ -9,8 +9,8 @@
 2. the header button is a gear called Settings (not the colours palette): true {"text":"⚙","label":"Settings","role":"button"}
    it opens Settings, no tab is lit and the gear shows that you are there: true {"view":"prefs","anyTab":false,"gearOn":true}
    the gear goes dark again on a tab: true
-3. Settings: the language at the very top, the default agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10): true ["Language","Default agent","Appearance","Palette Style","My Themes","Curated Theme Palettes","Lists","Motion","Row tints","Haptic feedback","Progress messages","VirusTotal API key","Reconnecting devices","Font","Icon pack","Action Button","Feature List","Press and hold guide"]
-   thirteen rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","Third Party Stores/Updater","Logcat Viewer","Task Manager","Connected Devices","Morphe Patcher","SD Maid"]
+3. Settings: the language at the very top, the Default Ask Agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10): true ["Language","Default Ask Agent","Appearance","Palette Style","My Themes","Curated Theme Palettes","Lists","Motion","Row tints","Haptic feedback","Progress messages","VirusTotal API key","Reconnecting devices","Font","Icon pack","Action Button","Feature List","Press and hold guide"]
+   thirteen rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer/Updater","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Stores","Logcat Viewer","Task Manager","Connected Devices","Morphe Patcher","SD Maid"]
    the first row cannot move up and the last cannot move down: true
    the names are the full names: true
    every switch and arrow has a name for a screen reader: true {"switches":true,"moves":true}
@@ -50,7 +50,7 @@
     About > check for update: says where to switch the tab on, and stays on About: true {"view":"about","bg":[]}
     Logcat Viewer off: "Logs" in an app's sheet says so, keeps the sheet and does not set a filter for later: true {"view":"apps","app":null,"bg":[]}
     and once the tab is on, the log shows everything (no app filter left behind): true
-    with the tab on again "Update" goes to it and starts the update: true {"view":"store","bg":["selfcheck","install:com.example.one"]}
+    with the tab on again "Update" goes to it and starts the update: true {"view":"installer","bg":["selfcheck","install:com.example.one"]}
     a package opened from outside is not turned away by a switch: APK Installer comes back, says so and loads it: true {"view":"installer","on":true,"bar":true,"pkg":"com.new.app","saved":[]}
     Overlays off at launch: no "Theme changed / Undo" bar on another tab, and the record is left to expire: true {"view":"apps","snack":false,"kept":"{\"t\":<epoch ms>,\"n\":0,\"sub\":\"theme\",\"undo\":\"x\",\"kind\":\"apply\",\"done\":true}"}
 12. Space on a switch: it turns off and the focus stays on that switch: true {"row":"files","cls":"switch-input","on":false}

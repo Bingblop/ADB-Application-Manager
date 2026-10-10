@@ -1,6 +1,6 @@
 ok   1. the card is "Default Ask Agent" and says it is a research agent, not a coding agent: Default Ask Agent | The research agent behind every Ask agent button, and the one the Application Up
 ok   2. nothing chosen yet means Perplexity (web research); the first line of the list is the free web lookup: ["perplexity","perplexity","No default (free web lookup only)"]
-ok   3. the list: web research (Perplexity, Browser Use, Crawl4AI) first; no coding agent (Cursor, Copilot, OpenCode) anywhere: ["Web research (recommended):perplexity+browseruse+crawl4ai","Chat models with an API key:gemini+claude+chatgpt+grok+muse+deepseek","Free Open-Source:jan+anythingllm+ollama+ownserver"]
+ok   3. the list: web research (Perplexity, Exa, Browser Use, Crawl4AI) first; no coding agent (Cursor, Copilot, OpenCode) anywhere: ["Web research (recommended):perplexity+exa+browseruse+crawl4ai","Chat models with an API key:gemini+claude+chatgpt+grok+muse+deepseek","Free Open-Source:jan+anythingllm+ollama+ownserver"]
 ok   4. without a key it says it reads the web for you until the agent is connected: Perplexity is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Command-Line Interface tab. Open it
 ok      so the Ask agent buttons fall back to the web lookup (not ready) while the default is Perplexity: {"ready":false,"def":"perplexity"}
 ok   5. choosing "No default" is kept (it does not go back to Perplexity) and the card says so: {"id":"","def":null,"val":"","note":"No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you."}
@@ -16,5 +16,9 @@ ok   12. the refresh button asks first, and nothing changes yet: {"open":true,"t
 ok   13. confirming makes the new code, shown at once and in the example: {"code":"NEWCO-DE123-45678-9ABCD-EFGHJ","ex":"adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity \\\n  -a com.bloatware.bingblop.action.AUTH_LAUNCH \\\n  --es auth NEWCO-DE123-45678-9ABCD-EFGHJ --es package com.android.settings","calls":1}
 ok   14. recent uses are listed (what and the verdict), and a lock after wrong codes is shown with its seconds: {"rows":2,"txt":"Recent uses\npackage com.android.settings\nok · <clock>\npackage com.example.x\nwrong · <clock>\nClear the list","note":"Locked for 42 more seconds after wrong codes."}
 ok   15. Clear the list empties them
+ok   16. the other way round: a switch, off, and a list that says no app gets the code: {"on":false,"list":"No app is listed, so no app gets the code."}
+ok   17. a package is added to the list; something that is not a package is refused with a message and stays in the box: {"list":"com.example.target\nRemove","calls":["add:com.example.target","add:not a package"],"val":"not a package"}
+ok   18. the switch turns sending on in the app
+ok   19. Remove takes the app off the list
 ok   no page errors:
 ALL PASSED
