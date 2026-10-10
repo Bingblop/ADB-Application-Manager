@@ -1,0 +1,42 @@
+ok   1. the button is in the SD Maid tab, in a card above the Trim Caches one: [true,true,"Clear Data from Uninstalled Apps"]
+ok      the description under it is the corrected sentence with markup (flag in code, 3rd party and fix in bold):
+                Leftover data of uninstalled apps
+
+                    Clear Data from Uninstalled Apps
+
+                Clears the data of apps that were uninstalled from this device while the DONT_DELETE_FLAG flag was active.
+ok      Root: only the uninstalled app that still has data is listed, with its size: {"open":true,"rows":1,"sub":"1 uninstalled app with data left (5.0 MB)","size":"Gone One\ncom.example.gone1\n5.0 MB","go":"Clear data of 1 app"}
+ok      without Root every uninstalled app is listed, ticked, and the note says Root is needed to see the data: {"rows":2,"note":"These apps are uninstalled. Without Root the app cannot see which of them still have data, so clearing all of them is safe but may find nothing for some. The data of the apps you tick is deleted for good.","go":"Clear data of 2 apps"}
+ok      Select None leaves nothing to clear (the button is off)
+ok      confirming runs the batch action clear_removed_data on the ticked apps, after asking: [[["clear_removed_data",["com.example.gone1","com.example.gone2"]]],["Delete the data of 2 uninstalled apps?\n\nThis cannot be undone."]]
+ok   2. the batch menu has the grab handle in the middle at the top, like the other sheets: 50% 7px
+ok   3. Select All and Clear All are outlined buttons ("Clear" is now "Clear All"): [{"t":"Select All","bw":"1px","bs":"solid"},{"t":"Clear All","bw":"1px","bs":"solid"}]
+ok   4. Keep selecting after running is on
+ok   5. Share List and Show Apps changed places; it is Show Applications now: [["Copy Packages","Show Applications"],["Freeze","Enable","Force Stop","Suspend","Unsuspend","Clear Data","Optimize","Uninstall","Reinstall","Batch Ops","Share List","Command"]]
+ok      pulled up, the menu gets taller (like the other sheets)
+ok      pulled down once, it goes back to its size
+ok      pulled down again, the menu closes to the checkmark button and the apps stay selected
+ok      turned off for this selection
+ok   4. a new selection starts with Keep selecting after running on again
+ok      it is not remembered in the saved state
+ok   6. the package name has its own colour, not the name's white and not the plain grey: {"name":"rgb(230, 224, 233)","pkg":"color(srgb 0.804392 0.752314 0.911529)","muted":"#CAC4D0"}
+ok   7. switching to another tab with apps selected clears them and removes the checkmark button in the same moment: {"n0":1,"n":0,"fab":false,"bar":false,"tr":"0s"}
+ok      back in the Apps tab nothing is selected
+ok   8. with Uninstalled on, tapping Running turns Uninstalled off: {"a":["uninstalled"],"b":["running"]}
+ok   9. Settings has the VirusTotal API key card
+ok      the Installer no longer has its own key box; it says the key is missing and links to Settings: {"note":"No VirusTotal API key yet. Enter it in Settings","link":true,"noBox":true,"scanOff":true}
+ok      typing the key keeps it, not approved yet
+ok      the Installer then says it is not approved and links to Settings to test it: {"note":"The key in Settings has not been approved yet. Test it in Settings","btn":"Test it in Settings"}
+ok      a refused key stays unapproved
+ok      Test key approves it (one validation call with the key)
+ok      the Installer now says it uses the key from Settings
+ok      Morphe Helper uses the same key (no box of its own)
+ok      changing the key takes the approval away
+ok      the links go to Settings
+ok      a key saved by the older Installer box is taken over
+ok      the older key is cleared after it is taken over
+ok      with both places filled the key in vt_key wins and the older copy is cleared
+ok      Helper's own key is moved to the one key and the plain config is emptied
+ok      if the key cannot be stored securely the Helper copy is kept (nothing is lost) and nothing is stored under vt_key
+ok      if the approval cannot be stored securely the toast says so and the key stays unapproved
+ok   no page errors:
