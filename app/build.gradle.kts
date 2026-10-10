@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val releaseKeystore = providers.environmentVariable("KEYSTORE").orNull
+val releaseKeystorePassword = providers.environmentVariable("KS_PASS").orNull
+val releaseKeyAlias = providers.environmentVariable("KS_ALIAS").orNull
+
 android {
     namespace = "com.bloatware.bingblop"
     compileSdk = 36
@@ -17,17 +21,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file("${rootDir}/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
-        create("debugConfig") {
-            storeFile = file("${rootDir}/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        if (releaseKeystore != null && releaseKeystorePassword != null && releaseKeyAlias != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeystorePassword
+            }
         }
     }
 
@@ -38,10 +38,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
-        }
-        debug {
-            signingConfig = signingConfigs.getByName("debugConfig")
+            if (releaseKeystore != null && releaseKeystorePassword != null && releaseKeyAlias != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
