@@ -8,6 +8,7 @@
  *                        'R' rows(2) cols(2)               the window size changed
  * stdout carries what the program wrote to its terminal, as it is. The exit status is the program's (128 + the signal when killed).
  * The environment is the caller's (TERM and the like are set by the app).
+ * When the app goes away (stdin ends) the program gets SIGHUP; one that is still there 500 ms later is killed with its process group (SIGKILL).
  *
  * No C library: this is a static executable that uses system calls only, for aarch64, 32-bit ARM and (to test it on a computer) x86_64.
  * Android runs it from the app's native library folder, as it does libadb.so. Source and build: native/pty/build.sh.
@@ -22,8 +23,12 @@
 #define POLLERR 8
 #define POLLHUP 16
 #define SIGHUP 1
+#define SIGKILL 9
 #define SIGCHLD 17
 #define EINTR 4
+#define WNOHANG 1
+#define CLOCK_MONOTONIC 1
+#define GRACE_NS 500000000L      /* how long the program has to leave after the hang-up (PtyShell.close() ends this helper after 800 ms) */
 #define TIOCSCTTY 0x540E
 #define TIOCSWINSZ 0x5414
 #define TIOCSPTLCK 0x40045431
@@ -31,6 +36,7 @@
 
 struct pollfd { int fd; short events; short revents; };
 struct winsize { u16 row, col, xpixel, ypixel; };
+struct timespec { long sec, nsec; };    /* the kernel's old layout: ppoll and clock_gettime take it on 32-bit ARM too */
 
 void *memcpy(void *d, const void *s, unsigned long n) { u8 *a = d; const u8 *b = s; while (n--) *a++ = *b++; return d; }
 void *memset(void *d, int c, unsigned long n) { u8 *a = d; while (n--) *a++ = (u8)c; return d; }
@@ -44,6 +50,16 @@ static long wr_all(int fd, const void *b, long n) {
 static __attribute__((noreturn)) void die(int code) { for (;;) sc(SYS_exit_group, code, 0, 0, 0, 0); }
 static int num(const char *s) { int v = 0; while (*s >= '0' && *s <= '9') v = v * 10 + (*s++ - '0'); return v; }
 static void put_err(const char *s) { long n = 0; while (s[n]) n++; wr_all(2, s, n); }
+/* the hang-up: SIGHUP to the program, and from then on the clock runs; a program that ignores it is killed when the grace period is over (see reap) */
+static struct timespec hup_at; static int hupped;
+static void mono(struct timespec *t) { sc(SYS_clock_gettime, CLOCK_MONOTONIC, (long)t, 0, 0, 0); }
+static void hangup(long pid) { if (hupped) return; hupped = 1; mono(&hup_at); sc(SYS_kill, pid, SIGHUP, 0, 0, 0); }
+static long grace_left(void) {          /* nanoseconds of the grace period that remain, 0 when it is over (a long is 32 bits on ARM: after a second or more it is over, no sums) */
+    struct timespec t; mono(&t);
+    long s = t.sec - hup_at.sec; if (s > 1) return 0;
+    long left = GRACE_NS - (s * 1000000000L + (t.nsec - hup_at.nsec));
+    return left > 0 ? left : 0;
+}
 static void setsize(int fd, int rows, int cols) { struct winsize w; w.row = (u16)rows; w.col = (u16)cols; w.xpixel = 0; w.ypixel = 0; sc(SYS_ioctl, fd, TIOCSWINSZ, (long)&w, 0, 0); }
 
 /* frames from the app: a state machine, as a read may end anywhere */
@@ -105,26 +121,37 @@ __attribute__((used)) void c_start(long *sp) {
     }
     sc(SYS_close, slave, 0, 0, 0, 0);
     u8 buf[16384];
-    int stdin_open = 1;
+    int stdin_open = 1, out_open = 1;
     for (;;) {
         struct pollfd fds[2];
         fds[0].fd = stdin_open ? 0 : -1; fds[0].events = POLLIN; fds[0].revents = 0;
-        fds[1].fd = master; fds[1].events = POLLIN; fds[1].revents = 0;
-        long r = sc(SYS_ppoll, (long)fds, 2, 0, 0, 0);
+        fds[1].fd = master; fds[1].events = out_open ? POLLIN : 0; fds[1].revents = 0;       /* without a reader only the end (POLLHUP) is of interest */
+        struct timespec tmo; tmo.sec = 0; tmo.nsec = hupped ? grace_left() : 0;
+        if (hupped && !tmo.nsec) break;                      /* the grace period is over: reap kills what is left */
+        long r = sc(SYS_ppoll, (long)fds, 2, hupped ? (long)&tmo : 0, 0, 0);
         if (r < 0) { if (r == -EINTR) continue; break; }
         if (fds[1].revents & (POLLIN | POLLHUP | POLLERR)) {
             long n = rd(master, buf, sizeof buf);
             if (n <= 0) break;                               /* the program closed its terminal */
-            if (wr_all(1, buf, n) < 0) { sc(SYS_kill, pid, SIGHUP, 0, 0, 0); break; }
+            if (out_open && wr_all(1, buf, n) < 0) { out_open = 0; hangup(pid); }          /* nobody reads the output any more: hang up, drop what comes */
         }
         if (stdin_open && (fds[0].revents & (POLLIN | POLLHUP | POLLERR))) {
             long n = rd(0, fbuf, sizeof fbuf);
-            if (n <= 0) { stdin_open = 0; sc(SYS_kill, pid, SIGHUP, 0, 0, 0); }       /* the app went away: hang up, as a terminal window closing does */
+            if (n <= 0) { stdin_open = 0; hangup(pid); }       /* the app went away: hang up, as a terminal window closing does */
             else if (feed(master, fbuf, n) < 0) stdin_open = 0;
         }
     }
-    int status = 0;
-    for (;;) { long w = sc(SYS_wait4, pid, (long)&status, 0, 0, 0); if (w == -EINTR) continue; break; }
+    /* reap: wait for the program. After a hang-up it gets the rest of the grace period, then it and everything in its process group (it leads the session) is killed */
+    int status = 0, flags = hupped ? WNOHANG : 0;
+    for (;;) {
+        long w = sc(SYS_wait4, pid, (long)&status, flags, 0, 0);
+        if (w == -EINTR) continue;
+        if (w != 0) break;
+        long left = grace_left();
+        if (!left) { sc(SYS_kill, -pid, SIGKILL, 0, 0, 0); flags = 0; continue; }
+        struct timespec nap; nap.sec = 0; nap.nsec = left < 2000000L ? left : 2000000L;
+        sc(SYS_ppoll, 0, 0, (long)&nap, 0, 0);
+    }
     int code = (status & 0x7f) == 0 ? ((status >> 8) & 0xff) : 128 + (status & 0x7f);
     die(code);
 }

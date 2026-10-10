@@ -19,6 +19,9 @@ typedef unsigned short u16;
 #define SYS_kill 62
 #define SYS_exit_group 231
 #define SYS_ppoll 271
+#define SYS_clock_gettime 228
+#define SYS_rt_sigaction 13
+#define SYS_getpid 39
 static inline long sc(long n, long a, long b, long c, long d, long e) {
     long r; register long r10 __asm__("r10") = d; register long r8 __asm__("r8") = e;
     __asm__ volatile("syscall" : "=a"(r) : "a"(n), "D"(a), "S"(b), "d"(c), "r"(r10), "r"(r8) : "rcx", "r11", "memory");
@@ -39,6 +42,9 @@ __asm__(".globl _start\n_start:\n xor %rbp,%rbp\n mov %rsp,%rdi\n and $-16,%rsp\
 #define SYS_kill 129
 #define SYS_exit_group 94
 #define SYS_ppoll 73
+#define SYS_clock_gettime 113
+#define SYS_rt_sigaction 134
+#define SYS_getpid 172
 static inline long sc(long n, long a, long b, long c, long d, long e) {
     register long x8 __asm__("x8") = n; register long x0 __asm__("x0") = a; register long x1 __asm__("x1") = b;
     register long x2 __asm__("x2") = c; register long x3 __asm__("x3") = d; register long x4 __asm__("x4") = e;
@@ -60,6 +66,9 @@ __asm__(".globl _start\n_start:\n mov x0, sp\n bl c_start\n");
 #define SYS_kill 37
 #define SYS_exit_group 248
 #define SYS_ppoll 336
+#define SYS_clock_gettime 263
+#define SYS_rt_sigaction 174
+#define SYS_getpid 20
 static inline long sc(long n, long a, long b, long c, long d, long e) {
     register long r7 __asm__("r7") = n; register long r0 __asm__("r0") = a; register long r1 __asm__("r1") = b;
     register long r2 __asm__("r2") = c; register long r3 __asm__("r3") = d; register long r4 __asm__("r4") = e;
