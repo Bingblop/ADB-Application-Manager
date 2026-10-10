@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Confronto in corso…",
 "Compatible width limit": "Limite di larghezza compatibile",
 "Compile mode": "Modalità di compilazione",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "Reimposta riporta l’ottimizzazione dex dell’app allo stato che Android usa dopo un’installazione (pm compile --reset). Il risultato esatto dipende dalla versione di Android.",
 "Compiled against": "Compilato per",
 "Complementary colors in a balanced blend": "Colori complementari in una miscela equilibrata",
 "Complete a file name": "Completa il nome del file",
@@ -2645,6 +2646,7 @@ x: {
 "Recompile even if already optimized (-f)": "Ricompila anche se già ottimizzata (-f)",
 "Recompile the app's code for faster runtime.": "Ricompila il codice dell’app per un’esecuzione più rapida.",
 "Recompile this app for faster runtime.": "Ricompila questa app per un’esecuzione più rapida.",
+"Reset the dex optimization of this app.": "Reimposta l’ottimizzazione dex di questa app.",
 "Reconnect": "Riconnetti",
 "Reconnect all": "Riconnetti tutto",
 "Reconnect on its own": "Riconnetti automaticamente",
@@ -4464,7 +4466,17 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Scansione VirusTotal<1>Verifica il file tramite il suo hash dopo il download</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Parole in un nome: <1>foto</1> (devono esserci tutte; <2/> e <3/> sono caratteri jolly; <4>-parola</4> esclude un nome; \"due parole\" tra virgolette).<br> <5>ext:jpg,png</5> o <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:parola</14> cerca dentro i file di testo (fino a 4 MB). <15>archive:nome</15> cerca nei nomi delle voci contenute in archivi zip, apk, jar e simili.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Scrivi il tuo messaggio e tocca <1>Invia</1>: si apre la tua app email con il messaggio pronto, indirizzato a un alias di contatto (<2/>) che lo inoltra allo sviluppatore. L’oggetto è <3>ADB App Manager</3>. L’indirizzo personale dello sviluppatore non è in questa app, e il messaggio viene inviato dalla tua app email, non da questa.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Al momento l’app è in <1>Modalità di sola lettura</1>. Le operazioni sui pacchetti di sistema (come Congela, Attiva, Forza arresto, Cancella dati o Disinstalla) richiedono autorizzazioni elevate tramite <2>ADB TCP (5555)</2>, <3>Debug wireless</3>, <4>Shizuku</4> o <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Al momento l’app è in <1>Modalità di sola lettura</1>. Le operazioni sui pacchetti di sistema (come Congela, Attiva, Forza arresto, Cancella dati o Disinstalla) richiedono autorizzazioni elevate tramite <2>ADB TCP (5555)</2>, <3>Debug wireless</3>, <4>Shizuku</4> o <5>Root</5>.",
+"The key could not be stored securely: it is kept until you leave the app, not saved": "Impossibile salvare la chiave in modo sicuro: resta finché non esci dall’app, non viene salvata",
+"The key works, but its approval could not be stored securely: test it again later": "La chiave funziona, ma non è stato possibile salvare l’approvazione in modo sicuro: riprova più tardi",
+"The token could not be stored securely: not saved": "Impossibile salvare il token in modo sicuro: non salvato",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Scegli quanto Android limita l’app quando non è in uso. active non ha limiti; restricted ne ha di più.",
+"Could not change the standby bucket": "Impossibile cambiare il bucket di standby",
+"Could not read the standby bucket": "Impossibile leggere il bucket di standby",
+"No answer from the app": "Nessuna risposta dall’app",
+"Standby": "Standby",
+"Standby bucket": "Bucket di standby",
+"Standby bucket changed": "Bucket di standby modificato"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],
@@ -4870,6 +4882,9 @@ p: [
 ["Recompile {0} for faster runtime.", "Ricompila {0} per un’esecuzione più rapida."],
 ["Recompile {0} selected app.", "Ricompila {0} app selezionata."],
 ["Recompile {0} selected apps.", "Ricompila {0} app selezionate."],
+["Reset the dex optimization of {0}.", "Reimposta l’ottimizzazione dex di {0}."],
+["Reset the dex optimization of {0} selected app.", "Reimposta l’ottimizzazione dex di {0} app selezionata."],
+["Reset the dex optimization of {0} selected apps.", "Reimposta l’ottimizzazione dex di {0} app selezionate."],
 ["Reconnected {0} device", "Riconnesso {0} dispositivo"],
 ["Reconnected {0} devices", "Riconnessi {0} dispositivi"],
 ["Reconnected {0} of {1}. The rest says why where it is listed.", "Riconnessi {0} di {1}. Gli altri indicano il motivo dove sono elencati."],
@@ -5510,6 +5525,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ adatto a questo telefono ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} ha lo stesso firmatario della chiave di questa app, quindi può essere aggiornata sul posto"],
 ["✓ {0}: done", "✓ {0}: fatto"],
-["＋ Create “{0}” in {1}", "＋ Crea “{0}” in {1}"]
+["＋ Create “{0}” in {1}", "＋ Crea “{0}” in {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

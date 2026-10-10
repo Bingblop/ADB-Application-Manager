@@ -1676,6 +1676,24 @@ public class MainActivity extends Activity {
     private final ExecutorService aiExecutor = Executors.newCachedThreadPool();
     private final Map<String, AiHttp> aiCalls = new java.util.concurrent.ConcurrentHashMap<String, AiHttp>();
 
+    private SecretSettings secretSettings;
+
+    /** The GitHub token and the VirusTotal key: sealed in the Keystore vault, old plain copies moved there on first read. */
+    private synchronized SecretSettings secrets() {
+        if (secretSettings == null) {
+            final AgentVault v = vault();
+            secretSettings = new SecretSettings(new SecretSettings.Vault() {
+                public String get(String id) { return v.get(id); }
+                public void put(String id, String secret) throws Exception { v.put(id, secret); }
+                public void remove(String id) { v.remove(id); }
+            }, new SecretSettings.Plain() {
+                public String get(String name) { return prefs.getString(name, ""); }
+                public void remove(String name) { if (prefs.contains(name)) prefs.edit().remove(name).apply(); }
+            });
+        }
+        return secretSettings;
+    }
+
     private synchronized AgentVault vault() {
         if (agentVault == null) agentVault = new AgentVault(this);
         return agentVault;
@@ -3037,7 +3055,7 @@ public class MainActivity extends Activity {
         JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) { storeDeliver(source, arg, cached, null); return; }
         storeProgress(source, arg, "Asking " + ("github-owner".equals(kind) || "github-repo".equals(kind) ? "GitHub" : "Codeberg") + "…");
-        String token = prefs.getString("github_token", "");
+        String token = secrets().get(SecretSettings.GITHUB_TOKEN);
         JSONArray items;
         if ("github-owner".equals(kind)) items = StoreDetail.githubOwner(owner, token);
         else if ("github-repo".equals(kind)) items = StoreDetail.githubRepo(owner, repo, token);
@@ -3098,7 +3116,7 @@ public class MainActivity extends Activity {
                     } else if (!owner.isEmpty() && !repo.isEmpty() && "codeberg".equals(kind)) {
                         detail = StoreDetail.codeberg(owner, repo);
                     } else if (!owner.isEmpty() && !repo.isEmpty()) {
-                        detail = StoreDetail.github(owner, repo, prefs.getString("github_token", ""));
+                        detail = StoreDetail.github(owner, repo, secrets().get(SecretSettings.GITHUB_TOKEN));
                     } else {
                         note = "This entry gives no more than what the list shows.";
                     }
@@ -3154,7 +3172,7 @@ public class MainActivity extends Activity {
                             && !item.optString("apkUrl", "").isEmpty();
                     if (!direct) storeInstallProgress(key, "resolving", -1, "Finding the latest release of " + name + "…");
                     // A saved GitHub token (Updates tab) lifts the API's anonymous rate limit
-                    JSONObject r = Stores.resolve(item, Build.SUPPORTED_ABIS, prefs.getString("github_token", ""));
+                    JSONObject r = Stores.resolve(item, Build.SUPPORTED_ABIS, secrets().get(SecretSettings.GITHUB_TOKEN));
                     String apkUrl = r.optString("apkUrl", "");
                     String rpkg = r.optString("pkg", pkg);
                     downloadAndInstall(apkUrl, rpkg == null || rpkg.isEmpty() ? pkg : rpkg, name, key, item.optString("sha256", ""));
@@ -6216,7 +6234,7 @@ public class MainActivity extends Activity {
 
     private void checkOpenSourceApps(JSONObject summary) throws Exception {
         final JSONObject sources = updateSources();
-        final String token = prefs.getString("github_token", "");
+        final String token = secrets().get(SecretSettings.GITHUB_TOKEN);
         final PackageManager pm = getPackageManager();
         final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
         final java.util.Map<String, String> installers = new java.util.HashMap<String, String>();
@@ -9875,13 +9893,13 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void setGithubToken(String token) {
-            prefs.edit().putString("github_token", token == null ? "" : token.trim()).apply();
+        public boolean setGithubToken(String token) {
+            return secrets().put(SecretSettings.GITHUB_TOKEN, token);       // false: the Keystore would not seal it, nothing was kept
         }
 
         @JavascriptInterface
         public boolean hasGithubToken() {
-            return prefs.getString("github_token", "").length() > 0;
+            return secrets().has(SecretSettings.GITHUB_TOKEN);
         }
 
         /** Opens obtainium:// links (falls back to the Obtainium web catalog when Obtainium isn't installed) */
@@ -11041,14 +11059,17 @@ public class MainActivity extends Activity {
         // ---- Small key/value settings (e.g. the VirusTotal API key) --------------------------
 
         @JavascriptInterface
-        public void saveSetting(String key, String value) {
-            if (key == null || key.isEmpty() || prefs == null) return;
+        public boolean saveSetting(String key, String value) {
+            if (key == null || key.isEmpty() || prefs == null) return false;
+            if (SecretSettings.isSecretKv(key)) return secrets().put(SecretSettings.kvName(key), value);     // false: not stored anywhere
             prefs.edit().putString("kv_" + key, value == null ? "" : value).apply();
+            return true;
         }
 
         @JavascriptInterface
         public String loadSetting(String key) {
             if (key == null || key.isEmpty() || prefs == null) return "";
+            if (SecretSettings.isSecretKv(key)) return secrets().get(SecretSettings.kvName(key));
             return prefs.getString("kv_" + key, "");
         }
 
@@ -14314,16 +14335,59 @@ public class MainActivity extends Activity {
         public String optimizeApp(String pkg, String mode, boolean force) {
             JSONObject r = new JSONObject();
             try {
-                if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) { r.put("ok", false); r.put("output", "Error: invalid package"); return r.toString(); }
+                if (pkg == null || !BackupScripts.isPackageName(pkg)) { r.put("ok", false); r.put("output", "Error: invalid package"); return r.toString(); }
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
-                String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
-                if (m.isEmpty()) m = "speed";
-                String flagged = runShellAction("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String cmd = ShellArgs.compileCommand(pkg, mode, force);
+                if (cmd == null) { r.put("ok", false); r.put("output", "Error: not a compile mode ART knows"); return r.toString(); }
+                String flagged = runShellAction(cmd);
                 String out = flagText(flagged);
                 r.put("ok", flagOk(flagged));
                 r.put("output", !out.trim().isEmpty() ? out.trim() : "Done");
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        /** The app standby bucket of one app: {ok, bucket ("active", "working_set", "frequent", "rare", "restricted", "exempted", "never"), output}. */
+        @JavascriptInterface
+        public String getStandbyBucket(String pkg) {
+            JSONObject r = new JSONObject();
+            try {
+                String cmd = StandbyBuckets.getCommand(pkg);
+                if (cmd == null) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: invalid package"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: the standby bucket needs ADB, Shizuku or Root."); return r.toString(); }
+                String out = executeShell(cmd);
+                String bucket = StandbyBuckets.parse(out);
+                r.put("ok", !bucket.isEmpty());
+                r.put("bucket", bucket);
+                r.put("output", bucket.isEmpty() ? (out == null ? "" : out.trim()) : bucket);
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        /** Puts one app in a standby bucket and asks the phone which bucket it is in now: ok only when it answers with the one asked for. */
+        @JavascriptInterface
+        public String setStandbyBucket(String pkg, String bucket) {
+            JSONObject r = new JSONObject();
+            try {
+                String cmd = StandbyBuckets.setCommand(pkg, bucket);
+                if (cmd == null) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: not a package and a standby bucket"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: the standby bucket needs ADB, Shizuku or Root."); return r.toString(); }
+                String flagged = runShellAction(cmd);
+                String now = StandbyBuckets.parse(executeShell(StandbyBuckets.getCommand(pkg)));
+                boolean ok = bucket.equals(now);
+                r.put("ok", ok);
+                r.put("bucket", now);
+                if (ok) r.put("output", now);
+                else {
+                    String said = flagText(flagged).trim();
+                    r.put("output", !said.isEmpty() && !flagOk(flagged) ? said : "The phone did not change it" + (now.isEmpty() ? "." : ": it is in " + now + "."));
+                }
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
             return r.toString();
         }

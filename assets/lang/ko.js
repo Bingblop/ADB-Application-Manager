@@ -775,6 +775,7 @@ x: {
 "Comparing…": "비교 중…",
 "Compatible width limit": "호환 너비 한계",
 "Compile mode": "컴파일 모드",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "초기화하면 앱의 dex 최적화가 설치 직후 Android가 사용하는 상태로 돌아갑니다(pm compile --reset). 정확한 결과는 Android 버전에 따라 다릅니다.",
 "Compiled against": "컴파일 대상",
 "Complementary colors in a balanced blend": "보색을 균형 있게 섞은 조합",
 "Complete a file name": "파일 이름 자동 완성",
@@ -2645,6 +2646,7 @@ x: {
 "Recompile even if already optimized (-f)": "이미 최적화되어 있어도 다시 컴파일 (-f)",
 "Recompile the app's code for faster runtime.": "더 빠른 실행을 위해 앱 코드를 다시 컴파일합니다.",
 "Recompile this app for faster runtime.": "더 빠른 실행을 위해 이 앱을 다시 컴파일합니다.",
+"Reset the dex optimization of this app.": "이 앱의 dex 최적화를 초기화합니다.",
 "Reconnect": "다시 연결",
 "Reconnect all": "모두 다시 연결",
 "Reconnect on its own": "자동으로 다시 연결",
@@ -4464,7 +4466,17 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal 검사<1>다운로드 후 해시로 파일 확인</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "이름에 포함된 단어: <1>photo</1> (모두 일치해야 함, <2/>와 <3/>는 와일드카드, <4>-word</4>는 해당 이름 제외, 여러 단어는 \"큰따옴표\"로 묶기).<br> <5>ext:jpg,png</5> 또는 <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14>는 텍스트 파일 내부를 검색합니다(최대 4MB). <15>archive:name</15>은 zip, apk, jar 등의 압축 파일 안에 있는 항목 이름을 검색합니다.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "메시지를 입력하고 <1>보내기</1>를 탭하세요. 이메일 앱이 메시지가 준비된 상태로 열리며, 개발자에게 전달해 주는 연락처 별칭(<2/>)으로 보내집니다. 제목은 <3>ADB App Manager</3>입니다. 개발자 본인의 주소는 이 앱에 없으며, 메시지는 이 앱이 아니라 이메일 앱에서 전송됩니다.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다.",
+"The key could not be stored securely: it is kept until you leave the app, not saved": "키를 안전하게 저장하지 못했습니다. 앱을 나갈 때까지만 유지되며 저장되지 않습니다",
+"The key works, but its approval could not be stored securely: test it again later": "키는 작동하지만 승인 상태를 안전하게 저장하지 못했습니다. 나중에 다시 테스트하세요",
+"The token could not be stored securely: not saved": "토큰을 안전하게 저장하지 못했습니다. 저장되지 않았습니다",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "앱을 사용하지 않는 동안 Android가 앱을 얼마나 제한할지 선택합니다. active는 제한이 없고 restricted는 가장 많이 제한합니다.",
+"Could not change the standby bucket": "대기 버킷을 변경하지 못했습니다",
+"Could not read the standby bucket": "대기 버킷을 읽지 못했습니다",
+"No answer from the app": "앱에서 응답이 없습니다",
+"Standby": "대기",
+"Standby bucket": "대기 버킷",
+"Standby bucket changed": "대기 버킷을 변경했습니다"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -4870,6 +4882,9 @@ p: [
 ["Recompile {0} for faster runtime.", "더 빠른 실행을 위해 {0} 앱을 다시 컴파일합니다."],
 ["Recompile {0} selected app.", "선택한 앱 {0}개를 다시 컴파일합니다."],
 ["Recompile {0} selected apps.", "선택한 앱 {0}개를 다시 컴파일합니다."],
+["Reset the dex optimization of {0}.", "{0}의 dex 최적화를 초기화합니다."],
+["Reset the dex optimization of {0} selected app.", "선택한 앱 {0}개의 dex 최적화를 초기화합니다."],
+["Reset the dex optimization of {0} selected apps.", "선택한 앱 {0}개의 dex 최적화를 초기화합니다."],
 ["Reconnected {0} device", "기기 {0}대를 다시 연결했습니다"],
 ["Reconnected {0} devices", "기기 {0}대를 다시 연결했습니다"],
 ["Reconnected {0} of {1}. The rest says why where it is listed.", "{1}대 중 {0}대를 다시 연결했습니다. 나머지는 목록에서 이유를 알려 줍니다."],
@@ -5510,6 +5525,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ 이 휴대전화에 맞음 ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}은(는) 이 앱의 키와 서명자가 같아 제자리에서 업데이트할 수 있습니다"],
 ["✓ {0}: done", "✓ {0}: 완료"],
-["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"]
+["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

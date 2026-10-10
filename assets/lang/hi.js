@@ -775,6 +775,7 @@ x: {
 "Comparing…": "तुलना हो रही है…",
 "Compatible width limit": "संगत चौड़ाई की सीमा",
 "Compile mode": "कंपाइल मोड",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "रीसेट करने पर ऐप का dex ऑप्टिमाइज़ेशन उस स्थिति में लौट जाता है जो Android इंस्टॉल के बाद इस्तेमाल करता है (pm compile --reset)। सटीक नतीजा Android के वर्शन पर निर्भर करता है।",
 "Compiled against": "जिसके लिए कंपाइल किया गया",
 "Complementary colors in a balanced blend": "संतुलित मिश्रण में पूरक रंग",
 "Complete a file name": "फ़ाइल का नाम पूरा करें",
@@ -2645,6 +2646,7 @@ x: {
 "Recompile even if already optimized (-f)": "पहले से ऑप्टिमाइज़ होने पर भी दोबारा कंपाइल करें (-f)",
 "Recompile the app's code for faster runtime.": "तेज़ रनटाइम के लिए ऐप का कोड दोबारा कंपाइल करें।",
 "Recompile this app for faster runtime.": "तेज़ रनटाइम के लिए इस ऐप को दोबारा कंपाइल करें।",
+"Reset the dex optimization of this app.": "इस ऐप का dex ऑप्टिमाइज़ेशन रीसेट करें।",
 "Reconnect": "फिर से कनेक्ट करें",
 "Reconnect all": "सब फिर से जोड़ें",
 "Reconnect on its own": "अपने आप फिर से जुड़ें",
@@ -4464,7 +4466,17 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal स्कैन<1>डाउनलोड के बाद फ़ाइल को उसके हैश से जाँचता है</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "नाम में शब्द: <1>photo</1> (सभी मेल खाने चाहिए; <2/> और <3/> वाइल्डकार्ड हैं; <4>-word</4> किसी नाम को बाहर रखता है; \"दो शब्द\" उद्धरण चिह्नों में)।<br> <5>ext:jpg,png</5> या <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> टेक्स्ट फ़ाइलों के अंदर खोजता है (4 MB तक)। <15>archive:name</15> zip, apk, jar जैसे आर्काइव के अंदर की प्रविष्टियों के नाम देखता है।",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "अपना संदेश लिखें और <1>भेजें</1> पर टैप करें: आपका ईमेल ऐप संदेश तैयार करके खुलता है, जो एक संपर्क उपनाम (<2/>) को संबोधित है जो उसे डेवलपर तक पहुँचाता है। विषय <3>ADB App Manager</3> है। डेवलपर का अपना पता इस ऐप में नहीं है, और संदेश आपके ईमेल ऐप से भेजा जाता है, इस ऐप से नहीं।",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।"
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
+"The key could not be stored securely: it is kept until you leave the app, not saved": "कुंजी सुरक्षित रूप से सहेजी नहीं जा सकी: यह ऐप छोड़ने तक रखी जाएगी, सहेजी नहीं गई",
+"The key works, but its approval could not be stored securely: test it again later": "कुंजी काम करती है, लेकिन उसकी मंज़ूरी सुरक्षित रूप से सहेजी नहीं जा सकी: बाद में फिर जाँचें",
+"The token could not be stored securely: not saved": "टोकन सुरक्षित रूप से सहेजा नहीं जा सका: सहेजा नहीं गया",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "चुनें कि ऐप इस्तेमाल में न होने पर Android उसे कितना सीमित करे। active पर कोई सीमा नहीं होती; restricted पर सबसे ज़्यादा।",
+"Could not change the standby bucket": "स्टैंडबाय बकेट बदला नहीं जा सका",
+"Could not read the standby bucket": "स्टैंडबाय बकेट पढ़ा नहीं जा सका",
+"No answer from the app": "ऐप से कोई जवाब नहीं मिला",
+"Standby": "स्टैंडबाय",
+"Standby bucket": "स्टैंडबाय बकेट",
+"Standby bucket changed": "स्टैंडबाय बकेट बदल दिया गया"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -4870,6 +4882,9 @@ p: [
 ["Recompile {0} for faster runtime.", "तेज़ रनटाइम के लिए {0} रीकंपाइल करें।"],
 ["Recompile {0} selected app.", "{0} चुना गया ऐप रीकंपाइल करें।"],
 ["Recompile {0} selected apps.", "{0} चुने गए ऐप्स रीकंपाइल करें।"],
+["Reset the dex optimization of {0}.", "{0} का dex ऑप्टिमाइज़ेशन रीसेट करें।"],
+["Reset the dex optimization of {0} selected app.", "चुने हुए {0} ऐप का dex ऑप्टिमाइज़ेशन रीसेट करें।"],
+["Reset the dex optimization of {0} selected apps.", "चुने हुए {0} ऐप्स का dex ऑप्टिमाइज़ेशन रीसेट करें।"],
 ["Reconnected {0} device", "{0} डिवाइस फिर से जुड़ा"],
 ["Reconnected {0} devices", "{0} डिवाइस फिर से जुड़े"],
 ["Reconnected {0} of {1}. The rest says why where it is listed.", "{1} में से {0} फिर से जुड़े। बाकी बताते हैं कि क्यों, जहाँ वे सूचीबद्ध हैं।"],
@@ -5510,6 +5525,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ इस फ़ोन पर फ़िट बैठता है ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
-["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"]
+["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Karşılaştırılıyor…",
 "Compatible width limit": "Uyumlu genişlik sınırı",
 "Compile mode": "Derleme modu",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "Sıfırla, uygulamanın dex optimizasyonunu Android’in kurulumdan sonra kullandığı duruma döndürür (pm compile --reset). Kesin sonuç Android sürümüne bağlıdır.",
 "Compiled against": "Derlendiği sürüm",
 "Complementary colors in a balanced blend": "Dengeli bir karışımda tamamlayıcı renkler",
 "Complete a file name": "Dosya adını tamamla",
@@ -2645,6 +2646,7 @@ x: {
 "Recompile even if already optimized (-f)": "Zaten optimize edilmiş olsa bile yeniden derle (-f)",
 "Recompile the app's code for faster runtime.": "Daha hızlı çalışma için uygulamanın kodunu yeniden derler.",
 "Recompile this app for faster runtime.": "Bu uygulamayı daha hızlı çalışması için yeniden derler.",
+"Reset the dex optimization of this app.": "Bu uygulamanın dex optimizasyonunu sıfırla.",
 "Reconnect": "Yeniden bağlan",
 "Reconnect all": "Tümünü yeniden bağla",
 "Reconnect on its own": "Kendiliğinden yeniden bağlan",
@@ -4464,7 +4466,17 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal taraması<1>Dosyayı indirildikten sonra hash'iyle denetler</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Addaki sözcükler: <1>photo</1> (hepsi eşleşmeli; <2/> ve <3/> joker karakterdir; <4>-word</4> bir adı hariç tutar; \"iki sözcük\" tırnak içinde).<br> <5>ext:jpg,png</5> veya <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> metin dosyalarının içine bakar (4 MB'a kadar). <15>archive:name</15> zip, apk, jar ve benzeri arşivlerin içindeki girdilerin adlarına bakar.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "İletinizi yazın ve <1>Gönder</1>’e dokunun: e-posta uygulamanız, iletiyi geliştiriciye yönlendiren bir iletişim takma adına (<2/>) hazır olarak açılır. Konu <3>ADB App Manager</3>’dır. Geliştiricinin kendi adresi bu uygulamada yok ve ileti bu uygulama tarafından değil, e-posta uygulamanız tarafından gönderilir.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
+"The key could not be stored securely: it is kept until you leave the app, not saved": "Anahtar güvenli biçimde saklanamadı: uygulamadan çıkana kadar tutulur, kaydedilmez",
+"The key works, but its approval could not be stored securely: test it again later": "Anahtar çalışıyor, ancak onayı güvenli biçimde saklanamadı: daha sonra yeniden test edin",
+"The token could not be stored securely: not saved": "Belirteç güvenli biçimde saklanamadı: kaydedilmedi",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Uygulama kullanılmadığı sürece Android’in onu ne kadar kısıtlayacağını seçin. active kısıtlama yapmaz; restricted en çok kısıtlar.",
+"Could not change the standby bucket": "Bekleme kovası değiştirilemedi",
+"Could not read the standby bucket": "Bekleme kovası okunamadı",
+"No answer from the app": "Uygulamadan yanıt gelmedi",
+"Standby": "Bekleme",
+"Standby bucket": "Bekleme kovası",
+"Standby bucket changed": "Bekleme kovası değiştirildi"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -4870,6 +4882,9 @@ p: [
 ["Recompile {0} for faster runtime.", "{0} uygulamasını daha hızlı çalışması için yeniden derler."],
 ["Recompile {0} selected app.", "{0} seçili uygulamayı yeniden derler."],
 ["Recompile {0} selected apps.", "{0} seçili uygulamayı yeniden derler."],
+["Reset the dex optimization of {0}.", "{0} uygulamasının dex optimizasyonunu sıfırla."],
+["Reset the dex optimization of {0} selected app.", "Seçilen {0} uygulamanın dex optimizasyonunu sıfırla."],
+["Reset the dex optimization of {0} selected apps.", "Seçilen {0} uygulamanın dex optimizasyonunu sıfırla."],
 ["Reconnected {0} device", "{0} cihaz yeniden bağlandı"],
 ["Reconnected {0} devices", "{0} cihaz yeniden bağlandı"],
 ["Reconnected {0} of {1}. The rest says why where it is listed.", "{1} cihazdan {0} tanesi yeniden bağlandı. Kalanlar, listelendikleri yerde nedenini söyler."],
@@ -5510,6 +5525,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ bu telefona uyuyor ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
-["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"]
+["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

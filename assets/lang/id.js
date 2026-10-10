@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Membandingkan…",
 "Compatible width limit": "Batas lebar yang kompatibel",
 "Compile mode": "Mode kompilasi",
+"Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.": "Reset mengembalikan optimasi dex aplikasi ke kondisi yang dipakai Android setelah instalasi (pm compile --reset). Hasil persisnya bergantung pada versi Android.",
 "Compiled against": "Dikompilasi terhadap",
 "Complementary colors in a balanced blend": "Warna komplementer dalam perpaduan seimbang",
 "Complete a file name": "Lengkapi nama file",
@@ -2645,6 +2646,7 @@ x: {
 "Recompile even if already optimized (-f)": "Kompilasi ulang meski sudah dioptimalkan (-f)",
 "Recompile the app's code for faster runtime.": "Kompilasi ulang kode aplikasi agar runtime lebih cepat.",
 "Recompile this app for faster runtime.": "Kompilasi ulang aplikasi ini agar runtime lebih cepat.",
+"Reset the dex optimization of this app.": "Atur ulang optimasi dex aplikasi ini.",
 "Reconnect": "Hubungkan ulang",
 "Reconnect all": "Hubungkan ulang semua",
 "Reconnect on its own": "Hubungkan ulang otomatis",
@@ -4464,7 +4466,17 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Pemindaian VirusTotal<1>Memeriksa file lewat hash-nya setelah diunduh</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Kata dalam nama: <1>photo</1> (semua harus cocok; <2/> dan <3/> adalah wildcard; <4>-word</4> mengecualikan nama; \"two words\" dalam tanda kutip).<br> <5>ext:jpg,png</5> atau <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> mencari di dalam file teks (hingga 4 MB). <15>archive:name</15> memeriksa nama entri di dalam arsip zip, apk, jar, dan sejenisnya.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Tulis pesan Anda dan ketuk <1>Kirim</1>: aplikasi email Anda terbuka dengan pesan siap, ditujukan ke alias kontak (<2/>) yang meneruskannya ke pengembang. Subjeknya <3>ADB App Manager</3>. Alamat pengembang sendiri tidak ada di aplikasi ini, dan pesan dikirim dari aplikasi email Anda, bukan dari aplikasi ini.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>.",
+"The key could not be stored securely: it is kept until you leave the app, not saved": "Kunci tidak dapat disimpan dengan aman: dipertahankan sampai Anda keluar dari aplikasi, tidak disimpan",
+"The key works, but its approval could not be stored securely: test it again later": "Kunci berfungsi, tetapi persetujuannya tidak dapat disimpan dengan aman: uji lagi nanti",
+"The token could not be stored securely: not saved": "Token tidak dapat disimpan dengan aman: tidak disimpan",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Pilih seberapa jauh Android membatasi aplikasi saat tidak digunakan. active tanpa batas; restricted paling terbatas.",
+"Could not change the standby bucket": "Tidak dapat mengubah bucket siaga",
+"Could not read the standby bucket": "Tidak dapat membaca bucket siaga",
+"No answer from the app": "Tidak ada jawaban dari aplikasi",
+"Standby": "Siaga",
+"Standby bucket": "Bucket siaga",
+"Standby bucket changed": "Bucket siaga diubah"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -4870,6 +4882,9 @@ p: [
 ["Recompile {0} for faster runtime.", "Kompilasi ulang {0} agar runtime lebih cepat."],
 ["Recompile {0} selected app.", "Kompilasi ulang {0} aplikasi yang dipilih."],
 ["Recompile {0} selected apps.", "Kompilasi ulang {0} aplikasi yang dipilih."],
+["Reset the dex optimization of {0}.", "Atur ulang optimasi dex {0}."],
+["Reset the dex optimization of {0} selected app.", "Atur ulang optimasi dex {0} aplikasi yang dipilih."],
+["Reset the dex optimization of {0} selected apps.", "Atur ulang optimasi dex {0} aplikasi yang dipilih."],
 ["Reconnected {0} device", "{0} perangkat terhubung ulang"],
 ["Reconnected {0} devices", "{0} perangkat terhubung ulang"],
 ["Reconnected {0} of {1}. The rest says why where it is listed.", "{0} dari {1} terhubung ulang. Sisanya menjelaskan alasannya di tempat ia tercantum."],
@@ -5510,6 +5525,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ cocok dengan ponsel ini ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
-["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"]
+["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

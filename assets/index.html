@@ -7138,6 +7138,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
                     <span>Optimize</span>
                 </button>
+                <button class="sheet-btn" onclick="openStandbyModal()" id="sheetBtnStandby">
+                    <span>Standby</span>
+                </button>
                 <button class="sheet-btn" onclick="openAppLog()" id="sheetBtnLogs">
                     <span>Logs</span>
                 </button>
@@ -7447,20 +7450,52 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <label class="switch-row" style="margin-top:4px;">
                 <div><div class="switch-title">Compile mode</div><div class="switch-sub">pm compile -m</div></div>
-                <select class="op-select" id="optimizeMode">
+                <select class="op-select" id="optimizeMode" onchange="optimizeModeChanged()">
                     <option value="verify">verify</option>
                     <option value="speed-profile">speed-profile</option>
                     <option value="speed" selected>speed</option>
+                    <option value="space">space</option>
                     <option value="everything">everything</option>
+                    <option value="reset">reset</option>
                 </select>
             </label>
-            <label class="switch-row">
+            <label class="switch-row" id="optimizeForceRow">
                 <div><div class="switch-title">Force</div><div class="switch-sub">Recompile even if already optimized (-f)</div></div>
                 <input type="checkbox" class="switch-input" id="optimizeForce" checked><span class="switch-track"></span>
             </label>
+            <div class="switch-sub" id="optimizeResetNote" style="display:none; margin:6px 2px;">Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.</div>
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="standbyModal" onclick="if(event.target===this) closeStandbyModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Standby bucket</h3>
+                        <p id="standbySubtitle" translate="no"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeStandbyModal()">✕</div>
+            </div>
+            <label class="switch-row" style="margin-top:4px;">
+                <div><div class="switch-title">Standby bucket</div><div class="switch-sub">am set-standby-bucket</div></div>
+                <select class="op-select" id="standbyBucket">
+                    <option value="active">active</option>
+                    <option value="working_set">working_set</option>
+                    <option value="frequent">frequent</option>
+                    <option value="rare">rare</option>
+                    <option value="restricted">restricted</option>
+                </select>
+            </label>
+            <div class="switch-sub" style="margin:6px 2px;">Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.</div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmStandby()">Apply</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeStandbyModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -9508,9 +9543,10 @@ Type any command below (e.g. pm list packages -d)
         function kvSet(key, value) {
             try {
                 const raw = JSON.stringify(value);
-                if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting(key, raw);
-                else localStorage.setItem(key, raw);
-            } catch (e) {}
+                if (window.AndroidBridge && window.AndroidBridge.saveSetting) return window.AndroidBridge.saveSetting(key, raw) !== false;     // false: a secret the Keystore would not seal
+                localStorage.setItem(key, raw);
+                return true;
+            } catch (e) { return false; }
         }
 
         // ---------- Android Back ----------
@@ -11680,9 +11716,9 @@ Type any command below (e.g. pm list packages -d)
             const has = b.hasGithubToken && b.hasGithubToken();
             const t = prompt((has ? 'A GitHub token is saved. ' : '') + 'Optional GitHub token (no permissions needed) raises the limit from 60 to 5,000 checks an hour. Leave empty to remove it.', '');
             if (t === null) return;
-            b.setGithubToken(t.trim());
+            const kept = b.setGithubToken(t.trim()) !== false;                 // false: the Keystore would not seal it
             renderGithubTokenBtn();
-            showToast(t.trim() ? 'GitHub token saved' : 'GitHub token removed');
+            showToast(!kept ? 'The token could not be stored securely: not saved' : t.trim() ? 'GitHub token saved' : 'GitHub token removed');
         }
 
         function renderGithubTokenBtn() {
@@ -16333,13 +16369,13 @@ Type any command below (e.g. pm list packages -d)
         let vtKeyCache = null;
         function vtKey() {
             if (vtKeyCache === null) {
-                let k = '';
+                let k = '', legacy = '';
                 try { k = String(kvGet('vt_key', '') || ''); } catch (e) {}
-                // keys entered before there was one place for them: the Installer's own box, then Morphe Helper's
-                if (!k && window.AndroidBridge && window.AndroidBridge.loadSetting) { try { k = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
-                if (!k) { try { if (typeof mp === 'object' && mp && mp.cfg && mp.cfg.hVtKey) k = String(mp.cfg.hVtKey); } catch (e) {} }
-                vtKeyCache = k.trim();
-                if (vtKeyCache) kvSet('vt_key', vtKeyCache);
+                // the older place (the Installer's own box, which until v7.12.8 was written beside vt_key on every edit)
+                if (window.AndroidBridge && window.AndroidBridge.loadSetting) { try { legacy = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
+                vtKeyCache = (k || legacy).trim();
+                // vt_key wins; the older copy is only a fallback, and goes away once the one key is kept (an older key is moved first)
+                if (legacy && vtKeyCache && (k || kvSet('vt_key', vtKeyCache)) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }
             }
             return vtKeyCache;
         }
@@ -16348,8 +16384,7 @@ Type any command below (e.g. pm list packages -d)
             const k = String(v || '').trim();
             if (k === vtKey()) return;
             vtKeyCache = k;
-            kvSet('vt_key', k);
-            if (window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', k); } catch (e) {} }
+            if (!kvSet('vt_key', k) && k) showToast('The key could not be stored securely: it is kept until you leave the app, not saved');
             vtRefreshUi();
         }
         function vtClearKey() { haptic(); const i = document.getElementById('vtKeyInput'); if (i) i.value = ''; vtKeyTyped(''); kvSet('vt_key_ok', ''); showToast('VirusTotal key removed'); }
@@ -16363,7 +16398,7 @@ Type any command below (e.g. pm list packages -d)
             const r = await mpCall('vtValidate', { key: k });
             if (btn) btn.disabled = false;
             if (vtKey() !== k) return;                                     // changed while it was being tested
-            if (r.ok) { kvSet('vt_key_ok', k); showToast('The key works'); }
+            if (r.ok) { showToast(kvSet('vt_key_ok', k) ? 'The key works' : 'The key works, but its approval could not be stored securely: test it again later'); }
             else { kvSet('vt_key_ok', ''); showToast(r.error || 'The key was refused'); if (st) st.dataset.err = r.error || 'refused'; }
             vtRefreshUi();
         }
@@ -22818,6 +22853,50 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // ---- App standby bucket (single app inspector): read what the phone says, set one, read it back ----
+        let standbyPkg = null;
+        // the Java bridge matches methods by argument count: pass exactly what the caller gave
+        function standbyBridgeCall(name, ...args) {
+            try { return JSON.parse(window.AndroidBridge[name](...args)); } catch (e) { return null; }
+        }
+        function openStandbyModal() {
+            if (!inspectedPkg) return;
+            if (!guardPrivilege('Standby bucket')) return;
+            haptic();
+            standbyPkg = inspectedPkg;
+            const app = allApps.find(a => a.pkg === standbyPkg);
+            document.getElementById('standbySubtitle').innerText = (app ? app.name + ' • ' : '') + standbyPkg;
+            const sel = document.getElementById('standbyBucket');
+            Array.from(sel.querySelectorAll('option[data-extra]')).forEach(o => o.remove());      // a bucket this list cannot set (exempted, never) from an earlier look
+            if (!window.AndroidBridge || !window.AndroidBridge.getStandbyBucket) { showToast('Needs the app build'); return; }
+            const r = standbyBridgeCall('getStandbyBucket', standbyPkg);
+            if (!r || !r.bucket) {                                  // no answer from the phone: do not offer a bucket the page only guessed
+                showToast('Could not read the standby bucket');
+                showCommandResults('Standby bucket', 'am get-standby-bucket ' + standbyPkg, [{ name: app ? app.name : standbyPkg, pkg: standbyPkg, output: (r && r.output) || 'No answer from the app', success: false }]);
+                return;
+            }
+            if (!Array.from(sel.options).some(o => o.value === r.bucket)) {
+                const o = document.createElement('option'); o.value = r.bucket; o.textContent = r.bucket; o.dataset.extra = '1'; o.disabled = true; sel.appendChild(o);
+            }
+            sel.value = r.bucket;
+            document.getElementById('standbyModal').classList.add('show');
+        }
+        function closeStandbyModal() {
+            haptic();
+            document.getElementById('standbyModal').classList.remove('show');
+        }
+        function confirmStandby() {
+            const pkg = standbyPkg, bucket = document.getElementById('standbyBucket').value;
+            document.getElementById('standbyModal').classList.remove('show');
+            if (!pkg || !window.AndroidBridge || !window.AndroidBridge.setStandbyBucket) { showToast('Needs the app build'); return; }
+            haptic();
+            const r = standbyBridgeCall('setStandbyBucket', pkg, bucket);
+            if (r && r.ok) { showToast('Standby bucket changed'); return; }
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+            showToast('Could not change the standby bucket');
+            showCommandResults('Standby bucket', 'am set-standby-bucket ' + pkg + ' ' + bucket, [{ name: app.name, pkg: pkg, output: (r && r.output) || 'No answer from the app', success: false }]);
+        }
+
         // ---- Dex optimization (single app inspector + batch) ----
         let pendingOptimizeTarget = null;
         function openOptimizeModal(target) {
@@ -22826,10 +22905,19 @@ Type any command below (e.g. pm list packages -d)
             if (target === 'single' && !inspectedPkg) return;
             if (!guardPrivilege('Dex optimization')) return;
             haptic();
-            document.getElementById('optimizeSubtitle').innerText = target === 'batch'
-                ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.`
-                : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.';
+            optimizeModeChanged();
             document.getElementById('optimizeModal').classList.add('show');
+        }
+        // "reset" is pm compile --reset: no Force switch for it, a line that says what it does (the result varies by Android version),
+        // and a subtitle that says "reset", not "recompile" or "faster"
+        function optimizeModeChanged() {
+            const reset = document.getElementById('optimizeMode').value === 'reset';
+            document.getElementById('optimizeForceRow').style.display = reset ? 'none' : '';
+            document.getElementById('optimizeResetNote').style.display = reset ? '' : 'none';
+            const batch = pendingOptimizeTarget === 'batch';
+            document.getElementById('optimizeSubtitle').innerText = reset
+                ? (batch ? `Reset the dex optimization of ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Reset the dex optimization of ' + (inspectedPkg || 'this app') + '.')
+                : (batch ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.');
         }
         function closeOptimizeModal() {
             haptic();
@@ -22853,7 +22941,7 @@ Type any command below (e.g. pm list packages -d)
             const pkgs = pendingOptimizeTarget === 'batch' ? Array.from(selectedPkgs) : (inspectedPkg ? [inspectedPkg] : []);
             if (!pkgs.length) return;
             haptic();
-            optimizeSubLabel = 'compile -m ' + mode + (force ? ' -f' : '');
+            optimizeSubLabel = mode === 'reset' ? 'compile --reset' : 'compile -m ' + mode + (force ? ' -f' : '');
             document.getElementById('batchConfirmTitle').innerText = 'Optimizing ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's');
             document.getElementById('batchConfirmSubtitle').innerText = '';
             document.getElementById('batchProgressText').innerText = '';
@@ -31569,6 +31657,13 @@ Type any command below (e.g. pm list packages -d)
             const saved = kvGet('morphe_cfg', null);
             mp.cfg = Object.assign({}, MP_DEFAULTS, saved && typeof saved === 'object' ? saved : {});
             if (!Array.isArray(mp.cfg.hSources)) mp.cfg.hSources = MP_DEFAULTS.hSources.slice();
+            // Helper's own VirusTotal box was the first home of the key: move it to the one key (sealed by the app) and leave no copy in this plain config
+            if (mp.cfg.hVtKey) {
+                const old = String(mp.cfg.hVtKey).trim();
+                let kept = !old || !!String(kvGet('vt_key', '') || '').trim();
+                if (!kept && kvSet('vt_key', old)) { kept = true; try { vtKeyCache = null; } catch (e) {} }
+                if (kept) { mp.cfg.hVtKey = ''; mpCfgSave(); }
+            }
         }
         function mpCfgSave() { kvSet('morphe_cfg', mp.cfg); }
 
