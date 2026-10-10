@@ -123,6 +123,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // an older saved key (the Installer\'s own) is taken over
   await ev(() => { vtKeyCache = null; kvSet('vt_key', ''); window.AndroidBridge.loadSetting = k => k === 'vt_api_key' ? 'OLDKEY' : ''; });
   check('   a key saved by the older Installer box is taken over', await ev(() => vtKey() === 'OLDKEY'));
+  // ... and the older copy is cleared once it is the one key; a Helper config that still carries a key is emptied
+  await ev(() => {
+    window.__st = { vt_api_key: 'OLDKEY', morphe_cfg: JSON.stringify({ hVtKey: 'HKEY', hDefault: 'apkmirror' }) };
+    window.AndroidBridge.loadSetting = k => window.__st[k] || '';
+    window.AndroidBridge.saveSetting = (k, v) => { window.__st[k] = v; return true; };
+    vtKeyCache = null; kvSet('vt_key', '');
+  });
+  check('   the older key is cleared after it is taken over', await ev(() => vtKey() === 'OLDKEY' && window.__st.vt_api_key === ''));
+  await ev(() => { vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
+  check('   Helper\'s own key is moved to the one key and the plain config is emptied', await ev(() => vtKey() === 'HKEY' && mp.cfg.hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hDefault === 'apkmirror'));
+  await ev(() => { window.__st.morphe_cfg = JSON.stringify({ hVtKey: 'OTHERKEY' }); window.AndroidBridge.saveSetting = (k, v) => { window.__st[k] = v; return k !== 'vt_key'; }; vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
+  check('   if the key cannot be stored securely the Helper copy is kept (nothing is lost)', await ev(() => mp.cfg.hVtKey === 'OTHERKEY'));
 
   check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await b.close();

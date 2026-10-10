@@ -9893,8 +9893,8 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void setGithubToken(String token) {
-            secrets().put(SecretSettings.GITHUB_TOKEN, token);
+        public boolean setGithubToken(String token) {
+            return secrets().put(SecretSettings.GITHUB_TOKEN, token);       // false: the Keystore would not seal it, nothing was kept
         }
 
         @JavascriptInterface
@@ -11059,10 +11059,11 @@ public class MainActivity extends Activity {
         // ---- Small key/value settings (e.g. the VirusTotal API key) --------------------------
 
         @JavascriptInterface
-        public void saveSetting(String key, String value) {
-            if (key == null || key.isEmpty() || prefs == null) return;
-            if (SecretSettings.isSecretKv(key)) { secrets().put(SecretSettings.kvName(key), value); return; }
+        public boolean saveSetting(String key, String value) {
+            if (key == null || key.isEmpty() || prefs == null) return false;
+            if (SecretSettings.isSecretKv(key)) return secrets().put(SecretSettings.kvName(key), value);     // false: not stored anywhere
             prefs.edit().putString("kv_" + key, value == null ? "" : value).apply();
+            return true;
         }
 
         @JavascriptInterface

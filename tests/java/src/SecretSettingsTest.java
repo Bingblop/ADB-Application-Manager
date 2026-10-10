@@ -22,7 +22,7 @@ public class SecretSettingsTest {
   }
 
   public static void main(String[] args) {
-    check("vt_key and its tested copy are secret", SecretSettings.isSecretKv("vt_key") && SecretSettings.isSecretKv("vt_key_ok"));
+    check("vt_key, its tested copy and the older vt_api_key are secret", SecretSettings.isSecretKv("vt_key") && SecretSettings.isSecretKv("vt_key_ok") && SecretSettings.isSecretKv("vt_api_key"));
     check("other page settings are not", !SecretSettings.isSecretKv("theme") && !SecretSettings.isSecretKv("vt_keyx") && !SecretSettings.isSecretKv("") && !SecretSettings.isSecretKv(null));
     check("the old plain name keeps its prefix", "kv_vt_key".equals(SecretSettings.kvName("vt_key")));
 
@@ -52,6 +52,24 @@ public class SecretSettingsTest {
     check("if the vault refuses a new value put says so", !s.put("github_token", "ghp_new"));
     check("... the new value is not written in the clear", !"ghp_new".equals(p.m.get("github_token")) && v.m.isEmpty());
     check("... and the stale plain copy is gone, so the old secret is not silently kept", !p.m.containsKey("github_token"));
+
+    v = new FakeVault(); p = new FakePlain(); s = new SecretSettings(v, p);
+    s.put("github_token", "ghp_sealed");
+    v.refuse = true;
+    check("an older sealed value is dropped when the vault refuses the new one", !s.put("github_token", "ghp_new") && s.get("github_token").isEmpty() && !s.has("github_token") && v.m.isEmpty());
+
+    // one reader moving an old plain value while another thread enters a new one: the new one has to win
+    final FakeVault cv = new FakeVault(); final FakePlain cp = new FakePlain(); final SecretSettings cs = new SecretSettings(cv, cp);
+    try {
+      for (int round = 0; round < 200; round++) {
+        cv.m.clear(); cp.m.clear(); cp.m.put("github_token", "old");
+        Thread w = new Thread(new Runnable() { public void run() { cs.put("github_token", "new"); } });
+        Thread r = new Thread(new Runnable() { public void run() { cs.get("github_token"); } });
+        r.start(); w.start(); r.join(); w.join();
+        if (!"new".equals(cs.get("github_token"))) { check("a value entered while an old one is being moved wins (round " + round + ")", false); break; }
+      }
+      check("a value entered while an old one is being moved wins (200 rounds)", "new".equals(cs.get("github_token")));
+    } catch (InterruptedException e) { check("interrupted", false); }
 
     v = new FakeVault(); p = new FakePlain(); s = new SecretSettings(v, p);
     s.put("kv_vt_key", "k1");

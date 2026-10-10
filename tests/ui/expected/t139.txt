@@ -34,4 +34,7 @@ ok      Morphe Helper uses the same key (no box of its own)
 ok      changing the key takes the approval away
 ok      the links go to Settings
 ok      a key saved by the older Installer box is taken over
+ok      the older key is cleared after it is taken over
+ok      Helper's own key is moved to the one key and the plain config is emptied
+ok      if the key cannot be stored securely the Helper copy is kept (nothing is lost)
 ok   no page errors:
