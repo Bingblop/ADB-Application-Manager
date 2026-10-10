@@ -54,8 +54,6 @@ function extractBlocks(text) {
 }
 
 // The lines bash should see, each with the 1-based line in the Markdown file it came from.
-// A trailing backslash continues the line only when the run of them is odd (an even run ends in an escaped backslash).
-const continues = s => (/\\+$/.exec(s) || [''])[0].length % 2 === 1;
 
 // The delimiter of a here-document that starts at text[at] ("<<" or "<<-"): the shell word after it with its quotes removed, as bash reads it (E"O"F and 'EO'F
 // and EO\F are all EOF). Returns { word, dash, end } or null when there is no word.
@@ -83,15 +81,17 @@ function heredocWord(text, at) {
 }
 
 // One line of shell, read with the quotes, comments and arithmetic of the line (and of the lines before it, in st = { quote, arith }) in mind.
-// Returns { code, heredocs }: the text outside quotes and comments, and the here-document delimiters declared outside them (a quoted delimiter counts;
-// << inside arithmetic is a shift and <<< a here-string, neither is a here-document).
+// Returns { code, heredocs, cont }: the text outside quotes and comments, the here-document delimiters declared outside them (a quoted delimiter counts;
+// << inside arithmetic is a shift and <<< a here-string, neither is a here-document), and whether the line ends in a backslash that joins it to the next
+// line (not one inside a comment or single quotes, and not the second of a pair).
 function scanLine(text, st) {
   let code = '';
+  let cont = false;
   const heredocs = [];
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
-    if (st.quote) { if (c === st.quote) st.quote = null; else if (c === '\\' && st.quote === '"') i++; continue; }
-    if (c === '\\') { i++; continue; }
+    if (st.quote) { if (c === st.quote) st.quote = null; else if (c === '\\' && st.quote === '"') { if (i === text.length - 1) cont = true; i++; } continue; }
+    if (c === '\\') { if (i === text.length - 1) cont = true; i++; continue; }
     if (c === '"' || c === "'") { st.quote = c; continue; }
     // a word that starts with # is a comment; a word starts after white space or a shell operator (echo ok;# note)
     if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
@@ -104,7 +104,7 @@ function scanLine(text, st) {
     }
     code += c;
   }
-  return { code, heredocs };
+  return { code, heredocs, cont };
 }
 
 // Whether the block is a transcript with "$ " prompts: a prompt counts only where a command could start, not inside a here-document body or a quote that is
@@ -116,8 +116,9 @@ function hasPrompt(all) {
   for (const l of all) {
     if (bodies.length) { const h = bodies[0]; if ((h.dash ? l.text.replace(/^\t+/, '') : l.text) === h.word) bodies.shift(); continue; }
     if (!st.quote && /^\s*\$(?: |$)/.test(l.text)) return true;
-    pending = pending.concat(scanLine(l.text, st).heredocs);
-    if (pending.length && !st.quote && !continues(l.text)) { bodies = pending; pending = []; }
+    const r0 = scanLine(l.text, st);
+    pending = pending.concat(r0.heredocs);
+    if (pending.length && !st.quote && !r0.cont) { bodies = pending; pending = []; }
   }
   return false;
 }
@@ -132,7 +133,7 @@ function shellLines(block) {
   let active = [];    // here-documents whose body (and terminator) is being read: those lines are input, not output, and are kept
   const read = text => {
     const r = scanLine(text, st);
-    const joined = continues(text) || st.quote !== null;      // the line goes on (backslash, open quote): the here-document starts after the joined line
+    const joined = r.cont || st.quote !== null;      // the line goes on (backslash, open quote): the here-document starts after the joined line
     continued = joined || /(?:\|\||&&|\|&|\|)\s*$/.test(r.code);      // the command goes on in the next line
     waiting = waiting.concat(r.heredocs);
     // bash reads a here-document right after the line that declares it, also when that line ends in | || && |& (the rest of the command comes after the terminator)
@@ -170,7 +171,7 @@ function findPlaceholders(lines) {
   for (const { text, line } of lines) {
     // the terminator is the delimiter alone on the line: exact, except that <<- ignores leading tabs
     if (bodies.length) { const h = bodies[0]; if ((h.dash ? text.replace(/^\t+/, '') : text) === h.word) bodies.shift(); continue; }
-    const { code, heredocs } = scanLine(text, st);
+    const { code, heredocs, cont } = scanLine(text, st);
     pending = pending.concat(heredocs);
     const re = /<([A-Za-z][\w .:/-]*)>/g;
     let m;
@@ -179,7 +180,7 @@ function findPlaceholders(lines) {
     }
     // the bodies start after the line that declares them, joined with the next ones while it goes on (odd trailing backslash, or a quote still open);
     // a trailing | || && |& does not delay them: the rest of that command comes after the terminator
-    if (pending.length && !st.quote && !continues(text)) { bodies = pending; pending = []; }
+    if (pending.length && !st.quote && !cont) { bodies = pending; pending = []; }
   }
   return found;
 }
@@ -278,6 +279,10 @@ function selfTest() {
     '```bash', 'cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
     "```bash", "cat <<''", '<html>', '', 'adb shell pm path <package> out.txt', '```', '',
     "```bash", 'cat <<""', '<html>', '', 'echo done', '```', '',
+    '```bash', 'cat <<EOF # note \\', '<html>', 'EOF', 'adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ echo hi # note \\', '<html>', '$ adb shell pm path <package> out.txt', '```', '',
+    '```bash', 'cat <<EOF \\', '  > out.txt', '<html>', 'EOF', 'echo done', '```', '',
+    '```bash', "echo 'a \\'", 'adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
     '```sh', '$ echo hi |&', '  grep <pattern> out.txt', '```', '',
     "```bash", "cat <<'EOF'", '$ literal', 'EOF', 'APP=<package>', '```', '',
@@ -286,7 +291,7 @@ function selfTest() {
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:295', 'FAIL@298:302', 'FAIL@305:308', 'ok@311', 'ok@318'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:296', 'ok@299', 'FAIL@307:309', 'FAIL@312:316', 'FAIL@319:321', 'FAIL@324:328', 'FAIL@331:334', 'ok@337', 'ok@344'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
