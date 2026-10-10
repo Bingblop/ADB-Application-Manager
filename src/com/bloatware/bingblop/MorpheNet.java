@@ -25,7 +25,7 @@ public final class MorpheNet {
     public static final int READ_TIMEOUT_MS = 60000;
     private static final int MAX_REDIRECTS = 8;
     /** No bundle or APK comes near this; it stops an open-ended answer from filling the phone's storage. */
-    static final long MAX_DOWNLOAD_BYTES = 3L << 30;
+    static long MAX_DOWNLOAD_BYTES = 3L << 30;
     private static final int MAX_TEXT = 64 * 1024 * 1024;
 
     /** A server answer that is not 2xx. The text is the body, cut to 4 KB. */
@@ -133,7 +133,7 @@ public final class MorpheNet {
                     if (loc == null) throw new IOException("redirect without a Location from " + hostOf(cur));
                     String next = new URL(new URL(cur), loc).toString();
                     if (!HttpSafe.redirectAllowed(cur, next)) throw new IOException("refused a redirect from " + hostOf(cur) + " to " + hostOf(next));
-                    if (!hostOf(next).equalsIgnoreCase(hostOf(cur))) { hdr = plainHeaders(hdr); b = null; m = "GET"; }      // an API key or a body never follows a redirect to another host
+                    if (!HttpSafe.sameOrigin(cur, next)) { hdr = plainHeaders(hdr); b = null; m = "GET"; }      // an API key or a body never follows a redirect to another host
                     else if (code != 307 && code != 308) { m = "GET"; b = null; }
                     cur = next;
                     continue;
@@ -173,13 +173,13 @@ public final class MorpheNet {
                     if (loc == null) throw new IOException("redirect without a Location from " + hostOf(cur));
                     String next = new URL(new URL(cur), loc).toString();
                     if (!HttpSafe.redirectAllowed(cur, next)) throw new IOException("refused a redirect from " + hostOf(cur) + " to " + hostOf(next));
-                    if (!hostOf(next).equalsIgnoreCase(hostOf(cur))) hdr = plainHeaders(hdr);                // a key or a cookie stays with the host it was meant for
+                    if (!HttpSafe.sameOrigin(cur, next)) hdr = plainHeaders(hdr);                // a key or a cookie stays with the host it was meant for
                     cur = next;
                     continue;
                 }
                 if (code < 200 || code >= 300) throw new HttpError(code, cur, errorBody(c));
                 long total = c.getContentLengthLong();
-                if (total > MAX_DOWNLOAD_BYTES) throw new IOException("the file is bigger than " + (MAX_DOWNLOAD_BYTES >> 30) + " GB: refused");
+                if (total > MAX_DOWNLOAD_BYTES) throw new IOException("the file is bigger than " + (MAX_DOWNLOAD_BYTES >> 20) + " MB: refused");
                 long done = 0;
                 InputStream in = c.getInputStream();
                 OutputStream out = new FileOutputStream(part);
@@ -192,7 +192,7 @@ public final class MorpheNet {
                         if (progress != null && progress.cancelled()) throw new IOException("cancelled");
                         out.write(buf, 0, n);
                         done += n;
-                        if (done > MAX_DOWNLOAD_BYTES) throw new IOException("the download is bigger than " + (MAX_DOWNLOAD_BYTES >> 30) + " GB: stopped");
+                        if (done > MAX_DOWNLOAD_BYTES) throw new IOException("the download is bigger than " + (MAX_DOWNLOAD_BYTES >> 20) + " MB: stopped");
                         long now = System.currentTimeMillis();
                         if (progress != null && now - lastTick >= 250) { lastTick = now; progress.onProgress(done, total); }
                     }

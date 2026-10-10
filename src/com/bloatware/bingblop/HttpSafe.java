@@ -17,10 +17,20 @@ final class HttpSafe {
 
     static final int MAX_HOPS = 8;
 
+    /** Whether a host name or literal address means this phone: localhost (and *.localhost), 127.0.0.0/8, 0.0.0.0, ::1, ::, and the IPv4-mapped forms. */
     static boolean isLoopback(String host) {
         if (host == null) return false;
-        String h = host.toLowerCase(Locale.ROOT);
-        return h.equals("localhost") || h.equals("127.0.0.1") || h.equals("::1") || h.equals("[::1]");
+        String h = host.trim().toLowerCase(Locale.ROOT);
+        if (h.startsWith("[") && h.endsWith("]")) h = h.substring(1, h.length() - 1);
+        while (h.endsWith(".")) h = h.substring(0, h.length() - 1);
+        if (h.isEmpty()) return false;
+        if (h.equals("localhost") || h.endsWith(".localhost")) return true;
+        if (h.startsWith("::ffff:")) h = h.substring(7);                                       // IPv4-mapped IPv6
+        if (h.matches("\\d{1,3}(\\.\\d{1,3}){3}")) {
+            String[] p = h.split("\\.");
+            return Integer.parseInt(p[0]) == 127 || h.equals("0.0.0.0");
+        }
+        return h.equals("::1") || h.equals("::") || h.matches("(0{1,4}:){7}0{0,3}[01]") || h.matches("(0{1,4}:){6}0{1,4}");
     }
 
     /** Whether a redirect from one address to another may be followed. */
@@ -28,10 +38,22 @@ final class HttpSafe {
         try {
             URL f = new URL(from), t = new URL(to);
             String ts = t.getProtocol().toLowerCase(Locale.ROOT);
+            if (!ts.equals("https") && !ts.equals("http")) return false;
+            if (isLoopback(t.getHost()) && !isLoopback(f.getHost())) return false;            // an outside address does not point into the phone (either scheme)
             if (ts.equals("https")) return true;
-            if (!ts.equals("http")) return false;
-            if (!f.getProtocol().equalsIgnoreCase("http")) return false;                      // https -> http is a downgrade
-            return !isLoopback(t.getHost()) || isLoopback(f.getHost());                       // an outside address does not point into the phone
+            return f.getProtocol().equalsIgnoreCase("http");                                  // https -> http is a downgrade
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Same scheme, host and effective port: the only case in which a key, a cookie or a request body may follow a redirect. */
+    static boolean sameOrigin(String a, String b) {
+        try {
+            URL x = new URL(a), y = new URL(b);
+            int px = x.getPort() == -1 ? x.getDefaultPort() : x.getPort();
+            int py = y.getPort() == -1 ? y.getDefaultPort() : y.getPort();
+            return x.getHost().equalsIgnoreCase(y.getHost()) && px == py && x.getProtocol().equalsIgnoreCase(y.getProtocol());
         } catch (Exception e) {
             return false;
         }
@@ -40,13 +62,6 @@ final class HttpSafe {
     private static boolean sensitive(String header) {
         String k = header.toLowerCase(Locale.ROOT);
         return k.equals("authorization") || k.equals("x-apikey") || k.equals("cookie") || k.equals("proxy-authorization");
-    }
-
-    private static boolean sameHost(String a, String b) throws IOException {
-        URL x = new URL(a), y = new URL(b);
-        int px = x.getPort() == -1 ? x.getDefaultPort() : x.getPort();
-        int py = y.getPort() == -1 ? y.getDefaultPort() : y.getPort();
-        return x.getHost().equalsIgnoreCase(y.getHost()) && px == py && x.getProtocol().equalsIgnoreCase(y.getProtocol());
     }
 
     /**
@@ -70,7 +85,7 @@ final class HttpSafe {
                     if (loc == null || loc.isEmpty()) throw new IOException("redirect without a Location from " + new URL(cur).getHost());
                     String next = new URL(new URL(cur), loc).toString();
                     if (!redirectAllowed(cur, next)) throw new IOException("refused a redirect from " + new URL(cur).getHost() + " to " + new URL(next).getProtocol() + "://" + new URL(next).getHost());
-                    if (!sameHost(cur, next)) {
+                    if (!sameOrigin(cur, next)) {
                         Map<String, String> plain = new LinkedHashMap<String, String>();
                         for (Map.Entry<String, String> e : hdr.entrySet()) if (!sensitive(e.getKey())) plain.put(e.getKey(), e.getValue());
                         hdr = plain;

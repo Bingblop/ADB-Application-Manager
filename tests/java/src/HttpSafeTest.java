@@ -25,6 +25,12 @@ public class HttpSafeTest {
     check("http outside to http outside", HttpSafe.redirectAllowed("http://a.example/x", "http://b.example/y"));
     check("http loopback to http loopback (a local test server)", HttpSafe.redirectAllowed("http://127.0.0.1:1/x", "http://localhost:2/y"));
     check("other schemes are refused", !HttpSafe.redirectAllowed("https://a.example/x", "ftp://b.example/y") && !HttpSafe.redirectAllowed("https://a.example/x", "file:///etc/passwd"));
+    check("outside https to https loopback is refused too", !HttpSafe.redirectAllowed("https://a.example/x", "https://127.0.0.1/y") && !HttpSafe.redirectAllowed("https://a.example/x", "https://localhost/y"));
+    check("the whole 127/8 range, localhost. and *.localhost are loopback", HttpSafe.isLoopback("127.0.0.2") && HttpSafe.isLoopback("127.255.255.254") && HttpSafe.isLoopback("localhost.") && HttpSafe.isLoopback("app.localhost") && HttpSafe.isLoopback("LOCALHOST"));
+    check("0.0.0.0, ::, ::1, [::1], the long ::1 and the mapped forms are loopback", HttpSafe.isLoopback("0.0.0.0") && HttpSafe.isLoopback("::") && HttpSafe.isLoopback("::1") && HttpSafe.isLoopback("[::1]") && HttpSafe.isLoopback("0:0:0:0:0:0:0:1") && HttpSafe.isLoopback("::ffff:127.0.0.1"));
+    check("ordinary hosts and addresses are not", !HttpSafe.isLoopback("example.com") && !HttpSafe.isLoopback("128.0.0.1") && !HttpSafe.isLoopback("126.255.255.255") && !HttpSafe.isLoopback("localhost.example.com") && !HttpSafe.isLoopback("10.0.0.1") && !HttpSafe.isLoopback("") && !HttpSafe.isLoopback(null));
+    check("outside http to 127.0.0.2 is refused", !HttpSafe.redirectAllowed("http://a.example/x", "http://127.0.0.2:8080/y"));
+    check("same origin needs scheme, host and effective port", HttpSafe.sameOrigin("https://a.example/x", "https://A.example:443/y") && !HttpSafe.sameOrigin("https://a.example/x", "https://a.example:8443/y") && !HttpSafe.sameOrigin("https://a.example/x", "http://a.example/y") && !HttpSafe.sameOrigin("https://a.example/x", "https://b.example/y"));
     check("garbage is refused", !HttpSafe.redirectAllowed("https://a.example/x", "not a url") && !HttpSafe.redirectAllowed(null, null));
 
     // real redirects against a local server

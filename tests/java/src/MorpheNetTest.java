@@ -72,6 +72,15 @@ public class MorpheNetTest {
         long size = MorpheNet.download(base + "/cross", dest, h, null);
         is("a download across hosts drops the key too and lands whole", size == 10 && dest.length() == 10 && "null".equals(seenKeyB) && !new File(dest.getPath() + ".part").exists(), size + " " + seenKeyB);
 
+        // a file bigger than the cap is refused before anything is written
+        long savedCap = MorpheNet.MAX_DOWNLOAD_BYTES;
+        MorpheNet.MAX_DOWNLOAD_BYTES = 5;
+        File capDest = new File(dir, "cap.bin");
+        boolean capRefused = false;
+        try { MorpheNet.download(base + "/cross", capDest, h, null); } catch (java.io.IOException e) { capRefused = e.getMessage().contains("bigger than"); }
+        MorpheNet.MAX_DOWNLOAD_BYTES = savedCap;
+        is("a download over the size cap is refused and leaves no file", capRefused && !capDest.exists() && !new File(capDest.getPath() + ".part").exists(), "");
+
         boolean refused = false;
         try { MorpheNet.getString("http://example.org/x", null); } catch (java.io.IOException e) { refused = e.getMessage().contains("https"); }
         is("plain http to a real host is refused", refused, "");
