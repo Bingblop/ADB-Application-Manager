@@ -45,7 +45,7 @@ function extractBlocks(text) {
 // The lines bash should see, each with the 1-based line in the Markdown file it came from.
 function shellLines(block) {
   const all = block.lines.map((text, k) => ({ text, line: block.startLine + 1 + k }));
-  if (!all.some(l => /^\s*\$ /.test(l.text))) return all;
+  if (!all.some(l => /^\s*\$(?: |$)/.test(l.text))) return all;   // a bare "$" is a prompt too
   const out = [];
   let continued = false;
   for (const l of all) {
@@ -141,9 +141,10 @@ function selfTest() {
     '```bash', 'echo "<<EOF"', 'adb shell pm path <package>', '```', '',
     '```bash', 'echo "first line', '<tag> second line"', '```', '',
     '```bash', '# see <<EOF later', 'adb shell pm path <package>', '```', '',
+    '```sh', '$', '<output-after-a-bare-prompt>', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
