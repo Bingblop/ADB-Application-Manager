@@ -30,6 +30,15 @@ public class MorpheNetTest {
                 OutputStream o = x.getResponseBody(); o.write(body); o.close();
             }
         });
+        // an answer of unknown length (chunked): the size cap has to hold while it streams
+        b.createContext("/stream", new HttpHandler() {
+            @Override public void handle(HttpExchange x) throws java.io.IOException {
+                x.sendResponseHeaders(200, 0);
+                OutputStream o = x.getResponseBody();
+                for (int i = 0; i < 4; i++) o.write("0123456789".getBytes("UTF-8"));
+                o.close();
+            }
+        });
         b.start();
         final int portB = b.getAddress().getPort();
         final HttpServer a1 = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -80,6 +89,18 @@ public class MorpheNetTest {
         try { MorpheNet.download(base + "/cross", capDest, h, null); } catch (java.io.IOException e) { capRefused = e.getMessage().contains("bigger than"); }
         MorpheNet.MAX_DOWNLOAD_BYTES = savedCap;
         is("a download over the size cap is refused and leaves no file", capRefused && !capDest.exists() && !new File(capDest.getPath() + ".part").exists(), "");
+
+        MorpheNet.MAX_DOWNLOAD_BYTES = 25;
+        File streamDest = new File(dir, "stream.bin");
+        boolean streamRefused = false;
+        try { MorpheNet.download("http://127.0.0.1:" + portB + "/stream", streamDest, h, null); } catch (java.io.IOException e) { streamRefused = e.getMessage().contains("bigger than"); }
+        MorpheNet.MAX_DOWNLOAD_BYTES = savedCap;
+        is("a streamed answer of unknown length is stopped at the cap and leaves no file", streamRefused && !streamDest.exists() && !new File(streamDest.getPath() + ".part").exists(), "");
+        MorpheNet.MAX_DOWNLOAD_BYTES = 40;
+        long exact = MorpheNet.download("http://127.0.0.1:" + portB + "/stream", streamDest, h, null);
+        MorpheNet.MAX_DOWNLOAD_BYTES = savedCap;
+        is("a streamed answer exactly at the cap is accepted", exact == 40 && streamDest.length() == 40, String.valueOf(exact));
+        streamDest.delete();
 
         boolean refused = false;
         try { MorpheNet.getString("http://example.org/x", null); } catch (java.io.IOException e) { refused = e.getMessage().contains("https"); }
