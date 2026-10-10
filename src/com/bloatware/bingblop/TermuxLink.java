@@ -12,6 +12,9 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -148,13 +151,62 @@ public final class TermuxLink {
         });
     }
 
+    /** How many accepted connections may wait for their hello at once; when more come, the oldest is closed. */
+    static final int MAX_PENDING_HELLOS = 32;
+    /** How long a connection has to send its hello line. */
+    static final long HELLO_WAIT_MS = 3000;
+
+    /** A connection that has not sent its hello line yet. */
+    private static final class Candidate {
+        final Socket socket;
+        final long deadline = System.nanoTime() + HELLO_WAIT_MS * 1000000L;
+        final byte[] buf = new byte[128];
+        int n;
+
+        Candidate(Socket socket) {
+            this.socket = socket;
+        }
+    }
+
+    /**
+     * Reads what the connection has sent so far, without blocking. 1: it sent the right hello line; -1: refuse it (wrong or too long line, closed,
+     * or out of time); 0: wait for more.
+     */
+    private static int helloStep(Candidate c, byte[] want) {
+        try {
+            if (System.nanoTime() > c.deadline) return -1;
+            InputStream in = c.socket.getInputStream();
+            // one byte at a time, so that nothing after the end of the line is taken from the stream
+            while (in.available() > 0) {
+                int ch = in.read();
+                if (ch < 0) return -1;
+                if (ch == '\n') {
+                    boolean ok = c.n == want.length && MessageDigest.isEqual(want, Arrays.copyOf(c.buf, c.n));
+                    if (ok) c.socket.setSoTimeout(0);
+                    return ok ? 1 : -1;
+                }
+                if (c.n >= c.buf.length) return -1;
+                c.buf[c.n++] = (byte) ch;
+            }
+            return 0;
+        } catch (IOException e) {
+            return -1;
+        }
+    }
+
     private static Process connect(Launcher launcher, long timeoutMs, ScriptMaker maker) throws IOException {
-        ServerSocket server = new ServerSocket(0, 4, InetAddress.getByName("127.0.0.1"));
+        ServerSocket server = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
         final SessionProcess proc = new SessionProcess(launcher);
+        // Any app on the phone can open this loopback port. A peer that connects and says nothing used to hold the accepting thread for 3 s, so a few
+        // such peers kept Termux's real connection waiting until the timeout. The hellos are therefore read here without blocking, all connections
+        // in turn: no thread per connection, at most MAX_PENDING_HELLOS sockets held (the oldest is closed when more come), and a connection that
+        // sends its hello is looked at within one short wait however many silent ones are queued.
+        final LinkedList<Candidate> waiting = new LinkedList<Candidate>();
         Socket sock = null;
         try {
-            server.setSoTimeout(250);
+            server.setSoTimeout(20);
             String token = randomHex(16);
+            final byte[] want = (HELLO + token).getBytes(StandardCharsets.US_ASCII);
             String script = maker.make(server.getLocalPort(), token);
             proc.launchId = launcher.launch(script, "ADB App Manager terminal", new Callback() {
                 @Override
@@ -169,16 +221,20 @@ public final class TermuxLink {
                 if (System.nanoTime() > deadline) {
                     throw new IOException("Termux did not connect back within " + Math.max(1, timeoutMs / 1000) + " s");
                 }
-                Socket s;
                 try {
-                    s = server.accept();
+                    // everything that is already waiting in the backlog, then one short wait for the next
+                    waiting.add(new Candidate(server.accept()));
+                    while (waiting.size() > MAX_PENDING_HELLOS) closeQuietly(waiting.removeFirst().socket);
                 } catch (SocketTimeoutException again) {
-                    continue;
+                    // nothing new; look at the connections already waiting
                 }
-                if (hello(s, token)) {
-                    sock = s;
-                } else {
-                    closeQuietly(s);
+                for (Iterator<Candidate> it = waiting.iterator(); it.hasNext() && sock == null; ) {
+                    Candidate c = it.next();
+                    int r = helloStep(c, want);
+                    if (r == 0) continue;
+                    it.remove();
+                    if (r > 0) sock = c.socket;
+                    else closeQuietly(c.socket);
                 }
             }
             proc.attach(sock);
@@ -191,6 +247,7 @@ public final class TermuxLink {
                 server.close();
             } catch (IOException ignored) {
             }
+            for (Candidate c : waiting) closeQuietly(c.socket);
         }
         return proc;
     }
