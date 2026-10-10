@@ -54,6 +54,9 @@ function extractBlocks(text) {
 }
 
 // The lines bash should see, each with the 1-based line in the Markdown file it came from.
+// A trailing backslash continues the line only when the run of them is odd (an even run ends in an escaped backslash).
+const continues = s => (/\\+$/.exec(s) || [''])[0].length % 2 === 1;
+
 function shellLines(block) {
   const all = block.lines.map((text, k) => ({ text, line: block.startLine + 1 + k }));
   if (!all.some(l => /^\s*\$(?: |$)/.test(l.text))) return all;   // a bare "$" is a prompt too
@@ -61,8 +64,8 @@ function shellLines(block) {
   let continued = false;
   for (const l of all) {
     const m = /^\s*\$(?: (.*))?$/.exec(l.text);      // the prompt is "$ " (or a bare "$"); "$name" is output
-    if (m) { const cmd = m[1] || ''; out.push({ text: cmd, line: l.line }); continued = /\\$/.test(cmd); }
-    else if (continued) { out.push(l); continued = /\\$/.test(l.text); }
+    if (m) { const cmd = m[1] || ''; out.push({ text: cmd, line: l.line }); continued = continues(cmd); }
+    else if (continued) { out.push(l); continued = continues(l.text); }
   }
   return out;
 }
@@ -76,7 +79,8 @@ function findPlaceholders(lines) {
   let quote = null;
   let arith = 0;
   for (const { text, line } of lines) {
-    if (heredoc) { if (text.trim() === heredoc) heredoc = null; continue; }
+    // the terminator is the delimiter alone on the line: exact, except that <<- ignores leading tabs
+    if (heredoc) { if ((heredoc.dash ? text.replace(/^\t+/, '') : text) === heredoc.word) heredoc = null; continue; }
     let code = '';
     for (let i = 0; i < text.length; i++) {
       const c = text[i];
@@ -90,7 +94,7 @@ function findPlaceholders(lines) {
       if (c === ')' && text[i + 1] === ')' && arith > 0) { arith--; i++; continue; }
       if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && arith === 0) {      // <<< is a here-string, not a here-document
         const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
-        if (hd) { heredoc = hd[1] || hd[2] || hd[3]; i += hd[0].length - 1; continue; }
+        if (hd) { heredoc = { word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }; i += hd[0].length - 1; continue; }
       }
       code += c;
     }
@@ -163,9 +167,14 @@ function selfTest() {
     '```bash', 'mask=$((1 << FLAG))', 'adb shell pm path <package>', '```', '',
     '> ```sh', '> APP=<package>', '> ```', '',
     '- a list item', '', '      ```bash', '      APP=<package>', '      ```', '',
+    '```sh', '$ echo a\\\\', 'if this output were shell it would not parse', '```', '',
+    '```sh', '$ echo a \\', '    && echo ok', '```', '',
+    '```bash', 'cat <<EOF', '  EOF', '<html>', 'EOF', 'echo done', '```', '',
+    '```bash', 'cat <<-EOF', '\t<html>', '\tEOF', 'echo done', '```', '',
+    '```bash', 'cat <<EOF', '<html>', 'EOF ', 'adb shell pm path <package>', 'EOF', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
