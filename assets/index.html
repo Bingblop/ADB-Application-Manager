@@ -22830,16 +22830,18 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Dex optimization')) return;
             haptic();
             optimizeModeChanged();
-            document.getElementById('optimizeSubtitle').innerText = target === 'batch'
-                ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.`
-                : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.';
             document.getElementById('optimizeModal').classList.add('show');
         }
-        // "reset" is pm compile --reset: no Force switch for it, and a line that says what it does (the result varies by Android version)
+        // "reset" is pm compile --reset: no Force switch for it, a line that says what it does (the result varies by Android version),
+        // and a subtitle that says "reset", not "recompile" or "faster"
         function optimizeModeChanged() {
             const reset = document.getElementById('optimizeMode').value === 'reset';
             document.getElementById('optimizeForceRow').style.display = reset ? 'none' : '';
             document.getElementById('optimizeResetNote').style.display = reset ? '' : 'none';
+            const batch = pendingOptimizeTarget === 'batch';
+            document.getElementById('optimizeSubtitle').innerText = reset
+                ? (batch ? `Reset the dex optimization of ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Reset the dex optimization of ' + (inspectedPkg || 'this app') + '.')
+                : (batch ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.` : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.');
         }
         function closeOptimizeModal() {
             haptic();

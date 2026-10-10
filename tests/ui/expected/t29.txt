@@ -21,5 +21,7 @@ reset: the Force switch is hidden and the note shows: true
 reset reaches the bridge as mode reset: ["opt:com.x:reset:false"]
 the sub label names the reset command: compile --reset
 opening the sheet again re-reads the mode (reset still chosen -> note still shown): true
+reset: the subtitle says reset, not recompile or faster: Reset the dex optimization of com.x.
+speed: the subtitle goes back to recompile: Recompile com.x for faster runtime.
 a failed single optimize still shows the result modal: true
 errors: []

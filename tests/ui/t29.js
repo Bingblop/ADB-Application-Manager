@@ -106,6 +106,8 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   console.log('the sub label names the reset command:', await page.evaluate(() => optimizeSubLabel));
   await page.evaluate(() => { openOptimizeModal('single'); });
   console.log('opening the sheet again re-reads the mode (reset still chosen -> note still shown):', await page.evaluate(() => document.getElementById('optimizeResetNote').style.display === ''));
+  console.log('reset: the subtitle says reset, not recompile or faster:', await page.evaluate(() => document.getElementById('optimizeSubtitle').innerText));
+  console.log('speed: the subtitle goes back to recompile:', await page.evaluate(() => { const s = document.getElementById('optimizeMode'); s.value = 'speed'; s.dispatchEvent(new Event('change')); const t = document.getElementById('optimizeSubtitle').innerText; s.value = 'reset'; s.dispatchEvent(new Event('change')); return t; }));
   await page.evaluate(() => { const s = document.getElementById('optimizeMode'); s.value = 'speed'; s.dispatchEvent(new Event('change')); closeOptimizeModal(); });
 
   // ---- A failed single optimize still gets the modal (the toast alone wouldn't explain why) ----
