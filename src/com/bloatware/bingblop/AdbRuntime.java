@@ -3,8 +3,6 @@ package com.bloatware.bingblop;
 import android.content.Context;
 import android.os.Build;
 
-import android.net.LocalSocket;
-import android.net.LocalSocketAddress;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -97,7 +95,7 @@ final class AdbRuntime {
 
     /**
      * The arguments that put adb's server on a private unix socket in the app's own folder, or on the old loopback port when the phone
-     * will not let this app bind such a socket (checked once per process, by binding one here: adb runs in the same app domain).
+     * will not let this app bind such a socket (checked once per process, by binding and listening on one here: adb runs in the same app domain).
      */
     static synchronized List<String> serverArgs(Context ctx) {
         if (!probed) {
@@ -122,11 +120,14 @@ final class AdbRuntime {
             if (!AdbServerSpec.pathFits(path)) return null;
             File probe = new File(dir, "probe");
             probe.delete();
-            LocalSocket s = new LocalSocket();
+            // bind() and listen() are separate permissions: adb's server needs both, so try both (a unix stream socket, the kind adb makes)
+            java.io.FileDescriptor fd = null;
             try {
-                s.bind(new LocalSocketAddress(probe.getAbsolutePath(), LocalSocketAddress.Namespace.FILESYSTEM));
+                fd = android.system.Os.socket(android.system.OsConstants.AF_UNIX, android.system.OsConstants.SOCK_STREAM, 0);
+                android.system.Os.bind(fd, android.system.UnixSocketAddress.createFileSystem(probe.getAbsolutePath()));
+                android.system.Os.listen(fd, 1);
             } finally {
-                try { s.close(); } catch (Exception ignored) {}
+                if (fd != null) { try { android.system.Os.close(fd); } catch (Exception ignored) {} }
                 probe.delete();
             }
             return path;
