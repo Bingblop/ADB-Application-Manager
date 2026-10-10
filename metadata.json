@@ -1,0 +1,8 @@
+{
+  "name": "ADB Application Manager Pro",
+  "description": "Powerful on-device ADB & system manager with debloater, app freezing, hidden settings, storage cleaner, and terminal console",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

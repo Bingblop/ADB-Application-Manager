@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ADB Application Manager Pro</string>
+    <string name="sdm_acs_description">Used only by the SD Maid tab (AppCleaner) after you agreed to it in the app: it opens the App info screen of one app after the other, taps Clear cache and stops when the screen turns off. It does not read or send anything else.\n\nThe tab is a port of the tools of SD Maid SE by darken.</string>
+</resources>
