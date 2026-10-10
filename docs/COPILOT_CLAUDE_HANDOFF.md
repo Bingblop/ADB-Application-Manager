@@ -125,7 +125,7 @@ Open, in the order I would take them:
 
 Ideas from Gemini's branch (#84, the Kotlin/Compose rewrite, which is a separate strategic initiative and not mergeable as it stands). Already in the app: Dex optimization `space` and `reset` (#92), Standby bucket (#93). Not ported, each would be its own small pull request with a test: game mode (`cmd game mode`), Private DNS switcher, `wm size` / `wm density`, a power-user permission dispatcher (`pm grant` for Shizuku, Tasker and similar), `dumpsys dropbox` crash and ANR viewer, automation profiles. Status-bar icon hiding is the removed System UI Tuner feature; refresh-rate, AppOps toggles, Logcat and batch ART already exist.
 
-Reviewed after v7.12.9 was cut: `ApkSigner` (one bug, #100; plus item 6), `TermuxBridge` / `TermuxLink` (one bug, #103; item 9), `PtyShell` and `ptyexec` (one bug, #105; items 7 and 8), `RarReader` (two bugs, #106 and #107; item 10). Not yet reviewed by anyone: most of `ApkScan`, `RarReader` (one bug fixed in #106 and one in #107; findings in item 10), 7z/tar extraction, `ZipWriter`, `FontScan`, `MorpheService`, the Kotlin engine, and the SD Maid delete flow.
+Reviewed after v7.12.9 was cut: `ApkSigner` (one bug, #100; plus item 6), `TermuxBridge` / `TermuxLink` (one bug, #103; item 9), `PtyShell` and `ptyexec` (one bug, #105; items 7 and 8), `RarReader` (two bugs, #106 and #107; item 10). Not yet reviewed by anyone: most of `ApkScan`, 7z/tar extraction, `ZipWriter`, `FontScan`, `MorpheService`, the Kotlin engine, and the SD Maid delete flow.
 
 ## Definition of done for implementation PRs
 
