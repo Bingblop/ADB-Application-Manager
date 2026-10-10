@@ -687,8 +687,8 @@ public final class ZipTool {
      * Writes an entry's data to {@code dest} through a hidden temporary file, checks it against the entry's size and (zip) CRC-32, and only
      * then moves it into place. Other formats carry no CRC here (their readers check their own), and a size of -1 means "not known".
      */
-    /** Free space an extraction of an entry with no declared size leaves untouched; package-private so a test can raise it. */
-    static long unknownSizeReserve = 64L << 20;
+    /** Free space an extraction leaves untouched; package-private so a test can raise it. */
+    static long freeSpaceReserve = 64L << 20;
 
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
@@ -696,9 +696,11 @@ public final class ZipTool {
         boolean ok = false;
         try {
             long total = 0;
-            // A size of -1 (RAR5 "unpacked size unknown") has no declared cap, so a tiny archive could otherwise write until the storage is full:
-            // such an entry stops while some free space is left.
-            final long room = e.size >= 0 ? Long.MAX_VALUE : Math.max(0L, parent.getUsableSpace() - unknownSizeReserve);
+            // What an entry may write is capped by the free space (less a reserve), whatever size it declares: a tiny archive can declare, and really
+            // contain, gigabytes (a sparse tar, a 7z of zeros, a deflate bomb), and would otherwise fill the phone's storage for every other app. The
+            // space is read again for each entry, so a whole extraction stops with the reserve still free.
+            final long room = Math.max(0L, parent.getUsableSpace() - freeSpaceReserve);
+            if (e.size > room) throw new IOException("Not enough free space for \"" + e.name + "\" (" + e.size + " bytes; the app keeps " + (freeSpaceReserve >> 20) + " MB free)");
             CRC32 crc = new CRC32();
             OutputStream out = new FileOutputStream(part);
             try {
