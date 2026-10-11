@@ -5649,7 +5649,12 @@ public class MainActivity extends Activity {
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
     private final java.util.concurrent.atomic.AtomicInteger fontScanSeq = new java.util.concurrent.atomic.AtomicInteger();
 
-    private final Object fontLock = new Object();       // one preview / apply / clear at a time: they share preview.bin, preview.json and current.*
+    private FontStore fontStore;                         // the font files and their lock: held only to swap files, never while a source is read
+
+    private synchronized FontStore fontStore() {
+        if (fontStore == null) fontStore = new FontStore(new File(getFilesDir(), "ui_font"));
+        return fontStore;
+    }
 
     private File fontDir() {
         File d = new File(getFilesDir(), "ui_font");
@@ -5739,65 +5744,23 @@ public class MainActivity extends Activity {
     }
 
     /** Copies the font in ref (a path, or the content:// address the file chooser gave) to the preview slot after checking it. Answer: {ok, family, style, name, kind, variable, size} or {ok:false, error}. */
-    private JSONObject stageFont(String ref) {
-        synchronized (fontLock) { return stageFontLocked(ref); }
-    }
-
-    private JSONObject stageFontLocked(String ref) {
-        JSONObject res = new JSONObject();
-        try {
-            File dir = fontDir();
-            new File(dir, "preview.bin").delete();     // a failed pick must not leave the earlier preview to be applied
-            new File(dir, "preview.json").delete();
-            if (ref == null || ref.isEmpty()) throw new IllegalStateException("No file was chosen.");
-            InputStream in;
-            String name;
-            if (ref.startsWith("content:")) {
-                Uri u = Uri.parse(ref);
-                name = contentName(u);
-                in = getContentResolver().openInputStream(u);
-                if (in == null) throw new IllegalStateException("The file could not be opened.");
-            } else {
+    private JSONObject stageFont(final String ref) {
+        return fontStore().stage(new FontStore.Opener() {
+            private String name = "font";
+            @Override public InputStream open() throws Exception {
+                if (ref == null || ref.isEmpty()) throw new IllegalStateException("No file was chosen.");
+                if (ref.startsWith("content:")) {
+                    Uri u = Uri.parse(ref);
+                    name = contentName(u);
+                    return getContentResolver().openInputStream(u);
+                }
                 File f = new File(fmCanonicalPath(ref));
                 if (!f.isFile() || !f.canRead()) throw new IllegalStateException("The app cannot read that file. Grant All-files access, or choose the file with the file chooser.");
                 name = f.getName();
-                in = new java.io.FileInputStream(f);
+                return new java.io.FileInputStream(f);
             }
-            File dest = new File(fontDir(), "preview.bin");
-            FontScan.Names n;
-            try { n = FontScan.copyChecked(in, dest); } finally { try { in.close(); } catch (Exception ignored) {} }
-            String kind = n.kind;
-            res.put("ok", true);
-            res.put("family", n.family.isEmpty() ? (name.lastIndexOf('.') > 0 ? name.substring(0, name.lastIndexOf('.')) : name) : n.family);
-            res.put("style", n.style);
-            res.put("name", name);
-            res.put("kind", kind);
-            res.put("variable", n.variable);
-            res.put("size", dest.length());
-            File pj = new File(dir, "preview.json"), pjTmp = new File(dir, "preview.json.part");
-            writeTextFile(pjTmp, res.toString());
-            if (!pjTmp.renameTo(pj)) throw new IllegalStateException("The font could not be stored.");
-        } catch (Exception e) {
-            new File(fontDir(), "preview.bin").delete();
-            try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "The font could not be read."); } catch (Exception ignored) {}
-        }
-        return res;
-    }
-
-    private String readTextFile(File f) throws IOException {
-        InputStream in = new java.io.FileInputStream(f);
-        try {
-            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
-            return bo.toString("UTF-8");
-        } finally { in.close(); }
-    }
-
-    private void writeTextFile(File f, String text) throws IOException {
-        FileOutputStream o = new FileOutputStream(f);
-        try { o.write(text.getBytes("UTF-8")); } finally { o.close(); }
+            @Override public String name() { return name; }
+        }, FontScan.READ_TIMEOUT_MS);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -11023,35 +10986,13 @@ public class MainActivity extends Activity {
         /** Makes the font that was looked at the one in use. Answer: the font's details {ok, family, style, name, kind, variable, size}, or {ok:false, error}. */
         @JavascriptInterface
         public String fontApply() {
-            JSONObject res = new JSONObject();
-            try {
-                synchronized (fontLock) {
-                    File dir = fontDir();
-                    File p = new File(dir, "preview.bin"), pm = new File(dir, "preview.json"), c = new File(dir, "current.bin"), cm = new File(dir, "current.json");
-                    if (!p.isFile() || !pm.isFile()) throw new IllegalStateException("There is no font to use.");
-                    if (!p.renameTo(c) || !pm.renameTo(cm)) throw new IllegalStateException("The font could not be stored.");
-                    res = new JSONObject(readTextFile(cm));
-                }
-            } catch (Exception e) {
-                try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
-            }
-            return res.toString();
+            return fontStore().apply();
         }
 
         /** Back to the system font: removes the stored font (and the one that was being looked at). */
         @JavascriptInterface
         public String fontClear() {
-            JSONObject res = new JSONObject();
-            try {
-                synchronized (fontLock) {
-                    File dir = fontDir();
-                    for (String n : new String[]{"preview.bin", "preview.json", "preview.bin.part", "preview.json.part", "current.bin", "current.json"}) new File(dir, n).delete();
-                }
-                res.put("ok", true);
-            } catch (Exception e) {
-                try { res.put("ok", false); res.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
-            }
-            return res.toString();
+            return fontStore().clear();
         }
 
         /**

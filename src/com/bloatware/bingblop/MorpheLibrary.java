@@ -65,16 +65,35 @@ public final class MorpheLibrary {
         }
     }
 
+    /** Copies a file. The target appears whole or not at all: see {@link #copy(InputStream, File)}. */
     static void copy(File from, File to) throws IOException {
         InputStream in = new FileInputStream(from);
+        try { copy(in, to); } finally { in.close(); }
+    }
+
+    /**
+     * Writes the stream into a hidden ".name.part" file beside the target and renames it over the target when it is complete. A copy that fails
+     * half way (storage full, the source unreadable, the card pulled) leaves no partial file that looks like a patched APK or a signing key, and
+     * does not damage a file that was already at the target.
+     */
+    static void copy(InputStream in, File to) throws IOException {
+        File part = new File(to.getParentFile(), "." + to.getName() + ".part");
+        boolean done = false;
         try {
-            OutputStream out = new FileOutputStream(to);
+            OutputStream out = new FileOutputStream(part);
             try {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             } finally { out.close(); }
-        } finally { in.close(); }
+            if (!part.renameTo(to)) {
+                to.delete();
+                if (!part.renameTo(to)) throw new IOException("cannot write " + to);
+            }
+            done = true;
+        } finally {
+            if (!done) part.delete();
+        }
     }
 
     /**
@@ -163,7 +182,12 @@ public final class MorpheLibrary {
         }
     }
 
-    /** Every patched APK, newest first. A folder whose APK is gone is dropped from the list (and cleaned). */
+    /**
+     * Every patched APK, newest first. An entry whose APK was kept in the library's own folder and is gone is dropped (and cleaned). One whose APK
+     * is kept outside (Downloads/Morphe Patcher) stays in the list, marked {@code "missing": true}, when the file cannot be seen: it may only be
+     * out of reach (storage access revoked, the card not mounted) and would come back, and deleting the entry would delete its log and its record
+     * for good. The person removes such an entry with Delete.
+     */
     public synchronized JSONArray list() {
         List<JSONObject> all = new ArrayList<JSONObject>();
         File[] kids = dir.listFiles();
@@ -172,7 +196,12 @@ public final class MorpheLibrary {
             JSONObject m = read(new File(k, "meta.json"));
             if (m == null) continue;
             String file = m.optString("file");
-            if (file.isEmpty() || !new File(file).exists()) { deleteTree(k); continue; }
+            if (file.isEmpty()) { deleteTree(k); continue; }
+            if (!new File(file).exists()) {
+                boolean ours = new File(file).getAbsolutePath().startsWith(k.getAbsolutePath() + File.separator);
+                if (ours) { deleteTree(k); continue; }
+                try { m.put("missing", true); } catch (JSONException ignored) {}
+            }
             all.add(m);
         }
         Collections.sort(all, new Comparator<JSONObject>() {

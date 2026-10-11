@@ -1225,6 +1225,8 @@
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
         .sheet-avatar:empty { display: none; }          /* a sheet with no symbol to show has no empty tile either */
+        .sheet-avatar.has-icon { background: var(--bg-surface); overflow: hidden; }          /* the app's own icon instead of its first letter */
+        .sheet-avatar.has-icon img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .sheet-avatar {
             width: 44px;
             height: 44px;
@@ -1236,6 +1238,7 @@
             font-size: 20px;
             font-weight: 900;
             color: var(--on-accent);
+            flex-shrink: 0;                 /* a long title does not squeeze the tile (it stays square when the letter turns into the icon) */
         }
 
         .sheet-title h3 {
@@ -13982,6 +13985,11 @@ Type any command below (e.g. pm list packages -d)
                 const u = appIconCache[img.getAttribute('data-icon')];
                 if (u) img.src = u;
             });
+            const im = document.getElementById('inspectorModal');
+            if (im && im.classList.contains('show') && inspectedPkg && map && map[inspectedPkg]) {          // the app menu is open and its icon just arrived
+                const a = allApps.find(x => x.pkg === inspectedPkg);
+                paintSheetAvatar(inspectedPkg, a ? a.name : inspectedPkg);
+            }
         };
         window.onAppIconSaved = function (r) {
             if (r && r.ok) showToast('Icon saved to ' + r.path);
@@ -22734,6 +22742,30 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
         }
 
+        /** The tile left of the app's name in the app menu: the app's own icon when it is known (asked for when it is not), its first letter until then or when it cannot be drawn. */
+        const sheetIconAsked = new Set();
+        function paintSheetAvatar(pkg, name) {
+            const av = document.getElementById('sheetAvatar');
+            if (!av) return;
+            const letter = String(name || pkg || '?').charAt(0).toUpperCase();
+            const url = appIconCache[pkg];
+            if (url) {
+                const img = document.createElement('img');
+                img.alt = ''; img.draggable = false;
+                img.onerror = () => { av.classList.remove('has-icon'); av.textContent = letter; };
+                img.src = url;
+                av.classList.add('has-icon');
+                av.replaceChildren(img);
+                return;
+            }
+            av.classList.remove('has-icon');
+            av.textContent = letter;
+            if (window.AndroidBridge && window.AndroidBridge.loadAppIcons && !sheetIconAsked.has(pkg)) {      // the list may have asked and been told nothing: ask once more from here
+                sheetIconAsked.add(pkg); appIconAsked.add(pkg);
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify([pkg]), iconPack); } catch (e) {}
+            }
+        }
+
         function openInspector(pkg) {
             inspectedPkg = pkg;
             haptic();
@@ -22747,7 +22779,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetDates').innerText = '';
             renderInspectorUpdateHint(pkg);
             renderInspectorSizes(pkg);
-            document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
+            paintSheetAvatar(app.pkg, app.name);
 
             refreshInspectorButtons(pkg);
             loadSheetUad(pkg);
