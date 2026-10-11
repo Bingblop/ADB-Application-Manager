@@ -42,12 +42,16 @@ public class MorpheRunnerTest {
         volatile boolean refuse;
         volatile boolean silent;                                 // dies without an answer
         volatile CountDownLatch hold;                            // the "engine" works until this opens
+        volatile Runnable onStart;                               // runs inside start(): something that happens while the service is being started
+        volatile boolean stopped;                                // cancel() ended the engine
         volatile int aliveForPolls;                              // alive() is true this many times after a finish (a service that is still going down)
         final List<String> jobsSeen = Collections.synchronizedList(new ArrayList<String>());
 
         @Override public boolean start(final String cmd, final File job, final File events, String title) {
             if (refuse) return false;
             starts.incrementAndGet();
+            Runnable hook = onStart;
+            if (hook != null) hook.run();
             try { jobsSeen.add(read(job)); } catch (IOException e) { jobsSeen.add("?"); }
             alive = true;
             final CountDownLatch h = hold;
@@ -55,13 +59,14 @@ public class MorpheRunnerTest {
                 try {
                     append(events, "LOG INFO started " + cmd + "\n");
                     if (h != null) h.await();
-                    if (!silent) append(events, "RESULT {\"success\":true,\"cmd\":\"" + cmd + "\"}\n");
+                    if (stopped) append(events, "RESULT {\"success\":false,\"cancelled\":true,\"error\":\"Cancelled\"}\n");
+                    else if (!silent) append(events, "RESULT {\"success\":true,\"cmd\":\"" + cmd + "\"}\n");
                 } catch (Exception ignored) {
                 } finally { alive = false; }
             } }, "fake-service").start();
             return true;
         }
-        @Override public void cancel() { cancels.incrementAndGet(); }
+        @Override public void cancel() { cancels.incrementAndGet(); CountDownLatch h = hold; if (h != null) { stopped = true; h.countDown(); } }
         @Override public boolean alive() {
             if (alive) return true;
             if (aliveForPolls > 0) { aliveForPolls--; return true; }
@@ -144,6 +149,45 @@ public class MorpheRunnerTest {
         check("Stop ends the run with 'Cancelled'", !stopped.optBoolean("success") && stopped.optBoolean("cancelled"), stopped.toString());
         check("a Stop for another job does not end this one", !new MorpheRunner(new FakeService(), FAST).run("x", new JSONObject(), new File(root, "g"), "t", "job2", null, 2000).optBoolean("cancelled"), null);
 
+        // M-4: Stop before the service starts is not lost, a Stop reaches the service, and a Stop for another job changes nothing
+        FakeService s8 = new FakeService();
+        final MorpheRunner r8 = new MorpheRunner(s8, FAST);
+        check("cancel() marks the job and reports it", r8.cancel("early") && r8.isCancelled("early") && !r8.cancel("") && !r8.cancel(null), null);
+        JSONObject early = r8.run("x", new JSONObject(), new File(root, "i"), "t", "early", null, 3000);
+        check("Stop pressed before the engine started: the engine is never started", early.optBoolean("cancelled") && s8.starts.get() == 0 && s8.cancels.get() == 0, early.toString() + " starts=" + s8.starts.get());
+
+        FakeService s9 = new FakeService(); s9.hold = new CountDownLatch(1);
+        final MorpheRunner r9 = new MorpheRunner(s9, FAST);
+        s9.onStart = new Runnable() { @Override public void run() { r9.cancel("gap"); } };      // Stop arrives while the service is being started
+        JSONObject gap = r9.run("x", new JSONObject(), new File(root, "j"), "t", "gap", null, 5000);
+        check("Stop that arrives while the service starts reaches the service once", gap.optBoolean("cancelled") && s9.cancels.get() == 1 && s9.stopped, gap.toString() + " cancels=" + s9.cancels.get());
+
+        final FakeService s10 = new FakeService(); s10.hold = new CountDownLatch(1);
+        final MorpheRunner r10 = new MorpheRunner(s10, FAST);
+        final JSONObject[] run10 = new JSONObject[1];
+        Thread t10 = new Thread(new Runnable() { @Override public void run() {
+            try { run10[0] = r10.run("x", new JSONObject(), new File(root, "k"), "t", "live", null, 10000); } catch (Exception e) { run10[0] = new JSONObject(); }
+        } });
+        t10.start();
+        long until10 = System.currentTimeMillis() + 3000;
+        while (s10.starts.get() < 1 && System.currentTimeMillis() < until10) Thread.sleep(5);
+        Thread.sleep(50);
+        r10.cancel("other");
+        Thread.sleep(150);
+        check("a Stop for another job changes nothing for the running one", s10.cancels.get() == 0 && run10[0] == null, "cancels=" + s10.cancels.get());
+        r10.cancel("live");
+        r10.cancel("live");
+        t10.join(5000);
+        check("Stop during the run tells the service (once, however often it is pressed) and ends with 'Cancelled'", run10[0] != null && run10[0].optBoolean("cancelled") && s10.cancels.get() == 1 && s10.stopped, String.valueOf(run10[0]) + " cancels=" + s10.cancels.get());
+        s10.hold.countDown();
+
+        // the next run of the same job id is not affected by the earlier Stop being remembered as sent
+        FakeService s11 = new FakeService();
+        MorpheRunner r11 = new MorpheRunner(s11, FAST);
+        r11.cancel("again"); r11.clearCancelled("again");
+        JSONObject fresh = r11.run("x", new JSONObject(), new File(root, "l"), "t", "again", null, 3000);
+        check("after clearCancelled the same job id runs normally", fresh.optBoolean("success") && s11.starts.get() == 1, fresh.toString());
+
         // a service still going down delays the start of the next run
         FakeService s7 = new FakeService(); s7.aliveForPolls = 5;
         long t0 = System.currentTimeMillis();
@@ -160,6 +204,9 @@ public class MorpheRunnerTest {
             String cat = c < 0 ? "" : m.substring(c, Math.min(m.length(), c + 400));
             check("catalog reads run one at a time (the second finds the first one's answer in the cache)", cat.contains("synchronized (catalogLock)") && cat.contains("catalogLocked("), cat);
             check("the bridge runs the engine through MorpheRunner and keeps no engine semaphore of its own", m.contains("runner.run(") && !m.contains("engine.acquire()"), null);
+            int cp = m.indexOf("case \"cancel\":");
+            String cb = cp < 0 ? "" : m.substring(cp, Math.min(m.length(), cp + 400));
+            check("the cancel call checks the job id and that it is the running job, then goes through runner.cancel", cb.contains("validJobId(job)") && cb.contains("slot.current()") && cb.contains("runner.cancel(job)") && !cb.contains("MorpheService.cancel"), cb);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
         System.out.println("all passed");
