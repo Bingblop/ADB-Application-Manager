@@ -1,6 +1,0 @@
-1. ReVanced card badge: ["REVANCED"] | Chrome has no mod badge: true
-2. Patched count: 2 (expect 2)
-   filter shows only patched: true | chrome hidden: true
-3. inspector mods line: "Patched / modified\nREVANCED\nInstalled by app.revanced.manager.flutter"
-   names ReVanced + installer: true
-errors: []

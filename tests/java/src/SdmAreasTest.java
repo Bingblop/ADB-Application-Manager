@@ -426,6 +426,9 @@ public class SdmAreasTest {
             Map<String, Sdm.Entry> frB = fsh.statAll(Arrays.asList(fr2 + "/victim2", fr2 + "/" + endName), null);
             is("statAll: same, the real file's size is kept", frB.size() == 1 && frB.get(fr2 + "/victim2").size == 2, true);
             is("stat: the file with the end marker in its name gives nothing", fsh.stat(fr2 + "/" + endName) == null, true);
+            String[] l2 = fsh.list(fr2);
+            is("list: a name holding the static end marker does not truncate the directory listing",
+                l2 != null && Arrays.asList(l2).contains("victim2") && Arrays.asList(l2).contains("zlast.txt"), true);
 
             eq("sha256", fsh.sha256(tr + "/bin.dat", null), sha(bin));
             eq("sha256 of a small file", fsh.sha256(tr + "/a.txt", null), sha("hello".getBytes("UTF-8")));

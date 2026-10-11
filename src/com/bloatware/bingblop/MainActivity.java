@@ -617,21 +617,6 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
-    /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
-    private interface Live { boolean now(); }
-
-    /** Like {@link #notifyJs}, but the script is dropped if {@code live} no longer holds on the UI thread (a restart may have happened while it waited). */
-    private void notifyJsIf(final String script, final Live live) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (webView != null && live.now()) {
-                    webView.evaluateJavascript(script, null);
-                }
-            }
-        });
-    }
-
     private void notifyJs(final String script) {
         runOnUiThread(new Runnable() {
             @Override
@@ -1572,7 +1557,7 @@ public class MainActivity extends Activity {
     }
 
     // ---- The real terminal (a pseudo-terminal through libptyexec.so, see PtyShell): the full-screen Terminal's sessions ----
-    private final SessionMap<PtyShell> ptySessions = new SessionMap<PtyShell>();
+    private final Map<String, PtyShell> ptySessions = new java.util.concurrent.ConcurrentHashMap<String, PtyShell>();
 
     private File ptyHelper() {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
@@ -1628,17 +1613,9 @@ public class MainActivity extends Activity {
         return rishSpawn(new String[]{"sh", "-c", script});
     }
 
-    /** A terminal session ended: drop it (unless the id already belongs to a newer one) and tell the page when it still waits for this end. */
-    private void ptyEnded(final String key, PtyShell sh, int code, final long token) {
-        final long gen = ptySessions.endedAt(key, sh);
-        if (gen >= 0) {
-            // told on the UI thread only while no newer session has been stored under the id since this decision
-            notifyJsIf("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + "," + token + ")", new Live() { public boolean now() { return ptySessions.generation(key) == gen; } });
-        }
-    }
-
     private void closePtySessions() {
-        for (PtyShell p : ptySessions.drain()) p.close();
+        for (PtyShell p : ptySessions.values()) p.close();
+        ptySessions.clear();
     }
 
     private void closeTermSessions() {
@@ -2738,19 +2715,14 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                File apk = null;
+                // One file per item, so two installs started back to back can't overwrite each other's download
+                File apk = new File(new File(getCacheDir(), "updates"), "store-" + Integer.toHexString(key.hashCode()) + ".apk");
                 boolean standard = "standard".equals(resolveExecMode());
                 try {
-                    // One file of its own for every call, never derived from the key (the page chooses the key, and two keys can share a hash code): the file
-                    // the user is asked about is the file that is installed, and no other request can write into it in between
-                    File dir = new File(getCacheDir(), "updates");
-                    dir.mkdirs();
-                    File[] old = dir.listFiles();
-                    if (old != null) for (File f : old) if (f.getName().startsWith("store-") && (f.getName().endsWith(".apk") || f.getName().endsWith(".apk.part")) && f.lastModified() < System.currentTimeMillis() - 24L * 3600 * 1000) f.delete();
-                    apk = File.createTempFile("store-", ".apk", dir);
+                    apk.getParentFile().mkdirs();
                     final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
                     storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
-                    final String finalUrl = UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
+                    UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
                             storeInstallProgress(key, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
@@ -2773,18 +2745,6 @@ public class MainActivity extends Activity {
                         launchSystemInstaller(apk);
                         storeInstallProgress(key, "opened", 100, "Confirm the install of " + name + ".");
                     } else {
-                        // A privileged install has no system installer in front of it, and the address, package and hash all come from the page:
-                        // the user is asked here, with what was read from the file itself.
-                        storeInstallProgress(key, "confirming", 100, "Waiting for your OK to install " + name + "…");
-                        String installedVersion = null;
-                        try {
-                            PackageInfo cur = getPackageManager().getPackageInfo(archive.packageName, 0);
-                            installedVersion = cur.versionName == null ? "" : cur.versionName;
-                        } catch (PackageManager.NameNotFoundException notInstalled) { /* a new app */ }
-                        boolean hashChecked = InstallGuards.hasPublishedHash(sha256) && InstallGuards.isSha256(InstallGuards.normalize(sha256));
-                        if (!confirmPrivilegedInstall(InstallConfirm.message(name, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl), InstallConfirm.hostOf(apkUrl), installedVersion, hashChecked))) {
-                            throw new IllegalStateException("Install cancelled.");
-                        }
                         storeInstallProgress(key, "installing", 100, "Installing " + name + "…");
                         String out = installApk(apk);
                         if (out != null && out.contains("Success")) {
@@ -2798,85 +2758,11 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard && apk != null) apk.delete();
+                    if (!standard) apk.delete();
                     storeInstalling.remove(key);
                 }
             }
         });
-    }
-
-    /**
-     * Asks, in a native dialog the page cannot press, whether to go on with a privileged install. Blocks the calling (background) thread until the
-     * user answers; no answer in two minutes, or the screen closing, is a no.
-     */
-    private boolean confirmPrivilegedInstall(final String message) {
-        final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
-        final boolean[] yes = { false };
-        // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
-        final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine = new java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog>();
-        try {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (isFinishing() || isDestroyed()) { answered.countDown(); return; }
-                    android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
-                    b.setTitle(InstallConfirm.title());
-                    b.setMessage(message);
-                    b.setCancelable(true);
-                    b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; }
-                    });
-                    b.setNegativeButton("Cancel", null);
-                    // Any way the dialog goes away (a button, Back, a tap outside, a timeout, the screen closing) ends the wait; only "Install" says yes.
-                    b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(android.content.DialogInterface d) {
-                            installConfirmDialogs.remove(d);
-                            answered.countDown();
-                        }
-                    });
-                    android.app.AlertDialog dlg = b.create();
-                    mine.set(dlg);
-                    installConfirmDialogs.add(dlg);
-                    dlg.show();
-                }
-            });
-            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
-                dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
-                return false;
-            }
-        } catch (InterruptedException e) {
-            dismissInstallConfirm(mine);
-            Thread.currentThread().interrupt();
-            return false;
-        } catch (RuntimeException e) {
-            return false;
-        }
-        return yes[0];
-    }
-
-    /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
-    private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
-
-    private void dismissInstallConfirm(final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine) {
-        try {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    android.app.AlertDialog d = mine.get();
-                    if (d != null) { installConfirmDialogs.remove(d); if (d.isShowing()) d.dismiss(); }
-                }
-            });
-        } catch (RuntimeException ignored) { /* the screen is already gone */ }
-    }
-
-    /** The screen is closing: every install question still open is closed with it (each waiting install then reads that as no). */
-    private void dismissAllInstallConfirms() {
-        for (android.content.DialogInterface d : new java.util.ArrayList<android.content.DialogInterface>(installConfirmDialogs)) {
-            try { d.dismiss(); } catch (Throwable ignored) {}
-        }
-        installConfirmDialogs.clear();
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
@@ -3302,82 +3188,6 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
 
     /**
-     * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
-     * VirusTotal or another app. Its patched APKs, Helper downloads and the cache folders for picked or downloaded files are allowed (see PrivatePaths.exportable).
-     */
-    private boolean isPrivateData(File f) {
-        return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {
-                    @Override public long count(File x) throws Exception { return android.system.Os.stat(x.getPath()).st_nlink; }
-                }, PrivatePaths.exportable(getFilesDir(), getCacheDir()));
-    }
-
-    private static final String PRIVATE_WHY = "That file is part of this app's own private data and is not opened or sent from here.";
-
-    /**
-     * Opens {@code f} for reading and only then decides whether it may be read: the decision is made from the open descriptor (where /proc/self/fd/N
-     * points, and the link count from fstat), not from the name, so a name swapped for a link between a check and the open cannot lead into the private
-     * part of the data folder. Fails closed: anything that cannot be read from the descriptor counts as private. Closing the stream closes the descriptor.
-     */
-    private InputStream openUnlessPrivate(File f) throws IOException {
-        android.os.ParcelFileDescriptor pfd = android.os.ParcelFileDescriptor.open(f, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
-        boolean ok = false;
-        try {
-            checkOpenedNotPrivate(pfd);
-            ok = true;
-            return new android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd);
-        } finally {
-            if (!ok) { try { pfd.close(); } catch (IOException ignored) {} }
-        }
-    }
-
-    /** Throws unless the file behind {@code pfd} may be read (see {@link #openUnlessPrivate}); anything the descriptor cannot tell counts as private. */
-    private void checkOpenedNotPrivate(android.os.ParcelFileDescriptor pfd) throws IOException {
-        try {
-            String target = android.system.Os.readlink("/proc/self/fd/" + pfd.getFd());
-            long links = android.system.Os.fstat(pfd.getFileDescriptor()).st_nlink;
-            if (!PrivatePaths.blockedOpened(target, links, getDataDir(), PrivatePaths.exportable(getFilesDir(), getCacheDir()))) return;
-        } catch (Exception e) {
-            // falls through: fail closed
-        }
-        throw new IOException(PRIVATE_WHY);
-    }
-
-    /** {@link #copyFile(File, OutputStream)} from a file that was opened and then judged (see {@link #openUnlessPrivate}); returns the bytes copied. */
-    private long copyFileChecked(File src, OutputStream out) throws Exception {
-        InputStream in = openUnlessPrivate(src);
-        long total = 0;
-        try {
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = in.read(buf)) > 0) { out.write(buf, 0, n); total += n; }
-        } finally { in.close(); }
-        return total;
-    }
-
-    /**
-     * What a file search leaves out: the app's own private data. The full check (a resolved path) runs only for what could lead there: a name below the data
-     * folder (under either of its spellings) or a link; everything else in a walk is plainly outside it.
-     */
-    private FileSearch.Skip searchSkip() {
-        final File data = getDataDir();
-        File real;
-        try { real = data.getCanonicalFile(); } catch (IOException e) { real = data; }
-        final File dataReal = real;
-        return new FileSearch.Skip() {
-            @Override
-            public boolean skip(File f) {
-                if (PrivatePaths.inside(f, data) || PrivatePaths.inside(f, dataReal) || java.nio.file.Files.isSymbolicLink(f.toPath())) return isPrivateData(f);
-                return false;
-            }
-        };
-    }
-
-    /** True when the file manager must not read, write or hand on {@code path}: the app's private data (see {@link #isPrivateData}); a content:// reference is never one. */
-    private boolean fmPrivate(String path) {
-        return path != null && !path.startsWith("content://") && isPrivateData(new File(path));
-    }
-
-    /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
      * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
      */
@@ -3385,20 +3195,11 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                File staged = null;
                 try {
                     if (apiKey == null || apiKey.trim().isEmpty()) throw new IllegalStateException("Enter your VirusTotal API key first.");
                     if (path == null || path.isEmpty()) throw new IllegalStateException("Load a package first.");
                     File f = new File(path);
                     if (!f.exists()) throw new IllegalStateException("The selected package is no longer available. Pick it again.");
-                    if (isPrivateData(f)) throw new IllegalStateException("That file is part of this app's own private data and is not sent anywhere.");
-                    // what is hashed and uploaded is a copy made from a file that was opened and then judged, not whatever the name leads to a moment later
-                    File dir = new File(getCacheDir(), "vt_stage");
-                    if (!dir.isDirectory()) dir.mkdirs();
-                    staged = File.createTempFile("vt", ".bin", dir);
-                    FileOutputStream sout = new FileOutputStream(staged);
-                    try { copyFileChecked(f, sout); } catch (IOException denied) { throw new IllegalStateException(denied.getMessage()); } finally { sout.close(); }
-                    f = staged;
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
                             .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
@@ -3413,8 +3214,6 @@ public class MainActivity extends Activity {
                     try {
                         notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
                     } catch (Exception ignored) {}
-                } finally {
-                    if (staged != null) staged.delete();
                 }
             }
         });
@@ -4845,7 +4644,6 @@ public class MainActivity extends Activity {
      *  (7z with encrypted names, rar -hp) — a zip's directory is never encrypted, so a zip never needs it here. */
     private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password) throws Exception {
         String p = fmCanonicalPath(path);
-        if (fmPrivate(p)) throw new IOException(PRIVATE_WHY);
         synchronized (archiveLock) {
             ArcSlot hit = fresh ? null : archiveSlots.get(p);
             if (hit != null && !hit.archive.isStale()) return hit.archive;
@@ -5571,15 +5369,8 @@ public class MainActivity extends Activity {
     private volatile long fontScanProgressAt = 0;
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
     private final java.util.concurrent.atomic.AtomicInteger fontScanSeq = new java.util.concurrent.atomic.AtomicInteger();
-    // the page's Cancel: every search numbered up to this has been cancelled (a search started after it is not), so a late Cancel can never stop a newer search
-    private final java.util.concurrent.atomic.AtomicInteger fontScanCancelledUpTo = new java.util.concurrent.atomic.AtomicInteger();
 
-    private FontStore fontStore;                         // the font files and their lock: held only to swap files, never while a source is read
-
-    private synchronized FontStore fontStore() {
-        if (fontStore == null) fontStore = new FontStore(new File(getFilesDir(), "ui_font"));
-        return fontStore;
-    }
+    private final Object fontLock = new Object();       // one preview / apply / clear at a time: they share preview.bin, preview.json and current.*
 
     private File fontDir() {
         File d = new File(getFilesDir(), "ui_font");
@@ -5610,14 +5401,11 @@ public class MainActivity extends Activity {
             public void run() {
                 JSONObject res = new JSONObject();
                 long t0 = System.currentTimeMillis();
-                final FontScan.Limits lim = new FontScan.Limits();
-                lim.cancel = new FontScan.Cancel() {
-                    @Override public boolean isCancelled() { return scanId != fontScanSeq.get() || scanId <= fontScanCancelledUpTo.get(); }   // cancelled, or a newer search started
-                };
                 try {
                     if (!hasStorageAccess()) {
                         res.put("status", "noaccess");
                     } else {
+                        final FontScan.Limits lim = new FontScan.Limits();
                         lim.deadlineMs = t0 + 25000;
                         List<File> roots = new ArrayList<File>();
                         roots.add(new File(fmCanonicalPath("/sdcard")));
@@ -5635,7 +5423,7 @@ public class MainActivity extends Activity {
                             doneBefore += FontScan.walkRoot(r, found, seen, lim, doneBefore, totalTop, new FontScan.Progress() {
                                 @Override
                                 public void onProgress(int done, int total, String folder, int foundNow) {
-                                    if (lim.cancel.isCancelled()) return;                                  // cancelled, or a newer search started: the walk stops at its next file
+                                    if (scanId != fontScanSeq.get()) { lim.hitLimit = true; return; }     // a newer search started: stop this walk
                                     int pct = total > 0 ? Math.min(99, done * 99 / total) : 99;
                                     sendFontScanProgress(scanId, pct, "Searched " + folder + " (" + done + " of " + total + " folders)", foundNow, done >= total);
                                 }
@@ -5651,10 +5439,6 @@ public class MainActivity extends Activity {
                     }
                 } catch (Exception e) {
                     try { res.put("status", "error"); res.put("error", e.getMessage() != null ? e.getMessage() : "search failed"); } catch (Exception ignored) {}
-                }
-                if (lim.cancelled || scanId <= fontScanCancelledUpTo.get()) {                // cancelled: no list, just the word, so the page can tidy up
-                    res = new JSONObject();
-                    try { res.put("status", "cancelled"); } catch (Exception ignored) {}
                 }
                 if (scanId == fontScanSeq.get()) notifyJs("window.onFontScan && window.onFontScan(" + JSONObject.quote(res.toString()) + ")");
             }
@@ -5676,23 +5460,65 @@ public class MainActivity extends Activity {
     }
 
     /** Copies the font in ref (a path, or the content:// address the file chooser gave) to the preview slot after checking it. Answer: {ok, family, style, name, kind, variable, size} or {ok:false, error}. */
-    private JSONObject stageFont(final String ref) {
-        return fontStore().stage(new FontStore.Opener() {
-            private String name = "font";
-            @Override public InputStream open() throws Exception {
-                if (ref == null || ref.isEmpty()) throw new IllegalStateException("No file was chosen.");
-                if (ref.startsWith("content:")) {
-                    Uri u = Uri.parse(ref);
-                    name = contentName(u);
-                    return getContentResolver().openInputStream(u);
-                }
+    private JSONObject stageFont(String ref) {
+        synchronized (fontLock) { return stageFontLocked(ref); }
+    }
+
+    private JSONObject stageFontLocked(String ref) {
+        JSONObject res = new JSONObject();
+        try {
+            File dir = fontDir();
+            new File(dir, "preview.bin").delete();     // a failed pick must not leave the earlier preview to be applied
+            new File(dir, "preview.json").delete();
+            if (ref == null || ref.isEmpty()) throw new IllegalStateException("No file was chosen.");
+            InputStream in;
+            String name;
+            if (ref.startsWith("content:")) {
+                Uri u = Uri.parse(ref);
+                name = contentName(u);
+                in = getContentResolver().openInputStream(u);
+                if (in == null) throw new IllegalStateException("The file could not be opened.");
+            } else {
                 File f = new File(fmCanonicalPath(ref));
                 if (!f.isFile() || !f.canRead()) throw new IllegalStateException("The app cannot read that file. Grant All-files access, or choose the file with the file chooser.");
                 name = f.getName();
-                return new java.io.FileInputStream(f);
+                in = new java.io.FileInputStream(f);
             }
-            @Override public String name() { return name; }
-        }, FontScan.READ_TIMEOUT_MS);
+            File dest = new File(fontDir(), "preview.bin");
+            FontScan.Names n;
+            try { n = FontScan.copyChecked(in, dest); } finally { try { in.close(); } catch (Exception ignored) {} }
+            String kind = n.kind;
+            res.put("ok", true);
+            res.put("family", n.family.isEmpty() ? (name.lastIndexOf('.') > 0 ? name.substring(0, name.lastIndexOf('.')) : name) : n.family);
+            res.put("style", n.style);
+            res.put("name", name);
+            res.put("kind", kind);
+            res.put("variable", n.variable);
+            res.put("size", dest.length());
+            File pj = new File(dir, "preview.json"), pjTmp = new File(dir, "preview.json.part");
+            writeTextFile(pjTmp, res.toString());
+            if (!pjTmp.renameTo(pj)) throw new IllegalStateException("The font could not be stored.");
+        } catch (Exception e) {
+            new File(fontDir(), "preview.bin").delete();
+            try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "The font could not be read."); } catch (Exception ignored) {}
+        }
+        return res;
+    }
+
+    private String readTextFile(File f) throws IOException {
+        InputStream in = new java.io.FileInputStream(f);
+        try {
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            return bo.toString("UTF-8");
+        } finally { in.close(); }
+    }
+
+    private void writeTextFile(File f, String text) throws IOException {
+        FileOutputStream o = new FileOutputStream(f);
+        try { o.write(text.getBytes("UTF-8")); } finally { o.close(); }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -8322,9 +8148,8 @@ public class MainActivity extends Activity {
 
         /**
          * The full-screen terminal: a real pseudo-terminal (vim, nano, top, htop, ssh ...). {@code backend}: "app", "priv" or "termux".
-         * Answers "started:N" (N is the number of this start) or "error: ..."; then window.onPtyStarted(id, json{ok, message}, N), the output as
-         * window.onPtyData(id, base64, N) (the page tells what it has shown with ptyAck, so a runaway program cannot flood it) and the end as
-         * window.onPtyExit(id, code, N). The page drops a notice whose N is not the start it is running: one queued before a restart can run after it.
+         * Answers "started" or "error: ..."; then window.onPtyStarted(id, json{ok, message}), the output as window.onPtyData(id, base64) (the page tells
+         * what it has shown with ptyAck, so a runaway program cannot flood it) and the end as window.onPtyExit(id, code).
          */
         @JavascriptInterface
         public String ptyStart(final String id, final String backend, final int rows, final int cols) {
@@ -8332,91 +8157,36 @@ public class MainActivity extends Activity {
             final String key = id;
             PtyShell old = ptySessions.remove(key);
             if (old != null) old.close();
-            final long ticket = ptySessions.ticket(key);     // taken now, in the order the page asked: a slower older start cannot replace a newer one
             executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
-                    PtyShell started = null;
-                    Integer early = null;
-                    boolean published = false;
                     try {
                         Process proc = ptyProcess(backend, rows, cols);
-                        // The end of this session can be reported before the constructor returns, or after the page has started a new one under the same id.
-                        // Its output waits in "held" until the session is accepted (a refused one, stale, must not write into the newer terminal), then
-                        // goes out in order under the same lock as the "started" event; state: 0 not decided, 1 accepted, 2 refused.
-                        final PtyShell[] me = new PtyShell[1];
-                        final Integer[] earlyExit = new Integer[1];
-                        final int[] state = { 0 };
-                        final long[] myGen = { -1 };       // the generation of the id this session was stored under
-                        final java.util.List<String> held = new java.util.ArrayList<String>();
-                        final int[] heldChars = { 0 };
                         PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
                             @Override
                             public void onData(byte[] data, int n) {
-                                String js = "window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\"," + ticket + ")";
-                                synchronized (me) {
-                                    // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
-                                    // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
-                                    if (state[0] == 1) {
-                                        // accepted: its output goes to the page unless a newer start or a close of the id came in since (checked again on the
-                                        // UI thread). A session that ended on its own keeps its last output, queued before its end.
-                                        final long g = myGen[0];
-                                        if (ptySessions.generation(key) == g) notifyJsIf(js, new Live() { public boolean now() { return ptySessions.generation(key) == g; } });
-                                        return;
-                                    }
-                                    if (state[0] == 0 && heldChars[0] < (1 << 20)) { held.add(js); heldChars[0] += js.length(); }
-                                }
+                                notifyJs("window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")");
                             }
 
                             @Override
                             public void onExit(int code) {
-                                synchronized (me) {
-                                    if (me[0] == null) { earlyExit[0] = code; return; }
-                                }
-                                ptyEnded(key, me[0], code, ticket);
+                                ptySessions.remove(key);
+                                notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
                             }
                         });
-                        started = sh;
-                        java.util.List<PtyShell> replaced = new java.util.ArrayList<PtyShell>();
-                        synchronized (me) {
-                            // Stored before it is published, so a listener that sees me[0] also finds it in the map; and the page is told it started under
-                            // the same lock, so an exit that follows is always queued after the start (and after the output held so far).
-                            final long gen = ptySessions.publishGen(key, ticket, sh, replaced);
-                            published = gen >= 0;
-                            state[0] = published ? 1 : 2;
-                            if (published) {
-                                myGen[0] = gen;
-                                me[0] = sh;
-                                early = earlyExit[0];
-                                res.put("ok", true);
-                                Live live = new Live() { public boolean now() { return ptySessions.generation(key) == gen; } };
-                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", live);
-                                for (String js : held) notifyJsIf(js, live);
-                            }
-                            held.clear();
-                        }
-                        for (PtyShell r : replaced) r.close();
-                        if (!published) sh.close();          // a newer start, a close, or the shutdown came first: nobody waits for this one
-                        // a session that was already over when it was stored: its end is told after the start
-                        if (published && early != null) ptyEnded(key, sh, early, ticket);
+                        ptySessions.put(key, sh);
+                        res.put("ok", true);
                     } catch (Throwable t) {
-                        if (!published) {
-                            if (started != null) started.close();
-                            // only the start the page still waits for may tell it that starting failed
-                            if (ptySessions.isCurrent(key, ticket)) {
-                                try {
-                                    res.put("ok", false);
-                                    res.put("message", errMsg(t));
-                                } catch (Exception ignored) {}
-                                // still only if no newer start was requested by the time this runs on the UI thread
-                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", new Live() { public boolean now() { return ptySessions.isCurrent(key, ticket); } });
-                            }
-                        }
+                        try {
+                            res.put("ok", false);
+                            res.put("message", errMsg(t));
+                        } catch (Exception ignored) {}
                     }
+                    notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
                 }
             });
-            return "started:" + ticket;      // the page tags what it receives from this start with the number, and drops what carries another
+            return "started";
         }
 
         /** Keys for the terminal: base64 of the UTF-8 bytes (escape sequences included). */
@@ -10200,16 +9970,16 @@ public class MainActivity extends Activity {
             try {
                 JSONArray a = new JSONArray(argsJson);
                 if (a.length() == 0 || a.length() > 80) throw new IllegalArgumentException("no command");
-                final List<String> given = new ArrayList<String>();
-                for (int i = 0; i < a.length(); i++) given.add(a.getString(i));
-                String refused = AdbArgs.check(given);
-                if (refused != null) throw new IllegalArgumentException(refused);
                 if (serial != null && !serial.isEmpty()) {
                     if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
                     args.add("-s");
                     args.add(serial);
                 }
-                args.addAll(given);
+                for (int i = 0; i < a.length(); i++) {
+                    String x = a.getString(i);
+                    if (x.indexOf('\u0000') >= 0) throw new IllegalArgumentException("bad argument");
+                    args.add(x);
+                }
             } catch (Exception e) {
                 try { early = new JSONObject().put("tag", t).put("out", "Error: " + e.getMessage()).put("ms", 0); } catch (Exception ignored) {}
             }
@@ -10462,10 +10232,10 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < a.length(); i++) {
                     JSONObject o = a.getJSONObject(i);
                     File src = new File(o.getString("path"));
-                    if (!src.isFile() || isPrivateData(src)) continue;
+                    if (!src.isFile()) continue;
                     File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
-                    try { copyFileChecked(src, out); } finally { out.close(); }
+                    try { copyFile(src, out); } finally { out.close(); }
                     uris.add(ShareProvider.uriFor(copy));
                 }
                 if (uris.isEmpty()) return "Error: nothing to send";
@@ -10665,14 +10435,24 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String deleteBackup(String ref) {
             try {
-                boolean ok;
+                File backupDir = new File(getExternalFilesDir(null), "ADB App Manager/Backups");
                 JSONArray index = backupIndex();
-                // only a backup this app listed can be deleted from here, not any file the app can reach
-                java.util.List<String> listedRefs = new java.util.ArrayList<String>();
-                for (int i = 0; i < index.length(); i++) listedRefs.add(index.getJSONObject(i).optString("ref"));
-                if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
-                if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
-                else ok = new File(ref).delete();
+                java.util.HashSet<String> known = new java.util.HashSet<String>();
+                for (int i = 0; i < index.length(); i++) {
+                    JSONObject item = index.optJSONObject(i);
+                    if (item != null) {
+                        String r = item.optString("ref", "");
+                        String p = item.optString("path", "");
+                        if (!r.isEmpty()) known.add(r);
+                        if (!p.isEmpty()) known.add(p);
+                    }
+                }
+                if (!StoragePathGuard.isSafeBackupRef(ref, backupDir, known)) {
+                    return "Error: invalid or unauthorized backup path";
+                }
+                boolean ok;
+                if (ref != null && ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
+                else ok = ref != null && new File(ref).delete();
                 JSONArray keep = new JSONArray();
                 for (int i = 0; i < index.length(); i++) {
                     if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
@@ -10708,12 +10488,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanFonts() {
             runFontScan();
-        }
-
-        /** Stops the font search that is running (the page left Settings). It stops at its next file and answers window.onFontScan({status:"cancelled"}); a search started later is not touched. */
-        @JavascriptInterface
-        public void cancelFontScan() {
-            fontScanCancelledUpTo.set(fontScanSeq.get());
         }
 
         /** Lets the user choose a small text file (up to 1 MB). Answer: window.onTextFilePicked({tag, name, text} or {tag, error}). */
@@ -10924,13 +10698,35 @@ public class MainActivity extends Activity {
         /** Makes the font that was looked at the one in use. Answer: the font's details {ok, family, style, name, kind, variable, size}, or {ok:false, error}. */
         @JavascriptInterface
         public String fontApply() {
-            return fontStore().apply();
+            JSONObject res = new JSONObject();
+            try {
+                synchronized (fontLock) {
+                    File dir = fontDir();
+                    File p = new File(dir, "preview.bin"), pm = new File(dir, "preview.json"), c = new File(dir, "current.bin"), cm = new File(dir, "current.json");
+                    if (!p.isFile() || !pm.isFile()) throw new IllegalStateException("There is no font to use.");
+                    if (!p.renameTo(c) || !pm.renameTo(cm)) throw new IllegalStateException("The font could not be stored.");
+                    res = new JSONObject(readTextFile(cm));
+                }
+            } catch (Exception e) {
+                try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /** Back to the system font: removes the stored font (and the one that was being looked at). */
         @JavascriptInterface
         public String fontClear() {
-            return fontStore().clear();
+            JSONObject res = new JSONObject();
+            try {
+                synchronized (fontLock) {
+                    File dir = fontDir();
+                    for (String n : new String[]{"preview.bin", "preview.json", "preview.bin.part", "preview.json.part", "current.bin", "current.json"}) new File(dir, n).delete();
+                }
+                res.put("ok", true);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /**
@@ -12414,7 +12210,7 @@ public class MainActivity extends Activity {
                 }
                 File f = new File(path);
                 if (f.isFile() && f.canRead()) {
-                    InputStream in = openUnlessPrivate(f);
+                    java.io.FileInputStream in = new java.io.FileInputStream(f);
                     try {
                         java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                         byte[] buf = new byte[65536];
@@ -12488,7 +12284,6 @@ public class MainActivity extends Activity {
                         if (roots.isEmpty() && safRoots.isEmpty()) throw new IOException("Choose where to search");
                         final FileSearch.Limits lim = new FileSearch.Limits();
                         lim.deadlineMs = t0 + 90000;
-                        lim.skip = searchSkip();                             // the app's own private data is neither listed nor read for content
                         lim.cancelled = searchCancelEarly;                  // a Cancel that came before the walk was set up still counts
                         searchLimits = lim;
                         res.put("problems", new JSONArray(q.problems));
@@ -12684,7 +12479,7 @@ public class MainActivity extends Activity {
                     long len = f.length();
                     if (len > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", len); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
                     data = new byte[(int) len];
-                    java.io.DataInputStream in = new java.io.DataInputStream(openUnlessPrivate(f));
+                    java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
                     try { in.readFully(data); } finally { in.close(); }
                     res.put("mtime", f.lastModified());
                     res.put("writable", f.canWrite() || (f.getParentFile() != null && f.getParentFile().canWrite()));
@@ -12724,7 +12519,6 @@ public class MainActivity extends Activity {
                 path = fmCanonicalPath(path);
                 if (path.startsWith("content://")) return fmWriteTextSaf(path, text, expectMtime);
                 if (fmProtectedPath(path)) { res.put("ok", false); res.put("error", "System location: not touched"); return res.toString(); }
-                if (fmPrivate(path)) { res.put("ok", false); res.put("error", PRIVATE_WHY); return res.toString(); }
                 byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
                 File f = new File(path);
@@ -12762,7 +12556,7 @@ public class MainActivity extends Activity {
                 long len = f.length();
                 if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
                 byte[] data = new byte[(int) len];
-                java.io.DataInputStream in = new java.io.DataInputStream(openUnlessPrivate(f));
+                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
                 try { in.readFully(data); } finally { in.close(); }
                 return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
             } catch (Throwable t) { return ""; }
@@ -12836,7 +12630,6 @@ public class MainActivity extends Activity {
                 File f = new File(path);
                 String kind = ThumbCache.kindOf(f.getName());
                 if (kind.isEmpty() || !f.isFile() || !f.canRead() || f.length() <= 0 || (kind.equals("image") && f.length() > 80L * 1024 * 1024)) return null;
-                if (isPrivateData(f)) return null;
                 File cached = new File(thumbDir(), ThumbCache.key(path, f.lastModified(), f.length(), px) + ".jpg");
                 if (!cached.isFile()) {
                     android.graphics.Bitmap bm = null;
@@ -12882,7 +12675,7 @@ public class MainActivity extends Activity {
                     try {
                         String p = fmCanonicalPath(path);
                         File f = new File(p);
-                        if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024 && !isPrivateData(f)) {
+                        if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024) {
                             int lim = Math.max(256, Math.min(2048, maxPx));
                             android.graphics.Bitmap bm = fmDecodeImage(p, lim);
                             if (bm != null) {
@@ -12912,7 +12705,6 @@ public class MainActivity extends Activity {
                         File f = new File(fmCanonicalPath(path));
                         if (!f.isFile() || !f.canRead()) throw new IOException("The app cannot read this file.");
                         pfd = android.os.ParcelFileDescriptor.open(f, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
-                        checkOpenedNotPrivate(pfd);
                         pr = new android.graphics.pdf.PdfRenderer(pfd);
                         int n = pr.getPageCount();
                         int pg = Math.max(0, Math.min(n - 1, page));
@@ -12968,11 +12760,10 @@ public class MainActivity extends Activity {
                     try {
                         File src = new File(fmCanonicalPath(path));
                         if (!src.isFile() || !src.canRead()) throw new IOException("The app cannot read this file. Grant All-files access for storage.");
-                        if (isPrivateData(src)) throw new IOException("This file is part of this app's own private data and is not handed to other apps.");
                         if (src.length() > 400L * 1024 * 1024) throw new IOException("This file is too big to hand over from here (over 400 MB).");
                         File copy = ShareProvider.newShareFile(MainActivity.this, src.getName());
                         java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
-                        try { copyFileChecked(src, out); } finally { out.close(); }
+                        try { copyFile(src, out); } finally { out.close(); }
                         final Uri uri = ShareProvider.uriFor(copy);
                         final String mime = mimeHint != null && !mimeHint.isEmpty() ? mimeHint : fmMime(src.getName());
                         runOnUiThread(new Runnable() {
@@ -13278,8 +13069,6 @@ public class MainActivity extends Activity {
                 }
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
-                // nothing is copied out of, moved, removed from or written into the app's own private data from here
-                if (fmPrivate(a) || ((("cp".equals(op) || "mv".equals(op)) && b != null && !b.isEmpty() && fmPrivate(b)))) { res.put("ok", false); res.put("output", PRIVATE_WHY); return res.toString(); }
                 // what the app can do with its own file access needs no working mode
                 String direct = fmOpDirect(op, a, b);
                 if (direct != null) { res.put("ok", direct.isEmpty()); res.put("output", direct.isEmpty() ? "OK" : direct); if (direct.isEmpty() || !direct.startsWith("?")) return res.toString(); }
@@ -13393,7 +13182,6 @@ public class MainActivity extends Activity {
                         List<String> todo = new ArrayList<String>();
                         for (String q : paths) {
                             if (fmProtectedPath(q)) failed.put(new JSONObject().put("p", q).put("error", "System location: not touched"));
-                            else if (fmPrivate(q) || (!"rm".equals(op) && fmPrivate(dest))) failed.put(new JSONObject().put("p", q).put("error", PRIVATE_WHY));
                             else if (!"rm".equals(op) && (dest.equals(q) || dest.startsWith(q + "/"))) failed.put(new JSONObject().put("p", q).put("error", "Can't put a folder inside itself"));
                             else todo.add(q);
                         }
@@ -13549,7 +13337,6 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
-                if (fmPrivate(path)) { res.put("ok", false); res.put("error", PRIVATE_WHY); return res.toString(); }
                 try {
                     File f = new File(path);
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
@@ -13813,7 +13600,6 @@ public class MainActivity extends Activity {
                         ZipTool.Archive a = archiveFor(path, false);
                         String dest = fmCanonicalPath(destDir == null || destDir.trim().isEmpty() ? "/storage/emulated/0/Download" : destDir.trim());
                         File dir = new File(dest);
-                        if (fmPrivate(dest)) throw new IOException(PRIVATE_WHY);                     // nothing is unpacked into the app's own private data
                         String name = entry == null ? "" : entry;
                         boolean tree = name.isEmpty() || name.endsWith("/");
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
@@ -14128,7 +13914,6 @@ public class MainActivity extends Activity {
                         if (!"zip".equals(format) && !ArchiveIo.supportsCreate(format)) throw new IOException("This format isn't available in this build yet. Use Zip for now.");
                         String name = opts.optString("name");
                         File dir = new File(fmCanonicalPath(opts.optString("dir")));
-                        if (fmPrivate(dir.getPath())) throw new IOException(PRIVATE_WHY);
                         int level = opts.optInt("level", 6);
                         boolean replace = "replace".equals(opts.optString("policy"));
                         String password = opts.optString("password", "");
@@ -14144,7 +13929,6 @@ public class MainActivity extends Activity {
                         long totalBytes = 0;
                         for (int i = 0; i < itemsArr.length(); i++) {
                             File f = new File(fmCanonicalPath(itemsArr.getJSONObject(i).optString("p")));
-                            if (isPrivateData(f)) throw new IOException(PRIVATE_WHY);
                             totalBytes += czCollect(srcs, f, f.getName(), seen, problems, fileCount);
                         }
                         if (fileCount[0] == 0) throw new IOException("Nothing to compress");
@@ -15038,12 +14822,23 @@ public class MainActivity extends Activity {
                 if (ref != null && ref.startsWith("content://")) {
                     uri = Uri.parse(ref);
                 } else {
+                    java.util.List<File> allowed = new java.util.ArrayList<File>();
+                    File ext = getExternalFilesDir(null);
+                    if (ext != null) allowed.add(ext);
+                    File cache = getCacheDir();
+                    if (cache != null) allowed.add(cache);
+                    try {
+                        File dl = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
+                        if (dl != null) allowed.add(dl);
+                    } catch (Exception ignored) {}
+                    if (!StoragePathGuard.isSafeShareFile(ref, allowed)) {
+                        return "Error: path not allowed for sharing";
+                    }
                     File src = new File(ref);
-                    if (isPrivateData(src)) return "Error: that file is part of this app's own private data and is not shared.";
                     File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try {
-                        copyFileChecked(src, out);
+                        copyFile(src, out);
                     } finally {
                         out.close();
                     }
@@ -15265,8 +15060,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
-        dismissAllInstallConfirms();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.

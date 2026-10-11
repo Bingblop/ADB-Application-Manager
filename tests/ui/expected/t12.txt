@@ -1,8 +1,0 @@
-chips (Recommended): All brands (61) | Samsung (38) | Google (11) | Android (3) | Meta (3) | Microsoft (3) | T-Mobile (3)
-first brand chip is device: true
-Samsung only: 38 shown • 0 selected | brands in rows: SAMSUNG
-chips (all levels): All brands (104) | Samsung (60) | Google (19) | Android (15)
-Samsung all levels: 60 shown • 0 selected
-Google: 19 shown • 0 selected
-search "meta" (brand-aware): 3 shown • 0 selected
-errors: []
