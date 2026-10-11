@@ -54,6 +54,16 @@ public class BundleApprovalsTest {
     return f;
   }
 
+  /** A file that counts how often FileInputStream asks it for its path, i.e. how often it is opened for reading. */
+  static final class Counting extends File {
+    int reads;
+    Counting(File f) { super(f.getPath()); }
+    @Override public String getPath() {
+      for (StackTraceElement e : new Throwable().getStackTrace()) if (e.getClassName().equals("java.io.FileInputStream")) { reads++; break; }
+      return super.getPath();
+    }
+  }
+
   static BundleApprovals.Source src(String id, File f) {
     BundleApprovals.Source s = new BundleApprovals.Source();
     s.id = id; s.file = f; s.name = "Some Patches"; s.version = "1.2.3"; s.url = "https://github.com/own/repo"; s.repo = "own/repo"; s.fileHost = "objects.githubusercontent.com";
@@ -93,6 +103,7 @@ public class BundleApprovalsTest {
     BundleApprovals.Source s = src("gh-own-repo", null);
     s.sum = "matched";
     String sha = "0123456789abcdef" + "0".repeat(48);
+    s.factSha = sha;
     String m = BundleApprovals.message(s, sha, 3 * 1024 * 1024 + 512 * 1024, null);
     String[] lines = m.split("\n");
     is("the question has a title that names what is asked", BundleApprovals.title().contains("patch source"));
@@ -110,10 +121,20 @@ public class BundleApprovalsTest {
     s.sum = "none";
     String nm = BundleApprovals.message(s, sha, 100, null);
     is("no published checksum is said, in place of a match", nm.contains("The source published no checksum") && !nm.contains("matches the checksum") && nm.contains("File size: 100 bytes\n"));
+    // the host and the checksum status belong to the bytes they were recorded for: for any other file they are shown as not known
+    s.sum = "matched";
+    s.factSha = "f".repeat(64);
+    String other = BundleApprovals.message(s, sha, 100, null);
+    is("facts recorded for another file are not shown for this one: host and checksum are 'unknown'", other.contains("File downloaded from: unknown\n") && !other.contains("objects.githubusercontent.com") && !other.contains("matches the checksum") && other.contains("no record of whether the source published a checksum for this exact file"));
+    s.factSha = "";
+    String nofs = BundleApprovals.message(s, sha, 100, null);
+    is("a record that kept no hash of its file shows nothing it recorded", nofs.contains("File downloaded from: unknown\n") && !nofs.contains("matches the checksum"));
+    s.factSha = sha;
     s.sum = "";
     String um = BundleApprovals.message(s, sha, 100, null);
-    is("a source whose checksum history is not known says that, and does not say none was published", um.contains("did not record whether the source published a checksum") && !um.contains("published no checksum") && !um.contains("matches the checksum"));
+    is("a source whose checksum history is not known says that, and does not say none was published", um.contains("no record of whether the source published a checksum") && !um.contains("published no checksum") && !um.contains("matches the checksum"));
     is("... and so does a Source made from facts without the field", !BundleApprovals.message(BundleApprovals.Source.of(new JSONObject(), null), sha, 100, null).contains("published no checksum"));
+    s.sum = "none";
     String changed = BundleApprovals.message(s, sha, 100, "f".repeat(64));
     is("a changed file says it differs from the one approved before", changed.contains("The file is different from the one you approved before.") && !changed.contains("have not approved"));
     String same = BundleApprovals.message(s, sha, 100, sha);
@@ -128,7 +149,7 @@ public class BundleApprovalsTest {
 
     // look-alike host: shown in its ASCII (xn--) form, for the address and for the host of the file
     BundleApprovals.Source h = src("url-x", null);
-    h.url = "https://g\u0456thub.com/o/r/m.json"; h.fileHost = InstallConfirm.hostOf("https://\u0430pple.com/x");
+    h.url = "https://g\u0456thub.com/o/r/m.json"; h.fileHost = InstallConfirm.hostOf("https://\u0430pple.com/x"); h.factSha = sha;
     String hm = BundleApprovals.message(h, sha, 1, null);
     is("a non-ASCII address is shown as xn-- and never as the look-alike", hm.contains("Source address: xn--") && !hm.contains("\u0456") && hm.contains("File downloaded from: xn--pple-43d.com"));
     is("a stored host that is already ASCII is shown as it is", hm.contains("File downloaded from: xn--pple-43d.com\n"));
@@ -158,9 +179,9 @@ public class BundleApprovalsTest {
     is("a long version is cut to 40", lgm.contains("Version: \u201c" + "V".repeat(40) + "\u201d\n"));
     is("a long repository is cut to 120", lgm.contains("Repository: \u201c" + "R".repeat(120) + "\u201d\n"));
     BundleApprovals.Source lh = src("gh-host", null);
-    lh.fileHost = ("x".repeat(60) + ".").repeat(6) + "github.com.evil.example";
+    lh.fileHost = ("x".repeat(60) + ".").repeat(6) + "github.com.evil.example"; lh.factSha = sha;
     is("a very long host keeps its real ending (read from the end)", BundleApprovals.message(lh, sha, 1, null).split("\n")[2].endsWith(".github.com.evil.example"));
-    is("sizes: bytes, KB and MB", BundleApprovals.sizeText(0).equals("0 bytes") && BundleApprovals.sizeText(1023).equals("1023 bytes") && BundleApprovals.sizeText(1536).equals("1.5 KB (1536 bytes)") && BundleApprovals.sizeText(-1).equals("unknown"));
+    is("sizes: bytes, KB and MB", BundleApprovals.sizeText(0).equals("0 bytes") && BundleApprovals.sizeText(1023).equals("1023 bytes") && BundleApprovals.sizeText(1).equals("1 byte") && BundleApprovals.sizeText(2).equals("2 bytes") && BundleApprovals.sizeText(1536).equals("1.5 KB (1536 bytes)") && BundleApprovals.sizeText(-1).equals("unknown"));
     BundleApprovals.Source empty = new BundleApprovals.Source();
     String om = BundleApprovals.message(empty, null, 0, null);
     is("missing values are harmless", om.contains("Source: unknown") && om.contains("Source address: unknown") && om.contains("fingerprint (SHA-256, first 12 characters): unknown") && !om.contains("Name:"));
@@ -372,6 +393,24 @@ public class BundleApprovalsTest {
     is("an asker that answers null is a No", new BundleApprovals(new File(d, "ap5d.json")).requireAll(two, nothing).size() == 2);
     is("the waiting time is the two minutes of the install question", BundleApprovals.ANSWER_WAIT_SECONDS == 120);
 
+    // after a timeout the sources that cannot match an approval are not even read (a bundle can be GBs); an approved one still is, and a No does not stop the reading
+    final BundleApprovals ap10 = new BundleApprovals(new File(d, "ap10.json"));
+    Counting slowX = new Counting(file("x.mpp", "XXX")), slowY = new Counting(file("y.mpp", "YYY")), okZ = new Counting(file("z.mpp", "ZZZ"));
+    ap10.approve("gh-z", BundleApprovals.sha256(okZ));
+    okZ.reads = 0;
+    Fake silent2 = new Fake(); silent2.answer = TIMEOUT;
+    List<BundleApprovals.Source> trio = new ArrayList<BundleApprovals.Source>();
+    trio.add(src("gh-x", slowX)); trio.add(src("gh-y", slowY)); trio.add(src("gh-z", okZ));
+    Map<String, String> rt = ap10.requireAll(trio, silent2);
+    is("after a timeout the next unapproved source is refused without reading its file", rt.containsKey("gh-x") && rt.containsKey("gh-y") && silent2.texts.size() == 1 && slowX.reads > 0 && slowY.reads == 0, "x=" + slowX.reads + " y=" + slowY.reads);
+    is("... but a source that was approved before is still checked and allowed", !rt.containsKey("gh-z") && okZ.reads > 0);
+    Counting slowY2 = new Counting(file("y2.mpp", "YYY2"));
+    Fake denyAll = new Fake(); denyAll.answer = DENY;
+    List<BundleApprovals.Source> duo = new ArrayList<BundleApprovals.Source>();
+    duo.add(src("gh-x2", file("x2.mpp", "X2"))); duo.add(src("gh-y2", slowY2));
+    new BundleApprovals(new File(d, "ap11.json")).requireAll(duo, denyAll);
+    is("(control) after a No the next source is read and asked about, so the counter above counts what it should", slowY2.reads > 0 && denyAll.texts.size() == 2);
+
     // an asker that throws, a missing file, one question on screen at a time
     BundleApprovals.Asker boom = new BundleApprovals.Asker() { public BundleApprovals.Answer ask(String ti, String te) { throw new IllegalStateException("screen is gone"); } };
     is("an asker that fails is a No", new BundleApprovals(new File(d, "ap6.json")).require(src("gh-b", fb), boom) != null);
@@ -459,6 +498,18 @@ public class BundleApprovalsTest {
     Files.write(live.toPath(), big);
     File fresh = ap.approvedCopy(src("gh-a", live), out);
     is("a stale file of the same name is replaced by the copy", fresh != null && java.util.Arrays.equals(Files.readAllBytes(fresh.toPath()), big));
+    // descriptors: a copy that fails leaves nothing open (as non-root a folder that cannot be written is the way to make the destination fail after the source is open)
+    File ro = new File(d, "readonly"); ro.mkdirs();
+    boolean canBlock = ro.setWritable(false, false) && !ro.canWrite();
+    java.io.File fds = new File("/proc/self/fd");
+    if (canBlock && fds.isDirectory()) {
+      int before = fds.list().length;
+      int failed = 0;
+      for (int i = 0; i < 300; i++) { try { BundleApprovals.copyAndHash(live, new File(ro, "c" + i + ".mpp")); } catch (IOException e) { failed++; } }
+      int after = fds.list().length;
+      is("a destination that cannot be created fails every time and leaves no descriptor open", failed == 300 && after <= before + 3, before + " -> " + after);
+    } else System.out.println("SKIP descriptor check: this user can write to a read-only folder (root) or /proc/self/fd is missing; the source scan covers it");
+    ro.setWritable(true, false);
     // unreadable: a folder where the file should be
     is("a copy that cannot be made is refused", ap.approvedCopy(src("gh-a", live), new File(live, "inside-a-file")) == null);
   }
@@ -485,6 +536,7 @@ public class BundleApprovalsTest {
     st.setEnabled(MorpheStore.BUILTIN_ID, false);
     is("the official source, off, hands out nothing either (it has no file here)", st.bundleFile(MorpheStore.BUILTIN_ID) == null);
     JSONObject facts = st.bundleFacts(id);
+    is("a one-byte file is '1 byte'", BundleApprovals.sizeText(1).equals("1 byte"));
     is("the store's facts for a local file: kind local, no host, no checksum, not built-in", "local".equals(facts.optString("kind")) && facts.optString("fileHost").isEmpty() && facts.optString("sum").isEmpty() && !facts.optBoolean("builtIn") && facts.optBoolean("enabled"));
     is("the store's facts for the official source say built-in", st.bundleFacts(MorpheStore.BUILTIN_ID).optBoolean("builtIn") && st.bundleFacts("nope") == null);
     BundleApprovals.Source fromFacts = BundleApprovals.Source.of(facts, st.bundleFile(id));
@@ -516,8 +568,12 @@ public class BundleApprovalsTest {
       JSONObject b = s2.addRemote("http://127.0.0.1:" + port + "/m-nosum.json", null, false, null);
       JSONObject f2 = s2.bundleFacts(b.getString("id"));
       is("a download with no published checksum records none", "127.0.0.1".equals(f2.optString("fileHost")) && "none".equals(f2.optString("sum")), f2.toString());
-      is("... and the text of the question says none was published", BundleApprovals.message(BundleApprovals.Source.of(f2, null), "a".repeat(64), 10, null).contains("The source published no checksum"));
-      is("... and for a matched one that it matched", BundleApprovals.message(BundleApprovals.Source.of(f, null), "a".repeat(64), 10, null).contains("matches the checksum the source published"));
+      is("... and the text of the question says none was published", BundleApprovals.message(BundleApprovals.Source.of(f2, null), hash, 10, null).contains("The source published no checksum"));
+      is("... and for a matched one that it matched", BundleApprovals.message(BundleApprovals.Source.of(f, null), hash, 10, null).contains("matches the checksum the source published"));
+      is("the facts of a download carry the hash of the file they describe", hash.equals(f.optString("factSha")) && hash.equals(f2.optString("factSha")));
+      // the bundle on disk is not the file the facts were recorded for (an update that did not finish recording, a swapped file): host and checksum are not claimed
+      String swapped = BundleApprovals.message(BundleApprovals.Source.of(f, null), "b".repeat(64), 10, null);
+      is("facts recorded for an earlier file are not shown for a different one", swapped.contains("File downloaded from: unknown") && !swapped.contains("localhost") && !swapped.contains("matches the checksum") && swapped.contains("no record of whether"));
       MorpheStore again = new MorpheStore(b2);
       is("both survive a restart", "localhost".equals(again.bundleFacts(a.getString("id")).optString("fileHost")) && "matched".equals(again.bundleFacts(a.getString("id")).optString("sum")) && "none".equals(again.bundleFacts(b.getString("id")).optString("sum")));
       is("the page's view of a source is unchanged by this (no new keys)", !again.get(a.getString("id")).has("fileHost") && !again.get(a.getString("id")).has("sum"));
@@ -525,16 +581,17 @@ public class BundleApprovalsTest {
       File sj = new File(b2, "sources.json");
       JSONObject root = new JSONObject(new String(Files.readAllBytes(sj.toPath()), StandardCharsets.UTF_8));
       org.json.JSONArray arr = root.getJSONArray("sources");
-      for (int i = 0; i < arr.length(); i++) { arr.getJSONObject(i).remove("sum"); arr.getJSONObject(i).remove("sumMatched"); arr.getJSONObject(i).remove("fileHost"); }
+      for (int i = 0; i < arr.length(); i++) { arr.getJSONObject(i).remove("sum"); arr.getJSONObject(i).remove("sumMatched"); arr.getJSONObject(i).remove("fileHost"); arr.getJSONObject(i).remove("factSha"); }
       Files.write(sj.toPath(), root.toString().getBytes(StandardCharsets.UTF_8));
       MorpheStore migrated = new MorpheStore(b2);
       JSONObject mf = migrated.bundleFacts(a.getString("id"));
-      is("a record from before the field existed reads as unknown, not as none", mf != null && mf.optString("sum").isEmpty() && mf.optString("fileHost").isEmpty());
-      String mt = BundleApprovals.message(BundleApprovals.Source.of(mf, null), "a".repeat(64), 10, null);
-      is("... and the question says the app did not record it (no false 'published no checksum')", mt.contains("did not record whether the source published a checksum") && !mt.contains("published no checksum"));
+      is("a record from before the field existed reads as unknown, not as none", mf != null && mf.optString("sum").isEmpty() && mf.optString("fileHost").isEmpty() && mf.optString("factSha").isEmpty());
+      String mt = BundleApprovals.message(BundleApprovals.Source.of(mf, null), hash, 10, null);
+      is("... and the question says the app did not record it (no false 'published no checksum')", mt.contains("no record of whether the source published a checksum") && !mt.contains("published no checksum"));
+      is("... and shows no download host it did not record", mt.contains("File downloaded from: unknown"));
       new File(b2, "bundles/" + a.getString("id") + "/bundle.mpp").delete();            // an update downloads when the file is gone
       migrated.update(a.getString("id"), null);
-      is("a new download over such a record records what was seen now", "matched".equals(migrated.bundleFacts(a.getString("id")).optString("sum")));
+      is("a new download over such a record records what was seen now", "matched".equals(migrated.bundleFacts(a.getString("id")).optString("sum")) && hash.equals(migrated.bundleFacts(a.getString("id")).optString("factSha")));
     } finally {
       srv.stop(0);
     }
@@ -597,6 +654,9 @@ public class BundleApprovalsTest {
     is("the hash that is compared with the approval is the one of the bytes copied, never of the live file read again", ac != null && ac.contains("isApproved(s.id, copyAndHash(s.file, copy))") && !ac.contains("sha256(s.file)") && ac.contains("copy.delete()"));
     String cah = body(ba, "static String copyAndHash(");
     is("copy and hash are one pass over the same bytes", cah != null && cah.contains("md.update(buf, 0, n); out.write(buf, 0, n);"));
+    is("both streams of the copy are closed by try-with-resources, whichever fails to open", cah != null && cah.contains("try (InputStream in = new FileInputStream(from);") && cah.contains("java.io.OutputStream out = Files.newOutputStream(to.toPath()") && !cah.contains("finally"));
+    String rq = body(ba, "private String require(Source s, Asker asker, boolean[] unanswered)");
+    is("the call's timeout flag is checked before the next file is hashed", rq != null && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") >= 0 && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") < rq.indexOf("sha256(s.file)"));
     String go = body(ba, "synchronized boolean grandfatherOnce(");
     is("the marker is written before anything is granted", go != null && go.contains("if (write(next, true)) approved.putAll(next);") && !go.contains("approved.put("));
     String ref = body(br, "private Map<String, String> refuseUnapproved(");

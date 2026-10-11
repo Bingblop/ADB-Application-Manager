@@ -56,6 +56,8 @@ final class BundleApprovals {
         boolean builtIn;
         /** "matched", "none" (the app saw that no checksum was published) or anything else: not known (a source recorded before the app kept this). */
         String sum = "";
+        /** The SHA-256 of the file that fileHost and sum describe (the file as the app downloaded it); "" for a record that did not keep it. They are shown only when it is the file being approved. */
+        String factSha = "";
         File file;
 
         /** From MorpheStore.bundleFacts(id) and the bundle file. */
@@ -72,6 +74,7 @@ final class BundleApprovals {
             s.fileHost = facts.optString("fileHost");
             s.builtIn = facts.optBoolean("builtIn");
             s.sum = facts.optString("sum");
+            s.factSha = facts.optString("factSha");
             return s;
         }
 
@@ -231,6 +234,7 @@ final class BundleApprovals {
     private String require(Source s, Asker asker, boolean[] unanswered) {
         if (s.file == null || !s.file.isFile()) return "Not allowed: the bundle file is not there";
         if (s.builtIn) return null;
+        if (unanswered[0] && approvedHash(s.id) == null) return NOT_ALLOWED;   // nobody answered in this call: a file that cannot match any approval is not even read (it may be GBs)
         String sha;
         try { sha = sha256(s.file); } catch (IOException e) { return "Not allowed: the bundle file could not be read"; }
         synchronized (askLock) {
@@ -273,9 +277,8 @@ final class BundleApprovals {
         File dir = to.getAbsoluteFile().getParentFile();
         if (dir != null) dir.mkdirs();
         Files.deleteIfExists(to.toPath());
-        InputStream in = new FileInputStream(from);
-        java.io.OutputStream out = Files.newOutputStream(to.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE);
-        try {
+        try (InputStream in = new FileInputStream(from);
+             java.io.OutputStream out = Files.newOutputStream(to.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] buf = new byte[65536];
             int n;
@@ -283,9 +286,6 @@ final class BundleApprovals {
             return hex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
-        } finally {
-            try { in.close(); } catch (IOException ignored) {}
-            out.close();
         }
     }
 
@@ -303,21 +303,22 @@ final class BundleApprovals {
      */
     static String message(Source s, String sha256, long size, String previous) {
         StringBuilder sb = new StringBuilder();
+        boolean bound = !s.factSha.isEmpty() && s.factSha.equals(sha256);        // the host and the checksum status were recorded for these very bytes, not for an earlier file of the source
         String id = InstallConfirm.clean(s.id, 80);
         sb.append("Source: ").append(id.isEmpty() ? "unknown" : id).append(s.local() ? " (a file from this phone)" : "").append("\n");
         String addr = s.local() ? "" : InstallConfirm.hostText(InstallConfirm.hostOf(s.url));
         sb.append("Source address: ").append(s.local() ? "none (a file from this phone)" : addr.isEmpty() ? "unknown" : addr).append("\n");
         if (!s.local()) {
-            String from = InstallConfirm.hostText(s.fileHost);
+            String from = bound ? InstallConfirm.hostText(s.fileHost) : "";
             sb.append("File downloaded from: ").append(from.isEmpty() ? "unknown" : from).append("\n");
         }
         sb.append("File size: ").append(sizeText(size)).append("\n");
         String fp = sha256 == null || sha256.length() < 12 ? "" : sha256.substring(0, 12).toLowerCase(Locale.ROOT);
         sb.append("File fingerprint (SHA-256, first 12 characters): ").append(fp.isEmpty() ? "unknown" : fp).append("\n");
         if (s.local()) sb.append("A file from this phone has no published checksum, so it could not be compared with one.\n");
-        else if ("matched".equals(s.sum)) sb.append("The file matches the checksum the source published (it does not show who made the file).\n");
-        else if ("none".equals(s.sum)) sb.append("The source published no checksum, so the file could not be compared with one.\n");
-        else sb.append("The app did not record whether the source published a checksum for this file (it was downloaded before the app kept that), so nothing is known about one.\n");
+        else if (bound && "matched".equals(s.sum)) sb.append("The file matches the checksum the source published (it does not show who made the file).\n");
+        else if (bound && "none".equals(s.sum)) sb.append("The source published no checksum, so the file could not be compared with one.\n");
+        else sb.append("The app has no record of whether the source published a checksum for this exact file, so nothing is known about one.\n");
         if (previous == null) sb.append("You have not approved this source before.\n");
         else if (!previous.equals(sha256)) sb.append("The file is different from the one you approved before.\n");
         sb.append("\nWritten by the source (not checked):\n");
@@ -334,7 +335,7 @@ final class BundleApprovals {
     /** "512 bytes", "3.4 KB (3482 bytes)", "12.0 MB (12582912 bytes)". */
     static String sizeText(long b) {
         if (b < 0) return "unknown";
-        if (b < 1024) return b + " bytes";
+        if (b < 1024) return b == 1 ? "1 byte" : b + " bytes";
         if (b < 1024L * 1024) return String.format(Locale.ROOT, "%.1f KB (%d bytes)", b / 1024.0, b);
         return String.format(Locale.ROOT, "%.1f MB (%d bytes)", b / (1024.0 * 1024.0), b);
     }

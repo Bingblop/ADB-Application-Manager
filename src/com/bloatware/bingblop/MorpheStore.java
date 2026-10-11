@@ -565,13 +565,15 @@ public final class MorpheStore {
         String fileHost = "";
         /** "matched", "none" (this version of the app saw that the source published no checksum), or "" (unknown: a record written before this was recorded). */
         String sum = "";
+        /** The SHA-256 of the file that fileHost and sum were recorded for: they describe those bytes only, so the question shows them only when the file now on disk has this hash. "" when not kept. */
+        String factSha = "";
         JSONObject meta;
 
         Rec copy() {
             Rec c = new Rec();
             c.id = id; c.name = name; c.kind = kind; c.host = host; c.repo = repo; c.url = url; c.branch = branch; c.version = version;
             c.description = description; c.createdAt = createdAt; c.error = error; c.updatedAt = updatedAt; c.patchCount = patchCount;
-            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta; c.fileHost = fileHost; c.sum = sum;
+            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta; c.fileHost = fileHost; c.sum = sum; c.factSha = factSha;
             return c;
         }
 
@@ -603,6 +605,7 @@ public final class MorpheStore {
             put(o, "error", error);
             put(o, "fileHost", fileHost);
             put(o, "sum", sum);
+            put(o, "factSha", factSha);
             if (meta != null) put(o, "meta", meta);
             return o;
         }
@@ -643,6 +646,8 @@ public final class MorpheStore {
             r.prerelease = o.optBoolean("prerelease", false);
             r.fileHost = cap(str(o, "fileHost"), 253);
             r.sum = SUM_MATCHED.equals(o.optString("sum")) ? SUM_MATCHED : SUM_NONE.equals(o.optString("sum")) ? SUM_NONE : SUM_UNKNOWN;   // a record from before this was recorded has no value: unknown, not "none"
+            String fs = str(o, "factSha");
+            r.factSha = fs.matches("[0-9a-f]{64}") ? fs : "";
             r.builtIn = BUILTIN_ID.equals(r.id);
             r.meta = o.optJSONObject("meta");
             return r;
@@ -736,7 +741,7 @@ public final class MorpheStore {
             Rec fixed = builtin();     // what the built-in source is cannot be changed from the file
             fixed.enabled = first.enabled; fixed.prerelease = first.prerelease; fixed.version = first.version; fixed.description = first.description;
             fixed.createdAt = first.createdAt; fixed.updatedAt = first.updatedAt; fixed.patchCount = first.patchCount; fixed.error = first.error;
-            fixed.meta = first.meta; fixed.branch = first.branch; fixed.fileHost = first.fileHost; fixed.sum = first.sum;
+            fixed.meta = first.meta; fixed.branch = first.branch; fixed.fileHost = first.fileHost; fixed.sum = first.sum; fixed.factSha = first.factSha;
             first = fixed;
         }
         loaded.add(0, first);
@@ -873,7 +878,7 @@ public final class MorpheStore {
 
     /**
      * What the app found out itself about the bundle on disk, for the question asked before it is loaded: {id, name, kind, url, repo, version,
-     * builtIn, enabled, fileHost, sum}, or null when there is no such source. name and version are written by the source.
+     * builtIn, enabled, fileHost, sum, factSha}, or null when there is no such source. name and version are written by the source.
      */
     public synchronized JSONObject bundleFacts(String id) {
         Rec r = find(id);
@@ -889,6 +894,7 @@ public final class MorpheStore {
         put(o, "enabled", r.enabled);
         put(o, "fileHost", r.fileHost);
         put(o, "sum", r.sum);
+        put(o, "factSha", r.factSha);
         return o;
     }
 
@@ -966,6 +972,7 @@ public final class MorpheStore {
         JSONObject meta;
         String fileHost = "";
         String sum = SUM_UNKNOWN;
+        String factSha = "";
     }
 
     private static Resolved fromMetadata(String text) {
@@ -1276,6 +1283,7 @@ public final class MorpheStore {
         rec.error = "";
         rec.fileHost = st.fileHost;
         rec.sum = st.sum;
+        rec.factSha = st.factSha;
     }
 
     /** Adds a bundle file from the phone. The file name must end in .mpp. */
@@ -1349,12 +1357,14 @@ public final class MorpheStore {
                 if ("cancelled".equals(e.getMessage())) throw e;
                 throw new IOException("Download failed: " + why(e, res.downloadUrl), e);
             }
-            if (!res.sha256.isEmpty() && !res.sha256.equals(sha256Hex(staging))) {
+            String got = sha256Hex(staging);
+            if (!res.sha256.isEmpty() && !res.sha256.equals(got)) {
                 throw new IOException("The downloaded file does not match the checksum (sha256) the source publishes");
             }
             Staged st = new Staged();
             st.file = staging;
             st.fileHost = InstallConfirm.hostOf(from[0]);
+            st.factSha = got;
             st.sum = res.sha256.isEmpty() ? SUM_NONE : SUM_MATCHED;   // seen now: a published checksum that is there got here only by matching
             st.meta = readManifest(staging);
             checkBundle(st.meta);
