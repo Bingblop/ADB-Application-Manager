@@ -12800,26 +12800,28 @@ Type any command below (e.g. pm list packages -d)
         // A separate app, found in a GitHub release of this repository. The page asks the app three things (is it installed and what is
         // the newest test build, open it, download and install it) and sends no package, address or checksum: the app looks all of
         // that up itself. The install goes through the same download-and-install path (and the same confirmation) as every Store app.
-        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false;
+        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0;   // kbPendingAt: when the question in flight was asked (0 = none)
         function kbBridge() { return (window.AndroidBridge && window.AndroidBridge.kotlinBuildCheck) ? window.AndroidBridge : null; }
         function kbShow() {
             const card = document.getElementById('kotlinBuildCard');
             if (!card) return;
             card.style.display = kbBridge() ? '' : 'none';
             if (!kbBridge()) return;
-            if (!kb || Date.now() - kbAt > 5 * 60 * 1000) kbCheck(false); else kbRender();
+            if (!kb || Date.now() - kbAt > 5 * 60 * 1000) kbCheck(false); else kbRender();   // kbCheck does nothing while a question is in flight
         }
         function kbCheck(user) {
             const b = kbBridge();
             if (!b) return;
+            if (kbPendingAt && Date.now() - kbPendingAt < 90 * 1000) return;       // one question at a time (an answer that never came is given up after 90 s)
             if (user) haptic();
+            kbPendingAt = Date.now();
             document.getElementById('kbCheckBtn').disabled = true;
             if (!kb) { document.getElementById('kbStatus').innerText = 'Checking…'; }
             b.kotlinBuildCheck();
         }
         function onKotlinBuild(json) {
             let d; try { d = JSON.parse(json || '{}'); } catch (e) { d = { release: 'error', error: 'bad response' }; }
-            kb = d; kbAt = Date.now();
+            kb = d; kbAt = Date.now(); kbPendingAt = 0;
             document.getElementById('kbCheckBtn').disabled = false;
             kbRender();
         }

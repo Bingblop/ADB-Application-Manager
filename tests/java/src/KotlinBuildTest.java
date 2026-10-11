@@ -44,11 +44,12 @@ public class KotlinBuildTest {
     final java.util.Set<String> failing = new java.util.HashSet<String>();
     final List<String> asked = new ArrayList<String>();
     Exception releasesFail;
-    FakeHttp releases(String json) { bodies.put(KotlinBuild.RELEASES_API_URL, json.getBytes(StandardCharsets.UTF_8)); return this; }
+    FakeHttp releases(String json) { return page(1, json); }
+    FakeHttp page(int n, String json) { bodies.put(KotlinBuild.pageUrl(n), json.getBytes(StandardCharsets.UTF_8)); return this; }
     FakeHttp body(String url, String text) { bodies.put(url, text.getBytes(StandardCharsets.UTF_8)); return this; }
     public byte[] get(String url, int maxBytes) throws Exception {
       asked.add(url);
-      if (url.equals(KotlinBuild.RELEASES_API_URL) && releasesFail != null) throw releasesFail;
+      if (url.equals(KotlinBuild.pageUrl(1)) && releasesFail != null) throw releasesFail;
       if (failing.contains(url)) throw new IllegalStateException("HTTP 500");
       byte[] b = bodies.get(url);
       if (b == null) throw new IllegalStateException("not found (HTTP 404)");
@@ -72,6 +73,7 @@ public class KotlinBuildTest {
     checksums();
     card();
     versions();
+    pages();
     sources();
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
@@ -82,6 +84,7 @@ public class KotlinBuildTest {
     check("the lookups and downloads are https and this repository", KotlinBuild.RELEASES_API_URL.startsWith("https://api.github.com/repos/Bingblop/ADB-Application-Manager/releases")
         && KotlinBuild.RELEASES_PAGE_URL.equals("https://github.com/Bingblop/ADB-Application-Manager/releases")
         && KotlinBuild.DOWNLOAD_URL_PREFIX.equals("https://github.com/Bingblop/ADB-Application-Manager/releases/download/"));
+    check("the releases are read 100 to a page, at most 5 pages, as page=N of the same address", KotlinBuild.RELEASES_API_URL.endsWith("per_page=100") && KotlinBuild.PAGE_SIZE == 100 && KotlinBuild.MAX_PAGES == 5 && KotlinBuild.pageUrl(3).equals(KotlinBuild.RELEASES_API_URL + "&page=3") && KotlinBuild.pageUrl(1).startsWith("https://"));
     check("the tag prefix and the file pattern are set", KotlinBuild.TAG_PREFIX.equals("kotlin-") && KotlinBuild.ASSET_PATTERN.equals("ADB-Manager-Kotlin*.apk"));
     check("pre-releases are out unless the flag says otherwise", !KotlinBuild.ALLOW_PRERELEASE);
   }
@@ -195,10 +198,10 @@ public class KotlinBuildTest {
 
     // huge
     StringBuilder big = new StringBuilder("[");
-    for (int i = 0; i < 120000; i++) { if (i > 0) big.append(','); big.append("{\"tag_name\":\"v").append(i).append("\",\"assets\":[]}"); }
+    for (int i = 0; i < 200000; i++) { if (i > 0) big.append(','); big.append("{\"tag_name\":\"v").append(i).append("\",\"assets\":[]}"); }
     big.append("]");
     check("the test list is over the size limit", big.length() > KotlinBuild.MAX_JSON_BYTES);
-    check("a list over 2 MB is refused", bad(big.toString()));
+    check("a list over 4 MB is refused", bad(big.toString()));
     StringBuilder s3 = new StringBuilder("[\"");
     for (int i = 0; i < KotlinBuild.MAX_JSON_BYTES + 10; i++) s3.append('a');
     s3.append("\"]");
@@ -252,18 +255,27 @@ public class KotlinBuildTest {
     h = new FakeHttp().releases(list(withSums)).body(sumsUrl, H64.replace('0', '2') + " *other.apk\n" + H64.toUpperCase() + " *" + f + "\r\n");
     check("a binary-mode line ('*name'), CRLF and upper case are read (and given in lower case)", KotlinBuild.find(h, false).sha256.equals(H64));
     h = new FakeHttp().releases(list(withSums)).body(sumsUrl, H64 + "  other.apk\n");
-    check("a sums file that does not list the file: nothing is published for it (not another file's hash)", KotlinBuild.find(h, false).sha256.isEmpty());
+    check("a sums file that does not list the file stops the lookup (not another file's hash, and not 'no checksum')", noValid(h));
     h = new FakeHttp().releases(list(withSums)).body(sumsUrl, H64 + "  " + f + ".sig\n" + H64 + "  x" + f + "\n");
-    check("a name that only looks like it is not it", KotlinBuild.find(h, false).sha256.isEmpty());
+    check("a name that only looks like it is not it: the lookup stops", noValid(h));
     h = new FakeHttp().releases(list(withSums));
     h.failing.add(sumsUrl);
     String why = "";
     try { KotlinBuild.find(h, false); } catch (Exception e) { why = String.valueOf(e.getMessage()); }
     check("a checksum file that cannot be read stops the lookup in words (fail closed, not 'no checksum')", why.contains("SHA256SUMS.txt") && why.contains("cannot be verified"));
     h = new FakeHttp().releases(list(withSums)).body(sumsUrl, "not a checksum file at all\n\u0000\u0001");
-    check("a sums file of junk is no checksum", KotlinBuild.find(h, false).sha256.isEmpty());
+    check("a sums file of junk stops the lookup", noValid(h));
+    h = new FakeHttp().releases(list(withSums)).body(sumsUrl, "");
+    check("an empty sums file stops the lookup", noValid(h));
+    h = new FakeHttp().releases(list(withSums)).body(sumsUrl, "\n\n  \n");
+    check("a sums file of blank lines stops the lookup", noValid(h));
     h = new FakeHttp().releases(list(withSums)).body(sumsUrl, H64.substring(1) + "  " + f + "\n");
-    check("a 63-digit line is no checksum", KotlinBuild.find(h, false).sha256.isEmpty());
+    check("a 63-digit line is no checksum: the lookup stops", noValid(h));
+    h = new FakeHttp().releases(list(withSums)).body(sumsUrl, H64.replace('0', 'g') + "  " + f + "\n");
+    check("a non-hex line for the file stops the lookup", noValid(h));
+    String mess = "";
+    try { KotlinBuild.find(new FakeHttp().releases(list(withSums)).body(sumsUrl, ""), false); } catch (Exception e) { mess = String.valueOf(e.getMessage()); }
+    check("and says why, in words", mess.contains("SHA256SUMS.txt") && mess.contains("no valid SHA-256 for " + f) && mess.contains("cannot be verified"));
     byte[] bigSums = new byte[KotlinBuild.MAX_SUMS_BYTES + 1];
     java.util.Arrays.fill(bigSums, (byte) 'a');
     h = new FakeHttp().releases(list(withSums));
@@ -282,7 +294,13 @@ public class KotlinBuildTest {
     h = new FakeHttp().releases(list(withSide)).body(sideUrl, H64 + "  " + f + "\n");
     check("or 'hash  name'", KotlinBuild.find(h, false).sha256.equals(H64));
     h = new FakeHttp().releases(list(withSide)).body(sideUrl, H64 + "  another.apk\n");
-    check("but not a line for another file", KotlinBuild.find(h, false).sha256.isEmpty());
+    check("but not a line for another file: the lookup stops", noValid(h));
+    h = new FakeHttp().releases(list(withSide)).body(sideUrl, "");
+    check("an empty .sha256 stops the lookup", noValid(h));
+    h = new FakeHttp().releases(list(withSide)).body(sideUrl, "oops\n");
+    check("a .sha256 with junk stops the lookup", noValid(h));
+    check("no checksum asset and no digest at all stays as it is: found, nothing published, no second request", fetched(list(rel(t, asset(t, f)))).isEmpty() && KotlinBuild.find(new FakeHttp().releases(list(rel(t, asset(t, f)))), false).sha256.isEmpty());
+    check("the card is an error, not an installable build, when the checksum file has no valid hash", "error".equals(KotlinBuild.check(new FakeHttp().releases(list(withSums)).body(sumsUrl, "junk"), new FakePackages(null, false), false).optString("release")));
     check("a .sha256 of another file is not used", pick(list(rel(t, asset(t, f), asset(t, "other.apk.sha256")))).sumsUrl.isEmpty());
 
     // 4. the lookup asks nothing else
@@ -290,7 +308,7 @@ public class KotlinBuildTest {
     KotlinBuild.find(q, false);
     boolean ok = true;
     for (String u : q.asked) if (!u.startsWith("https://")) ok = false;
-    check("find() asks only the releases list and, when needed, the checksum file (all https)", ok && q.asked.size() == 2 && q.asked.get(0).equals(KotlinBuild.RELEASES_API_URL) && q.asked.get(1).equals(sumsUrl));
+    check("find() asks only the first page of releases and, when needed, the checksum file (all https)", ok && q.asked.size() == 2 && q.asked.get(0).equals(KotlinBuild.pageUrl(1)) && q.asked.get(1).equals(sumsUrl));
     check("find() with no release is null", KotlinBuild.find(new FakeHttp().releases("[]"), false) == null);
     check("find() passes the pre-release flag on", KotlinBuild.find(new FakeHttp().releases(list(kotlin("9.0.0").put("prerelease", true))), false) == null && KotlinBuild.find(new FakeHttp().releases(list(kotlin("9.0.0").put("prerelease", true))), true) != null);
     check("find() with an unreadable list throws", throwsIn(new FakeHttp().releases("<html>")));
@@ -301,10 +319,73 @@ public class KotlinBuildTest {
     FakeHttp h = new FakeHttp().releases(json);
     KotlinBuild.find(h, false);
     List<String> others = new ArrayList<String>(h.asked);
-    others.remove(KotlinBuild.RELEASES_API_URL);
+    others.remove(KotlinBuild.pageUrl(1));
     return others;
   }
+  static boolean noValid(FakeHttp h) { try { KotlinBuild.find(h, false); return false; } catch (Exception e) { return String.valueOf(e.getMessage()).contains("cannot be verified"); } }
   static boolean throwsIn(FakeHttp h) { try { KotlinBuild.find(h, false); return false; } catch (Exception e) { return true; } }
+
+  /** A full page of 100 releases of the WebView app (none a Kotlin build). */
+  static String fullPage(int n) throws Exception {
+    JSONObject[] a = new JSONObject[KotlinBuild.PAGE_SIZE];
+    for (int i = 0; i < a.length; i++) a[i] = rel("v7." + n + "." + i);
+    return list(a);
+  }
+  /** A full page that holds one Kotlin build among 99 other releases. */
+  static String fullPageWith(JSONObject k) throws Exception {
+    JSONObject[] a = new JSONObject[KotlinBuild.PAGE_SIZE];
+    for (int i = 0; i < a.length; i++) a[i] = i == 40 ? k : rel("v6." + i);
+    return list(a);
+  }
+
+  static void pages() throws Exception {
+    // a Kotlin build only on page 2 or 3: the project has more than 30 releases
+    FakeHttp h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0")));
+    KotlinBuild.Choice c = KotlinBuild.find(h, false);
+    check("a Kotlin build on page 2 is found", c != null && c.version.equals("8.0.0") && h.asked.size() == 2 && h.asked.get(0).equals(KotlinBuild.pageUrl(1)) && h.asked.get(1).equals(KotlinBuild.pageUrl(2)));
+    h = new FakeHttp().page(1, fullPage(1)).page(2, fullPage(2)).page(3, list(kotlin("8.1.0"), rel("v5.0")));
+    c = KotlinBuild.find(h, false);
+    check("on page 3 (a short page) too, and nothing more is asked", c != null && c.version.equals("8.1.0") && h.asked.size() == 3 && !h.asked.contains(KotlinBuild.pageUrl(4)));
+    check("the card finds it as well", KotlinBuild.check(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0"))), new FakePackages(null, false), false).optString("version").equals("8.0.0"));
+    // stops
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0"))).page(2, fullPageWith(kotlin("9.0.0")));
+    c = KotlinBuild.find(h, false);
+    check("a full page that holds a Kotlin build ends the search: older pages cannot be newer, page 2 is not asked", c.version.equals("8.0.0") && h.asked.size() == 1);
+    h = new FakeHttp().page(1, list(rel("v7.1"), rel("v7.0")));
+    check("a short first page is the last: no Kotlin build, no second request", KotlinBuild.find(h, false) == null && h.asked.size() == 1);
+    h = new FakeHttp().page(1, "[]");
+    check("an empty page is the last", KotlinBuild.find(h, false) == null && h.asked.size() == 1);
+    // the bound
+    h = new FakeHttp();
+    for (int p = 1; p <= KotlinBuild.MAX_PAGES + 2; p++) h.page(p, p == KotlinBuild.MAX_PAGES + 1 ? fullPageWith(kotlin("8.0.0")) : fullPage(p));
+    check("at most " + KotlinBuild.MAX_PAGES + " pages are read: a Kotlin build on page " + (KotlinBuild.MAX_PAGES + 1) + " is not looked for", KotlinBuild.find(h, false) == null && h.asked.size() == KotlinBuild.MAX_PAGES);
+    h = new FakeHttp();
+    for (int p = 1; p <= KotlinBuild.MAX_PAGES; p++) h.page(p, p == KotlinBuild.MAX_PAGES ? fullPageWith(kotlin("8.0.0")) : fullPage(p));
+    check("one on the last page read is found", KotlinBuild.find(h, false) != null && h.asked.size() == KotlinBuild.MAX_PAGES);
+    // failures on a later page stop the lookup, they are not 'none published'
+    h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0")));
+    h.failing.add(KotlinBuild.pageUrl(2));
+    check("a page that cannot be read stops the lookup", throwsIn(h));
+    check("and the card says error, not 'none published'", "error".equals(KotlinBuild.check(h, new FakePackages(null, false), false).optString("release")));
+    check("a later page that is not a list stops the lookup", throwsIn(new FakeHttp().page(1, fullPage(1)).page(2, "<html>rate limited</html>")));
+    check("a later page over the size limit stops the lookup", throwsIn(new FakeHttp().page(1, fullPage(1)).page(2, "[\"" + new String(new char[KotlinBuild.MAX_JSON_BYTES + 10]).replace('\0', 'a') + "\"]")));
+    check("every page is asked over https, from this address only", allHttps(new FakeHttp().page(1, fullPage(1)).page(2, fullPage(2)).page(3, "[]")));
+    // the rules for the files hold on every page
+    JSONObject hostile = rel("kotlin-9.0.0", new JSONObject().put("name", "ADB-Manager-Kotlin.apk").put("browser_download_url", "http://evil.example/a.apk").put("size", 5));
+    check("a hostile release on page 2 is ignored like on page 1", KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(hostile)).page(3, "[]"), false) == null);
+    check("a draft or pre-release on page 2 is ignored like on page 1", KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("9.0.0").put("draft", true))).page(3, "[]"), false) == null
+        && KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("9.0.0").put("prerelease", true))).page(3, "[]"), false) == null);
+    // the digest and the checksum file come from the release found on a later page
+    JSONObject withSums = rel("kotlin-8.0.0", asset("kotlin-8.0.0", "ADB-Manager-Kotlin.apk"), asset("kotlin-8.0.0", "SHA256SUMS.txt"));
+    String sumsUrl = P + "kotlin-8.0.0/SHA256SUMS.txt";
+    h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(withSums)).body(sumsUrl, H64 + "  ADB-Manager-Kotlin.apk\n");
+    check("the checksum file of a release found on page 2 is read", KotlinBuild.find(h, false).sha256.equals(H64));
+  }
+  static boolean allHttps(FakeHttp h) throws Exception {
+    KotlinBuild.find(h, false);
+    for (String u : h.asked) if (!u.startsWith("https://api.github.com/repos/Bingblop/ADB-Application-Manager/releases?per_page=100&page=")) return false;
+    return !h.asked.isEmpty();
+  }
 
   static void card() throws Exception {
     String list8 = list(kotlin("8.0.0"));

@@ -36,6 +36,12 @@ ok      after five minutes it does
 ok   16. in German: title, status with the version, the newer-build line and the buttons are translated: {"title":"Kotlin-Build ausprobieren (Beta)","status":"Installiert, Version 8.0.0-Pro.","latest":"Ein neueres Testbuild ist verfügbar: 8.0.1.","btns":["Kotlin-Build öffnen","Herunterladen und installieren","Erneut prüfen"]}
 ok      and the no-release state: {"s":"Nicht installiert.","l":"Es wurde noch kein Kotlin-Testbuild veröffentlicht.","p":"Releases-Seite öffnen"}
 ok      in every other language the title is translated (not the English one, and not left empty): {"ar":"جرّب إصدار Kotlin (تجريبي)","es":"Prueba la versión Kotlin (beta)","fr":"Essayer la version Kotlin (bêta)","hi":"Kotlin बिल्ड आज़माएं (बीटा)","id":"Coba build Kotlin (beta)","it":"Prova la build Kotlin (beta)","ja":"Kotlin版を試す（ベータ）","ko":"Kotlin 빌드 사용해 보기(베타)","pt-BR":"Experimente a versão Kotlin (beta)","ru":"Попробуйте сборку Kotlin (бета)","tr":"Kotlin sürümünü deneyin (beta)","zh-CN":"试用 Kotlin 版（测试版）"}
+ok   16b. the first lookup is still out: leaving Settings and coming back three times asks GitHub nothing more: asked 1
+ok       and the card says it is checking, with Check again off
+ok       when the answer comes the card shows it: {"status":"Not installed.","again":true}
+ok       and it is then asked at most once in five minutes (the visit after the answer asks nothing)
+ok       a lookup whose answer never comes is not repeated at once either: asked 2
+ok       but is asked again after 90 seconds: asked 3
 ok   17. [320px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":304,"vw":320}
 ok   17. [360px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":344,"vw":360}
 ok   18. without the app (no Kotlin bridge) the card is hidden

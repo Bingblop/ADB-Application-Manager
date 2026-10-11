@@ -29,6 +29,7 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
           const o = { package: pkg, page: 'https://github.com/Bingblop/ADB-Application-Manager/releases', installed: k.installed, installedVersion: k.installedVersion, update: k.update, release: k.release };
           if (k.release === 'ok') { o.version = k.version; o.tag = k.tag; o.size = k.size; }
           if (k.release === 'error') o.error = k.error;
+          if (window.__kbNever) return;
           setTimeout(() => window.onKotlinBuild(JSON.stringify(o)), window.__kbDelay || 5);
         },
         kotlinBuildOpen() { window.__calls.push(['kotlinBuildOpen', ...arguments]); return window.__kb.openResult; },
@@ -198,6 +199,34 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
   }
   check('   in every other language the title is translated (not the English one, and not left empty)', Object.values(langs).every(t => t && t !== 'Try the Kotlin build (beta)'), JSON.stringify(langs));
   await ev(() => LANG_ENGINE.set('en')); await sleep(300);
+
+  // ---- 16b. one question at a time: leaving Settings and coming back while the first lookup is still out asks nothing more ----
+  {
+    const fp = await mkPage({});
+    const f2 = (fn, arg) => fp.evaluate(fn, arg);
+    const asked = () => f2(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
+    await f2(() => { window.__kbDelay = 900; switchView('prefs'); });
+    await fp.waitForTimeout(150);
+    for (let i = 0; i < 3; i++) { await f2(() => switchView('apps')); await fp.waitForTimeout(60); await f2(() => switchView('prefs')); await fp.waitForTimeout(60); }
+    check('16b. the first lookup is still out: leaving Settings and coming back three times asks GitHub nothing more', (await asked()) === 1, 'asked ' + (await asked()));
+    check('    and the card says it is checking, with Check again off', (await f2(() => document.getElementById('kbStatus').innerText)) === 'Checking…' && (await f2(() => document.getElementById('kbCheckBtn').disabled)));
+    await fp.waitForTimeout(1000);
+    const done = await f2(() => ({ status: document.getElementById('kbStatus').innerText, again: !document.getElementById('kbCheckBtn').disabled }));
+    check('    when the answer comes the card shows it', done.status === 'Not installed.' && done.again, JSON.stringify(done));
+    await f2(() => { switchView('apps'); switchView('prefs'); });
+    await fp.waitForTimeout(150);
+    check('    and it is then asked at most once in five minutes (the visit after the answer asks nothing)', (await asked()) === 1);
+    // an answer that never comes is given up after 90 seconds
+    await f2(() => { window.__kbNever = true; kbAt = 0; switchView('apps'); switchView('prefs'); });
+    await fp.waitForTimeout(100);
+    await f2(() => { switchView('apps'); switchView('prefs'); });
+    await fp.waitForTimeout(100);
+    check('    a lookup whose answer never comes is not repeated at once either', (await asked()) === 2, 'asked ' + (await asked()));
+    await f2(() => { kbPendingAt -= 91 * 1000; switchView('apps'); switchView('prefs'); });
+    await fp.waitForTimeout(100);
+    check('    but is asked again after 90 seconds', (await asked()) === 3, 'asked ' + (await asked()));
+    await fp.close();
+  }
 
   // ---- 17. narrow screens: nothing sticks out sideways ----
   for (const [w, h] of [[320, 640], [360, 800]]) {

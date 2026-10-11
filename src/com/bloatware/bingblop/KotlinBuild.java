@@ -24,8 +24,8 @@ final class KotlinBuild {
     static final String KOTLIN_PACKAGE_ID = "com.aistudio.adbmanager.pkzgwt";
     /** The repository whose releases hold the Kotlin test builds. */
     static final String REPO = "Bingblop/ADB-Application-Manager";
-    /** The releases list (newest first). */
-    static final String RELEASES_API_URL = "https://api.github.com/repos/" + REPO + "/releases?per_page=30";
+    /** The releases list, newest first, 100 to a page; page N is this address plus "&page=N" (see {@link #pageUrl}). */
+    static final String RELEASES_API_URL = "https://api.github.com/repos/" + REPO + "/releases?per_page=100";
     /** What "Open the releases page" opens. */
     static final String RELEASES_PAGE_URL = "https://github.com/" + REPO + "/releases";
     /** Only a Kotlin release is taken: its tag starts with this. */
@@ -39,9 +39,13 @@ final class KotlinBuild {
 
     /** Every download address must start with this (https, this repository's release downloads). */
     static final String DOWNLOAD_URL_PREFIX = "https://github.com/" + REPO + "/releases/download/";
-    static final int MAX_JSON_BYTES = 2 * 1024 * 1024;
+    /** One page of 100 releases with their notes and files. */
+    static final int MAX_JSON_BYTES = 4 * 1024 * 1024;
+    /** Pages of releases read at most (this repository has more than 30 releases, and a Kotlin one may be on an older page). */
+    static final int MAX_PAGES = 5;
+    static final int PAGE_SIZE = 100;
     static final int MAX_SUMS_BYTES = 64 * 1024;
-    static final int MAX_RELEASES = 50;
+    static final int MAX_RELEASES = PAGE_SIZE;
     static final int MAX_ASSETS = 100;
     static final long MAX_APK_BYTES = 600L * 1024 * 1024;
     private static final int MAX_DEPTH = 32;
@@ -153,17 +157,29 @@ final class KotlinBuild {
      * then the one listed first. Returns null when there is none; throws {@link IllegalArgumentException} when the text is not a releases list.
      */
     static Choice choose(String json, boolean allowPrerelease) {
+        return chooseFrom(parseList(json), allowPrerelease);
+    }
+
+    /** The text of one page as a list: refused (IllegalArgumentException) when it is too large, nested too deep or not a list. */
+    static JSONArray parseList(String json) {
         if (json == null) throw new IllegalArgumentException("no answer");
         if (json.length() > MAX_JSON_BYTES) throw new IllegalArgumentException("the answer is too large");
         if (nestingTooDeep(json)) throw new IllegalArgumentException("the answer is not a list of releases");
-        JSONArray list;
         try {
-            list = new JSONArray(json);
+            return new JSONArray(json);
         } catch (Exception e) {
             throw new IllegalArgumentException("the answer is not a list of releases");
         } catch (StackOverflowError e) {
             throw new IllegalArgumentException("the answer is not a list of releases");
         }
+    }
+
+    /** The address of page {@code page} (1 is the first) of the releases list. */
+    static String pageUrl(int page) {
+        return RELEASES_API_URL + "&page=" + page;
+    }
+
+    static Choice chooseFrom(JSONArray list, boolean allowPrerelease) {
         Choice best = null;
         int n = Math.min(list.length(), MAX_RELEASES);
         for (int i = 0; i < n; i++) {
@@ -279,14 +295,24 @@ final class KotlinBuild {
     // ---- The lookups the page and the install use ----------------------------------------------------------------------------------------
 
     /**
-     * The newest Kotlin test build with its published checksum, or null when no release has one. A checksum file the release carries but
-     * that cannot be read stops the lookup (an exception): the file would be installed unchecked otherwise.
+     * The newest Kotlin test build with its checksum, or null when no release has one. The releases are read a page at a time (newest
+     * first, {@link #PAGE_SIZE} to a page, at most {@link #MAX_PAGES} pages) until a page holds a Kotlin build (the pages after it are
+     * older releases) or a page is short or empty (the last one). A page that cannot be read stops the lookup.
+     *
+     * A release that carries a checksum asset (its own .sha256 or SHA256SUMS.txt) must give a valid SHA-256 for the file: an unreadable,
+     * empty, malformed or unrelated checksum file stops the lookup (an exception) instead of leaving the file unchecked. With no checksum
+     * asset and no digest at all, nothing is published and the install goes on as other Store installs do.
      */
     static Choice find(Http http, boolean allowPrerelease) throws Exception {
-        byte[] body = http.get(RELEASES_API_URL, MAX_JSON_BYTES);
-        if (body == null) throw new IllegalStateException("no answer from GitHub");
-        if (body.length > MAX_JSON_BYTES) throw new IllegalArgumentException("the answer is too large");
-        Choice c = choose(new String(body, "UTF-8"), allowPrerelease);
+        Choice c = null;
+        for (int page = 1; page <= MAX_PAGES; page++) {
+            byte[] body = http.get(pageUrl(page), MAX_JSON_BYTES);
+            if (body == null) throw new IllegalStateException("no answer from GitHub");
+            if (body.length > MAX_JSON_BYTES) throw new IllegalArgumentException("the answer is too large");
+            JSONArray list = parseList(new String(body, "UTF-8"));
+            c = chooseFrom(list, allowPrerelease);
+            if (c != null || list.length() < PAGE_SIZE) break;
+        }
         if (c != null && c.sha256.isEmpty() && !c.sumsUrl.isEmpty()) {
             byte[] sums;
             try {
@@ -295,6 +321,9 @@ final class KotlinBuild {
                 throw new IllegalStateException("the release's checksum file (" + c.sumsName + ") could not be read, so the download cannot be verified");
             }
             c.sha256 = sums == null ? "" : hashFromSums(new String(sums, "UTF-8"), c.apkName, !c.sumsName.equalsIgnoreCase("SHA256SUMS.txt") && !c.sumsName.equalsIgnoreCase("SHA256SUMS"));
+            if (!InstallGuards.isSha256(c.sha256)) {
+                throw new IllegalStateException("the release's checksum file (" + c.sumsName + ") has no valid SHA-256 for " + c.apkName + ", so the download cannot be verified");
+            }
         }
         return c;
     }
