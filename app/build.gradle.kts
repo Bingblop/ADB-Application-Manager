@@ -54,6 +54,10 @@ android {
     }
 }
 
+base {
+    archivesName.set("ADB-Manager-Kotlin")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
