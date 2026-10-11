@@ -39,6 +39,8 @@ public class ApkScanFindTest {
             touch(new File(root, "d\n/data/app/victim.apk"));   // a folder whose name ends in a line break: the next printed line looks like /data/app/victim.apk
             touch(new File(root, "n\nx.apk"));                  // a file name with a line break in it
             touch(new File(root, "e\n/system/app/y.apks"));
+            touch(new File(root, "cr\r/data/app/victim_cr.apk")); // folder with carriage return
+            touch(new File(root, "r\rx.apk"));                  // file with carriage return
 
             String base = "find '" + root.getAbsolutePath() + "' -maxdepth 12 ";
             String oldOut = run(base + "-type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\) 2>/dev/null");
@@ -49,7 +51,7 @@ public class ApkScanFindTest {
             List<String> paths = ApkScan.parseFindOutput(out, 100);
             String ok = root.getAbsolutePath() + "/ok.apk", sub = root.getAbsolutePath() + "/sub dir/b.XAPK";
             is("the normal package files are still found (including a folder with a space)", paths.contains(ok) && paths.contains(sub), paths.toString());
-            is("no phantom path from a folder name that holds a line break", !paths.contains("/data/app/victim.apk") && !paths.contains("/system/app/y.apks"), paths.toString());
+            is("no phantom path from a folder name that holds a line break", !paths.contains("/data/app/victim.apk") && !paths.contains("/system/app/y.apks") && !paths.contains("/data/app/victim_cr.apk"), paths.toString());
             is("a file name with a line break is left out", paths.size() == 2, paths.toString());
             is("every path found exists as printed", paths.stream().allMatch(p -> new File(p).isFile()), paths.toString());
             is("the predicate holds no raw line break (it travels as one line through every shell mode)", ApkScan.FIND_PREDICATE.indexOf('\n') < 0 && ApkScan.FIND_PREDICATE.indexOf('\r') < 0, "has a line break");
