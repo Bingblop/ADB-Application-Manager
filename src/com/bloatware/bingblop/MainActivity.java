@@ -2810,6 +2810,15 @@ public class MainActivity extends Activity {
      * user answers; no answer in two minutes, or the screen closing, is a no.
      */
     private boolean confirmPrivilegedInstall(final String message) {
+        return confirmNative(InstallConfirm.title(), message, "Install", "Cancel");
+    }
+
+    /**
+     * The question dialog behind {@link #confirmPrivilegedInstall} and the one asked before a patch bundle (code) is loaded: a native dialog the page
+     * cannot press, which blocks the calling (background) thread until the user answers. Only the yes button says yes; Back, a tap outside, no answer in
+     * two minutes (the same time as {@link BundleApprovals#ANSWER_WAIT_SECONDS}) and the screen closing are all no. Each question tracks and dismisses its own dialog.
+     */
+    private boolean confirmNative(final String title, final String message, final String yesLabel, final String noLabel) {
         final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
         final boolean[] yes = { false };
         // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
@@ -2820,14 +2829,14 @@ public class MainActivity extends Activity {
                 public void run() {
                     if (isFinishing() || isDestroyed()) { answered.countDown(); return; }
                     android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
-                    b.setTitle(InstallConfirm.title());
+                    b.setTitle(title);
                     b.setMessage(message);
                     b.setCancelable(true);
-                    b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
+                    b.setPositiveButton(yesLabel, new android.content.DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; }
                     });
-                    b.setNegativeButton("Cancel", null);
+                    b.setNegativeButton(noLabel, null);
                     // Any way the dialog goes away (a button, Back, a tap outside, a timeout, the screen closing) ends the wait; only "Install" says yes.
                     b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
                         @Override
@@ -2842,7 +2851,7 @@ public class MainActivity extends Activity {
                     dlg.show();
                 }
             });
-            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!answered.await(BundleApprovals.ANSWER_WAIT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)) {
                 dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
                 return false;
             }
@@ -7224,6 +7233,7 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public boolean confirmBundle(String title, String text) { return confirmNative(title, text, "Allow", "Don't allow"); }
             @Override public String copyToTree(File file, String treeUri, String name) throws Exception {
                 Uri tree = Uri.parse(treeUri);
                 String safe = name == null ? "app.apk" : name.replaceAll("[^A-Za-z0-9._ ()-]", "_");

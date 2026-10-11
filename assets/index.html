@@ -31749,9 +31749,9 @@ Type any command below (e.g. pm list packages -d)
             mp.sources = r.ok && r.data && Array.isArray(r.data.sources) ? r.data.sources : [];
             await mpCatalogsLoad(false);
         }
-        // The patches of every enabled source that is downloaded: the engine reads them once per bundle version (in its own process) and the answer is cached
+        // The patches of every enabled source that is downloaded (a source that is off is not loaded: a bundle is code): the engine reads them once per bundle version (in its own process) and the answer is cached
         async function mpCatalogsLoad(force) {
-            const ids = mp.sources.filter(s => s.file && (force || !mp.catalogs[s.id] || mp.catalogs[s.id].key !== mpCatKey(s))).map(s => s.id);
+            const ids = mp.sources.filter(s => s.file && s.enabled !== false && (force || !mp.catalogs[s.id] || mp.catalogs[s.id].key !== mpCatKey(s))).map(s => s.id);
             mp.catBusy = ids.length > 0;
             if (ids.length) { mpAppsRender(); }
             if (ids.length && mp.info && mp.info.engine) {
@@ -32115,7 +32115,10 @@ Type any command below (e.g. pm list packages -d)
         async function mpSourceToggle(id) {
             const s = mp.sources.find(x => x.id === id);
             if (!s) return;
-            await mpCall('sourceEnable', { id: id, on: s.enabled === false });
+            const turningOn = s.enabled === false;
+            await mpCall('sourceEnable', { id: id, on: turningOn });
+            // turning a source back on is also the way to be asked again about one that was not allowed or could not be read
+            if (turningOn && mp.catalogs[id] && !mp.catalogs[id].ok) delete mp.catalogs[id];
             await mpSourcesLoad(); mpSourcesRender();
         }
         async function mpSourcePre(id) {

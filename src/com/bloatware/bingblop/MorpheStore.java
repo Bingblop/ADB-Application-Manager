@@ -558,13 +558,16 @@ public final class MorpheStore {
         long updatedAt;
         int patchCount = -1;
         boolean enabled = true, builtIn, prerelease;
+        /** Found out by the app when the file now on disk was downloaded: the host the bytes finally came from (after redirects, "" for a file from the phone), and whether the source published a checksum that the file matched. */
+        String fileHost = "";
+        boolean sumMatched;
         JSONObject meta;
 
         Rec copy() {
             Rec c = new Rec();
             c.id = id; c.name = name; c.kind = kind; c.host = host; c.repo = repo; c.url = url; c.branch = branch; c.version = version;
             c.description = description; c.createdAt = createdAt; c.error = error; c.updatedAt = updatedAt; c.patchCount = patchCount;
-            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta;
+            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta; c.fileHost = fileHost; c.sumMatched = sumMatched;
             return c;
         }
 
@@ -594,6 +597,8 @@ public final class MorpheStore {
             put(o, "builtIn", builtIn);
             put(o, "prerelease", prerelease);
             put(o, "error", error);
+            put(o, "fileHost", fileHost);
+            put(o, "sumMatched", sumMatched);
             if (meta != null) put(o, "meta", meta);
             return o;
         }
@@ -632,6 +637,8 @@ public final class MorpheStore {
             r.patchCount = Math.max(-1, o.optInt("patchCount", -1));
             r.enabled = o.optBoolean("enabled", true);
             r.prerelease = o.optBoolean("prerelease", false);
+            r.fileHost = cap(str(o, "fileHost"), 253);
+            r.sumMatched = o.optBoolean("sumMatched", false);
             r.builtIn = BUILTIN_ID.equals(r.id);
             r.meta = o.optJSONObject("meta");
             return r;
@@ -725,7 +732,7 @@ public final class MorpheStore {
             Rec fixed = builtin();     // what the built-in source is cannot be changed from the file
             fixed.enabled = first.enabled; fixed.prerelease = first.prerelease; fixed.version = first.version; fixed.description = first.description;
             fixed.createdAt = first.createdAt; fixed.updatedAt = first.updatedAt; fixed.patchCount = first.patchCount; fixed.error = first.error;
-            fixed.meta = first.meta; fixed.branch = first.branch;
+            fixed.meta = first.meta; fixed.branch = first.branch; fixed.fileHost = first.fileHost; fixed.sumMatched = first.sumMatched;
             first = fixed;
         }
         loaded.add(0, first);
@@ -839,8 +846,18 @@ public final class MorpheStore {
         return r == null ? null : view(r);
     }
 
-    /** The bundle.mpp of a source, or null when it has not been downloaded. */
+    /**
+     * The bundle.mpp of a source the engine may read, or null when it has not been downloaded or the source is switched off (a bundle is code:
+     * "off" means it is not loaded, not catalogued and not patched with).
+     */
     public synchronized File bundleFile(String id) {
+        Rec r = find(id);
+        if (r == null || !r.enabled) return null;
+        return bundleFileAny(id);
+    }
+
+    /** The bundle.mpp of a source whether it is switched on or off (updating needs to know if there is a file); never handed to the engine. */
+    private File bundleFileAny(String id) {
         if (find(id) == null) return null;
         try {
             File f = bundlePath(id);
@@ -848,6 +865,27 @@ public final class MorpheStore {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    /**
+     * What the app found out itself about the bundle on disk, for the question asked before it is loaded: {id, name, kind, url, repo, version,
+     * builtIn, enabled, fileHost, sumMatched}, or null when there is no such source. name and version are written by the source.
+     */
+    public synchronized JSONObject bundleFacts(String id) {
+        Rec r = find(id);
+        if (r == null) return null;
+        JSONObject o = new JSONObject();
+        put(o, "id", r.id);
+        put(o, "name", r.name);
+        put(o, "kind", r.kind);
+        put(o, "url", r.url);
+        put(o, "repo", r.repo);
+        put(o, "version", r.version);
+        put(o, "builtIn", r.builtIn);
+        put(o, "enabled", r.enabled);
+        put(o, "fileHost", r.fileHost);
+        put(o, "sumMatched", r.sumMatched);
+        return o;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -922,6 +960,8 @@ public final class MorpheStore {
     private static final class Staged {
         File file;
         JSONObject meta;
+        String fileHost = "";
+        boolean sumMatched;
     }
 
     private static Resolved fromMetadata(String text) {
@@ -1230,6 +1270,8 @@ public final class MorpheStore {
         rec.patchCount = -1;
         rec.meta = st.meta;
         rec.error = "";
+        rec.fileHost = st.fileHost;
+        rec.sumMatched = st.sumMatched;
     }
 
     /** Adds a bundle file from the phone. The file name must end in .mpp. */
@@ -1296,8 +1338,9 @@ public final class MorpheStore {
         deleteQuiet(part);
         boolean ok = false;
         try {
+            String[] from = { res.downloadUrl };
             try {
-                MorpheNet.download(res.downloadUrl, staging, null, p);
+                MorpheNet.download(res.downloadUrl, staging, null, p, from);
             } catch (IOException e) {
                 if ("cancelled".equals(e.getMessage())) throw e;
                 throw new IOException("Download failed: " + why(e, res.downloadUrl), e);
@@ -1307,6 +1350,8 @@ public final class MorpheStore {
             }
             Staged st = new Staged();
             st.file = staging;
+            st.fileHost = InstallConfirm.hostOf(from[0]);
+            st.sumMatched = !res.sha256.isEmpty();                 // a published checksum that is there got here only by matching
             st.meta = readManifest(staging);
             checkBundle(st.meta);
             ok = true;
@@ -1373,7 +1418,7 @@ public final class MorpheStore {
                 if (!r.remote()) throw new IOException("A local source never updates on its own, add the new file instead");
                 snap = r.copy();
                 current = installedVersion(r);
-                hasFile = bundleFile(id) != null;
+                hasFile = bundleFileAny(id) != null;
             }
             try {
                 Resolved res = resolve(snap);
