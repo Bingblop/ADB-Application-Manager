@@ -1,0 +1,46 @@
+1. a 64-bit phone at 420 dpi in English and Spanish (twelve splits: base, three CPUs, three densities, three languages, a feature module and its config split): true ++--+--+-+--
+   a 32-bit phone at 320 dpi in French (Canada): true +-+--+--+---
+   a phone of 640 dpi, bigger than any split: the biggest there is: true
+   a phone of 100 dpi, smaller than any split: the smallest there is: true
+   a density between two: the one Android itself would take (220 dpi: tvdpi 213 beats hdpi 240): true
+   340 dpi, with xhdpi (320) and xxhdpi (480): xhdpi, the nearer (the old "at or above" rule took the bigger one): true
+   360 dpi: still xhdpi (its pull towards the bigger one is not enough yet): true
+   380 dpi: xxhdpi, from here on the bigger one: true
+   420 dpi and 450 dpi: xxhdpi: true
+   500 dpi, with xxhdpi (480) and xxxhdpi (640): xxhdpi; 560 dpi: xxxhdpi: true
+   a density the phone has exactly wins, whatever else is there: true
+   a "420dpi" style split counts by its number: true
+   all seven densities at 420 dpi: xxhdpi: true
+   only the first CPU of the phone that has a split is ticked (x86_64 before x86): true
+   the second CPU is used when the first has no split: true
+   a phone whose CPU, density and languages are unknown ticks only the base: true
+   Hebrew: the phone says "he-IL", a split says "iw" (the old code of the same language): true
+   Indonesian: "in-ID" (old) matches "id" and "in": true
+   a region has to agree when both name one: pt-PT takes pt_rPT and pt, not pt_rBR: true
+   …and pt-BR takes pt_rBR and pt, not pt_rPT: true
+   a phone with only "pt" takes every region of it: true
+   a script in the phone's tag (zh-Hans-CN) does not get in the way: zh and zh_rCN, not zh_rTW: true
+   every language of the phone's list is ticked, wherever it is in the list: true
+   a Unicode extension in the phone's tag is not a region ("ar-u-nu-latn", "en-US-x-twain"): true
+   a split called "constructor" or "__proto__" is just another split: no code of Object shows in its note: true
+   a split with no manifest name is judged by its file name ("3__split_config.arm64_v8a.apk"): true
+   texture, night-mode, SDK and unknown splits are not ticked: true
+   a feature module and its config split are never ticked, even when their CPU would fit: true
+   the base is always in: true
+   every split says why: it fits (✓ …) or what it is for: true ["","✓ fits this phone (CPU arm64-v8a)","another CPU (armeabi-v7a)","another CPU (x86_64)","✓ fits this phone (screen xxhdpi)","another screen density","another screen density","✓ fits this phone (language en)","another language","another language","feature module (optional)","for a feature module"]
+2. "Select all splits by default" is off to start with: true
+   so only the base and the splits that fit are ticked (arm64, xxhdpi, en, es); the base cannot be unticked: true +D + - - + - - + - + - -
+   the install would send exactly those five files: true
+   each row shows its file name without the numbering of the unpacking, its size and why: true config.arm64_v8a split_config.arm64_v8a.apk • 11.4 MB • ✓ fits this phone (CPU arm64-v8a)
+   the card says the splits that fit are ticked and the others left off: true
+   …and that sentence is not shown when "Select all" is the default (then every split starts ticked): true
+   "Select all" ticks every split: true +D + + + + + + + + + + +
+   "Only base" leaves the base: true +D - - - - - - - - - - -
+   "Match this phone" goes back to the fitting ones: true +D + - - + - - + - + - -
+   the user can add a split that does not fit (French): true
+   turning "Select all splits by default" on ticks every split of the package that is open: true +D + + + + + + + + + + +
+   and off again goes back to the fitting ones: true +D + - - + - - + - + - -
+   with it on, the next package that is opened has every split ticked: true
+3. another phone (32-bit, 320 dpi, French): the base, armeabi_v7a, xhdpi and fr: true +D - + - - + - - + - - -
+4. a single APK has no splits card and installs its one file: true
+all checks passed

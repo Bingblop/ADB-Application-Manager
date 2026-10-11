@@ -1,0 +1,10 @@
+start badge: ADB TCP (5555)
+after read-only: Read-Only Mode
+after auto: Auto • ADB TCP (5555)
+after shizuku: Shizuku ADB (UID 2000) | tag: AUTHORIZED
+typed port field: 192.168.1.20:41235
+autodetect: 192.168.1.20:37155 192.168.1.20 41235
+m3 vars: #6750A4 #FEF7FF #1D1B20 #FEF7FF
+saved prefs preset: materialyou
+calls: ["select:unprivileged","select:auto","shizukuReq"]
+errors: []

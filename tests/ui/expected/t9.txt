@@ -1,0 +1,18 @@
+startup toast: This app now has its own private ADB key. Tap the mode badge for details.
+expressive animations, fresh install: on by default: true | html class: true | toggle checked: true
+schedule row visible: true | Light from 07:00, dark from 19:00 (currently Dark)
+07:00-19:00 → 6:59=dark 7:00=light 12:00=light 18:59=light 19:00=dark 23:30=dark
+20:00-06:00 (crosses midnight) → 5:00=light 6:00=dark 13:00=dark 21:00=light
+dark: #141218 #211F26 #1D1B20 mode=dark bar=#141218
+pure black: #000000 #151419 #000000 mode=dark bar=#000000 | toggle checked: true
+light (pure black ignored): #FEF7FF #F3EDF7 #F7F2FA mode=light bar=#FEF7FF
+expressive, on: a themed transition gets the bounce curve, a progress fill stays plain ease: cubic-bezier(0.175, 0.885, 0.32, 1.275) | ease
+the OS's own reduced-motion setting wins over it: cubic-bezier(0.16, 1, 0.3, 1)
+turned off: the themed transition is back to its own curve, html class gone, toggle unchecked: cubic-bezier(0.16, 1, 0.3, 1) | false | false
+saved: {"appearance":"light","schedule":{"lightAt":"07:00","darkAt":"19:00"},"pureBlack":true,"expressiveAnimations":false}
+key fp: 78:EF:B9:D4:94:44:F7:CC:80:9F:4E:D7:7F:29:E9:A5 | notice visible: true
+notice after dismiss: false
+after regen: AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99
+calls: ["dismiss","copy:78:EF:B9:D4:94:44:F7:CC:80:9F:4E:D7:7F:29:E9:A5","regen"]
+restored: {"appearance":"dark","pureBlack":true,"expressiveAnimations":false,"schedule":{"lightAt":"07:00","darkAt":"19:00"},"bg":"#000000"}
+errors: []

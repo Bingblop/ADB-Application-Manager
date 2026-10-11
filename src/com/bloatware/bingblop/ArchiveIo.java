@@ -102,56 +102,6 @@ public final class ArchiveIo {
     private static final int LZMA_DICT_CAP = 8 * 1024 * 1024;
     private static final int S_IFMT = 0170000, S_IFLNK = 0120000, S_IFDIR = 040000, S_IFREG = 0100000;
 
-    /**
-     * Checks whether an archive entry path is safe from directory traversal (tar slip / path traversal).
-     * Rejects paths with NUL bytes, leading slashes or Windows drives, and segments equal to "..".
-     */
-    public static boolean isSafeEntryName(String name) {
-        if (name == null || name.isEmpty() || name.indexOf('\0') >= 0) return false;
-        if (name.startsWith("/") || name.startsWith("\\")) return false;
-        if (name.length() >= 2 && Character.isLetter(name.charAt(0)) && name.charAt(1) == ':') return false;
-        String[] parts = name.replace('\\', '/').split("/+");
-        for (String p : parts) {
-            if ("..".equals(p)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * Sanitizes an archive entry name, stripping leading slashes, Windows drive prefixes, and removing ".." segments.
-     * Returns null if the name cannot be sanitized into a safe relative path.
-     */
-    public static String safeEntryName(String name) {
-        if (name == null || name.indexOf('\0') >= 0) return null;
-        String normalized = name.replace('\\', '/');
-        while (normalized.startsWith("/")) normalized = normalized.substring(1);
-        if (normalized.length() >= 2 && Character.isLetter(normalized.charAt(0)) && normalized.charAt(1) == ':') {
-            normalized = normalized.substring(2);
-            while (normalized.startsWith("/")) normalized = normalized.substring(1);
-        }
-        String[] parts = normalized.split("/+");
-        java.util.List<String> safeParts = new java.util.ArrayList<String>();
-        for (String p : parts) {
-            if (p.isEmpty() || ".".equals(p)) continue;
-            if ("..".equals(p)) {
-                if (!safeParts.isEmpty()) safeParts.remove(safeParts.size() - 1);
-                else return null;
-            } else {
-                safeParts.add(p);
-            }
-        }
-        if (safeParts.isEmpty()) return null;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < safeParts.size(); i++) {
-            if (i > 0) sb.append('/');
-            sb.append(safeParts.get(i));
-        }
-        if (name.endsWith("/") && sb.length() > 0 && sb.charAt(sb.length() - 1) != '/') {
-            sb.append('/');
-        }
-        return sb.toString();
-    }
-
     // ---------------------------------------------------------------------------------------------------------------- public types
 
     /** One entry. */

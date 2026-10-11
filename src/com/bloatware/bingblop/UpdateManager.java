@@ -106,7 +106,8 @@ public final class UpdateManager {
     // (no Content-Length to check completeness against) can't fill the phone's storage.
     private static final long MAX_DOWNLOAD_BYTES = 2L * 1024 * 1024 * 1024;
 
-    public static void download(String url, File dest, Progress progress) throws Exception {
+    /** Downloads {@code url} to {@code dest}; returns the address the bytes finally came from (after redirects). */
+    public static String download(String url, File dest, Progress progress) throws Exception {
         java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
         hdr.put("User-Agent", "ADB-Application-Manager");
         HttpURLConnection conn = HttpSafe.open(url, 15000, 60000, hdr);
@@ -114,6 +115,7 @@ public final class UpdateManager {
         try {
             int code = conn.getResponseCode();
             if (code != 200) throw new IllegalStateException("download failed: HTTP " + code);
+            String finalUrl = conn.getURL().toString();
             long total = conn.getContentLength();
             InputStream in = conn.getInputStream();
             OutputStream out = new FileOutputStream(tmp);
@@ -142,6 +144,7 @@ public final class UpdateManager {
             if (dest.exists()) dest.delete();
             if (!tmp.renameTo(dest)) throw new IllegalStateException("could not save download");
             if (progress != null) progress.onProgress(done, total);
+            return finalUrl;
         } finally {
             conn.disconnect();
             if (tmp.exists()) tmp.delete();

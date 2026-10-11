@@ -1,0 +1,16 @@
+1. 7 entry rows + 2 buffer separators: true | rows 7 metas 2
+2. stack trace grouped into one block (3 lines, tag AndroidRuntime): true
+3. badges in order: true ["I","D","V","W","E","F","I"]
+4. E reddish: true [251,102,103]
+   I greenish: true [72,194,125]
+   W amber: true [251,169,33]
+   F magenta: true [225,86,248]
+   D blueish: true [67,188,244]
+5. key has 6 chips; E=3, I=2: true | "E · Error\n3" "I · Info\n2"
+6. tapping E hides error rows + chip dims: true
+7. copy = raw threadtime lines w/o hidden level: true
+8. filter highlighted: true ["frames"]
+9. error text -> notice only: true
+10. refresh jumps to newest: true | live update keeps reader position: true
+11. clear shows (cleared): true
+errors: []

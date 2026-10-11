@@ -1,0 +1,47 @@
+ok   the Saved Applications tab has a Back up and restore card with Back up now, Choose folder, Share, Restore from a file and Restore from the folder
+ok   with no folder: says backups go to Download/ADB App Manager, no backup yet, 2 lists would be backed up; the folder-only controls are off
+ok   Back up now without a folder saves saved-lists-<date>-<time>.json to Download/ADB App Manager and says where
+ok   the file says what it is and holds both lists whole, with the quick list
+ok   the card then shows the last backup: when, how many lists, the file name
+ok   a failed save says why, and the card says the last attempt failed
+ok   backing out of the folder picker changes nothing
+ok   a chosen folder is remembered and shown, Use Downloads appears, and the folder controls come on
+ok   Back up now writes a new dated file into the folder (not a replace)
+ok   and says so in the card with the file name
+ok   Share hands the same JSON to Android's share sheet
+ok   a folder Android no longer allows says to choose it again
+ok   Automatic on: a first backup is made at once, as saved-lists-latest.json, replacing
+ok   a change is backed up a few seconds later, once however many saves came, into the same single file
+ok   the card says it was automatic
+ok   an empty set of lists never replaces the automatic backup
+ok   and the next real change updates it again
+ok   Automatic off: changes are not written
+ok   Restore from the folder lists the saved-lists backups there, newest first, without other files
+ok   choosing one reads it and asks: Restore 1 list with 2 apps, from the file, with Add and Replace
+ok   Add keeps the two lists and adds the old one
+ok   the added list is shown in the tab
+ok   merging: the identical list is skipped, the same name with other apps comes in as "(imported)", the same id gets a new id, a new one comes in; toast counts them
+ok   what was there before is untouched
+ok   the question says how many lists Replace removes
+ok   Replace leaves exactly the backup's lists
+ok   the quick list is the one the old quick list pointed to no longer exists, so it follows the backup (Two)
+ok   a quick list that is not in the backup is cleared
+ok   with no lists at all, the backup is simply restored (no question)
+ok   a backup of nothing says so (nothing to back up)
+ok   Back up now with no lists writes nothing and says so
+ok   a bad file is refused in words (/not a backup file/) and nothing changes
+ok   a bad file is refused in words (/not a saved-lists backup/) and nothing changes
+ok   a bad file is refused in words (/not a saved-lists backup/) and nothing changes
+ok   a bad file is refused in words (/not a saved-lists backup/) and nothing changes
+ok   a bad file is refused in words (/newer version of the app \(format 2\)/) and nothing changes
+ok   a bad file is refused in words (/no usable lists/) and nothing changes
+ok   a bad file is refused in words (/no usable lists/) and nothing changes
+ok   a file the app could not read says why
+ok   a file is cleaned: names trimmed and cut, descriptions cut, only real package names kept once, a repeated or odd id replaced, entries that are not lists dropped
+ok   at most 200 lists are taken from a file
+ok   and at most 5000 apps in a list
+ok   Use Downloads goes back to the default, switches Automatic off, and the folder controls go off
+ok   a backup read back is the lists that were backed up (names with quotes, tags and non-ASCII, a line break in a description)
+ok   and the list is shown as text, not markup
+errors: []
+all ok
