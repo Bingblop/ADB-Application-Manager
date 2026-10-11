@@ -26,14 +26,18 @@ const { chromium, PAGE } = require('./lib/pw');
   });
 
   // the rule itself, against hand-made pairs
-  const pairs = await ev(() => [['#FFFF00', '#FFEB3B'], ['#00008B', '#4B0082'], ['#00E5FF', '#7C4DFF'], ['#FFD600', '#0000AA'], ['#FFFFFF', '#000000'], ['#FF5722', '#FFC107'], ['#A0A0A0', '#000040'], ['#FF0000', '#008080']].map(([a, c]) => {
-    const pts = []; for (let i = 0; i <= 8; i++) pts.push(i === 0 ? a : i === 8 ? c : mixColors(a, c, i / 8));
-    const worst = x => Math.min.apply(null, pts.map(q => contrastRatio(q, x)));
-    return { a, c, got: onGradientColor(a, c), black: +worst('#000000').toFixed(2), white: +worst('#FFFFFF').toFixed(2) };
+  const pairs = await ev(() => [['#FFFF00', '#FFEB3B'], ['#00008B', '#4B0082'], ['#00E5FF', '#7C4DFF'], ['#FFD600', '#0000AA'], ['#FFFFFF', '#000000'], ['#FF5722', '#FFC107'], ['#A0A0A0', '#000040'], ['#FF0000', '#008080'], ['#FF0000', '#00A80A']].map(([a, c]) => {
+    // the oracle does not use the page's rule: 4001 unrounded points along the gradient, its darkest and its brightest
+    const lin = u => u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4);
+    const x = [1, 3, 5].map(i => parseInt(a.substr(i, 2), 16)), y = [1, 3, 5].map(i => parseInt(c.substr(i, 2), 16));
+    let lo = 9, hi = -9;
+    for (let i = 0; i <= 4000; i++) { const t = i / 4000, q = x.map((v, k) => lin((v + (y[k] - v) * t) / 255)), l = 0.2126 * q[0] + 0.7152 * q[1] + 0.0722 * q[2]; lo = Math.min(lo, l); hi = Math.max(hi, l); }
+    return { a, c, got: onGradientColor(a, c), black: +((lo + 0.05) / 0.05).toFixed(2), white: +(1.05 / (hi + 0.05)).toFixed(2) };
   }));
   for (const p of pairs) check('onGradientColor(' + p.a + ', ' + p.c + ') = ' + p.got + ' (worst contrast black ' + p.black + ', white ' + p.white + ')', p.got === (p.black >= p.white ? '#000000' : '#FFFFFF'));
   check('two light colors get black, two dark colors get white', pairs[0].got === '#000000' && pairs[1].got === '#FFFFFF');
   check('complementary ends (red to teal): the middle of the gradient is darker than both ends, and the rule reads it: white, not the black the two ends alone would pick', pairs[7].got === '#FFFFFF' && pairs[7].white > pairs[7].black, JSON.stringify(pairs[7]));
+  check('red to green (#00A80A): the darkest point is between nine evenly spaced samples (t about 0.44), where black falls just below white: white', pairs[8].got === '#FFFFFF' && pairs[8].white > pairs[8].black, JSON.stringify(pairs[8]));
   check('a mid-light accent over a very dark secondary gets WHITE (black reads on the accent alone, but not over the whole gradient)', pairs[6].got === '#FFFFFF', JSON.stringify(pairs[6]));
 
   // every palette, in dark and light: the page variable and the three surfaces agree with the rule

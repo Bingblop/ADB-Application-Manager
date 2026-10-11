@@ -8944,12 +8944,19 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Black or white text for something painted with a gradient from color a to color b: the one whose WORST contrast over the whole gradient is the better
-        // (the accent alone is not enough: a bright accent with a dark secondary needs the choice that reads over both)
+        // (the accent alone is not enough: a bright accent with a dark secondary needs the choice that reads over both).
+        // The luminance along an sRGB gradient is convex: its darkest point can lie between the ends (red to teal), found here by a ternary search
+        // on the unrounded mix; its brightest point is always one of the two ends.
         function onGradientColor(a, b) {
-            // nine samples: both ends and seven mixes between them, because with channels moving in opposite directions the middle can be darker than both ends
-            const pts = []; for (let i = 0; i <= 8; i++) pts.push(i === 0 ? a : i === 8 ? b : mixColors(a, b, i / 8));
-            const worst = c => Math.min.apply(null, pts.map(p => contrastRatio(p, c)));
-            return worst('#000000') >= worst('#FFFFFF') ? '#000000' : '#FFFFFF';
+            const x = hexToRgb(a), y = hexToRgb(b);
+            const lum = t => {
+                const c = x.map((v, i) => { const u = (v + (y[i] - v) * t) / 255; return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); });
+                return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+            };
+            let lo = 0, hi = 1;
+            for (let i = 0; i < 60; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (lum(m1) <= lum(m2)) hi = m2; else lo = m1; }
+            const lMin = Math.min(lum(0), lum(1), lum((lo + hi) / 2)), lMax = Math.max(lum(0), lum(1));
+            return (lMin + 0.05) / 0.05 >= 1.05 / (lMax + 0.05) ? '#000000' : '#FFFFFF';
         }
 
         // Darkens (or lightens) a color step by step until it reaches the contrast target against bg
