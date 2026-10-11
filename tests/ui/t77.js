@@ -49,7 +49,8 @@ const APPS = [
 
   // 2) the menu button at the right end of the bar
   const bx = await ev(page, () => { const r = e => { const b = document.getElementById(e).getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height) }; }; return { box: r('searchBox'), input: r('searchInput'), btn: r('searchMenuBtn'), label: document.getElementById('searchMenuBtn').getAttribute('aria-label'), text: document.getElementById('searchMenuBtn').innerText, expanded: document.getElementById('searchMenuBtn').getAttribute('aria-expanded') }; });
-  check('2. a menu button (three dots) sits all the way to the right inside the search bar, at least 40 x 40', bx.btn.r <= bx.box.r && bx.box.r - bx.btn.r <= 8 && bx.btn.w >= 40 && bx.btn.h >= 40 && bx.btn.t >= bx.box.t && bx.btn.b <= bx.box.b && bx.text === '⋮', JSON.stringify(bx));
+  const rf = await ev(page, () => { const b = document.getElementById('appsRefreshBtn').getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right) }; });
+  check('2. a menu button (three dots) sits at the right end inside the search bar, just left of the Refresh button, at least 40 x 40', bx.btn.r <= rf.l + 1 && rf.r <= bx.box.r && bx.box.r - rf.r <= 8 && bx.btn.w >= 40 && bx.btn.h >= 40 && bx.btn.t >= bx.box.t && bx.btn.b <= bx.box.b && bx.text === '⋮', JSON.stringify(bx));
   check('   it has a name for a screen reader and says it is closed', bx.label === 'Search options' && bx.expanded === 'false');
   check('   the menu is closed at the start', !(await menuOpen(page)));
   await page.fill('#searchInput', 'cal');
