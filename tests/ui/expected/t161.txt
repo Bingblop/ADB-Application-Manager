@@ -1,0 +1,50 @@
+ok   320px 1. a Refresh button sits in the search bar, visible, an icon with no text: {"box":{"l":16,"r":304,"t":578,"b":624,"w":288,"h":46},"btn":{"l":260,"r":300,"t":581,"b":621,"w":40,"h":40},"menu":{"l":220,"r":260,"t":581,"b":621,"w":40,"h":40},"inp":{"l":16,"r":304,"t":578,"b":624,"w":288,"h":46},"vw":320,"lastButton":"appsRefreshBtn","visible":true,"label":"Refresh","title":"Refresh","text":"","svg":true,"type":"button","inSearchRow":true,"scrollX":false}
+ok   320px    it is the last control: the right-most thing in the bar, after the search options button, inside the bar and the screen: {"box":{"l":16,"r":304,"t":578,"b":624,"w":288,"h":46},"btn":{"l":260,"r":300,"t":581,"b":621,"w":40,"h":40},"menu":{"l":220,"r":260,"t":581,"b":621,"w":40,"h":40},"inp":{"l":16,"r":304,"t":578,"b":624,"w":288,"h":46},"vw":320,"lastButton":"appsRefreshBtn","visible":true,"label":"Refresh","title":"Refresh","text":"","svg":true,"type":"button","inSearchRow":true,"scrollX":false}
+ok   320px    at least 40 x 40, within the height of the bar: {"l":260,"r":300,"t":581,"b":621,"w":40,"h":40}
+ok   320px    it is named for a screen reader and has a tool tip, with the existing word "Refresh"
+ok   320px    the page does not scroll sideways
+ok   320px    the Sort row is untouched (5 controls, one line) and the bar keeps its height: {"rowH":30,"boxH":46,"kids":5,"inpW":288,"room":186,"hint":186}
+ok   320px    the search box keeps room to type: the empty box shows the whole hint ("Search by name or package"): {"rowH":30,"boxH":46,"kids":5,"inpW":288,"room":186,"hint":186}
+ok   320px    with text in the box the clear x stays, left of the menu button, and Refresh is still the last: {"clearShown":true,"clearLeftOfMenu":true,"menuLeftOfRefresh":true,"room":146}
+ok   320px    and there is still room to type: {"clearShown":true,"clearLeftOfMenu":true,"menuLeftOfRefresh":true,"room":146}
+ok   320px 2. a tap shows the busy state at once: the button is off, spinning and marked busy: {"disabled":true,"busy":true,"ariaBusy":"true"}
+ok   320px    and the icon really turns: the spin animation runs on the SVG (0.8 s, forever): {"name":"appsRefreshSpin","dur":"0.8s","iter":"infinite"}
+ok   320px    the phone was asked once, however often it was tapped meanwhile: 1
+ok   320px    when the load is done the button is on again and still: {"disabled":false,"busy":false,"ariaBusy":null}
+ok   320px    and the icon stops turning
+ok   320px    and a later tap loads again: 2
+ok   320px 3. before: search "alpha", 3rd Party filter, one app selected: two apps listed: {"names":"Alpha One|Alpha Two","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one"}
+ok   320px    after: the list shows the new data (Alpha Two gone, Alpha Three there) and the counts follow: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   320px    the search text, the sort and the filter are as they were: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   320px    the selected app is still selected and drawn selected: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   320px 3b. with 64 apps listed and the page scrolled down, a refresh keeps the scroll position: rows 64, before 900, after 900
+ok   320px 4. the tap ticks once, and nothing with Haptic feedback off: 1 / 0
+ok   320px 5. when the load fails the list says so (as every load does) and the button is on again: {"text":"No Applications Loaded\ndevice not reachable\nReload Packages","btnOn":true}
+ok   320px    and a later tap brings the list back: Alpha One|Alpha System|Alpha Three|Zed
+ok   320px 6. in German the name and the tool tip read "Aktualisieren": {"label":"Aktualisieren","title":"Aktualisieren"}
+ok   412px 1. a Refresh button sits in the search bar, visible, an icon with no text: {"box":{"l":16,"r":396,"t":530,"b":576,"w":380,"h":46},"btn":{"l":352,"r":392,"t":533,"b":573,"w":40,"h":40},"menu":{"l":312,"r":352,"t":533,"b":573,"w":40,"h":40},"inp":{"l":16,"r":396,"t":530,"b":576,"w":380,"h":46},"vw":412,"lastButton":"appsRefreshBtn","visible":true,"label":"Refresh","title":"Refresh","text":"","svg":true,"type":"button","inSearchRow":true,"scrollX":false}
+ok   412px    it is the last control: the right-most thing in the bar, after the search options button, inside the bar and the screen: {"box":{"l":16,"r":396,"t":530,"b":576,"w":380,"h":46},"btn":{"l":352,"r":392,"t":533,"b":573,"w":40,"h":40},"menu":{"l":312,"r":352,"t":533,"b":573,"w":40,"h":40},"inp":{"l":16,"r":396,"t":530,"b":576,"w":380,"h":46},"vw":412,"lastButton":"appsRefreshBtn","visible":true,"label":"Refresh","title":"Refresh","text":"","svg":true,"type":"button","inSearchRow":true,"scrollX":false}
+ok   412px    at least 40 x 40, within the height of the bar: {"l":352,"r":392,"t":533,"b":573,"w":40,"h":40}
+ok   412px    it is named for a screen reader and has a tool tip, with the existing word "Refresh"
+ok   412px    the page does not scroll sideways
+ok   412px    the Sort row is untouched (5 controls, one line) and the bar keeps its height: {"rowH":30,"boxH":46,"kids":5,"inpW":380,"room":278,"hint":186}
+ok   412px    the search box keeps room to type: the empty box shows the whole hint ("Search by name or package"): {"rowH":30,"boxH":46,"kids":5,"inpW":380,"room":278,"hint":186}
+ok   412px    with text in the box the clear x stays, left of the menu button, and Refresh is still the last: {"clearShown":true,"clearLeftOfMenu":true,"menuLeftOfRefresh":true,"room":238}
+ok   412px    and there is still room to type: {"clearShown":true,"clearLeftOfMenu":true,"menuLeftOfRefresh":true,"room":238}
+ok   412px 2. a tap shows the busy state at once: the button is off, spinning and marked busy: {"disabled":true,"busy":true,"ariaBusy":"true"}
+ok   412px    and the icon really turns: the spin animation runs on the SVG (0.8 s, forever): {"name":"appsRefreshSpin","dur":"0.8s","iter":"infinite"}
+ok   412px    the phone was asked once, however often it was tapped meanwhile: 1
+ok   412px    when the load is done the button is on again and still: {"disabled":false,"busy":false,"ariaBusy":null}
+ok   412px    and the icon stops turning
+ok   412px    and a later tap loads again: 2
+ok   412px 3. before: search "alpha", 3rd Party filter, one app selected: two apps listed: {"names":"Alpha One|Alpha Two","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one"}
+ok   412px    after: the list shows the new data (Alpha Two gone, Alpha Three there) and the counts follow: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   412px    the search text, the sort and the filter are as they were: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   412px    the selected app is still selected and drawn selected: {"names":"Alpha One|Alpha Three","search":"alpha","sort":"updated/updated","filters":"user","sel":"com.a.one","checked":true,"stat":"4"}
+ok   412px 3b. with 64 apps listed and the page scrolled down, a refresh keeps the scroll position: rows 64, before 900, after 900
+ok   412px 4. the tap ticks once, and nothing with Haptic feedback off: 1 / 0
+ok   412px 5. when the load fails the list says so (as every load does) and the button is on again: {"text":"No Applications Loaded\ndevice not reachable\nReload Packages","btnOn":true}
+ok   412px    and a later tap brings the list back: Alpha One|Alpha System|Alpha Three|Zed
+ok   412px 6. in German the name and the tool tip read "Aktualisieren": {"label":"Aktualisieren","title":"Aktualisieren"}
+ok   7. with "reduce motion" on, the busy button does not turn its icon, but is still off and marked busy: {"busy":true,"disabled":true,"anim":"none"}
+ok   no page errors:
