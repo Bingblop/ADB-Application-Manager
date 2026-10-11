@@ -7,6 +7,7 @@ import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.CleanerRepository
 import com.bloatware.bingblop.data.repository.LogcatRepository
 import com.bloatware.bingblop.data.repository.MonitorRepository
+import com.bloatware.bingblop.data.repository.PatcherRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.data.repository.ShellRepository
 import com.bloatware.bingblop.ui.ADBApp
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
         val cleanerRepository = CleanerRepository(applicationContext)
         val monitorRepository = MonitorRepository(applicationContext, shellRepository)
         val logcatRepository = LogcatRepository(shellRepository)
+        val patcherRepository = PatcherRepository(applicationContext, shellRepository)
 
         setContent {
             ADBTheme {
@@ -32,7 +34,8 @@ class MainActivity : ComponentActivity() {
                     shellRepository = shellRepository,
                     cleanerRepository = cleanerRepository,
                     monitorRepository = monitorRepository,
-                    logcatRepository = logcatRepository
+                    logcatRepository = logcatRepository,
+                    patcherRepository = patcherRepository
                 )
             }
         }

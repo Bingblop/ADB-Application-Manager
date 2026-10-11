@@ -175,3 +175,53 @@ data class PowerUserApp(
     val isInstalled: Boolean = false,
     val hasWriteSecureSettings: Boolean = false
 )
+
+data class PatchBundleInfo(
+    val id: String,
+    val name: String,
+    val version: String,
+    val author: String,
+    val totalPatches: Int,
+    val supportedPackages: List<String>
+)
+
+data class MorphePatchItem(
+    val id: String,
+    val name: String,
+    val summary: String,
+    val category: String,
+    val targetPackage: String,
+    val isRecommended: Boolean = true,
+    val isEnabled: Boolean = false
+)
+
+enum class PatchJobStatus {
+    IDLE,
+    STAGING,
+    DECOMPILING,
+    PATCHING,
+    REPACKAGING,
+    SIGNING,
+    COMPLETED,
+    FAILED
+}
+
+data class MorpheJobState(
+    val status: PatchJobStatus = PatchJobStatus.IDLE,
+    val targetAppLabel: String = "",
+    val targetPackage: String = "",
+    val progress: Float = 0f,
+    val currentStep: String = "",
+    val logs: List<String> = emptyList(),
+    val outputApkPath: String = ""
+)
+
+data class SigningKeystoreInfo(
+    val alias: String,
+    val subject: String,
+    val sha256Fingerprint: String,
+    val algorithm: String = "RSA 2048-bit (SHA256withRSA)",
+    val isHardwareBacked: Boolean = true,
+    val validityYears: Int = 25,
+    val certificateBase64: String = ""
+)
