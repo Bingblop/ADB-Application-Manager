@@ -31,7 +31,7 @@ public final class ApkScan {
      * looks like the absolute path {@code /data/app/y.apk}. (A line break is written with printf, so the command text itself has none.)
      */
     public static final String FIND_PREDICATE =
-            "! -path \"$(printf '*\\n*')\" -type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
+            "! -path \"$(printf '*\\n*')\" ! -path \"$(printf '*\\r*')\" -type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
 
     /** One package file found on storage. */
     public static final class Entry {
