@@ -4876,15 +4876,17 @@ public class MainActivity extends Activity {
     // Opening an archive can take long (a compressed tar is unpacked whole to list it), so the lock is never held while it runs. Each open takes a
     // ticket, and the newest ticket per archive is the only one allowed to publish into archiveSlots: an open that was cancelled, superseded by
     // another open of the same archive, or overtaken by Close, throws its result away (and its staged copy) instead of putting it over a newer one.
-    private static long archiveOpenSeq;
-    private static final java.util.HashMap<String, Long> archiveOpenNewest = new java.util.HashMap<String, Long>();
+    // A ticket is taken when the open is requested (on the bridge thread, in the page's order) and handed to the worker: workers come from a cached
+    // pool, so taking it when a worker starts would let a cancelled older open that starts late supersede the open that replaced it.
+    private static final ArchiveTickets archiveTickets = new ArchiveTickets();
 
     /** A background open of an archive whose listing needs a full unpacking; {@code cancel} is the page's Cancel. */
     private static final class ArchiveOpenJob {
         final String token, path;
         final MainActivity owner;       // the window whose page is waiting for it (released when the job ends or that window is destroyed)
+        final long ticket;              // taken when the open was requested, not when its worker starts
         volatile boolean cancel;
-        ArchiveOpenJob(String token, String path, MainActivity owner) { this.token = token; this.path = path; this.owner = owner; }
+        ArchiveOpenJob(String token, String path, MainActivity owner, long ticket) { this.token = token; this.path = path; this.owner = owner; this.ticket = ticket; }
     }
 
     private volatile boolean activityDestroyed;     // set by onDestroy: a background job must not call into this window's page any more
@@ -4895,7 +4897,7 @@ public class MainActivity extends Activity {
             ArchiveOpenJob job = archiveOpening;
             if (job != null && job.owner == this) {
                 job.cancel = true;
-                archiveOpenNewest.remove(job.path);
+                archiveTickets.remove(job.path);
                 archiveOpening = null;
             }
         }
@@ -4918,14 +4920,23 @@ public class MainActivity extends Activity {
      * ({@code IOException("Cancelled")}); it is asked once more just before the result is published.
      */
     private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb) throws Exception {
+        return archiveFor(path, fresh, password, cb, 0);
+    }
+
+    /** As above; {@code requested} (0: none) is the ticket the caller took when the open was asked for, so an open that a newer request or Close has overtaken ends as Cancelled before it starts. */
+    private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb, long requested) throws Exception {
         String p = fmCanonicalPath(path);
         if (fmPrivate(p)) throw new IOException(PRIVATE_WHY);
         long ticket;
         synchronized (archiveLock) {
             ArcSlot hit = fresh ? null : archiveSlots.get(p);
             if (hit != null && !hit.archive.isStale()) return hit.archive;
-            ticket = ++archiveOpenSeq;
-            archiveOpenNewest.put(p, ticket);
+            if (requested > 0) {
+                ticket = requested;
+                if (!archiveTickets.isNewest(p, ticket)) throw new IOException("Cancelled");      // overtaken before it started: it must not touch the newer open's ticket
+            } else {
+                ticket = archiveTickets.issue(p);
+            }
         }
         String stagedPath = null, stamp = null;
         boolean published = false;
@@ -4941,11 +4952,11 @@ public class MainActivity extends Activity {
             ZipTool.Archive a = openAnyArchive(use, password, cb);
             java.util.ArrayList<String> gone = new java.util.ArrayList<String>();
             synchronized (archiveLock) {
-                Long newest = archiveOpenNewest.get(p);
-                if (newest == null || newest.longValue() != ticket || (cb != null && !cb.tick(0))) {
+                boolean newest = archiveTickets.isNewest(p, ticket);
+                if (!newest || (cb != null && !cb.tick(0))) {
                     // a newer open of this archive (or Close) came first. A plain read is happy with what the newer one published.
                     ArcSlot now = fresh ? null : archiveSlots.get(p);
-                    if (now != null && !now.archive.isStale() && (newest == null || newest.longValue() != ticket)) return now.archive;
+                    if (now != null && !now.archive.isStale() && !newest) return now.archive;
                     throw new IOException("Cancelled");
                 }
                 ArcSlot old = archiveSlots.get(p);
@@ -4959,8 +4970,7 @@ public class MainActivity extends Activity {
             return a;
         } finally {
             synchronized (archiveLock) {
-                Long newest = archiveOpenNewest.get(p);
-                if (newest != null && newest.longValue() == ticket) archiveOpenNewest.remove(p);
+                archiveTickets.finish(p, ticket);
             }
             if (!published && stagedPath != null) deleteStagedFiles(java.util.Collections.singletonList(stagedPath));
         }
@@ -4985,7 +4995,7 @@ public class MainActivity extends Activity {
     private void dropSlot(String canonicalPath) {
         String staged = null;
         synchronized (archiveLock) {
-            archiveOpenNewest.remove(canonicalPath);
+            archiveTickets.remove(canonicalPath);
             ArcSlot slot = archiveSlots.remove(canonicalPath);
             if (slot != null) staged = slot.stagedPath;
         }
@@ -13699,7 +13709,7 @@ public class MainActivity extends Activity {
                 final ArchiveOpenJob job;
                 synchronized (archiveLock) {
                     if (archiveOpening != null) archiveOpening.cancel = true;      // the page asked for another one: the old one ends as cancelled
-                    job = new ArchiveOpenJob("open" + (++archiveOpenJobs), p, MainActivity.this);
+                    job = new ArchiveOpenJob("open" + (++archiveOpenJobs), p, MainActivity.this, archiveTickets.issue(p));      // the ticket now, in the page's order
                     archiveOpening = job;
                 }
                 if (!submitJob(new Runnable() {
@@ -13720,7 +13730,7 @@ public class MainActivity extends Activity {
                                     }
                                     return true;
                                 }
-                            });
+                            }, job.ticket);
                             res = archiveOpenJson(a, p);
                         } catch (Throwable t) {
                             res = new JSONObject();
@@ -13741,6 +13751,7 @@ public class MainActivity extends Activity {
                     synchronized (archiveLock) {
                         if (archiveOpening == job) archiveOpening = null;
                     }
+                    archiveTickets.finish(p, job.ticket);       // the worker will never run: its ticket must not stay behind
                     return archiveFail("The archive could not be opened right now");
                 }
                 return new JSONObject().put("ok", true).put("pending", true).put("token", job.token).toString();
@@ -14238,7 +14249,7 @@ public class MainActivity extends Activity {
             java.util.ArrayList<String> staged = new java.util.ArrayList<String>();
             synchronized (archiveLock) {
                 if (archiveOpening != null) archiveOpening.cancel = true;      // an open still unpacking is not wanted any more
-                archiveOpenNewest.clear();                                     // and nothing that is still opening may publish after this
+                archiveTickets.clear();                                           // and nothing that is still opening may publish after this
                 for (ArcSlot slot : archiveSlots.values()) if (slot.stagedPath != null) staged.add(slot.stagedPath);
                 archiveSlots.clear();
                 staged.addAll(archiveEvictedStages);
@@ -14254,7 +14265,7 @@ public class MainActivity extends Activity {
             String p = fmCanonicalPath(path);
             String staged = null;
             synchronized (archiveLock) {
-                archiveOpenNewest.remove(p);
+                archiveTickets.remove(p);
                 ArcSlot slot = archiveSlots.remove(p);
                 if (slot != null) staged = slot.stagedPath;
             }

@@ -166,6 +166,7 @@ public class ArchiveCancelTest {
         File root = Files.createTempDirectory("archivecancel").toFile();
         try {
             shortReads();
+            tickets();
             smallArchives(root);
             bigArchives(root);
             sourceScan();
@@ -215,6 +216,52 @@ public class ArchiveCancelTest {
                 check(what + ": asked at least every 64 KB of data (largest step " + p.maxStep + " over " + p.asks + " asks)", p.maxStep <= ArchiveIo.POLL_BYTES && p.asks >= total / ArchiveIo.POLL_BYTES, "maxStep=" + p.maxStep);
             }
         }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------ tickets
+
+    /** The order the page asked in, not the order the workers start in, decides which open is the newest (Cancel, then open the same archive again). */
+    static void tickets() {
+        final String p = "/sdcard/big.tar.zst";
+        // forced order: request 1, Cancel, request 2 (same archive); the replacement's worker starts FIRST, the cancelled one starts second
+        ArchiveTickets t = new ArchiveTickets();
+        long t1 = t.issue(p), t2 = t.issue(p);
+        check("tickets: the replacement's worker starts first and is the newest", t.isNewest(p, t2), null);
+        check("tickets: the cancelled older worker starting second is no longer the newest (it ends Cancelled before it starts)", !t.isNewest(p, t1), null);
+        t.finish(p, t1);      // what its finally does
+        check("tickets: ... and finishing it leaves the replacement's ticket alone, so the replacement still publishes", t.isNewest(p, t2), null);
+        t.finish(p, t2);
+        check("tickets: ... the replacement's own finish forgets it", !t.isNewest(p, t2), null);
+
+        // the other order
+        t = new ArchiveTickets();
+        t1 = t.issue(p); t2 = t.issue(p);
+        t.finish(p, t1);
+        check("tickets: the cancelled older worker finishing first leaves the replacement the newest", t.isNewest(p, t2) && !t.isNewest(p, t1), null);
+
+        // another archive is its own line
+        long q1 = t.issue("/sdcard/other.tar.gz");
+        check("tickets: another archive's ticket does not supersede this one's", t.isNewest(p, t2) && t.isNewest("/sdcard/other.tar.gz", q1), null);
+
+        // Release / the window going drops the archive's ticket, Close drops all
+        t.remove(p);
+        check("tickets: remove (Release, dropSlot, the window going) makes the open stale", !t.isNewest(p, t2) && t.isNewest("/sdcard/other.tar.gz", q1), null);
+        t.clear();
+        check("tickets: clear (Close) makes every open stale", !t.isNewest("/sdcard/other.tar.gz", q1), null);
+        long late = t.issue(p);
+        check("tickets: a ticket taken after a clear is the newest again, and numbers never repeat", t.isNewest(p, late) && late > q1, null);
+
+        // a thread-per-worker run of the same sequence, started in the bad order, repeated
+        for (int round = 0; round < 200; round++) {
+            final ArchiveTickets tt = new ArchiveTickets();
+            final long a = tt.issue(p), b = tt.issue(p);
+            final boolean[] started = new boolean[2];
+            Thread replacement = new Thread() { public void run() { started[1] = tt.isNewest(p, b); tt.finish(p, b); } };
+            Thread older = new Thread() { public void run() { started[0] = tt.isNewest(p, a); tt.finish(p, a); } };
+            try { replacement.start(); older.start(); replacement.join(); older.join(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            if (started[0] || !started[1]) { check("tickets: threads, replacement and older worker in any interleaving: the replacement always starts as the newest, the older never does (round " + round + ")", false, Arrays.toString(started)); return; }
+        }
+        check("tickets: threads, replacement and older worker in any interleaving: the replacement always starts as the newest, the older never does (200 rounds)", true, null);
     }
 
     // ------------------------------------------------------------------------------------------------------------ the decision
@@ -364,7 +411,7 @@ public class ArchiveCancelTest {
         File sdir = srcDir();
         if (sdir == null) { System.out.println("SKIP source scan: src/com/bloatware/bingblop not found"); return; }
         String m = new String(Files.readAllBytes(new File(sdir, "MainActivity.java").toPath()), StandardCharsets.UTF_8);
-        String af = bodyOf(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb)");
+        String af = bodyOf(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb, long requested)");
         check("source: archiveFor (the one that opens) is found", af != null, null);
         if (af != null) {
             int open = af.indexOf("openAnyArchive(");
@@ -373,8 +420,8 @@ public class ArchiveCancelTest {
             check("source: archiveFor does not hold archiveLock while it unpacks the archive (openAnyArchive)", open > 0 && !insideLock(af, open), null);
             check("source: ... nor while it copies a file out through the shell (stageArchive)", stage > 0 && !insideLock(af, stage), null);
             check("source: ... it takes the lock only to publish into archiveSlots", put > 0 && insideLock(af, put), null);
-            int newest = af.indexOf("newest.longValue() != ticket");
-            check("source: ... and checks it is still the newest open of that archive first (a stale open never publishes over a newer one)", newest > 0 && newest < put && af.contains("if (newest == null || newest.longValue() != ticket ||") && af.contains("throw new IOException(\"Cancelled\")"), null);
+            int newest = af.indexOf("archiveTickets.isNewest(p, ticket)");
+            check("source: ... and checks it is still the newest open of that archive first (a stale open never publishes over a newer one)", newest > 0 && newest < put && af.contains("if (!newest || (cb != null && !cb.tick(0)))") && af.contains("throw new IOException(\"Cancelled\")"), null);
             check("source: ... a discarded open removes its staged copy", af.contains("if (!published && stagedPath != null) deleteStagedFiles("), null);
             check("source: ... and it asks the callback once more just before publishing (a Cancel that came last still wins)", af.contains("cb != null && !cb.tick(0)"), null);
         }
@@ -387,7 +434,7 @@ public class ArchiveCancelTest {
         check("source: onDestroy marks the activity destroyed and cancels the archive open it started (a huge tar must not keep the window alive)",
                 od != null && od.contains("activityDestroyed = true;") && od.contains("cancelArchiveOpenOnDestroy();"), null);
         check("source: ... that sets the job's cancel flag, drops its ticket (so it publishes nothing and removes its staged copy) and lets go of the job, under the lock, only for this window's job",
-                cd != null && cd.contains("job.owner == this") && cd.contains("job.cancel = true;") && cd.contains("archiveOpenNewest.remove(job.path);") && cd.contains("archiveOpening = null;") && cd.contains("synchronized (archiveLock)"), null);
+                cd != null && cd.contains("job.owner == this") && cd.contains("job.cancel = true;") && cd.contains("archiveTickets.remove(job.path);") && cd.contains("archiveOpening = null;") && cd.contains("synchronized (archiveLock)"), null);
         check("source: the worker's progress ask stops once the activity is destroyed, and its answer is not delivered to a destroyed page",
                 any != null && any.contains("if (job.cancel || activityDestroyed) return false;") && any.indexOf("if (activityDestroyed) return;") > 0
                 && any.indexOf("if (activityDestroyed) return;") < any.indexOf("window.onArchiveOpened"), null);
@@ -399,16 +446,26 @@ public class ArchiveCancelTest {
             int run = b == null ? -1 : b.indexOf("public void run()"), flag = b == null ? -1 : b.indexOf("!activityDestroyed"), eval = b == null ? -1 : b.indexOf("evaluateJavascript");
             check("source: " + c[0] + " checks activityDestroyed inside the UI-thread runnable, before it calls the page (onDestroy may run between queueing and running)", run > 0 && flag > run && eval > flag, null);
         }
+        // the ticket is taken when the open is requested (bridge thread), not when its worker starts
+        String af5 = af;
+        check("source: archiveFor takes a ticket the caller took at request time, and ends as Cancelled before starting when it is no longer the newest (a late older worker never touches the newer ticket)",
+                af5 != null && af5.contains("if (requested > 0) {") && af5.contains("ticket = requested;") && af5.contains("if (!archiveTickets.isNewest(p, ticket)) throw new IOException(\"Cancelled\");")
+                && af5.indexOf("throw new IOException(\"Cancelled\")") < af5.indexOf("openAnyArchive(") && af5.contains("ticket = archiveTickets.issue(p);"), null);
+        int mkJob = any == null ? -1 : any.indexOf("new ArchiveOpenJob("), submit = any == null ? -1 : any.indexOf("submitJob(");
+        check("source: archiveOpenAny takes the job's ticket in the bridge call (inside the lock, before the worker is queued), not in the worker",
+                mkJob > 0 && submit > mkJob && any.contains("MainActivity.this, archiveTickets.issue(p))") && insideLock(any, mkJob) && !any.substring(submit).contains("archiveTickets.issue("), null);
+        check("source: ... the worker hands that ticket to archiveFor, and a worker that was never queued gives it back",
+                any != null && any.contains("}, job.ticket);") && any.contains("archiveTickets.finish(p, job.ticket);"), null);
         check("source: a fast format is still answered in the call (archiveFor then archiveOpenJson)", any != null && any.indexOf("archiveOpenJson(a, p).toString()") > 0, null);
         check("source: archiveOpen and archiveOpen2 both go through it", m.contains("return archiveOpenAny(path, null);") && m.contains("return archiveOpenAny(path, password == null"), null);
         String cancel = bodyOf(m, "public void archiveOpenCancel()");
         check("source: archiveOpenCancel is a bridge method that sets the running open's flag", cancel != null && cancel.contains("archiveOpening.cancel = true") && m.contains("@JavascriptInterface\n        public void archiveOpenCancel()"), null);
         String close = bodyOf(m, "public void archiveClose()");
-        check("source: Close cancels a running open and clears the tickets, so nothing publishes after it", close != null && close.contains("archiveOpening.cancel = true") && close.contains("archiveOpenNewest.clear()"), null);
+        check("source: Close cancels a running open and clears the tickets, so nothing publishes after it", close != null && close.contains("archiveOpening.cancel = true") && close.contains("archiveTickets.clear()"), null);
         String rel = bodyOf(m, "public void archiveRelease(String path)");
-        check("source: Release of one archive drops its ticket too", rel != null && rel.contains("archiveOpenNewest.remove(p)"), null);
+        check("source: Release of one archive drops its ticket too", rel != null && rel.contains("archiveTickets.remove(p)"), null);
         String drop = bodyOf(m, "private void dropSlot(String canonicalPath)");
-        check("source: dropSlot drops its ticket too", drop != null && drop.contains("archiveOpenNewest.remove(canonicalPath)"), null);
+        check("source: dropSlot drops its ticket too", drop != null && drop.contains("archiveTickets.remove(canonicalPath)"), null);
         for (String sig : new String[] {"public String archiveList(", "public String archiveRead(", "public String archiveSetPassword("}) {
             String b = bodyOf(m, sig);
             check("source: " + sig.replace("public String ", "") + " (on the bridge thread) can give up a long re-listing in words", b != null && b.contains("archiveForUi(path)") && !b.contains("archiveFor(path, false)"), null);
