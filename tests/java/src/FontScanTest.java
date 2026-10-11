@@ -1,4 +1,5 @@
 import com.bloatware.bingblop.FontScan;
+import com.bloatware.bingblop.FontStore;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -275,9 +276,155 @@ public class FontScanTest {
     check("the limit is 12 MB", FontScan.MAX_FONT_BYTES == 12L * 1024 * 1024);
     deleteAll(stash);
 
+    stalledSources();
+
     deleteAll(root);
     System.out.println(fails == 0 ? "ALL PASSED" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);
+  }
+
+  // ---------- a source that stalls: the 30 s limit must hold even when read() never returns, and nothing waits on it ----------
+  /** Delivers the first half of a font, then blocks in read() until released (a cloud provider that stopped answering). close() frees the read only when closeFrees. */
+  static class Stalled extends java.io.InputStream {
+    final byte[] f; final boolean closeFrees;
+    final java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1), blocked = new java.util.concurrent.CountDownLatch(1);
+    volatile boolean closed; int pos;
+    Stalled(byte[] f, boolean closeFrees) { this.f = f; this.closeFrees = closeFrees; }
+    @Override public int read() throws IOException { byte[] b = new byte[1]; int n = read(b, 0, 1); return n < 0 ? -1 : b[0] & 0xff; }
+    @Override public int read(byte[] b, int off, int len) throws IOException {
+      if (pos < f.length / 2) { int n = Math.min(len, f.length / 2 - pos); System.arraycopy(f, pos, b, off, n); pos += n; return n; }
+      blocked.countDown();
+      try { release.await(); } catch (InterruptedException e) { throw new java.io.InterruptedIOException(); }
+      if (closed) throw new IOException("closed");
+      int n = Math.min(len, f.length - pos);
+      if (n <= 0) return -1;
+      System.arraycopy(f, pos, b, off, n); pos += n; return n;
+    }
+    @Override public void close() { closed = true; if (closeFrees) release.countDown(); }
+  }
+
+  /** Runs r on its own thread and waits up to waitMs: false when it did not finish (the old code's behaviour with a stalled source). */
+  static boolean finishes(Runnable r, long waitMs) throws InterruptedException {
+    Thread t = new Thread(r, "test-call"); t.setDaemon(true); t.start(); t.join(waitMs); return !t.isAlive();
+  }
+
+  static int liveThreads(String name) { int c = 0; for (Thread t : Thread.getAllStackTraces().keySet()) if (t.getName().equals(name) && t.isAlive()) c++; return c; }
+
+  static String listing(File d) { String[] k = d.list(); if (k == null) return ""; java.util.Arrays.sort(k); return java.util.Arrays.toString(k); }
+
+  static void stalledSources() throws Exception {
+    final long LIMIT = 700;                       // the real limit is 30 s; the code takes it as a parameter
+    final byte[] font = simple("Stalled", "Regular");
+
+    // (a) a source that stalls half way: copyChecked comes back with the timeout error at about the limit, with nothing left on disk
+    final File d1 = Files.createTempDirectory("fstall").toFile();
+    final Stalled st = new Stalled(font, false);   // close() does not free the read: the hardest case
+    final long[] took = new long[1]; final String[] err = new String[1];
+    final long t0 = System.currentTimeMillis();
+    boolean returned = finishes(new Runnable() { public void run() {
+      try { FontScan.copyChecked(st, new File(d1, "preview.bin"), LIMIT); err[0] = "no error"; } catch (IOException e) { err[0] = e.getMessage(); }
+      took[0] = System.currentTimeMillis() - t0;
+    } }, LIMIT + 2500);
+    check("a stalled source: copyChecked returns by the limit (" + took[0] + " ms of " + LIMIT + ")", returned && took[0] >= LIMIT - 50 && took[0] < LIMIT + 1500);
+    check("a stalled source: the error says it took too long: " + err[0], err[0] != null && err[0].contains("took too long"));
+    check("a stalled source: no .part file and no font left: " + listing(d1), listing(d1).equals("[]"));
+    check("a stalled source: the stream is closed to free the stuck read", waitFor(new java.util.concurrent.Callable<Boolean>() { public Boolean call() { return st.closed; } }, 1000));
+    // the stuck read comes back later with the rest of the font: nothing is written, nothing is brought back
+    st.release.countDown();
+    Thread.sleep(400);
+    check("a late answer from the stalled source writes nothing: " + listing(d1), listing(d1).equals("[]"));
+    check("the copy thread has ended once the read came back", waitFor(new java.util.concurrent.Callable<Boolean>() { public Boolean call() { return liveThreads("font-copy") == 0; } }, 2000));
+    deleteAll(d1);
+
+    // (b) a source that trickles (a byte every 40 ms) is stopped by the same limit, not by the byte count
+    final File d2 = Files.createTempDirectory("ftrickle").toFile();
+    final String[] err2 = new String[1];
+    long t1 = System.currentTimeMillis();
+    boolean ret2 = finishes(new Runnable() { public void run() {
+      try {
+        FontScan.copyChecked(new java.io.InputStream() {
+          @Override public int read() throws IOException { try { Thread.sleep(40); } catch (InterruptedException e) { throw new java.io.InterruptedIOException(); } return 1; }
+          @Override public int read(byte[] b, int off, int len) throws IOException { b[off] = 1; return read() > 0 ? 1 : -1; }
+        }, new File(d2, "preview.bin"), LIMIT);
+        err2[0] = "no error";
+      } catch (IOException e) { err2[0] = e.getMessage(); }
+    } }, LIMIT + 2500);
+    long took2 = System.currentTimeMillis() - t1;
+    check("a trickling source is given up on at the limit (" + took2 + " ms): " + err2[0], ret2 && took2 < LIMIT + 1500 && err2[0] != null && err2[0].contains("took too long"));
+    Thread.sleep(150);
+    check("a trickling source leaves no file: " + listing(d2), listing(d2).equals("[]"));
+    deleteAll(d2);
+
+    // (c) a good font still copies under the limit (the new thread changes nothing for it)
+    final File d3 = Files.createTempDirectory("fok").toFile();
+    FontScan.Names ok = FontScan.copyChecked(new java.io.ByteArrayInputStream(font), new File(d3, "preview.bin"), LIMIT);
+    check("a good font still copies with the limit: " + ok.family + " " + listing(d3), ok.family.equals("Stalled") && listing(d3).equals("[preview.bin]"));
+    deleteAll(d3);
+
+    // (d) FontStore: apply and clear never wait for a stalled stage (the old code held the lock for the whole copy)
+    final File d4 = Files.createTempDirectory("fstore").toFile();
+    final FontStore store = new FontStore(d4);
+    final byte[] fast = simple("Fast", "Bold");
+    // a font already in use and one being looked at
+    check("a font is staged", store.stage(opener(new java.io.ByteArrayInputStream(fast), "fast.ttf"), 5000).optBoolean("ok"));
+    check("... and applied", new JSONObject(store.apply()).optBoolean("ok"));
+    final Stalled slow = new Stalled(font, false);
+    final JSONObject[] slowRes = new JSONObject[1];
+    final long t4 = System.currentTimeMillis();
+    Thread stage = new Thread(new Runnable() { public void run() { slowRes[0] = store.stage(opener(slow, "slow.ttf"), 1500); } }, "test-stage");
+    stage.setDaemon(true); stage.start();
+    check("the stalled stage is reading", slow.blocked.await(2, java.util.concurrent.TimeUnit.SECONDS));
+    final String[] ar = new String[2];
+    long ta = System.currentTimeMillis();
+    boolean applyDone = finishes(new Runnable() { public void run() { ar[0] = store.apply(); } }, 800);
+    long applyMs = System.currentTimeMillis() - ta;
+    check("apply is not blocked by the stalled stage (" + applyMs + " ms): " + ar[0], applyDone && stage.isAlive() && !new JSONObject(ar[0]).optBoolean("ok"));
+    ta = System.currentTimeMillis();
+    boolean clearDone = finishes(new Runnable() { public void run() { ar[1] = store.clear(); } }, 800);
+    long clearMs = System.currentTimeMillis() - ta;
+    check("clear is not blocked by the stalled stage (" + clearMs + " ms)", clearDone && stage.isAlive() && ar[1].contains("true"));
+    check("clear removed the font in use", !new File(d4, "current.bin").exists() && !new File(d4, "current.json").exists());
+    stage.join(4000);
+    long took4 = System.currentTimeMillis() - t4;
+    check("the stalled stage ends at its own limit with the timeout error (" + took4 + " ms): " + slowRes[0], !stage.isAlive() && slowRes[0] != null && !slowRes[0].optBoolean("ok") && slowRes[0].optString("error").contains("took too long") && took4 < 4000);
+    check("a stalled stage leaves no staging, .part or preview file: " + listing(d4), listing(d4).equals("[]"));
+    slow.release.countDown();
+
+    // (e) a pick that was cleared while it was being read is dropped when it finishes; a newer pick is not overwritten by an older one
+    final Stalled older = new Stalled(font, false);
+    final JSONObject[] olderRes = new JSONObject[1];
+    Thread tOld = new Thread(new Runnable() { public void run() { olderRes[0] = store.stage(opener(older, "older.ttf"), 5000); } }, "test-old");
+    tOld.setDaemon(true); tOld.start();
+    check("the older pick is reading", older.blocked.await(2, java.util.concurrent.TimeUnit.SECONDS));
+    JSONObject newer = store.stage(opener(new java.io.ByteArrayInputStream(fast), "newer.ttf"), 5000);
+    check("a newer pick is staged while the older is stalled", newer.optBoolean("ok") && new File(d4, "preview.bin").isFile());
+    older.release.countDown();                     // the older one now delivers the rest of its font
+    tOld.join(3000);
+    check("the older pick finishing late is refused and keeps the newer preview: " + olderRes[0], !tOld.isAlive() && !olderRes[0].optBoolean("ok") && olderRes[0].optString("error").contains("newer")
+        && FontScan.readNames(new File(d4, "preview.bin")).family.equals("Fast") && listing(d4).equals("[preview.bin, preview.json]"));
+    JSONObject applied = new JSONObject(store.apply());
+    check("the newer pick is the one applied: " + applied, applied.optBoolean("ok") && applied.optString("family").equals("Fast") && new File(d4, "current.bin").isFile());
+    store.clear();
+    final Stalled cleared = new Stalled(font, true);
+    final JSONObject[] clearedRes = new JSONObject[1];
+    Thread tClr = new Thread(new Runnable() { public void run() { clearedRes[0] = store.stage(opener(cleared, "cleared.ttf"), 5000); } }, "test-clr");
+    tClr.setDaemon(true); tClr.start();
+    check("the pick to be cleared is reading", cleared.blocked.await(2, java.util.concurrent.TimeUnit.SECONDS));
+    store.clear();
+    cleared.closed = true; cleared.release.countDown();
+    tClr.join(3000);
+    check("a pick cleared while it was read leaves nothing: " + listing(d4), !tClr.isAlive() && !clearedRes[0].optBoolean("ok") && listing(d4).equals("[]"));
+    deleteAll(d4);
+  }
+
+  static FontStore.Opener opener(final java.io.InputStream in, final String name) {
+    return new FontStore.Opener() { public java.io.InputStream open() { return in; } public String name() { return name; } };
+  }
+
+  static boolean waitFor(java.util.concurrent.Callable<Boolean> c, long ms) throws Exception {
+    long end = System.currentTimeMillis() + ms;
+    while (System.currentTimeMillis() < end) { if (c.call()) return true; Thread.sleep(20); }
+    return c.call();
   }
 
   static boolean contains(List<FontScan.Entry> l, String family) { for (FontScan.Entry e : l) if (e.family.equals(family) || e.name.equals(family + ".ttf")) return true; return false; }

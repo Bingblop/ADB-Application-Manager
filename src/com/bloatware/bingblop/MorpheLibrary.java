@@ -65,16 +65,35 @@ public final class MorpheLibrary {
         }
     }
 
+    /** Copies a file. The target appears whole or not at all: see {@link #copy(InputStream, File)}. */
     static void copy(File from, File to) throws IOException {
         InputStream in = new FileInputStream(from);
+        try { copy(in, to); } finally { in.close(); }
+    }
+
+    /**
+     * Writes the stream into a hidden ".name.part" file beside the target and renames it over the target when it is complete. A copy that fails
+     * half way (storage full, the source unreadable, the card pulled) leaves no partial file that looks like a patched APK or a signing key, and
+     * does not damage a file that was already at the target.
+     */
+    static void copy(InputStream in, File to) throws IOException {
+        File part = new File(to.getParentFile(), "." + to.getName() + ".part");
+        boolean done = false;
         try {
-            OutputStream out = new FileOutputStream(to);
+            OutputStream out = new FileOutputStream(part);
             try {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             } finally { out.close(); }
-        } finally { in.close(); }
+            if (!part.renameTo(to)) {
+                to.delete();
+                if (!part.renameTo(to)) throw new IOException("cannot write " + to);
+            }
+            done = true;
+        } finally {
+            if (!done) part.delete();
+        }
     }
 
     /**
@@ -89,33 +108,56 @@ public final class MorpheLibrary {
     public synchronized JSONObject add(File apk, JSONObject meta, File log, File apkDir) throws IOException {
         String pkg = meta.optString("pkg", "app");
         String ver = meta.optString("versionName", "");
-        String id = System.currentTimeMillis() + "-" + slug(pkg);
+        long stamp = System.currentTimeMillis();
+        String id = stamp + "-" + slug(pkg);
+        while (folder(id).exists()) id = (++stamp) + "-" + slug(pkg);                      // a second filing in the same millisecond (or a retry after a failed one) must not land in the same folder
         File f = folder(id);
         if (!f.mkdirs()) throw new IOException("cannot create " + f);
         String name = slug(pkg) + (ver.isEmpty() ? "" : "_" + slug(ver)) + "-patched.apk";
         File dest = new File(f, name);
-        if (apkDir != null) {
-            if (!apkDir.isDirectory() && !apkDir.mkdirs()) throw new IOException("cannot create " + apkDir);
-            dest = new File(apkDir, name);
-            String base = name.substring(0, name.length() - 4);
-            for (int n = 1; dest.exists(); n++) dest = new File(apkDir, base + " (" + n + ").apk");
-        }
-        if (!apk.renameTo(dest)) { copy(apk, dest); apk.delete(); }
-        File logCopy = null;
-        if (log != null && log.exists()) { logCopy = new File(f, "log.txt"); copy(log, logCopy); }
         try {
-            meta.put("id", id);
-            meta.put("file", dest.getAbsolutePath());
-            meta.put("fileName", dest.getName());
-            meta.put("size", dest.length());
-            meta.put("sha256", sha256(dest));
-            meta.put("patchedAt", System.currentTimeMillis());
-            meta.put("log", logCopy == null ? "" : logCopy.getAbsolutePath());
-            write(new File(f, "meta.json"), meta);
-        } catch (JSONException e) {
-            throw new IOException(e);
+            if (apkDir != null) {
+                if (!apkDir.isDirectory() && !apkDir.mkdirs()) throw new IOException("cannot create " + apkDir);
+                dest = new File(apkDir, name);
+                String base = name.substring(0, name.length() - 4);
+                for (int n = 1; dest.exists(); n++) dest = new File(apkDir, base + " (" + n + ").apk");
+            }
+            if (!apk.renameTo(dest)) { copy(apk, dest); apk.delete(); }
+            File logCopy = null;
+            if (log != null && log.exists()) { logCopy = new File(f, "log.txt"); copy(log, logCopy); }
+            try {
+                meta.put("id", id);
+                meta.put("file", dest.getAbsolutePath());
+                meta.put("fileName", dest.getName());
+                meta.put("size", dest.length());
+                meta.put("sha256", sha256(dest));
+                meta.put("patchedAt", System.currentTimeMillis());
+                meta.put("log", logCopy == null ? "" : logCopy.getAbsolutePath());
+                write(new File(f, "meta.json"), meta);
+            } catch (JSONException e) {
+                throw new IOException(e);
+            }
+        } catch (IOException e) {
+            undo(f, dest, apk);
+            throw e;
         }
         return meta;
+    }
+
+    /**
+     * A filing that failed leaves nothing behind: its folder goes, and so does the APK it wrote, but only once the patched APK is safe again at
+     * its old place (it was moved, and the next attempt - for example into the app folder when Downloads is not writable - needs it there).
+     */
+    private static void undo(File folder, File dest, File apk) {
+        if (dest != null && dest.isFile()) {
+            if (!apk.exists()) {
+                long size = dest.length();
+                if (!dest.renameTo(apk)) { try { copy(dest, apk); } catch (IOException ignored) {} }
+                if (apk.length() != size) return;                                       // could not put it back whole: keep what we have, lose nothing
+            }
+            dest.delete();                                                               // (already gone when it was moved back; a partial copy otherwise)
+        }
+        deleteTree(folder);
     }
 
     private static void write(File f, JSONObject o) throws IOException {
@@ -140,7 +182,12 @@ public final class MorpheLibrary {
         }
     }
 
-    /** Every patched APK, newest first. A folder whose APK is gone is dropped from the list (and cleaned). */
+    /**
+     * Every patched APK, newest first. An entry whose APK was kept in the library's own folder and is gone is dropped (and cleaned). One whose APK
+     * is kept outside (Downloads/Morphe Patcher) stays in the list, marked {@code "missing": true}, when the file cannot be seen: it may only be
+     * out of reach (storage access revoked, the card not mounted) and would come back, and deleting the entry would delete its log and its record
+     * for good. The person removes such an entry with Delete.
+     */
     public synchronized JSONArray list() {
         List<JSONObject> all = new ArrayList<JSONObject>();
         File[] kids = dir.listFiles();
@@ -149,7 +196,12 @@ public final class MorpheLibrary {
             JSONObject m = read(new File(k, "meta.json"));
             if (m == null) continue;
             String file = m.optString("file");
-            if (file.isEmpty() || !new File(file).exists()) { deleteTree(k); continue; }
+            if (file.isEmpty()) { deleteTree(k); continue; }
+            if (!new File(file).exists()) {
+                boolean ours = new File(file).getAbsolutePath().startsWith(k.getAbsolutePath() + File.separator);
+                if (ours) { deleteTree(k); continue; }
+                try { m.put("missing", true); } catch (JSONException ignored) {}
+            }
             all.add(m);
         }
         Collections.sort(all, new Comparator<JSONObject>() {

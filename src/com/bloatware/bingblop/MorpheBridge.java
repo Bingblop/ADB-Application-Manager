@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 
 /**
  * The Morphe Patcher tab's side of the page (window.AndroidBridge.morphe(tag, op, argsJson)): the patch sources and the community finder
@@ -65,9 +64,13 @@ public final class MorpheBridge {
     private final MorpheStore store;
     private final MorpheLibrary library;
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private final Semaphore engine = new Semaphore(1);
-    private final Map<String, Boolean> cancelled = new ConcurrentHashMap<String, Boolean>();
-    private volatile String runningJob = "";
+    private final Object catalogLock = new Object();                                // one catalog read at a time (they share jobs/list)
+    private final MorpheRunner runner = new MorpheRunner(new MorpheRunner.Launcher() {
+        @Override public boolean start(String cmd, File job, File events, String title) { return MorpheService.start(host.context(), cmd, job, events, title); }
+        @Override public void cancel() { MorpheService.cancel(host.context()); }
+        @Override public boolean alive() { return serviceAlive(); }
+    });
+    private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
 
     public MorpheBridge(Host host, File base) {
         this.host = host;
@@ -148,8 +151,12 @@ public final class MorpheBridge {
             case "apkInspect": return apkInspect(a.optString("path"));
             case "pick": return pick(tag, a.optString("kind", "any"));
             case "patch": return startPatch(a);
-            case "cancel": cancelled.put(a.optString("job"), Boolean.TRUE); MorpheService.cancel(host.context()); return null;
-            case "patchedList": return new JSONObject().put("items", library.list());
+            case "cancel": {
+                String job = a.optString("job");
+                if (MorpheJobs.validJobId(job) && job.equals(slot.current())) runner.cancel(job);   // only the run that is going; a stale or foreign id changes nothing
+                return null;
+            }
+            case "patchedList": adoptOrphans(); return new JSONObject().put("items", library.list());
             case "patchedDelete": library.delete(a.optString("id")); return null;
             case "patchedExport": return patchedExport(a.optString("id"));
             case "patchedLog": return new JSONObject().put("text", library.readLog(a.optString("id"), 400 * 1024));
@@ -284,53 +291,9 @@ public final class MorpheBridge {
         }
     }
 
-    /** Waits (a few seconds) for the process of an earlier job to end, so the new one does not start on a service that is about to be stopped. */
-    private void waitForQuiet() throws InterruptedException {
-        for (int i = 0; i < 30 && serviceAlive(); i++) Thread.sleep(200);
-    }
-
-    interface EventSink { void accept(JSONObject e); }
-
-    /** Runs one engine command in the service and follows its events file. Returns the RESULT of the engine (a synthetic failure when it died). */
-    private JSONObject runEngine(String cmd, JSONObject job, File dir, String title, String jobId, EventSink sink, long timeoutMs) throws Exception {
-        dir.mkdirs();
-        File jobFile = new File(dir, "job.json");
-        File events = new File(dir, "events.log");
-        writeText(jobFile, job.toString());
-        events.delete();
-        engine.acquire();
-        try {
-            waitForQuiet();
-            if (!MorpheService.start(host.context(), cmd, jobFile, events, title)) throw new IOException("Android would not start the patcher service. Open the app and try again.");
-            MorpheEvents.Tail tail = new MorpheEvents.Tail(events);
-            long started = System.currentTimeMillis(), lastData = started;
-            StringBuilder lastLog = new StringBuilder();
-            while (true) {
-                List<JSONObject> got = tail.poll();
-                for (JSONObject e : got) {
-                    if ("log".equals(e.optString("t"))) { lastLog.append(e.optString("text")).append('\n'); if (lastLog.length() > 4000) lastLog.delete(0, lastLog.length() - 3000); }
-                    if (!"result".equals(e.optString("t")) && sink != null) sink.accept(e);
-                }
-                if (tail.sawResult()) return tail.result();
-                long now = System.currentTimeMillis();
-                if (!got.isEmpty()) lastData = now;
-                if (jobId != null && cancelled.containsKey(jobId) && now - lastData > 4000) {
-                    return new JSONObject().put("success", false).put("cancelled", true).put("error", "Cancelled");
-                }
-                if (!serviceAlive() && now - started > 10000 && now - lastData > 3000) {
-                    tail.poll();
-                    if (tail.sawResult()) return tail.result();
-                    return new JSONObject().put("success", false).put("error", MorpheJobs.diedMessage(lastLog.toString()));
-                }
-                if (now - started > timeoutMs) {
-                    MorpheService.cancel(host.context());
-                    return new JSONObject().put("success", false).put("error", "The patcher took too long and was stopped.");
-                }
-                Thread.sleep(150);
-            }
-        } finally {
-            engine.release();
-        }
+    /** Runs one engine command in the service and follows its events file (see MorpheRunner). */
+    private JSONObject runEngine(String cmd, JSONObject job, File dir, String title, String jobId, MorpheRunner.EventSink sink, long timeoutMs) throws Exception {
+        return runner.run(cmd, job, dir, title, jobId, sink, timeoutMs);
     }
 
     private static void writeText(File f, String s) throws IOException {
@@ -353,6 +316,12 @@ public final class MorpheBridge {
 
     /** The patches of the downloaded sources, read by the engine once per bundle version and kept in a file. */
     private JSONObject catalog(JSONArray ids, boolean force) throws Exception {
+        synchronized (catalogLock) {                                                       // a second call waits, then finds the first one's answer in the cache
+            return catalogLocked(ids, force);
+        }
+    }
+
+    private JSONObject catalogLocked(JSONArray ids, boolean force) throws Exception {
         JSONObject out = new JSONObject();
         File cacheDir = new File(base, "catalog");
         cacheDir.mkdirs();
@@ -410,14 +379,18 @@ public final class MorpheBridge {
         final String jobId = a.optString("job");
         if (jobId.isEmpty()) throw new IOException("no job id");
         if (!MorpheJobs.validJobId(jobId)) throw new IOException("bad job id");           // it names a folder that the run empties first
-        if (!runningJob.isEmpty()) throw new IOException("A patch is already running.");
-        runningJob = jobId;
-        cancelled.remove(jobId);
-        pool.submit(new Runnable() {
-            @Override public void run() {
-                try { patch(a, jobId); } finally { runningJob = ""; cancelled.remove(jobId); }
-            }
-        });
+        if (!slot.tryStart(jobId)) throw new IOException("A patch is already running.");
+        runner.clearCancelled(jobId);
+        try {
+            pool.submit(new Runnable() {
+                @Override public void run() {
+                    try { patch(a, jobId); } finally { slot.finish(jobId); runner.clearCancelled(jobId); }
+                }
+            });
+        } catch (RuntimeException refused) {                                               // the pool would not take it: do not keep the slot for a run that never starts
+            slot.finish(jobId);
+            throw refused;
+        }
         return new JSONObject().put("job", jobId);
     }
 
@@ -445,6 +418,7 @@ public final class MorpheBridge {
         try {
             deleteTree(dir);
             dir.mkdirs();
+            try { writeText(new File(dir, "request.json"), a.toString()); } catch (IOException ignored) {}   // lets a later start of the app file the result if this process is killed
             step(jobId, "Preparing", "RUNNING");
             File input = prepareInput(a, dir, jobId);
             File output = new File(dir, "patched.apk");
@@ -456,7 +430,7 @@ public final class MorpheBridge {
                 @Override public File fileOf(String id) { return store.bundleFile(id); }
             }, keystore, keyInfo, MorpheJobs.abiName(Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""));
             step(jobId, "Preparing", "OK");
-            final JSONObject engineResult = runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new EventSink() {
+            final JSONObject engineResult = runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
                 @Override public void accept(JSONObject e) { ev(jobId, e); }
             }, 45L * 60 * 1000);
             result = engineResult;
@@ -501,6 +475,21 @@ public final class MorpheBridge {
             try { ev(jobId, new JSONObject().put("t", "result").put("result", result)); } catch (JSONException ignored) {}
             if (a.optBoolean("cleanUp", true)) deleteTree(dir);
         }
+    }
+
+    /**
+     * Files the results of runs that finished while the app was not running (the engine is a process of its own), and removes the folders of runs
+     * that failed or never answered. The run that is going now is left alone.
+     */
+    private synchronized void adoptOrphans() {
+        MorpheOrphans.Scan scan = MorpheOrphans.scan(new File(base, "jobs"), slot.current(), System.currentTimeMillis(), 6L * 60 * 60 * 1000);
+        for (MorpheOrphans.Orphan o : scan.finished) {
+            try {
+                save(o.request, o.apk, o.dir, o.result);
+                deleteTree(o.dir);
+            } catch (Throwable t) { /* stays where it is; the next list tries again */ }
+        }
+        for (File d : scan.debris) deleteTree(d);
     }
 
     private File prepareInput(JSONObject a, File dir, String jobId) throws Exception {
