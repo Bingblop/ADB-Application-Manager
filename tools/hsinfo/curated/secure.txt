@@ -1,0 +1,283 @@
+# key | what it does | values | risk (conn, lock, break)
+accessibility_allow_diagonal_scrolling | While magnified, lets you pan the zoomed screen diagonally. | 0 = off; 1 = on
+accessibility_autoclick_delay | How long the mouse pointer must stay still before it clicks by itself. | milliseconds, e.g. 600
+accessibility_autoclick_enabled | Clicks by itself when the mouse pointer stops moving. | 0 = off; 1 = on
+accessibility_bounce_keys | Ignores a repeated press of the same key on a physical keyboard within this time. | milliseconds; 0 = off
+accessibility_button_mode | Where the accessibility shortcut button lives. | 0 = in the navigation bar; 1 = floating button; 2 = use the navigation gesture
+accessibility_button_targets | The accessibility features the accessibility button starts. | list of component names separated by :
+accessibility_captioning_background_color | Background colour behind captions. | colour as a whole number (ARGB)
+accessibility_captioning_edge_color | Edge colour of caption text. | colour as a whole number (ARGB)
+accessibility_captioning_edge_type | Edge style of caption text. | 0 = none; 1 = outline; 2 = drop shadow; 3 = raised; 4 = depressed
+accessibility_captioning_enabled | Shows captions (subtitles) in video. | 0 = off; 1 = on
+accessibility_captioning_font_scale | Size of caption text. | decimal; 1 = normal; 0.25 to 2 are usual
+accessibility_captioning_foreground_color | Colour of caption text. | colour as a whole number (ARGB)
+accessibility_captioning_locale | Language of captions. | locale, e.g. en_US; empty = the phone language
+accessibility_captioning_preset | Caption style preset. | -1 = custom; 0 to 4 = the presets in Settings
+accessibility_captioning_typeface | Font of captions. | DEFAULT; MONOSPACE; SANS_SERIF; SERIF
+accessibility_captioning_window_color | Colour of the window behind captions. | colour as a whole number (ARGB)
+accessibility_display_daltonizer | Colour correction type. | -1 = off; 0 = grayscale; 11 = red-weak (protanomaly); 12 = green-weak (deuteranomaly); 13 = blue-weak (tritanomaly)
+accessibility_display_daltonizer_enabled | Colour correction for colour blindness. | 0 = off; 1 = on
+accessibility_display_daltonizer_saturation_level | How strong the colour correction is. | whole number, 0 to 10
+accessibility_display_inversion_enabled | Colour inversion. | 0 = off; 1 = on
+accessibility_display_magnification_enabled | Magnify the screen with a triple tap. | 0 = off; 1 = on
+accessibility_display_magnification_scale | How much the magnifier zooms. | decimal, 1 to 8; 2 is the default
+accessibility_enabled | Whether any accessibility service is switched on. Android keeps this by itself. | 0 = off; 1 = on | lock
+accessibility_floating_menu_fade_enabled | The floating accessibility button fades when not used. | 0 = off; 1 = on
+accessibility_floating_menu_icon_type | Shape of the floating accessibility button. | 0 = full circle; 1 = half circle
+accessibility_floating_menu_opacity | How see-through the floating button gets when it fades. | decimal, 0 (invisible) to 1 (solid)
+accessibility_floating_menu_size | Size of the floating accessibility button. | 0 = small; 1 = large
+accessibility_font_scaling_has_been_changed | Whether you ever changed the text size. | 0 = no; 1 = yes
+accessibility_force_invert_color_enabled | Forces dark appearance on apps that have no dark theme. | 0 = off; 1 = on
+accessibility_gesture_targets | The accessibility features the accessibility gesture starts. | list of component names separated by :
+accessibility_interactive_ui_timeout_ms | How long controls that need a tap stay on screen ("Time to take action"). | milliseconds; 0 = use the app's own time
+accessibility_large_pointer_icon | Bigger mouse pointer. | 0 = normal; 1 = large
+accessibility_magnification_always_on_enabled | Keeps the magnifier on when you switch apps. | 0 = off; 1 = on
+accessibility_magnification_capability | Which magnification modes are allowed. | 1 = full screen; 2 = a window; 3 = both
+accessibility_magnification_mode | Which magnification mode the shortcut starts. | 1 = full screen; 2 = a window; 3 = switch between them
+accessibility_non_interactive_ui_timeout_ms | How long messages that need no action stay on screen ("Time to read"). | milliseconds; 0 = use the app's own time
+accessibility_shortcut_on_lock_screen | Allows the accessibility shortcut on the lock screen. | 0 = no; 1 = yes
+accessibility_shortcut_target_service | The accessibility feature the volume-key shortcut starts. | component name, e.g. com.google.android.marvin.talkback/...TalkBackService
+accessibility_slow_keys | Ignores key presses shorter than this on a physical keyboard. | milliseconds; 0 = off
+accessibility_soft_keyboard_mode | Whether the on-screen keyboard shows while a hardware keyboard is used. | 0 = default; 1 = hidden
+accessibility_sticky_keys | Sticky keys: Shift, Ctrl and Alt stay pressed for the next key. | 0 = off; 1 = on
+active_unlock_on_wake | Lets a trusted device unlock the phone when the screen wakes. | 0 = off; 1 = on
+adaptive_charging_enabled | Adaptive Charging: slows charging overnight to protect the battery. | 0 = off; 1 = on
+adaptive_connectivity_enabled | Adaptive connectivity: switches between mobile and Wi-Fi to save power. | 0 = off; 1 = on
+adaptive_sleep | Screen Attention: keeps the screen on while you look at it. | 0 = off; 1 = on
+advanced_protection_mode | Advanced Protection mode. | 0 = off; 1 = on
+allowed_geolocation_origins | Websites that may use your location by default in the browser. | list separated by spaces
+always_on_vpn_app | The app set as always-on VPN. | package name; empty = none
+always_on_vpn_lockdown | Blocks all traffic that does not go through the always-on VPN. | 0 = off; 1 = on
+always_on_vpn_lockdown_whitelist | Apps that may use the network while VPN lockdown is on. | list of package names separated by commas
+android_id | The ID this phone gives to apps (one per app signing key and user). Changing it makes apps treat the phone as new. | 16 hexadecimal characters | break
+anr_show_background | Shows "not responding" dialogs for apps in the background. | 0 = off; 1 = on
+assist_disclosure_enabled | Shows a glow when the assistant reads the screen. | 0 = off; 1 = on
+assist_gesture_enabled | The squeeze or assistant gesture. | 0 = off; 1 = on
+assist_gesture_sensitivity | How hard to squeeze for the assistant gesture. | decimal, 0 to 1
+assist_screenshot_enabled | Lets the assistant use a screenshot of the screen. | 0 = off; 1 = on
+assist_structure_enabled | Lets the assistant see the text and layout of the current app. | 0 = off; 1 = on
+assistant | The app that answers when you call the assistant. | component name; empty = none
+attentive_timeout | How long the phone waits before sleeping when you are not looking at it. | milliseconds
+auto_revoke_disabled | Turns off removing permissions from apps you do not use. | 0 = permissions are removed; 1 = they are kept
+autofill_service | The app that fills in passwords and forms. | component name; empty = none
+automatic_storage_manager_days_to_retain | Storage manager deletes backed-up photos and videos older than this. | days: 30, 60 or 90
+automatic_storage_manager_enabled | Storage manager frees space by itself. | 0 = off; 1 = on
+backup_auto_restore | Restores an app's data when it is reinstalled. | 0 = off; 1 = on
+backup_enabled | Backs up app data and settings to your account. | 0 = off; 1 = on
+backup_transport | The service that backs up and restores data. | component name
+biometric_app_enabled | Lets apps use fingerprint or face to sign in. | 0 = off; 1 = on
+biometric_keyguard_enabled | Lets fingerprint or face unlock the screen. | 0 = off; 1 = on
+bluetooth_address | The Bluetooth address of this phone. Android keeps this by itself. | address like AA:BB:CC:DD:EE:FF
+bluetooth_name | The Bluetooth name of this phone. | text
+bugreport_in_power_menu | Shows "Take bug report" in the power menu. | 0 = hidden; 1 = shown
+camera_autorotate | Rotates the screen using the camera to see how you hold the phone. | 0 = off; 1 = on
+camera_double_tap_power_gesture_disabled | Turns off "double-press the power button to open the camera". | 0 = gesture works; 1 = gesture turned off
+camera_gesture_disabled | Turns off the camera launch gesture. | 0 = gesture works; 1 = gesture turned off
+camera_lift_trigger_enabled | Opens the camera when you lift the phone. | 0 = off; 1 = on
+charging_sounds_enabled | Plays a sound when charging starts. | 0 = off; 1 = on
+charging_vibration_enabled | Vibrates when charging starts. | 0 = off; 1 = on
+clipboard_show_access_notifications | Shows a message when an app reads what you copied. | 0 = off; 1 = on
+clock_seconds | Shows seconds in the status bar clock. | 0 = off; 1 = on
+content_capture_enabled | Content capture, which lets the system see on-screen text for suggestions. | 0 = off; 1 = on
+contextual_screen_timeout_enabled | Keeps the screen on longer when it is needed. | 0 = off; 1 = on
+contrast_level | Colour contrast of the system theme. | decimal, -1 (lowest) to 1 (highest); 0 = standard
+controls_enabled | Device controls (smart home) in the power menu. | 0 = off; 1 = on
+credential_service | Apps that provide passkeys and passwords. | list of component names separated by :
+dark_theme_custom_end_time | When the dark theme turns off on a custom schedule. | milliseconds after midnight, e.g. 25200000 = 7:00
+dark_theme_custom_start_time | When the dark theme turns on on a custom schedule. | milliseconds after midnight, e.g. 72000000 = 20:00
+default_input_method | The keyboard that is in use. | component name, e.g. com.google.android.inputmethod.latin/...LatinIME | lock
+dialer_default_application | The app that makes calls. | package name
+disabled_print_services | Print services that are switched off. | list of component names separated by :
+disabled_system_input_methods | Built-in keyboards that are switched off. | list of keyboard ids separated by :
+display_density_forced | Screen density you set with "wm density". | dots per inch, e.g. 420; empty = the phone's own
+display_white_balance_enabled | Display white balance. | 0 = off; 1 = on
+double_tap_power_button_gesture | What a double press of the power button does. | 0 = open the camera; 1 = open the wallet
+double_tap_power_button_gesture_enabled | Double-press the power button for a shortcut. | 0 = off; 1 = on
+double_tap_to_wake | Wakes the screen when you double-tap it. | 0 = off; 1 = on
+doze_always_on | Always-on display. | 0 = off; 1 = on
+doze_enabled | Allows the display to show a low-power screen (ambient display). | 0 = off; 1 = on
+doze_pulse_on_double_tap | Ambient display shows when you double-tap the screen. | 0 = off; 1 = on
+doze_pulse_on_long_press | Ambient display shows when you long-press the screen. | 0 = off; 1 = on
+doze_pulse_on_pick_up | Ambient display shows when you pick the phone up. | 0 = off; 1 = on
+doze_tap_gesture | Ambient display shows when you tap the screen. | 0 = off; 1 = on
+doze_wake_screen_gesture | Wakes the screen with a gesture. | 0 = off; 1 = on
+emergency_assistance_application | The app used for emergency assistance. | package name
+emergency_gesture_enabled | The emergency gesture (press power button quickly several times). | 0 = off; 1 = on
+emergency_gesture_sound_enabled | Plays a sound while the emergency gesture counts down. | 0 = off; 1 = on
+enabled_accessibility_services | Accessibility services that are on. | list of component names separated by : | lock
+enabled_input_methods | Keyboards that are switched on. | list of keyboard ids separated by : | lock
+enabled_notification_assistant | The app that sorts and suggests actions for notifications. | component name
+enabled_notification_listeners | Apps that may read all your notifications. | list of component names separated by :
+enabled_notification_policy_access_packages | Apps that may change Do Not Disturb. | list of package names separated by :
+enabled_print_services | Print services that are switched on. | list of component names separated by :
+enabled_vr_listeners | Services that may know when VR mode is on. | list of component names separated by :
+even_dimmer_activated | Extra dim: lets the screen go dimmer than the lowest brightness. | 0 = off; 1 = on
+extra_low_power_warning_acknowledged | You saw the extreme battery saver warning. | 0 = no; 1 = yes
+face_unlock_always_require_confirmation | Face unlock asks you to tap Confirm. | 0 = off; 1 = on
+face_unlock_app_enabled | Face unlock may be used inside apps. | 0 = off; 1 = on
+face_unlock_keyguard_enabled | Face unlock may unlock the screen. | 0 = off; 1 = on
+flashlight_available | A flashlight can be turned on now. Android keeps this by itself. | 0 = no; 1 = yes
+flashlight_enabled | The flashlight is on. | 0 = off; 1 = on
+font_weight_adjustment | Bold text. | 0 = normal; 300 = bold (small steps are added to the font weight)
+game_dashboard_always_on | Shows the Game Dashboard shortcut in every game. | 0 = off; 1 = on
+hearing_aid_call_routing | Where call sound plays when a hearing aid is connected. | 0 = default; 1 = hearing aid; 2 = phone speaker
+hearing_aid_media_routing | Where media sound plays when a hearing aid is connected. | 0 = default; 1 = hearing aid; 2 = phone speaker
+hearing_aid_notification_routing | Where notification sound plays when a hearing aid is connected. | 0 = default; 1 = hearing aid; 2 = phone speaker
+hearing_aid_ringtone_routing | Where the ringtone plays when a hearing aid is connected. | 0 = default; 1 = hearing aid; 2 = phone speaker
+high_text_contrast_enabled | High contrast text. | 0 = off; 1 = on
+hush_gesture_used | You have used the "hush" gesture once. | 0 = no; 1 = yes
+icon_blacklist | Status bar icons that are hidden. | icon names separated by commas, e.g. rotate,headset; empty = none hidden
+immersive_mode_confirmations | Apps for which you accepted the "full screen" hint. | text, e.g. confirmed or a package list
+in_call_notification_enabled | Plays a sound during calls when a notification comes in. | 0 = off; 1 = on
+incall_back_button_behavior | What the Back button does during a call. | 0 = nothing; 1 = ends the call
+incall_power_button_behavior | What the power button does during a call. | 1 = turn the screen off; 2 = hang up
+input_methods_subtype_history | Which keyboard language you used last for each keyboard. | text kept by Android
+install_non_market_apps | Allows installing apps from outside the store (older switch; now chosen per app). | 0 = no; 1 = yes
+instant_apps_enabled | Instant apps (open apps without installing). | 0 = off; 1 = on
+key_repeat_delay | Time between repeats while a key on a physical keyboard is held. | milliseconds
+key_repeat_enabled | Repeats a key held down on a physical keyboard. | 0 = off; 1 = on
+key_repeat_timeout | Time before a held key starts to repeat. | milliseconds
+location_changer | Which app or setting last changed the location mode. | whole number code; Android keeps this by itself
+location_mode | Location mode (older setting; now only on or off). | 0 = off; 1 = device only (GPS); 2 = battery saving; 3 = high accuracy
+location_providers_allowed | Location providers that are on (older setting). | list separated by commas, e.g. gps,network | lock
+lock_screen_allow_private_notifications | Shows private notification content on the lock screen. | 0 = hide the content; 1 = show it
+lock_screen_allow_remote_input | Lets you reply to notifications from the lock screen. | 0 = no; 1 = yes
+lock_screen_lock_after_timeout | How long after the screen turns off before it locks. | milliseconds; 0 = at once
+lock_screen_owner_info | Text shown on the lock screen, such as owner contact details. | text
+lock_screen_owner_info_enabled | Shows the owner text on the lock screen. | 0 = off; 1 = on
+lock_screen_show_notifications | Shows notifications on the lock screen. | 0 = off; 1 = on
+lock_screen_show_silent_notifications | Shows silent notifications on the lock screen. | 0 = off; 1 = on
+lock_screen_show_only_unseen_notifications | Hides notifications on the lock screen that you already saw. | 0 = off; 1 = on
+lock_screen_show_qr_code_scanner | Shows the QR scanner shortcut on the lock screen. | 0 = off; 1 = on
+lock_to_app_exit_locked | Locks the screen when you leave screen pinning. | 0 = off; 1 = on
+lockscreen_show_controls | Shows device controls on the lock screen. | 0 = off; 1 = on
+lockscreen_show_wallet | Shows the wallet on the lock screen. | 0 = off; 1 = on
+long_press_timeout | How long a touch must last to count as a long press. | milliseconds, e.g. 400 (short), 500 (default), 1500 (long)
+mandatory_biometrics | Requires biometrics for sensitive actions. | 0 = off; 1 = on
+match_content_frame_rate | Changes the screen refresh rate to suit videos. | 0 = never; 1 = only when it looks seamless; 2 = always
+media_controls_lock_screen | Shows media controls on the lock screen. | 0 = off; 1 = on
+minimal_post_processing_allowed | Lets games and video turn off screen image processing. | 0 = no; 1 = yes
+mock_location | Allows apps to fake the location (developer option, older setting). | 0 = off; 1 = on
+multi_press_timeout | Longest gap between two taps to count as a double tap. | milliseconds, e.g. 300
+nav_bar_force_visible | Keeps the navigation bar visible, even in full-screen. | 0 = off; 1 = on
+nav_bar_kids_mode | Navigation bar for kids mode. | 0 = off; 1 = on
+navigation_mode | How you navigate. | 0 = three buttons; 1 = two buttons; 2 = gestures
+nearby_sharing_component | The app that provides sharing with nearby devices. | component name
+nfc_payment_foreground | Pays with the app on screen instead of the default payment app. | 0 = no; 1 = yes
+night_display_activated | Night Light is on now. | 0 = off; 1 = on
+night_display_auto_mode | When Night Light turns on by itself. | 0 = never; 1 = on a custom schedule; 2 = from sunset to sunrise
+night_display_color_temperature | Warmth of Night Light. | kelvin, about 2596 (very warm) to 4082 (mild)
+night_display_custom_end_time | When Night Light turns off on a custom schedule. | milliseconds after midnight, e.g. 25200000 = 7:00
+night_display_custom_start_time | When Night Light turns on on a custom schedule. | milliseconds after midnight, e.g. 79200000 = 22:00
+notification_badging | Notification dots on app icons. | 0 = off; 1 = on
+notification_bubbles | Chat bubbles for notifications. | 0 = off; 1 = on
+notification_dismiss_rtl | Swipe notifications right to left to dismiss them. | 0 = no; 1 = yes
+notification_history_enabled | Keeps a history of notifications for the last 24 hours. | 0 = off; 1 = on
+odi_captions_enabled | Live Caption. | 0 = off; 1 = on
+one_handed_mode_activated | One-handed mode is active right now. | 0 = no; 1 = yes
+one_handed_mode_enabled | One-handed mode. | 0 = off; 1 = on
+one_handed_mode_timeout | How long one-handed mode stays on after the last touch. | seconds: 4, 8 or 12; 0 = never ends
+people_strip | Shows a strip of people at the top of notifications. | 0 = off; 1 = on
+power_menu_locked_show_content | Shows cards and controls in the power menu while locked. | 0 = hide; 1 = show
+preferred_tty_mode | Preferred TTY (text telephone) mode. | 0 = off; 1 = full; 2 = hearing carry over; 3 = voice carry over
+qs_auto_tiles | Quick Settings tiles that were added automatically. | list separated by commas
+qs_media_resumption | Shows resumable media in Quick Settings. | 0 = off; 1 = on
+reduce_bright_colors_activated | Extra dim (Reduce Bright Colors) is on. | 0 = off; 1 = on
+reduce_bright_colors_level | How strong Extra dim is. | percent, 0 to 100
+rtt_calling_mode | Real-time text calls. | 0 = off; 1 = on
+screen_resolution_mode | Screen resolution you chose. | 0 = unset; 1 = high resolution; 2 = full resolution
+screensaver_activate_on_dock | Starts the screen saver while docked. | 0 = off; 1 = on
+screensaver_activate_on_sleep | Starts the screen saver while charging. | 0 = off; 1 = on
+screensaver_components | The screen saver in use. | list of component names separated by commas
+screensaver_enabled | Screen saver (daydream). | 0 = off; 1 = on
+search_global_search_activity | The app used for system-wide search. | component name
+selected_input_method_subtype | The keyboard language in use. | whole number (a hash); -1 = automatic
+selected_spell_checker | The spell checker in use. | component name
+show_first_crash_dialog_dev_option | Shows a dialog when an app crashes (developer option). | 0 = off; 1 = on
+show_ime_with_hard_keyboard | Shows the on-screen keyboard while a physical keyboard is connected. | 0 = off; 1 = on
+show_notification_snooze | Shows snooze options on notifications. | 0 = off; 1 = on
+show_rotation_suggestions | The small button that offers to rotate the screen when auto-rotate is off. | 0 = off; 1 = on
+silence_gesture | Flip or tap gesture that silences alarms and calls. | 0 = off; 1 = on
+skip_first_use_hints | Asks apps to skip their welcome hints. | 0 = show hints; 1 = skip hints
+sleep_timeout | How long the phone is idle before it goes to sleep fully. | milliseconds; -1 = never
+sms_default_application | The app that handles text messages. | package name
+spatial_audio_enabled | Spatial audio. | 0 = off; 1 = on
+speak_password | Reads passwords aloud while accessibility is on. | 0 = off; 1 = on
+spell_checker_enabled | Spell checker. | 0 = off; 1 = on
+status_bar_show_vibrate_icon | Shows the vibrate icon in the status bar. | 0 = off; 1 = on
+stylus_buttons_enabled | Lets the stylus buttons do things. | 0 = off; 1 = on
+stylus_handwriting_enabled | Handwriting with a stylus in text fields. | 0 = off; 1 = on
+suppress_doze | Prevents the phone from entering ambient display (doze). | 0 = off; 1 = on
+swipe_bottom_to_notification_enabled | Swipe down on the bottom edge to open notifications. | 0 = off; 1 = on
+sysui_nav_bar | The buttons of the navigation bar and their order. | text, e.g. space;back,home;recent
+sysui_qs_tiles | Quick Settings tiles and their order. | list of tile names separated by commas, e.g. wifi,bt,dnd,flashlight
+tap_gesture | Tap to check the phone. | 0 = off; 1 = on
+touch_exploration_enabled | TalkBack touch exploration. | 0 = off; 1 = on | lock
+touch_exploration_granted_accessibility_services | Services allowed to use touch exploration. | list of component names separated by :
+tts_default_pitch | Pitch of the text-to-speech voice. | percent; 100 = normal
+tts_default_rate | Speed of the text-to-speech voice. | percent; 100 = normal
+tts_default_synth | The text-to-speech engine in use. | package name
+ui_night_mode | Dark theme. | 0 = automatic (follows Battery Saver or the schedule); 1 = off; 2 = on; 3 = custom schedule
+ui_night_mode_custom_type | Which kind of custom schedule the dark theme follows. | 0 = unset; 1 = a schedule; 2 = bedtime mode
+unknown_sources_default_reversed | Reverses the default for installing apps from unknown sources. | 0 = no; 1 = yes
+usb_audio_automatic_routing_disabled | Stops sound moving to USB audio devices by itself. | 0 = it moves; 1 = it stays
+user_setup_complete | The first-time setup of this user is finished: leave this at 1. | 1 = finished; 0 = not finished | break
+voice_interaction_service | The voice assistant service in use. | component name
+voice_recognition_service | The speech recognition service in use. | component name
+volume_dialog_dismiss_timeout | How long the volume panel stays on screen. | milliseconds
+volume_hush_gesture | What pressing power and volume up does. | 0 = nothing; 1 = vibrate; 2 = mute
+wake_gesture_enabled | Wakes the screen when you lift the phone. | 0 = off; 1 = on
+zen_duration | How long Do Not Disturb stays on when you switch it on from Quick Settings. | minutes; 0 = until you turn it off; -1 = ask each time
+
+# more Android settings (2026-10): written from the AOSP documentation
+default_voice_input_method | The last voice keyboard (voice typing engine) that was the default. Android resets it when the phone maker changes the default. | keyboard id: package/service
+input_method_selector_visibility | Whether the keyboard picker button shows on the navigation bar. | 0 = automatic; 1 = always; 2 = never
+credential_service_primary | The service that holds your passkeys and passwords (Credential Manager). | component name
+location_time_zone_detection_enabled | Sets the time zone from your location instead of the mobile network. | 0 = off; 1 = on
+accessibility_button_target_component | The accessibility service or feature the accessibility button on the navigation bar toggles. | component name or the class name of an Android feature
+accessibility_key_gesture_targets | The accessibility services or features a keyboard shortcut toggles. | list separated by :
+accessibility_qs_targets | The accessibility services or features that have a Quick Settings tile. | list separated by :
+even_dimmer_min_nits | How dark Extra dim lets the screen go. | brightness in nits (a number)
+tty_mode_enabled | Text telephone (TTY) mode for calls. | 0 = off; 1 = on
+doze_wake_display_gesture | Wakes the always-on display when you tap or touch it. | 0 = off; 1 = on
+doze_quick_pickup_gesture | Wakes the always-on display when you pick the phone up quickly. | 0 = off; 1 = on
+ui_night_mode_override_on | The night mode the system has turned on by itself (for example with Battery Saver). | 0 = automatic; 1 = night off; 2 = night on
+screensaver_default_component | The screen saver that is used when screen savers are on. | component name
+screensaver_complications_enabled | Shows extras such as the time and weather over the screen saver. | 0 = off; 1 = on
+glanceable_hub_enabled | Turns on the glanceable hub (widgets on a charging screen). | 0 = off; 1 = on
+camera_double_twist_to_flip_enabled | Twisting the phone twice switches the camera between the front and the back. | 0 = off; 1 = on
+face_unlock_dismisses_keyguard | Face unlock takes you straight into the phone instead of stopping at the lock screen. | 0 = off; 1 = on
+show_media_when_bypassing | Shows the media player on the lock screen when face unlock skips the lock screen. | 0 = off; 1 = on
+face_unlock_attention_required | Face unlock needs you to look at the phone. | 0 = not needed; 1 = needed
+screen_off_udfps_enabled | Lets the under-screen fingerprint reader work while the screen is off. | 0 = off; 1 = on
+biometric_debug_enabled | Turns on debugging of fingerprint and face unlock. | 0 = off; 1 = on
+assist_gesture_silence_alerts_enabled | Squeezing the phone (assist gesture) silences alerts. | 0 = off; 1 = on
+assist_gesture_wake_enabled | Squeezing the phone (assist gesture) wakes it. | 0 = off; 1 = on
+assist_long_press_home_enabled | Holding the home button opens the assistant. | 0 = off; 1 = on
+system_navigation_keys_enabled | Lets the keys of the navigation bar be used by the system. | 0 = off; 1 = on
+lockscreen_allow_trivial_controls | Home controls that are harmless (like a light) work from the lock screen without unlocking. | 0 = off; 1 = on
+lockscreen_use_double_line_clock | Shows the large two-line clock on the lock screen. | 0 = single line; 1 = two lines
+show_qr_code_scanner_setting | Shows the QR code scanner option for the lock screen. | 1 = show; unset = hidden
+bubble_important_conversations | Opens conversations you marked as favorites in bubbles. | 0 = off; 1 = on
+back_gesture_inset_scale_left | How wide the back gesture area is on the left edge. | decimal; 1 = normal; smaller = narrower
+back_gesture_inset_scale_right | How wide the back gesture area is on the right edge. | decimal; 1 = normal; smaller = narrower
+trackpad_gesture_back_enabled | The back gesture on a trackpad. | 0 = off; 1 = on
+accessibility_magnification_follow_typing_enabled | Magnification follows the text you type. | 0 = off; 1 = on
+accessibility_single_finger_panning_enabled | Move around a magnified screen with one finger. | 0 = two fingers; 1 = one finger
+accessibility_mouse_keys_enabled | Moves the mouse pointer with keys on a physical keyboard. | 0 = off; 1 = on
+lockscreen_weather_enabled | Shows the weather on the lock screen. | 0 = off; 1 = on
+accessibility_display_magnification_edge_haptic_enabled | Vibrates when you scroll to the edge of the screen while magnified. | 0 = off; 1 = on
+hide_privatespace_entry_point | Hides the Private Space entry in the app drawer. | 0 = shown; 1 = hidden
+disable_secure_windows | Lets screenshots and recordings show screens that apps mark as secret. Works only on debuggable builds. | 0 = off; 1 = on
+private_space_auto_lock | When Private Space locks itself: every time the screen locks, after a few minutes without use, or only after a restart. | whole number picking one of those three
+stylus_pointer_icon_enabled | Shows a pointer icon where a stylus hovers. | 0 = off; 1 = on
+charge_optimization_mode | The charging optimization in use. | 0 = none; 1 to 10 = the maker's modes
+extra_automatic_power_save_mode | Battery Saver runs on a different schedule than the standard one. | 0 = no; 1 = yes
+low_power_warning_acknowledged | The first-time Battery Saver warning has been seen. | 0 = not yet; 1 = seen
+emergency_thermal_alert_disabled | Switches off the emergency alert about the phone overheating. | 0 = alert on; 1 = alert off
+suppress_auto_battery_saver_suggestion | Stops suggesting an automatic Battery Saver. | 0 = suggest; 1 = do not
+theme_customization_overlay_packages | Which style, color and font overlays are on, as a JSON text (Material You). | JSON text
+aware_enabled | Lets the phone sense when you are near or looking at it (Aware). | 0 = off; 1 = on
+odi_captions_volume_ui_enabled | Shows the Live Caption button on the volume panel. | 0 = hidden; 1 = shown
+reduce_bright_colors_persist_across_reboots | Keeps Extra dim on after a restart. | 0 = off after a restart; 1 = stays on
+tts_default_locale | The language each text-to-speech engine uses. | list separated by commas: engine:language, e.g. com.google.android.tts:en-US

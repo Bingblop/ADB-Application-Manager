@@ -42,8 +42,10 @@ const SUITES = [
   { name: 'apkscanfind', title: 'The shell search for package files run for real: a folder or file name with a line break gives no phantom path (needs sh and find)', tests: ['ApkScanFindTest'], main: 'com.bloatware.bingblop.ApkScanFindTest', needs: ['json'] },
   { name: 'apktrash', title: 'Deleting a found package file with Undo (which paths, where it waits) and the storage search\'s progress, against a real folder tree', tests: ['ApkTrashTest'], main: 'com.bloatware.bingblop.ApkTrashTest', needs: ['json'] },
   { name: 'fileops', title: 'File manager copy, move and delete with replace / skip / keep both, free names (name (1).ext), cancel, links, atomic write, and the same rules as a shell script', tests: ['FileOpsTest'], main: 'com.bloatware.bingblop.FileOpsTest' },
-  { name: 'filesearch', title: 'File search: the query (name, wildcards, ending, size, date, kind, content:, archive:), the bounded walk, hidden and nested options, zip entries, links, limits and Cancel', tests: ['FileSearchTest'], main: 'com.bloatware.bingblop.FileSearchTest' },
+  { name: 'filesearch', title: 'File search: the query (name, wildcards, ending, size, date, kind, content:, archive:), the bounded walk, hidden and nested options, zip entries, links, limits and Cancel, and a guard that leaves the app\'s private data out of the walk, names and content', tests: ['FileSearchTest'], main: 'com.bloatware.bingblop.FileSearchTest' },
   { name: 'rarreader', title: 'RAR archives: RAR 1.5-4.x through junrar and RAR 5 / 7 (own parser, LZ unpacker, filters, solid, AES-256 data and headers, CRC32 / BLAKE2sp): list, one-pass walk, open, passwords, damaged and hostile input; real archives from tests/java/fixtures/rar when present', tests: ['RarReaderTest'], main: 'com.bloatware.bingblop.RarReaderTest' },
+  { name: 'extractlinks', title: 'Hard links in a tar (and RAR5 file copies): extracted as a copy of the file they share, skipped in words when that file is not part of the extraction or comes later, never written as empty files; symbolic links are still not extracted', tests: ['ExtractLinksTest'], main: 'com.bloatware.bingblop.ExtractLinksTest' },
+  { name: 'extractspace', title: 'A small archive that declares (and holds) far more than the free space is not written out: a zip bomb, a GNU sparse tar of 600 MB in 10 KB and a 7z of zeros are refused entry by entry in words, with the reserve left free and no partial file; several entries together stop at the reserve', tests: ['ExtractSpaceTest'], main: 'com.bloatware.bingblop.ExtractSpaceTest' },
   { name: 'zipwriter', title: 'New zip archives: stored / deflated, folders, unicode, ZIP64 end record, AES-256 / AES-128 / ZipCrypto passwords read back through ZipTool, Info-ZIP and pyzipper, wrong password, Cancel', tests: ['ZipWriterTest'], main: 'com.bloatware.bingblop.ZipWriterTest', utf8: true },
   { name: 'zipcrypt', title: 'Zip passwords: traditional ZipCrypto and WinZip AES (128 / 192 / 256), raw entry streams checked against Info-ZIP zip / unzip and pyzipper, wrong password, tampering, empty, > 5 MB, unicode', tests: ['ZipCryptTest'], main: 'com.bloatware.bingblop.ZipCryptTest' },
   { name: 'archiveio', title: 'Archive formats (7z, tar, tar.gz / bz2 / xz / zst / lz4, single gz / bz2 / xz / zst / lz4): detect, list, one-pass walk, open, create, rewrite with edits, 7z AES with encrypted names, cancel, atomic .part; checked against 7-Zip, py7zr, tar, gzip, bzip2, xz, zstd, lz4',
@@ -55,21 +57,26 @@ const SUITES = [
   { name: 'logrecorder', title: 'Recording the log to a file: only new lines are written, errors and empty snapshots skipped, the size limit, stop, the list, reading a long file from its end, refused names, UTF-8', tests: ['LogRecorderTest'], main: 'com.bloatware.bingblop.LogRecorderTest', utf8: true },
   { name: 'secretsettings', title: 'The GitHub token and the VirusTotal key: sealed in the vault, old plain copies moved or deleted, nothing written in the clear when the vault refuses', tests: ['SecretSettingsTest'], main: 'com.bloatware.bingblop.SecretSettingsTest', utf8: true },
   { name: 'httpsites', title: 'Network code stays on the safe path: raw HttpURLConnection only in the listed files, each with automatic redirects off (new call sites must use HttpSafe.open)', tests: ['HttpSitesTest'], main: 'com.bloatware.bingblop.HttpSitesTest', utf8: true },
+  { name: 'installconfirm', title: 'The question before a privileged install of a downloaded app: package, version, host, new or replacing, checksum; page text (line breaks, right-to-left overrides) cannot disguise it', tests: ['InstallConfirmTest'], main: 'com.bloatware.bingblop.InstallConfirmTest' },
+  { name: 'privatepaths', title: 'Files the bridge may hand out or delete: the app\'s own data (settings, sealed secrets, adb key, logs, the Morphe key) is not; only patched and Helper APKs and the cache folders for picked or downloaded files are, and only backups the app listed can be deleted; links (also as a folder, also hard ones), ".." and look-alike folder names do not get around it; a file that is already open is judged from its descriptor (where it points, its link count, unlinked = protected), and a source scan checks that the file manager\'s read, write, copy, move, archive, thumbnail, PDF, share, Bluetooth, Open With, VirusTotal and search routes keep their guards', tests: ['PrivatePathsTest'], main: 'com.bloatware.bingblop.PrivatePathsTest' },
+  { name: 'adbargs', title: 'The adb arguments the Connected Devices tab accepts: everything a person uses, none that moves (-P, -H, -L, -a) or stops (kill-server, server ...) the adb this app runs on', tests: ['AdbArgsTest'], main: 'com.bloatware.bingblop.AdbArgsTest' },
   { name: 'installguards', title: 'Pre-install checks fail closed: a published checksum that is not a SHA-256 stops the install, and so does an APK whose signing certificate cannot be read', tests: ['InstallGuardsTest'], main: 'com.bloatware.bingblop.InstallGuardsTest' },
-  { name: 'storagepathguard', title: 'File path safety: deleteBackup and shareStoredFile check canonical directory containment and extension allow-lists to prevent directory traversal', tests: ['StoragePathGuardTest'], main: 'com.bloatware.bingblop.StoragePathGuardTest' },
-  { name: 'archiveiosafety', title: 'Archive entry name safety: isSafeEntryName and safeEntryName guard against path traversal (tar slip, leading slashes, dot-dot escape, and NUL bytes)', tests: ['ArchiveIoSafetyTest'], main: 'com.bloatware.bingblop.ArchiveIoSafetyTest' },
   { name: 'shellargs', title: 'What the page may pass into a shell command through the bridge: install options (an allow-list), app op names and values; package and permission names', tests: ['ShellArgsTest'], main: 'com.bloatware.bingblop.ShellArgsTest', utf8: true },
   { name: 'standbybuckets', title: 'App standby buckets: the buckets a person may set, the am commands, and reading what the phone printed (a number or a name)', tests: ['StandbyBucketsTest'], main: 'com.bloatware.bingblop.StandbyBucketsTest', utf8: true },
   { name: 'assistantrestore', title: 'The saved assistant settings for the launch-through-assistant method: only plain component names are written back, and the record round-trips', tests: ['AssistantRestoreTest'], main: 'com.bloatware.bingblop.AssistantRestoreTest' },
+  { name: 'sdmshellkill', title: 'A hung process is killed: SdmShell with a real sh ends a silent hang, a cancel and a held pipe within a bounded time, kills the shell and stops calling the sink (needs sh, sleep and kill)', tests: ['SdmShellKillTest'], main: 'com.bloatware.bingblop.SdmShellKillTest', needs: ['json', 'posixtools'] },
   { name: 'shelloutcome', title: 'The verdict of a privileged command run with an exit-status marker: the status when the marker is there; an Error: line or a timeout note without it is a failure, not an "ok"', tests: ['ShellOutcomeTest'], main: 'com.bloatware.bingblop.ShellOutcomeTest' },
   { name: 'adbserverspec', title: 'Where the bundled adb server listens: a private unix socket in the app\'s folder (closed to other apps), the old loopback port only as the fallback', tests: ['AdbServerSpecTest'], main: 'com.bloatware.bingblop.AdbServerSpecTest' },
   { name: 'sdmstatframe', title: 'SD Maid stat records carry the scan\'s own random tag, so a file name with a newline cannot forge the record of another file', tests: ['SdmStatFrameTest'], main: 'com.bloatware.bingblop.SdmStatFrameTest', needs: ['json'] },
+  { name: 'zipextraalign', title: 'Rewriting a zip with alignment aligns a stored entry even when its local extra field is almost 64 KB (the unknown records go, the padding stays)', tests: ['ZipExtraAlignTest'], main: 'com.bloatware.bingblop.ZipExtraAlignTest' },
   { name: 'zipbounds', title: 'A small zip cannot fill the storage (extraction stops at the entry\'s declared size) or list millions of files (entry cap)', tests: ['ZipBoundsTest'], main: 'com.bloatware.bingblop.ZipBoundsTest' },
+  { name: 'archivebounds', title: 'A small archive cannot run the app out of memory: a GNU long-name or pax header declaring 1.5 GiB is refused in words (an IOException in under a second, never an allocation by the declared size) while normal long names and pax headers still list and extract; more than 500,000 entries (tar, 7z) or 40 MB of names is refused in words, not listed in part, and 500,000 still list (runs with a 256 MB heap)', tests: ['ArchiveBoundsTest'], main: 'com.bloatware.bingblop.ArchiveBoundsTest', jvm: ['-Xmx256m'] },
   { name: 'apkflags', title: 'Found package files: identical copies (hash) and older versions of a package, which one is kept', tests: ['ApkFlagsTest'], main: 'com.bloatware.bingblop.ApkFlagsTest' },
   { name: 'procstats', title: '`ps` output: toybox\'s `-o PID,PPID,USER,RSS,%CPU,NAME` (by header column, not fixed offsets) and a degraded busybox-style `ps -A` fallback, truncated rows, package name vs. kernel/native process, top by CPU / RSS', tests: ['ProcStatsTest'], main: 'com.bloatware.bingblop.ProcStatsTest' },
   { name: 'gpustats', title: 'GPU load/frequency sysfs text parsing: Adreno gpubusy/gpu_busy_percentage, Mali utilization, the devfreq frequency-ratio fallback, combine() priority and the UI label', tests: ['GpuStatsTest'], main: 'com.bloatware.bingblop.GpuStatsTest' },
   { name: 'cpustats', title: '/proc/stat CPU-time parsing: the aggregate and per-core lines, tolerance for missing cores and extra kernel fields, and the busy-percentage math (counter resets, a core-count mismatch)', tests: ['CpuStatsTest'], main: 'com.bloatware.bingblop.CpuStatsTest' },
   { name: 'memstats', title: '/proc/meminfo parsing: the kept keys in any order, a kernel too old for MemAvailable, unknown extra keys, and the usedKb/swapUsedKb formulas', tests: ['MemStatsTest'], main: 'com.bloatware.bingblop.MemStatsTest' },
+  { name: 'sessionmap', title: 'The terminal session map: a late end of a closed session neither removes nor announces over the session that replaced it under the same id', tests: ['SessionMapTest'], main: 'com.bloatware.bingblop.SessionMapTest' },
   { name: 'ptyshell', title: 'The real terminal: the pty helper (native/pty) and PtyShell: a tty of the asked size, resize, Ctrl-C, UTF-8, status codes, hang-up, flow control, and the scripts that start it on the phone and in Termux', tests: ['PtyShellTest'], main: 'com.bloatware.bingblop.PtyShellTest', needs: ['pty'], utf8: true },
   { name: 'browserdownload', title: 'What the in-app browser saves: file names (Content-Disposition, address, type), the browser\'s cookies / agent / referer, redirects, refusals in words, a web page is not a file, no partial files left, cancel, resuming (Range, If-Range, validators, 416, servers without ranges, remembered address)', tests: ['BrowserDownloadTest'], main: 'com.bloatware.bingblop.BrowserDownloadTest' },
   { name: 'downloadnotice', title: 'The Helper downloads notification: how many, how far, how fast, how long is left, and how it ended', tests: ['DownloadNoticeTest'], main: 'com.bloatware.bingblop.DownloadNoticeTest' },
@@ -108,7 +115,11 @@ const SUITES = [
   { name: 'sdmengine', title: 'SD Maid SE port, task engine and bridge against fake tools: two tasks at a time with the rest in the queue, cancel, paged results, receipts, History, exclusions with Undo, one-click, settings, the bridge ops in JSON', tests: ['SdmEngineTest'], main: 'com.bloatware.bingblop.SdmEngineTest', needs: ['json'] },
   { name: 'sdmexclusions', title: 'SD Maid SE port, exclusions: apps, paths and segments with tool tags, the stock defaults (remove and restore), matching, the nested rule, import and export', tests: ['SdmExclusionsTest'], main: 'com.bloatware.bingblop.SdmExclusionsTest', needs: ['json'] },
   { name: 'sdmhistory', title: 'SD Maid SE port, History of what was deleted: reports and paths, retention, totals, reset', tests: ['SdmHistoryTest'], main: 'com.bloatware.bingblop.SdmHistoryTest', needs: ['json'] },
-  { name: 'sdmareas', title: 'SD Maid SE port, data areas and the shell file system: which areas are read with Java, through the working mode or not at all (and why), stat / list / walk / hash / delete through a real sh', tests: ['SdmAreasTest'], main: 'com.bloatware.bingblop.SdmAreasTest', needs: ['json', 'sdmclasses'], utf8: true },
+  { name: 'sdmareas', title: 'SD Maid SE port, data areas and the shell file system: which areas are read with Java, through the working mode or not at all (and why), stat / list / walk / hash / delete through a real sh', tests: ['SdmAreasTest'], main: 'com.bloatware.bingblop.SdmAreasTest', needs: ['json'], utf8: true },
+  { name: 'keyimport', title: 'Importing a Morphe signing keystore: a text file, a wrong password or a store without the key named Morphe replaces nothing (in words); a good one replaces the key and keeps the old pair as .bak; an empty password opens a Morphe-made store; a failure while saving puts the old key back', tests: ['KeyImportTest'], main: 'com.bloatware.bingblop.KeyImportTest', needs: ['json'] },
+  { name: 'morpherunner', title: 'Morphe Patcher: running the engine - one run at a time, a run\'s job file and events file are its own (a second caller, for example a second catalog read, waits before it touches them), the answer, a service that will not start / died / takes too long, Stop, and the bridge\'s use of it; against a fake service', tests: ['MorpheRunnerTest'], main: 'com.bloatware.bingblop.MorpheRunnerTest', needs: ['json'] },
+  { name: 'morpheslot', title: 'Morphe Patcher: one patch at a time - taking the slot is one atomic step (8 callers at once, 3,000 rounds: exactly one wins), only the holder frees it, a late finish of an old run frees nothing, the bridge uses it', tests: ['MorpheSlotTest'], main: 'com.bloatware.bingblop.MorpheSlotTest' },
+  { name: 'morpheorphans', title: 'Morphe Patcher: a patch that finished while the app was not running is found and filed on the next start (the engine is a process of its own), from its saved request or, for an older leftover, from the engine\'s own answer; failed or long-dead folders are removed; the run in progress, the catalog folder and anything that is not a job folder are left alone', tests: ['MorpheOrphansTest'], main: 'com.bloatware.bingblop.MorpheOrphansTest', needs: ['json'] },
   { name: 'morphejobs', title: 'Morphe Patcher: the job file of the engine (bundles, options, strip libraries, keystore, errors in words), which files the page may name, the words for a patcher that died', tests: ['MorpheJobsTest'], main: 'com.bloatware.bingblop.MorpheJobsTest', needs: ['json'] },
   { name: 'morpheengine', title: 'The real Morphe engine on this computer: the job file the app writes, the engine listing the patches of the official bundle, patching a real APK with universal patches, the events read back and the result signed (needs engine/build-engine.sh run once, the official bundle and an APK)', tests: ['MorpheEngineTest'], main: 'com.bloatware.bingblop.MorpheEngineTest', needs: ['json', 'engine', 'mpp', 'apk', 'apksigner'] },
   { name: 'aihttp', title: 'Coding agents\' HTTPS calls against a local server: whole and error answers, streaming piece by piece, Cancel mid-stream, no redirects, UTF-8, kept headers, network failures in words', tests: ['AiHttpTest'], main: 'com.bloatware.bingblop.AiHttpTest', utf8: true },
@@ -121,6 +132,7 @@ const SUITES = [
   { name: 'morphevt', title: 'Morphe Helper VirusTotal scan against a local server: lookup found / not found / wrong key / quota, cached report, upload and polling, upload_url above 32 MB, split bundles, the 4 per minute / 500 per day limiter with a fake clock and its saved counters, the key never in a message, Cancel',
     tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
+  { name: 'rishkill', title: 'Rish shell, a hung command is killed: a timeout or stop() ends it in bounded time with its whole process tree (child, grandchild, one that ignores INT and TERM), output before the hang arrives, a normal command is left alone, the session goes on (real mksh, real processes)', tests: ['RishKillTest'], main: 'RishKillTest', needs: ['rish', 'proc'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
   { name: 'signwritefail', title: 'APK signer: a write that fails half way (disk full, simulated with ulimit -f) leaves no truncated APK and reports the write error', tests: ['SignWriteFailTest'], main: 'SignWriteFailTest', needs: ['apk', 'keys', 'bash'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
@@ -184,6 +196,7 @@ const NEEDS = {
     return err ? { skip: err } : { props: { keys: dir } };
   },
   bash: () => (which('bash') ? {} : { skip: 'needs bash' }),
+  posixtools: () => { const miss = ['sh', 'sleep', 'kill'].filter(c => !which(c)); return miss.length ? { skip: 'needs ' + miss.join(', ') + ' on PATH' } : {}; },
   // The Morphe engine built on this computer (engine/build-engine.sh leaves engine/build/engine-libs) and the official patch bundle (downloaded once into tests/.cache)
   engine: () => {
     const libs = path.join(REPO, 'engine', 'build', 'engine-libs');
@@ -203,6 +216,9 @@ const NEEDS = {
     }
     return { props: { mpp: f } };
   },
+  proc: () => {
+    try { fs.readFileSync('/proc/self/stat'); fs.readdirSync('/proc'); return {}; } catch (e) { return { skip: 'needs a readable /proc (the suite finds its processes there)' }; }
+  },
   rish: () => {
     const mksh = which('mksh'), toybox = which('toybox');
     if (!mksh || !toybox) return { skip: 'needs mksh and toybox (apt install mksh toybox)' };
@@ -214,10 +230,6 @@ const NEEDS = {
     fs.symlinkSync(toybox, path.join(env, 'bin', 'toybox'));
     for (const a of ['cat', 'env', 'getprop', 'grep', 'head', 'id', 'kill', 'nohup', 'pgrep', 'pkill', 'printf', 'ps', 'seq', 'setsid', 'sleep', 'tail', 'tee', 'timeout', 'yes']) fs.symlinkSync(path.join(env, 'bin', 'toybox'), path.join(env, 'tb', a));
     return { props: { rishenv: env } };
-  },
-  sdmclasses: () => {
-    const f = path.join(JSRC, 'com', 'bloatware', 'bingblop', 'SdmShell.java');
-    return fs.existsSync(f) ? {} : { skip: 'needs SD Maid standalone engine classes (SdmShell, SdmFsJava)' };
   },
 };
 
@@ -272,8 +284,6 @@ async function runSuite(suite, timeoutS) {
   if (need.skip) return { name: suite.name, status: 'SKIP', why: [need.skip], seconds: 0 };
 
   const files = suite.kind === 'parity' ? [path.join(TSRC, 'ParityDump2.java')] : suite.tests.map(t => path.join(TSRC, t + '.java'));
-  const missing = files.filter(f => !fs.existsSync(f));
-  if (missing.length > 0) return { name: suite.name, status: 'SKIP', why: ['test file not present: ' + missing.map(f => path.basename(f)).join(', ')], seconds: 0 };
   const cpSep = path.delimiter;
   const libs = fs.readdirSync(path.join(REPO, 'libs')).filter(f => f.endsWith('.jar')).map(f => path.join(REPO, 'libs', f));
   need.cp = Array.from(new Set(need.cp.concat(libs)));
@@ -290,7 +300,7 @@ async function runSuite(suite, timeoutS) {
     res = await exec(process.execPath, [path.join(HERE, 'parity', 'parity_all.js')], { cwd: work, env: penv }, timeoutS);
   } else {
     const jvm = suite.utf8 ? ['-Dfile.encoding=UTF-8', '-Dsun.jnu.encoding=UTF-8'] : [];
-    res = await exec('java', jvm.concat(props, ['-cp', [classes].concat(need.cp).join(cpSep), suite.main]), { cwd: work, env }, timeoutS);
+    res = await exec('java', jvm.concat(suite.jvm || [], props, ['-cp', [classes].concat(need.cp).join(cpSep), suite.main]), { cwd: work, env }, timeoutS);
   }
   const text = clean(res.out);
   fs.writeFileSync(path.join(dir, 'output.txt'), text);

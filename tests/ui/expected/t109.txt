@@ -1,0 +1,100 @@
+ok   the tab sits after the Task Manager (before About) and is on the bar
+ok   this phone itself is not listed; the empty state shows
+ok   Add device opens on the Wi-Fi tab
+ok   a short pairing code is turned down before adb runs
+ok   a wrong code shows adb's answer
+ok   pairing sends the address and the code
+ok   a refused connect says so and stays open
+ok   connecting closes the sheet, selects the watch and remembers it
+ok   the card shows the model, Android, screen, density, battery, link and Wear OS
+ok   the scan lists a device to connect and one waiting for a code
+ok   Pair from the scan fills the pairing address on the Wi-Fi tab
+ok   the Bluetooth link needs this phone's own ADB
+ok   the Bluetooth link forwards through this phone then connects to the port
+ok   the linked watch is a device with the Bluetooth link transport, kept for next time
+ok   the picker lists every device with its state
+ok   a device that has not allowed this phone says what to do and hides the tools
+ok   the apps of the device are listed with phone names where the phone has the app
+ok   the filter chips carry counts; an uninstalled app counts only as Uninstalled
+ok   each row shows its state and the action that fits it
+ok   3rd Party / System and Enabled / Disabled combine and show the Clear filters chip
+ok   Uninstalled with System narrows to the removed system app
+ok   search finds an app by name or package
+ok   Disable runs pm disable-user and the row changes
+ok   Reinstall runs install-existing and the app is back
+ok   the app menu has Open, Force stop, Clear data, Enable, Uninstall, Pull APK, Details, App page, Select, Copy
+ok   Uninstall asks first and nothing runs until it is confirmed
+ok   confirmed, it runs pm uninstall --user 0 and the row says UNINSTALLED
+ok   an uninstalled app's menu offers Reinstall, not the running tools
+ok   Pull APK pulls the base and its splits to the phone's Download folder
+ok   Details shows what dumpsys says
+ok   selecting shows the batch bar with a count
+ok   a batch with no failure toasts the count and clears the selection
+ok   disabling several asks first
+ok   the one the device refused is named with its reason, the other went through
+ok   nothing chosen yet
+ok   picked files queue by kind; a file that is no package is turned down
+ok   several APKs that are a base and its splits queue as one split APK
+ok   the phone's 3rd party apps are offered
+ok   an app from this phone queues with its base and splits
+ok   an item can be removed
+ok   while sending: Send is replaced by Stop and leaving is warned about
+ok   the device, the options and its profile (ABIs, density, language) go to the installer
+ok   each row shows its result; the line says how many went in
+ok   paired Bluetooth devices are listed and the queued files go to Bluetooth sharing
+ok   the console offers command chips
+ok   a shell command runs on the device and its output shows
+ok   a line that starts with adb goes to adb itself, with the device
+ok   adb's own commands go without a device
+ok   stopping the adb this app runs on is not sent
+ok   kill-server is not sent even after other words (-s serial)
+ok   in adb mode a leading adb is taken off (and a shell command may hold the word kill-server)
+ok   adb mode takes quoted arguments
+ok   a running command turns Run into Stop
+ok   Stop ends it
+ok   the history steps back through earlier lines
+ok   Copy gives the whole session
+ok   the device log is read and drawn like the phone's own logcat
+ok   the level goes to the device as a logcat filter
+ok   the filter box narrows the rows and marks the match
+ok   Play follows the log and the button says Pause
+ok   leaving the Logcat sub-tab stops following
+ok   Clear empties the device's log buffer
+ok   the device's storage opens with folders first
+ok   a folder opens
+ok   Up goes back
+ok   View as text shows the start of the file
+ok   Pull to this phone saves into the device's own folder
+ok   Delete asks first
+ok   confirmed, it removes just that file
+ok   New folder makes it
+ok   Send a file here pushes the picked file into the open folder
+ok   a folder that is not there says so
+ok   the settings of the namespace are listed sorted
+ok   another namespace is read on its own
+ok   search matches keys
+ok   Save puts the value on the device and the list shows it
+ok   Delete asks, then removes the setting from the device and the list
+ok   + New adds a key and value
+ok   the density dropdown goes from 120 to 640 in steps of 5, on the current value
+ok   + steps the dropdown by 5
+ok   Apply selected sends wm density with the value
+ok   a change shows Keep / Put it back with a countdown and the card follows
+ok   Keep ends the countdown
+ok   a number that is too small is turned down
+ok   a manual number is applied as typed
+ok   its list now holds the typed value
+ok   left alone, the change is undone on its own to the value before
+ok   Reset to default sends wm density reset
+ok   the size is set with wm size and also gets the undo
+ok   Put it back restores the earlier size
+ok   the device menu has Reconnect, Reload details, Reboot, Recovery, Bootloader, Power off, Copy address and Disconnect
+ok   a reboot asks first
+ok   and then sends adb reboot to the device
+ok   Disconnect drops the device and the empty state returns
+ok   the recent addresses are offered to reconnect
+ok   Back closes the Add device sheet first
+ok   leaving the tab stops the device poll
+ok   the page had no errors
+errors: []
+all checks passed

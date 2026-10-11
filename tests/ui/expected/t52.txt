@@ -1,0 +1,29 @@
+1. five rows listed, no checkboxes visible, no selection bar: true
+   Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done: true
+   tapping rows picks them (a folder is not opened): true ["a.txt","b.apk"]
+   the count follows: true
+   a folder row can be picked too and is not entered: true
+   tapping again un-picks it: true
+   All picks every row, and again none: true
+   … true
+2. Back leaves selection mode first (the folder stays): true
+3. press and hold a folder row: selection mode starts with that row picked, the folder is not opened: true ["DCIM"]
+   a short tap while selecting toggles it (it is un-picked): true
+4. Delete asks first (count + names), then sends one batch with every path: true [{"op":"rm","paths":["/storage/emulated/0/DCIM","/storage/emulated/0/a.txt"],"dest":"","policy":"replace"}]
+   selection mode ends and a status line shows meanwhile: true
+   when done: toast, list refreshed: true
+   declining the confirm sends nothing: true
+5. Copy: selection mode ends, the clipboard bar names the count: true
+   the clipboard survives opening another folder: true
+   Paste here: a.txt already exists there, so a sheet asks (Replace / Skip / Keep both), then sends cp with the folder and the choice: true {"op":"cp","paths":["/storage/emulated/0/a.txt","/storage/emulated/0/b.apk"],"dest":"/storage/emulated/0/Download","policy":"replace"} []
+   a copy keeps the clipboard for another paste: true
+   pasting a copy into the folder it came from asks what to do (Keep both makes a duplicate) and sends nothing until chosen: true
+   pasting a move into the folder it came from is refused: true
+   ✕ drops the clipboard: true
+6. Move sends mv to the open folder, no conflict prompt for a new name: true
+   after a successful move the clipboard is gone: true
+   failures are reported (toast count + a results sheet naming each file and reason): true "File manager\n\ndeleted\n\n✕\nx\nFAILED\n/storage/emulated/0/x\nPermission denied\ny\nFAILED\n/storage/emulated/0/y\nSystem location"
+7. a file name with quotes can be picked (no inline handler breaks): true ["it's \"q\".txt"]
+8. while a job runs the Paste button is disabled and a second job is refused: true
+   …and it frees up afterwards: true
+errors: []

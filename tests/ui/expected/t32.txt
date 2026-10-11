@@ -1,0 +1,16 @@
+1. self-check auto-fired on Updates open: true
+2. self card status: "Update available: 4.9.5-Pro → 5.0-Pro"
+   Update button visible: true
+   Release-notes button visible: true
+   notes shown: true
+3. general updates list (self filtered out): ["Sample"]
+4. installSelfUpdate called: true
+   status after done: "Updated to 5.0-Pro. The app will restart."
+   progress bar width 100%: 100%
+5. release notes openUrl: [ 'openUrl:https://github.com/x/releases/tag/v5.0' ]
+6. up-to-date status: "You’re on the latest version (5.0-Pro). ✓"
+   Update button hidden when up to date: true
+7. no-priv "opened" message: "Confirm the install to update to 5.0-Pro."
+8. error message shown: true
+9. card hidden without bridge support: true
+errors: []

@@ -1,0 +1,14 @@
+1. App Stores comes right before Logcat Viewer, then Task Manager, then Connected Devices, then About: false
+   catalog requested: true
+   app cards rendered: 2
+2. default sort most-starred, Bravo first: true
+3. search "alpha" narrows to: 1
+4. name sort, Alpha first: true
+5. detail modal shown: true | install enabled: true
+   detail fetched: true
+6a. the published checksum reaches the native install: true abababababababababababababababababababababababababababababababab
+6. install bridge called: true | progress: "Installed Alpha Tool 2.1. 100%"
+7. the install result sheet opens with Launch Application and Application Settings: true ["Launch Application","Application Settings"]
+   Launch Application calls the bridge with the real package name: true
+   Application Settings too: true
+errors: []
