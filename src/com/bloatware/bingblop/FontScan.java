@@ -56,7 +56,25 @@ public final class FontScan {
         public int maxVisited = 600000;
         public long deadlineMs;                      // absolute System.currentTimeMillis() cutoff
         public boolean hitLimit;                     // set when any limit stopped the scan early
-        int visited;
+        public Cancel cancel;                        // asked before every file; when it says yes the scan stops and {@link #cancelled} is set (null: cannot be cancelled)
+        public boolean cancelled;                    // set when {@link #cancel} stopped the scan (hitLimit is set too: the list is incomplete)
+        public int visited;                          // files and folders looked at so far
+    }
+
+    /** Asked by the walk before every file whether the scan was cancelled (the page left Settings, a newer search started). Must be cheap and thread-safe. */
+    public interface Cancel {
+        boolean isCancelled();
+    }
+
+    /** The clock is read once per this many files, so a folder of 100,000 files cannot run far past the deadline and the walk does not spend its time on the clock. */
+    static final int CLOCK_EVERY = 16;
+
+    /** True when the walk must stop: a limit was hit before, the scan was cancelled, or the deadline has passed (checked every {@link #CLOCK_EVERY} files, i.e. per file and not only per folder). Sets {@code hitLimit}. */
+    private static boolean timeUp(Limits lim) {
+        if (lim.hitLimit) return true;
+        if (lim.cancel != null && lim.cancel.isCancelled()) { lim.cancelled = true; lim.hitLimit = true; return true; }
+        if ((lim.visited & (CLOCK_EVERY - 1)) == 0 && System.currentTimeMillis() > lim.deadlineMs) lim.hitLimit = true;
+        return lim.hitLimit;
     }
 
     /** Told after each top-level folder of a storage root has been searched: how many are done of how many, which one, and how many fonts were found so far. */
@@ -106,8 +124,8 @@ public final class FontScan {
         if (len <= 0 || len > MAX_FONT_BYTES) return;
         String path = k.getAbsolutePath();
         if (seen.contains(path)) return;
-        Names names = readNames(k);
-        if (names == null) return;                          // a file called .ttf that is not a font
+        Names names = readNames(k, false);
+        if (names == null) return;                          // a file called .ttf that is not a font, or a collection (.ttc) saved under a .ttf name: the font setting cannot use it, so it is not offered
         seen.add(path);
         Entry e = new Entry();
         e.path = path;
@@ -126,18 +144,18 @@ public final class FontScan {
      * {@code total} were done before this root). Fonts lying directly in the root are added first. Returns how many top-level folders were gone through.
      */
     public static int walkRoot(File root, List<Entry> out, Set<String> seen, Limits lim, int doneBefore, int total, Progress progress) {
-        if (root == null || lim.hitLimit) return 0;
+        if (root == null || timeUp(lim)) return 0;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return 0; }
         File[] kids = root.listFiles();
         if (kids == null) return 0;
         for (File k : kids) {
-            if (lim.hitLimit) return 0;
+            if (timeUp(lim)) return 0;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return 0; }
             if (k.isFile()) addIfFont(k, out, seen);
         }
         int done = 0;
         for (File k : kids) {
-            if (lim.hitLimit) break;
+            if (timeUp(lim)) break;
             if (!k.isDirectory() || skipDir(k.getName())) continue;
             if (!isSymlink(k)) walk(k, 1, out, seen, lim);
             done++;
@@ -148,12 +166,12 @@ public final class FontScan {
 
     /** Walks {@code root} for fonts this app can read. Folders that can't be listed are skipped silently; symlinked folders are not followed (no loops). */
     public static void walk(File root, int depth, List<Entry> out, Set<String> seen, Limits lim) {
-        if (root == null || lim.hitLimit) return;
+        if (root == null || timeUp(lim)) return;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return; }
         File[] kids = root.listFiles();
         if (kids == null) return;
         for (File k : kids) {
-            if (lim.hitLimit) return;
+            if (timeUp(lim)) return;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return; }
             if (k.isDirectory()) {
                 if (depth >= lim.maxDepth || skipDir(k.getName())) continue;
@@ -207,7 +225,10 @@ public final class FontScan {
     private static long ul32(byte[] b, int o) { return u32(b, o) & 0xFFFFFFFFL; }
 
     /** What the font at {@code f} says about itself, or null when it is not a TrueType / OpenType font (or is damaged). A collection answers for its first font. */
-    public static Names readNames(File f) {
+    public static Names readNames(File f) { return readNames(f, true); }
+
+    /** {@link #readNames(File)}; with {@code allowCollection} false a collection ("ttcf") is not a font either: the listing and {@link #copyChecked} then agree on what can be used. */
+    private static Names readNames(File f, boolean allowCollection) {
         RandomAccessFile r = null;
         try {
             r = new RandomAccessFile(f, "r");
@@ -217,6 +238,7 @@ public final class FontScan {
             r.readFully(head);
             long base = 0;
             if (u32(head, 0) == TAG_TTCF) {                                        // a collection: header, version, count, then the offset of each font
+                if (!allowCollection) return null;
                 byte[] ttc = new byte[16];
                 r.seek(0);
                 r.readFully(ttc);

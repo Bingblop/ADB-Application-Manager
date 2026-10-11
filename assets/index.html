@@ -9434,7 +9434,11 @@ Type any command below (e.g. pm list packages -d)
         // The list of fonts found is for the visit to Settings that asked for it: leaving Settings (or Clear this list) empties it
         function fontScanClear(toast) {
             fontFound = [];
-            if (fontScanning) fontScanStale = true;
+            if (fontScanning) {
+                fontScanStale = true;
+                // the search is stopped on the phone too (it answers "cancelled"); an older build without the call lets it run to its end and drops the answer
+                try { if (window.AndroidBridge && window.AndroidBridge.cancelFontScan) window.AndroidBridge.cancelFontScan(); } catch (e) {}
+            }
             const box = document.getElementById('fontScanBox'), list = document.getElementById('fontScanList'), search = document.getElementById('fontScanSearch'), clr = document.getElementById('fontScanClearBtn');
             if (list) list.innerHTML = '';
             if (search) { search.value = ''; search.style.display = 'none'; }
@@ -9462,6 +9466,7 @@ Type any command below (e.g. pm list packages -d)
             fontScanEnd();
             if (fontScanStale) { fontScanStale = false; fontScanClear(false); return; }
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'unreadable answer' }; }
+            if (d.status === 'cancelled') { fontScanClear(false); return; }
             if (d.status === 'noaccess') {
                 fontScanNote('This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).', true);
                 promptFileAccess('To search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.', fontScanStart, true);

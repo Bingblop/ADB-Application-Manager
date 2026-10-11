@@ -62,6 +62,23 @@ public class FontScanTest {
   static Object[] win(int id, String s) { return new Object[]{3, 1, 0x0409, id, s}; }
   static byte[] simple(String family, String style) throws IOException { return sfnt("ttf", nameTable(new Object[][]{win(1, family), win(2, style)}), "glyf"); }
 
+  /** A real font collection (a "ttcf" header and one font) with that family name. */
+  static byte[] collection(String family) throws IOException {
+    byte[] f1 = simple(family, "Regular");
+    ByteArrayOutputStream o = new ByteArrayOutputStream();
+    tag(o, "ttcf"); u32(o, 0x00010000L); u32(o, 1); u32(o, 16);
+    byte[] shifted = f1.clone();                                             // the table offsets inside a collection are from the start of the file
+    int nt2 = ((shifted[4] & 0xFF) << 8) | (shifted[5] & 0xFF);
+    for (int i = 0; i < nt2; i++) {
+      int p = 12 + i * 16 + 8;
+      long off = ((shifted[p] & 0xFFL) << 24) | ((shifted[p + 1] & 0xFFL) << 16) | ((shifted[p + 2] & 0xFFL) << 8) | (shifted[p + 3] & 0xFFL);
+      off += 16;
+      shifted[p] = (byte) (off >> 24); shifted[p + 1] = (byte) (off >> 16); shifted[p + 2] = (byte) (off >> 8); shifted[p + 3] = (byte) off;
+    }
+    o.write(shifted);
+    return o.toByteArray();
+  }
+
   static File put(File dir, String rel, byte[] data) throws IOException {
     File f = new File(dir, rel);
     f.getParentFile().mkdirs();
@@ -141,22 +158,8 @@ public class FontScanTest {
     check("a record outside the table is skipped: '" + n.family + "'/" + n.style, n != null && n.family.isEmpty() && n.style.equals("Regular"));
 
     // a collection answers for its first font
-    {
-      byte[] f1 = simple("InCollection", "Regular");
-      ByteArrayOutputStream o = new ByteArrayOutputStream();
-      tag(o, "ttcf"); u32(o, 0x00010000L); u32(o, 1); u32(o, 16);
-      byte[] shifted = f1.clone();                                             // the table offsets inside a collection are from the start of the file
-      int nt2 = ((shifted[4] & 0xFF) << 8) | (shifted[5] & 0xFF);
-      for (int i = 0; i < nt2; i++) {
-        int p = 12 + i * 16 + 8;
-        long off = ((shifted[p] & 0xFFL) << 24) | ((shifted[p + 1] & 0xFFL) << 16) | ((shifted[p + 2] & 0xFFL) << 8) | (shifted[p + 3] & 0xFFL);
-        off += 16;
-        shifted[p] = (byte) (off >> 24); shifted[p + 1] = (byte) (off >> 16); shifted[p + 2] = (byte) (off >> 8); shifted[p + 3] = (byte) off;
-      }
-      o.write(shifted);
-      n = names(o.toByteArray());
-      check("a collection: first font: " + (n == null ? null : n.family), n != null && n.family.equals("InCollection"));
-    }
+    n = names(collection("InCollection"));
+    check("a collection: first font: " + (n == null ? null : n.family), n != null && n.family.equals("InCollection"));
 
     // ---------- cssName ----------
     check("cssName strips what could break out of a rule", FontScan.cssName("a\"; } body {x").equals("a body x"));
@@ -179,6 +182,8 @@ public class FontScanTest {
     put(root, ".trashed-1700000000-Old.ttf", simple("Trashed", "Regular"));
     put(root, ".trashed-folder/x.ttf", simple("TrashedInFolder", "Regular"));
     put(root, "Top.ttf", simple("Top", "Regular"));
+    put(root, "Fonts/Collection.ttf", collection("SavedAsTtf"));              // a .ttc saved with the name ending .ttf (F-4)
+    put(root, "Fonts/Collection2.OTF", collection("SavedAsOtf"));
     put(root, "Fonts/nameless.ttf", sfnt("ttf", nameTable(new Object[][]{win(2, "Regular")}), "glyf"));
     File big = new File(root, "Fonts/Huge.ttf");
     try (RandomAccessFile r = new RandomAccessFile(big, "rw")) { r.write(simple("Huge", "Regular")); r.setLength(FontScan.MAX_FONT_BYTES + 1); }
@@ -200,6 +205,21 @@ public class FontScanTest {
     System.out.println("found: " + names);
     check("the fonts are found, the rest is not: " + names.size(), found.size() == 7);
     check("sorted by family, Regular first: " + names, names.toString().equals("[Deep Regular, Inter, lato Regular, nameless Regular, Roboto Regular, Roboto Bold, Top Regular]"));
+    // F-4: a collection under a .ttf / .otf name is a "font" the font setting cannot use: the listing and the use agree
+    check("a collection saved as .ttf or .otf is not listed (it cannot be used)", !contains(found, "SavedAsTtf") && !contains(found, "SavedAsOtf") && !contains(found, "Collection"));
+    {
+      boolean allUsable = !found.isEmpty();
+      for (FontScan.Entry e : found) {
+        File out = new File(stashDir(), "use.bin");
+        try { FontScan.copyChecked(new java.io.FileInputStream(e.path), out); } catch (IOException ex) { allUsable = false; System.out.println("listed but refused: " + e.path + ": " + ex.getMessage()); }
+        out.delete();
+      }
+      check("every font in the list can be used (listing and use agree)", allUsable);
+      String refused = "";
+      try { FontScan.copyChecked(new java.io.FileInputStream(new File(root, "Fonts/Collection.ttf")), new File(stashDir(), "use.bin")); } catch (IOException ex) { refused = ex.getMessage(); }
+      check("and the collection under a .ttf name is refused when chosen by hand, saying why: " + refused, refused.contains("collection"));
+      check("a real .ttc is still readable by readNames (the first font), only the listing leaves it out", FontScan.readNames(new File(root, "Fonts/Collection.ttf")) != null && FontScan.readNames(new File(root, "Fonts/Collection.ttf")).family.equals("SavedAsTtf"));
+    }
     check("a font with no family is named after its file", contains(found, "nameless"));
     check("the variable font is marked", variable(found, "Inter") && !variable(found, "Roboto"));
     check("the font of a collapsed stub, a trash folder, a trashed file and the broken ones are left out", !contains(found, "Ghost") && !contains(found, "Trashed") && !contains(found, "TrashedInFolder") && !contains(found, "broken") && !contains(found, "empty"));
@@ -277,6 +297,8 @@ public class FontScanTest {
     deleteAll(stash);
 
     stalledSources();
+    scanInOneFolder();
+    if (stash != null) deleteAll(stash);
 
     deleteAll(root);
     System.out.println(fails == 0 ? "ALL PASSED" : fails + " FAILED");
@@ -417,9 +439,77 @@ public class FontScanTest {
     deleteAll(d4);
   }
 
+  /** F-2: the deadline is read per file, not only when a folder is entered. F-3: so is the cancel check. */
+  static void scanInOneFolder() throws Exception {
+    File d = Files.createTempDirectory("fontdeadline").toFile();
+    File one = new File(d, "Download");
+    one.mkdirs();
+    byte[] notAFont = "not a font".getBytes("UTF-8");
+    for (int i = 0; i < 60000; i++) Files.write(new File(one, "f" + i + ".ttf").toPath(), notAFont);       // 60,000 files called .ttf in ONE folder
+    List<File> roots = java.util.Collections.singletonList(d);
+
+    FontScan.Limits full = new FontScan.Limits();
+    full.deadlineMs = System.currentTimeMillis() + 60000;
+    long t0 = System.currentTimeMillis();
+    FontScan.scan(roots, full, null);
+    long fullMs = System.currentTimeMillis() - t0;
+    check("without a deadline in reach every file is visited and nothing stops the walk (" + fullMs + " ms): " + full.visited, !full.hitLimit && full.visited >= 60000);
+
+    FontScan.Limits lim = new FontScan.Limits();
+    long start = System.currentTimeMillis();
+    lim.deadlineMs = start + 20;
+    FontScan.scan(roots, lim, null);
+    long took = System.currentTimeMillis() - start;
+    System.out.println("deadline 20 ms, one folder of 60000 files: took " + took + " ms, visited " + lim.visited + ", full walk " + fullMs + " ms");
+    check("a deadline that comes while one folder is being read stops the walk inside that folder: visited " + lim.visited, lim.visited < 60000);
+    check("and it says the scan stopped early", lim.hitLimit);
+    check("and it stops within a small margin of the deadline (" + took + " ms)", took < 20 + Math.max(150, fullMs / 3));
+
+    // F-3: a cancel check is asked before every file
+    final int[] asked = new int[1];
+    FontScan.Limits cl = new FontScan.Limits();
+    cl.deadlineMs = System.currentTimeMillis() + 60000;
+    cl.cancel = new FontScan.Cancel() { public boolean isCancelled() { return ++asked[0] > 500; } };
+    List<FontScan.Entry> cres = FontScan.scan(roots, cl, null);
+    check("a cancel that says yes after 500 files stops the walk there: visited " + cl.visited + ", asked " + asked[0], cl.visited >= 400 && cl.visited <= 520 && asked[0] <= 520);
+    check("a cancelled scan reports cancelled, and stopped early", cl.cancelled && cl.hitLimit && cres.isEmpty());
+
+    final java.util.concurrent.atomic.AtomicBoolean flag = new java.util.concurrent.atomic.AtomicBoolean();
+    FontScan.Limits fl = new FontScan.Limits();
+    fl.deadlineMs = System.currentTimeMillis() + 60000;
+    fl.cancel = new FontScan.Cancel() { public boolean isCancelled() { return flag.get(); } };
+    final long[] flagAt = new long[1];
+    Thread canceller = new Thread(new Runnable() { public void run() { try { Thread.sleep(25); } catch (InterruptedException e) { return; } flagAt[0] = System.currentTimeMillis(); flag.set(true); } });
+    canceller.start();
+    FontScan.scan(roots, fl, null);
+    long stopped = System.currentTimeMillis();
+    canceller.join();
+    long late = flagAt[0] == 0 ? -1 : stopped - flagAt[0];
+    System.out.println("flag set from another thread after 25 ms: scan stopped " + late + " ms later, visited " + fl.visited + ", full walk " + fullMs + " ms");
+    check("a flag set from another thread stops a scan inside one big folder: visited " + fl.visited, fl.cancelled && fl.visited < 60000);
+    check("and it stops promptly after the flag (" + late + " ms)", late >= 0 && late < Math.max(150, fullMs / 3));
+
+    FontScan.Limits before = new FontScan.Limits();
+    before.deadlineMs = System.currentTimeMillis() + 60000;
+    before.cancel = new FontScan.Cancel() { public boolean isCancelled() { return true; } };
+    List<FontScan.Entry> nothing = FontScan.scan(roots, before, null);
+    check("a scan cancelled before it starts looks at nothing", before.cancelled && nothing.isEmpty() && before.visited == 0);
+
+    check("a scan that is not cancelled does not say so", !full.cancelled && !lim.cancelled);
+    FontScan.Limits never = new FontScan.Limits();
+    never.deadlineMs = System.currentTimeMillis() + 60000;
+    never.cancel = new FontScan.Cancel() { public boolean isCancelled() { return false; } };
+    FontScan.scan(roots, never, null);
+    check("a cancel check that says no lets the scan finish: visited " + never.visited, !never.cancelled && !never.hitLimit && never.visited >= 60000);
+    deleteAll(d);
+  }
+
   static FontStore.Opener opener(final java.io.InputStream in, final String name) {
     return new FontStore.Opener() { public java.io.InputStream open() { return in; } public String name() { return name; } };
   }
+
+  static File stash;
+  static File stashDir() throws IOException { if (stash == null) stash = Files.createTempDirectory("fuse").toFile(); return stash; }
 
   static boolean waitFor(java.util.concurrent.Callable<Boolean> c, long ms) throws Exception {
     long end = System.currentTimeMillis() + ms;
