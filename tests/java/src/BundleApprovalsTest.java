@@ -91,7 +91,7 @@ public class BundleApprovalsTest {
 
   static void text() {
     BundleApprovals.Source s = src("gh-own-repo", null);
-    s.sumMatched = true;
+    s.sum = "matched";
     String sha = "0123456789abcdef" + "0".repeat(48);
     String m = BundleApprovals.message(s, sha, 3 * 1024 * 1024 + 512 * 1024, null);
     String[] lines = m.split("\n");
@@ -107,9 +107,13 @@ public class BundleApprovalsTest {
     is("the facts come before the source's own words", m.indexOf("File fingerprint") < m.indexOf("Written by the source (not checked):"));
     is("the source's name, version and repository are quoted, under the not-checked label", m.contains("\nName: \u201cSome Patches\u201d\n") && m.contains("\nVersion: \u201c1.2.3\u201d\n") && m.contains("\nRepository: \u201cown/repo\u201d\n"));
     is("it says a source is code that runs in the app", m.contains("program code") && m.contains("runs inside this app"));
-    s.sumMatched = false;
+    s.sum = "none";
     String nm = BundleApprovals.message(s, sha, 100, null);
     is("no published checksum is said, in place of a match", nm.contains("The source published no checksum") && !nm.contains("matches the checksum") && nm.contains("File size: 100 bytes\n"));
+    s.sum = "";
+    String um = BundleApprovals.message(s, sha, 100, null);
+    is("a source whose checksum history is not known says that, and does not say none was published", um.contains("did not record whether the source published a checksum") && !um.contains("published no checksum") && !um.contains("matches the checksum"));
+    is("... and so does a Source made from facts without the field", !BundleApprovals.message(BundleApprovals.Source.of(new JSONObject(), null), sha, 100, null).contains("published no checksum"));
     String changed = BundleApprovals.message(s, sha, 100, "f".repeat(64));
     is("a changed file says it differs from the one approved before", changed.contains("The file is different from the one you approved before.") && !changed.contains("have not approved"));
     String same = BundleApprovals.message(s, sha, 100, sha);
@@ -481,7 +485,7 @@ public class BundleApprovalsTest {
     st.setEnabled(MorpheStore.BUILTIN_ID, false);
     is("the official source, off, hands out nothing either (it has no file here)", st.bundleFile(MorpheStore.BUILTIN_ID) == null);
     JSONObject facts = st.bundleFacts(id);
-    is("the store's facts for a local file: kind local, no host, no checksum, not built-in", "local".equals(facts.optString("kind")) && facts.optString("fileHost").isEmpty() && !facts.optBoolean("sumMatched") && !facts.optBoolean("builtIn") && facts.optBoolean("enabled"));
+    is("the store's facts for a local file: kind local, no host, no checksum, not built-in", "local".equals(facts.optString("kind")) && facts.optString("fileHost").isEmpty() && facts.optString("sum").isEmpty() && !facts.optBoolean("builtIn") && facts.optBoolean("enabled"));
     is("the store's facts for the official source say built-in", st.bundleFacts(MorpheStore.BUILTIN_ID).optBoolean("builtIn") && st.bundleFacts("nope") == null);
     BundleApprovals.Source fromFacts = BundleApprovals.Source.of(facts, st.bundleFile(id));
     is("a Source is made from the store's record and the file", fromFacts.id.equals(id) && fromFacts.local() && !fromFacts.builtIn && fromFacts.name.equals("Mine"));
@@ -508,13 +512,29 @@ public class BundleApprovalsTest {
       JSONObject a = s2.addRemote("http://127.0.0.1:" + port + "/m-sum.json", null, false, null);
       JSONObject f = s2.bundleFacts(a.getString("id"));
       is("a download after a redirect records the host it finally came from", "localhost".equals(f.optString("fileHost")), f.toString());
-      is("a published checksum that matched is recorded", f.optBoolean("sumMatched") && "remote".equals(f.optString("kind")));
+      is("a published checksum that matched is recorded", "matched".equals(f.optString("sum")) && "remote".equals(f.optString("kind")));
       JSONObject b = s2.addRemote("http://127.0.0.1:" + port + "/m-nosum.json", null, false, null);
       JSONObject f2 = s2.bundleFacts(b.getString("id"));
-      is("a download with no published checksum records none", "127.0.0.1".equals(f2.optString("fileHost")) && !f2.optBoolean("sumMatched"), f2.toString());
+      is("a download with no published checksum records none", "127.0.0.1".equals(f2.optString("fileHost")) && "none".equals(f2.optString("sum")), f2.toString());
+      is("... and the text of the question says none was published", BundleApprovals.message(BundleApprovals.Source.of(f2, null), "a".repeat(64), 10, null).contains("The source published no checksum"));
+      is("... and for a matched one that it matched", BundleApprovals.message(BundleApprovals.Source.of(f, null), "a".repeat(64), 10, null).contains("matches the checksum the source published"));
       MorpheStore again = new MorpheStore(b2);
-      is("both survive a restart", "localhost".equals(again.bundleFacts(a.getString("id")).optString("fileHost")) && again.bundleFacts(a.getString("id")).optBoolean("sumMatched"));
-      is("the page's view of a source is unchanged by this (no new keys)", !again.get(a.getString("id")).has("fileHost") && !again.get(a.getString("id")).has("sumMatched"));
+      is("both survive a restart", "localhost".equals(again.bundleFacts(a.getString("id")).optString("fileHost")) && "matched".equals(again.bundleFacts(a.getString("id")).optString("sum")) && "none".equals(again.bundleFacts(b.getString("id")).optString("sum")));
+      is("the page's view of a source is unchanged by this (no new keys)", !again.get(a.getString("id")).has("fileHost") && !again.get(a.getString("id")).has("sum"));
+      // a record written before the app kept this (no "sum", no "fileHost"): the history is unknown, which is not the same as "none was published"
+      File sj = new File(b2, "sources.json");
+      JSONObject root = new JSONObject(new String(Files.readAllBytes(sj.toPath()), StandardCharsets.UTF_8));
+      org.json.JSONArray arr = root.getJSONArray("sources");
+      for (int i = 0; i < arr.length(); i++) { arr.getJSONObject(i).remove("sum"); arr.getJSONObject(i).remove("sumMatched"); arr.getJSONObject(i).remove("fileHost"); }
+      Files.write(sj.toPath(), root.toString().getBytes(StandardCharsets.UTF_8));
+      MorpheStore migrated = new MorpheStore(b2);
+      JSONObject mf = migrated.bundleFacts(a.getString("id"));
+      is("a record from before the field existed reads as unknown, not as none", mf != null && mf.optString("sum").isEmpty() && mf.optString("fileHost").isEmpty());
+      String mt = BundleApprovals.message(BundleApprovals.Source.of(mf, null), "a".repeat(64), 10, null);
+      is("... and the question says the app did not record it (no false 'published no checksum')", mt.contains("did not record whether the source published a checksum") && !mt.contains("published no checksum"));
+      new File(b2, "bundles/" + a.getString("id") + "/bundle.mpp").delete();            // an update downloads when the file is gone
+      migrated.update(a.getString("id"), null);
+      is("a new download over such a record records what was seen now", "matched".equals(migrated.bundleFacts(a.getString("id")).optString("sum")));
     } finally {
       srv.stop(0);
     }

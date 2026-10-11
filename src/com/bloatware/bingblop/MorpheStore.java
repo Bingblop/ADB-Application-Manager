@@ -553,6 +553,9 @@ public final class MorpheStore {
     // ---------------------------------------------------------------------------------------------
 
     /** One source as it is kept in sources.json. What depends on the file (file, size, meta, needsNewerPatcher) is worked out when it is read. */
+    /** What is known about the checksum a source published for the file on disk (see Rec.sum): kept apart from "none" so an old record is not told it published nothing. */
+    static final String SUM_MATCHED = "matched", SUM_NONE = "none", SUM_UNKNOWN = "";
+
     private static final class Rec {
         String id = "", name = "", kind = "remote", host = "", repo = "", url = "", branch = "", version = "", description = "", createdAt = "", error = "";
         long updatedAt;
@@ -560,14 +563,15 @@ public final class MorpheStore {
         boolean enabled = true, builtIn, prerelease;
         /** Found out by the app when the file now on disk was downloaded: the host the bytes finally came from (after redirects, "" for a file from the phone), and whether the source published a checksum that the file matched. */
         String fileHost = "";
-        boolean sumMatched;
+        /** "matched", "none" (this version of the app saw that the source published no checksum), or "" (unknown: a record written before this was recorded). */
+        String sum = "";
         JSONObject meta;
 
         Rec copy() {
             Rec c = new Rec();
             c.id = id; c.name = name; c.kind = kind; c.host = host; c.repo = repo; c.url = url; c.branch = branch; c.version = version;
             c.description = description; c.createdAt = createdAt; c.error = error; c.updatedAt = updatedAt; c.patchCount = patchCount;
-            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta; c.fileHost = fileHost; c.sumMatched = sumMatched;
+            c.enabled = enabled; c.builtIn = builtIn; c.prerelease = prerelease; c.meta = meta; c.fileHost = fileHost; c.sum = sum;
             return c;
         }
 
@@ -598,7 +602,7 @@ public final class MorpheStore {
             put(o, "prerelease", prerelease);
             put(o, "error", error);
             put(o, "fileHost", fileHost);
-            put(o, "sumMatched", sumMatched);
+            put(o, "sum", sum);
             if (meta != null) put(o, "meta", meta);
             return o;
         }
@@ -638,7 +642,7 @@ public final class MorpheStore {
             r.enabled = o.optBoolean("enabled", true);
             r.prerelease = o.optBoolean("prerelease", false);
             r.fileHost = cap(str(o, "fileHost"), 253);
-            r.sumMatched = o.optBoolean("sumMatched", false);
+            r.sum = SUM_MATCHED.equals(o.optString("sum")) ? SUM_MATCHED : SUM_NONE.equals(o.optString("sum")) ? SUM_NONE : SUM_UNKNOWN;   // a record from before this was recorded has no value: unknown, not "none"
             r.builtIn = BUILTIN_ID.equals(r.id);
             r.meta = o.optJSONObject("meta");
             return r;
@@ -732,7 +736,7 @@ public final class MorpheStore {
             Rec fixed = builtin();     // what the built-in source is cannot be changed from the file
             fixed.enabled = first.enabled; fixed.prerelease = first.prerelease; fixed.version = first.version; fixed.description = first.description;
             fixed.createdAt = first.createdAt; fixed.updatedAt = first.updatedAt; fixed.patchCount = first.patchCount; fixed.error = first.error;
-            fixed.meta = first.meta; fixed.branch = first.branch; fixed.fileHost = first.fileHost; fixed.sumMatched = first.sumMatched;
+            fixed.meta = first.meta; fixed.branch = first.branch; fixed.fileHost = first.fileHost; fixed.sum = first.sum;
             first = fixed;
         }
         loaded.add(0, first);
@@ -869,7 +873,7 @@ public final class MorpheStore {
 
     /**
      * What the app found out itself about the bundle on disk, for the question asked before it is loaded: {id, name, kind, url, repo, version,
-     * builtIn, enabled, fileHost, sumMatched}, or null when there is no such source. name and version are written by the source.
+     * builtIn, enabled, fileHost, sum}, or null when there is no such source. name and version are written by the source.
      */
     public synchronized JSONObject bundleFacts(String id) {
         Rec r = find(id);
@@ -884,7 +888,7 @@ public final class MorpheStore {
         put(o, "builtIn", r.builtIn);
         put(o, "enabled", r.enabled);
         put(o, "fileHost", r.fileHost);
-        put(o, "sumMatched", r.sumMatched);
+        put(o, "sum", r.sum);
         return o;
     }
 
@@ -961,7 +965,7 @@ public final class MorpheStore {
         File file;
         JSONObject meta;
         String fileHost = "";
-        boolean sumMatched;
+        String sum = SUM_UNKNOWN;
     }
 
     private static Resolved fromMetadata(String text) {
@@ -1271,7 +1275,7 @@ public final class MorpheStore {
         rec.meta = st.meta;
         rec.error = "";
         rec.fileHost = st.fileHost;
-        rec.sumMatched = st.sumMatched;
+        rec.sum = st.sum;
     }
 
     /** Adds a bundle file from the phone. The file name must end in .mpp. */
@@ -1351,7 +1355,7 @@ public final class MorpheStore {
             Staged st = new Staged();
             st.file = staging;
             st.fileHost = InstallConfirm.hostOf(from[0]);
-            st.sumMatched = !res.sha256.isEmpty();                 // a published checksum that is there got here only by matching
+            st.sum = res.sha256.isEmpty() ? SUM_NONE : SUM_MATCHED;   // seen now: a published checksum that is there got here only by matching
             st.meta = readManifest(staging);
             checkBundle(st.meta);
             ok = true;

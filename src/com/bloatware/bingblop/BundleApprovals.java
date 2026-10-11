@@ -53,7 +53,9 @@ final class BundleApprovals {
     /** What is known about one bundle on disk. The fields the source wrote itself (name, version, repo) are shown as "not checked". */
     static final class Source {
         String id = "", name = "", kind = "remote", url = "", repo = "", version = "", fileHost = "";
-        boolean builtIn, sumMatched;
+        boolean builtIn;
+        /** "matched", "none" (the app saw that no checksum was published) or anything else: not known (a source recorded before the app kept this). */
+        String sum = "";
         File file;
 
         /** From MorpheStore.bundleFacts(id) and the bundle file. */
@@ -69,7 +71,7 @@ final class BundleApprovals {
             s.version = facts.optString("version");
             s.fileHost = facts.optString("fileHost");
             s.builtIn = facts.optBoolean("builtIn");
-            s.sumMatched = facts.optBoolean("sumMatched");
+            s.sum = facts.optString("sum");
             return s;
         }
 
@@ -313,8 +315,9 @@ final class BundleApprovals {
         String fp = sha256 == null || sha256.length() < 12 ? "" : sha256.substring(0, 12).toLowerCase(Locale.ROOT);
         sb.append("File fingerprint (SHA-256, first 12 characters): ").append(fp.isEmpty() ? "unknown" : fp).append("\n");
         if (s.local()) sb.append("A file from this phone has no published checksum, so it could not be compared with one.\n");
-        else if (s.sumMatched) sb.append("The file matches the checksum the source published (it does not show who made the file).\n");
-        else sb.append("The source published no checksum, so the file could not be compared with one.\n");
+        else if ("matched".equals(s.sum)) sb.append("The file matches the checksum the source published (it does not show who made the file).\n");
+        else if ("none".equals(s.sum)) sb.append("The source published no checksum, so the file could not be compared with one.\n");
+        else sb.append("The app did not record whether the source published a checksum for this file (it was downloaded before the app kept that), so nothing is known about one.\n");
         if (previous == null) sb.append("You have not approved this source before.\n");
         else if (!previous.equals(sha256)) sb.append("The file is different from the one you approved before.\n");
         sb.append("\nWritten by the source (not checked):\n");
