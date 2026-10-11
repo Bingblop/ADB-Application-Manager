@@ -59,6 +59,7 @@ final class InstallConfirm {
 
     /** What an install may also do, said in the question: the installed copy goes first (with its data); the data saved in a backup is put back. */
     static final String REMOVES_FIRST = "The installed app is uninstalled first, with its data.";
+    static final String REINSTATES_SYSTEM = "The system copy of this app, removed for your user, is brought back; the APK in the backup is not installed.";
     static final String RESTORES_DATA = "The app's saved data from the backup is restored as well.";
 
     /** How the privileged working mode is named in the question ("ADB", "Wireless Debugging (ADB)", "Shizuku", "Root"); anything else is "a privileged mode". */

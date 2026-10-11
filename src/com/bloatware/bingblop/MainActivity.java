@@ -6422,6 +6422,14 @@ public class MainActivity extends Activity {
                         if (sysInfo != null) {
                             requireCompatibleSigner(signerDigests(sysInfo, true), archiveSigners,
                                     "the system app on this phone is signed with a different key than this backup's APK - it does not match this device");
+                            // This too is a privileged install, of a copy that is on the phone already: asked before it, like the install below.
+                            backupEvent("restore", "confirm", 30, "Waiting for your OK to bring back " + meta.optString("label", pkg) + "...");
+                            List<String> sysActs = new ArrayList<String>();
+                            sysActs.add(InstallConfirm.REINSTATES_SYSTEM);
+                            if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                    installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), "", sysActs))) {
+                                throw new InstallCancelled();
+                            }
                             String o = new AndroidBridge().executeShell("pm install-existing " + pkg);
                             if (o.contains("installed for user")) {
                                 installed = true;
@@ -7658,6 +7666,7 @@ public class MainActivity extends Activity {
             // with the package and version read from the APK itself. Before anything is removed or installed.
             PackageInfo inside = getPackageManager().getPackageArchiveInfo(files.get(0).getAbsolutePath(), 0);
             String insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
+            if (uninstallFirst && insidePkg == null) throw new IllegalStateException("can't tell which app to uninstall first: the package name can't be read from the APK");
             List<String> acts = new ArrayList<String>();
             if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
             if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(apk.getName(), insidePkg, inside != null ? inside.versionName : null,
@@ -7668,7 +7677,8 @@ public class MainActivity extends Activity {
                 return r;
             }
             if (uninstallFirst) {
-                uninstallInstalledCopy(mode, pkg);
+                // the app removed is the one the APK is, as read from the APK: never the package name the page sent
+                uninstallInstalledCopy(mode, insidePkg);
                 notes.append("The installed copy was uninstalled first.\n");
             }
             out = installApks(files);

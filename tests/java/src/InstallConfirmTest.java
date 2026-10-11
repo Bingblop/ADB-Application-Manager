@@ -250,6 +250,10 @@ public class InstallConfirmTest {
         int rAsk = res.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
         is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApks(ordered)") && res.indexOf("throw new InstallCancelled()") > rAsk && res.indexOf("throw new InstallCancelled()") < res.indexOf("installApks(ordered)"));
         is("...and says when the data is restored as well", res.contains("InstallConfirm.RESTORES_DATA"));
+        int existing = res.indexOf("pm install-existing ");
+        int sysAsk = res.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,\n                                    installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), \"\", sysActs))");
+        is("bringing back a removed system app (pm install-existing) asks first too, and a No stops the restore", existing > 0 && sysAsk > 0 && sysAsk < existing && res.indexOf("throw new InstallCancelled()") > sysAsk && res.indexOf("throw new InstallCancelled()") < existing && res.contains("InstallConfirm.REINSTATES_SYSTEM"));
+        is("the Morphe uninstall-first removes the package read from the APK, never the one the page sent", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && !mor.contains("uninstallInstalledCopy(mode, pkg)") && mor.contains("uninstallFirst && insidePkg == null"));
 
         String self = methodBody(src, "private void runInstallSelfUpdate(");
         is("the self update asks nothing of its own: it names no address, file or authorizer of the page, and is pinned to this package, a newer version and this install's key",

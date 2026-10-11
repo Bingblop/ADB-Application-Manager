@@ -119,11 +119,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const files2 = await ev(() => ({ ready: installFilesReady(), backend: privilegedInstallBackend() }));
   check('   with Shizuku as the working mode it does', files2.ready === true && files2.backend === 'shizuku', JSON.stringify(files2));
 
+  // 5b) A package from the file manager is open when the app goes to Read-Only mode: Install does not cross the bridge, it says what is needed
+  await setMode('shizuku');
+  await ev(() => { installFromFiles = true; applyFilesInstallMode(); });
+  await setMode('unprivileged');
+  await ev(() => { window.__calls.install.length = 0; runInstall(); }); await sleep(80);
+  check('5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed', (await ev(() => window.__calls.install.length)) === 0 && /Installs from File Manager need/.test(await page.locator('#toastMsg').innerText()));
+  await ev(() => { installFromFiles = false; applyFilesInstallMode(); });
+
   // 6) "Update All" asks once, in the app's own dialog
   await setMode('adb_tcp');
   await page.click('#instSwitchUpdater');
   await page.waitForFunction(() => /Update All \(4\)/.test(document.getElementById('updAllBtn').innerText), null, { timeout: 8000 });
   dialogs.length = 0;
+  await ev(() => { updList.forEach(u => { updProgress[u.pkg] = { stage: 'queued', percent: 0, message: '' }; }); updateAllUI(); });
+  check('   apps that are already queued are not asked about again (no second question for a queue that is running)', (await ev(() => window.__upd.approve.length)) === 0);
+  await ev(() => { updList.forEach(u => { delete updProgress[u.pkg]; }); renderUpdates(); });
   await page.click('#updAllBtn'); await sleep(60);
   let u = await ev(() => JSON.parse(JSON.stringify(window.__upd)));
   check('6. Update All asks the app, once, with the packages (no dialog of the page)', u.approve.length === 1 && JSON.stringify(u.approve[0]) === '["com.a","com.b","com.c","com.d"]' && dialogs.length === 0, JSON.stringify([u.approve, dialogs]));

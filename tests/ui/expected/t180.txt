@@ -19,6 +19,8 @@
 5. Read-Only mode with ADB and Shizuku still connected: the file manager has no backend to install with: true {"ready":false,"backend":null}
    the person is told (and offered Working Modes) instead: true ["confirm:Installing from File Manager runs through ADB, Wireless Debu"]
    with Shizuku as the working mode it does: true {"ready":true,"backend":"shizuku"}
+5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed: true
+   apps that are already queued are not asked about again (no second question for a queue that is running): true
 6. Update All asks the app, once, with the packages (no dialog of the page): true [[["com.a","com.b","com.c","com.d"]],[]]
    nothing is downloaded or installed before the answer: true
    the button waits for the answer (it cannot be pressed again): true
