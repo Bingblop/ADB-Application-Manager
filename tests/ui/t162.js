@@ -67,6 +67,9 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
     /way to move to the Kotlin version/.test(card.note) && /own app id/.test(card.note) && /smaller feature set/.test(card.note) && /no Morphe, File Manager or archives/.test(card.note) && /no real ADB, Shizuku or root yet/.test(card.note) && /does not replace or update this app/.test(card.note) && /you keep both/.test(card.note) && /same swap back to this one/.test(card.note), card.note);
   check('   opening Settings asked the app once', (await countOf('kotlinBuildCheck')) === 1, JSON.stringify(await calls()));
 
+  const live = await ev(() => { const c = document.getElementById('kotlinBuildCard'); const at = e => [e.getAttribute('role'), e.getAttribute('aria-live')].join('/'); return { three: ['kbStatus', 'kbLatest', 'kbProgress'].map(i => at(document.getElementById(i))), card: at(c), title: at(c.querySelector('.color-card-title')), note: at(c.querySelector('.color-card-subtitle')), btns: [...c.querySelectorAll('button')].map(at), others: [...c.querySelectorAll('[aria-live], [role=status], [role=alert]')].map(e => e.id).join() }; });
+  check('1b. the three status lines are polite live regions (role status), so a screen reader announces a new result or progress line; the card, its title, note and buttons are not', live.three.join() === 'status/polite,status/polite,status/polite' && live.card === '/' && live.title === '/' && live.note === '/' && live.btns.every(x => x === '/') && live.others === 'kbStatus,kbLatest,kbProgress', JSON.stringify(live));
+
   // ---- 2. not installed, a test build in a release ----
   check('2. not installed, a test build published: "Not installed." and "A test build is available: 8.0.0."; Download and install and Check again, no Open, no releases page',
     s0.status === 'Not installed.' && s0.latest === 'A test build is available: 8.0.0.' && !s0.open && s0.install && !s0.page && s0.again, JSON.stringify(s0));
@@ -83,20 +86,25 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
   await progress('resolving', -1, 'Finding the latest Kotlin test build…');
   check('4. the app\'s progress is shown in the card: finding the build', (await txt('kbProgress')) === 'Finding the latest Kotlin test build…');
   await progress('downloading', 40, '7 MB');
-  check('   downloading with a percent', (await txt('kbProgress')) === '7 MB 40%', await txt('kbProgress'));
+  check('   downloading with a percent', (await txt('kbProgress')) === 'Downloading the Kotlin build… 40%', await txt('kbProgress'));
   await progress('confirming', 100, 'Waiting for your OK to install ADB Application Manager (Kotlin build)…');
-  check('   waiting for the app\'s own question (the native confirmation) before a privileged install', /^Waiting for your OK to install/.test(await txt('kbProgress')) && (await ev(() => document.getElementById('kbInstallBtn').disabled)));
+  check('   waiting for the app\'s own question (the native confirmation) before a privileged install', (await txt('kbProgress')) === 'Waiting for your OK to install the Kotlin build…' && (await ev(() => document.getElementById('kbInstallBtn').disabled)));
   check('   the page has no way to answer that question (no install, confirm or accept call was made)', (await calls()).every(x => /^kotlinBuild(Check|Install)/.test(x)), JSON.stringify(await calls()));
   await progress('error', 0, 'Install cancelled.');
   const cancelled = await ev(() => ({ prog: document.getElementById('kbProgress').innerText, btn: document.getElementById('kbInstallBtn').disabled, shown: getComputedStyle(document.getElementById('kbInstallBtn')).display !== 'none', err: !!document.querySelector('#kbProgress .is-err') }));
-  check('5. the person said no (or it failed): the reason is shown in red and Download and install is back', /Install failed: Install cancelled\./.test(cancelled.prog) && cancelled.err && !cancelled.btn && cancelled.shown, JSON.stringify(cancelled));
+  check('5. the person said no (or it failed): the reason is shown in red (its own words) and Download and install is back', cancelled.prog === 'Install cancelled.' && cancelled.err && !cancelled.btn && cancelled.shown, JSON.stringify(cancelled));
   await ev(() => document.getElementById('kbInstallBtn').click()); await sleep(80);
   check('   and it can be started again', (await countOf('kotlinBuildInstall')) === 2);
 
   // done: the card looks again and now shows the app installed
   await set({ installed: true, installedVersion: '8.0.0-Pro', update: false });
+  await ev(() => { window.__kbDelay = 600; });
   await progress('done', 100, 'Installed ADB Application Manager (Kotlin build) 8.0.0-Pro.');
-  await sleep(250);
+  await sleep(150);
+  const busy = await ev(() => ({ btn: document.getElementById('kbInstallBtn').disabled, shown: getComputedStyle(document.getElementById('kbInstallBtn')).display !== 'none', text: document.getElementById('kbProgress').innerText }));
+  await ev(() => kbInstall()); await ev(() => document.getElementById('kbInstallBtn').click()); await sleep(50);
+  check('6a. at "done", while the look after the install is out, Download and install stays off (the old answer still offers the build) and a press starts nothing', busy.btn && busy.shown && busy.text === 'Installed the Kotlin build.' && (await countOf('kotlinBuildInstall')) === 2, JSON.stringify(busy));
+  await sleep(700); await ev(() => { window.__kbDelay = 0; });
   const s1 = await state();
   check('6. when the install is done the card looks again: "Installed, version 8.0.0-Pro." with Open the Kotlin build, no Download and install', s1.status === 'Installed, version 8.0.0-Pro.' && s1.open && !s1.install && s1.latest === '', JSON.stringify(s1));
   check('   the check after it was asked of the app, not worked out by the page', (await countOf('kotlinBuildCheck')) === 2);
@@ -107,7 +115,7 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
   await ev(() => document.getElementById('kbInstallBtn').click()); await sleep(60);
   await progress('opened', -1, 'Confirm the install of ADB Application Manager (Kotlin build).');
   const before = await countOf('kotlinBuildCheck');
-  check('7. with the system installer open ("opened") the card waits; the button is back', (await txt('kbProgress')) === 'Confirm the install of ADB Application Manager (Kotlin build).' && !(await ev(() => document.getElementById('kbInstallBtn').disabled)));
+  check('7. with the system installer open ("opened") the card waits; the button is back', (await txt('kbProgress')) === 'Confirm the install of the Kotlin build.' && !(await ev(() => document.getElementById('kbInstallBtn').disabled)));
   await set({ installed: true, installedVersion: '8.0.0-Pro' });
   await ev(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); }); await sleep(200);
   check('   when the person comes back it looks again and shows the app installed', (await countOf('kotlinBuildCheck')) === before + 1 && (await txt('kbStatus')) === 'Installed, version 8.0.0-Pro.');
@@ -194,12 +202,30 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
   await again(); await sleep(200);
   const de2 = await ev(() => ({ s: document.getElementById('kbStatus').innerText, l: document.getElementById('kbLatest').innerText, p: document.getElementById('kbPageBtn').innerText }));
   check('   and the no-release state', de2.s === 'Nicht installiert.' && de2.l === 'Es wurde noch kein Kotlin-Testbuild veröffentlicht.' && de2.p === 'Releases-Seite öffnen', JSON.stringify(de2));
-  const langs = {};
+  await ev(() => { window.__kb.release = 'ok'; window.__kb.installed = false; });
+  await again(); await sleep(200);
+  await ev(() => kbInstall()); await sleep(60);
+  const deP = {};
+  for (const [stage, pct, msg] of [['resolving', -1, 'Finding the latest Kotlin test build…'], ['downloading', 40, '7 MB'], ['downloading', -1, '7 MB'], ['verifying', 100, "Checking the download's SHA-256…"], ['confirming', 100, 'Waiting for your OK to install X…'], ['installing', 100, 'Installing X…']]) {
+    await progress(stage, pct, msg); await sleep(120);
+    deP[stage + (stage === 'downloading' && pct < 0 ? '-' : '')] = await txt('kbProgress');
+  }
+  check('16d. in German the install progress lines are the card\'s own translated words, not the English the app sends', deP.resolving === 'Neuester Kotlin-Testbuild wird gesucht …' && deP.downloading === 'Kotlin-Build wird heruntergeladen … 40 %' && deP['downloading-'] === 'Kotlin-Build wird heruntergeladen …'
+    && deP.verifying === 'SHA-256 des Downloads wird geprüft …' && deP.confirming === 'Warte auf Ihr OK zur Installation des Kotlin-Builds …' && deP.installing === 'Kotlin-Build wird installiert …', JSON.stringify(deP));
+  await progress('error', 0, 'Install cancelled.'); await sleep(120);
+  const deC = await txt('kbProgress');
+  await progress('opened', -1, 'Confirm the install of X.'); await sleep(120);
+  const deO = await txt('kbProgress');
+  check('    the cancel and the system-installer lines too', deC === 'Installation abgebrochen.' && deO === 'Bestätigen Sie die Installation des Kotlin-Builds.', JSON.stringify([deC, deO]));
+  const langs = {}, prog = {};
   for (const code of ['ar', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt-BR', 'ru', 'tr', 'zh-CN']) {
     await ev(c => LANG_ENGINE.set(c), code); await sleep(250);
     langs[code] = await ev(() => document.querySelector('#kotlinBuildCard .color-card-title').innerText);
+    await progress('installing', 100, 'Installing X…'); await sleep(100);
+    prog[code] = await txt('kbProgress');
   }
   check('   in every other language the title is translated (not the English one, and not left empty)', Object.values(langs).every(t => t && t !== 'Try the Kotlin build (beta)'), JSON.stringify(langs));
+  check('    and so is a progress line in each of them', Object.values(prog).every(t => t && t !== 'Installing the Kotlin build…'), JSON.stringify(prog));
   await ev(() => LANG_ENGINE.set('en')); await sleep(300);
 
   // ---- 16b. one question at a time: leaving Settings and coming back while the first lookup is still out asks nothing more ----
@@ -257,6 +283,25 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
     await sp.waitForTimeout(100);
     check('    so leaving and coming back still asks nothing more', (await asked3()) === 3, 'asked ' + (await asked3()));
     await sp.close();
+  }
+
+  // ---- 16e. the look after the install gets no answer: the wait ends by itself after 90 s ----
+  {
+    const tp = await mkPage({});
+    const f4 = (fn, arg) => tp.evaluate(fn, arg);
+    await f4(() => switchView('prefs'));
+    await tp.waitForTimeout(200);
+    await f4(() => { window.__t90 = null; const orig = window.setTimeout; window.setTimeout = function (f, ms, ...a) { if (ms === 90000) { window.__t90 = f; return 0; } return orig.call(window, f, ms, ...a); }; window.__kbNever = true; });
+    await f4(() => kbCheck(true)); await tp.waitForTimeout(50);
+    const before = await f4(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
+    await f4(a => window.onStoreInstallProgress(JSON.stringify({ pkg: a, stage: 'done', percent: 100, message: 'Installed', installedPkg: '', label: '' })), PKG);
+    await tp.waitForTimeout(100);
+    const askedAtDone = await f4(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
+    const held = await f4(() => ({ off: document.getElementById('kbInstallBtn').disabled, timer: typeof window.__t90 === 'function' }));
+    await f4(() => window.__t90());
+    const freed = await f4(() => ({ off: document.getElementById('kbInstallBtn').disabled, shown: getComputedStyle(document.getElementById('kbInstallBtn')).display !== 'none' }));
+    check('16e. with no answer to the look after the install, Download and install is held, then freed by itself after 90 s; and the look after the install is asked even while an older question is out', held.off && held.timer && !freed.off && freed.shown && askedAtDone === before + 1, JSON.stringify([held, freed, before, askedAtDone]));
+    await tp.close();
   }
 
   // ---- 17. narrow screens: nothing sticks out sideways ----

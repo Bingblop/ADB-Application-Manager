@@ -198,8 +198,7 @@ final class KotlinBuild {
             if (c == null) continue;
             c.publishedAt = stamp(rel.optString("published_at", ""));
             if (best == null) { best = c; continue; }
-            int cmp = compareVersions(c.version, best.version);
-            if (cmp > 0 || (cmp == 0 && c.publishedAt > best.publishedAt)) best = c;
+            if (newer(c, best)) best = c;
         }
         return best;
     }
@@ -222,6 +221,13 @@ final class KotlinBuild {
             }
         }
         return false;
+    }
+
+    /** Whether {@code c} is a newer build than {@code best}: the higher number in the tag, then the later publishing date (equal: the one found first stays). */
+    static boolean newer(Choice c, Choice best) {
+        if (best == null) return true;
+        int cmp = compareVersions(c.version, best.version);
+        return cmp > 0 || (cmp == 0 && c.publishedAt > best.publishedAt);
     }
 
     private static Choice pickAsset(JSONObject rel, String tag) {
@@ -299,8 +305,9 @@ final class KotlinBuild {
 
     /**
      * The newest Kotlin test build with its checksum, or null when no release has one. The releases are read a page at a time (newest
-     * first, {@link #PAGE_SIZE} to a page, at most {@link #MAX_PAGES} pages) until a page holds a Kotlin build (the pages after it are
-     * older releases) or a page is short or empty (the last one). A page that cannot be read stops the lookup.
+     * created first, {@link #PAGE_SIZE} to a page, at most {@link #MAX_PAGES} pages) until a page is short or empty (the last one). The
+     * best build across all the pages read wins, by the number in its tag: a higher number can sit on an older page. A page that cannot
+     * be read stops the lookup.
      *
      * A release that carries a checksum asset (its own .sha256 or SHA256SUMS.txt) must give a valid SHA-256 for the file: an unreadable,
      * empty, malformed or unrelated checksum file stops the lookup (an exception) instead of leaving the file unchecked. With no checksum
@@ -314,8 +321,9 @@ final class KotlinBuild {
             if (body == null) throw new IllegalStateException("no answer from GitHub");
             if (body.length > MAX_JSON_BYTES) throw new IllegalArgumentException("the answer is too large");
             JSONArray list = parseList(new String(body, "UTF-8"));
-            c = chooseFrom(list, allowPrerelease);
-            if (c != null || list.length() < PAGE_SIZE) break;
+            Choice here = chooseFrom(list, allowPrerelease);
+            if (here != null && newer(here, c)) c = here;
+            if (list.length() < PAGE_SIZE) break;
         }
         if (c != null && c.sha256.isEmpty() && !c.sumsUrl.isEmpty()) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException("cancelled");

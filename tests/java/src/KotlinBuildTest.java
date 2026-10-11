@@ -340,17 +340,27 @@ public class KotlinBuildTest {
 
   static void pages() throws Exception {
     // a Kotlin build only on page 2 or 3: the project has more than 30 releases
-    FakeHttp h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0")));
+    FakeHttp h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0"))).page(3, "[]");
     KotlinBuild.Choice c = KotlinBuild.find(h, false);
-    check("a Kotlin build on page 2 is found", c != null && c.version.equals("8.0.0") && h.asked.size() == 2 && h.asked.get(0).equals(KotlinBuild.pageUrl(1)) && h.asked.get(1).equals(KotlinBuild.pageUrl(2)));
+    check("a Kotlin build on page 2 is found (the pages are read to the last one)", c != null && c.version.equals("8.0.0") && h.asked.size() == 3 && h.asked.get(0).equals(KotlinBuild.pageUrl(1)) && h.asked.get(1).equals(KotlinBuild.pageUrl(2)) && h.asked.get(2).equals(KotlinBuild.pageUrl(3)));
     h = new FakeHttp().page(1, fullPage(1)).page(2, fullPage(2)).page(3, list(kotlin("8.1.0"), rel("v5.0")));
     c = KotlinBuild.find(h, false);
     check("on page 3 (a short page) too, and nothing more is asked", c != null && c.version.equals("8.1.0") && h.asked.size() == 3 && !h.asked.contains(KotlinBuild.pageUrl(4)));
-    check("the card finds it as well", KotlinBuild.check(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0"))), new FakePackages(null, false), false).optString("version").equals("8.0.0"));
+    check("the card finds it as well", KotlinBuild.check(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0"))).page(3, "[]"), new FakePackages(null, false), false).optString("version").equals("8.0.0"));
     // stops
-    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0"))).page(2, fullPageWith(kotlin("9.0.0")));
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0"))).page(2, fullPageWith(kotlin("9.0.0"))).page(3, "[]");
     c = KotlinBuild.find(h, false);
-    check("a full page that holds a Kotlin build ends the search: older pages cannot be newer, page 2 is not asked", c.version.equals("8.0.0") && h.asked.size() == 1);
+    check("a numerically newer Kotlin build on an older page wins over the one on the first page", c.version.equals("9.0.0") && h.asked.size() == 3);
+    h = new FakeHttp().page(1, fullPageWith(kotlin("9.0.0"))).page(2, fullPageWith(kotlin("8.0.0"))).page(3, "[]");
+    check("and an older one on a later page does not win", KotlinBuild.find(h, false).version.equals("9.0.0") && h.asked.size() == 3);
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.9"))).page(2, fullPageWith(kotlin("8.0.10"))).page(3, "[]");
+    check("by number, not as text (8.0.10 on page 2 beats 8.0.9 on page 1)", KotlinBuild.find(h, false).version.equals("8.0.10"));
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0"))).page(2, fullPageWith(rel("kotlin-8.0.0-b", asset("kotlin-8.0.0-b", "ADB-Manager-Kotlin-b.apk")).put("published_at", "2026-10-01T00:00:00Z"))).page(3, "[]");
+    check("the same number on two pages: the earlier page (the one created later) stays when the date is not later", KotlinBuild.find(h, false).version.equals("8.0.0"));
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0").put("published_at", "2026-10-01T00:00:00Z"))).page(2, fullPageWith(rel("kotlin-8.0.0-b", asset("kotlin-8.0.0-b", "ADB-Manager-Kotlin-b.apk")).put("published_at", "2026-10-09T00:00:00Z"))).page(3, "[]");
+    check("and the later published date wins", KotlinBuild.find(h, false).version.equals("8.0.0-b"));
+    h = new FakeHttp().page(1, fullPageWith(kotlin("8.0.0"))).page(2, "[]");
+    check("a full page with a Kotlin build still asks for the next one (it may hold a newer number); an empty one ends it", KotlinBuild.find(h, false).version.equals("8.0.0") && h.asked.size() == 2);
     h = new FakeHttp().page(1, list(rel("v7.1"), rel("v7.0")));
     check("a short first page is the last: no Kotlin build, no second request", KotlinBuild.find(h, false) == null && h.asked.size() == 1);
     h = new FakeHttp().page(1, "[]");
@@ -360,7 +370,7 @@ public class KotlinBuildTest {
     for (int p = 1; p <= KotlinBuild.MAX_PAGES + 2; p++) h.page(p, p == KotlinBuild.MAX_PAGES + 1 ? fullPageWith(kotlin("8.0.0")) : fullPage(p));
     check("at most " + KotlinBuild.MAX_PAGES + " pages are read: a Kotlin build on page " + (KotlinBuild.MAX_PAGES + 1) + " is not looked for", KotlinBuild.find(h, false) == null && h.asked.size() == KotlinBuild.MAX_PAGES);
     h = new FakeHttp();
-    for (int p = 1; p <= KotlinBuild.MAX_PAGES; p++) h.page(p, p == KotlinBuild.MAX_PAGES ? fullPageWith(kotlin("8.0.0")) : fullPage(p));
+    for (int p = 1; p <= KotlinBuild.MAX_PAGES + 1; p++) h.page(p, p == KotlinBuild.MAX_PAGES ? fullPageWith(kotlin("8.0.0")) : fullPage(p));
     check("one on the last page read is found", KotlinBuild.find(h, false) != null && h.asked.size() == KotlinBuild.MAX_PAGES);
     // failures on a later page stop the lookup, they are not 'none published'
     h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0")));
@@ -400,7 +410,7 @@ public class KotlinBuildTest {
     // the digest and the checksum file come from the release found on a later page
     JSONObject withSums = rel("kotlin-8.0.0", asset("kotlin-8.0.0", "ADB-Manager-Kotlin.apk"), asset("kotlin-8.0.0", "SHA256SUMS.txt"));
     String sumsUrl = P + "kotlin-8.0.0/SHA256SUMS.txt";
-    h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(withSums)).body(sumsUrl, H64 + "  ADB-Manager-Kotlin.apk\n");
+    h = new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(withSums)).page(3, "[]").body(sumsUrl, H64 + "  ADB-Manager-Kotlin.apk\n");
     check("the checksum file of a release found on page 2 is read", KotlinBuild.find(h, false).sha256.equals(H64));
   }
   static boolean allHttps(FakeHttp h) throws Exception {
@@ -543,7 +553,7 @@ public class KotlinBuildTest {
     String ins = between(main, "private void runKotlinBuildInstall()", "private void downloadAndInstall(");
     check("the install is a cancellable job and does not start a download once the window is gone", ins.contains("submitKotlinJob(") && ins.indexOf("if (activityDestroyed) return;") > ins.indexOf("KotlinBuild.find(") && ins.indexOf("if (activityDestroyed) return;") < ins.indexOf("downloadAndInstall("));
     check("notifyJs drops a script once the window is gone (the answer is a no-op then)", main.contains("if (!activityDestroyed && webView != null) {      // checked here, on the UI thread"));
-    String pjs = between(page, "function kbCheck(user)", "window.onKotlinBuild = ");
+    String pjs = between(page, "function kbCheck(user, force)", "window.onKotlinBuild = ");
     check("the page keeps the number of its newest question and ignores an answer to another", pjs.contains("kbWant = typeof token === 'number' ? token : 0;") && pjs.contains("if (kbWant && d.seq && d.seq !== kbWant) return;"));
     check("the web request goes through UpdateManager.httpGet (HttpSafe.open)", main.contains("UpdateManager.httpGet(url, \"application/vnd.github+json\", maxBytes)"));
     check("the package query is getPackageInfo (the app's existing package query)", Pattern.compile("kotlinPackages = new KotlinBuild\\.Packages\\(\\)[\\s\\S]{0,400}getPackageManager\\(\\)\\.getPackageInfo\\(pkg, 0\\)").matcher(main).find());
