@@ -1,7 +1,8 @@
 // ADB Console: the result line under every command's output. The Kotlin app shows `SUCCESS (0)` / `EXIT n` from ShellSafety.parseShellOutcome; the page gets one merged
 // text from the bridge and no exit code (MainActivity.executeShell returns a String), so the line here comes from the same failure signs read out of the text and never
 // shows an exit number or the word success. This script checks:
-//   - the pure classifier termClassifyOutput on ordinary, edge and hostile input (the exact rules: see the comment above it in assets/index.html),
+//   - the pure classifier termClassifyOutput on ordinary, edge and hostile input (the exact rules: see the comment above it in assets/index.html;
+//     they are ShellSafety.kt's plus the Java backend's ShellOutcome.backendFailed: a leading error: or adb: device , ignoring case),
 //   - what the page draws for an async answer (onShellDone) and for the old synchronous bridge call: the words, the order, a line of its own, role="status",
 //   - that a stale answer and the Trim Caches answer get no result line, that the text is data-safe (no markup from the output), and that Copy holds the line,
 //   - that the failure line is readable (colour and contrast) in every theme, dark and light, and that it is translated.
@@ -48,7 +49,20 @@ const { chromium, PAGE } = require('./lib/pw');
       ['"Failure [" at the start', 'Failure [INSTALL_FAILED_ALREADY_EXISTS]', true, 'error'],
       ['"Error:" only on a later line is not enough', 'package:a\nError: in the middle', false, ''],
       ['a sentence that merely mentions Error: is not a failure', 'The word Error: is explained in the manual', false, ''],
-      ['lower-case "error:" is not the indicator', 'error: lowercase', false, ''],
+      ['adb\'s lower-case "error:" at the start', 'error: device offline', true, 'error'],
+      ['adb: no devices', 'error: no devices/emulators found', true, 'error'],
+      ['the start is matched ignoring case', 'ERROR: x', true, 'error'],
+      ['mixed case at the start', 'eRrOr: x', true, 'error'],
+      ['"adb: device " at the start', 'adb: device offline', true, 'error'],
+      ['"ADB: DEVICE " at the start, ignoring case', 'ADB: DEVICE offline', true, 'error'],
+      ['"adb: device unauthorized" is a permission problem', 'adb: device unauthorized', true, 'permission'],
+      ['"error:" in the middle of a line is not a failure', 'the parser printed error: nothing here', false, ''],
+      ['a listing that has "error: " on a later line is not a failure', 'package:com.a\nerror: not a real failure\nERROR: neither', false, ''],
+      ['"adb: device " not at the start is not a failure', 'see adb: device offline in the manual', false, ''],
+      ['"error" without the colon at the start', 'errors were found in nothing', false, ''],
+      ['"error :" with a space is not the indicator', 'error : x', false, ''],
+      ['"adb:device" without the space is not the indicator', 'adb:device offline', false, ''],
+      ['"adb: devices" (no space right after device) is not the indicator', 'adb: devices attached', false, ''],
       ['"Failure" without the bracket', 'Failure: nothing', false, ''],
       ['"Failure[" without the space', 'Failure[x]', false, ''],
       ['"Failure [" on a later line is not enough', 'ok\nFailure [x]', false, ''],
@@ -165,6 +179,23 @@ const { chromium, PAGE } = require('./lib/pw');
     return ls;
   });
   check('the line is translated (German)', de[0] === 'Sieht nach einem Fehlschlag aus: Zeitüberschreitung des Befehls.' && de[1] === 'Beendet. Kein Fehlertext in der Ausgabe.', JSON.stringify(de));
+  // right-to-left: the failure bar moves with the text direction (logical properties), so it stays in front of the words
+  const rtl = await page.evaluate(async () => {
+    const side = () => {
+      const id = 's' + (++termShellSeq); termShellRun = { id, cmd: 'x' };
+      onShellDone(id, 'Error: x');
+      const e = [...document.querySelectorAll('#termOutput .term-result.is-fail')].pop(), cs = getComputedStyle(e);
+      const r = e.getBoundingClientRect();
+      return { dir: document.documentElement.dir, l: parseFloat(cs.borderLeftWidth), r: parseFloat(cs.borderRightWidth), pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), text: e.textContent, w: r.width };
+    };
+    const en = side();
+    await LANG_ENGINE.set('ar');
+    const ar = side();
+    await LANG_ENGINE.set('en');
+    return { en, ar };
+  });
+  check('left-to-right: the failure bar is on the left', rtl.en.dir !== 'rtl' && rtl.en.l === 3 && rtl.en.r === 0 && rtl.en.pl === 6 && rtl.en.pr === 0, JSON.stringify(rtl.en));
+  check('right-to-left (Arabic): the bar and its gap are on the right, in front of the translated words', rtl.ar.dir === 'rtl' && rtl.ar.r === 3 && rtl.ar.l === 0 && rtl.ar.pr === 6 && rtl.ar.pl === 0 && /[\u0600-\u06FF]/.test(rtl.ar.text), JSON.stringify(rtl.ar));
   await page.close();
 
   // ---- 5) the old synchronous bridge call ----

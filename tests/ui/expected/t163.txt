@@ -10,7 +10,20 @@ ok   classifier: "Error:" after leading blank lines
 ok   classifier: "Failure [" at the start
 ok   classifier: "Error:" only on a later line is not enough
 ok   classifier: a sentence that merely mentions Error: is not a failure
-ok   classifier: lower-case "error:" is not the indicator
+ok   classifier: adb's lower-case "error:" at the start
+ok   classifier: adb: no devices
+ok   classifier: the start is matched ignoring case
+ok   classifier: mixed case at the start
+ok   classifier: "adb: device " at the start
+ok   classifier: "ADB: DEVICE " at the start, ignoring case
+ok   classifier: "adb: device unauthorized" is a permission problem
+ok   classifier: "error:" in the middle of a line is not a failure
+ok   classifier: a listing that has "error: " on a later line is not a failure
+ok   classifier: "adb: device " not at the start is not a failure
+ok   classifier: "error" without the colon at the start
+ok   classifier: "error :" with a space is not the indicator
+ok   classifier: "adb:device" without the space is not the indicator
+ok   classifier: "adb: devices" (no space right after device) is not the indicator
 ok   classifier: "Failure" without the bracket
 ok   classifier: "Failure[" without the space
 ok   classifier: "Failure [" on a later line is not enough
@@ -53,6 +66,8 @@ ok   themes: the neutral line reads at 4.5:1 on the console in every theme
 ok   themes: the failure line reads at 4.5:1 on the console in every theme
 ok   themes: the failure line differs from the neutral one: bold with a bar in front, in every theme (the words carry the meaning, the style only helps)
 ok   the line is translated (German)
+ok   left-to-right: the failure bar is on the left
+ok   right-to-left (Arabic): the bar and its gap are on the right, in front of the translated words
 ok   without executeShellAsync the same line follows the output
 errors: []
 all passed

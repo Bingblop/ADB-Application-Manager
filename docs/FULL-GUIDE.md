@@ -616,8 +616,10 @@ separate from the Terminal's.
 
 **The ADB Console says how each command looked.** Under every command's output the console adds one line: "Finished. No error text in the
 output." or "Looks like a failure:" and the reason (the output reports an error, the command timed out, or permission denied). It follows the
-same failure signs as the Kotlin build's console: output that starts with `Error:` or `Failure [`, or that holds `adb: error:`,
-`SecurityException`, `Permission Denial`, `unauthorized` or the app's own time-out note (the words are matched exactly, with their capitals).
+same failure signs as the Kotlin build's console and the app's own shell code: output that starts with `Error:` (any capitals, so adb's own
+`error: device offline` counts), `adb: device ` (as in `adb: device offline`) or `Failure [`, or that holds `adb: error:`,
+`SecurityException`, `Permission Denial`, `unauthorized` or the app's own time-out note. Only the very start of the output counts for
+`Error:` and `adb: device `, and the other words are matched with their capitals.
 The shell path hands the page one merged text and no exit code, so the line is a reading of the words, never an exit number and never the word
 "success": a command that fails without printing one of them can still read "Finished", and a listing that merely contains one of them reads as a
 failure. Copy and Share include the line.

@@ -2604,8 +2604,8 @@
         .term-result.is-fail {
             color: var(--text-main);
             font-weight: 700;
-            border-left: 3px solid var(--status-bloat);
-            padding-left: 6px;
+            border-inline-start: 3px solid var(--status-bloat);
+            padding-inline-start: 6px;
         }
 
         .rish-promptline {
@@ -24614,14 +24614,17 @@ Type any command below (e.g. pm list packages -d)
         let termShellSeq = 0;
 
         // The result line under a command's output. The bridge hands the page one merged text (stdout and stderr together) and no exit code,
-        // so this reads the text for the failure signs of the Kotlin app's ShellSafety.parseShellOutcome (its rules, case-sensitive, on the
-        // trimmed text): it starts with "Error:" or "Failure [", or holds "adb: error:", "[Process timed out", "SecurityException",
-        // "Permission Denial" or "unauthorized". Anything else is NOT called a success - only "no error text". kind then says which sort,
-        // as ShellOutcome.Failure does (isTimeout: "timed out"; isPermissionDenied: the three permission words; both ignoring case).
-        const TERM_FAIL_RE = /^(?:Error:|Failure \[)|adb: error:|\[Process timed out|SecurityException|Permission Denial|unauthorized/;      // ^ = the start of the trimmed text (no m flag)
+        // so this reads the text for failure signs, on the trimmed text: the Kotlin app's ShellSafety.parseShellOutcome (case-sensitive: it
+        // starts with "Failure [", or holds "adb: error:", "[Process timed out", "SecurityException", "Permission Denial" or "unauthorized")
+        // and the Java backend's ShellOutcome.backendFailed (the start, ignoring case: "error:" - so "Error: ..." and adb's own "error: device
+        // offline" - or "adb: device ", as in "adb: device offline"). Only the START counts for those two; a later "error:" line does not.
+        // Anything else is NOT called a success - only "no error text". kind then says which sort, as ShellOutcome.Failure does
+        // (isTimeout: "timed out"; isPermissionDenied: the three permission words; both ignoring case); the adb forms are an error unless a word applies.
+        const TERM_FAIL_HEAD_RE = /^(?:error:|adb: device )/i;      // ^ = the start of the trimmed text (no m flag)
+        const TERM_FAIL_RE = /^Failure \[|adb: error:|\[Process timed out|SecurityException|Permission Denial|unauthorized/;
         function termClassifyOutput(out) {
             const t = String(out == null ? '' : out).trim();
-            if (!TERM_FAIL_RE.test(t)) return { failed: false, kind: '' };
+            if (!TERM_FAIL_HEAD_RE.test(t) && !TERM_FAIL_RE.test(t)) return { failed: false, kind: '' };
             return { failed: true, kind: /timed out/i.test(t) ? 'timeout' : /SecurityException|Permission Denial|unauthorized/i.test(t) ? 'permission' : 'error' };
         }
 
