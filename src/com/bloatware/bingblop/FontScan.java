@@ -56,7 +56,17 @@ public final class FontScan {
         public int maxVisited = 600000;
         public long deadlineMs;                      // absolute System.currentTimeMillis() cutoff
         public boolean hitLimit;                     // set when any limit stopped the scan early
-        int visited;
+        public int visited;                          // files and folders looked at so far
+    }
+
+    /** The clock is read once per this many files, so a folder of 100,000 files cannot run far past the deadline and the walk does not spend its time on the clock. */
+    static final int CLOCK_EVERY = 16;
+
+    /** True when the walk must stop: a limit was hit before, or the deadline has passed (checked every {@link #CLOCK_EVERY} files, i.e. per file and not only per folder). Sets {@code hitLimit}. */
+    private static boolean timeUp(Limits lim) {
+        if (lim.hitLimit) return true;
+        if ((lim.visited & (CLOCK_EVERY - 1)) == 0 && System.currentTimeMillis() > lim.deadlineMs) lim.hitLimit = true;
+        return lim.hitLimit;
     }
 
     /** Told after each top-level folder of a storage root has been searched: how many are done of how many, which one, and how many fonts were found so far. */
@@ -131,13 +141,13 @@ public final class FontScan {
         File[] kids = root.listFiles();
         if (kids == null) return 0;
         for (File k : kids) {
-            if (lim.hitLimit) return 0;
+            if (timeUp(lim)) return 0;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return 0; }
             if (k.isFile()) addIfFont(k, out, seen);
         }
         int done = 0;
         for (File k : kids) {
-            if (lim.hitLimit) break;
+            if (timeUp(lim)) break;
             if (!k.isDirectory() || skipDir(k.getName())) continue;
             if (!isSymlink(k)) walk(k, 1, out, seen, lim);
             done++;
@@ -153,7 +163,7 @@ public final class FontScan {
         File[] kids = root.listFiles();
         if (kids == null) return;
         for (File k : kids) {
-            if (lim.hitLimit) return;
+            if (timeUp(lim)) return;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return; }
             if (k.isDirectory()) {
                 if (depth >= lim.maxDepth || skipDir(k.getName())) continue;

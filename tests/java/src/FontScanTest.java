@@ -277,6 +277,7 @@ public class FontScanTest {
     deleteAll(stash);
 
     stalledSources();
+    deadlineInOneFolder();
 
     deleteAll(root);
     System.out.println(fails == 0 ? "ALL PASSED" : fails + " FAILED");
@@ -415,6 +416,34 @@ public class FontScanTest {
     tClr.join(3000);
     check("a pick cleared while it was read leaves nothing: " + listing(d4), !tClr.isAlive() && !clearedRes[0].optBoolean("ok") && listing(d4).equals("[]"));
     deleteAll(d4);
+  }
+
+  /** F-2: the deadline is read per file, not only when a folder is entered. */
+  static void deadlineInOneFolder() throws Exception {
+    File d = Files.createTempDirectory("fontdeadline").toFile();
+    File one = new File(d, "Download");
+    one.mkdirs();
+    byte[] notAFont = "not a font".getBytes("UTF-8");
+    for (int i = 0; i < 60000; i++) Files.write(new File(one, "f" + i + ".ttf").toPath(), notAFont);       // 60,000 files called .ttf in ONE folder
+    List<File> roots = java.util.Collections.singletonList(d);
+
+    FontScan.Limits full = new FontScan.Limits();
+    full.deadlineMs = System.currentTimeMillis() + 60000;
+    long t0 = System.currentTimeMillis();
+    FontScan.scan(roots, full, null);
+    long fullMs = System.currentTimeMillis() - t0;
+    check("without a deadline in reach every file is visited and nothing stops the walk (" + fullMs + " ms): " + full.visited, !full.hitLimit && full.visited >= 60000);
+
+    FontScan.Limits lim = new FontScan.Limits();
+    long start = System.currentTimeMillis();
+    lim.deadlineMs = start + 20;
+    FontScan.scan(roots, lim, null);
+    long took = System.currentTimeMillis() - start;
+    System.out.println("deadline 20 ms, one folder of 60000 files: took " + took + " ms, visited " + lim.visited + ", full walk " + fullMs + " ms");
+    check("a deadline that comes while one folder is being read stops the walk inside that folder: visited " + lim.visited, lim.visited < 60000);
+    check("and it says the scan stopped early", lim.hitLimit);
+    check("and it stops within a small margin of the deadline (" + took + " ms)", took < 20 + Math.max(150, fullMs / 3));
+    deleteAll(d);
   }
 
   static FontStore.Opener opener(final java.io.InputStream in, final String name) {
