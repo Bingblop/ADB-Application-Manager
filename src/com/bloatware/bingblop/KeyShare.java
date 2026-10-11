@@ -16,7 +16,9 @@ import java.util.regex.Pattern;
  * provider's key route reads it, for exactly this name, and only through the one-off grant on the share intent.</li>
  * <li>The folder and the file are readable by this app only. The recipient reads through the provider.</li>
  * <li>It is short-lived: removed {@link #KEEP_MS} after it was made, before the next export, and at the next start of the app (the first thing a new process
- * does is {@link #sweepAtStart}: a process that is new has no share in flight, so whatever is left is removed, however young).</li>
+ * does is {@link #sweepAtStart}: a process that is new has no share in flight, so whatever is left is removed, however young). That first call is made
+ * by the share provider's onCreate, which Android runs at the start of every process of the app, also one started only to serve a share; and
+ * {@link #resolve} never serves a copy older than the keep time, so an address stops working at the keep time whatever process state there is.</li>
  * <li>One copy at a time, also when exports overlap: staging, the removal of the copy before it and the removal of a copy are serialized by one lock, so two
  * calls from the bridge's thread pool cannot both sweep before either creates its folder.</li>
  * </ul>
@@ -109,8 +111,9 @@ final class KeyShare {
     /**
      * The start-up sweep: removes every staged copy, whatever its age, the first time it is called in this process, and does nothing after that. A copy that
      * is there when the process starts was left by a process that died, and no share of it can be in flight (the timer that would remove it died with that
-     * process), so it is not kept for the keep time. The activity calls this from onCreate, which also runs again in a live process (the window is
-     * recreated or opened again); then a share sheet may still be reading the copy, so only the first call of the process sweeps.
+     * process), so it is not kept for the keep time. The share provider calls this from onCreate (the first thing of every process of the app, before any
+     * address is served) and the activity from onCreate, which also runs again in a live process (the window is recreated or opened again); then a share
+     * sheet may still be reading the copy, so only the first call of the process sweeps.
      * Returns how many folders were removed.
      */
     static int sweepAtStart(File cacheDir) {
@@ -121,8 +124,13 @@ final class KeyShare {
     /**
      * The staged key a share address names, or null. {@code segments} are the path segments of the address: exactly {@link #ROUTE}, a 16 hex digit id and
      * {@link #NAME}. A link in place of the folder or the file, or a file that is not a regular file, is refused.
+     * <p>A copy older than {@link #KEEP_MS} is never served, whatever state the process is in: the timer that removes it lives in the process that made
+     * it, and a receiving app that still holds the grant can open the address after that process died (Android then starts the app only for the
+     * provider). Such a copy is removed here, and null is returned.
      */
-    static File resolve(File cacheDir, List<String> segments) {
+    static File resolve(File cacheDir, List<String> segments) { return resolve(cacheDir, segments, System.currentTimeMillis()); }
+
+    static File resolve(File cacheDir, List<String> segments, long now) {
         if (segments == null || segments.size() != 3 || !ROUTE.equals(segments.get(0)) || !ID.matcher(segments.get(1)).matches() || !NAME.equals(segments.get(2))) return null;
         File root = root(cacheDir);
         File dir = new File(root, segments.get(1));
@@ -130,7 +138,12 @@ final class KeyShare {
         try {
             if (java.nio.file.Files.isSymbolicLink(root.toPath()) || java.nio.file.Files.isSymbolicLink(dir.toPath()) || java.nio.file.Files.isSymbolicLink(f.toPath())) return null;
         } catch (Exception e) { return null; }
-        return f.isFile() ? f : null;
+        if (!f.isFile()) return null;
+        if (now - dir.lastModified() > KEEP_MS) {                       // the copy's age is the age of its folder (made when the copy was)
+            synchronized (LOCK) { deleteTree(dir); }
+            return null;
+        }
+        return f;
     }
 
     /** The path segments a share address for {@code staged} has (the inverse of {@link #resolve}). */

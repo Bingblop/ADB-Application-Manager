@@ -153,6 +153,21 @@ public class KeyShareTest {
         check("cleanup: removing it again is fine", KeyShare.remove(staged));
         check("cleanup: the real key and its info are still there", Arrays.equals(Files.readAllBytes(key.toPath()), keyBytes) && info.isFile());
 
+        // ---- an address stops working at the keep time, whatever the process state (the timer that removes the copy died with the process that made it) ----
+        File aged = KeyShare.stage(cache, key);
+        List<String> agedSeg = Arrays.asList(KeyShare.segments(aged));
+        long born = aged.getParentFile().lastModified();
+        check("expiry: a copy that is younger than the keep time still resolves", aged.equals(KeyShare.resolve(cache, agedSeg, born + 1000)) && aged.isFile());
+        check("expiry: a copy exactly as old as the keep time still resolves (the timer fires at that moment, not before)", aged.equals(KeyShare.resolve(cache, agedSeg, born + KeyShare.KEEP_MS)) && aged.isFile());
+        check("expiry: a copy one millisecond older is not served, and it is removed (the folder too)", KeyShare.resolve(cache, agedSeg, born + KeyShare.KEEP_MS + 1) == null && !aged.exists() && !aged.getParentFile().exists());
+        check("expiry: after that the address reaches nothing, also with the real clock", KeyShare.resolve(cache, agedSeg) == null);
+        File aged2 = KeyShare.stage(cache, key);
+        aged2.getParentFile().setLastModified(System.currentTimeMillis() - KeyShare.KEEP_MS - 60000);
+        check("expiry: a copy made long ago (the folder's time), read with the real clock, is not served and is removed", KeyShare.resolve(cache, Arrays.asList(KeyShare.segments(aged2))) == null && !aged2.getParentFile().exists());
+        File aged3 = KeyShare.stage(cache, key);
+        check("expiry: a copy just made resolves with the real clock", aged3.equals(KeyShare.resolve(cache, Arrays.asList(KeyShare.segments(aged3)))));
+        KeyShare.remove(aged3);
+
         // remove() only touches a staged copy
         File stray1 = new File(base, "morphe.keystore");
         File d2 = new File(cache, "share/0123456789abcdef"); d2.mkdirs(); File stray2 = new File(d2, "morphe.keystore"); Files.write(stray2.toPath(), new byte[] {1});
@@ -274,6 +289,11 @@ public class KeyShareTest {
         String ff = body(prov, "private File fileFor(");
         check("provider: the key route is read through KeyShare.resolve, before and apart from the ordinary route, whose address pattern is unchanged", has(ff, "KeyShare.ROUTE.equals(seg.get(0))", "KeyShare.resolve(getContext().getCacheDir(), seg)")
             && ff.indexOf("KeyShare.resolve") < ff.indexOf("ID.matcher") && prov.contains("Pattern.compile(\"[0-9a-f]{16}\")") && has(prov, "static Uri uriForKey(File staged)", "KeyShare.segments(staged)"), ff);
+        String oc = body(prov, "public boolean onCreate()");
+        check("provider: onCreate makes the first-call-of-the-process sweep (Android runs it at the start of every process of the app, also one started only to serve an address), before it returns, and ignores a failure",
+            has(oc, "KeyShare.sweepAtStart(getContext().getCacheDir())", "catch (Throwable") && oc.indexOf("KeyShare.sweepAtStart") < oc.indexOf("return true"), oc);
+        String kr = body(read(new File(repo(), "src/com/bloatware/bingblop/KeyShare.java")), "static File resolve(File cacheDir, List<String> segments, long now)");
+        check("provider: the key route serves nothing older than the keep time (resolve compares the folder's age with KEEP_MS and deletes the stale copy)", has(kr, "now - dir.lastModified() > KEEP_MS", "deleteTree(dir)") && kr.indexOf("KEEP_MS") < kr.lastIndexOf("return f;"), kr);
         check("provider: still not exported, grants only by the one-off URI grant", has(read(new File(repo, "AndroidManifest.xml")), "android:name=\".ShareProvider\"", "android:exported=\"false\"", "android:grantUriPermissions=\"true\""));
         check("PrivatePaths.exportable does not list the key-share folder", !read(new File(repo, "src/com/bloatware/bingblop/PrivatePaths.java")).contains("morphe_keyshare") && !read(new File(repo, "src/com/bloatware/bingblop/PrivatePaths.java")).contains("KeyShare"));
 

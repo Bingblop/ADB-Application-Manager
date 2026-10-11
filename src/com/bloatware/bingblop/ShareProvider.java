@@ -91,7 +91,12 @@ public class ShareProvider extends ContentProvider {
         return f;
     }
 
-    @Override public boolean onCreate() { return true; }
+    @Override public boolean onCreate() {
+        // Android runs this at the start of every process of the app, also one started only because a receiving app opened a share address. A staged signing
+        // key left by a process that died has lost its expiry timer, so it is removed here, before any address is served (first call of the process only).
+        try { KeyShare.sweepAtStart(getContext().getCacheDir()); } catch (Throwable ignored) {}
+        return true;
+    }
 
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
