@@ -135,6 +135,39 @@ public class MorpheLibraryTest {
         JSONObject ok2 = lib3.add(keep2, new JSONObject().put("pkg", "com.e.f"), null, dl3);
         check("and the next attempt into Downloads works", new File(ok2.getString("file")).getParentFile().equals(dl3) && new File(ok2.getString("file")).length() == 6, ok2.toString());
 
+        // M-11: a copy that fails half way leaves no partial file, and does not damage the file that was there
+        File root4 = temp();
+        File full = file(root4, "src.bin", "0123456789ABCDEF");
+        File good = new File(root4, "good.apk");
+        MorpheLibrary.copy(full, good);
+        check("a copy that works leaves the whole file and no .part", good.length() == 16 && root4.list().length == 2, java.util.Arrays.toString(root4.list()));
+        final int[] left = { 10 };
+        java.io.InputStream dying = new java.io.InputStream() {
+            @Override public int read() throws IOException { throw new IOException("unused"); }
+            @Override public int read(byte[] b, int off, int len) throws IOException { if (left[0] <= 0) throw new IOException("card pulled"); int n = Math.min(left[0], Math.min(len, 4)); java.util.Arrays.fill(b, off, off + n, (byte) 'x'); left[0] -= n; return n; }
+        };
+        File target = new File(root4, "patched.apk");
+        boolean threw4 = false;
+        try { MorpheLibrary.copy(dying, target); } catch (IOException e) { threw4 = true; }
+        check("a copy that dies half way throws", threw4, null);
+        check("and leaves no partial APK and no .part file", !target.exists() && root4.list().length == 2, java.util.Arrays.toString(root4.list()));
+        File keyFile = file(root4, "morphe.keystore", "THE-GOOD-KEY");
+        left[0] = 10;
+        threw4 = false;
+        try { MorpheLibrary.copy(dying, keyFile); } catch (IOException e) { threw4 = true; }
+        check("a copy that dies does not damage the file that was already at the target", threw4 && new String(java.nio.file.Files.readAllBytes(keyFile.toPath()), "UTF-8").equals("THE-GOOD-KEY") && root4.list().length == 3, java.util.Arrays.toString(root4.list()));
+        File over = file(root4, "over.apk", "OLD");
+        MorpheLibrary.copy(full, over);
+        check("a good copy replaces what was there", over.length() == 16, null);
+        File missingSrc = new File(root4, "nothing.apk");
+        threw4 = false;
+        try { MorpheLibrary.copy(missingSrc, new File(root4, "x.apk")); } catch (IOException e) { threw4 = true; }
+        check("a missing source throws and leaves nothing", threw4 && !new File(root4, "x.apk").exists() && !new File(root4, ".x.apk.part").exists(), null);
+        // exportTo and the library filing go through the same copy
+        MorpheLibrary lib4 = new MorpheLibrary(new File(root4, "patched"));
+        JSONObject e4 = lib4.add(file(root4, "p.apk", "PATCHEDDATA"), new JSONObject().put("pkg", "com.p.q"), null);
+        File out4 = lib4.exportTo(e4.getString("id"), new File(root4, "out"));
+        check("an export is whole and leaves no .part", out4.length() == 11 && new File(root4, "out").list().length == 1, java.util.Arrays.toString(new File(root4, "out").list()));
         // M-10: an APK kept outside (Downloads) that cannot be seen is not forgotten: the entry, its log and its record stay
         File root5 = temp();
         MorpheLibrary lib5 = new MorpheLibrary(new File(root5, "patched"));
