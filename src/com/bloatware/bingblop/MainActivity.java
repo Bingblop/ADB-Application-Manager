@@ -2723,6 +2723,59 @@ public class MainActivity extends Activity {
         downloadAndInstall(apkUrl, pkg, label, pkg, sha256 == null ? "" : sha256);
     }
 
+    // ---- Settings > "Try the Kotlin build (beta)": a separate app, found in a GitHub release of this repository ----------------------------
+    // The lookup and the choice of file are KotlinBuild's (pure, tested). The install is not new: the chosen file goes through downloadAndInstall
+    // like every Store app (the hardened download, the published SHA-256, the native confirmation of a privileged install or the system
+    // installer), and the package it must turn out to be is KotlinBuild's, not anything the page sends.
+
+    private static final KotlinBuild.Http KOTLIN_HTTP = new KotlinBuild.Http() {
+        @Override
+        public byte[] get(String url, int maxBytes) throws Exception {
+            return UpdateManager.httpGet(url, "application/vnd.github+json", maxBytes);
+        }
+    };
+
+    private final KotlinBuild.Packages kotlinPackages = new KotlinBuild.Packages() {
+        @Override
+        public String installedVersion(String pkg) throws Exception {
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(pkg, 0);
+                return pi.versionName == null ? "" : pi.versionName;
+            } catch (PackageManager.NameNotFoundException notInstalled) {
+                return null;
+            }
+        }
+    };
+
+    /** Answer: window.onKotlinBuild(json). */
+    private void runKotlinBuildCheck() {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                notifyUpdates("onKotlinBuild", KotlinBuild.check(KOTLIN_HTTP, kotlinPackages, KotlinBuild.ALLOW_PRERELEASE));
+            }
+        });
+    }
+
+    /** Looks the newest test build up again (the page's copy of it is never trusted), then downloads and installs it. Progress: window.onStoreInstallProgress(json). */
+    private void runKotlinBuildInstall() {
+        final String key = KotlinBuild.KOTLIN_PACKAGE_ID;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                if (storeInstalling.contains(key)) return;                                  // already running: its own progress goes on
+                try {
+                    storeInstallProgress(key, "resolving", -1, "Finding the latest Kotlin test build…");
+                    KotlinBuild.Choice c = KotlinBuild.find(KOTLIN_HTTP, KotlinBuild.ALLOW_PRERELEASE);
+                    if (c == null) throw new IllegalStateException("No Kotlin test build has been published yet.");
+                    downloadAndInstall(c.apkUrl, KotlinBuild.KOTLIN_PACKAGE_ID, "ADB Application Manager (Kotlin build)", key, c.sha256);
+                } catch (Exception e) {
+                    storeInstallProgress(key, "error", 0, KotlinBuild.cleanMessage(e));
+                }
+            }
+        });
+    }
+
     /**
      * Downloads an https APK and installs it through the active mode (shared by every Store source).
      * {@code pkg}: the package the download must turn out to be ("" when the catalog doesn't know it).
@@ -11211,6 +11264,54 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void storeInstall(String apkUrl, String pkg, String label, String sha256) {
             runStoreInstall(apkUrl, pkg, label, sha256);
+        }
+
+        // ---- Settings > Try the Kotlin build (beta): none of these takes a package, an address or a checksum from the page ----
+
+        /** Whether the Kotlin app is installed (and its version) and the newest test build in the releases. Answer: window.onKotlinBuild(json). */
+        @JavascriptInterface
+        public void kotlinBuildCheck() {
+            runKotlinBuildCheck();
+        }
+
+        /** Opens the installed Kotlin app. False when it is not installed or has nothing to launch. */
+        @JavascriptInterface
+        public boolean kotlinBuildOpen() {
+            try {
+                final Intent launch = getPackageManager().getLaunchIntentForPackage(KotlinBuild.KOTLIN_PACKAGE_ID);
+                if (launch == null) return false;
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try { startActivity(launch); } catch (Exception ignored) {}
+                    }
+                });
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        /** Downloads the newest Kotlin test build and installs it through the app's one install path. Progress: window.onStoreInstallProgress(json), key = the Kotlin package id. */
+        @JavascriptInterface
+        public void kotlinBuildInstall() {
+            runKotlinBuildInstall();
+        }
+
+        /** Opens the repository's releases page in the browser. */
+        @JavascriptInterface
+        public void kotlinBuildReleases() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(KotlinBuild.RELEASES_PAGE_URL));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception ignored) {}
+                }
+            });
         }
 
         /**

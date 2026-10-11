@@ -115,6 +115,8 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
+**Try the Kotlin build (beta)** (a card in **Settings**): the Kotlin version of the app is a *separate* app with its own app id and a smaller feature set (no Morphe, File Manager or archives, no real ADB, Shizuku or root yet). It does not replace or update this app; you keep both. If it is installed, the card shows its version and a button opens it. If not, **Download and install** takes the newest `kotlin-*` release of this repository that has an `ADB-Manager-Kotlin*.apk`, through the same checked download and the same install question as every other app installed here; with no release yet the card says so and **Open the releases page** shows what is there.
+
 ## New in v7.9
 
 **v7.12.9 is the latest build** (a security and stability release; before it, v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
