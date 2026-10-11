@@ -48,6 +48,46 @@ enum class DexOptMode(val arg: String, val label: String) {
     EVERYTHING("everything", "Everything (Maximum bytecode)")
 }
 
+enum class DebloatSafetyTier(val displayName: String, val levelKey: String) {
+    SAFE("Safe to remove", "Recommended"),
+    RECOMMENDED("Recommended", "Recommended"),
+    ADVANCED("Advanced", "Advanced"),
+    EXPERT("Expert", "Expert"),
+    UNSAFE("Unsafe / Bootloop risk", "Unsafe");
+
+    companion object {
+        fun fromUad(str: String?): DebloatSafetyTier {
+            return when (str?.lowercase()?.trim()) {
+                "safe", "recommended" -> SAFE
+                "advanced" -> ADVANCED
+                "expert" -> EXPERT
+                "unsafe" -> UNSAFE
+                else -> ADVANCED
+            }
+        }
+    }
+}
+
+enum class DebloatCategory(val displayName: String, val id: String) {
+    ALL("All Bloatware", "all"),
+    SAMSUNG("Samsung OneUI", "samsung"),
+    XIAOMI("Xiaomi MIUI / HyperOS", "xiaomi"),
+    GOOGLE("Google / AOSP", "google"),
+    CARRIER("Carrier Bloat", "carrier"),
+    TELEMETRY("Analytics & Telemetry", "telemetry"),
+    OEM("OEM & Other", "oem")
+}
+
+data class DebloatInfo(
+    val packageName: String,
+    val category: DebloatCategory,
+    val safetyTier: DebloatSafetyTier,
+    val summary: String,
+    val description: String,
+    val dependencies: List<String> = emptyList(),
+    val neededBy: List<String> = emptyList()
+)
+
 data class PackageItem(
     val packageName: String,
     val appName: String,
@@ -59,7 +99,24 @@ data class PackageItem(
     val apkPath: String = "",
     val sizeBytes: Long = 0L,
     val isVendorBloatware: Boolean = false,
-    val vendorPresetName: String? = null
+    val vendorPresetName: String? = null,
+    val debloatInfo: DebloatInfo? = null,
+    val isSelected: Boolean = false
+)
+
+data class DebloatProfile(
+    val name: String,
+    val description: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val deviceModel: String = "",
+    val packages: List<DebloatProfileEntry>
+)
+
+data class DebloatProfileEntry(
+    val packageName: String,
+    val action: String = "DISABLE", // "DISABLE", "ENABLE", "UNINSTALL"
+    val safety: String = "SAFE",
+    val comment: String = ""
 )
 
 data class SystemSettingItem(
