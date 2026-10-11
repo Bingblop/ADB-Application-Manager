@@ -1,0 +1,21 @@
+1. Grok, Muse and Deepseek are in API Key Required; Kilo Code is in Free Open-Source: ["None","API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek, Exa","Free Open-Source: DroidMind, OpenCode, Kilo Code, Leon.ai, Browser Use, Crawl4AI, Jan.ai, AnythingLLM, Ollama (on-device), Own server (OpenAI-compatible)"]
+2. Kilo Code opens an explainer, not a Connect sheet for chatting: true true
+3. grok: its Connect sheet names its own host (api.x.ai): true
+   a good key connects it: true
+   the request went to its own address: ok
+3. muse: its Connect sheet names its own host (api.llama.com): true
+   a good key connects it: true
+   the request went to its own address: ok
+3. deepseek: its Connect sheet names its own host (api.deepseek.com): true
+   a good key connects it: true
+   the request went to its own address: ok
+4. Claude defaults to Balanced the first time it is picked: balanced
+   Low: no thinking block: true 8192
+   High: a bigger thinking budget, and max_tokens grows past it: {"type":"enabled","budget_tokens":10000} true
+5. ChatGPT, Balanced: reasoning_effort medium: medium
+   High: reasoning_effort high: high
+6. Gemini, Low: thinkingBudget 0 (off): 0
+   Balanced: thinkingBudget -1 (dynamic): -1
+   High: a fixed, larger budget: 8192
+7. Deepseek: Effort is kept (High) but sends no reasoning_effort/thinking field: high true
+page errors: none

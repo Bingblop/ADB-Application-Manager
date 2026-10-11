@@ -1,0 +1,16 @@
+ok   jsArg 1. "x');AndroidBridge.executeShell('id');//": the handler receives exactly the value and nothing runs: {"got":"x');AndroidBridge.executeShell('id');//","pwn":0,"shell":0}
+ok   jsArg 2. "x\");AndroidBridge.executeShell(\"id\");//": the handler receives exactly the value and nothing runs: {"got":"x\");AndroidBridge.executeShell(\"id\");//","pwn":0,"shell":0}
+ok   jsArg 3. "o/r');window.__pwn=1;//": the handler receives exactly the value and nothing runs: {"got":"o/r');window.__pwn=1;//","pwn":0,"shell":0}
+ok   jsArg 4. "\\": the handler receives exactly the value and nothing runs: {"got":"\\","pwn":0,"shell":0}
+ok   jsArg 5. "a\\'b": the handler receives exactly the value and nothing runs: {"got":"a\\'b","pwn":0,"shell":0}
+ok   jsArg 6. "\"><img src=x onerror=window.__pwn=1>": the handler receives exactly the value and nothing runs: {"got":"\"><img src=x onerror=window.__pwn=1>","pwn":0,"shell":0}
+ok   jsArg 7. "&#39;);window.__pwn=1;//": the handler receives exactly the value and nothing runs: {"got":"&#39;);window.__pwn=1;//","pwn":0,"shell":0}
+ok   jsArg 8. "line\nbreak sep": the handler receives exactly the value and nothing runs: {"got":"line\nbreak sep","pwn":0,"shell":0}
+ok   jsArg 9. "</script><script>window.__pwn=1</script>": the handler receives exactly the value and nothing runs: {"got":"</script><script>window.__pwn=1</script>","pwn":0,"shell":0}
+ok   jsArg 10. "plain.package.name": the handler receives exactly the value and nothing runs: {"got":"plain.package.name","pwn":0,"shell":0}
+ok   jsArg 11. "": the handler receives exactly the value and nothing runs: {"got":"","pwn":0,"shell":0}
+ok   the safe handlers raised no page errors:
+ok   control: the old way (escapeHtml inside the quotes) fails for the quote and backslash values, so the check above can fail (5 of 11)
+ok   control: the old way really ran the injected shell call for the first value: {"got":"x","pwn":0,"shell":1}
+ok   no inline handler builds a string argument with escapeHtml (use jsArg); only the already JS-escaped usBrowse one is allowed:
+all ok

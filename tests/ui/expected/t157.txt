@@ -1,0 +1,11 @@
+1. a search is running: the bar shows and the button is off: true {"btnOff":true,"box":"block","bar":"block","rows":0,"note":"Searched Download (2 of 3 folders) · 1 found"}
+   nothing has been cancelled yet: true
+   leaving Settings calls cancelFontScan on the phone, once: true ["scanFonts","cancelFontScan"]
+   the phone answered "cancelled": button works again, no bar, no list, box hidden, no message: true {"btnOff":false,"box":"none","bar":"none","rows":0,"note":""}
+2. a new search after the cancelled one lists its fonts: true {"btnOff":false,"box":"block","bar":"none","rows":2,"note":"2 fonts found. Tap one to see it before you use it."}
+   and it was not cancelled: true
+3. leaving Settings with nothing running does not call cancelFontScan: true
+   the list of fonts found is emptied: true
+4. a "cancelled" answer ends the wait quietly: button on, no bar, no list, no message: true {"btnOff":false,"box":"none","bar":"none","rows":0,"note":""}
+5. without the call the late answer is dropped and the page is usable again: true {"btnOff":false,"box":"none","bar":"none","rows":0,"note":""}
+ALL PASSED

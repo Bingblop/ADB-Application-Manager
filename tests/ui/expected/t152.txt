@@ -1,0 +1,8 @@
+ok   1. Exa is in the Web research group, right after Perplexity: ["Web research (recommended):perplexity+exa+browseruse+crawl4ai","Chat models with an API key:gemini+claude+chatgpt+grok+muse+deepseek","Free Open-Source:jan+anythingllm+ollama+ownserver"]
+ok   2. choosing Exa in the Terminal opens its key sheet (api.exa.ai, what it is, the test costs a fraction of a cent) and does not make it the chat agent: "Paste your Exa API key. It is tested right away, then kept encrypted on this phone and only ever sent to api.exa.ai.\n\nTest and save\nShow\nGet a key\nTest\n\nExa is a search engine built for AI. Its answer"
+ok   3. a good key connects it, only the provider "exa" was tested, and the Terminal stays as it was: {"open":false,"prov":["exa"],"st":"none","ready":true,"vault":["exa"]}
+ok   4. the Ask agent window gets Exa's answer with its sources; one POST to /answer carrying the vault name, never the key: {"t":"Asking Exa. The text above is sent to them.\nIt is the Bixby helper from Samsung.\n\nSources:\n• Samsung Bixby https://samsung.example/bixby","req":[{"method":"POST","auth":"exa","body":"{\"query\":\"You help someone who is not a developer decide whether an Android app "}]}
+ok   5. no answer is said in words: Exa found no answer for this one. Try Web search, or another agent.
+ok   6. a refused call is reported like any agent's
+ok   no page errors:
+ALL PASSED

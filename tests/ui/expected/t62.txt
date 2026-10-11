@@ -1,0 +1,20 @@
+1. 0/1, true/false, on/off, yes/no flip to their partner, keeping the letter case: true ["","","","","","","","","","","","","","","",""]
+   everything else is left alone: true []
+   the state reads right (1 / true / on / yes are on): true
+   and a non-string is never a switch: true
+2. the copied command quotes like the app does: true
+3. rows can take focus and have roles: true {"tab":"0","role":"listitem","list":"list"}
+   Enter on a row opens the editor: true
+   Space too: true
+   Enter on a switch flips it (and does not open the editor): true
+   the switch says what state it is in: true
+   the search box and the buttons have labels: true
+4. the table, filter, sort and changes are stored: true {"sdb_ui":"{\"ns\":\"secure\",\"filter\":\"switch\",\"sort\":\"za\"}","sdb_journal":"[{\"n\":3,\"t\":<epoch ms>,\"ns\":\"global\",\"k\":\"device_name\",\"f\":\"Sam's phone\",\"lf\":false,\"v\":\"Pe
+   after a restart they are back: true {"ns":"secure","filter":"switch","sort":"za","journal":3,"active":"Secure\n65 / 193","chip":"switch","edited":"global/device_name,secure/ui_night_mode,system/accelerometer_rotation"}
+   and the Edited filter still knows what was changed before: true
+   a damaged store falls back to the defaults and keeps only the good entries: true {"ns":"global","filter":"all","sort":"az","journal":["ok"]}
+5. 5,500 settings: the first page and a search are quick: true {"total":5455,"rows":100}
+   drawing 720 rows takes well under a second: true {"rows":720}
+   and so does filtering the whole table: true {"n":120}
+errors: []
+ALL OK

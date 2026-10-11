@@ -1,0 +1,7 @@
+1. launch button rendered for the component: true
+2. launchActivity called with exported=false: true
+3. no result dialog for a launch that passed: true | toast: Activity launched
+4. result dialog for a launch that failed: true | toast: Launch failed
+   subtitle shows Unexported + assistant: true | "Unexported • via assistant"
+   body has the answer, marked failed: true | "SecretActivity | FAILED | com.android.phone/com.android.phone.SecretActivity | $ input keyevent KEYCODE_ASSIST | Error: injection failed (assistant method)"
+errors: []
