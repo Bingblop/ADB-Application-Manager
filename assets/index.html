@@ -32260,10 +32260,11 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="color-card" style="margin:0 0 10px;"><div class="mp-name" translate="no">' + escapeHtml(p.appName || p.pkg) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(p.versionName || '') + '</span></div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(p.pkg) + '</div>' +
                 '<div class="mp-badges"><span class="mp-chip">' + escapeHtml(mpFmtDate(p.patchedAt)) + '</span><span class="mp-chip">' + escapeHtml(formatBytes(p.size)) + '</span><span class="mp-chip">' + ((p.patches || []).length) + ' patches</span>' +
-                (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + '</div>' +
+                (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + (p.missing ? '<span class="mp-chip bad">File not found</span>' : '') + '</div>' +
+                (p.missing ? '<div class="mp-note">The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry.</div>' : '') +
                 '<div class="mp-note" translate="no">' + escapeHtml((p.patches || []).slice(0, 8).join(', ')) + ((p.patches || []).length > 8 ? ' +' + ((p.patches || []).length - 8) : '') + '</div>' +
-                '<div class="mp-row"><button class="mp-act" onclick="mpPatchedInstall(' + jsArg(p.id) + ')">Install</button><button class="mp-act" onclick="mpPatchedShare(' + jsArg(p.id) + ')">Share</button>' +
-                '<button class="mp-act" onclick="mpPatchedSave(' + jsArg(p.id) + ')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(' + jsArg(p.id) + ')">Log</button>' +
+                '<div class="mp-row"><button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedInstall(' + jsArg(p.id) + ')">Install</button><button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedShare(' + jsArg(p.id) + ')">Share</button>' +
+                '<button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedSave(' + jsArg(p.id) + ')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(' + jsArg(p.id) + ')">Log</button>' +
                 '<button class="mp-act danger" onclick="mpPatchedDelete(' + jsArg(p.id) + ')">Delete</button></div></div>').join(''));
         }
         async function mpPatchedInstall(id) {
