@@ -1,0 +1,67 @@
+ok   1. the host name check: 20 good names are accepted (lower case, spaces around and one trailing dot dropped), 97 bad ones are refused, each for its reason:
+ok      the limits are exact: 253 characters pass, 254 do not; 63 in a part pass, 64 do not: {"ok253":true,"len":253,"ok254":false,"ok63":true,"ok64":false}
+ok      of the first 592 characters, exactly letters, digits and the hyphen can stand inside a part (a dot splits it): ["2e"]
+ok      every reason has its own plain sentence: ["Type a host name first.","Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.","The whole name can be 253 characters at most.","Each part between dots needs at least one character.","Each part between dots can be 63 characters at most.","A part can’t start or end with a hyphen.","It needs at least one dot, like dns.example.com.","That looks like an IP address. Private DNS needs a host name.","The last part can’t be only digits.","That is not a host name Private DNS can use."]
+ok      what the phone reports is classified: off, auto, host (kept as the phone has it), host mode with no host, not set, unknown: ["{\"kind\":\"off\"}","{\"kind\":\"auto\"}","{\"kind\":\"host\",\"host\":\"Dns.Example.com\"}","{\"kind\":\"nohost\"}","{\"kind\":\"nohost\"}","{\"kind\":\"default\"}","{\"kind\":\"default\"}","{\"kind\":\"other\",\"raw\":\"strict\"}","{\"kind\":\"off\"}"]
+ok   2. Settings has the card "Private DNS", straight after "Reconnecting devices" (the connection settings), with a plain explanation: {"inPrefs":true,"after":"cdReconnectCard","title":"Private DNS"}
+ok      the three Kotlin presets with the same host names, not translated: AdGuard DNS, Cloudflare, Quad9: AdGuard DNS=dns.adguard.com/dns.adguard.com/no | Cloudflare=one.one.one.one/one.one.one.one/no | Quad9=dns.quad9.net/dns.quad9.net/no
+ok      Automatic and Off, and a field for another host name (hint dns.nextdns.io, not translated) with its Apply button and a label: {"id":"pdnsHost","ph":"dns.nextdns.io","tr":"no","label":"Another host name","type":"text","desc":"pdnsProblem"}auto=Automatic | off=Off
+ok      the notes say: a host name not an IP, some networks block it, a wrong host can cost the connection, and Automatic or Off is the way back: Private DNS needs a host name, never an IP address. Some Wi-Fi networks and hotspots block it, and then pages may stop loading. AdGuard DNS blocks ads and trackers. Cloudflare is fast and blocks nothing. Quad9 blocks known malicious sites. If the host name is wrong or the service is down, this phone can lose its internet. The way back is Automatic or Off here, or Private DNS in Android’s network settings: both bring normal DNS back.
+ok      the status is a polite live region read as a whole; the problem line too; every button has a pressed state: status/polite true problem:status/polite
+ok   3. Settings opens: the card reads the phone once (the mode only, the host is read when the mode is hostname) and says what it is: ["get private_dns_mode"] / Private DNS is now: Automatic
+ok      Automatic is marked (aria-pressed), the others are not: pdnsAuto
+ok      "Check again" reads the mode and the host: hostname dns.quad9.net (the case does not matter for the mark); Quad9 is marked: Private DNS is now: hostname DNS.Quad9.net / pdnsQuad9
+ok      the host is its own span with translate="no" and a monospace face: no|DNS.Quad9.net|ui-monosp
+ok      off: "Private DNS is now: Off", Off marked: Private DNS is now: Off / pdnsOff
+ok      hostname mode with no host: said so, nothing marked: Private DNS is now: hostname mode, but no host name is set /
+ok      a host the phone reports is shown as text, never as markup
+ok      not set at all: said so (the phone's own default applies), nothing marked: Private DNS is now: not set, so the phone’s own default applies
+ok      a mode this card does not know is shown as it is: Private DNS is now: an unknown mode “strict”
+ok      when the phone cannot say, the card says it could not read (no guess): Could not read Private DNS: The settings service did not answer Try again.
+ok   4. AdGuard DNS: while the change is out every control is off, the card is busy, and a line says "Changing Private DNS…": {"busy":"true","dis":true,"msg":"Changing Private DNS…"}
+ok      presses while it runs do nothing: ["put private_dns_specifier=dns.adguard.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]
+ok      the phone holds it, and the card says what the phone reports: "hostname dns.adguard.com", with "Changed, and read back from the phone.": Private DNS is now: hostname dns.adguard.com / Changed, and read back from the phone.
+ok      the Hidden Settings tab is told its Global table is out of date (it reads it again when shown)
+ok      AdGuard DNS is marked and nothing else; the controls are back: pdnsAdguard 8/8
+ok      Cloudflare: one.one.one.one: Private DNS is now: hostname one.one.one.one
+ok      Quad9: dns.quad9.net: Private DNS is now: hostname dns.quad9.net
+ok   5. a good name in the field shows no problem
+ok      Apply writes the cleaned-up name (lower case, no spaces, no final dot), reads back, and shows it: ["put private_dns_specifier=dns.nextdns.io","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]Private DNS is now: hostname dns.nextdns.io
+ok      no preset is marked for a name of your own:
+ok      Enter in the field applies too: ["put private_dns_specifier=dns.nextdns.io","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]
+ok      bad names are refused with a sentence next to the field, and nothing is sent to the phone (no write, no read): [true,true,true,true,true,true,true,true,true][]
+ok      an empty field shows no complaint
+ok      the field has the focus after a refusal, so it can be fixed
+ok   6. Automatic writes private_dns_mode=opportunistic (the host stays), reads back, and says Automatic: ["put private_dns_mode=opportunistic","get private_dns_mode"]
+ok      Off writes private_dns_mode=off and resets the host (as the Kotlin app does), reads back, and says Off: ["put private_dns_mode=off","delete private_dns_specifier","get private_dns_mode"]Private DNS is now: Off
+ok   7. a write the phone claims but does not keep: the read-back says Automatic, and the card says "Not applied", not success: Private DNS is now: Automatic / Not applied: the phone does not report the new setting. The state above is what it reports.
+ok      a write Android puts back: the error is shown, the mode is not touched, and the card shows what the phone really has: put private_dns_specifier=dns.quad9.net,get private_dns_mode,get private_dns_specifier / Could not change Private DNS: Android did not keep the new value
+ok      permission missing: the phone's refusal is shown (with the advice), the mode is not written, the old state stays: Could not change Private DNS: java.lang.SecurityException: Permission denial: writing to settings requires android.permission.WRITE_SECURE_SETTINGS Android refused the change. Some phones (Xiaomi, Redmi, POCO) only allow it once "USB debugging (Security settings)" is on in Developer options.
+ok      no answer from the phone: said so, and the state read afterwards is the one shown (the change may have been made): Could not change Private DNS: The phone did not answer. It may still have been applied: the state above is what the phone reports now. / Private DNS is now: hostname dns.quad9.net
+ok      Off where the host cannot be cleared: the mode is Off (read back) and the card says the saved host name stayed: Private DNS is now: Off / Changed, and read back from the phone. The saved host name could not be cleared.
+ok   8. the working mode goes while a change is out: the card explains it at once, and the late answers change nothing (no message, no state, not busy): [{"busy":false,"now":"Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)","setup":"flex"},{"busy":false,"now":"Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)","msg":"none","state":null}]
+ok      when the mode is back, the card reads the phone again: the dropped change stopped after its first step (the host was written, the mode never was), and that is what it shows: Private DNS is now: Automatic{"mode":"opportunistic","spec":"dns.adguard.com"}
+ok      an answer to an older question never overwrites a newer state (sequence number): Private DNS is now: Off
+ok   9. no working mode: the card says "Needs a working mode…", offers Set Up, and the buttons are marked locked (not hidden): {"now":"Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)","setup":"flex","locked":true,"dis":false,"ops":0}
+ok      pressing a preset opens the "requires working mode" sheet and sends nothing: {"open":true,"ops":0,"text":"Action \"Private DNS\" requires working mode"}
+ok      Apply with no working mode sends nothing either
+ok      in a browser (no bridge): "This works in the app on a phone, not in a browser.", every control off, no error when forced: {"now":"This works in the app on a phone, not in a browser.","allOff":true}
+ok   10. 320px wide, dark: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok   10.    with a long name in the field: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok       dark / amoled: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 17.4 / 13.7
+ok   10.     dark / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok       light / amoled: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 18.0 / 18.0
+ok   10.     light / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok       dark / ocean: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 12.6 / 12.6
+ok   10.     dark / ocean: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok       light / sunset: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 14.9 / 14.9
+ok   10.     light / sunset: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok       with reduced motion the card runs no animation (it has none of its own): []
+ok       the card adds no keyframes and no hard-coded colours of its own (it uses the page tokens)
+ok   11. in German: title, state line, buttons, label and group names are translated; the host names, the presets and the hint are left alone: {"title":"Privates DNS","now":"Privates DNS ist jetzt: Hostname dns.adguard.com","host":"dns.adguard.com","btns":"AdGuard DNS dns.adguard.com | Cloudflare one.one.one.one | Quad9 dns.quad9.net | Automatisch | Aus","label":"Anderer Hostname","ph":"dns.nextdns.io","group":"Dienste für privates DNS | Automatisch oder Aus","refresh":"Erneut prüfen","apply":"Anwenden"}
+ok       the refusal, the result line and the new state are German too: ["Das sieht nach einer IP-Adresse aus. Privates DNS braucht einen Hostnamen.","Geändert und vom Telefon zurückgelesen.","Privates DNS ist jetzt: Automatisch"]
+ok       a failure line with the phone's own text (not translated) in a German sentence: Privates DNS konnte nicht geändert werden: x Android refused the change. Some phones (Xiaomi, Redmi, POCO) only allow it once "USB debugging (Security settings)" is on in Developer options.
+ok       in the 12 other languages the title, the state line, the Automatic button, a refusal and a failure line are all translated (none is the English text), the host name and the hint are not: {"ar":{"t":"DNS الخاص","n":"DNS الخاص الآن: اسم المضيف dns.adguard.com","h":"dns.adguard.com","ph":"dns.nextdns.io","b":"تلقائي","p":"يبدو هذا كعنوان IP. يحتاج DNS الخاص إلى اسم مضيف.","f":"تعذّر تغيير DNS الخاص: zz"},"es":{"t":"DNS privado","n":"El DNS privado ahora es: nombre de host dns.adguard.com","h":"dns.adguard.com","ph":"dns.nextdns.io","b":"Automático","p":"Parece una dirección IP. El DNS privado necesita un nombre de host.","f":"No se pudo cambiar el DNS privado: zz"},"fr":{"t":"DNS privé","n":"Le DNS privé est maintenant : nom d’hôte dns.adguard.com","h":"dns.adguard.com","ph":"dns
+ok       and the state line keeps the host name as it is, whatever the language: []
+ok   no page errors:
+all ok

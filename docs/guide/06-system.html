@@ -433,7 +433,7 @@
   <ul>
     <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Try the Kotlin build (beta)</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Private DNS</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Try the Kotlin build (beta)</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -599,6 +599,23 @@
   </table>
   <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
 
+  <h4>Private DNS</h4>
+  <p>Android's own <b>Private DNS</b> for the whole phone (DNS-over-TLS, Android 9 or newer): the name lookups of every app go to one encrypted DNS service, which can block ads, trackers or bad sites without a VPN. Unlike the rest of Settings, this card changes the phone, so it needs a working mode (ADB, Wireless Debugging, Shizuku or Root). Without one it says so and offers <b>Set Up</b>. It changes two Android settings, <code>private_dns_mode</code> and <code>private_dns_specifier</code>, through the same path as the <a href="#tab-settings">Hidden Settings</a> tab (which lists them too).</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>When to use it</th></tr></thead>
+    <tbody>
+      <tr><td><b>AdGuard DNS</b> (<code>dns.adguard.com</code>)</td><td>Sets the host name, then switches Private DNS to <i>hostname</i>.</td><td>To block ads and trackers in every app.</td></tr>
+      <tr><td><b>Cloudflare</b> (<code>one.one.one.one</code>)</td><td>The same, with Cloudflare's host name. It blocks nothing.</td><td>For a fast, encrypted DNS with no filtering.</td></tr>
+      <tr><td><b>Quad9</b> (<code>dns.quad9.net</code>)</td><td>The same, with Quad9's host name. It blocks known malicious sites.</td><td>For protection from known bad sites.</td></tr>
+      <tr><td><b>Automatic</b></td><td>Sets the mode to <i>opportunistic</i>: the phone uses Private DNS when the network offers it and plain DNS when it does not. A saved host name is kept.</td><td>The way back to Android's normal behaviour.</td></tr>
+      <tr><td><b>Off</b></td><td>Sets the mode to <i>off</i> and clears the saved host name.</td><td>When Private DNS gets in the way (a network that blocks it).</td></tr>
+      <tr><td><b>Another host name</b> and <b>Apply</b></td><td>Checks the name, then does what a preset does with it. Only a real host name is accepted: letters a-z, digits and hyphens in parts separated by dots, at least one dot, each part up to 63 characters and the whole name up to 253, no part starting or ending with a hyphen. Capitals are made small, spaces around the name and one dot at the end are dropped. An IP address (<code>1.1.1.1</code>, with or without a port), a name with spaces, quotes, <code>;</code>, <code>$</code>, accents or look-alike letters, a web address or an empty field is refused with a sentence beside the field, and nothing is sent to the phone.</td><td>For another service, such as <code>dns.nextdns.io</code>. A name with accents is written in its <code>xn--</code> form.</td></tr>
+      <tr><td><b>Check again</b></td><td>Reads the two settings from the phone again. The card also reads them when Settings opens.</td><td>After you changed Private DNS in Android's own settings.</td></tr>
+    </tbody>
+  </table>
+  <p><b>What the card says is what the phone has.</b> The line at the top reads <i>Private DNS is now: Off</i>, <i>Automatic</i> or <i>hostname</i> with the host name. It always comes from reading the settings back from the phone, never from the change alone. The button that matches the phone's state is marked (a tick and a pressed state, not only a colour). While a change is out, the controls are off. When the phone refuses a change, or keeps something else, the card says so in words (for example that Android refused the write, or that the phone does not report the new setting) and shows what the phone really holds. A change is made host first, then mode, and stops at the first step the phone refuses.</p>
+  <div class="hg-note"><b>If the internet stops.</b> A host name that is wrong, or a service that is down, can leave the phone without internet, and some Wi-Fi networks and hotspots block Private DNS altogether. The way back is <b>Automatic</b> or <b>Off</b> here, or <b>Private DNS</b> in Android's network settings (in the Internet or Connections section, under More connection settings on some phones); both bring normal DNS back. This card has not been tried on a phone yet.</div>
+
   <h4>Font</h4>
   <p><b>The list of fonts found is for one visit.</b> What <b>Find fonts on this phone</b> finds is shown under the button, with a <b>Clear this list</b> link. The list is emptied when you leave Settings (and a search that finishes after you left is thrown away), so it does not sit in memory; search again when you need it. The font you chose stays.</p>
   <p>The font of the text in this app only. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
@@ -688,6 +705,7 @@
     <li><b>An app icon is missing or wrong.</b> Tap <b>Clear icon cache</b>, or pick <b>Default icons</b>.</li>
     <li><b>The text is hard to read after a font change.</b> Tap <b>Use system font</b>.</li>
     <li><b>The Kotlin build card says no test build has been published.</b> None is in the project's releases yet. <b>Open the releases page</b> shows what is there.</li>
+    <li><b>Pages stopped loading after I chose a Private DNS host.</b> The host may be wrong or down, or the network may block Private DNS. Tap <b>Automatic</b> or <b>Off</b> in the Private DNS card.</li>
     <li><b>I cannot find Trim Caches any more.</b> It moved to the <a href="#tab-sdm">SD Maid</a> tab.</li>
   </ul>
 </section>

@@ -5643,6 +5643,61 @@
                 <div class="appearance-note" id="cdRetryNote"></div>
             </div>
 
+            <style>
+                #privateDnsCard .pdns-status { font-size: 12px; line-height: 1.45; margin: 10px 0 12px; }
+                #privateDnsCard #pdnsNow { font-weight: 700; overflow-wrap: anywhere; }
+                #privateDnsCard .pdns-host { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: 800; }
+                #privateDnsCard #pdnsMsg { margin-top: 4px; color: var(--text-muted); overflow-wrap: anywhere; }
+                #privateDnsCard #pdnsMsg.is-err { color: var(--status-bloat); font-weight: 700; }
+                #privateDnsCard .pdns-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
+                #privateDnsCard .pdns-btn { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; padding: 7px 8px; text-align: center; min-width: 0; }
+                #privateDnsCard .pdns-btn b { font-weight: 800; overflow-wrap: anywhere; }
+                #privateDnsCard .pdns-btn small { font-size: 9.5px; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.25; }
+                #privateDnsCard .pdns-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+                #privateDnsCard .pdns-btn[aria-pressed="true"] small { color: inherit; }
+                #privateDnsCard .pdns-btn[aria-pressed="true"] b::before { content: '\2713\00a0'; }
+                #privateDnsCard .pdns-btn:focus-visible, #privateDnsCard .list-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                #privateDnsCard .pdns-label { display: block; font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin: 10px 0 4px; }
+                #privateDnsCard .pdns-custom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+                #privateDnsCard .pdns-custom .list-search { flex: 1 1 150px; min-width: 0; min-height: 38px; }
+                #privateDnsCard .pdns-custom .mode-action-btn, #privateDnsCard #pdnsRefresh, #privateDnsCard #pdnsSetup { min-height: 38px; justify-content: center; }
+                #privateDnsCard .pdns-problem { font-size: 11px; min-height: 14px; margin-top: 4px; overflow-wrap: anywhere; }
+                #privateDnsCard .pdns-notes p { font-size: 10.5px; line-height: 1.45; color: var(--text-muted); margin: 8px 0 0; }
+                #privateDnsCard .pdns-btn:disabled, #privateDnsCard .list-search:disabled { opacity: 0.6; cursor: default; }
+            </style>
+            <div class="color-card" id="privateDnsCard">
+                <div class="color-card-title">Private DNS</div>
+                <div class="color-card-subtitle">Encrypted DNS for the whole phone (DNS-over-TLS, Android 9 or newer): one service can block ads, trackers or bad sites in every app, without a VPN.</div>
+                <div class="pdns-status" id="pdnsStatus" role="status" aria-live="polite" aria-atomic="true">
+                    <div id="pdnsNow">Reading…</div>
+                    <div id="pdnsMsg" style="display:none;"></div>
+                </div>
+                <div class="pdns-grid" role="group" aria-label="Private DNS services">
+                    <button class="mode-action-btn pdns-btn" id="pdnsAdguard" data-host="dns.adguard.com" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>AdGuard DNS</b><small>dns.adguard.com</small></button>
+                    <button class="mode-action-btn pdns-btn" id="pdnsCloudflare" data-host="one.one.one.one" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Cloudflare</b><small>one.one.one.one</small></button>
+                    <button class="mode-action-btn pdns-btn" id="pdnsQuad9" data-host="dns.quad9.net" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Quad9</b><small>dns.quad9.net</small></button>
+                </div>
+                <div class="pdns-grid" role="group" aria-label="Automatic or off">
+                    <button class="mode-action-btn pdns-btn" id="pdnsAuto" data-mode="auto" aria-pressed="false" onclick="pdnsPick(this)"><b>Automatic</b></button>
+                    <button class="mode-action-btn pdns-btn" id="pdnsOff" data-mode="off" aria-pressed="false" onclick="pdnsPick(this)"><b>Off</b></button>
+                </div>
+                <label class="pdns-label" for="pdnsHost">Another host name</label>
+                <div class="pdns-custom">
+                    <input type="text" class="list-search" id="pdnsHost" translate="no" placeholder="dns.nextdns.io" inputmode="url" maxlength="400" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pdnsProblem" oninput="pdnsHostInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();pdnsApplyCustom();}">
+                    <button class="mode-action-btn primary" id="pdnsApply" onclick="pdnsApplyCustom()">Apply</button>
+                </div>
+                <div class="pdns-problem is-err" id="pdnsProblem" role="status" aria-live="polite"></div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn" id="pdnsRefresh" onclick="pdnsRefresh(true)">Check again</button>
+                    <button class="mode-action-btn primary" id="pdnsSetup" onclick="openWorkingModesModal()" style="display:none;">Set Up</button>
+                </div>
+                <div class="pdns-notes">
+                    <p>Private DNS needs a host name, never an IP address. Some Wi-Fi networks and hotspots block it, and then pages may stop loading.</p>
+                    <p>AdGuard DNS blocks ads and trackers. Cloudflare is fast and blocks nothing. Quad9 blocks known malicious sites.</p>
+                    <p>If the host name is wrong or the service is down, this phone can lose its internet. The way back is Automatic or Off here, or Private DNS in Android’s network settings: both bring normal DNS back.</p>
+                </div>
+            </div>
+
             <div class="color-card" id="fontCard">
                 <div class="color-card-title">Font</div>
                 <div class="color-card-subtitle">The font of the text in this app. It does not change the font of the rest of your phone.</div>
@@ -9263,7 +9318,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); kbShow(); }
+            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); kbShow(); pdnsShow(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -10425,6 +10480,7 @@ Type any command below (e.g. pm list packages -d)
 
                 if (typeof rishSyncUi === 'function') rishSyncUi();
                 try { if (typeof sdbOnModeChange === 'function') sdbOnModeChange(); } catch (e) { console.error('Settings tab: ' + e); }
+                try { if (typeof pdnsOnModeChange === 'function') pdnsOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
 
@@ -12941,6 +12997,211 @@ Type any command below (e.g. pm list packages -d)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible' && kbWaiting) { kbWaiting = false; kbCheck(false); }
         });
+
+        // ---- Settings: Private DNS --------------------------------------------------------------------------------------------------
+        // Private DNS is two global settings of the phone: private_dns_mode (off | opportunistic | hostname) and private_dns_specifier (the
+        // host). They are read and written through the Hidden Settings tab's own path (AndroidBridge.settingsOp, run by the active working
+        // mode, with the shell quoting and the read-back of SettingsDb) and nothing else: no new bridge call, no command text built here.
+        // What the card reports comes from reading the settings back, never from the write alone.
+        const PDNS_MODE = 'private_dns_mode', PDNS_HOST = 'private_dns_specifier';
+        let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsWasPriv = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
+
+        // The host name that may be written, or why not. Pure: no page, no bridge. { ok: true, host } (lower case, one trailing dot dropped) or { ok: false, why }.
+        function pdnsCheckHost(text) {
+            if (typeof text !== 'string') return { ok: false, why: 'empty' };
+            let s = text.replace(/^[ \t]+|[ \t]+$/g, '');                          // spaces around a pasted name are dropped; nothing else is
+            if (s === '') return { ok: false, why: 'empty' };
+            if (s.charAt(s.length - 1) === '.') s = s.slice(0, -1);               // one dot at the end is how a full name is written
+            if (s === '') return { ok: false, why: 'empty' };
+            if (!/^[A-Za-z0-9.-]+$/.test(s)) return { ok: false, why: 'chars' };   // ASCII only: no spaces, quotes, ; ` $ \ / : @, line breaks, accents or look-alike letters
+            if (s.length > 253) return { ok: false, why: 'long' };
+            const labels = s.split('.');
+            if (labels.some(l => l === '')) return { ok: false, why: 'dots' };
+            if (labels.some(l => l.length > 63)) return { ok: false, why: 'label' };
+            if (labels.some(l => l.charAt(0) === '-' || l.charAt(l.length - 1) === '-')) return { ok: false, why: 'hyphen' };
+            if (labels.length < 2) return { ok: false, why: 'onedot' };
+            const num = l => /^[0-9]+$/.test(l) || /^0[xX][0-9A-Fa-f]+$/.test(l);  // 1.1.1.1, 1.2.3, 0x7f.1: forms of an IP address
+            if (labels.every(num)) return { ok: false, why: 'ip' };
+            if (/^[0-9]+$/.test(labels[labels.length - 1])) return { ok: false, why: 'tld' };
+            return { ok: true, host: s.toLowerCase() };
+        }
+        function pdnsProblemText(why) {
+            switch (why) {
+                case 'empty': return txT('Type a host name first.');
+                case 'chars': return txT('Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.');
+                case 'long': return txT('The whole name can be 253 characters at most.');
+                case 'dots': return txT('Each part between dots needs at least one character.');
+                case 'label': return txT('Each part between dots can be 63 characters at most.');
+                case 'hyphen': return txT('A part can’t start or end with a hyphen.');
+                case 'onedot': return txT('It needs at least one dot, like dns.example.com.');
+                case 'ip': return txT('That looks like an IP address. Private DNS needs a host name.');
+                case 'tld': return txT('The last part can’t be only digits.');
+            }
+            return txT('That is not a host name Private DNS can use.');
+        }
+
+        // What the two settings say, as one answer: { kind: off | auto | host | nohost | default | other, host?, raw? }
+        function pdnsClassify(mode, spec) {
+            const m = String(mode == null ? '' : mode).trim();
+            if (m === 'off') return { kind: 'off' };
+            if (m === 'opportunistic') return { kind: 'auto' };
+            if (m === 'hostname') { const h = String(spec == null ? '' : spec).trim(); return h && h !== 'null' ? { kind: 'host', host: h } : { kind: 'nohost' }; }
+            if (m === '' || m === 'null') return { kind: 'default' };
+            return { kind: 'other', raw: m };
+        }
+        function pdnsSame(want, got) { return !!got && want.kind === got.kind && (want.kind !== 'host' || String(got.host).toLowerCase() === want.host); }
+
+        function pdnsBridgeOk() { return sdbBridgeOk(); }
+        function pdnsAsk(op, key, value) {                                          // one settingsOp, as a promise (the Hidden Settings tab's request/answer pairing, its timeout)
+            return new Promise(done => { sdbRequest(id => window.AndroidBridge.settingsOp(id, op, 'global', key, value), done, 60000); });
+        }
+        function pdnsFailText(r) {
+            if (r && r.needsPrivilege) return txT('Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)');
+            let t = r && (r.timedOut || r.unknown) ? txT('The phone did not answer.') : (r && r.error) || txT('It did not work.');
+            if (r && r.advice) t += ' ' + r.advice;
+            return t;
+        }
+        // The two settings, read from the phone. null: an answer to a question that is not current any more. { err } when the phone could not say.
+        async function pdnsReadBack(seq) {
+            const m = await pdnsAsk('get', PDNS_MODE, '');
+            if (seq !== pdnsSeq) return null;
+            if (!m.ok) return { err: m };
+            const mode = String(m.value == null ? 'null' : m.value);
+            let spec = null;
+            if (mode.trim() === 'hostname') {
+                const h = await pdnsAsk('get', PDNS_HOST, '');
+                if (seq !== pdnsSeq) return null;
+                if (!h.ok) return { err: h };
+                spec = String(h.value == null ? 'null' : h.value);
+            }
+            return { mode, spec };
+        }
+
+        function pdnsMsg(text, isErr) {
+            const el = document.getElementById('pdnsMsg');
+            if (!el) return;
+            el.textContent = text || '';
+            el.classList.toggle('is-err', !!isErr);
+            el.style.display = text ? '' : 'none';
+        }
+        function pdnsRender() {
+            const card = document.getElementById('privateDnsCard');
+            if (!card) return;
+            const bridge = pdnsBridgeOk(), priv = !!isPrivilegedActive;
+            const got = pdnsState && !pdnsState.err ? pdnsClassify(pdnsState.mode, pdnsState.spec) : null;
+            card.setAttribute('aria-busy', pdnsBusy ? 'true' : 'false');
+            card.querySelectorAll('.pdns-btn').forEach(b => {
+                const want = b.dataset.host ? { kind: 'host', host: b.dataset.host } : { kind: b.dataset.mode };
+                b.setAttribute('aria-pressed', pdnsSame(want, got) ? 'true' : 'false');
+                b.disabled = pdnsBusy || !bridge;
+                b.classList.toggle('locked', bridge && !priv);
+            });
+            ['pdnsHost', 'pdnsApply', 'pdnsRefresh'].forEach(id => { document.getElementById(id).disabled = pdnsBusy || !bridge; });
+            document.getElementById('pdnsSetup').style.display = bridge && !priv ? '' : 'none';
+            const now = document.getElementById('pdnsNow');
+            now.textContent = '';
+            if (!bridge) now.textContent = txT('This works in the app on a phone, not in a browser.');
+            else if (!priv) now.textContent = txT('Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)');
+            else if (pdnsReading && !pdnsState) now.textContent = txT('Reading Private DNS from the phone…');
+            else if (!pdnsState) now.textContent = txT('Private DNS is not read yet.');
+            else if (pdnsState.err) now.textContent = txF('Could not read Private DNS: {0}', pdnsFailText(pdnsState.err));
+            else if (got.kind === 'host') {
+                now.appendChild(document.createTextNode(txT('Private DNS is now: hostname') + ' '));
+                const h = document.createElement('span');
+                h.className = 'pdns-host'; h.setAttribute('translate', 'no'); h.textContent = got.host;
+                now.appendChild(h);
+            }
+            else if (got.kind === 'off') now.textContent = txT('Private DNS is now: Off');
+            else if (got.kind === 'auto') now.textContent = txT('Private DNS is now: Automatic');
+            else if (got.kind === 'nohost') now.textContent = txT('Private DNS is now: hostname mode, but no host name is set');
+            else if (got.kind === 'default') now.textContent = txT('Private DNS is now: not set, so the phone’s own default applies');
+            else now.textContent = txF('Private DNS is now: an unknown mode “{0}”', got.raw);
+        }
+
+        // Called when Settings opens: read the phone (again when the last look is a minute old).
+        function pdnsShow() {
+            if (!document.getElementById('privateDnsCard')) return;
+            if (pdnsBusy || !pdnsBridgeOk() || !isPrivilegedActive) { pdnsRender(); return; }
+            if (!pdnsState || Date.now() - pdnsAt > 60000) pdnsRefresh(false); else pdnsRender();
+        }
+        async function pdnsRefresh(user) {
+            if (pdnsBusy || !pdnsBridgeOk() || !isPrivilegedActive) { if (user && !pdnsBusy && pdnsBridgeOk()) guardPrivilege('Private DNS'); pdnsRender(); return; }
+            if (user) haptic();
+            const seq = ++pdnsSeq;
+            pdnsBusy = true; pdnsReading = true;
+            pdnsMsg('');
+            pdnsRender();
+            const back = await pdnsReadBack(seq);
+            if (seq !== pdnsSeq) return;
+            pdnsBusy = false; pdnsReading = false;
+            pdnsState = back; pdnsAt = Date.now();
+            pdnsRender();
+        }
+        // The working mode came or went (or changed): what was asked under the old one is not answered here any more.
+        function pdnsOnModeChange() {
+            if (!document.getElementById('privateDnsCard')) return;
+            const priv = !!isPrivilegedActive;
+            if (pdnsWasPriv === priv) return;
+            pdnsWasPriv = priv;
+            pdnsSeq++; pdnsBusy = false; pdnsReading = false; pdnsState = null; pdnsAt = 0;
+            pdnsMsg('');
+            if (currentViewName() === 'prefs') pdnsShow(); else pdnsRender();
+        }
+
+        // plan: { want, steps: [[op, key, value, optional]] }. A step marked optional may fail without failing the change.
+        async function pdnsChange(plan) {
+            if (pdnsBusy || !pdnsBridgeOk()) return;
+            if (!guardPrivilege('Private DNS')) return;
+            haptic();
+            const seq = ++pdnsSeq;
+            pdnsBusy = true; pdnsReading = false;
+            pdnsMsg(txT('Changing Private DNS…'));
+            pdnsRender();
+            let fail = null, soft = false;
+            for (const st of plan.steps) {
+                const r = await pdnsAsk(st[0], st[1], st[2]);
+                if (seq !== pdnsSeq) return;
+                if (!r.ok) { if (st[3]) soft = true; else { fail = r; break; } }
+            }
+            const back = await pdnsReadBack(seq);
+            if (seq !== pdnsSeq) return;
+            pdnsBusy = false;
+            pdnsState = back; pdnsAt = Date.now();
+            const got = back && !back.err ? pdnsClassify(back.mode, back.spec) : null;
+            try { sdbLoadedAt.global = 0; sdbDirty(); } catch (e) {}                      // the Hidden Settings tab lists these two keys: it reads the table again when it is next shown
+            if (fail) {
+                const maybe = fail.timedOut || fail.unknown;
+                pdnsMsg(txF('Could not change Private DNS: {0}', pdnsFailText(fail)) + (maybe && got ? ' ' + txT('It may still have been applied: the state above is what the phone reports now.') : ''), true);
+            } else if (!back || back.err) pdnsMsg(txF('Could not confirm the change: {0}', pdnsFailText(back && back.err)), true);
+            else if (!pdnsSame(plan.want, got)) pdnsMsg(txT('Not applied: the phone does not report the new setting. The state above is what it reports.'), true);
+            else pdnsMsg(txT('Changed, and read back from the phone.') + (soft ? ' ' + txT('The saved host name could not be cleared.') : ''), false);
+            pdnsRender();
+        }
+        function pdnsHostPlan(host) {                                              // the host first, then the mode: the phone never sees "hostname" with another host behind it
+            return { want: { kind: 'host', host }, steps: [['put', PDNS_HOST, host], ['put', PDNS_MODE, 'hostname']] };
+        }
+        function pdnsPick(btn) {
+            if (pdnsBusy || !btn) return;
+            if (btn.dataset.host) {
+                const v = pdnsCheckHost(btn.dataset.host);
+                if (v.ok) pdnsChange(pdnsHostPlan(v.host));
+            } else if (btn.dataset.mode === 'auto') pdnsChange({ want: { kind: 'auto' }, steps: [['put', PDNS_MODE, 'opportunistic']] });
+            else if (btn.dataset.mode === 'off') pdnsChange({ want: { kind: 'off' }, steps: [['put', PDNS_MODE, 'off'], ['delete', PDNS_HOST, '', true]] });
+        }
+        function pdnsHostInput() {
+            const v = document.getElementById('pdnsHost').value;
+            const r = v.trim() === '' ? { ok: true } : pdnsCheckHost(v);
+            document.getElementById('pdnsProblem').textContent = r.ok ? '' : pdnsProblemText(r.why);
+        }
+        function pdnsApplyCustom() {
+            if (pdnsBusy || !pdnsBridgeOk()) return;
+            const input = document.getElementById('pdnsHost');
+            const r = pdnsCheckHost(input.value);
+            document.getElementById('pdnsProblem').textContent = r.ok ? '' : pdnsProblemText(r.why);
+            if (!r.ok) { input.focus(); return; }
+            input.value = r.host;
+            pdnsChange(pdnsHostPlan(r.host));
+        }
 
         function fmtCount(n) {
             n = Number(n) || 0;
