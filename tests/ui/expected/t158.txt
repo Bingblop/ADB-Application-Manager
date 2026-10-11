@@ -1,0 +1,18 @@
+ok   360x800 1. a row of an app that is also installed here shows its real icon: {"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="}
+ok   360x800 2. a row of an app that exists only on the other device keeps its letter: {"text":"R","img":false,"src":null}
+ok   360x800 3. only the icon that is not known yet was asked for (the other was in the cache), once, however often the list is drawn: [["com.remote.only"]]
+ok   360x800 4. the app menu shows the real icon in its tile (44 px): {"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","shown":true,"w":44}
+ok   360x800 5. the menu of an app that is only on the other device shows its letter: {"text":"R","img":false,"src":null,"shown":true,"w":44}
+ok   360x800 6. an icon that arrives while the menu is open fills the tile and the row: [{"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","shown":true,"w":44},{"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="}]
+ok   360x800 7. a menu that is not about an app has no tile: {"text":"","img":false,"src":null,"shown":false,"w":0}
+ok   360x800 8. no sideways scroll
+ok   412x915 1. a row of an app that is also installed here shows its real icon: {"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="}
+ok   412x915 2. a row of an app that exists only on the other device keeps its letter: {"text":"R","img":false,"src":null}
+ok   412x915 3. only the icon that is not known yet was asked for (the other was in the cache), once, however often the list is drawn: [["com.remote.only"]]
+ok   412x915 4. the app menu shows the real icon in its tile (44 px): {"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","shown":true,"w":44}
+ok   412x915 5. the menu of an app that is only on the other device shows its letter: {"text":"R","img":false,"src":null,"shown":true,"w":44}
+ok   412x915 6. an icon that arrives while the menu is open fills the tile and the row: [{"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","shown":true,"w":44},{"text":"","img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="}]
+ok   412x915 7. a menu that is not about an app has no tile: {"text":"","img":false,"src":null,"shown":false,"w":0}
+ok   412x915 8. no sideways scroll
+ok   no page errors:
+ALL PASSED
