@@ -86,7 +86,7 @@ public class MorpheJobsTest {
             String m = new String(java.nio.file.Files.readAllBytes(src.toPath()), java.nio.charset.StandardCharsets.UTF_8);
             int sp = m.indexOf("private JSONObject startPatch("), pa = m.indexOf("private void patch(JSONObject a");
             String startBody = sp < 0 ? "" : m.substring(sp, pa > sp ? pa : m.length());
-            check("startPatch refuses a bad id before it takes the running slot", startBody.indexOf("validJobId(jobId)") > 0 && startBody.indexOf("validJobId(jobId)") < startBody.indexOf("runningJob = jobId"), null);
+            check("startPatch refuses a bad id before it takes the running slot", startBody.indexOf("validJobId(jobId)") > 0 && startBody.indexOf("validJobId(jobId)") < startBody.indexOf("slot.tryStart(jobId)"), null);
             String patchBody = pa < 0 ? "" : m.substring(pa, Math.min(m.length(), pa + 1200));
             check("patch refuses a bad id before it empties the job folder", patchBody.indexOf("validJobId(jobId)") > 0 && patchBody.indexOf("validJobId(jobId)") < patchBody.indexOf("deleteTree(dir)"), null);
         }
