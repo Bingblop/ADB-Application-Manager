@@ -78,15 +78,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await page.tap('#appsRefreshBtn'); await sleep(700);
     await page.fill('#searchInput', 'alpha'); await sleep(150);
     await ev(() => setFilter('user')); await sleep(100);
-    await ev(() => { document.getElementById('appSort').value = 'name'; setAppSort('name'); }); await sleep(100);
+    await ev(() => { document.getElementById('appSort').value = 'updated'; setAppSort('updated'); }); await sleep(100);   // not the default (name), so a refresh that reset the sort would show
     await ev(() => toggleSelectPkg('com.a.one'));
-    const before = { names: await names(), search: await ev(() => document.getElementById('searchInput').value), sort: await ev(() => document.getElementById('appSort').value), filters: await ev(() => Array.from(activeFilters).join()), sel: await ev(() => Array.from(selectedPkgs).join()) };
+    const before = { names: await names(), search: await ev(() => document.getElementById('searchInput').value), sort: await ev(() => document.getElementById('appSort').value + '/' + appSort), filters: await ev(() => Array.from(activeFilters).join()), sel: await ev(() => Array.from(selectedPkgs).join()) };
     check(tag + ' 3. before: search "alpha", 3rd Party filter, one app selected: two apps listed', before.names === 'Alpha One|Alpha Two' && before.search === 'alpha' && before.filters === 'user' && before.sel === 'com.a.one', JSON.stringify(before));
     await ev(() => { window.__gen = 2; });                                    // the phone changed: Alpha Two is gone, Alpha Three is new
     await page.tap('#appsRefreshBtn'); await sleep(700);
-    const post = { names: await names(), search: await ev(() => document.getElementById('searchInput').value), sort: await ev(() => document.getElementById('appSort').value), filters: await ev(() => Array.from(activeFilters).join()), sel: await ev(() => Array.from(selectedPkgs).join()), checked: await ev(() => document.getElementById('card_com.a.one').classList.contains('selected')), stat: await ev(() => document.getElementById('statTotal').innerText) };
+    const post = { names: await names(), search: await ev(() => document.getElementById('searchInput').value), sort: await ev(() => document.getElementById('appSort').value + '/' + appSort), filters: await ev(() => Array.from(activeFilters).join()), sel: await ev(() => Array.from(selectedPkgs).join()), checked: await ev(() => document.getElementById('card_com.a.one').classList.contains('selected')), stat: await ev(() => document.getElementById('statTotal').innerText) };
     check(tag + '    after: the list shows the new data (Alpha Two gone, Alpha Three there) and the counts follow', post.names === 'Alpha One|Alpha Three' && post.stat === '4', JSON.stringify(post));
-    check(tag + '    the search text, the sort and the filter are as they were', post.search === 'alpha' && post.sort === 'name' && post.filters === 'user', JSON.stringify(post));
+    check(tag + '    the search text, the sort and the filter are as they were', post.search === 'alpha' && post.sort === 'updated/updated' && before.sort === 'updated/updated' && post.filters === 'user', JSON.stringify(post));
     check(tag + '    the selected app is still selected and drawn selected', post.sel === 'com.a.one' && post.checked, JSON.stringify(post));
     await ev(() => { clearBatchSelectionNow(); setFilter('all'); clearSearch(); });
 
