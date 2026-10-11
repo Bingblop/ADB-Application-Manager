@@ -108,6 +108,10 @@ public final class Sdm {
         byte[] head(String path, int max) throws IOException;
     }
 
+    public interface PruningFs extends Fs {
+        void walk(String root, Collection<String> prune, EntrySink sink, Cancel cancel) throws IOException;
+    }
+
     public interface Areas {
         /** Every area this phone has, with how it is read; areas that cannot be read are there too, with via "" and a reason. */
         List<AreaInfo> all();
