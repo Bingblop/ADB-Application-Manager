@@ -258,6 +258,10 @@ public class MainActivity extends Activity {
         // Extract binaries and ADB keys in background
         setupBinariesAndKeys();
 
+        // a copy of the Morphe signing key staged for the share sheet is short-lived; whatever a dead process left behind is removed here, however young
+        // (only the first onCreate of the process: a later one, the window opened again, may have a share sheet still reading the live copy)
+        try { KeyShare.sweepAtStart(getCacheDir()); } catch (Throwable ignored) {}
+
         if (isHeadless()) {
             runQuickAction(getIntent());
             return;
@@ -7320,6 +7324,72 @@ public class MainActivity extends Activity {
         return authManagerInstance;
     }
 
+    /**
+     * Opens the share sheet for the staged signing key (see {@link KeyShare}) and removes the copy, and the grant on it, {@link KeyShare#KEEP_MS} later.
+     * The timer is a static class that holds the application context, the address and the file, not this activity. If the process dies first, the next
+     * start removes what is left.
+     * The sheet is opened on the UI thread. If the UI thread has not started the task after 10 seconds (or this thread is interrupted), the task is
+     * given up before the failure is passed on: the caller then removes the copy, and a task that ran late must not open a sheet for an address that no
+     * longer resolves. Whoever gets there first decides (a compare-and-set on {@code state}): the task starts the sheet only if it can move 0 to 1, the waiter gives up
+     * only if it can move 0 to 2.
+     */
+    private void shareMorpheKey(final File staged) throws Exception {
+        final Uri uri = ShareProvider.uriForKey(staged);
+        final Context app = getApplicationContext();
+        final java.util.concurrent.atomic.AtomicInteger state = new java.util.concurrent.atomic.AtomicInteger();   // 0 waiting, 1 started, 2 given up
+        final java.util.concurrent.FutureTask<Boolean> open = new java.util.concurrent.FutureTask<Boolean>(new java.util.concurrent.Callable<Boolean>() {
+            @Override public Boolean call() {
+                if (!state.compareAndSet(0, 1)) return Boolean.FALSE;       // the caller gave up while this waited in the UI queue: no sheet
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("application/octet-stream");
+                send.putExtra(Intent.EXTRA_STREAM, uri);
+                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                Intent chooser = Intent.createChooser(send, "Share");
+                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(chooser);
+                return Boolean.TRUE;
+            }
+        });
+        runOnUiThread(open);
+        try {
+            open.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+        } catch (java.util.concurrent.TimeoutException e) {
+            if (state.compareAndSet(0, 2)) { open.cancel(false); throw e; }
+            awaitStarted(open);
+        } catch (InterruptedException e) {
+            if (state.compareAndSet(0, 2)) { open.cancel(false); Thread.currentThread().interrupt(); throw e; }
+            awaitStarted(open);
+            Thread.currentThread().interrupt();
+        }
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new KeyShareExpiry(app, uri, staged), KeyShare.KEEP_MS);
+    }
+
+    /** The UI thread had already started the sheet when the wait ended: wait for it to finish (it is running), and pass on an error it ended with. */
+    private static void awaitStarted(java.util.concurrent.FutureTask<Boolean> open) throws Exception {
+        boolean interrupted = false;
+        try {
+            for (;;) {
+                try { open.get(); return; }
+                catch (InterruptedException e) { interrupted = true; }
+                catch (java.util.concurrent.ExecutionException e) { throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e; }
+            }
+        } finally { if (interrupted) Thread.currentThread().interrupt(); }
+    }
+
+    /** Ends a key share: revokes the grant and removes the staged copy. Static, so it cannot hold the activity: only the application context, the address and the file. */
+    private static final class KeyShareExpiry implements Runnable {
+        private final Context app;
+        private final Uri uri;
+        private final File staged;
+        KeyShareExpiry(Context app, Uri uri, File staged) { this.app = app; this.uri = uri; this.staged = staged; }
+        @Override public void run() {
+            try { app.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Throwable ignored) {}
+            KeyShare.remove(staged);
+        }
+    }
+
     private synchronized MorpheBridge morphe() {
         if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
@@ -7342,6 +7412,7 @@ public class MainActivity extends Activity {
             }
             @Override public JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception { return morpheInstall(apk, pkg, uninstallFirst); }
             @Override public void share(File f, String mime) { new AndroidBridge().shareStoredFile(f.getAbsolutePath(), mime, f.getName()); }
+            @Override public void shareKey(File staged) throws Exception { shareMorpheKey(staged); }
             @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }

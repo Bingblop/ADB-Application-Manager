@@ -1,0 +1,16 @@
+ok   1. Export KeyStore opens a question before anything is exported, and no call has been made yet: []
+ok      the question says in plain words that whoever gets the file can sign apps as you and that Android will take them as updates: {"title":"Share the signing key?","text":"Whoever gets this file can sign apps as you, and Android will install them as updates of the apps you patched here. Send it only to a place that only you can open.","ok":"Share"}
+ok      the button says Share (the share sheet comes next), not Save: Share
+ok   2. Cancel closes the question and the app is not asked for anything: []
+ok   3. Share asks the app for keyExport once, with no path and no file name from the page: [["keyExport",{}]]
+ok      no "Saved to" message (nothing was saved to Downloads) and no other file operation was asked for:
+ok   4. an error from the app is shown as it is: There is no signing key yet: it is made the first time you patch.
+ok   5. the patcher settings still have Export the key, Import a key and New key: Export the key,Import a key,New key
+ok      its Export asks the same question first (no call yet): {"title":"Share the signing key?","text":"Whoever gets this file can sign apps as you, and Android will install them as updates of the apps you patched here. Send it only to a place that only you can open.","ok":"Share"}
+ok      No: still nothing asked of the app
+ok      Yes: keyExport once: ["keyExport"]
+ok   6. Import a key still asks the app for a file (the password question comes after a file is chosen): ["pick"]
+ok      New key still asks first, in its own words: {"title":"Make a new signing key?","text":"Apps patched from now on are signed with the new key. Android will not install them over an app that was signed with the old key; export the old one first if you may need it.","ok":"New key"}
+ok      and a No makes no new key
+ok   no page errors:
+ALL PASSED
