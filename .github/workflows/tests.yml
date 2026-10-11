@@ -86,7 +86,7 @@ jobs:
       - name: Build an APK for the signer suites
         run: |
           echo "KEYSTORE=$RUNNER_TEMP/throwaway.keystore" >> "$GITHUB_ENV"
-          ./build.sh
+          bash build.sh
 
       - name: Run the Java suites
         working-directory: tests

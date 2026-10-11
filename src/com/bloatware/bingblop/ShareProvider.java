@@ -92,8 +92,9 @@ public class ShareProvider extends ContentProvider {
     }
 
     @Override public boolean onCreate() {
-        // Android runs this at the start of every process of the app, also one started only because a receiving app opened a share address. A staged signing
-        // key left by a process that died has lost its expiry timer, so it is removed here, before any address is served (first call of the process only).
+        // Android runs this when the provider is created, at the start of a process that hosts it; that includes a process started only because a receiving
+        // app opened a share address. A staged signing key left by a process that died has lost its expiry timer, so it is removed here, before any address
+        // is served (first call of the process only).
         try { KeyShare.sweepAtStart(getContext().getCacheDir()); } catch (Throwable ignored) {}
         return true;
     }

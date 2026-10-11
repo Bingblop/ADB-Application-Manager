@@ -306,7 +306,12 @@ public class KeyShareTest {
         // ---- the documents do not say the key is written to Downloads any more ----
         String[] docs = {"docs/guide/04-tools.html", "docs/guide/10-morphe.html", "docs/DEVICE-TEST-CHECKLIST.md", "docs/FULL-GUIDE.md", "README.md"};
         StringBuilder stale = new StringBuilder();
-        for (String d : docs) if (read(new File(repo, d)).contains("Downloads/Morphe Patcher/morphe.keystore")) stale.append(d).append(' ');
+        for (String d : docs) {
+            StringBuilder cur = new StringBuilder();
+            // the changes-by-version entry of v7.12.8 describes what that version did and stays as it was written
+            for (String line : read(new File(repo, d)).split("\n")) if (!line.contains("(v7.12.8)")) cur.append(line).append('\n');
+            if (cur.toString().contains("Downloads/Morphe Patcher/morphe.keystore")) stale.append(d).append(' ');
+        }
         check("docs: none of the guide, the checklist, the full guide or the README says the key is written to Downloads/Morphe Patcher/morphe.keystore", stale.length() == 0, stale.toString());
         check("docs: the Help Guide script (assets/guide.js) is built from the fragments", !read(new File(repo, "assets/guide.js")).contains("Downloads/Morphe Patcher/morphe.keystore"));
 
