@@ -2317,6 +2317,69 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    /** The packages the person said yes to in one "Update all" question (package -> when), so each of them does not ask again. */
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> approvedUpdates = new java.util.concurrent.ConcurrentHashMap<String, Long>();
+    private final java.util.concurrent.atomic.AtomicBoolean updateAllAsking = new java.util.concurrent.atomic.AtomicBoolean();
+    /** How long a yes to "Update all" holds (the queue downloads one app after the other). */
+    private static final long UPDATE_APPROVAL_MS = 60L * 60 * 1000;
+
+    /** True once for a package the person approved in the "Update all" question and not yet used; the yes is spent by this call. */
+    private boolean takeUpdateApproval(String pkg) {
+        Long at = approvedUpdates.remove(pkg);
+        return at != null && System.currentTimeMillis() - at < UPDATE_APPROVAL_MS;
+    }
+
+    /**
+     * The one question for "Update all": the page names the packages it wants updated, the app keeps those it found an update for itself (not this app,
+     * not one that opens elsewhere, not one already running), lists them in a native dialog and asks once, before anything is downloaded. A yes is
+     * remembered per package, so the single installs that follow do not ask again. The answer goes to window.onUpdateAllAnswer(json): ok, pkgs.
+     */
+    private void runApproveUpdateAll(final String pkgsJson) {
+        if (!updateAllAsking.compareAndSet(false, true)) return;     // a question is already on screen: its answer is coming
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject answer = new JSONObject();
+                JSONArray ok = new JSONArray();
+                try {
+                    if (isPrivilegedMode(resolveExecMode())) {
+                        JSONArray asked = new JSONArray(pkgsJson);
+                        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<String>();
+                        List<String[]> rows = new ArrayList<String[]>();
+                        for (int i = 0; i < asked.length(); i++) {
+                            String p = asked.optString(i, "");
+                            JSONObject u = p.isEmpty() ? null : updateResults.get(p);
+                            if (u == null || "self".equals(u.optString("source")) || "external".equals(u.optString("source")) || installingUpdates.contains(p) || !seen.add(p)) continue;
+                            rows.add(new String[]{u.optString("name"), p, u.optString("installedVersion"), u.optString("availableVersion")});
+                            ok.put(p);
+                        }
+                        if (rows.isEmpty()) {
+                            answer.put("error", "There is nothing to update.");
+                        } else if (confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows, resolveExecMode()), "Update", "Cancel") == BundleApprovals.Answer.ALLOW) {
+                            approvedUpdates.clear();
+                            long now = System.currentTimeMillis();
+                            for (int i = 0; i < ok.length(); i++) approvedUpdates.put(ok.optString(i), now);
+                        } else {
+                            ok = new JSONArray();
+                        }
+                    } else {
+                        answer.put("error", "installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                    }
+                } catch (Exception e) {
+                    ok = new JSONArray();
+                    try { answer.put("error", errMsg(e)); } catch (Exception ignored) {}
+                } finally {
+                    updateAllAsking.set(false);
+                }
+                try {
+                    answer.put("ok", ok.length() > 0);
+                    answer.put("pkgs", ok);
+                    notifyUpdates("onUpdateAllAnswer", answer);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
     /** Downloads the official APK, verifies it, and installs it through the active privileged mode. */
     private void runInstallUpdate(final String pkg) {
         final JSONObject u = updateResults.get(pkg);
@@ -2335,7 +2398,7 @@ public class MainActivity extends Activity {
                     progress(pkg, "downloading", 0, "Getting download link...");
                     String url = "galaxy".equals(source) ? UpdateManager.galaxyDownloadUrl(pkg, updateDevice()) : u.optString("downloadUrl");
                     if (url.isEmpty()) throw new IllegalStateException("no APK for this phone in the latest release");
-                    UpdateManager.download(url, apk, new UpdateManager.Progress() {
+                    final String finalUrl = UpdateManager.download(url, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
                             progress(pkg, "downloading", total > 0 ? (int) (done * 100 / total) : -1, (done / (1024 * 1024)) + " MB");
@@ -2367,6 +2430,18 @@ public class MainActivity extends Activity {
                                 + "Update from the source you originally installed from" + ("fdroid".equals(source) ? " (F-Droid signs its own builds)." : "."));
                     }
 
+                    // A privileged install has no system installer in front of it: the person is asked here, in a dialog the page cannot press, with
+                    // what was read from the downloaded file itself. A yes given for the whole "Update all" list already covers this app.
+                    if (!takeUpdateApproval(pkg)) {
+                        String mode = resolveExecMode();
+                        if (!isPrivilegedMode(mode)) throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                        String label = u.optString("name");
+                        progress(pkg, "confirming", 100, "Waiting for your OK to update " + (label.isEmpty() ? pkg : label) + "...");
+                        if (!confirmPrivilegedInstall(InstallConfirm.messageUpdate(label, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl),
+                                InstallConfirm.hostOf(url), installedVersionOrNull(pkg), mode))) {
+                            throw new IllegalStateException("Update cancelled. Nothing was installed.");
+                        }
+                    }
                     progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
                     String out = installApk(apk);
                     if (out.contains("Success")) {
@@ -2432,6 +2507,9 @@ public class MainActivity extends Activity {
      * no privileged mode - by handing it to the system package installer for a normal install confirmation.
      */
     private void runInstallSelfUpdate() {
+        // No question here, on purpose: the page chooses nothing. The address is this app's own release page, and the file is installed only when it is
+        // this package, newer, and signed with the key this install is signed with (checked below, failing closed): the only app it can replace is
+        // this one, with a build of the same author. The question is for installs the page can point at a file, an address or an authorizer.
         final String pkg = getPackageName();
         if (!installingUpdates.add("self")) return;
         executor.submit(new Runnable() {
@@ -3556,6 +3634,8 @@ public class MainActivity extends Activity {
     /** OBB / Android-data files of the XAPK currently loaded in the Installer, and the archive that holds them. */
     private volatile List<XapkInfo.Extra> installExtras = new ArrayList<XapkInfo.Extra>();
     private volatile File installSourceZip = null;
+    /** The name of the file the Installer was last given (read here from the file or its provider, for the question before a privileged install); "" when unknown. */
+    private volatile String installSourceName = "";
 
     private static final Object installInspectLock = new Object();
 
@@ -3670,6 +3750,7 @@ public class MainActivity extends Activity {
     private void clearInstallerWorkDir() {
         installExtras = new ArrayList<XapkInfo.Extra>();
         installSourceZip = null;
+        installSourceName = "";
         File[] fs = installerWorkDir().listFiles();
         if (fs != null) for (File f : fs) { try { f.delete(); } catch (Exception ignored) {} }
     }
@@ -3692,11 +3773,23 @@ public class MainActivity extends Activity {
         return null;
     }
 
+    /** The file name of a picked package: its display name for a content:// address, else the last part of the path; "" when there is none. */
+    private String sourceNameOf(String ref) {
+        try {
+            if (ref == null || ref.isEmpty()) return "";
+            if (ref.startsWith("content://")) return cdDisplayName(Uri.parse(ref));
+            return new File(ref).getName();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     /** Streams a picked .apk/.apks/.apkm into the installer cache and returns its package info + split list. */
     private JSONObject inspectInstallSourceImpl(String ref) throws Exception {
         clearInstallerWorkDir();
         File work = installerWorkDir();
         work.mkdirs();
+        installSourceName = sourceNameOf(ref);
         // A content:// stream is one-shot, so copy it to the cache once (capped like restore, so a crafted
         // archive can't fill storage) and work from concrete files afterwards.
         File raw = new File(work, "source.bin");
@@ -3875,24 +3968,29 @@ public class MainActivity extends Activity {
         return res;
     }
 
-    /** Maps the installer's authorizer choice to a concrete backend mode. */
+    /**
+     * Maps the installer's authorizer choice to a concrete backend mode. The page chooses the authorizer, so it is not trusted: in standard mode
+     * (the Read-Only mode) no privileged authorizer is honoured, whatever the page sent and whatever is still connected, and the install goes through
+     * the system installer ("none"), which asks the person itself (see {@link InstallGuards#authorizerFor}).
+     */
     private String resolveAuthorizerMode(String authorizer) {
+        final String exec = resolveExecMode();
+        authorizer = InstallGuards.authorizerFor(authorizer, exec);
         if ("shizuku".equals(authorizer)) return "shizuku";
         if ("root".equals(authorizer)) return "root";
         if ("none".equals(authorizer)) return "none";
         if ("adb".equals(authorizer)) {
-            String m = resolveExecMode();
-            if ("adb_tcp".equals(m) || "adb_wireless".equals(m)) return m;
+            if ("adb_tcp".equals(exec) || "adb_wireless".equals(exec)) return exec;
             if (isAdbTargetConnected(tcpTarget())) return "adb_tcp";
             if (isAdbTargetConnected(wirelessTarget())) return "adb_wireless";
             return "adb_tcp";
         }
-        return resolveExecMode();
+        return exec;
     }
 
     /** ADB (TCP or Wireless Debugging), Shizuku or Root: a backend that runs `pm` with shell or root rights. */
     private static boolean isPrivilegedMode(String mode) {
-        return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
+        return InstallGuards.isPrivilegedMode(mode);
     }
 
     /** The app that provides Shizuku. With Shizuku as the backend, removing it would take the install's own rights away. */
@@ -4703,19 +4801,36 @@ public class MainActivity extends Activity {
                     // From the file manager an install always runs through a privileged backend (ADB, Wireless
                     // Debugging, Shizuku or Root), never the system installer.
                     boolean viaFiles = opts.optBoolean("fromFiles", false);
-                    String mode = resolveAuthorizerMode(opts.optString("authorizer", ""));
+                    String asked = opts.optString("authorizer", "");
+                    String mode = resolveAuthorizerMode(asked);
                     if (viaFiles && !isPrivilegedMode(mode)) {
                         throw new IllegalStateException("installing from Files needs ADB, Wireless Debugging, Shizuku or Root - set one up in Working Modes and try again");
                     }
                     if ("none".equals(mode)) {
+                        // A privileged authorizer the page asked for is not honoured in standard mode: the system installer asks instead.
+                        if (!"none".equals(asked)) notifyInstallProgress("Read-Only mode: the system installer asks you, so the ADB, Shizuku and Root options are not used.");
                         installNoPrivilege(files, opts); // result arrives via the PackageInstaller receiver
                         return;
                     }
                     String flags = opts.optString("createFlags", "-r");
+                    // Only the options the Installer page can build; anything else stops the install, before the person is asked about it.
+                    List<String> flagArgs = ShellArgs.installFlags(flags);
+                    if (flagArgs == null) throw new IllegalArgumentException("Unsupported install options: not installed");
                     // The app's name, read without its signature so it is known even when that is broken.
                     PackageInfo named = pm.getPackageArchiveInfo(gateApk.getAbsolutePath(), 0);
                     String pkgName = named != null ? named.packageName : null;
                     res.put("pkg", pkgName == null ? "" : pkgName);
+                    // A privileged install has no system installer in front of it, and the page chose the file, the authorizer and the options: the
+                    // person is asked here, in a dialog the page cannot press, with what the app read from the file itself.
+                    {
+                        List<String> acts = new ArrayList<String>();
+                        if (viaFiles && opts.optBoolean("uninstallFirst", false)) acts.add(InstallConfirm.REMOVES_FIRST);
+                        notifyInstallProgress("Waiting for your OK to install...");
+                        if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(installSourceName, pkgName, named != null ? named.versionName : null,
+                                installedVersionOrNull(pkgName), files.size(), mode, ShellArgs.join(flagArgs), acts))) {
+                            throw new InstallCancelled();
+                        }
+                    }
                     List<File> preSigned = null;
                     if (viaFiles && opts.optBoolean("uninstallFirst", false)) {
                         // Whatever can fail without touching the phone is done before the installed copy (and its data) goes:
@@ -4761,12 +4876,28 @@ public class MainActivity extends Activity {
                     try {
                         res.put("ok", false);
                         res.put("method", "none");
-                        res.put("output", notes + "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                        res.put("output", notes + (e instanceof InstallCancelled ? e.getMessage() : "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
                     } catch (Exception ignored) {}
                     notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
                 }
             }
         });
+    }
+
+    /** The person answered No to the question before a privileged install (or did not answer): nothing was installed. */
+    private static final class InstallCancelled extends IllegalStateException {
+        InstallCancelled() { super("Install cancelled. Nothing was installed."); }
+    }
+
+    /** The version name installed now, "" when the installed app has none, or null when the package is not installed (or is unknown). */
+    private String installedVersionOrNull(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return null;
+        try {
+            PackageInfo cur = getPackageManager().getPackageInfo(pkg, 0);
+            return cur.versionName == null ? "" : cur.versionName;
+        } catch (PackageManager.NameNotFoundException notInstalled) {
+            return null;
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -6303,6 +6434,15 @@ public class MainActivity extends Activity {
                     if (installed && sameVersion) {
                         res.put("install", installNote != null ? installNote : "already installed (same version)");
                     } else {
+                        // The backup is a file the page named (or the person picked) and it is installed without the system installer's question:
+                        // ask here, in a dialog the page cannot press, with what was read from the APK inside it.
+                        backupEvent("restore", "confirm", 38, "Waiting for your OK to install " + meta.optString("label", pkg) + "...");
+                        List<String> acts = new ArrayList<String>();
+                        if (wantData) acts.add(InstallConfirm.RESTORES_DATA);
+                        if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), "", acts))) {
+                            throw new InstallCancelled();
+                        }
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
                         String out = installApks(ordered);
                         if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
@@ -7502,10 +7642,6 @@ public class MainActivity extends Activity {
             return r;
         }
         StringBuilder notes = new StringBuilder();
-        if (uninstallFirst) {
-            uninstallInstalledCopy(mode, pkg);
-            notes.append("The installed copy was uninstalled first.\n");
-        }
         List<File> files = new ArrayList<File>();
         File tmp = null;
         String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
@@ -7517,6 +7653,24 @@ public class MainActivity extends Activity {
         }
         String out;
         try {
+            if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
+            // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
+            // with the package and version read from the APK itself. Before anything is removed or installed.
+            PackageInfo inside = getPackageManager().getPackageArchiveInfo(files.get(0).getAbsolutePath(), 0);
+            String insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
+            List<String> acts = new ArrayList<String>();
+            if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
+            if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(apk.getName(), insidePkg, inside != null ? inside.versionName : null,
+                    installedVersionOrNull(insidePkg), files.size(), mode, "", acts))) {
+                r.put("ok", false);
+                r.put("cancelled", true);
+                r.put("output", "Install cancelled. Nothing was installed.");
+                return r;
+            }
+            if (uninstallFirst) {
+                uninstallInstalledCopy(mode, pkg);
+                notes.append("The installed copy was uninstalled first.\n");
+            }
             out = installApks(files);
         } finally {
             if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
@@ -10241,6 +10395,15 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installUpdate(String pkg) {
             runInstallUpdate(pkg);
+        }
+
+        /**
+         * Asks once, in a native dialog, whether to update all of these apps (a JSON array of packages). Answer: window.onUpdateAllAnswer(json) with
+         * ok and the packages that were approved; each of those then installs without asking again.
+         */
+        @JavascriptInterface
+        public void approveUpdateAll(String pkgsJson) {
+            runApproveUpdateAll(pkgsJson);
         }
 
         /** Checks THIS app's own latest GitHub release. Result -> window.onSelfUpdate(json). */

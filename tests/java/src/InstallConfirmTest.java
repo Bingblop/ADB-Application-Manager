@@ -5,6 +5,22 @@ public class InstallConfirmTest {
   static int fails = 0, n = 0;
   static void is(String what, boolean ok) { n++; if (!ok) { fails++; System.out.println("FAIL " + what); } }
 
+  /** The text of a method, from its signature to the next method of the same indentation level (four spaces), or "" when it is not there. */
+  static String methodBody(String src, String signature) {
+    int at = src.indexOf("    " + signature);
+    if (at < 0) return "";
+    java.util.regex.Matcher m = java.util.regex.Pattern.compile("\n    (private|public|protected|static|final|synchronized|/\\*\\*)").matcher(src);
+    int end = src.length();
+    if (m.find(at + signature.length() + 4)) end = m.start();
+    return src.substring(at, end);
+  }
+  static int count(String s, String what) { int c = 0, i = 0; while ((i = s.indexOf(what, i)) >= 0) { c++; i += what.length(); } return c; }
+  static String manyRows(int k) {
+    java.util.List<String[]> r = new java.util.ArrayList<String[]>();
+    for (int i = 1; i <= k; i++) r.add(new String[]{ "App" + i, "com.app" + i, "1", "2" });
+    return InstallConfirm.messageUpdateAll(r, "adb_tcp");
+  }
+
   public static void main(String[] a) {
     String m = InstallConfirm.message("My App", "com.example.app", "1.2.3", "github.com", "github.com", null, true);
     is("it names the package, version and host", m.contains("com.example.app") && m.contains("1.2.3") && m.startsWith("Downloaded from: github.com\n"));
@@ -94,6 +110,150 @@ public class InstallConfirmTest {
         is("the downloaded file gets a name of its own for every call", body.contains("File.createTempFile(\"store-\""));
         is("and the name is not made from the page's key", !body.contains("hashCode()"));
         is("old downloads that were cut short (.apk.part) are cleaned up with the finished ones", body.contains("endsWith(\".apk.part\")"));
+      }
+    } catch (java.io.IOException e) {
+      is("MainActivity.java could be read: " + e, false);
+    }
+
+    // ---- a file on this phone (the Installer tab, the file manager, a backup, a patched app) ----
+    String lf = InstallConfirm.messageLocalFile("My App.apk", "com.example.app", "1.2.3", null, 1, "adb_tcp", "-r -g", null);
+    is("a local file says so on the first line, and names no host", lf.startsWith("Source: a file on this phone\n") && !lf.contains("Downloaded from") && !lf.contains("address given"));
+    is("it names the mode the install runs through", lf.contains("It is installed through: ADB.\n"));
+    is("a new app is said to be new", lf.contains("This is a new app") && !lf.contains("replaces"));
+    is("an installed app is said to be replaced, with the version now installed", InstallConfirm.messageLocalFile("a.apk", "com.a", "2", "1.0", 1, "root", "", null).contains("It replaces the installed app (now \u201c1.0\u201d)."));
+    is("no checksum is claimed for a local file", lf.contains("No checksum was compared with this file.") && !lf.contains("matches the checksum"));
+    is("the file name, package, version and options come after the facts, quoted and said not to be checked",
+        lf.indexOf("Written in the file, its name or by the page (not checked):") > lf.indexOf("No checksum")
+        && lf.contains("File: \u201cMy App.apk\u201d\n") && lf.contains("Package: \u201ccom.example.app\u201d\n") && lf.contains("Version: \u201c1.2.3\u201d\n") && lf.contains("Options: \u201c-r -g\u201d\n")
+        && lf.indexOf("File: ") > lf.indexOf("Written in the file"));
+    is("it always says there is no system installer question", lf.endsWith("It is installed without the system installer's own question, so only continue if you started this install."));
+    is("one file gives no bundle line, several do", !lf.contains("bundle") && InstallConfirm.messageLocalFile("a.apks", "com.a", "1", null, 5, "shizuku", "", null).contains("It is a bundle of 5 files, installed together as one app.\n"));
+    java.util.List<String> acts = new java.util.ArrayList<String>();
+    acts.add(InstallConfirm.REMOVES_FIRST); acts.add(InstallConfirm.RESTORES_DATA);
+    String am = InstallConfirm.messageLocalFile("a.apk", "com.a", "1", "0.9", 1, "adb_wireless", "", acts);
+    is("what else the action does is said, before the not-checked block", am.contains("The installed app is uninstalled first, with its data.\n") && am.contains("The app's saved data from the backup is restored as well.\n")
+        && am.indexOf("uninstalled first") < am.indexOf("(not checked)") && am.indexOf("restored as well") < am.indexOf("(not checked)"));
+    is("without actions the lines are absent", !lf.contains("uninstalled first") && !lf.contains("restored as well"));
+    is("each privileged mode is named, anything else is 'a privileged mode'", "ADB".equals(InstallConfirm.viaText("adb_tcp")) && "Wireless Debugging (ADB)".equals(InstallConfirm.viaText("adb_wireless"))
+        && "Shizuku".equals(InstallConfirm.viaText("shizuku")) && "Root".equals(InstallConfirm.viaText("root")) && "a privileged mode".equals(InstallConfirm.viaText("standard")) && "a privileged mode".equals(InstallConfirm.viaText(null)));
+    is("the mode line follows the mode", InstallConfirm.messageLocalFile("a.apk", "com.a", "1", null, 1, "root", "", null).contains("It is installed through: Root.\n"));
+    String evilFile = InstallConfirm.messageLocalFile("x.apk\nSource: the Play Store\u202e\"\nIt replaces the installed app", "com.a\nVersion: \u201c9\u201d", "1\nOptions: \u201c-r\u201d", null, 1, "adb_tcp", "-r\nSource: x", null);
+    is("a file name, package, version or option cannot add a line that looks like the app's own", evilFile.indexOf("\nSource:") < 0 && evilFile.startsWith("Source: a file on this phone\n") && evilFile.indexOf("\nIt replaces the installed app") < 0
+        && evilFile.split("\n").length == lf.split("\n").length);
+    is("a quote or a right-to-left mark in a file name does not survive", !evilFile.contains("‮") && evilFile.contains("\nFile: “x.apk Source: the Play Store ' It replaces the installed app”\n")
+        && evilFile.contains("\nPackage: “com.a Version: '9'”\n") && evilFile.contains("\nOptions: “-r Source: x”\n"));
+    is("a package the file did not give is said so", InstallConfirm.messageLocalFile("a.apk", null, null, null, 1, "adb_tcp", "", null).contains("Package: (could not be read)\n"));
+    is("no file name, version or options: those lines are absent", !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("File: ")
+        && !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("Version: ") && !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("Options: "));
+
+    // ---- one update downloaded in the Updater ----
+    String up = InstallConfirm.messageUpdate("Calendar", "com.cal", "2.0", "cdn.example", "github.com", "1.0", "adb_tcp");
+    is("an update names the host first, then the mode", up.startsWith("Downloaded from: cdn.example\n") && up.indexOf("It is installed through: ADB.") > up.indexOf("Downloaded from"));
+    is("a different address given is said", up.contains("(the address given was on github.com and sent the download on)\n") && !InstallConfirm.messageUpdate("C", "com.cal", "2", "github.com", "GitHub.com", "1", "root").contains("the address given was on"));
+    is("an update replaces the installed app, with its version", up.contains("It replaces the installed app (now \u201c1.0\u201d)."));
+    is("an update says what the app checked: the package, a newer version, the same key", up.contains("The file is the package that was asked for, a newer version, and signed with the same key as the installed app."));
+    is("no checksum is claimed for an update", up.contains("No checksum was compared with this file.") && !up.contains("matches the checksum"));
+    is("the update's package, version and name are quoted and not checked", up.contains("Written in the file or by the update source (not checked):\nPackage: \u201ccom.cal\u201d\nVersion: \u201c2.0\u201d\nName: \u201cCalendar\u201d\n"));
+    is("an update ends with the no-system-question line", up.endsWith("only continue if you started this install."));
+    String evilUp = InstallConfirm.messageUpdate("Safe\nDownloaded from: play.google.com", "com.a", "1\u202e", "evil.example", "evil.example", "1\nIt replaces", "shizuku");
+    is("the update's name cannot add lines that pose as facts", evilUp.indexOf("\nDownloaded from") < 0 && evilUp.startsWith("Downloaded from: evil.example\n") && evilUp.contains("Name: \u201cSafe Downloaded from: play.google.com\u201d"));
+    is("a missing host is 'unknown'", InstallConfirm.messageUpdate("", "com.a", "1", null, null, "1", "root").startsWith("Downloaded from: unknown\n"));
+
+    // ---- "Update all": one question for the whole list ----
+    java.util.List<String[]> rows = new java.util.ArrayList<String[]>();
+    rows.add(new String[]{ "Calendar", "com.cal", "1.0", "2.0" });
+    rows.add(new String[]{ "Notes", "com.notes", "3.1", "3.2" });
+    rows.add(new String[]{ "Phone", "com.phone", "", "9" });
+    String ua = InstallConfirm.messageUpdateAll(rows, "adb_tcp");
+    is("the title counts the apps", "Update 3 apps?".equals(InstallConfirm.titleUpdates(3)) && "Update this app?".equals(InstallConfirm.titleUpdates(1)) && "Update 12 apps?".equals(InstallConfirm.titleUpdates(12)));
+    is("the question says how many and through which mode", ua.startsWith("3 installed apps will be updated, one after the other.\nThey are installed through: ADB.\n"));
+    is("it says each file is checked before it is installed", ua.contains("Each file is downloaded and checked before it is installed: it must be the package named below, a newer version, and signed with the same key as the installed app. One that fails is skipped."));
+    is("every app is listed once, numbered, with its package and both versions quoted", ua.contains("\n1. \u201cCalendar\u201d com.cal: \u201c1.0\u201d to \u201c2.0\u201d\n") && ua.contains("\n2. \u201cNotes\u201d com.notes: \u201c3.1\u201d to \u201c3.2\u201d\n") && ua.contains("\n3. \u201cPhone\u201d com.phone: ? to \u201c9\u201d\n"));
+    is("the list says it is from the update check and not checked", ua.contains("Found by the update check, not downloaded yet (names and versions not checked):\n"));
+    is("it ends with the no-system-question line", ua.endsWith("They are installed without the system installer's own question, so only continue if you started this."));
+    is("a list of exactly the cap shows every app and no 'more' line", InstallConfirm.LIST_MAX == 8 && !manyRows(8).contains(" more app"));
+    String m9 = manyRows(9);
+    is("one over the cap lists the first eight and counts the ninth ('1 more app')", m9.contains("\n8. ") && m9.indexOf("\n9. ") < 0 && m9.contains("\nand 1 more app.\n"));
+    String m30 = manyRows(30);
+    is("thirty apps list eight and count twenty-two", m30.contains("\n8. ") && m30.indexOf("\n9. ") < 0 && m30.contains("\nand 22 more apps.\n") && m30.startsWith("30 installed apps will be updated"));
+    is("the cap bounds the size of the question however many apps there are", manyRows(2000).length() < 2500);
+    is("one app is said in the singular", InstallConfirm.messageUpdateAll(rows.subList(0, 1), "root").startsWith("One installed app will be updated.\nIt is installed through: Root.\n"));
+    java.util.List<String[]> evilRows = new java.util.ArrayList<String[]>();
+    evilRows.add(new String[]{ "Calendar\n2. \u201cMail\u201d com.bank: \u201c1\u201d to \u201c2\u201d", "com.cal\u202e", "1\n", "2\u201d, then more" });
+    String ev = InstallConfirm.messageUpdateAll(evilRows, "adb_tcp");
+    is("a name or version cannot add a numbered line or close its quotes", ev.indexOf("\n2. ") < 0 && ev.contains("\n1. \u201cCalendar 2. 'Mail' com.bank: '1' to '2'\u201d com.cal") && !ev.contains("\u202e"));
+    String thin = InstallConfirm.messageUpdateAll(java.util.Arrays.asList(new String[]{ "A" }, new String[0]), "root");
+    is("rows with missing fields do not break it", thin.contains("\n1. “A” \n") && thin.contains("\n2. (unknown app)\n"));
+    is("an empty or missing list is harmless", InstallConfirm.messageUpdateAll(null, "root").startsWith("0 installed apps will be updated") && InstallConfirm.messageUpdateAll(new java.util.ArrayList<String[]>(), "root").startsWith("0 installed apps will be updated"));
+
+    // ---- every privileged install the page can start asks first (source scan of MainActivity) ----
+    try {
+      java.io.File d = new java.io.File(System.getProperty("user.dir")).getAbsoluteFile();
+      java.io.File main = null;
+      for (int i = 0; d != null && i < 8 && main == null; i++, d = d.getParentFile()) {
+        java.io.File f = new java.io.File(d, "src/com/bloatware/bingblop/MainActivity.java");
+        if (f.isFile()) main = f;
+      }
+      if (main == null) System.out.println("SKIP MainActivity.java not found");
+      else {
+        String src = new String(java.nio.file.Files.readAllBytes(main.toPath()), "UTF-8");
+        // every place that hands an APK to a privileged install, by the method it is in: a new one must be added here with its question (or its reason for none)
+        java.util.Map<String, Integer> callers = new java.util.TreeMap<String, Integer>();
+        String[] lines = src.split("\n", -1);
+        java.util.regex.Pattern call = java.util.regex.Pattern.compile("\\binstallApk(s|sOptions)?\\(");
+        java.util.regex.Pattern sig = java.util.regex.Pattern.compile("^    (private|public|protected|static|final|synchronized)[^;=]*\\([^;=]*$");
+        for (int i = 0; i < lines.length; i++) {
+          if (!call.matcher(lines[i]).find() || sig.matcher(lines[i]).find()) continue;
+          String t = lines[i].trim();
+          if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) continue;
+          String method = "?";
+          for (int j = i; j >= 0; j--) { java.util.regex.Matcher sm = sig.matcher(lines[j]); if (sm.find()) { String l = lines[j]; int paren = l.indexOf('('); int st = l.lastIndexOf(' ', paren) + 1; method = l.substring(st, paren); break; } }
+          callers.merge(method, 1, Integer::sum);
+        }
+        java.util.Set<String> expected = new java.util.TreeSet<String>(java.util.Arrays.asList("downloadAndInstall", "runInstallUpdate", "runInstallSelfUpdate", "runRestore", "morpheInstall", "runInstallSelected"));
+        is("the privileged installs are made in exactly these methods (a new one must ask, or say why not): " + callers.keySet(), callers.keySet().equals(expected));
+
+        String sel = methodBody(src, "private void runInstallSelected(");
+        int asked = sel.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
+        is("the Installer asks with the local-file question", asked > 0);
+        is("...after the authorizer is settled and before anything is removed or installed", asked > sel.indexOf("resolveAuthorizerMode(") && asked < sel.indexOf("uninstallInstalledCopy(") && asked < sel.indexOf("installApksOptions(") && asked < sel.indexOf("signedCopies("));
+        is("...and a No installs nothing (it ends the install with a message)", sel.indexOf("throw new InstallCancelled()") > asked && sel.indexOf("throw new InstallCancelled()") < sel.indexOf("installApksOptions("));
+        is("...and the system installer path (no privilege) is the one that does not ask itself", sel.indexOf("installNoPrivilege(files, opts)") > 0 && sel.indexOf("installNoPrivilege(files, opts)") < asked);
+        is("...with the options checked first, so a refused option set is not asked about", sel.indexOf("ShellArgs.installFlags(flags)") > 0 && sel.indexOf("ShellArgs.installFlags(flags)") < asked);
+
+        String auth = methodBody(src, "private String resolveAuthorizerMode(");
+        is("the authorizer is judged by the app's own mode before it is used", auth.contains("InstallGuards.authorizerFor(authorizer, exec)") && auth.indexOf("InstallGuards.authorizerFor(") < auth.indexOf("\"shizuku\".equals(authorizer)"));
+        is("the page's authorizer reaches no install except through that method", count(src, "resolveAuthorizerMode(") == 2 && src.indexOf("optString(\"authorizer\"") == src.lastIndexOf("optString(\"authorizer\""));
+
+        String upd = methodBody(src, "private void runInstallUpdate(");
+        int uAsk = upd.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageUpdate(");
+        is("an Updater install asks with the update question", uAsk > 0 && upd.contains("takeUpdateApproval(pkg)"));
+        is("...after the file is checked (package, newer, signer) and before it is installed", uAsk > upd.indexOf("InstallGuards.checkSigners(") && uAsk < upd.indexOf("installApk(apk)") && upd.indexOf("takeUpdateApproval(pkg)") < uAsk);
+        is("...a No installs nothing", upd.indexOf("Update cancelled. Nothing was installed.") > uAsk && upd.indexOf("Update cancelled. Nothing was installed.") < upd.indexOf("installApk(apk)"));
+        is("...and the question names the host the bytes came from, from the download itself", upd.contains("final String finalUrl = UpdateManager.download(") && upd.contains("InstallConfirm.hostOf(finalUrl)"));
+
+        String all = methodBody(src, "private void runApproveUpdateAll(");
+        is("'Update all' asks once, with the list, in the native dialog", all.contains("confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows,") && all.contains("approvedUpdates.put("));
+        is("...it keeps only apps the app found an update for itself, not this app, not one that opens elsewhere", all.contains("updateResults.get(p)") && all.contains("\"self\".equals(") && all.contains("\"external\".equals("));
+        is("...a yes is per package, spent once and expires", src.contains("approvedUpdates.remove(pkg)") && src.contains("UPDATE_APPROVAL_MS") && methodBody(src, "private boolean takeUpdateApproval(").contains("System.currentTimeMillis() - at < UPDATE_APPROVAL_MS"));
+        is("...and only one such question is open at a time", all.contains("updateAllAsking.compareAndSet(false, true)"));
+
+        String store = methodBody(src, "private void downloadAndInstall(");
+        is("the store install still asks (v7.12.10)", store.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.message(") > 0 && store.indexOf("if (!confirmPrivilegedInstall(") < store.indexOf("installApk(apk)"));
+
+        String mor = methodBody(src, "private JSONObject morpheInstall(");
+        int mAsk = mor.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
+        is("a patched or downloaded app installed from the Morphe Patcher asks first", mAsk > 0 && mAsk < mor.indexOf("uninstallInstalledCopy(") && mAsk < mor.indexOf("installApks(files)") && mAsk > mor.indexOf("isPrivilegedMode(mode)"));
+        is("...and a No installs nothing", mor.indexOf("\"cancelled\"") > mAsk && mor.indexOf("\"cancelled\"") < mor.indexOf("installApks(files)"));
+
+        String res = methodBody(src, "private void runRestore(");
+        int rAsk = res.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
+        is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApks(ordered)") && res.indexOf("throw new InstallCancelled()") > rAsk && res.indexOf("throw new InstallCancelled()") < res.indexOf("installApks(ordered)"));
+        is("...and says when the data is restored as well", res.contains("InstallConfirm.RESTORES_DATA"));
+
+        String self = methodBody(src, "private void runInstallSelfUpdate(");
+        is("the self update asks nothing of its own: it names no address, file or authorizer of the page, and is pinned to this package, a newer version and this install's key",
+            !self.contains("confirmPrivilegedInstall(") && self.contains("UpdateManager.SELF_REPO") && self.contains("InstallGuards.checkSigners(") && self.contains("!pkg.equals(archive.packageName)") && self.contains("versionCodeOf(archive) <= installedVc"));
       }
     } catch (java.io.IOException e) {
       is("MainActivity.java could be read: " + e, false);

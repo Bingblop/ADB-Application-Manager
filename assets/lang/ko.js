@@ -1687,7 +1687,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Android용 빌드가 없어 Termux 안의 Debian 컨테이너에 설치됩니다(몇 분, 수백 MB). 이미 설치된 단계는 빠르게 건너뜁니다.",
 "It has no value right now.": "지금은 값이 없습니다.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "지금 연결되어 있고 계속 연결됩니다. 다음에 연결할 때 다시 저장됩니다.",
-"It is installed silently through the working mode.": "작동 모드를 통해 자동으로 설치됩니다.",
+"It is installed through the working mode after you answer the app's question.": "앱의 질문에 답하면 작동 모드로 설치됩니다.",
 "It is not set any more": "더 이상 설정되어 있지 않습니다",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "기기 사용자에게서 제거됩니다. 시스템 앱은 재설치로 다시 복구할 수 있습니다.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "먼저 그대로 설치를 시도하고, Android가 거부하면 이 앱의 키로 서명한 사본을 설치합니다.",
@@ -4474,7 +4474,11 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal 검사<1>다운로드 후 해시로 파일 확인</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "이름에 포함된 단어: <1>photo</1> (모두 일치해야 함, <2/>와 <3/>는 와일드카드, <4>-word</4>는 해당 이름 제외, 여러 단어는 \"큰따옴표\"로 묶기).<br> <5>ext:jpg,png</5> 또는 <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14>는 텍스트 파일 내부를 검색합니다(최대 4MB). <15>archive:name</15>은 zip, apk, jar 등의 압축 파일 안에 있는 항목 이름을 검색합니다.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "메시지를 입력하고 <1>보내기</1>를 탭하세요. 이메일 앱이 메시지가 준비된 상태로 열리며, 개발자에게 전달해 주는 연락처 별칭(<2/>)으로 보내집니다. 제목은 <3>ADB App Manager</3>입니다. 개발자 본인의 주소는 이 앱에 없으며, 메시지는 이 앱이 아니라 이메일 앱에서 전송됩니다.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다.",
+
+"Waiting for OK": "확인 대기 중",
+"Updates cancelled": "업데이트가 취소되었습니다",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "읽기 전용 모드: 무엇이든 설치하기 전에 시스템 설치 프로그램이 먼저 묻기 때문에 여기서는 ADB, Shizuku, Root를 제공하지 않습니다."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
