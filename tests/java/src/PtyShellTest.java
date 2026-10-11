@@ -40,6 +40,24 @@ public class PtyShellTest {
         return r;
     }
 
+    /** The pid of a running process whose command line is exactly "sleep N" (mark), or -1 (a zombie does not count). */
+    static int pidOf(String mark) throws Exception {
+        File[] ps = new File("/proc").listFiles();
+        if (ps == null) return -1;
+        for (File f : ps) {
+            if (!f.getName().matches("[0-9]+")) continue;
+            try {
+                String cmd = new String(java.nio.file.Files.readAllBytes(new File(f, "cmdline").toPath()), StandardCharsets.UTF_8);
+                if (!cmd.equals(mark.replace(' ', '\0') + "\0")) continue;
+                String stat = new String(java.nio.file.Files.readAllBytes(new File(f, "stat").toPath()), StandardCharsets.UTF_8);
+                if (stat.substring(stat.lastIndexOf(')') + 2).startsWith("Z")) continue;
+                return Integer.parseInt(f.getName());
+            } catch (java.io.IOException gone) {
+            }
+        }
+        return -1;
+    }
+
     static void type(Rec r, String s) throws Exception { byte[] b = s.getBytes(StandardCharsets.UTF_8); r.sh.write(b, 0, b.length); }
 
     public static void main(String[] args) throws Exception {
@@ -99,6 +117,23 @@ public class PtyShellTest {
         z.sh.close();
         is("closing hangs up: the program ends within a second or two", z.done.await(4, TimeUnit.SECONDS) && System.currentTimeMillis() - t0 < 3500 && z.code == 129, "code " + z.code);
 
+        // ---- a program that ignores SIGHUP is killed after a grace period (C-015) ----
+        // close() hangs up (the helper sends SIGHUP and, 500 ms later, SIGKILL to the program's process group) and destroys the helper after 800 ms; the
+        // helper used to wait for the program forever, so a program that ignores SIGHUP survived the closed terminal.
+        String mark = "sleep " + (40000 + new java.util.Random().nextInt(20000));       // an unusual duration: no other process has this command line
+        Rec ig = start(h, 24, 80, "/bin/sh", "-c", "trap '' HUP; exec " + mark);
+        long ig0 = System.currentTimeMillis();
+        int igPid = -1;
+        while (igPid < 0 && System.currentTimeMillis() - ig0 < 3000) { igPid = pidOf(mark); if (igPid < 0) Thread.sleep(20); }
+        is("a program that ignores SIGHUP is running", igPid > 0, mark);
+        ig.sh.close();
+        long ig1 = System.currentTimeMillis();
+        while (pidOf(mark) > 0 && System.currentTimeMillis() - ig1 < 2000) Thread.sleep(20);
+        boolean igGone = pidOf(mark) < 0;
+        is("it is gone within 2 s of close()", igGone, igGone ? "" : "still running: pid " + pidOf(mark));
+        is("and the end is reported as a kill (137)", ig.done.await(2, TimeUnit.SECONDS) && ig.code == 137, "code " + ig.code);
+        if (!igGone) new ProcessBuilder("kill", "-9", String.valueOf(pidOf(mark))).start().waitFor();
+
         // ---- flow control: output waits for the page ----
         Rec f = new Rec();
         f.autoAck = false;
@@ -112,6 +147,92 @@ public class PtyShellTest {
         Thread.sleep(600);
         is("after the page acknowledges, more arrives", f.text().length() > got + 1000, f.text().length() + " vs " + got);
         f.sh.close();
+
+        // ---- a program that ended: its writer thread ends too, and later input is refused ----
+        Rec e = start(h, 24, 80, "/bin/sh", "-c", "exit 0");
+        is("a program that ends on its own", e.done.await(4, TimeUnit.SECONDS));
+        Thread.sleep(1200);
+        int writers = 0;
+        for (Thread th : Thread.getAllStackTraces().keySet()) if ("pty-writer".equals(th.getName()) && th.isAlive()) writers++;
+        is("no writer thread is left behind by sessions that ended", writers == 0, "writers " + writers);
+        boolean refusedAfterEnd = false;
+        try { type(e, "x"); } catch (java.io.IOException ex) { refusedAfterEnd = true; }
+        is("input for a program that ended is refused", refusedAfterEnd);
+
+        // the helper is killed (its connection dropped) while the reader still waits for the page to acknowledge output: the writer must end anyway
+        Rec g = new Rec();
+        g.autoAck = false;
+        ProcessBuilder pb3 = new ProcessBuilder(PtyShell.command(h, 24, 80, Arrays.asList("/bin/sh", "-c", "yes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        pb3.redirectErrorStream(true);
+        Process helperProc = pb3.start();
+        g.sh = new PtyShell(helperProc, g);
+        Thread.sleep(1500);                              // the reader is at the limit and waits for the page
+        helperProc.destroyForcibly();
+        Thread.sleep(1500);
+        is("the helper is gone although the page never acknowledged (the reader still waits, no end reported yet)", g.done.getCount() == 1 && g.text().length() > 100 * 1024, "got " + g.text().length());
+        int writers2 = 0;
+        for (Thread th : Thread.getAllStackTraces().keySet()) if ("pty-writer".equals(th.getName()) && th.isAlive()) writers2++;
+        is("its writer thread has ended all the same", writers2 == 0, "writers " + writers2);
+        boolean refusedFinite = false;
+        try { type(g, "x"); } catch (java.io.IOException ex) { refusedFinite = true; }
+        is("and input for it is refused", refusedFinite);
+        g.sh.ack(g.text().length());
+        g.sh.ack(1 << 20);
+        is("when the page catches up, the end is reported", g.done.await(4, TimeUnit.SECONDS), "code " + g.code);
+        // one paste larger than the queue is refused before a copy of it is made
+        final byte[] huge = new byte[8 * 1024 * 1024];
+        Rec hq = start(h, 24, 80, "/bin/sleep", "20");
+        long m0 = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        boolean refusedHuge = false;
+        try { hq.sh.write(huge, 0, huge.length); } catch (java.io.IOException ex) { refusedHuge = true; }
+        is("a paste over the limit is refused", refusedHuge);
+        hq.sh.close();
+
+        // ---- input never blocks the caller (C-014) ----
+        // The page's calls reach the app one after another. A program that takes no input and floods its output (the page not yet acknowledging) used to
+        // block a paste in the pipe to the helper, and with it every later call (the acknowledgement that would have freed the output): a deadlock.
+        Rec d = new Rec();
+        d.autoAck = false;
+        ProcessBuilder pb2 = new ProcessBuilder(PtyShell.command(h, 24, 80, Arrays.asList("/bin/sh", "-c", "yes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        pb2.redirectErrorStream(true);
+        d.sh = new PtyShell(pb2.start(), d);
+        Thread.sleep(1500);                              // the reader waits for acknowledgements; the helper's output is blocked; so is its input
+        final int dGot = d.text().length();
+        final byte[] paste = new byte[100 * 1024];
+        Arrays.fill(paste, (byte) 'a');
+        final CountDownLatch pasted = new CountDownLatch(1);
+        final PtyShell dsh = d.sh;
+        Thread pt = new Thread(new Runnable() { public void run() { try { dsh.write(paste, 0, paste.length); } catch (java.io.IOException e) { } pasted.countDown(); } });
+        pt.setDaemon(true);
+        pt.start();
+        is("a 100 KB paste returns at once although the program takes no input", pasted.await(2, TimeUnit.SECONDS));
+        final CountDownLatch resized = new CountDownLatch(1);
+        Thread rt = new Thread(new Runnable() { public void run() { try { dsh.resize(30, 90); } catch (java.io.IOException e) { } resized.countDown(); } });
+        rt.setDaemon(true);
+        rt.start();
+        is("and so does a resize behind it", resized.await(2, TimeUnit.SECONDS));
+        d.sh.ack(dGot);
+        Thread.sleep(600);
+        is("the acknowledgement frees the output again", d.text().length() > dGot + 1000, d.text().length() + " vs " + dGot);
+        // far more than the program will ever take: refused with an error, never waiting
+        final int[] refused = { 0 };
+        final CountDownLatch flooded = new CountDownLatch(1);
+        Thread ft = new Thread(new Runnable() { public void run() {
+            for (int i = 0; i < 60; i++) { try { dsh.write(paste, 0, paste.length); } catch (java.io.IOException e) { refused[0]++; } }
+            flooded.countDown(); } });
+        ft.setDaemon(true);
+        ft.start();
+        is("6 MB of input in a row never blocks the caller", flooded.await(5, TimeUnit.SECONDS));
+        is("what the queue cannot hold is refused with an error", refused[0] > 0, "refused " + refused[0]);
+        d.sh.close();
+        // the queue keeps the order of keys and resizes, and a normal shell still gets every byte
+        Rec o = start(h, 30, 100, "/bin/bash", "--norc", "-i");
+        is("a shell prompt after the change", o.waitFor("bash-", 3000), o.text());
+        for (int i = 0; i < 20; i++) type(o, "echo seq-" + i + "\n");
+        is("many small writes arrive in order", o.waitFor("seq-19", 3000), o.text());
+        int a0 = o.text().indexOf("seq-0\r\n"), a19 = o.text().lastIndexOf("seq-19\r\n");
+        is("the first line comes before the last", a0 >= 0 && a19 > a0, o.text());
+        o.sh.close();
 
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " FAILED");
         System.exit(fails == 0 ? 0 : 1);

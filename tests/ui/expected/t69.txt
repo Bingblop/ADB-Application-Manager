@@ -13,7 +13,7 @@
    and with this much in it, it does: true 595px
    a strip is left above it to tap and close (at least 4% of the height and 24px): true 45px
    nothing sticks out sideways: true
-2. [320x640] the lists get 8% of the screen height more room: true -81px -> -30px
+2. [320x640] the lists get 8% of the screen height more room: true -110px -> -59px
 3. [320x640] the other sheets keep 85% (66 checked): true []
 4. [320x640] the last of 45 permissions can be scrolled into view: true {"n":45,"lastTop":540,"lastBottom":621,"sheetTop":45,"sheetBottom":640,"tabTop":288,"tabBottom":621}
 5. [320x640] a tap on the strip above the sheet closes it: true tapped at y=22
@@ -23,7 +23,7 @@
    and with this much in it, it does: true 851px
    a strip is left above it to tap and close (at least 4% of the height and 24px): true 64px
    nothing sticks out sideways: true
-2. [412x915] the lists get 8% of the screen height more room: true 226px -> 299px
+2. [412x915] the lists get 8% of the screen height more room: true 215px -> 288px
 3. [412x915] the other sheets keep 85% (66 checked): true []
 4. [412x915] the last of 45 permissions can be scrolled into view: true {"n":45,"lastTop":826,"lastBottom":896,"sheetTop":64,"sheetBottom":915,"tabTop":420,"tabBottom":896}
 5. [412x915] a tap on the strip above the sheet closes it: true tapped at y=32

@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.12.8)
+# On-device test checklist (v7.1 to v7.12.9)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -315,6 +315,24 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] Settings > **Default Ask Agent** reads Perplexity on a fresh install. The list is grouped (No default, Web research (recommended) with Perplexity, Exa, Browser Use and Crawl4AI, Chat models with an API key, Free Open-Source) and has no Cursor, Copilot or OpenCode. With no Perplexity key, **Ask agent** on a Hidden Setting row answers with the free web lookup (no key). Choose **No default**, leave Settings and come back: it is still **No default**. **Test the Default Ask Agent** works once a key is set.
 - [ ] About > **Authorization Manager**: the card shows a code of five groups of five letters and digits (no I, L, O or U) and says nothing accepts it yet. The copy button puts it on the clipboard (paste it somewhere to compare). Close the app completely and reopen it: the code is the same. The circular refresh button asks first; after confirming, a different code shows and stays after a restart.
 - [ ] Exa (Default Ask Agent): in the Command-Line Interface tab choose **Exa**, paste a key from dashboard.exa.ai/api-keys and tap **Test and save** (one small search). In Settings > Default Ask Agent, Exa sits in **Web research (recommended)** right after Perplexity (order: Perplexity, Exa, Browser Use, Crawl4AI). Choose it and press an **Ask agent** button: the answer comes with its sources. Exa is not offered as a chat in the Terminal.
+
+## 19. Security and stability changes, Dex optimization and Standby bucket (v7.12.9)
+
+None of these has been run on a phone yet; this section is the first run.
+
+- [ ] Private adb socket: connect in ADB mode as usual (Wireless Debugging or ADB over TCP) and open the Apps tab: the list loads. Then check which path the phone took, from a computer: `adb shell "ss -ltn | grep -E ':5042([[:space:]]|$)'"`. If the probe prints an error (`ss: inaccessible or not found`, permission denied), it proved nothing and is **not** a pass: use the kernel table instead (`docs/DEVICE-TEST-SCRIPT.md`, section 1, has the `/proc/net/tcp` command). **Nothing listening and no error from the probe** = the private socket is in use (the intended result). **Port 5042 listening** = this phone refused the socket and fell back to the old loopback port: adb works, but the old exposure is unchanged on this phone, so write it down as a separate result (phone model, Android version) rather than a pass.
+- [ ] Keystore vault, upgrade: install this version over v7.12.8 with a GitHub token and a VirusTotal key already saved. Settings still shows the GitHub Token button ticked and the VirusTotal key card still reads "approved" (or asks you to test it once). Nothing asks you to type either again.
+- [ ] Keystore vault, new value: enter a new GitHub token, then a new VirusTotal key and tap Test key: both work. Clear them: the button loses its tick and the key card says no key.
+- [ ] Download safety: in the Updater download any app from APKMirror or F-Droid: the download completes and the SHA-256 card shows. Download a Morphe bundle: it completes.
+- [ ] Install checks: install a downloaded app over the installed one from the same source: it installs. Try one signed with a different key (a test APK you have): it is refused with a message about the signer.
+- [ ] VirusTotal upload: scan a small APK with the VirusTotal card: the hash lookup shows. If the file is unknown and an upload is offered, it uploads and a result comes back.
+- [ ] Dex optimization, **space**: app menu > Dex optimization > mode **space** > Apply on one app: the result window says Done (or the phone's own message).
+- [ ] Dex optimization, **reset**: choose **reset**: the Force switch is hidden and the note says the result depends on the Android version; the subtitle reads "Reset the dex optimization of ...". Apply: Done. Note the Android version and what `dumpsys package dexopt` (or `cmd package dump <pkg>`) says afterwards.
+- [ ] Dex optimization, batch: select two apps, batch menu > Dex optimization > **speed-profile**: the progress bar moves and Stop works.
+- [ ] Standby bucket, read: app menu > **Standby** on a normal app: the sheet opens with the bucket the phone reports (`adb shell am get-standby-bucket <pkg>` shows the same). On a phone with no working mode the sheet does not open and says why.
+- [ ] Standby bucket, set: pick **rare**, Apply: the toast says "Standby bucket changed" and `am get-standby-bucket <pkg>` reports rare. Pick **restricted**, then **active**: same. On the current launcher or another exempted app the sheet shows the bucket greyed out and a set is refused with the phone's words.
+- [ ] Task Manager: open the Task Manager tab, then close the app from Recents: the phone shows no leftover activity from the app (battery stats show no polling after closing).
+- [ ] Command output in the log: on a release build, first clear the log from a computer (`adb logcat -c`; installing the update does not clear it, and lines from the previous version would look like a leak), then run a privileged action (for example Freeze an app), then `adb logcat -d -s ADBAppManager`. The tag lines show the mode and sizes of a command, not its text or output. (A debuggable build still logs the whole line, by design.)
 
 ## Report
 

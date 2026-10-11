@@ -75,8 +75,14 @@ public final class FileSearch {
         public long entryContentMaxBytes = 1024 * 1024;
         public int maxArchiveEntries = 100000;
         public volatile boolean cancelled;
+        /** Files and folders the search must not look at, name or content (the app's own private data): never listed, never read, never descended into. Null: none. */
+        public Skip skip;
         public boolean hitLimit;            // a limit (not Cancel) stopped it
         public int visited, archivesRead;
+    }
+
+    public interface Skip {
+        boolean skip(File f);
     }
 
     public interface Progress {
@@ -426,7 +432,7 @@ public final class FileSearch {
         Run r = new Run(q, lim, progress);
         for (File root : roots) {
             if (r.stop()) break;
-            if (!root.exists()) continue;
+            if (!root.exists() || skipped(r, root)) continue;
             try {
                 if (root.isDirectory()) walk(root, 0, r, true); else look(root, r);
             } catch (RuntimeException e) {
@@ -435,6 +441,10 @@ public final class FileSearch {
         }
         if (progress != null) progress.onProgress("", lim.visited, r.hits.size());
         return r.hits;
+    }
+
+    private static boolean skipped(Run r, File f) {
+        try { return r.lim.skip != null && r.lim.skip.skip(f); } catch (RuntimeException e) { return true; }      // a check that fails counts as skipped
     }
 
     private static boolean skipDir(File d) {
@@ -453,6 +463,7 @@ public final class FileSearch {
         for (File k : kids) {
             if (r.stop()) return;
             if (!r.q.includeHidden && k.getName().startsWith(".")) continue;
+            if (skipped(r, k)) continue;
             r.lim.visited++;
             boolean link = Files.isSymbolicLink(k.toPath());
             boolean d = !link && k.isDirectory();
@@ -502,6 +513,7 @@ public final class FileSearch {
         Hit h = new Hit();
         h.path = f.getPath(); h.size = size; h.mtime = mtime; h.why = "name";
         if (!q.content.isEmpty()) {
+            if (r.lim.skip != null && Files.isSymbolicLink(f.toPath())) return;       // the text of whatever a link leads to is not read while the search is guarded (the link may lead to a private file)
             if (size == 0 || size > r.lim.contentMaxBytes || ARCHIVE.contains(ext(name)) || IMAGE.contains(ext(name)) || VIDEO.contains(ext(name)) || AUDIO.contains(ext(name))) return;
             try {
                 InputStream in = new java.io.FileInputStream(f);

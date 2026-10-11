@@ -1650,11 +1650,11 @@ public class RarReaderTest {
     File out = new File(tmp, "unknown-size.out");
     long wrote = ZipTool.extractTo(a, e, out);
     check("with room to spare an unknown-size entry still extracts fully (" + wrote + " bytes)", wrote == z.expected().length && out.length() == wrote);
-    long saved = ZipTool.unknownSizeReserve;
-    ZipTool.unknownSizeReserve = Long.MAX_VALUE / 2;
+    long saved = ZipTool.freeSpaceReserve;
+    ZipTool.freeSpaceReserve = Long.MAX_VALUE / 2;
     File out2 = new File(tmp, "unknown-size-2.out");
     String msg = null;
-    try { ZipTool.extractTo(a, e, out2); } catch (IOException ex) { msg = ex.getMessage(); } finally { ZipTool.unknownSizeReserve = saved; }
+    try { ZipTool.extractTo(a, e, out2); } catch (IOException ex) { msg = ex.getMessage(); } finally { ZipTool.freeSpaceReserve = saved; }
     check("with no room left it stops with a free-space message (" + msg + ")", msg != null && msg.contains("Not enough free space"));
     check("and leaves no partial file behind", !out2.exists() && !new File(tmp, ".unknown-size-2.out.part").exists());
   }

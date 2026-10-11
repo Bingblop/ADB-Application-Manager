@@ -56,7 +56,25 @@ public final class FontScan {
         public int maxVisited = 600000;
         public long deadlineMs;                      // absolute System.currentTimeMillis() cutoff
         public boolean hitLimit;                     // set when any limit stopped the scan early
-        int visited;
+        public Cancel cancel;                        // asked before every file; when it says yes the scan stops and {@link #cancelled} is set (null: cannot be cancelled)
+        public boolean cancelled;                    // set when {@link #cancel} stopped the scan (hitLimit is set too: the list is incomplete)
+        public int visited;                          // files and folders looked at so far
+    }
+
+    /** Asked by the walk before every file whether the scan was cancelled (the page left Settings, a newer search started). Must be cheap and thread-safe. */
+    public interface Cancel {
+        boolean isCancelled();
+    }
+
+    /** The clock is read once per this many files, so a folder of 100,000 files cannot run far past the deadline and the walk does not spend its time on the clock. */
+    static final int CLOCK_EVERY = 16;
+
+    /** True when the walk must stop: a limit was hit before, the scan was cancelled, or the deadline has passed (checked every {@link #CLOCK_EVERY} files, i.e. per file and not only per folder). Sets {@code hitLimit}. */
+    private static boolean timeUp(Limits lim) {
+        if (lim.hitLimit) return true;
+        if (lim.cancel != null && lim.cancel.isCancelled()) { lim.cancelled = true; lim.hitLimit = true; return true; }
+        if ((lim.visited & (CLOCK_EVERY - 1)) == 0 && System.currentTimeMillis() > lim.deadlineMs) lim.hitLimit = true;
+        return lim.hitLimit;
     }
 
     /** Told after each top-level folder of a storage root has been searched: how many are done of how many, which one, and how many fonts were found so far. */
@@ -106,8 +124,8 @@ public final class FontScan {
         if (len <= 0 || len > MAX_FONT_BYTES) return;
         String path = k.getAbsolutePath();
         if (seen.contains(path)) return;
-        Names names = readNames(k);
-        if (names == null) return;                          // a file called .ttf that is not a font
+        Names names = readNames(k, false);
+        if (names == null) return;                          // a file called .ttf that is not a font, or a collection (.ttc) saved under a .ttf name: the font setting cannot use it, so it is not offered
         seen.add(path);
         Entry e = new Entry();
         e.path = path;
@@ -126,18 +144,18 @@ public final class FontScan {
      * {@code total} were done before this root). Fonts lying directly in the root are added first. Returns how many top-level folders were gone through.
      */
     public static int walkRoot(File root, List<Entry> out, Set<String> seen, Limits lim, int doneBefore, int total, Progress progress) {
-        if (root == null || lim.hitLimit) return 0;
+        if (root == null || timeUp(lim)) return 0;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return 0; }
         File[] kids = root.listFiles();
         if (kids == null) return 0;
         for (File k : kids) {
-            if (lim.hitLimit) return 0;
+            if (timeUp(lim)) return 0;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return 0; }
             if (k.isFile()) addIfFont(k, out, seen);
         }
         int done = 0;
         for (File k : kids) {
-            if (lim.hitLimit) break;
+            if (timeUp(lim)) break;
             if (!k.isDirectory() || skipDir(k.getName())) continue;
             if (!isSymlink(k)) walk(k, 1, out, seen, lim);
             done++;
@@ -148,12 +166,12 @@ public final class FontScan {
 
     /** Walks {@code root} for fonts this app can read. Folders that can't be listed are skipped silently; symlinked folders are not followed (no loops). */
     public static void walk(File root, int depth, List<Entry> out, Set<String> seen, Limits lim) {
-        if (root == null || lim.hitLimit) return;
+        if (root == null || timeUp(lim)) return;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return; }
         File[] kids = root.listFiles();
         if (kids == null) return;
         for (File k : kids) {
-            if (lim.hitLimit) return;
+            if (timeUp(lim)) return;
             if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return; }
             if (k.isDirectory()) {
                 if (depth >= lim.maxDepth || skipDir(k.getName())) continue;
@@ -207,7 +225,10 @@ public final class FontScan {
     private static long ul32(byte[] b, int o) { return u32(b, o) & 0xFFFFFFFFL; }
 
     /** What the font at {@code f} says about itself, or null when it is not a TrueType / OpenType font (or is damaged). A collection answers for its first font. */
-    public static Names readNames(File f) {
+    public static Names readNames(File f) { return readNames(f, true); }
+
+    /** {@link #readNames(File)}; with {@code allowCollection} false a collection ("ttcf") is not a font either: the listing and {@link #copyChecked} then agree on what can be used. */
+    private static Names readNames(File f, boolean allowCollection) {
         RandomAccessFile r = null;
         try {
             r = new RandomAccessFile(f, "r");
@@ -217,6 +238,7 @@ public final class FontScan {
             r.readFully(head);
             long base = 0;
             if (u32(head, 0) == TAG_TTCF) {                                        // a collection: header, version, count, then the offset of each font
+                if (!allowCollection) return null;
                 byte[] ttc = new byte[16];
                 r.seek(0);
                 r.readFully(ttc);
@@ -289,32 +311,65 @@ public final class FontScan {
         return n;
     }
 
+    /** {@link #copyChecked(java.io.InputStream, File, long)} with the usual limit, {@link #READ_TIMEOUT_MS}. */
+    public static Names copyChecked(java.io.InputStream in, File dest) throws java.io.IOException {
+        return copyChecked(in, dest, READ_TIMEOUT_MS);
+    }
+
     /**
      * Copies a font from {@code in} to {@code dest} after checking it: at most {@link #MAX_FONT_BYTES}, a TrueType / OpenType font (not a
      * collection, which a page cannot use). Written to a ".part" file first, so a refused file never replaces a good one. Returns what the font
-     * says about itself; the exception message is fit to show to the user. {@code in} is not closed.
+     * says about itself; the exception message is fit to show to the user.
+     * <p>The whole copy has {@code timeoutMs}. A read() that never returns (a cloud provider that stopped answering) cannot be interrupted, so
+     * the copy runs on its own thread and this call gives up when the time is out: the ".part" file is deleted, {@code in} is closed from another
+     * thread (which usually frees the stuck read) and the exception says the file took too long. Otherwise {@code in} is not closed.
      */
-    public static Names copyChecked(java.io.InputStream in, File dest) throws java.io.IOException {
-        File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
-        java.io.OutputStream out = new java.io.FileOutputStream(tmp);
-        long total = 0;
-        boolean ok = false;
-        try {
-            byte[] buf = new byte[65536];
-            int n;
-            long deadline = System.currentTimeMillis() + READ_TIMEOUT_MS;
-            while ((n = in.read(buf)) > 0) {
-                total += n;
-                if (total > MAX_FONT_BYTES) throw new java.io.IOException("That file is too big to use as a font (the limit is 12 MB).");
-                if (System.currentTimeMillis() > deadline) throw new java.io.IOException("The file took too long to read.");
-                out.write(buf, 0, n);
+    public static Names copyChecked(final java.io.InputStream in, File dest, long timeoutMs) throws java.io.IOException {
+        final File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
+        final java.io.OutputStream out = new java.io.FileOutputStream(tmp);
+        final long[] total = new long[1];
+        final java.io.IOException[] failure = new java.io.IOException[1];
+        final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+        Thread worker = new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while (!cancelled.get() && (n = in.read(buf)) > 0) {
+                        if (cancelled.get()) break;
+                        total[0] += n;
+                        if (total[0] > MAX_FONT_BYTES) throw new java.io.IOException("That file is too big to use as a font (the limit is 12 MB).");
+                        out.write(buf, 0, n);
+                    }
+                } catch (java.io.IOException e) {
+                    failure[0] = e;
+                } catch (RuntimeException e) {
+                    failure[0] = new java.io.IOException(String.valueOf(e.getMessage()));
+                } finally {
+                    try { out.close(); } catch (Exception ignored) {}
+                }
             }
-            ok = true;
-        } finally {
-            try { out.close(); } catch (Exception ignored) {}
-            if (!ok) tmp.delete();
+        }, "font-copy");
+        worker.setDaemon(true);
+        worker.start();
+        try {
+            worker.join(Math.max(1, timeoutMs));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            cancelled.set(true);
+            tmp.delete();
+            closeInBackground(in);
+            throw new java.io.InterruptedIOException("The font was not read.");
         }
-        if (total >= 4) {
+        if (worker.isAlive()) {                                                       // still stuck in read(): leave it behind, nothing of it stays on disk
+            cancelled.set(true);
+            worker.interrupt();
+            tmp.delete();                                                             // the thread may still hold the open file; it writes nothing more and never touches the name again
+            closeInBackground(in);
+            throw new java.io.IOException("The file took too long to read.");
+        }
+        if (failure[0] != null) { tmp.delete(); throw failure[0]; }
+        if (total[0] >= 4) {
             byte[] h = new byte[4];
             RandomAccessFile r = new RandomAccessFile(tmp, "r");
             try { r.readFully(h); } finally { r.close(); }
@@ -327,6 +382,14 @@ public final class FontScan {
             if (!tmp.renameTo(dest)) { tmp.delete(); throw new java.io.IOException("Could not store the font."); }
         }
         return names;
+    }
+
+    private static void closeInBackground(final java.io.Closeable c) {
+        Thread t = new Thread(new Runnable() {
+            @Override public void run() { try { c.close(); } catch (Exception ignored) {} }
+        }, "font-close");
+        t.setDaemon(true);
+        t.start();
     }
 
     /** A name that is safe to use as a CSS font-family and in a file name: letters, digits, space, dash. Never empty. */

@@ -17,6 +17,7 @@ with another UI stack in a pull request; add features to it (see "Pull requests"
 | Build and sign the APK | `./build.sh` | needs `ANDROID_JAR` (a platform `android.jar`; the script looks for android-34, CI and the release use platform 34 with build-tools 35), `aapt2`, `d8` (or `D8_JAR` pointing to an r8 jar), `javac` or `ecj`, `python3`, `zipalign`, `apksigner` and `keytool` on `PATH`; output `bin/ADB_Application_Manager_Pro.apk`. Termux: `pkg install aapt2 apksigner d8 ecj zipalign openjdk-17 python` |
 | Java suites | `cd tests && ORG_JSON_JAR=<json.jar> node java/run.js [suite ...]` | `node java/run.js --list` names every suite and what it needs; a missing tool is a skip, not a failure |
 | UI scripts | `cd tests && node run.js [tNN ...]` | headless Chromium against the real `assets/index.html` with a mock Android bridge; `node run.js --update tNN` re-records `tests/ui/expected/tNN.txt` — review the diff before committing it |
+| Doc shell blocks | `node tests/docs/check-shell-blocks.js` | `bash -n` on every fenced sh, bash or shell block in `*.md` and `docs/`; an unquoted `<placeholder>` fails (use a concrete value), `<!-- no-shell-check -->` above a fence opts out; `--list`, `--self-test` |
 | Help Guide | `node docs/guide/build.js` | rebuild when `docs/guide` changes |
 
 CI (`.github/workflows/`) runs the build, the Java suites and the UI scripts on every pull request. Chain commands with `&&` so a failed build

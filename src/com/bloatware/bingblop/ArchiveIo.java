@@ -49,6 +49,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.compress.archivers.tar.TarUtils;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -330,13 +331,40 @@ public final class ArchiveIo {
         return new SingleReader(f, format);
     }
 
+    /** The longest GNU long name / link name record we read into memory (a path is at most 4096 bytes on Linux). */
+    static final long MAX_LONGNAME_RECORD = 1L << 20;
+    /** The longest pax extended header record (path, xattrs, a sparse map ...) we read into memory; real ones are a few hundred bytes. */
+    static final long MAX_PAX_RECORD = 8L << 20;
+
+    /**
+     * A tar reader that looks at every header block before the library acts on it: a GNU long name (L, K) or pax (x, g) record is read into
+     * memory whole, sized by the number the header declares, so a 1.5 MB tar.gz declaring 1.5 GiB of header ran the phone out of memory.
+     * Such a record over a sane cap is refused as an IOException; nothing is allocated by the declared size.
+     */
+    private static final class GuardedTarInputStream extends TarArchiveInputStream {
+        GuardedTarInputStream(InputStream in) { super(in, "UTF-8"); }
+        @Override protected byte[] readRecord() throws IOException {
+            byte[] rec = super.readRecord();
+            if (rec != null && rec.length >= 157) {
+                byte type = rec[156];
+                long cap = type == 'L' || type == 'K' ? MAX_LONGNAME_RECORD : type == 'x' || type == 'g' ? MAX_PAX_RECORD : -1;
+                if (cap >= 0) {
+                    long size;
+                    try { size = TarUtils.parseOctalOrBinary(rec, 124, 12); } catch (IllegalArgumentException e) { size = -1; }   // not a number: the library reports it
+                    if (size > cap) throw new IOException("damaged or hostile archive: header of " + size + " bytes");
+                }
+            }
+            return rec;
+        }
+    }
+
     private static final class TarReader extends Reader {
         private final TarArchiveInputStream in;
         TarReader(File f, String comp) throws IOException {
             InputStream raw = new FileInputStream(f);
             try {
                 InputStream chain = comp == null ? new BufferedInputStream(raw, BUF) : decompress(comp, raw);
-                in = new TarArchiveInputStream(chain, "UTF-8");
+                in = new GuardedTarInputStream(chain);
             } catch (IOException e) { closeQuietly(raw); throw e; } catch (RuntimeException e) { closeQuietly(raw); throw new IOException(e); }
         }
         boolean next() throws IOException {
