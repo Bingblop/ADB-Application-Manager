@@ -182,7 +182,21 @@ data class PatchBundleInfo(
     val version: String,
     val author: String,
     val totalPatches: Int,
-    val supportedPackages: List<String>
+    val supportedPackages: List<String>,
+    val sourceUrl: String = "",
+    val sha256: String = "",
+    val isCustom: Boolean = false,
+    val license: String = "GPL-3.0",
+    val description: String = ""
+)
+
+data class PatchOption(
+    val key: String,
+    val title: String,
+    val description: String,
+    val type: String = "boolean", // "boolean", "string", "choice"
+    val currentValue: String,
+    val choices: List<String> = emptyList()
 )
 
 data class MorphePatchItem(
@@ -192,7 +206,12 @@ data class MorphePatchItem(
     val category: String,
     val targetPackage: String,
     val isRecommended: Boolean = true,
-    val isEnabled: Boolean = false
+    val isEnabled: Boolean = false,
+    val version: String = "1.0.0",
+    val requiresMicroG: Boolean = false,
+    val conflictsWith: List<String> = emptyList(),
+    val options: List<PatchOption> = emptyList(),
+    val isExperimental: Boolean = false
 )
 
 enum class PatchJobStatus {
@@ -201,6 +220,7 @@ enum class PatchJobStatus {
     DECOMPILING,
     PATCHING,
     REPACKAGING,
+    ALIGNING,
     SIGNING,
     COMPLETED,
     FAILED
@@ -212,16 +232,35 @@ data class MorpheJobState(
     val targetPackage: String = "",
     val progress: Float = 0f,
     val currentStep: String = "",
+    val currentStageIndex: Int = 0,
+    val totalStages: Int = 6,
     val logs: List<String> = emptyList(),
-    val outputApkPath: String = ""
+    val outputApkPath: String = "",
+    val startedAtMillis: Long = 0L,
+    val completedAtMillis: Long = 0L,
+    val errorMessage: String? = null
 )
 
 data class SigningKeystoreInfo(
     val alias: String,
     val subject: String,
     val sha256Fingerprint: String,
+    val sha1Fingerprint: String = "",
+    val md5Fingerprint: String = "",
     val algorithm: String = "RSA 2048-bit (SHA256withRSA)",
     val isHardwareBacked: Boolean = true,
     val validityYears: Int = 25,
-    val certificateBase64: String = ""
+    val certificateBase64: String = "",
+    val isDefault: Boolean = false,
+    val keystorePath: String = ""
+)
+
+data class ApkSignatureComparison(
+    val stockAppLabel: String,
+    val stockPackage: String,
+    val stockCertSha256: String,
+    val patcherCertSha256: String,
+    val isMatch: Boolean,
+    val needsUninstallFirst: Boolean,
+    val recommendedAction: String
 )
