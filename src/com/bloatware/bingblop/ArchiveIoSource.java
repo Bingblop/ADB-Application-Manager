@@ -25,6 +25,8 @@ final class ArchiveIoSource implements ZipTool.Source {
     static ZipTool.Archive open(File f, String format, char[] password) throws IOException {
         try {
             ArchiveIo.Info info = ArchiveIo.list(f, format, password);
+            // never show (or extract, or delete after extracting) part of an archive as if it were the whole of it
+            if (info.truncated) throw new IOException("This archive has too many entries (more than " + ArchiveIo.MAX_ITEMS + " files, or " + (ArchiveIo.MAX_NAME_BYTES >> 20) + " MB of names), so it is not opened");
             List<ZipTool.Entry> entries = new ArrayList<ZipTool.Entry>(info.items.size());
             for (ArchiveIo.Item it : info.items) entries.add(toEntry(it));
             ZipTool.Archive a = new ZipTool.Archive(f, f.length(), f.lastModified(), entries, info.format, new ArchiveIoSource(f, info.format), password);
