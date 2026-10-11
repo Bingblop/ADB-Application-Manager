@@ -1,1 +1,0 @@
-{"retcode":0,"app_update_response":[{"label":"Example App","package_name":"com.example.app","version_code":103,"version_name":"1.0.3","asset":{"type":"APK","url":"http://{{HOST}}/files/example-1.0.3.apk","size":"4096","file_sha256":"not-a-hash"},"native_code":[]}]}
