@@ -182,7 +182,12 @@ public final class MorpheLibrary {
         }
     }
 
-    /** Every patched APK, newest first. A folder whose APK is gone is dropped from the list (and cleaned). */
+    /**
+     * Every patched APK, newest first. An entry whose APK was kept in the library's own folder and is gone is dropped (and cleaned). One whose APK
+     * is kept outside (Downloads/Morphe Patcher) stays in the list, marked {@code "missing": true}, when the file cannot be seen: it may only be
+     * out of reach (storage access revoked, the card not mounted) and would come back, and deleting the entry would delete its log and its record
+     * for good. The person removes such an entry with Delete.
+     */
     public synchronized JSONArray list() {
         List<JSONObject> all = new ArrayList<JSONObject>();
         File[] kids = dir.listFiles();
@@ -191,7 +196,12 @@ public final class MorpheLibrary {
             JSONObject m = read(new File(k, "meta.json"));
             if (m == null) continue;
             String file = m.optString("file");
-            if (file.isEmpty() || !new File(file).exists()) { deleteTree(k); continue; }
+            if (file.isEmpty()) { deleteTree(k); continue; }
+            if (!new File(file).exists()) {
+                boolean ours = new File(file).getAbsolutePath().startsWith(k.getAbsolutePath() + File.separator);
+                if (ours) { deleteTree(k); continue; }
+                try { m.put("missing", true); } catch (JSONException ignored) {}
+            }
             all.add(m);
         }
         Collections.sort(all, new Comparator<JSONObject>() {

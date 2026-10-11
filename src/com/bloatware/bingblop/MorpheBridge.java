@@ -187,7 +187,7 @@ public final class MorpheBridge {
                 if (MorpheJobs.validJobId(job) && job.equals(slot.current())) runner.cancel(job);   // only the run that is going; a stale or foreign id changes nothing
                 return null;
             }
-            case "patchedList": return new JSONObject().put("items", library.list());
+            case "patchedList": adoptOrphans(); return new JSONObject().put("items", library.list());
             case "patchedDelete": library.delete(a.optString("id")); return null;
             case "patchedExport": return patchedExport(a.optString("id"));
             case "patchedLog": return new JSONObject().put("text", library.readLog(a.optString("id"), 400 * 1024));
@@ -499,6 +499,7 @@ public final class MorpheBridge {
         try {
             deleteTree(dir);
             dir.mkdirs();
+            try { writeText(new File(dir, "request.json"), a.toString()); } catch (IOException ignored) {}   // lets a later start of the app file the result if this process is killed
             step(jobId, "Preparing", "RUNNING");
             approveBundles(a, jobId);
             File input = prepareInput(a, dir, jobId);
@@ -561,6 +562,21 @@ public final class MorpheBridge {
             try { ev(jobId, new JSONObject().put("t", "result").put("result", result)); } catch (JSONException ignored) {}
             if (a.optBoolean("cleanUp", true)) deleteTree(dir);
         }
+    }
+
+    /**
+     * Files the results of runs that finished while the app was not running (the engine is a process of its own), and removes the folders of runs
+     * that failed or never answered. The run that is going now is left alone.
+     */
+    private synchronized void adoptOrphans() {
+        MorpheOrphans.Scan scan = MorpheOrphans.scan(new File(base, "jobs"), slot.current(), System.currentTimeMillis(), 6L * 60 * 60 * 1000);
+        for (MorpheOrphans.Orphan o : scan.finished) {
+            try {
+                save(o.request, o.apk, o.dir, o.result);
+                deleteTree(o.dir);
+            } catch (Throwable t) { /* stays where it is; the next list tries again */ }
+        }
+        for (File d : scan.debris) deleteTree(d);
     }
 
     private File prepareInput(JSONObject a, File dir, String jobId) throws Exception {
