@@ -40,6 +40,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.compress.MemoryLimitException;
 import org.apache.commons.compress.PasswordRequiredException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
@@ -75,17 +76,29 @@ import io.airlift.compress.zstd.ZstdOutputStream;
  * <p>Names are given as they are stored (forward slashes, folders end with '/'), also when they are absolute or have ".." segments: the caller
  * decides what to extract. Nothing here writes outside the archive file that is asked for (and its ".part" file).
  *
- * <p>Limits worth knowing: a listing stops at {@link #MAX_ITEMS} items ({@link Info#truncated}); the 7z reader refuses a coder that needs more than
- * 256 MiB; the writers cap the LZMA dictionary at 8 MiB (7z level 0 stores without compression); a 7z password encrypts the content and the header
+ * <p>Limits worth knowing: a listing stops at {@link #MAX_ITEMS} items or {@link #MAX_NAME_BYTES} of names ({@link Info#truncated}; the file
+ * manager refuses such an archive in words rather than show part of it); the 7z reader refuses a header or a coder that needs more than
+ * 100 MiB; the writers cap the LZMA dictionary at 8 MiB (7z level 0 stores without compression); a 7z password encrypts the content and the header
  * (file names too) with AES-256, the way 7-Zip's "encrypt file names" does.
  */
 public final class ArchiveIo {
     private ArchiveIo() {}
 
-    /** A listing never holds more items than this. */
-    public static final int MAX_ITEMS = 2000000;
+    /**
+     * A listing never holds more items than this, nor more than {@link #MAX_NAME_BYTES} of names. Each listed entry is held twice (here and in the
+     * file manager's entry list), about 250 bytes plus its name: 500,000 short names took 116 MB, 500,000 names of 100 characters 200 MB, and
+     * with the old cap of 2,000,000 a 14 MB tar.gz of empty files ran a 256 MB heap out of memory. The zip reader has the same cap.
+     */
+    public static final int MAX_ITEMS = 500000;
+    /** The names of a listing, in UTF-8 bytes (a long name record may be 1 MiB, and compresses to nothing when repeated). */
+    public static final long MAX_NAME_BYTES = 40L << 20;
     private static final int BUF = 64 * 1024;
     private static final int MEM_LIMIT_KB = 256 * 1024;
+    /**
+     * What the 7z reader may need: its header (the library estimates about 208 bytes per entry, so this is about {@link #MAX_ITEMS} entries; it
+     * refuses a bigger header before reading it, where a 7z of 1,000,000 empty files, 300 KB on disk, ran a 256 MB heap out of memory) and a coder.
+     */
+    private static final int MEM_LIMIT_7Z_KB = 100 * 1024;
     private static final int LZMA_DICT_CAP = 8 * 1024 * 1024;
     private static final int S_IFMT = 0170000, S_IFLNK = 0120000, S_IFDIR = 040000, S_IFREG = 0100000;
 
@@ -121,7 +134,7 @@ public final class ArchiveIo {
         /** The names themselves are encrypted (7z). */
         public boolean headerEncrypted;
         public boolean anyEncrypted;
-        /** The listing stopped at {@link #MAX_ITEMS}. */
+        /** The listing stopped at {@link #MAX_ITEMS} items or {@link #MAX_NAME_BYTES} of names: it is not the whole archive. */
         public boolean truncated;
         /** Item sizes come from a 32 bit field and may be too small by a multiple of 4 GiB (a big .gz). */
         public boolean sizesApprox;
@@ -429,11 +442,16 @@ public final class ArchiveIo {
             if (hdrEnc && pw == null) throw new PasswordException(false);
             SevenZFile s;
             try {
-                SevenZFile.Builder b = SevenZFile.builder().setFile(f).setMaxMemoryLimitKb(MEM_LIMIT_KB).setUseDefaultNameForUnnamedEntries(true);
+                SevenZFile.Builder b = SevenZFile.builder().setFile(f).setMaxMemoryLimitKb(MEM_LIMIT_7Z_KB).setUseDefaultNameForUnnamedEntries(true);
                 if (pw != null) b.setPassword(pw);
                 s = b.get();
             } catch (PasswordRequiredException e) {
                 PasswordException p = new PasswordException(false); p.initCause(e); throw p;
+            } catch (MemoryLimitException e) {
+                if (hdrEnc) { PasswordException p = new PasswordException(true); p.initCause(e); throw p; }
+                IOException io = new IOException("This 7z archive is too big to open here: it has too many entries (more than " + MAX_ITEMS + " files) or a coder that needs more than "
+                    + (MEM_LIMIT_7Z_KB >> 10) + " MB of memory (it needs " + (e.getMemoryNeededInKb() >> 10) + " MB)");
+                io.initCause(e); throw io;
             } catch (IOException e) {
                 if (hdrEnc) { PasswordException p = new PasswordException(true); p.initCause(e); throw p; }
                 throw e;
@@ -965,16 +983,18 @@ public final class ArchiveIo {
                 SevenZReader z = (SevenZReader) r;
                 info.headerEncrypted = z.hdrEnc;
                 info.anyEncrypted = z.hdrEnc || z.anyEnc;
+                long names = 0;
                 for (SevenZArchiveEntry e : z.sz.getEntries()) {
                     if (e.isAntiItem()) continue;
-                    if (info.items.size() >= MAX_ITEMS) { info.truncated = true; break; }
                     Item it = z.toItem(e);
+                    if (info.items.size() >= MAX_ITEMS || (names += utf8Len(it.name)) > MAX_NAME_BYTES) { info.truncated = true; break; }
                     info.items.add(it);
                 }
                 info.solid = z.solid();
             } else {
+                long names = 0;
                 while (r.next()) {
-                    if (info.items.size() >= MAX_ITEMS) { info.truncated = true; break; }
+                    if (info.items.size() >= MAX_ITEMS || (names += utf8Len(r.item.name)) > MAX_NAME_BYTES) { info.truncated = true; break; }
                     info.items.add(r.item);
                 }
                 info.solid = isTar(format) && !"tar".equals(format);
@@ -986,6 +1006,13 @@ public final class ArchiveIo {
             }
             return info;
         } finally { closeQuietly(r); }
+    }
+
+    private static long utf8Len(String s) {
+        if (s == null) return 0;
+        long n = 0;
+        for (int i = 0; i < s.length(); i++) { char c = s.charAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : 3; }     // a surrogate pair counts 3 + 3 for its 4 bytes: over-counting is safe for a budget
+        return n;
     }
 
     /** One pass over the entries in archive order; the data stream is valid during the call only. */
