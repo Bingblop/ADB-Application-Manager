@@ -357,6 +357,10 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Font search, leaving Settings: in Settings, in the font setting, start the font search on a phone with a lot of storage, then leave Settings (back to the Apps tab) before it ends. No message appears and the phone is not left busy: open Settings again, the list is empty and the search button works at once. Start a new search: it runs normally. Fonts saved as `.ttc` (or a `.ttc` renamed to `.ttf`) are not listed.
 - [ ] Apps, Refresh button: in the Apps tab, the round Refresh button is the last control of the search bar. Install or remove an app with another tool, tap Refresh: the list shows the change, the button spins while it loads and the search text, sort and scroll position stay. Tap it twice quickly: it loads once. With the phone's animations turned off (Android's reduce motion), it does not spin.
 
+## 22. ADB Console result line
+
+- [ ] Command-Line Interface > **ADB Console**: run `pm list packages -3`: under the list one plain line reads "Finished. No error text in the output." (no exit number, no "success"). Run `cat /nonexistent/file`: the line still reads "Finished" if the phone prints no error words, which is expected. Run `pm install /sdcard/nonexistent.apk` or `am start -n no.such/.Activity`: the output starts with `Error:` or `Failure [` and the line reads "Looks like a failure: the output reports an error." in bold with a red bar. Run `sleep 30`: after the mode's time limit the line reads "Looks like a failure: the command timed out.". In ADB or Wireless mode run `adb devices` while a device shows `unauthorized`, or a command your mode may not run (for example `settings put secure x 1` without WRITE_SECURE_SETTINGS): "permission denied". Check it is readable in a light and a dark theme, and that Copy holds the line.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

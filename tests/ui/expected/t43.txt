@@ -32,7 +32,7 @@
     a denied prompt does not start anything: true
 15. start failure leaves Rish off and the button usable: true "Rish mode"
 16. root shell labelled and # prompt: true {"title":"Rish shell • root (uid 0)","pl":"husky:/ #"}
-    4 MB streamed in under 3 s stays responsive and bounded: true len=776743
-    older output trimmed with a marker, newest kept, scrolled to the end: true {"head":"[older output trimmed]","top":455633,"max":455633}
+    4 MB streamed in under 3 s stays responsive and bounded: true len=776782
+    older output trimmed with a marker, newest kept, scrolled to the end: true {"head":"[older output trimmed]","top":455651,"max":455651}
 17. long prompt shortened from the left: true "…example.verylongpackagename/files $"
 errors: []

@@ -2594,6 +2594,20 @@
             font-style: italic;
         }
 
+        /* The line under a command in the ADB Console (termResultHtml). The words carry the meaning. A failure is main-text colour (readable in every theme, which the
+           red status colour is not on a light page), bold, with a bar in the status colour in front. */
+        .term-result {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .term-result.is-fail {
+            color: var(--text-main);
+            font-weight: 700;
+            border-left: 3px solid var(--status-bloat);
+            padding-left: 6px;
+        }
+
         .rish-promptline {
             margin-top: 10px;
             font-family: monospace;
@@ -24590,8 +24604,7 @@ Type any command below (e.g. pm list packages -d)
                 // honestly (it used to hardcode success:true), and the output is already right here in the
                 // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
                 // finding #4 / nuisance A).
-                const res = window.AndroidBridge.executeShell(cmd) || '';
-                term.appendChild(document.createTextNode(res));
+                termAppendOutput(term, window.AndroidBridge.executeShell(cmd) || '');
             }
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
@@ -24599,6 +24612,33 @@ Type any command below (e.g. pm list packages -d)
 
         let termShellRun = null;       // the command running in the normal terminal: { id, cmd }
         let termShellSeq = 0;
+
+        // The result line under a command's output. The bridge hands the page one merged text (stdout and stderr together) and no exit code,
+        // so this reads the text for the failure signs of the Kotlin app's ShellSafety.parseShellOutcome (its rules, case-sensitive, on the
+        // trimmed text): it starts with "Error:" or "Failure [", or holds "adb: error:", "[Process timed out", "SecurityException",
+        // "Permission Denial" or "unauthorized". Anything else is NOT called a success - only "no error text". kind then says which sort,
+        // as ShellOutcome.Failure does (isTimeout: "timed out"; isPermissionDenied: the three permission words; both ignoring case).
+        const TERM_FAIL_RE = /^(?:Error:|Failure \[)|adb: error:|\[Process timed out|SecurityException|Permission Denial|unauthorized/;      // ^ = the start of the trimmed text (no m flag)
+        function termClassifyOutput(out) {
+            const t = String(out == null ? '' : out).trim();
+            if (!TERM_FAIL_RE.test(t)) return { failed: false, kind: '' };
+            return { failed: true, kind: /timed out/i.test(t) ? 'timeout' : /SecurityException|Permission Denial|unauthorized/i.test(t) ? 'permission' : 'error' };
+        }
+
+        function termResultHtml(out) {
+            const c = termClassifyOutput(out);
+            const msg = !c.failed ? txT('Finished. No error text in the output.')
+                : c.kind === 'timeout' ? txT('Looks like a failure: the command timed out.')
+                : c.kind === 'permission' ? txT('Looks like a failure: permission denied.')
+                : txT('Looks like a failure: the output reports an error.');
+            return '<span class="term-result' + (c.failed ? ' is-fail' : '') + '" role="status">' + escapeHtml(msg) + '</span>';
+        }
+
+        // A command's output, then the result line on a line of its own.
+        function termAppendOutput(term, res) {
+            term.appendChild(document.createTextNode(res));
+            term.insertAdjacentHTML('beforeend', (res && !res.endsWith('\n') ? '\n' : '') + termResultHtml(res) + '\n');
+        }
 
         // ---------- ADB Console: the same Coding Agent picked in the Terminal, for syntax/code help here too ----------
         // A smaller, one-shot cousin of the Terminal's own agent engine: no file reads or edits, at most one proposed
@@ -24717,8 +24757,7 @@ Type any command below (e.g. pm list packages -d)
             const term = document.getElementById('termOutput');
             const wait = document.getElementById('termWait');
             if (wait) wait.remove();
-            const res = String(out || '');
-            term.appendChild(document.createTextNode(res));
+            termAppendOutput(term, String(out || ''));
             // no result modal (see runTerminalCmd) - but still worth a toast if the user has since left the tab,
             // since then the output appearing isn't something they're looking at right now.
             if (currentViewName() !== 'terminal') showToast('Command finished: see the ADB Console');
