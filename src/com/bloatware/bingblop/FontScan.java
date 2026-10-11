@@ -124,8 +124,8 @@ public final class FontScan {
         if (len <= 0 || len > MAX_FONT_BYTES) return;
         String path = k.getAbsolutePath();
         if (seen.contains(path)) return;
-        Names names = readNames(k);
-        if (names == null) return;                          // a file called .ttf that is not a font
+        Names names = readNames(k, false);
+        if (names == null) return;                          // a file called .ttf that is not a font, or a collection (.ttc) saved under a .ttf name: the font setting cannot use it, so it is not offered
         seen.add(path);
         Entry e = new Entry();
         e.path = path;
@@ -225,7 +225,10 @@ public final class FontScan {
     private static long ul32(byte[] b, int o) { return u32(b, o) & 0xFFFFFFFFL; }
 
     /** What the font at {@code f} says about itself, or null when it is not a TrueType / OpenType font (or is damaged). A collection answers for its first font. */
-    public static Names readNames(File f) {
+    public static Names readNames(File f) { return readNames(f, true); }
+
+    /** {@link #readNames(File)}; with {@code allowCollection} false a collection ("ttcf") is not a font either: the listing and {@link #copyChecked} then agree on what can be used. */
+    private static Names readNames(File f, boolean allowCollection) {
         RandomAccessFile r = null;
         try {
             r = new RandomAccessFile(f, "r");
@@ -235,6 +238,7 @@ public final class FontScan {
             r.readFully(head);
             long base = 0;
             if (u32(head, 0) == TAG_TTCF) {                                        // a collection: header, version, count, then the offset of each font
+                if (!allowCollection) return null;
                 byte[] ttc = new byte[16];
                 r.seek(0);
                 r.readFully(ttc);
