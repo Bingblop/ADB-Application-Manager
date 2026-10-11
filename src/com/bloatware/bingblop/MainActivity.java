@@ -625,7 +625,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (webView != null && live.now()) {
+                if (!activityDestroyed && webView != null && live.now()) {      // checked here, on the UI thread: onDestroy may have run since the script was queued
                     webView.evaluateJavascript(script, null);
                 }
             }
@@ -636,7 +636,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (webView != null) {
+                if (!activityDestroyed && webView != null) {      // checked here, on the UI thread: onDestroy may have run since the script was queued
                     webView.evaluateJavascript(script, null);
                 }
             }

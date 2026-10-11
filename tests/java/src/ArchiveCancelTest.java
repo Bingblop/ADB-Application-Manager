@@ -392,6 +392,13 @@ public class ArchiveCancelTest {
                 any != null && any.contains("if (job.cancel || activityDestroyed) return false;") && any.indexOf("if (activityDestroyed) return;") > 0
                 && any.indexOf("if (activityDestroyed) return;") < any.indexOf("window.onArchiveOpened"), null);
         check("source: the progress callback to the page is a no-op once the activity is destroyed", m.contains("private void notifyArchiveProgress(String msg) {\n        if (activityDestroyed) return;"), null);
+        String nj = bodyOf(m, "private void notifyJs(final String script)");
+        String nji = bodyOf(m, "private void notifyJsIf(final String script, final Live live)");
+        for (String[] c : new String[][] {{"notifyJs", nj == null ? null : nj}, {"notifyJsIf", nji}}) {
+            String b = c[1];
+            int run = b == null ? -1 : b.indexOf("public void run()"), flag = b == null ? -1 : b.indexOf("!activityDestroyed"), eval = b == null ? -1 : b.indexOf("evaluateJavascript");
+            check("source: " + c[0] + " checks activityDestroyed inside the UI-thread runnable, before it calls the page (onDestroy may run between queueing and running)", run > 0 && flag > run && eval > flag, null);
+        }
         check("source: a fast format is still answered in the call (archiveFor then archiveOpenJson)", any != null && any.indexOf("archiveOpenJson(a, p).toString()") > 0, null);
         check("source: archiveOpen and archiveOpen2 both go through it", m.contains("return archiveOpenAny(path, null);") && m.contains("return archiveOpenAny(path, password == null"), null);
         String cancel = bodyOf(m, "public void archiveOpenCancel()");
