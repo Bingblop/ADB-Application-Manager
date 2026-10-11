@@ -2738,14 +2738,19 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                // One file per item, so two installs started back to back can't overwrite each other's download
-                File apk = new File(new File(getCacheDir(), "updates"), "store-" + Integer.toHexString(key.hashCode()) + ".apk");
+                File apk = null;
                 boolean standard = "standard".equals(resolveExecMode());
                 try {
-                    apk.getParentFile().mkdirs();
+                    // One file of its own for every call, never derived from the key (the page chooses the key, and two keys can share a hash code): the file
+                    // the user is asked about is the file that is installed, and no other request can write into it in between
+                    File dir = new File(getCacheDir(), "updates");
+                    dir.mkdirs();
+                    File[] old = dir.listFiles();
+                    if (old != null) for (File f : old) if (f.getName().startsWith("store-") && (f.getName().endsWith(".apk") || f.getName().endsWith(".apk.part")) && f.lastModified() < System.currentTimeMillis() - 24L * 3600 * 1000) f.delete();
+                    apk = File.createTempFile("store-", ".apk", dir);
                     final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
                     storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
-                    UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
+                    final String finalUrl = UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
                             storeInstallProgress(key, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
@@ -2768,6 +2773,18 @@ public class MainActivity extends Activity {
                         launchSystemInstaller(apk);
                         storeInstallProgress(key, "opened", 100, "Confirm the install of " + name + ".");
                     } else {
+                        // A privileged install has no system installer in front of it, and the address, package and hash all come from the page:
+                        // the user is asked here, with what was read from the file itself.
+                        storeInstallProgress(key, "confirming", 100, "Waiting for your OK to install " + name + "…");
+                        String installedVersion = null;
+                        try {
+                            PackageInfo cur = getPackageManager().getPackageInfo(archive.packageName, 0);
+                            installedVersion = cur.versionName == null ? "" : cur.versionName;
+                        } catch (PackageManager.NameNotFoundException notInstalled) { /* a new app */ }
+                        boolean hashChecked = InstallGuards.hasPublishedHash(sha256) && InstallGuards.isSha256(InstallGuards.normalize(sha256));
+                        if (!confirmPrivilegedInstall(InstallConfirm.message(name, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl), InstallConfirm.hostOf(apkUrl), installedVersion, hashChecked))) {
+                            throw new IllegalStateException("Install cancelled.");
+                        }
                         storeInstallProgress(key, "installing", 100, "Installing " + name + "…");
                         String out = installApk(apk);
                         if (out != null && out.contains("Success")) {
@@ -2781,11 +2798,85 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard) apk.delete();
+                    if (!standard && apk != null) apk.delete();
                     storeInstalling.remove(key);
                 }
             }
         });
+    }
+
+    /**
+     * Asks, in a native dialog the page cannot press, whether to go on with a privileged install. Blocks the calling (background) thread until the
+     * user answers; no answer in two minutes, or the screen closing, is a no.
+     */
+    private boolean confirmPrivilegedInstall(final String message) {
+        final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
+        final boolean[] yes = { false };
+        // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
+        final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine = new java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog>();
+        try {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (isFinishing() || isDestroyed()) { answered.countDown(); return; }
+                    android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
+                    b.setTitle(InstallConfirm.title());
+                    b.setMessage(message);
+                    b.setCancelable(true);
+                    b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; }
+                    });
+                    b.setNegativeButton("Cancel", null);
+                    // Any way the dialog goes away (a button, Back, a tap outside, a timeout, the screen closing) ends the wait; only "Install" says yes.
+                    b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(android.content.DialogInterface d) {
+                            installConfirmDialogs.remove(d);
+                            answered.countDown();
+                        }
+                    });
+                    android.app.AlertDialog dlg = b.create();
+                    mine.set(dlg);
+                    installConfirmDialogs.add(dlg);
+                    dlg.show();
+                }
+            });
+            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
+                dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
+                return false;
+            }
+        } catch (InterruptedException e) {
+            dismissInstallConfirm(mine);
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (RuntimeException e) {
+            return false;
+        }
+        return yes[0];
+    }
+
+    /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
+    private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
+
+    private void dismissInstallConfirm(final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine) {
+        try {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    android.app.AlertDialog d = mine.get();
+                    if (d != null) { installConfirmDialogs.remove(d); if (d.isShowing()) d.dismiss(); }
+                }
+            });
+        } catch (RuntimeException ignored) { /* the screen is already gone */ }
+    }
+
+    /** The screen is closing: every install question still open is closed with it (each waiting install then reads that as no). */
+    private void dismissAllInstallConfirms() {
+        for (android.content.DialogInterface d : new java.util.ArrayList<android.content.DialogInterface>(installConfirmDialogs)) {
+            try { d.dismiss(); } catch (Throwable ignored) {}
+        }
+        installConfirmDialogs.clear();
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
@@ -15218,6 +15309,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
+        dismissAllInstallConfirms();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.
