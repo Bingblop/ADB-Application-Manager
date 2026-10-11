@@ -69,5 +69,9 @@ ok   the line is translated (German)
 ok   left-to-right: the failure bar is on the left
 ok   right-to-left (Arabic): the bar and its gap are on the right, in front of the translated words
 ok   without executeShellAsync the same line follows the output
+ok   Rish mode is on and a command goes to the Rish shell, not to executeShellAsync
+ok   Rish mode: the command output is shown and no result line is added (its persistent shell keeps its own notes)
+ok   Rish mode: a non-zero exit still gets its own [exit 1] note, and still no result line
+ok   after leaving Rish mode a normal command gets the result line again
 errors: []
 all passed

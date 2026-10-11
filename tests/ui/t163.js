@@ -1,11 +1,12 @@
-// ADB Console: the result line under every command's output. The Kotlin app shows `SUCCESS (0)` / `EXIT n` from ShellSafety.parseShellOutcome; the page gets one merged
+// ADB Console: the result line under the output of a command run in the normal console (not Rish mode). The Kotlin app shows `SUCCESS (0)` / `EXIT n` from ShellSafety.parseShellOutcome; the page gets one merged
 // text from the bridge and no exit code (MainActivity.executeShell returns a String), so the line here comes from the same failure signs read out of the text and never
 // shows an exit number or the word success. This script checks:
 //   - the pure classifier termClassifyOutput on ordinary, edge and hostile input (the exact rules: see the comment above it in assets/index.html;
 //     they are ShellSafety.kt's plus the Java backend's ShellOutcome.backendFailed: a leading error: or adb: device , ignoring case),
 //   - what the page draws for an async answer (onShellDone) and for the old synchronous bridge call: the words, the order, a line of its own, role="status",
 //   - that a stale answer and the Trim Caches answer get no result line, that the text is data-safe (no markup from the output), and that Copy holds the line,
-//   - that the failure line is readable (colour and contrast) in every theme, dark and light, and that it is translated.
+//   - that the failure line is readable (colour and contrast) in every theme, dark and light, and that it is translated,
+//   - that Rish mode (a persistent Shizuku shell, its own path through rishSubmit / onRishDone) gets no result line and keeps its own `[exit N]` note.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -23,6 +24,15 @@ const { chromium, PAGE } = require('./lib/pw');
         loadSetting() { return ''; }, saveSetting() {}, copyToClipboard(t) { window.__copied.push(t); },
       };
       if (m === 'async') base.executeShellAsync = (id, cmd) => { window.__shell.push({ id, cmd }); return 'started'; };
+      else if (m === 'rish') {
+        base.executeShellAsync = (id, cmd) => { window.__shell.push({ id, cmd }); return 'started'; };
+        base.rishStart = () => { setTimeout(() => window.onRishStarted({ ok: true, reused: false, uid: 2000, host: 'husky', cwd: '/', prompt: 'husky:/ $' }), 30); return 'starting'; };
+        base.rishRun = (cmd, id) => { window.__rish.push(cmd); setTimeout(() => { if (cmd !== 'false') window.onRishOutput(id, 'ran:' + cmd + '\n'); window.onRishDone(id, { exit: cmd === 'false' ? 1 : 0, cwd: '/', prompt: 'husky:/ $' }); }, 20); return 'ok'; };
+        base.rishStop = () => 'ok'; base.rishClose = () => 'ok';
+        base.checkShizukuStatus = () => JSON.stringify({ installed: true, running: true, authorized: true });
+        base.selectWorkingMode = mode => JSON.stringify({ ok: true, mode, message: 'Using Shizuku (UID 2000)' });
+        window.__rish = [];
+      }
       else base.executeShell = cmd => { window.__shell.push({ cmd }); return window.__syncOut; };
       window.AndroidBridge = base;
     }, mode);
@@ -205,6 +215,25 @@ const { chromium, PAGE } = require('./lib/pw');
   const sl = await sp.evaluate(() => { const t = document.getElementById('termOutput'); const l = t.querySelector('.term-result'); return { line: l && l.textContent, cls: l && l.className, tail: t.textContent.slice(-80) }; });
   check('without executeShellAsync the same line follows the output', sl.line === 'Looks like a failure: the output reports an error.' && /is-fail/.test(sl.cls) && sl.tail.endsWith('Error: no such file\n' + sl.line + '\n'), JSON.stringify(sl));
   await sp.close();
+
+  // ---- 6) Rish mode: its own path, no result line, its own exit note kept ----
+  const rp = await bridge('rish');
+  await rp.locator('#rishBtn').click(); await rp.waitForTimeout(250);
+  const rishOn = await rp.evaluate(() => rishActive);
+  const rrun = async cmd => { await rp.fill('#termCmd', cmd); await rp.press('#termCmd', 'Enter'); await rp.waitForTimeout(150); return rp.evaluate(() => { const t = document.getElementById('termOutput'); return { text: t.textContent, n: t.querySelectorAll('.term-result').length }; }); };
+  let rr = await rrun('pwd');
+  check('Rish mode is on and a command goes to the Rish shell, not to executeShellAsync', rishOn === true && (await rp.evaluate(() => window.__rish.join(','))) === 'pwd' && (await rp.evaluate(() => window.__shell.length)) === 0);
+  check('Rish mode: the command output is shown and no result line is added (its persistent shell keeps its own notes)', /ran:pwd\n/.test(rr.text) && rr.n === 0 && !/Finished\. No error text/.test(rr.text), JSON.stringify(rr.text.slice(-60)));
+  rr = await rrun('false');
+  check('Rish mode: a non-zero exit still gets its own [exit 1] note, and still no result line', /\[exit 1\]/.test(rr.text) && rr.n === 0, JSON.stringify(rr.text.slice(-60)));
+  await rp.fill('#termCmd', 'exit'); await rp.press('#termCmd', 'Enter'); await rp.waitForTimeout(150);
+  check('after leaving Rish mode a normal command gets the result line again', await (async () => {
+    await rp.fill('#termCmd', 'echo hi'); await rp.press('#termCmd', 'Enter'); await rp.waitForTimeout(40);
+    const id = await rp.evaluate(() => window.__shell[window.__shell.length - 1].id);
+    await rp.evaluate(i => window.onShellDone(i, 'hi'), id); await rp.waitForTimeout(30);
+    return (await rp.evaluate(() => [...document.querySelectorAll('#termOutput .term-result')].map(e => e.textContent))).join('|') === 'Finished. No error text in the output.';
+  })());
+  await rp.close();
 
   console.log('errors:', JSON.stringify(errors));
   if (errors.length) failed++;
