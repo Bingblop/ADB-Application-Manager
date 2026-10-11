@@ -8458,6 +8458,7 @@ Type any command below (e.g. pm list packages -d)
         <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdSheetTitle">
             <div class="sheet-header">
                 <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="cdSheetAvatar"></div>
                     <div class="sheet-title">
                         <h3 id="cdSheetTitle"></h3>
                         <p id="cdSheetSub" translate="no" style="word-break:break-all;"></p>
@@ -13984,6 +13985,7 @@ Type any command below (e.g. pm list packages -d)
                 const u = appIconCache[img.getAttribute('data-icon')];
                 if (u) img.src = u;
             });
+            if (map && typeof cdIconsArrived === 'function') cdIconsArrived(map);
             const im = document.getElementById('inspectorModal');
             if (im && im.classList.contains('show') && inspectedPkg && map && map[inspectedPkg]) {          // the app menu is open and its icon just arrived
                 const a = allApps.find(x => x.pkg === inspectedPkg);
@@ -20331,8 +20333,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- a sheet of buttons for one thing, and a question ----
+        let cdSheetPkg = '';
         function cdSheetOpen(o) {
             document.getElementById('cdSheetTitle').innerText = o.title || '';
+            cdSheetPkg = o.pkg || '';
+            if (cdSheetPkg) paintSheetAvatar(cdSheetPkg, o.title, 'cdSheetAvatar');
+            else { const av = document.getElementById('cdSheetAvatar'); av.classList.remove('has-icon'); av.textContent = ''; }
             const sub = document.getElementById('cdSheetSub');
             sub.innerText = o.sub || '';
             sub.style.display = o.sub ? '' : 'none';
@@ -20466,6 +20472,25 @@ Type any command below (e.g. pm list packages -d)
                 (!rows.length ? '<div class="cd-note">No app matches.</div>' : '');
             rowBusyApply();
             cdBatchBar();
+            cdLoadIcons(shown);
+        }
+        /** The icons come from this phone's icon cache, so an app that is also installed here shows its real icon; the rest keep their first letter. */
+        function cdLoadIcons(apps) {
+            if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
+            const want = [];
+            apps.forEach(a => { if (!appIconCache[a.pkg] && !appIconAsked.has(a.pkg)) { appIconAsked.add(a.pkg); want.push(a.pkg); } });
+            for (let i = 0; i < want.length; i += 24) {
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24)), iconPack); } catch (e) {}
+            }
+        }
+        /** An icon arrived: put it on the rows and in the menu of Connected Devices. */
+        function cdIconsArrived(map) {
+            document.querySelectorAll('#cdAppList .app-card').forEach(card => {
+                const u = map[card.dataset.pkg], ic = card.querySelector('.cd-icon');
+                if (u && ic && !ic.querySelector('img')) { const img = document.createElement('img'); img.alt = ''; img.draggable = false; img.src = u; ic.textContent = ''; ic.appendChild(img); }
+            });
+            const sh = document.getElementById('cdSheet');
+            if (cdSheetPkg && map[cdSheetPkg] && sh && sh.classList.contains('show')) paintSheetAvatar(cdSheetPkg, cdApp(cdSheetPkg).name, 'cdSheetAvatar');
         }
         function cdAppCardHtml(a) {
             const pk = escapeHtml(a.pkg), sel = cd.sel.has(a.pkg);
@@ -20659,10 +20684,10 @@ Type any command below (e.g. pm list packages -d)
             }
             b.push({ label: cd.sel.has(pkg) ? 'Deselect' : 'Select', fn: () => cdToggleSel(pkg) });
             b.push({ label: 'Copy package', fn: () => copyText(pkg) });
-            cdSheetOpen({ title: a.name, sub: pkg, buttons: b });
+            cdSheetOpen({ title: a.name, sub: pkg, pkg: pkg, buttons: b });
         }
         async function cdAppInfo(pkg) {
-            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
+            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, pkg: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
             const out = await cdSh('dumpsys package ' + cdQ(pkg) + ' | grep -E "versionCode|versionName|firstInstallTime|lastUpdateTime|installerPackageName|targetSdk|minSdk|userId=|codePath|pkgFlags=" | head -24', { timeout: 30000 });
             const f = cdFail(out);
             document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
@@ -22683,8 +22708,8 @@ Type any command below (e.g. pm list packages -d)
 
         /** The tile left of the app's name in the app menu: the app's own icon when it is known (asked for when it is not), its first letter until then or when it cannot be drawn. */
         const sheetIconAsked = new Set();
-        function paintSheetAvatar(pkg, name) {
-            const av = document.getElementById('sheetAvatar');
+        function paintSheetAvatar(pkg, name, elId) {
+            const av = document.getElementById(elId || 'sheetAvatar');
             if (!av) return;
             const letter = String(name || pkg || '?').charAt(0).toUpperCase();
             const url = appIconCache[pkg];
