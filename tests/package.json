@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node run.js && node java/run.js",
     "test:ui": "node run.js",
-    "test:java": "node java/run.js"
+    "test:java": "node java/run.js",
+    "test:docs": "node docs/check-shell-blocks.js"
   },
   "devDependencies": {
     "playwright": "1.56.1",
