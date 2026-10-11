@@ -70,7 +70,7 @@ public final class MorpheBridge {
         @Override public void cancel() { MorpheService.cancel(host.context()); }
         @Override public boolean alive() { return serviceAlive(); }
     });
-    private volatile String runningJob = "";
+    private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
 
     public MorpheBridge(Host host, File base) {
         this.host = host;
@@ -375,14 +375,18 @@ public final class MorpheBridge {
         final String jobId = a.optString("job");
         if (jobId.isEmpty()) throw new IOException("no job id");
         if (!MorpheJobs.validJobId(jobId)) throw new IOException("bad job id");           // it names a folder that the run empties first
-        if (!runningJob.isEmpty()) throw new IOException("A patch is already running.");
-        runningJob = jobId;
+        if (!slot.tryStart(jobId)) throw new IOException("A patch is already running.");
         runner.clearCancelled(jobId);
-        pool.submit(new Runnable() {
-            @Override public void run() {
-                try { patch(a, jobId); } finally { runningJob = ""; runner.clearCancelled(jobId); }
-            }
-        });
+        try {
+            pool.submit(new Runnable() {
+                @Override public void run() {
+                    try { patch(a, jobId); } finally { slot.finish(jobId); runner.clearCancelled(jobId); }
+                }
+            });
+        } catch (RuntimeException refused) {                                               // the pool would not take it: do not keep the slot for a run that never starts
+            slot.finish(jobId);
+            throw refused;
+        }
         return new JSONObject().put("job", jobId);
     }
 
