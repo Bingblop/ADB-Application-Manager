@@ -72,6 +72,12 @@ ok   an address that is not a repository or a .json is refused
 ok   the deep link of the finder is understood
 ok   a GitLab repository is fine
 ok   turning the official source off empties the app list
+ok   with the source off, reloading every catalog does not ask the app for it (the others are asked)
+ok   turning the source on asks the app for its patches
+ok   a refusal is shown as that source's error and its patches are not listed
+ok   the page does not ask again by itself while the source stays refused
+ok   turning it off does not ask
+ok   turning a refused source back on asks again, and the allowed bundle is listed
 ok   Patched APKs lists the run with its patches and Install / Share / Save / Log / Delete
 ok   an install Android refuses (other key) offers to uninstall the installed copy first
 ok   after OK it installs with the uninstall

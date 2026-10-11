@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
  * new question. The pre-installed source is exempt, judged from the store's own record and never from what the page says. Bundles that were already on
  * disk when this code first ran are approved once ("grandfathered", guarded by a marker in the same file) so an update does not start with a wall of
  * questions. Anything damaged means "nothing approved", never a crash and never a fresh grandfathering.
+ * What the engine reads is a private copy made and hashed in one pass ({@link #approvedCopy}), never the live file, so a source that is updated after the check
+ * cannot change what runs.
  *
  * The question itself is asked through {@link Asker} (a native dialog of the app that the page cannot press, see MainActivity), one at a time, and
  * only after the app has worked out what to say from facts it found out itself; the text is built here, from untrusted values only inside quotation
@@ -40,13 +42,12 @@ final class BundleApprovals {
     private static final Pattern SHA_OK = Pattern.compile("[0-9a-f]{64}");
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
-    /** Asks the person; true only for an explicit yes. May block (up to {@link #ANSWER_WAIT_SECONDS}); no answer is false. */
-    interface Asker {
-        boolean ask(String title, String text);
-    }
+    /** What the person said. TIMEOUT is only "nobody answered in the whole waiting time"; an explicit "Don't allow" (however late) is DENY. */
+    enum Answer { ALLOW, DENY, TIMEOUT }
 
-    interface Clock {
-        long nowMs();
+    /** Asks the person. May block (up to {@link #ANSWER_WAIT_SECONDS}). Only ALLOW lets a bundle through; anything else, an exception or null included, is a no. */
+    interface Asker {
+        Answer ask(String title, String text);
     }
 
     /** What is known about one bundle on disk. The fields the source wrote itself (name, version, repo) are shown as "not checked". */
@@ -76,24 +77,20 @@ final class BundleApprovals {
     }
 
     private final File store;
-    private final Clock clock;
     private final Map<String, String> approved = new HashMap<String, String>();
     private boolean grandfathered;
     private boolean damaged;
+    private boolean persisted;                                   // the approvals file (with its marker) is known to be on disk
     private final Object askLock = new Object();                // one question on screen at a time, across catalog and patch
 
     BundleApprovals(File store) {
-        this(store, new Clock() { @Override public long nowMs() { return System.currentTimeMillis(); } });
-    }
-
-    BundleApprovals(File store, Clock clock) {
         this.store = store;
-        this.clock = clock;
         load();
     }
 
     private void load() {
         if (!store.exists()) return;                             // a first start: grandfatherOnce() may fill it in
+        persisted = true;
         grandfathered = true;                                    // a file that is there, readable or not, is never a first start again
         try {
             JSONObject root = new JSONObject(new String(Files.readAllBytes(store.toPath()), UTF8));
@@ -138,27 +135,36 @@ final class BundleApprovals {
     /**
      * The first time this code runs (no approvals file yet): every bundle already on disk is approved as it is, and the marker is written, so this
      * happens once. Not when the file exists, damaged or not. {@code present}: source id -> its bundle file (the pre-installed source needs no entry).
+     * The marker and the entries are committed in one atomic write BEFORE anything is granted: if that write fails nothing is approved (fail closed,
+     * the person is asked about everything), because a "first start" that could not be recorded would otherwise repeat at the next start and approve
+     * whatever was added and refused in between. The write is tried again at every later question until it succeeds.
      * @return whether anything was done
      */
     synchronized boolean grandfatherOnce(Map<String, File> present) {
         if (grandfathered) return false;
+        Map<String, String> next = new HashMap<String, String>(approved);
         for (Map.Entry<String, File> e : present.entrySet()) {
             File f = e.getValue();
             if (f == null || !f.isFile() || !ID_OK.matcher(e.getKey()).matches()) continue;
-            try { approved.put(e.getKey(), sha256(f)); } catch (IOException ignored) { /* this one will be asked about */ }
+            try { next.put(e.getKey(), sha256(f)); } catch (IOException ignored) { /* this one will be asked about */ }
         }
-        grandfathered = true;
-        save();
+        grandfathered = true;                                    // in memory: this run never grandfathers again
+        if (write(next, true)) approved.putAll(next);            // granted only once the marker is on disk
         return true;
     }
 
     private void save() {
+        write(approved, grandfathered);
+    }
+
+    /** Writes the file (temp file, then a move over the old one). @return whether it is on disk now */
+    private boolean write(Map<String, String> entries, boolean marker) {
         try {
             JSONObject root = new JSONObject();
             root.put("version", 1);
-            root.put("grandfathered", grandfathered);
+            root.put("grandfathered", marker);
             JSONObject map = new JSONObject();
-            for (Map.Entry<String, String> e : approved.entrySet()) map.put(e.getKey(), e.getValue());
+            for (Map.Entry<String, String> e : entries.entrySet()) map.put(e.getKey(), e.getValue());
             root.put("approved", map);
             File dir = store.getAbsoluteFile().getParentFile();
             if (dir != null) dir.mkdirs();
@@ -169,9 +175,16 @@ final class BundleApprovals {
             } catch (IOException e) {
                 Files.move(tmp.toPath(), store.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            persisted = true;
+            return true;
         } catch (Exception e) {
-            /* the approval holds for this run; it is asked again after a restart */
+            return false;                                        // an approval then holds for this run only; it is asked again after a restart
         }
+    }
+
+    /** The marker could not be written at first: try again now (a refused question is the usual moment, nothing else would write the file). */
+    private synchronized void persistMarker() {
+        if (grandfathered && !persisted) save();
     }
 
     // ---------------------------------------------------------------------------------------------------------------- the decision
@@ -192,8 +205,9 @@ final class BundleApprovals {
 
     /**
      * Makes sure every bundle of the list is approved, asking about each one that is not, one question at a time and in order. A yes is remembered
-     * (for this exact file). If a question gets no answer in the whole waiting time, the sources after it in this call are not asked: they are refused
-     * the same way, so a phone that is lying on a table is not asked for minutes more.
+     * (for this exact file). If a question gets no answer in the whole waiting time (the asker says TIMEOUT), the sources after it in this call are
+     * not asked: they are refused the same way, so a phone that is lying on a table is not asked for minutes more. An explicit "Don't allow" never
+     * does that, however late it comes.
      * @return source id -> the error to show, for every source that is NOT allowed (an empty map: all allowed)
      */
     Map<String, String> requireAll(List<Source> list, Asker asker) {
@@ -220,17 +234,56 @@ final class BundleApprovals {
         synchronized (askLock) {
             String before = approvedHash(s.id);
             if (sha.equals(before)) return null;                  // answered by a question that was on screen before this one
+            persistMarker();
             if (unanswered[0]) return NOT_ALLOWED;
-            long t0 = clock.nowMs();
-            boolean yes;
+            Answer answer;
             try {
-                yes = asker.ask(title(), message(s, sha, s.file.length(), before));
+                answer = asker.ask(title(), message(s, sha, s.file.length(), before));
             } catch (RuntimeException e) {
-                yes = false;
+                answer = Answer.DENY;
             }
-            if (yes) { approve(s.id, sha); return null; }
-            if (clock.nowMs() - t0 >= ANSWER_WAIT_SECONDS * 1000L - 3000L) unanswered[0] = true;
+            if (answer == Answer.ALLOW) { approve(s.id, sha); return null; }
+            if (answer == Answer.TIMEOUT) unanswered[0] = true;
             return NOT_ALLOWED;
+        }
+    }
+
+    /**
+     * The bundle to give the engine: a private copy of the file, made in {@code destDir} and hashed in the same pass, and the copy only if that hash is
+     * the one approved for this source (the pre-installed source is handed out as it is). The engine is given the copy, never the live path, so a
+     * source that is updated or swapped after the check cannot change what runs. Null (and no copy left) when it is not approved, the file is gone or
+     * cannot be read.
+     */
+    File approvedCopy(Source s, File destDir) {
+        if (s == null || s.file == null || !s.file.isFile()) return null;
+        if (s.builtIn) return s.file;
+        if (s.id == null || !ID_OK.matcher(s.id).matches()) return null;
+        File copy = new File(destDir, s.id + ".mpp");
+        try {
+            if (isApproved(s.id, copyAndHash(s.file, copy))) return copy;
+        } catch (IOException ignored) { /* not readable: not handed out */ }
+        copy.delete();
+        return null;
+    }
+
+    /** Copies {@code from} to {@code to} (a new file in a folder of this app) and returns the SHA-256 of the bytes copied, in one pass. */
+    static String copyAndHash(File from, File to) throws IOException {
+        File dir = to.getAbsoluteFile().getParentFile();
+        if (dir != null) dir.mkdirs();
+        Files.deleteIfExists(to.toPath());
+        InputStream in = new FileInputStream(from);
+        java.io.OutputStream out = Files.newOutputStream(to.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE);
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) { md.update(buf, 0, n); out.write(buf, 0, n); }
+            return hex(md.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        } finally {
+            try { in.close(); } catch (IOException ignored) {}
+            out.close();
         }
     }
 
@@ -290,14 +343,17 @@ final class BundleApprovals {
             byte[] buf = new byte[65536];
             int n;
             while ((n = in.read(buf)) > 0) md.update(buf, 0, n);
-            byte[] d = md.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte x : d) sb.append(Character.forDigit((x >> 4) & 15, 16)).append(Character.forDigit(x & 15, 16));
-            return sb.toString();
+            return hex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
         } finally {
             try { in.close(); } catch (IOException ignored) {}
         }
+    }
+
+    private static String hex(byte[] d) {
+        StringBuilder sb = new StringBuilder();
+        for (byte x : d) sb.append(Character.forDigit((x >> 4) & 15, 16)).append(Character.forDigit(x & 15, 16));
+        return sb.toString();
     }
 }

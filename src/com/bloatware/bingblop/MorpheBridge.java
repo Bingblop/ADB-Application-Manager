@@ -56,9 +56,10 @@ public final class MorpheBridge {
         String copyToTree(File file, String treeUri, String name) throws Exception;
         /**
          * Asks, in a dialog of the app that the page cannot press, whether a patch bundle (code) may be loaded. Blocks the calling (background) thread until
-         * the person answers; no answer in {@link BundleApprovals#ANSWER_WAIT_SECONDS} seconds, or the screen closing, is false.
+         * the person answers: ALLOW or DENY for what they pressed (or the screen closing), TIMEOUT only when nobody answered in
+         * {@link BundleApprovals#ANSWER_WAIT_SECONDS} seconds.
          */
-        boolean confirmBundle(String title, String text);
+        BundleApprovals.Answer confirmBundle(String title, String text);
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -78,7 +79,7 @@ public final class MorpheBridge {
     private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
     private final BundleApprovals approvals;                                            // which custom bundles the person has allowed to run (see BundleApprovals)
     private final BundleApprovals.Asker asker = new BundleApprovals.Asker() {
-        @Override public boolean ask(String title, String text) { return host.confirmBundle(title, text); }
+        @Override public BundleApprovals.Answer ask(String title, String text) { return host.confirmBundle(title, text); }
     };
     private final Object grandfatherLock = new Object();
     private boolean grandfatherDone;
@@ -373,12 +374,28 @@ public final class MorpheBridge {
             }
             need.add(id); needFiles.add(mpp); needCache.add(cache);
         }
-        for (int i = need.size() - 1; i >= 0; i--) {                                       // the file may have changed while a question was open: only what is still allowed goes to the engine
-            if (approvals.allowedNow(bundleSource(need.get(i)))) continue;
-            out.put(need.get(i), denied(BundleApprovals.NOT_ALLOWED));
-            need.remove(i); needFiles.remove(i); needCache.remove(i);
+        File copies = new File(base, "jobs/list/bundles");                                 // the engine reads these private copies, never the live files
+        deleteTree(copies);
+        try {
+            for (int i = need.size() - 1; i >= 0; i--) {                                   // the file may have changed while a question was open (or since): the copy made now is checked against the approval
+                File copy = approvals.approvedCopy(bundleSource(need.get(i)), copies);
+                if (copy != null) {
+                    if (copy.length() != needFiles.get(i).length()) needCache.set(i, null);   // not the file the cache name was made from: do not cache under that name
+                    needFiles.set(i, copy);
+                    continue;
+                }
+                out.put(need.get(i), denied(BundleApprovals.NOT_ALLOWED));
+                need.remove(i); needFiles.remove(i); needCache.remove(i);
+            }
+            if (need.isEmpty()) return new JSONObject().put("catalogs", out);
+            return catalogEngine(out, need, needFiles, needCache);
+        } finally {
+            deleteTree(copies);
         }
-        if (need.isEmpty()) return new JSONObject().put("catalogs", out);
+    }
+
+    /** Runs the engine over the private copies in {@code needFiles} and fills {@code out} (and the cache) with what it read. */
+    private JSONObject catalogEngine(JSONObject out, List<String> need, List<File> needFiles, List<File> needCache) throws Exception {
         if (!engineThere()) {
             for (String id : need) out.put(id, new JSONObject().put("ok", false).put("error", "This build of the app does not contain the Morphe engine").put("patches", new JSONArray()));
             return new JSONObject().put("catalogs", out);
@@ -402,7 +419,7 @@ public final class MorpheBridge {
             if (!b.optBoolean("ok")) c.put("error", b.optString("error", "The patches could not be read"));
             out.put(need.get(i), c);
             if (b.optBoolean("ok")) {
-                try { writeText(needCache.get(i), c.toString()); } catch (IOException ignored) {}
+                if (needCache.get(i) != null) try { writeText(needCache.get(i), c.toString()); } catch (IOException ignored) {}
                 store.setPatchCount(need.get(i), c.getJSONArray("patches").length());
             }
         }
@@ -508,12 +525,17 @@ public final class MorpheBridge {
             JSONObject keyInfo = null;
             File ki = new File(base, "morphe_key.json");
             if (ki.isFile()) try { keyInfo = new JSONObject(readText(ki)); } catch (Exception ignored) {}
+            final File copies = new File(dir, "bundles");                                  // the engine reads these private copies, never the live files
+            final Map<String, File> given = new java.util.HashMap<String, File>();
             JSONObject job = MorpheJobs.patchJob(a, input, output, new File(dir, "work"), new MorpheJobs.Bundles() {
                 @Override public File fileOf(String id) {
+                    if (given.containsKey(id)) return given.get(id);
                     BundleApprovals.Source s = bundleSource(id);                           // null: not downloaded, or switched off
                     if (s == null) return null;
-                    if (!approvals.allowedNow(s)) throw new IllegalStateException(BundleApprovals.NOT_ALLOWED);   // changed since the question
-                    return s.file;
+                    File copy = approvals.approvedCopy(s, copies);                         // copied and hashed now: what was approved is what the engine gets
+                    if (copy == null) throw new IllegalStateException(BundleApprovals.NOT_ALLOWED);   // changed since the question
+                    given.put(id, copy);
+                    return copy;
                 }
             }, keystore, keyInfo, MorpheJobs.abiName(Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""));
             step(jobId, "Preparing", "OK");
@@ -555,6 +577,7 @@ public final class MorpheBridge {
             try { if (result == null) result = new JSONObject().put("success", false).put("error", "The patch did not finish"); } catch (JSONException ignored) {}
             // The run's own folder (input copy, work files) is not needed any more; the log stays with the patched APK
             deleteTree(new File(dir, "work"));
+            deleteTree(new File(dir, "bundles"));
             new File(dir, "input.apk").delete();
             new File(dir, "input.apks").delete();
             File splits = new File(dir, "splits");

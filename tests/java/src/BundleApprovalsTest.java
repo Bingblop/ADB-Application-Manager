@@ -64,25 +64,23 @@ public class BundleApprovalsTest {
   static final class Fake implements BundleApprovals.Asker {
     final List<String> texts = new ArrayList<String>();
     final List<String> titles = new ArrayList<String>();
-    boolean answer;
-    List<Boolean> script = new ArrayList<Boolean>();
-    long[] clock;
-    long takes;
-    public boolean ask(String title, String text) {
+    BundleApprovals.Answer answer = BundleApprovals.Answer.DENY;
+    List<BundleApprovals.Answer> script = new ArrayList<BundleApprovals.Answer>();
+    public BundleApprovals.Answer ask(String title, String text) {
       titles.add(title); texts.add(text);
-      if (clock != null) clock[0] += takes;
       if (!script.isEmpty()) return script.remove(0);
       return answer;
     }
   }
 
-  static BundleApprovals.Clock clockOf(final long[] t) { return new BundleApprovals.Clock() { public long nowMs() { return t[0]; } }; }
+  static final BundleApprovals.Answer ALLOW = BundleApprovals.Answer.ALLOW, DENY = BundleApprovals.Answer.DENY, TIMEOUT = BundleApprovals.Answer.TIMEOUT;
 
   public static void main(String[] args) throws Exception {
     tmp = Files.createTempDirectory("bundleapprovals").toFile();
     text();
     list();
     decisions();
+    copies();
     store();
     scan();
     System.out.println(n + " checks, " + fails + " failed");
@@ -244,6 +242,46 @@ public class BundleApprovalsTest {
     BundleApprovals hs = new BundleApprovals(hostile);
     is("entries that are not (id, sha256) are dropped, the good one stays", hs.isApproved("gh-ok", h1) && !hs.isApproved("gh-short", "abc") && !hs.isApproved("../../x", h1) && !hs.wasDamaged());
     is("an approvals file that cannot be written does not crash and still holds for the run", approveInto(new File(dir(), "nodir/\u0000/x.json")));
+
+    // the first start cannot write its marker: nothing is granted (fail closed), and the marker is tried again at the next question
+    File d2 = dir();
+    File blocker = file("blocker", "a file where the folder should be");
+    File blocked = new File(blocker, "bundle_approvals.json");
+    File old1 = file("old1.mpp", "installed before the update");
+    String oh = BundleApprovals.sha256(old1);
+    BundleApprovals fb = new BundleApprovals(blocked);
+    Map<String, File> pre = new LinkedHashMap<String, File>();
+    pre.put("gh-old", old1);
+    boolean did = fb.grandfatherOnce(pre);
+    is("first start with an unwritable approvals file: it ran, but granted nothing", did && !fb.isApproved("gh-old", oh) && !fb.allowedNow(src("gh-old", old1)) && !blocked.exists());
+    is("... and it does not grandfather a second time in the same run", !fb.grandfatherOnce(pre) && !fb.isApproved("gh-old", oh));
+    File added = file("added.mpp", "added after the first start and refused");
+    Fake refuse = new Fake();
+    is("a source added later and refused is asked about", fb.require(src("gh-added", added), refuse) != null && refuse.texts.size() == 1);
+    is("... and the old one is asked about too, not approved", fb.require(src("gh-old", old1), refuse) != null && refuse.texts.size() == 2);
+    blocker.delete();                                                       // the folder can be written now
+    is("the marker is still not on disk until something tries again", !blocked.exists());
+    fb.require(src("gh-added", added), refuse);                             // a refusal is the moment it is retried
+    BundleApprovals again = new BundleApprovals(blocked);
+    is("a later question writes the marker (without granting anything)", blocked.isFile() && !again.isApproved("gh-old", oh) && !again.isApproved("gh-added", BundleApprovals.sha256(added)));
+    Map<String, File> pre2 = new LinkedHashMap<String, File>(pre);
+    pre2.put("gh-added", added);
+    is("so the next start does not grandfather the source that was refused", !again.grandfatherOnce(pre2) && !again.isApproved("gh-added", BundleApprovals.sha256(added)) && !again.isApproved("gh-old", oh));
+    // the same hole through a first yes whose write failed
+    File blocker2 = file("blocker2", "x");
+    BundleApprovals yesFirst = new BundleApprovals(new File(blocker2, "bundle_approvals.json"));
+    Fake ok = new Fake(); ok.answer = ALLOW;
+    yesFirst.require(src("gh-old", old1), ok);
+    is("a yes whose write fails still holds for the run", yesFirst.isApproved("gh-old", oh));
+    blocker2.delete();
+    yesFirst.require(src("gh-added", added), refuse);
+    is("... and the marker is written at the next question, so a restart is not a first start", new BundleApprovals(new File(blocker2, "bundle_approvals.json")).grandfatherOnce(pre2) == false);
+    // the normal first start still works, in one write: marker and entries together
+    File okf = new File(dir(), "bundle_approvals.json");
+    BundleApprovals normal = new BundleApprovals(okf);
+    normal.grandfatherOnce(pre);
+    String disk = new String(Files.readAllBytes(okf.toPath()), StandardCharsets.UTF_8);
+    is("a writable first start grants and records both in the one file", normal.isApproved("gh-old", oh) && disk.contains("\"grandfathered\": true") && disk.contains(oh));
   }
 
   static boolean approveInto(File f) {
@@ -269,7 +307,7 @@ public class BundleApprovalsTest {
     File d = dir();
     File fa = file("a.mpp", "AAA"), fb = file("b.mpp", "BBB"), fc = file("c.mpp", "CCC");
     BundleApprovals ap = new BundleApprovals(new File(d, "ap.json"));
-    Fake yes = new Fake(); yes.answer = true;
+    Fake yes = new Fake(); yes.answer = ALLOW;
     Fake no = new Fake();
 
     BundleApprovals.Source a = src("gh-a", fa);
@@ -289,7 +327,7 @@ public class BundleApprovalsTest {
     // two sources, one No: the other is still allowed; asked in order, one at a time
     BundleApprovals ap2 = new BundleApprovals(new File(d, "ap2.json"));
     Fake mixed = new Fake();
-    mixed.script.add(Boolean.FALSE); mixed.script.add(Boolean.TRUE);
+    mixed.script.add(DENY); mixed.script.add(ALLOW);
     List<BundleApprovals.Source> two = new ArrayList<BundleApprovals.Source>();
     two.add(src("gh-b", fb)); two.add(src("gh-c", fc));
     Map<String, String> refused = ap2.requireAll(two, mixed);
@@ -298,7 +336,7 @@ public class BundleApprovalsTest {
     is("the second is approved, the first is not", ap2.allowedNow(two.get(1)) && !ap2.allowedNow(two.get(0)));
     Fake none = new Fake();
     is("the approved one is not asked about again, the refused one is", ap2.requireAll(two, none).size() == 1 && none.texts.size() == 1 && none.texts.get(0).contains("Source: gh-b\n"));
-    Fake all = new Fake(); all.answer = true;
+    Fake all = new Fake(); all.answer = ALLOW;
     List<BundleApprovals.Source> mix = new ArrayList<BundleApprovals.Source>(two);
     BundleApprovals.Source offi = src("morphe-official", fa);
     offi.builtIn = true;
@@ -306,30 +344,42 @@ public class BundleApprovalsTest {
     is("only the ones that need it are asked (the official and the approved are not)", ap2.requireAll(mix, all).isEmpty() && all.texts.size() == 1);
     is("unapproved() lists exactly what would be asked", new BundleApprovals(new File(d, "ap3.json")).unapproved(mix).size() == 2);
 
-    // no answer is a No: the asker returns false after the whole wait, and the sources after it are not asked
-    long[] t = { 1000 };
-    BundleApprovals ap4 = new BundleApprovals(new File(d, "ap4.json"), clockOf(t));
-    Fake silent = new Fake(); silent.clock = t; silent.takes = BundleApprovals.ANSWER_WAIT_SECONDS * 1000L;
+    // no answer is a No: the asker says TIMEOUT after the whole wait, and the sources after it are not asked
+    BundleApprovals ap4 = new BundleApprovals(new File(d, "ap4.json"));
+    Fake silent = new Fake(); silent.answer = TIMEOUT;
     Map<String, String> r4 = ap4.requireAll(two, silent);
     is("a question nobody answered is a No", r4.containsKey("gh-b") && BundleApprovals.NOT_ALLOWED.equals(r4.get("gh-b")));
     is("and the next sources are refused without waiting again (not minutes more)", r4.size() == 2 && silent.texts.size() == 1);
-    Fake quickNo = new Fake(); quickNo.clock = t; quickNo.takes = 3000;
-    BundleApprovals ap5 = new BundleApprovals(new File(d, "ap5.json"), clockOf(t));
+    Fake quickNo = new Fake(); quickNo.answer = DENY;
+    BundleApprovals ap5 = new BundleApprovals(new File(d, "ap5.json"));
     is("a quick No does not stop the questions after it", ap5.requireAll(two, quickNo).size() == 2 && quickNo.texts.size() == 2);
+    // what decides is the answer, not the clock: a No is a No whenever it comes (also 118 s into the 120), and the sources after it are still asked
+    is("... also when it comes late: the asker's own word (DENY, not TIMEOUT) is all that is read", quickNo.texts.size() == 2 && BundleApprovals.NOT_ALLOWED.equals(ap5.require(two.get(0), quickNo)) && quickNo.texts.size() == 3);
+    // a Yes for the first and a timeout for the second: the third source is not asked
+    BundleApprovals ap5c = new BundleApprovals(new File(d, "ap5c.json"));
+    Fake yesThenSilent = new Fake(); yesThenSilent.script.add(ALLOW); yesThenSilent.script.add(TIMEOUT); yesThenSilent.answer = ALLOW;
+    List<BundleApprovals.Source> three = new ArrayList<BundleApprovals.Source>(two);
+    three.add(src("gh-d", file("d.mpp", "DDD")));
+    Map<String, String> r3 = ap5c.requireAll(three, yesThenSilent);
+    is("a timeout stops the questions after it, a yes before it stays", r3.size() == 2 && !r3.containsKey("gh-b") && r3.containsKey("gh-c") && r3.containsKey("gh-d") && yesThenSilent.texts.size() == 2);
+    is("a TIMEOUT is remembered only within its call: the next call asks again", ap5c.requireAll(three, yesThenSilent).isEmpty() && yesThenSilent.texts.size() == 4);
+    // an asker that returns nothing is a No, not a crash and not a timeout
+    BundleApprovals.Asker nothing = new BundleApprovals.Asker() { public BundleApprovals.Answer ask(String ti, String te) { return null; } };
+    is("an asker that answers null is a No", new BundleApprovals(new File(d, "ap5d.json")).requireAll(two, nothing).size() == 2);
     is("the waiting time is the two minutes of the install question", BundleApprovals.ANSWER_WAIT_SECONDS == 120);
 
     // an asker that throws, a missing file, one question on screen at a time
-    BundleApprovals.Asker boom = new BundleApprovals.Asker() { public boolean ask(String ti, String te) { throw new IllegalStateException("screen is gone"); } };
+    BundleApprovals.Asker boom = new BundleApprovals.Asker() { public BundleApprovals.Answer ask(String ti, String te) { throw new IllegalStateException("screen is gone"); } };
     is("an asker that fails is a No", new BundleApprovals(new File(d, "ap6.json")).require(src("gh-b", fb), boom) != null);
     is("a file that is not there is refused without a question", new BundleApprovals(new File(d, "ap7.json")).require(src("gh-z", new File(d, "gone")), yes) != null && yes.texts.size() == 1);
     final BundleApprovals ap8 = new BundleApprovals(new File(d, "ap8.json"));
     final int[] inside = { 0, 0 };
     final BundleApprovals.Asker slow = new BundleApprovals.Asker() {
-      public boolean ask(String ti, String te) {
+      public BundleApprovals.Answer ask(String ti, String te) {
         synchronized (inside) { inside[0]++; inside[1] = Math.max(inside[1], inside[0]); }
         try { Thread.sleep(40); } catch (InterruptedException ignored) {}
         synchronized (inside) { inside[0]--; }
-        return true;
+        return ALLOW;
       }
     };
     List<Thread> ts = new ArrayList<Thread>();
@@ -342,11 +392,71 @@ public class BundleApprovalsTest {
     is("never two questions at once, across callers", inside[1] == 1);
     // the same source asked by two callers at once: one question, the second finds the answer
     final BundleApprovals ap9 = new BundleApprovals(new File(d, "ap9.json"));
-    final Fake once = new Fake(); once.answer = true;
+    final Fake once = new Fake(); once.answer = ALLOW;
     final BundleApprovals.Source same = src("gh-same", file("same.mpp", "S"));
     Thread t1 = new Thread() { public void run() { ap9.require(same, once); } }, t2 = new Thread() { public void run() { ap9.require(same, once); } };
     t1.start(); t2.start(); t1.join(); t2.join();
     is("the same file asked about by two calls at once: one question", once.texts.size() == 1);
+  }
+
+  // ------------------------------------------------------------------------------------------------------------------------------ the copy the engine reads
+
+  static void copies() throws Exception {
+    File d = dir();
+    byte[] big = new byte[3 * 65536 + 123];
+    new java.util.Random(7).nextBytes(big);
+    File live = new File(d, "live.mpp");
+    Files.write(live.toPath(), big);
+    String h = BundleApprovals.sha256(live);
+    File out = new File(d, "job/bundles");
+    BundleApprovals ap = new BundleApprovals(new File(d, "ap.json"));
+    ap.approve("gh-a", h);
+
+    File c = ap.approvedCopy(src("gh-a", live), out);
+    is("an approved bundle is handed out as a copy in the job's own folder, not the live path", c != null && !c.equals(live) && c.getParentFile().equals(out) && c.isFile());
+    is("the copy has exactly the approved bytes (across the read buffer size)", c != null && java.util.Arrays.equals(Files.readAllBytes(c.toPath()), big) && BundleApprovals.sha256(c).equals(h));
+    // the live file is swapped after the check: the copy made is unchanged, the swapped file is not what is handed out next
+    byte[] evil = "swapped in by a concurrent update".getBytes(StandardCharsets.UTF_8);
+    Files.write(live.toPath(), evil);
+    is("a swap of the live file after the copy does not change what the engine is given", c != null && java.util.Arrays.equals(Files.readAllBytes(c.toPath()), big));
+    File again = ap.approvedCopy(src("gh-a", live), new File(d, "job2/bundles"));
+    is("a swapped live file is not approved: no copy is handed out and none is left behind", again == null && !new File(d, "job2/bundles/gh-a.mpp").exists());
+    // the swap lands between the question and the copy: the hash that is compared is the copy's own
+    Files.write(live.toPath(), big);
+    ap.approvedCopy(src("gh-a", live), new File(d, "job3/bundles"));
+    File viaLive = new File(d, "viaLive.mpp");
+    Files.write(viaLive.toPath(), evil);
+    BundleApprovals.Source claim = src("gh-a", viaLive);
+    is("the approval is checked against the bytes copied, whatever the path says", ap.approvedCopy(claim, new File(d, "job4/bundles")) == null);
+    // what is approved is what the copy hash says, also when the live file is replaced between hashing for the question and copying
+    BundleApprovals ap2 = new BundleApprovals(new File(d, "ap2.json"));
+    final File racy = new File(d, "racy.mpp");
+    Files.write(racy.toPath(), big);
+    final byte[] other = evil;
+    BundleApprovals.Asker swapper = new BundleApprovals.Asker() {
+      public BundleApprovals.Answer ask(String ti, String te) {
+        try { Files.write(racy.toPath(), other); } catch (IOException e) { throw new RuntimeException(e); }
+        return ALLOW;
+      }
+    };
+    is("the person approves the bytes they were asked about", ap2.require(src("gh-r", racy), swapper) == null);
+    is("a file swapped during the question is not handed out: the copy is hashed, and it is not what was approved", ap2.approvedCopy(src("gh-r", racy), new File(d, "job5/bundles")) == null && !new File(d, "job5/bundles/gh-r.mpp").exists());
+    Files.write(racy.toPath(), big);
+    is("... and the approved bytes back are handed out again", ap2.approvedCopy(src("gh-r", racy), new File(d, "job6/bundles")) != null);
+
+    BundleApprovals.Source official = src("morphe-official", live);
+    official.builtIn = true;
+    is("the pre-installed source needs no copy and is handed out as it is", ap.approvedCopy(official, new File(d, "job7/bundles")).equals(live) && !new File(d, "job7").exists());
+    is("a source with no file is refused", ap.approvedCopy(src("gh-a", new File(d, "gone")), out) == null && ap.approvedCopy(null, out) == null);
+    is("an id that is not one never names a file outside the folder", ap.approvedCopy(src("../escape", live), out) == null && !new File(d, "job/escape.mpp").exists() && !new File(d, "job/bundles/../escape.mpp").exists());
+    // the copy goes over nothing that was there (a stale file of an earlier run)
+    File stale = new File(out, "gh-a.mpp");
+    Files.write(stale.toPath(), "stale".getBytes(StandardCharsets.UTF_8));
+    Files.write(live.toPath(), big);
+    File fresh = ap.approvedCopy(src("gh-a", live), out);
+    is("a stale file of the same name is replaced by the copy", fresh != null && java.util.Arrays.equals(Files.readAllBytes(fresh.toPath()), big));
+    // unreadable: a folder where the file should be
+    is("a copy that cannot be made is refused", ap.approvedCopy(src("gh-a", live), new File(live, "inside-a-file")) == null);
   }
 
   // ------------------------------------------------------------------------------------------------------------------------------ the store
@@ -452,11 +562,23 @@ public class BundleApprovalsTest {
     String cat = body(br, "private JSONObject catalogLocked(");
     is("catalogLocked was found", cat != null);
     if (cat != null) {
-      int ask = cat.indexOf("refuseUnapproved(ids)"), cache = cat.indexOf("cache.isFile()"), run = cat.indexOf("runEngine(\"list\"");
+      int ask = cat.indexOf("refuseUnapproved(ids)"), cache = cat.indexOf("cache.isFile()"), run = cat.indexOf("catalogEngine(out");
       is("catalog asks before it reads the cache and before the engine runs", ask >= 0 && run > ask && cache > ask);
       is("catalog drops a source that is refused (not loaded, not cached)", cat.contains("refused.containsKey(id)") && cat.indexOf("refused.containsKey(id)") < cat.indexOf("store.bundleFile(id)"));
-      is("catalog checks again right before the engine, in case the file changed during a question", cat.indexOf("allowedNow(") > cat.indexOf("needCache.add(cache)") && cat.indexOf("allowedNow(") < run);
+      int copy = cat.indexOf("approvals.approvedCopy(bundleSource("), eng = cat.indexOf("catalogEngine(out, need, needFiles, needCache)");
+      is("catalog copies and re-checks each bundle right before the engine, in case the file changed during a question or since", copy > cat.indexOf("needCache.add(cache)") && eng > copy && cat.contains("needFiles.set(i, copy)"));
+      is("catalog never hands the live path to the engine: the list is rebuilt from the copies", !cat.contains("listJob(") && !cat.contains("runEngine(") && !cat.contains("allowedNow("));
+      is("catalog deletes the copies when it is done, also on an error", cat.contains("finally") && cat.contains("deleteTree(copies)") && cat.indexOf("deleteTree(copies)", cat.indexOf("finally")) > 0);
     }
+    String ce = body(br, "private JSONObject catalogEngine(");
+    is("the engine's list job is made from the copies it is given", ce != null && ce.contains("MorpheJobs.listJob(needFiles, answer)") && !ce.contains("store.bundleFile") && !ce.contains("bundleSource("));
+    String ba = read(d, "BundleApprovals.java");
+    String ac = body(ba, "File approvedCopy(");
+    is("the hash that is compared with the approval is the one of the bytes copied, never of the live file read again", ac != null && ac.contains("isApproved(s.id, copyAndHash(s.file, copy))") && !ac.contains("sha256(s.file)") && ac.contains("copy.delete()"));
+    String cah = body(ba, "static String copyAndHash(");
+    is("copy and hash are one pass over the same bytes", cah != null && cah.contains("md.update(buf, 0, n); out.write(buf, 0, n);"));
+    String go = body(ba, "synchronized boolean grandfatherOnce(");
+    is("the marker is written before anything is granted", go != null && go.contains("if (write(next, true)) approved.putAll(next);") && !go.contains("approved.put("));
     String ref = body(br, "private Map<String, String> refuseUnapproved(");
     is("the catalog's question goes through the approvals", ref != null && ref.contains("approvals.requireAll(list, asker)") && ref.contains("bundleSource(id)"));
     String catOuter = body(br, "private JSONObject catalog(");
@@ -467,21 +589,23 @@ public class BundleApprovalsTest {
       int prep = pt.indexOf("\"Preparing\", \"RUNNING\""), ask = pt.indexOf("approveBundles(a, jobId)"), run = pt.indexOf("runEngine(\"patch\"");
       is("patch asks inside the Preparing step, before the engine is started", prep >= 0 && ask > prep && run > ask);
       is("a refusal ends the run with its error and nothing is started", pt.indexOf("approveBundles(a, jobId)") < pt.indexOf("prepareInput(") && pt.contains("catch (Throwable t)"));
-      is("the job file takes bundles only through the approvals check", pt.contains("approvals.allowedNow(s)") && pt.contains("bundleSource(id)") && !pt.contains("store.bundleFile(id)"));
+      is("the job file takes bundles only as approved private copies", pt.contains("approvals.approvedCopy(s, copies)") && pt.contains("bundleSource(id)") && !pt.contains("store.bundleFile(id)") && !pt.contains("return s.file") && !pt.contains("allowedNow("));
+      is("the copies are in the job's own folder and are deleted with the run", pt.contains("new File(dir, \"bundles\")") && pt.indexOf("deleteTree(new File(dir, \"bundles\"))") > pt.indexOf("finally"));
     }
     String ab = body(br, "private void approveBundles(");
     is("the patch route refuses a source that is switched off and asks about the rest", ab != null && ab.contains("is switched off") && ab.contains("approvals.requireAll(list, asker)") && ab.contains("throw new IOException"));
     String bs = body(br, "private BundleApprovals.Source bundleSource(");
     is("a bundle is only taken from the store's file (switched-off sources give none)", bs != null && bs.contains("store.bundleFile(id)") && bs.contains("store.bundleFacts(id)"));
     is("the built-in exemption is not read from the call: the only builtIn in the bridge is the store's own list", br.split("builtIn", -1).length == 2 && br.contains("s.optBoolean(\"builtIn\")") && !br.contains("a.optBoolean(\"builtIn"));
-    is("the Host has the question and the bridge uses nothing else to ask", br.contains("boolean confirmBundle(String title, String text);") && br.contains("host.confirmBundle(title, text)"));
+    is("the Host has the question and the bridge uses nothing else to ask", br.contains("BundleApprovals.Answer confirmBundle(String title, String text);") && br.contains("host.confirmBundle(title, text)"));
     is("every bridge call grandfathers first, once", body(br, "private void handle(").contains("grandfatherBundles();") && br.indexOf("grandfatherBundles();") < br.indexOf("dispatch(tag, op, a)"));
     is("removing a source forgets its approval", br.contains("store.remove(a.optString(\"id\")); approvals.forget("));
-    is("MainActivity answers it with a native dialog that says Allow and Don't allow", main.contains("public boolean confirmBundle(String title, String text) { return confirmNative(title, text, \"Allow\", \"Don't allow\"); }"));
-    String cn = body(main, "private boolean confirmNative(");
-    is("it waits the shared time, and no answer or a closed screen is a No", cn != null && cn.contains("answered.await(BundleApprovals.ANSWER_WAIT_SECONDS") && cn.contains("return false") && cn.contains("installConfirmDialogs"));
+    is("MainActivity answers it with a native dialog that says Allow and Don't allow", main.contains("public BundleApprovals.Answer confirmBundle(String title, String text) { return confirmNative(title, text, \"Allow\", \"Don't allow\"); }"));
+    String cn = body(main, "private BundleApprovals.Answer confirmNative(");
+    is("it waits the shared time, and no answer or a closed screen is a No", cn != null && cn.contains("answered.await(BundleApprovals.ANSWER_WAIT_SECONDS") && cn.contains("installConfirmDialogs") && !cn.contains("return false"));
+    is("only the wait running out says TIMEOUT; a button, Back, a tap outside, the screen closing or an error say DENY", cn != null && cn.split("Answer\\.TIMEOUT", -1).length == 2 && cn.indexOf("Answer.TIMEOUT") > cn.indexOf("answered.await(") && cn.indexOf("Answer.TIMEOUT") < cn.indexOf("catch (InterruptedException") && cn.contains("Answer.DENY") && cn.contains("yes[0] ? BundleApprovals.Answer.ALLOW"));
     is("each question dismisses its own dialog", cn != null && cn.contains("dismissInstallConfirm(mine)"));
-    is("the install question still goes through the same dialog", main.contains("return confirmNative(InstallConfirm.title(), message, \"Install\", \"Cancel\")"));
+    is("the install question still goes through the same dialog", main.contains("return confirmNative(InstallConfirm.title(), message, \"Install\", \"Cancel\") == BundleApprovals.Answer.ALLOW"));
     String bf = body(store, "public synchronized File bundleFile(");
     is("the store's bundleFile checks the enabled flag", bf != null && bf.contains("!r.enabled"));
     String up = body(store, "public JSONObject update(");

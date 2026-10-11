@@ -2810,15 +2810,16 @@ public class MainActivity extends Activity {
      * user answers; no answer in two minutes, or the screen closing, is a no.
      */
     private boolean confirmPrivilegedInstall(final String message) {
-        return confirmNative(InstallConfirm.title(), message, "Install", "Cancel");
+        return confirmNative(InstallConfirm.title(), message, "Install", "Cancel") == BundleApprovals.Answer.ALLOW;
     }
 
     /**
      * The question dialog behind {@link #confirmPrivilegedInstall} and the one asked before a patch bundle (code) is loaded: a native dialog the page
      * cannot press, which blocks the calling (background) thread until the user answers. Only the yes button says yes; Back, a tap outside, no answer in
      * two minutes (the same time as {@link BundleApprovals#ANSWER_WAIT_SECONDS}) and the screen closing are all no. Each question tracks and dismisses its own dialog.
+     * The answer says which kind of no it was: TIMEOUT is only "nobody answered in the whole wait"; a button, Back, a tap outside or the screen closing is DENY.
      */
-    private boolean confirmNative(final String title, final String message, final String yesLabel, final String noLabel) {
+    private BundleApprovals.Answer confirmNative(final String title, final String message, final String yesLabel, final String noLabel) {
         final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
         final boolean[] yes = { false };
         // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
@@ -2853,16 +2854,16 @@ public class MainActivity extends Activity {
             });
             if (!answered.await(BundleApprovals.ANSWER_WAIT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)) {
                 dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
-                return false;
+                return BundleApprovals.Answer.TIMEOUT;
             }
         } catch (InterruptedException e) {
             dismissInstallConfirm(mine);
             Thread.currentThread().interrupt();
-            return false;
+            return BundleApprovals.Answer.DENY;
         } catch (RuntimeException e) {
-            return false;
+            return BundleApprovals.Answer.DENY;
         }
-        return yes[0];
+        return yes[0] ? BundleApprovals.Answer.ALLOW : BundleApprovals.Answer.DENY;
     }
 
     /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
@@ -7242,7 +7243,7 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
-            @Override public boolean confirmBundle(String title, String text) { return confirmNative(title, text, "Allow", "Don't allow"); }
+            @Override public BundleApprovals.Answer confirmBundle(String title, String text) { return confirmNative(title, text, "Allow", "Don't allow"); }
             @Override public String copyToTree(File file, String treeUri, String name) throws Exception {
                 Uri tree = Uri.parse(treeUri);
                 String safe = name == null ? "app.apk" : name.replaceAll("[^A-Za-z0-9._ ()-]", "_");
