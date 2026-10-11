@@ -289,32 +289,65 @@ public final class FontScan {
         return n;
     }
 
+    /** {@link #copyChecked(java.io.InputStream, File, long)} with the usual limit, {@link #READ_TIMEOUT_MS}. */
+    public static Names copyChecked(java.io.InputStream in, File dest) throws java.io.IOException {
+        return copyChecked(in, dest, READ_TIMEOUT_MS);
+    }
+
     /**
      * Copies a font from {@code in} to {@code dest} after checking it: at most {@link #MAX_FONT_BYTES}, a TrueType / OpenType font (not a
      * collection, which a page cannot use). Written to a ".part" file first, so a refused file never replaces a good one. Returns what the font
-     * says about itself; the exception message is fit to show to the user. {@code in} is not closed.
+     * says about itself; the exception message is fit to show to the user.
+     * <p>The whole copy has {@code timeoutMs}. A read() that never returns (a cloud provider that stopped answering) cannot be interrupted, so
+     * the copy runs on its own thread and this call gives up when the time is out: the ".part" file is deleted, {@code in} is closed from another
+     * thread (which usually frees the stuck read) and the exception says the file took too long. Otherwise {@code in} is not closed.
      */
-    public static Names copyChecked(java.io.InputStream in, File dest) throws java.io.IOException {
-        File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
-        java.io.OutputStream out = new java.io.FileOutputStream(tmp);
-        long total = 0;
-        boolean ok = false;
-        try {
-            byte[] buf = new byte[65536];
-            int n;
-            long deadline = System.currentTimeMillis() + READ_TIMEOUT_MS;
-            while ((n = in.read(buf)) > 0) {
-                total += n;
-                if (total > MAX_FONT_BYTES) throw new java.io.IOException("That file is too big to use as a font (the limit is 12 MB).");
-                if (System.currentTimeMillis() > deadline) throw new java.io.IOException("The file took too long to read.");
-                out.write(buf, 0, n);
+    public static Names copyChecked(final java.io.InputStream in, File dest, long timeoutMs) throws java.io.IOException {
+        final File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
+        final java.io.OutputStream out = new java.io.FileOutputStream(tmp);
+        final long[] total = new long[1];
+        final java.io.IOException[] failure = new java.io.IOException[1];
+        final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+        Thread worker = new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while (!cancelled.get() && (n = in.read(buf)) > 0) {
+                        if (cancelled.get()) break;
+                        total[0] += n;
+                        if (total[0] > MAX_FONT_BYTES) throw new java.io.IOException("That file is too big to use as a font (the limit is 12 MB).");
+                        out.write(buf, 0, n);
+                    }
+                } catch (java.io.IOException e) {
+                    failure[0] = e;
+                } catch (RuntimeException e) {
+                    failure[0] = new java.io.IOException(String.valueOf(e.getMessage()));
+                } finally {
+                    try { out.close(); } catch (Exception ignored) {}
+                }
             }
-            ok = true;
-        } finally {
-            try { out.close(); } catch (Exception ignored) {}
-            if (!ok) tmp.delete();
+        }, "font-copy");
+        worker.setDaemon(true);
+        worker.start();
+        try {
+            worker.join(Math.max(1, timeoutMs));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            cancelled.set(true);
+            tmp.delete();
+            closeInBackground(in);
+            throw new java.io.InterruptedIOException("The font was not read.");
         }
-        if (total >= 4) {
+        if (worker.isAlive()) {                                                       // still stuck in read(): leave it behind, nothing of it stays on disk
+            cancelled.set(true);
+            worker.interrupt();
+            tmp.delete();                                                             // the thread may still hold the open file; it writes nothing more and never touches the name again
+            closeInBackground(in);
+            throw new java.io.IOException("The file took too long to read.");
+        }
+        if (failure[0] != null) { tmp.delete(); throw failure[0]; }
+        if (total[0] >= 4) {
             byte[] h = new byte[4];
             RandomAccessFile r = new RandomAccessFile(tmp, "r");
             try { r.readFully(h); } finally { r.close(); }
@@ -327,6 +360,14 @@ public final class FontScan {
             if (!tmp.renameTo(dest)) { tmp.delete(); throw new java.io.IOException("Could not store the font."); }
         }
         return names;
+    }
+
+    private static void closeInBackground(final java.io.Closeable c) {
+        Thread t = new Thread(new Runnable() {
+            @Override public void run() { try { c.close(); } catch (Exception ignored) {} }
+        }, "font-close");
+        t.setDaemon(true);
+        t.start();
     }
 
     /** A name that is safe to use as a CSS font-family and in a file name: letters, digits, space, dash. Never empty. */
