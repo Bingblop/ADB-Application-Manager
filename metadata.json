@@ -1,0 +1,6 @@
+{
+  "name": "ADB Application Manager Pro",
+  "description": "Android debloat, package management, SD Maid cleanup tools, terminal and device maintenance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
