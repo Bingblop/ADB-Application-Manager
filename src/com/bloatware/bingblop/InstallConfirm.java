@@ -112,10 +112,12 @@ final class InstallConfirm {
         StringBuilder sb = new StringBuilder();
         sb.append("Source: a file on this phone\n");
         viaLine(sb, mode);
-        newOrReplaces(sb, installedVersion);
-        if (files > 1) sb.append("It is a bundle of ").append(files).append(" files, installed together as one app.\n");
+        // Bringing back a removed system app installs nothing from the file, so "new app" / "replaces" would only contradict the action line
+        boolean reinstates = actions != null && actions.contains(REINSTATES_SYSTEM);
+        if (!reinstates) newOrReplaces(sb, installedVersion);
+        if (files > 1 && !reinstates) sb.append("It is a bundle of ").append(files).append(" files, installed together as one app.\n");
         if (actions != null) for (String a : actions) if (a != null && !a.isEmpty()) sb.append(a).append("\n");
-        sb.append("No checksum was compared with this file.\n");
+        if (!reinstates) sb.append("No checksum was compared with this file.\n");
         sb.append("\nWritten in the file, its name or by the page (not checked):\n");
         String fn = quoted(fileName, 80);
         if (!fn.isEmpty()) sb.append("File: ").append(fn).append("\n");

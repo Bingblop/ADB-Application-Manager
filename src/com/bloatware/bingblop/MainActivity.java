@@ -2204,6 +2204,7 @@ public class MainActivity extends Activity {
                 JSONObject summary = new JSONObject();
                 try {
                     updateResults.clear();
+                    approvedUpdates.clear();            // a yes holds for the update it was given for, not for what a new check finds
                     PackageManager pm = getPackageManager();
 
                     // 1. This app, from GitHub Releases
@@ -2317,16 +2318,19 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
-    /** The packages the person said yes to in one "Update all" question (package -> when), so each of them does not ask again. */
-    private final java.util.concurrent.ConcurrentHashMap<String, Long> approvedUpdates = new java.util.concurrent.ConcurrentHashMap<String, Long>();
+    /** The yes to one "Update all" question, per app, bound to the update the check found (version, source); see {@link UpdateApprovals}. */
+    private final UpdateApprovals approvedUpdates = new UpdateApprovals();
     private final java.util.concurrent.atomic.AtomicBoolean updateAllAsking = new java.util.concurrent.atomic.AtomicBoolean();
-    /** How long a yes to "Update all" holds (the queue downloads one app after the other). */
-    private static final long UPDATE_APPROVAL_MS = 60L * 60 * 1000;
 
-    /** True once for a package the person approved in the "Update all" question and not yet used; the yes is spent by this call. */
+    /**
+     * True once for an app the person approved in the "Update all" question, for the very update the check holds now (same version, same source), while
+     * the working mode is privileged; the yes is spent by this call.
+     */
     private boolean takeUpdateApproval(String pkg) {
-        Long at = approvedUpdates.remove(pkg);
-        return at != null && System.currentTimeMillis() - at < UPDATE_APPROVAL_MS;
+        JSONObject cur = updateResults.get(pkg);
+        boolean ok = approvedUpdates.take(pkg, cur == null ? null : cur.optString("availableVersion"), cur == null ? null : cur.optString("source"),
+                System.currentTimeMillis(), isPrivilegedMode(resolveExecMode()));
+        return ok && cur != null;
     }
 
     /**
@@ -2346,19 +2350,19 @@ public class MainActivity extends Activity {
                         JSONArray asked = new JSONArray(pkgsJson);
                         java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<String>();
                         List<String[]> rows = new ArrayList<String[]>();
+                        java.util.Map<String, String[]> versions = new java.util.LinkedHashMap<String, String[]>();
                         for (int i = 0; i < asked.length(); i++) {
                             String p = asked.optString(i, "");
                             JSONObject u = p.isEmpty() ? null : updateResults.get(p);
                             if (u == null || "self".equals(u.optString("source")) || "external".equals(u.optString("source")) || installingUpdates.contains(p) || !seen.add(p)) continue;
                             rows.add(new String[]{u.optString("name"), p, u.optString("installedVersion"), u.optString("availableVersion")});
                             ok.put(p);
+                            versions.put(p, new String[]{u.optString("availableVersion"), u.optString("source")});
                         }
                         if (rows.isEmpty()) {
                             answer.put("error", "There is nothing to update.");
                         } else if (confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows, resolveExecMode()), "Update", "Cancel") == BundleApprovals.Answer.ALLOW) {
-                            approvedUpdates.clear();
-                            long now = System.currentTimeMillis();
-                            for (int i = 0; i < ok.length(); i++) approvedUpdates.put(ok.optString(i), now);
+                            approvedUpdates.replace(versions, System.currentTimeMillis());
                         } else {
                             ok = new JSONArray();
                         }
@@ -10414,6 +10418,12 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void approveUpdateAll(String pkgsJson) {
             runApproveUpdateAll(pkgsJson);
+        }
+
+        /** The page's Update All queue is over (finished, stopped, or the working mode went read-only): every approval not used yet is dropped. */
+        @JavascriptInterface
+        public void endUpdateAll() {
+            approvedUpdates.clear();
         }
 
         /** Checks THIS app's own latest GitHub release. Result -> window.onSelfUpdate(json). */

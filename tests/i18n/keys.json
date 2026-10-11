@@ -1677,6 +1677,7 @@
 {"k":"Installing DroidMind","ctx":"built by the code of: tx install droid mind"},
 {"k":"Installing Ollama","ctx":"built by the code of: tx install ollama"},
 {"k":"Installing from File Manager runs through ADB, Wireless Debugging, Shizuku or Root, and none of them is connected right now.","ctx":"built by the code of: install files ready"},
+{"k":"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.","ctx":"built by the code of: installer sync authorizer"},
 {"k":"Installing...","ctx":"built by the code of: us install got"},
 {"k":"Installing…","ctx":"built by the code of: on self update progress"},
 {"k":"Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.","ctx":"built by the code of: tx render connect"},

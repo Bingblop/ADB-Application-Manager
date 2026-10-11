@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Соединение с устройством потеряно. Подключитесь заново в «Режимах работы» и повторите попытку.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Служба настроек не ответила. Повторите попытку через минуту или перезагрузите телефон.",
 "This Android version did not understand the command.": "Эта версия Android не поняла команду.",
-"Check again": "Проверить снова"
+"Check again": "Проверить снова",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Для установки из Диспетчера файлов нужен ADB, Wireless Debugging, Shizuku или Root. Настройте один из них в разделе «Режимы работы» и повторите попытку."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],

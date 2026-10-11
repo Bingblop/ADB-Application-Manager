@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "与设备的连接已断开。请在工作模式中重新连接，然后重试。",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
 "This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
-"Check again": "重新检查"
+"Check again": "重新检查",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],

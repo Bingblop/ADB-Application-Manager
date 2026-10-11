@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "기기와의 연결이 끊어졌습니다. 작동 모드에서 다시 연결한 뒤 다시 시도하세요.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "설정 서비스가 응답하지 않았습니다. 잠시 후 다시 시도하거나 휴대전화를 다시 시작하세요.",
 "This Android version did not understand the command.": "이 Android 버전은 명령을 이해하지 못했습니다.",
-"Check again": "다시 확인"
+"Check again": "다시 확인",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "파일 관리자에서 설치하려면 ADB, 무선 디버깅, Shizuku 또는 Root가 필요합니다. 작동 모드에서 하나를 설정한 뒤 다시 시도하세요."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],

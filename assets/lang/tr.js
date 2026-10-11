@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Cihazla bağlantı kesildi. Çalışma Modları’nda yeniden bağlanın, sonra tekrar deneyin.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
 "This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
-"Check again": "Yeniden denetle"
+"Check again": "Yeniden denetle",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],

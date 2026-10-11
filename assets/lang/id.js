@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Koneksi ke perangkat terputus. Hubungkan ulang di Mode Kerja, lalu coba lagi.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Layanan pengaturan tidak menjawab. Coba lagi sebentar lagi, atau mulai ulang ponsel.",
 "This Android version did not understand the command.": "Versi Android ini tidak memahami perintah tersebut.",
-"Check again": "Periksa lagi"
+"Check again": "Periksa lagi",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Memasang dari Manajer File memerlukan ADB, Wireless Debugging, Shizuku, atau Root. Siapkan salah satunya di Mode Kerja, lalu coba lagi."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],

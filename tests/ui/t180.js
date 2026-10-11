@@ -26,7 +26,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     window.__pkgs['content://pick/1'] = { type: 'apk', pkg: 'com.example.app', label: 'Example App', versionName: '2.0', versionCode: 200, minSdk: 26, targetSdk: 34, totalSize: 9e6,
       splits: [{ path: '/cache/base.apk', name: 'base.apk', size: 9e6, isBase: true, split: '' }], signed: true, installed: false };
     // the Updater: three updates to install, and a bridge that asks once for all of them (answered when the script says so)
-    window.__upd = { approve: [], installs: [] };
+    window.__upd = { approve: [], installs: [], ended: 0 };
     const mk = (pkg, name) => ({ pkg, name, installedVersion: '1.0', availableVersion: '2.0', source: 'github', origin: 'yours', downloadUrl: 'https://github.com/x/' + pkg + '.apk', page: 'https://github.com/x/' + pkg });
     const updates = [mk('com.a', 'Alpha'), mk('com.b', 'Bravo'), mk('com.c', 'Charlie'), mk('com.d', 'Delta')];
     B.getUpdateState = () => JSON.stringify({ running: false, checkedAt: 0, updates: [] });
@@ -37,6 +37,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
       const steps = window.__upd.confirmFirst === pkg ? [['confirming', 100, 'Waiting for your OK to update ' + pkg + '...']] : [['downloading', 50, '2 MB'], ['installing', 100, ''], ['done', 100, 'Updated']];
       steps.forEach((s, i) => setTimeout(() => window.onUpdateProgress(JSON.stringify({ pkg, stage: s[0], percent: s[1], message: s[2] })), 40 * (i + 1)));
     };
+    B.endUpdateAll = () => { window.__upd.ended++; };
     B.hasGithubToken = () => false;
   });
   await page.goto(PAGE);
@@ -125,7 +126,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await setMode('unprivileged');
   await ev(() => { window.__calls.install.length = 0; runInstall(); }); await sleep(80);
   check('5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed', (await ev(() => window.__calls.install.length)) === 0 && /Installs from File Manager need/.test(await page.locator('#toastMsg').innerText()));
+  const fstate = () => ev(() => ({ btn: document.getElementById('installRunBtn').disabled, value: document.getElementById('optAuthorizer').value, note: getComputedStyle(document.getElementById('installFilesNote')).display !== 'none' ? document.getElementById('installFilesNote').innerText : '' }));
+  const fs0 = await fstate();
+  check('   the stale backend is cleared, Install is off and a sentence names what is needed', fs0.btn === true && fs0.value === 'none' && /^Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root\./.test(fs0.note), JSON.stringify(fs0));
+  await setMode('shizuku');
+  const fs1 = await fstate();
+  check('   a working mode is back: Install is on again and the backend is Shizuku', fs1.btn === false && fs1.value === 'shizuku' && /Shizuku/.test(fs1.note), JSON.stringify(fs1));
   await ev(() => { installFromFiles = false; applyFilesInstallMode(); });
+  check('   a normal install leaves Install on', (await fstate()).btn === false);
 
   // 6) "Update All" asks once, in the app's own dialog
   await setMode('adb_tcp');
@@ -135,6 +143,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { updList.forEach(u => { updProgress[u.pkg] = { stage: 'queued', percent: 0, message: '' }; }); updateAllUI(); });
   check('   apps that are already queued are not asked about again (no second question for a queue that is running)', (await ev(() => window.__upd.approve.length)) === 0);
   await ev(() => { updList.forEach(u => { delete updProgress[u.pkg]; }); renderUpdates(); });
+  const endedAtStart = await ev(() => window.__upd.ended);
   await page.click('#updAllBtn'); await sleep(60);
   let u = await ev(() => JSON.parse(JSON.stringify(window.__upd)));
   check('6. Update All asks the app, once, with the packages (no dialog of the page)', u.approve.length === 1 && JSON.stringify(u.approve[0]) === '["com.a","com.b","com.c","com.d"]' && dialogs.length === 0, JSON.stringify([u.approve, dialogs]));
@@ -156,6 +165,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.click('#updAllBtn'); await sleep(60);
   await ev(() => window.onUpdateAllAnswer(JSON.stringify({ ok: false, pkgs: [], error: 'installing updates needs ADB, Shizuku or Root. Set up a working mode first.' }))); await sleep(60);
   check('   an error from the app is shown as it is', /needs ADB, Shizuku or Root/.test(await page.locator('#toastMsg').innerText()) && (await ev(() => window.__upd.installs.length)) === 2);
+
+  // 7b) The queue is over / the working mode goes read-only: the app is told, so approvals that were not used are dropped
+  check('7b. the app is told when the queue is over (every approval left is dropped)', (await ev(() => window.__upd.ended)) > endedAtStart);
+  const endedBefore = await ev(() => window.__upd.ended);
+  await ev(() => { updQueue = ['com.c', 'com.d']; });
+  await setMode('unprivileged');
+  check('   the working mode goes read-only: the page\'s queue is emptied and the app is told', (await ev(() => updQueue.length)) === 0 && (await ev(() => window.__upd.ended)) > endedBefore);
+  await setMode('adb_tcp');
 
   // 8) A single Update goes straight to the app, which asks after the download; the row shows it is waiting for the person
   await ev(() => { window.__upd.confirmFirst = 'com.c'; });

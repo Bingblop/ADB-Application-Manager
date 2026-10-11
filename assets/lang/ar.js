@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "فُقد الاتصال بالجهاز. أعد الاتصال في أوضاع التشغيل ثم حاول مرة أخرى.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
 "This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
-"Check again": "فحص مرة أخرى"
+"Check again": "فحص مرة أخرى",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],

@@ -4044,7 +4044,7 @@
                     <input type="checkbox" class="switch-input" id="optSelectAllSplits" onchange="renderInstallSplits()"><span class="switch-track"></span>
                 </label>
 
-                <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">Install</button>
+                <button class="batch-grid-btn accent" id="installRunBtn" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">Install</button>
                 <div id="installProgress" class="uad-status" style="display:none;margin-top:10px;"></div>
                 <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
@@ -10502,6 +10502,7 @@ Type any command below (e.g. pm list packages -d)
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
                 try { if (typeof installerOnModeChange === 'function') installerOnModeChange(); } catch (e) { console.error(e); }
+                try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -12004,6 +12005,15 @@ Type any command below (e.g. pm list packages -d)
             updStartQueue(pending.map(u => u.pkg));
         }
 
+        // Tells the app the queue is over (finished, or the working mode went read-only): approvals of "Update All" that were not used are dropped.
+        function updEndAll() {
+            const B = updBridge();
+            if (B && B.endUpdateAll) { try { B.endUpdateAll(); } catch (e) { console.error(e); } }
+        }
+        function updOnModeChange() {
+            if (!isPrivilegedActive) { updQueue = []; updEndAll(); }
+        }
+
         function updStartQueue(pkgs) {
             updQueue = pkgs.slice();
             updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
@@ -12024,7 +12034,8 @@ Type any command below (e.g. pm list packages -d)
 
         function startNextQueuedUpdate() {
             const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing' || p.stage === 'confirming');
-            if (busy || !updQueue.length) return;
+            if (busy) return;
+            if (!updQueue.length) { updEndAll(); return; }          // the queue is over: a yes that was not used is dropped
             const next = updQueue.shift();
             updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
@@ -16156,7 +16167,21 @@ Type any command below (e.g. pm list packages -d)
             });
             const note = document.getElementById('installStandardNote');
             if (note) note.style.display = standard && !installFromFiles ? '' : 'none';
-            if (installFromFiles) return;          // a package from the file manager has its own rule (applyFilesInstallMode)
+            const runBtn0 = document.getElementById('installRunBtn');
+            if (runBtn0 && !installFromFiles) runBtn0.disabled = false;
+            if (installFromFiles) {
+                // A package from the file manager has its own rule (applyFilesInstallMode) and needs a privileged working mode: when the mode goes
+                // read-only the stale backend is cleared, a sentence says what is needed and Install is off until a working mode is back.
+                const fnote = document.getElementById('installFilesNote'), btn = document.getElementById('installRunBtn');
+                if (btn) btn.disabled = standard;
+                if (standard) {
+                    sel.value = 'none';
+                    if (fnote) { fnote.style.display = ''; fnote.innerText = 'Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.'; }
+                } else {
+                    applyFilesInstallMode();
+                }
+                return;
+            }
             const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
             if (standard) sel.value = 'none';
             else if (installerAuthPicked && installerAuthPick) sel.value = installerAuthPick;
@@ -16710,6 +16735,8 @@ Type any command below (e.g. pm list packages -d)
             const none = sel && sel.querySelector('option[value="none"]');
             const note = document.getElementById('installFilesNote');
             const gates = ['optBlockMismatch', 'optBlockUnknown'].map(id => document.getElementById(id));
+            const runBtn = document.getElementById('installRunBtn');
+            if (runBtn) runBtn.disabled = installFromFiles && !isPrivilegedActive;       // a package from the file manager needs a privileged working mode
             if (installFromFiles) {
                 const auth = privilegedInstallBackend();
                 if (sel && auth) sel.value = auth;

@@ -14,6 +14,16 @@ public class InstallConfirmTest {
     if (m.find(at + signature.length() + 4)) end = m.start();
     return src.substring(at, end);
   }
+  static boolean noContradiction() {
+    java.util.List<String> a = new java.util.ArrayList<String>();
+    a.add(InstallConfirm.REINSTATES_SYSTEM);
+    String[] installed = { null, "1.0" };
+    for (String iv : installed) for (int files : new int[]{ 1, 4 }) {
+      String m = InstallConfirm.messageLocalFile("b.backup", "com.sys", "1", iv, files, "adb_tcp", "", a);
+      if (m.contains("new app") || m.contains("replaces") || m.contains("bundle") || m.contains("checksum") || !m.contains(InstallConfirm.REINSTATES_SYSTEM)) return false;
+    }
+    return true;
+  }
   static int count(String s, String what) { int c = 0, i = 0; while ((i = s.indexOf(what, i)) >= 0) { c++; i += what.length(); } return c; }
   static String manyRows(int k) {
     java.util.List<String[]> r = new java.util.ArrayList<String[]>();
@@ -233,9 +243,12 @@ public class InstallConfirmTest {
         is("...and the question names the host the bytes came from, from the download itself", upd.contains("final String finalUrl = UpdateManager.download(") && upd.contains("InstallConfirm.hostOf(finalUrl)"));
 
         String all = methodBody(src, "private void runApproveUpdateAll(");
-        is("'Update all' asks once, with the list, in the native dialog", all.contains("confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows,") && all.contains("approvedUpdates.put("));
+        is("'Update all' asks once, with the list, in the native dialog", all.contains("confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows,") && all.contains("approvedUpdates.replace(versions,"));
         is("...it keeps only apps the app found an update for itself, not this app, not one that opens elsewhere", all.contains("updateResults.get(p)") && all.contains("\"self\".equals(") && all.contains("\"external\".equals("));
-        is("...a yes is per package, spent once and expires", src.contains("approvedUpdates.remove(pkg)") && src.contains("UPDATE_APPROVAL_MS") && methodBody(src, "private boolean takeUpdateApproval(").contains("System.currentTimeMillis() - at < UPDATE_APPROVAL_MS"));
+        String take = methodBody(src, "private boolean takeUpdateApproval(");
+        is("...a yes is bound to the update the check holds now (its version and source), spent when used, and needs a privileged mode", take.contains("updateResults.get(pkg)") && take.contains("optString(\"availableVersion\")") && take.contains("optString(\"source\")") && take.contains("isPrivilegedMode(resolveExecMode())") && all.contains("versions.put(p, new String[]{u.optString(\"availableVersion\"), u.optString(\"source\")})"));
+        is("...a new update check drops every approval, and so does the page when its queue ends", methodBody(src, "private void runUpdateCheck(").contains("approvedUpdates.clear()") && src.contains("public void endUpdateAll() {\n            approvedUpdates.clear();"));
+        is("a REINSTATES_SYSTEM question says nothing of a new app, a replaced app, a bundle or a checksum", noContradiction());
         is("...and only one such question is open at a time", all.contains("updateAllAsking.compareAndSet(false, true)"));
 
         String store = methodBody(src, "private void downloadAndInstall(");

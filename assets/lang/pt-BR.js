@@ -4526,7 +4526,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "A conexão com o dispositivo foi perdida. Reconecte em Modos de operação e tente de novo.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "O serviço de configurações não respondeu. Tente de novo daqui a pouco ou reinicie o telefone.",
 "This Android version did not understand the command.": "Esta versão do Android não entendeu o comando.",
-"Check again": "Verificar de novo"
+"Check again": "Verificar de novo",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Instalar pelo Gerenciador de arquivos exige ADB, Wireless Debugging, Shizuku ou Root. Configure um deles em Modos de operação e tente de novo."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
