@@ -10,7 +10,7 @@ The release is a pull request (this one), then the `release.yml` workflow with t
 4. [ ] Read the `## v7.12.10-Pro (versionCode 852)` section of `CHANGELOG.md` once as the person who will see it: the workflow copies it into the release text, so every sentence must be true of this build.
 5. [ ] The quick phone check ([PHONE-QUICK-CHECK-v7.12.9.md](PHONE-QUICK-CHECK-v7.12.9.md)) has been offered to the owner (AGENTS.md asks for that before a release). It can be run on a build from `main` (`./build.sh`) before the release exists.
 6. [ ] Start it: Actions, "Build, sign and publish release", Run workflow, branch `main`, version `7.12.10` (no leading `v`, no `-Pro`), **leave "allow_throwaway_key" unticked**. A tag `v7.12.10` pushed to the repository starts the same workflow; use one or the other, not both. The workflow always publishes a real GitHub release, so a "test run" creates one: use a version such as `7.12.10-test` and delete the release and its tag afterwards.
-7. [ ] Wait for it to finish green. It builds three APKs (`arm64-v8a`, `armeabi-v7a`, `universal`), writes `SHA256SUMS.txt`, checks the signing certificate against the pinned value (this check has not run before in a real release) and publishes.
+7. [ ] Wait for it to finish green. It builds three APKs (`arm64-v8a`, `armeabi-v7a`, `universal`), writes `SHA256SUMS.txt`, checks the signing certificate against the pinned value (this check passed in the v7.12.9 release run; this release must pass it again) and publishes.
 8. [ ] Verify the published files (next section).
 9. [ ] Install the arm64 file over the previous version on a phone and run the quick phone check.
 
