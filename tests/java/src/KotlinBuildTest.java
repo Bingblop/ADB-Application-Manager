@@ -561,6 +561,22 @@ public class KotlinBuildTest {
     check("the package id is not written anywhere else in the app's Java", count == 0);
     check("nor in the page (the app tells the page, the page never names it)", !page.contains(KotlinBuild.KOTLIN_PACKAGE_ID));
 
+    // the contract document says what the code does, and the WebView side of the swap-back matches the release workflow
+    String contract = read("docs/KOTLIN-SWAP-CONTRACT.md");
+    String rel = read(".github/workflows/release.yml");
+    if (contract == null) check("docs/KOTLIN-SWAP-CONTRACT.md exists", false);
+    else {
+      check("the contract names the Kotlin package id, the tag prefix, the file pattern and the pre-release rule of the code", contract.contains("`" + KotlinBuild.KOTLIN_PACKAGE_ID + "`") && contract.contains("`" + KotlinBuild.TAG_PREFIX + "<version>`") && contract.contains("`" + KotlinBuild.ASSET_PATTERN + "`") && contract.contains("not marked pre-release"));
+      check("the contract's limits are the code's (pages, releases)", contract.contains("5 pages of 100") && contract.contains("per_page=" + KotlinBuild.PAGE_SIZE) && KotlinBuild.MAX_PAGES == 5 && contract.contains("under 600 MB"));
+      check("the contract names the WebView package, its file names and SHA256SUMS.txt", contract.contains("`com.bloatware.bingblop`") && contract.contains("ADB_Application_Manager_Pro-v<version>-arm64-v8a.apk") && contract.contains("-armeabi-v7a.apk") && contract.contains("-universal.apk") && contract.contains("SHA256SUMS.txt") && contract.contains("**Switch to the WebView version**"));
+      if (rel == null) System.out.println("SKIP release.yml not found");
+      else {
+        Matcher cm = Pattern.compile("EXPECTED_CERT_SHA256:\\s*([0-9a-f]{64})").matcher(rel);
+        check("the certificate in the contract is the one release.yml checks", cm.find() && contract.contains(cm.group(1)));
+        check("and the file names are the ones release.yml builds", rel.contains("ADB_Application_Manager_Pro-v${V}-$ABI.apk") && rel.contains("arm64-v8a armeabi-v7a universal") && rel.contains("SHA256SUMS.txt"));
+      }
+    }
+
     // the page's calls
     String js = between(page, "// ---- Settings: Try the Kotlin build (beta)", "document.addEventListener('visibilitychange'");
     check("the page script was found", js.contains("function kbInstall()"));
