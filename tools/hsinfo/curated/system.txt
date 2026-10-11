@@ -1,0 +1,77 @@
+# key | what it does | values | risk (conn, lock, break)
+accelerometer_rotation | Auto-rotate: turns the screen when you turn the phone. | 0 = off (screen keeps user_rotation); 1 = on
+advanced_settings | Advanced settings mode. | 0 = no; 1 = yes
+alarm_alert | The default alarm sound. | address of a sound file (URI)
+alarm_vibration_intensity | How strong alarm vibration is. | 0 = off; 1 = low; 2 = medium; 3 = high
+apply_ramping_ringer | Ringtone starts quiet and gets louder. | 0 = off; 1 = on
+auto_caps | Capitalises the first letter of a sentence in text fields. | 0 = off; 1 = on
+auto_punctuate | Two spaces become a full stop and a space. | 0 = off; 1 = on
+auto_replace | Corrects typing mistakes automatically. | 0 = off; 1 = on
+bluetooth_discoverability | Whether other devices may find and connect to this phone by Bluetooth. | 0 = neither; 1 = connectable but not visible; 2 = visible and connectable
+bluetooth_discoverability_timeout | How long Bluetooth stays visible to other devices. | seconds; 0 = never ends
+camera_flash_notification | Flashes the camera light for notifications. | 0 = off; 1 = on
+dtmf_tone | Keypad tones while dialling. | 0 = off; 1 = on
+dtmf_tone_type | Length of keypad tones (CDMA). | 0 = normal; 1 = long
+end_button_behavior | What the end-call (power) button does when you are not in a call. | 0 = nothing; 1 = go to the home screen; 2 = turn the screen off and lock it; 3 = go to the home screen, or turn the screen off if you are already there
+font_scale | Text size. | decimal; 1.0 = normal; 0.85 = small; 1.15 = large; 1.3 = largest
+haptic_feedback_enabled | Vibrates when you touch buttons and keys. | 0 = off; 1 = on
+haptic_feedback_intensity | How strong touch vibration is. | 0 = off; 1 = low; 2 = medium; 3 = high
+hearing_aid | Hearing aid compatibility. | 0 = off; 1 = on
+hide_rotation_lock_toggle_for_accessibility | Hides the rotation lock button in Quick Settings. | 0 = shown; 1 = hidden
+keyboard_vibration_enabled | Vibrates when you press keyboard keys. | 0 = off; 1 = on
+lock_to_app_enabled | Screen pinning: pins one app to the screen. | 0 = off; 1 = on
+lockscreen_sounds_enabled | Plays sounds when the screen locks and unlocks. | 0 = off; 1 = on
+master_balance | Stereo balance of all sound. | decimal, -1 = all left; 0 = centred; 1 = all right
+master_mono | Plays all sound as mono. | 0 = stereo; 1 = mono
+media_vibration_intensity | How strong vibration in media and games is. | 0 = off; 1 = low; 2 = medium; 3 = high
+min_refresh_rate | The lowest screen refresh rate allowed. | Hz, e.g. 60; 0 = no minimum
+mode_ringer_streams_affected | The sounds that are muted in silent or vibrate mode. | whole number, one bit per sound type
+multi_audio_focus_enabled | Lets several apps play sound at once. | 0 = off; 1 = on
+mute_streams_affected | The sounds that the mute button silences. | whole number, one bit per sound type
+notification_light_pulse | The notification light pulses while a notification waits. | 0 = off; 1 = on
+notification_sound | The default notification sound. | address of a sound file (URI)
+notification_vibration_intensity | How strong notification vibration is. | 0 = off; 1 = low; 2 = medium; 3 = high
+notifications_use_ring_volume | Notifications use the ringer volume. | 0 = separate volume; 1 = same as the ringer
+peak_refresh_rate | The highest screen refresh rate allowed. | Hz, e.g. 120; large value or empty = as high as possible
+pointer_location | Shows the touch pointer position on screen (developer option). | 0 = off; 1 = on
+pointer_speed | Speed of the mouse or touch pointer. | whole number, -7 (slowest) to 7 (fastest); 0 = normal
+power_sounds_enabled | Plays sounds for low battery alerts. | 0 = off; 1 = on
+ring_vibration_intensity | How strong ringtone vibration is. | 0 = off; 1 = low; 2 = medium; 3 = high
+ringtone | The default ringtone. | address of a sound file (URI)
+screen_auto_brightness_adj | Adjustment to automatic brightness. | decimal, -1 (darker) to 1 (brighter); 0 = none
+screen_brightness | Screen brightness. | 0 or 1 (dimmest) to 255 (brightest); some phones go higher
+screen_brightness_mode | Adaptive brightness. | 0 = manual; 1 = automatic
+screen_flash_notification | Flashes the screen for notifications. | 0 = off; 1 = on
+screen_off_timeout | How long the screen stays on without touch before it turns off. | milliseconds, e.g. 15000, 30000, 60000, 600000
+setup_wizard_has_run | The first-time setup has run. | 0 = not yet; 1 = done | break
+show_key_presses | Shows key presses on screen (developer option). | 0 = off; 1 = on
+show_password | Shows typed password characters for a moment. | 0 = off; 1 = on
+show_touches | Shows a dot where you touch the screen (developer option). | 0 = off; 1 = on
+sip_call_options | When to use internet (SIP) calls. | SIP_ALWAYS = always; SIP_ADDRESS_ONLY = only for SIP addresses
+sip_receive_calls | Receives internet (SIP) calls. | 0 = no; 1 = yes
+sound_effects_enabled | Plays sounds when you touch the screen. | 0 = off; 1 = on
+status_bar_show_battery_percent | Shows the battery percentage in the status bar. | 0 = hide it; 1 = show it
+system_locales | The languages of the phone, in order. | list of locale tags separated by commas, e.g. en-US,de-DE
+time_12_24 | 12 or 24 hour clock. | 12 = 12 hour; 24 = 24 hour; unset = by the language
+touchpad_natural_scrolling | Natural scrolling on a touchpad. | 0 = off; 1 = on
+touchpad_pointer_speed | Touchpad pointer speed. | whole number, -7 (slowest) to 7 (fastest)
+touchpad_tap_to_click | Tap to click on a touchpad. | 0 = off; 1 = on
+tty_mode | Teletypewriter (TTY) mode for calls. | 0 = off; 1 = full; 2 = hearing carry over; 3 = voice carry over
+unread_notification_dot_indicator | Shows a dot for unread notifications (watches). | 0 = off; 1 = on
+user_rotation | Screen orientation used when auto-rotate is off. | 0 = portrait; 1 = landscape (left); 2 = upside down; 3 = landscape (right)
+vibrate_in_silent | Allows vibration while the phone is in silent mode. | 0 = no; 1 = yes
+vibrate_input_devices | Sends vibration to attached game controllers too. | 0 = no; 1 = yes
+vibrate_on | Whether vibration is on for events. Android keeps this by itself. | whole number
+vibrate_when_ringing | Vibrates as well as ringing for calls. | 0 = off; 1 = on
+volume_a11y | Accessibility volume (index). | whole number, from 0 to the maximum of that sound
+volume_alarm | Alarm volume. | whole number, 0 (silent) up to the maximum (often 7)
+volume_assistant | Assistant volume. | whole number, 0 up to the maximum
+volume_bluetooth_sco | Bluetooth call volume. | whole number, 0 up to the maximum
+volume_master | Master volume. | decimal, 0 to 1
+volume_music | Media volume. | whole number, 0 up to the maximum (often 15)
+volume_notification | Notification volume. | whole number, 0 up to the maximum
+volume_ring | Ringer volume. | whole number, 0 (silent) up to the maximum
+volume_system | System sounds volume. | whole number, 0 up to the maximum
+volume_voice | Call volume. | whole number, 0 up to the maximum
+wifi_use_static_ip | Uses a fixed IP address for Wi-Fi (older setting). | 0 = off; 1 = on
+when_to_make_wifi_calls | When to place calls over Wi-Fi. | 0 = always use Wi-Fi calling; 1 = ask every time; 2 = never

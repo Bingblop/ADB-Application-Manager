@@ -1,0 +1,12 @@
+edit active quick list -> bridge calls: ["quicklist:\"listA\""]
+edited list now has 2 packages: 2
+edit a DIFFERENT (non-active) list -> bridge calls (should be empty): []
+delete active quick list -> bridge calls: ["quicklist:\"\""]
+quickListId cleared: true
+delete a DIFFERENT (non-active) list -> bridge calls (should be empty): []
+quickListId unchanged: true
+imported profile apps: [{"pkg":"com.a","name":"A","state":"uninstalled"},{"pkg":"com.b","name":"B","state":"suspended"}]
+exactly one entry for the duplicated package: true
+the surviving entry is the LAST one listed (uninstalled, not disabled): true
+total apps after dedup is 2, not 3: true
+errors: []

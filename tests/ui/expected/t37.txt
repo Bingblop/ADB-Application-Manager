@@ -1,0 +1,10 @@
+1. VirusTotal card visible after a package loads: true
+2a. no key -> the card says so and links to Settings, the scan button is off: true
+2. no key -> bridge not called: true
+3. key persisted via saveSetting (as the one key, no second plain copy under the older name): true
+   scan bridge called with key+path: true
+4. clean verdict: true | shows report link: true
+5. malicious verdict: true
+6. unknown file offers upload: true
+   upload bridge called: true
+errors: []

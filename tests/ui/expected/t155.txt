@@ -1,0 +1,18 @@
+ok   360x800 1. before the icon is known the tile shows the first letter: {"text":"S","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   360x800 2. when the icon arrives the tile shows it (44x44, no letter): {"text":"","hasIcon":true,"img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","w":44,"h":44,"iw":44,"ih":44}
+ok   360x800 3. the menu asked for the icon once, for this app alone: ["com.facebook.appmanager,com.microsoft.skydrive,com.sec.android.app.sbrowser","com.sec.android.app.sbrowser"]
+ok   360x800 4. opening the same app again shows the icon at once and asks nothing more: [true,2,2]
+ok   360x800 5. an icon that cannot be drawn falls back to the first letter: {"text":"O","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   360x800 6. an app with no icon from the phone keeps the letter: {"text":"F","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   360x800 7. an icon that arrives for another app does not replace this tile: {"text":"O","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   360x800 8. no sideways scroll
+ok   412x915 1. before the icon is known the tile shows the first letter: {"text":"S","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   412x915 2. when the icon arrives the tile shows it (44x44, no letter): {"text":"","hasIcon":true,"img":true,"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==","w":44,"h":44,"iw":44,"ih":44}
+ok   412x915 3. the menu asked for the icon once, for this app alone: ["com.facebook.appmanager,com.microsoft.skydrive,com.sec.android.app.sbrowser","com.sec.android.app.sbrowser"]
+ok   412x915 4. opening the same app again shows the icon at once and asks nothing more: [true,2,2]
+ok   412x915 5. an icon that cannot be drawn falls back to the first letter: {"text":"O","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   412x915 6. an app with no icon from the phone keeps the letter: {"text":"F","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   412x915 7. an icon that arrives for another app does not replace this tile: {"text":"O","hasIcon":false,"img":false,"src":null,"w":44,"h":44,"iw":0,"ih":0}
+ok   412x915 8. no sideways scroll
+ok   no page errors:
+ALL PASSED

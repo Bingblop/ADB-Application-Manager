@@ -1,0 +1,29 @@
+1. a store app that cannot be loaded: "Could not load this app: SocketTimeoutException", in the failed color: true {"text":"Could not load this app: SocketTimeoutException","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   a store list that cannot be loaded: "Could not load: ...": true {"text":"Could not load: java.net.UnknownHostException","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   and when the error is gone the color goes with it: true {"text":"No apps found.","marked":false,"color":"","want":"rgb(242, 184, 181)"}
+   an install that fails: "Install failed: EACCES (Permission denied)": true {"text":"Install failed: EACCES (Permission denied)","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   progress after it is plain text again ("Downloading 40%"): true {"text":"Downloading 40%","marked":false,"color":"","want":"rgb(242, 184, 181)"}
+   a package that cannot be read: "Could not read that package: ...": true {"text":"Could not read that package: EACCES (Permission denied)","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   a file the app cannot open: "Could not open that file: boom": true {"text":"Could not open that file: boom","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   the search for packages that fails: "The search failed: EACCES": true {"text":"The search failed: EACCES","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   and without a reason: "The search failed.": true {"text":"The search failed.","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   a search that cannot start: "The search failed: boom": true {"text":"The search failed: boom","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+   a search that works shows no failed color: true {"text":"No APK, APKS, APKM or XAPK files found on this device.","marked":false,"color":"","want":"rgb(242, 184, 181)"}
+   a VirusTotal scan that fails: "The scan failed: bad key": true {"text":"The scan failed: bad key","marked":true,"color":"rgb(242, 184, 181)","want":"rgb(242, 184, 181)"}
+2. Uninstall and Delete (the danger buttons) are in the failed color, the others are not: true {"plain":"rgb(230, 224, 233)","danger":"rgb(242, 184, 181)","dangerBorder":"rgb(242, 184, 181)","bloat":"rgb(242, 184, 181)","accentBg":"rgba(208, 188, 255, 0.27)","accentColor":"rgb(208, 188, 255)","plainBg":"rgba(255, 255, 255, 0.08)","accentVar":"#D0BCFF"}
+   the main action (the accent buttons: Install, Restore, Reinstall) is tinted and in the accent color: true {"plain":"rgb(230, 224, 233)","danger":"rgb(242, 184, 181)","dangerBorder":"rgb(242, 184, 181)","bloat":"rgb(242, 184, 181)","accentBg":"rgba(208, 188, 255, 0.27)","accentColor":"rgb(208, 188, 255)","plainBg":"rgba(255, 255, 255, 0.08)","accentVar":"#D0BCFF"}
+   a pinned command next to the built-in buttons has the accent color (it is not "Connect 5555"): true {"pinned":"rgb(208, 188, 255)","other":"rgba(255, 255, 255, 0.09)","accent":"#D0BCFF","pinColor":"rgb(208, 188, 255)","text":"Connect"}
+   the remove button of a history row has a name for a screen reader: true Remove from history
+   the F-Droid copy button says Copy (it was a symbol): true
+   a sheet with no symbol to show has no empty tile (the archive sheet), and one with a symbol still has it: true {"empty":"none","filled":"flex"}
+3. [320 px] the terminal find box is wide enough for its hint (288 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":288,"hint":83,"navInside":true,"wrapped":true,"side":true}
+3. [360 px] the terminal find box is wide enough for its hint (127 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":127,"hint":83,"navInside":true,"wrapped":false,"side":true}
+3. [412 px] the terminal find box is wide enough for its hint (179 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":179,"hint":83,"navInside":true,"wrapped":false,"side":true}
+   the sub-tabs of Hidden Settings and App Stores are 14 px (they were 13), the log level chips 12 px (11): true {"sdbTab":"14px","store":"14px","lc":"16px"}
+4. [dark] the filled accent button ("Apply", "Watching") is readable (contrast 12.3:1, at least 4.5): true {"prof":["rgb(0, 0, 0)","rgb(208, 188, 255)"],"sub":["rgb(0, 0, 0)"]}
+4. [light] the filled accent button ("Apply", "Watching") is readable (contrast 6.4:1, at least 4.5): true {"prof":["rgb(255, 255, 255)","rgb(103, 80, 164)"],"sub":["rgb(255, 255, 255)"]}
+5. no sentence of the page names a tab that has another name now (Files, Applications, Saved Lists, Saved App Lists): true []
+   the tile that stops the quick list tells where it is set with the names of v7.0: true
+   the About tab names File Manager: true
+6. every permission that cannot be changed has the "locked" badge, and no other has it: true {"rows":45,"locked":22,"badged":22,"wrong":0}
+all checks passed

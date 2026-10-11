@@ -1,0 +1,50 @@
+ok   a connected watch is shown and remembered
+ok   the drop is told in a toast
+ok   the device stays listed as Not connected, with its name, how it was connected and Reconnect and Forget
+ok   the picker and the empty state show there is no device now
+ok   the automatic setting is shown, and it is off here
+ok   Reconnect disconnects, connects to the same address, then looks for it by name
+ok   a failed Reconnect says why: no answer, and that Wireless debugging changes its port
+ok   the buttons work again afterwards
+ok   Reconnect brings the watch back: selected, listed as connected, the Not connected card gone
+ok   and says so
+ok   a new Wireless debugging port on the same address is found and used, and the device keeps its place in the list
+ok   only the entry on the same address was tried (not the other phone's)
+ok   a device known by its service name is listed
+ok   Reconnect finds it by name through mDNS and connects to the address it announces
+ok   a USB device that is not there says what to check (cable, unlock, USB debugging)
+ok   when it answers after "adb reconnect offline" it is back
+ok   the Bluetooth link is set up again through this phone's own ADB, then connected
+ok   without this phone's own ADB the Bluetooth link says what to turn on
+ok   a refused forward is told in adb's words
+ok   Forget takes a device off the list for good
+ok   the device menu starts with Reconnect
+ok   Reconnect from the menu cycles the connection of the selected device
+ok   Disconnect from the menu is a decision, not a drop: no card, no toast about a lost connection
+ok   an offline device offers Reconnect in its card, and is also listed as not connected
+ok   with the setting on, a drop is followed by three attempts on its own, and then it stops
+ok   the card then says why it could not (the buttons are free again)
+ok   when the first attempt works, it stops there and the watch is back
+ok   with the setting off, nothing is tried until the button is pressed
+ok   the setting is switched in the card (and remembered)
+ok   with one device not connected there is no Reconnect all (its own Reconnect does that)
+ok   with two it shows how many are not connected, and Reconnect all
+ok   Reconnect all tries each device (both addresses)
+ok   the one that answers is back, the other stays listed with the reason
+ok   and the toast counts: 1 of 2
+ok   the buttons are free again
+ok   when both answer, both are back and the card is gone
+ok   Settings has the switch (off here, as set) and the timings box showing the default 0, 8, 25 with no Reset
+ok   turning it on in Settings is the same setting as in the Devices tab (and enables the box)
+ok   your own timings are saved and used (seconds), and Reset appears
+ok   invalid timings (a word) are refused in words and the saved ones stay
+ok   invalid timings (nothing) are refused in words and the saved ones stay
+ok   invalid timings (nine attempts) are refused in words and the saved ones stay
+ok   invalid timings (more than 10 minutes) are refused in words and the saved ones stay
+ok   invalid timings (a negative number) are refused in words and the saved ones stay
+ok   spaces work as separators too
+ok   Reset goes back to 0, 8, 25 and hides itself
+ok   a damaged saved value falls back to the default
+ok   a saved value out of range falls back to the default too
+errors: []
+all ok

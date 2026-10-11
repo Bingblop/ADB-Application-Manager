@@ -1,0 +1,55 @@
+1. a theme change made before Settings was opened keeps the 3 earlier journal entries (and adds its own): true ["theme_customization_overlay_packages","key1","key2","key3"]
+2. after the answer the note is still there, marked finished, with the value to Undo to: true {"t":<epoch ms>,"sub":"theme","undo":"null","done":true,"n":0,"kind":"apply"}
+   a restart after the answer comes back to Overlays with the Undo bar: true {"view":"overlays","snack":"Theme changed"}
+   the note is counted (1) and kept for a second restart: true
+   a second restart still comes back (counted: 2): true {"view":"overlays","n":2}
+   a third one does not (the note is dropped, the app starts normally): true {"view":"apps","left":"null"}
+   an old note is ignored: true {"view":"apps","left":"null"}
+   a note from the future is ignored: true {"view":"apps","left":"null"}
+   a restart before the answer: the colour is added to the recent ones: true ["43A047"]
+   ... the change is logged in Settings (old value null): true ["theme_customization_overlay_packages:null>{\"android.theme.customization."]
+   ... and the note is marked finished, so it is not done twice: true
+   a restart where the phone does not hold the theme: no recent colour, no log entry: true {"done":false}
+3. Undo writes a note (no second Undo in it): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo"}
+   and keeps it once it is answered: true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo"}
+   the bridge was told it is an Undo (the switch goes back too): true [true]
+   a refused change leaves no note: true null
+   an unanswered one keeps the note (the restart may still come): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":false,"n":0,"kind":"apply","source":"preset","hex":"43A047","style":"TONAL_SPOT","from":""}
+   Default is not an Undo: true
+4. the read-out says "Monochromatic", not Tonal Spot: true From your wallpaper Monochromatic style
+   Apply does not claim it is already the same: true Android repaints in a moment, and apps may restart.
+   the editor does not start on the unknown style (one of the six stays chosen): true
+   a style with markup in it is not taken for a style at all: true From your wallpaper Tonal Spot style
+5. the first read (1.2 s late) does not replace what was chosen meanwhile: true {"src":"preset","color":"43A047","style":"VIBRANT","hex":"#43A047","now":"D32F2F"}
+   a redraw while the hex box has focus leaves what is typed alone: true 12AB
+   once it is left, the box shows the colour that is used: true 1122AA
+   an Apply made before the first read offers Undo, using what the phone reports it held: true {"shown":true,"msg":"Theme applied"}
+   ... and that Undo writes the old value back: true ["{\"android.theme.customization.system_palette\":\"D32F2F\",\"android.theme.customization.color_source\":\"preset\",\"android.theme.customization.theme_style\":\"SPRITZ\",\"_applied_timestamp\":1}"]
+6. the Undo bar says a switch would not change: true Theme applied, but a switch would not change
+   and a toast gives the phone's own words: true Applied, but the wallpaper-colors switch (global) would not change, so the phone's own palette may still win.
+6b. the failure sheet carries the warning about the switch: true Theme change refused FAILED Monet · secure setting java.lang.SecurityException: not allowed Android refused the request. The wallpaper-colors switch (global) could not be put back to what it was.
+7. a preset colour chosen from the keyboard keeps the focus on it: true BCC6CC
+   a recent colour chosen from the keyboard keeps the focus: true 0288D1
+   "Show more" in the presets keeps the focus in the presets: true BUTTON.mode-action-btn
+   when there is no more to show the focus moves onto the last colour, not into the page: true BUTTON
+   the three sliders have a visible focus ring: true
+   the clear button can be tabbed to and used with Enter: true
+   ... Enter clears the search: true
+   "Show more" in the list keeps the focus in the list: true DIV
+8. targets "constructor", "__proto__", "toString" and "hasOwnProperty" show real counts: true ["__proto__ 1","constructor 1","hasOwnProperty 1","constructor 1","toString 1"]
+   and nothing was written onto Object.prototype: true
+9. the preset list is open: true
+   choosing the wallpaper closes it (it is hidden with the editor): true
+   so Back is not used up on it: true
+10. opening the list a minute after it was read reads it again: true 1
+    a fresh one is not read again: true
+11. on Android 11 a first visit opens on the Overlays list: true
+    Apply and Default are off: true
+    and it says why: true Material You needs Android 12 or newer.
+    asking anyway changes nothing and says so: true Material You needs Android 12 or newer
+    on Android 14 it opens on Theme, as before: true
+    a saved choice of the Theme half is kept even there: true
+12. the list the page has is kept (131 overlays): true
+    and the page reads the list again (the overlay may be gone): true 1
+no page errors: true
+ALL OK

@@ -1,0 +1,39 @@
+ok   the details show the screenshots as tappable pictures, only web addresses (javascript:, data:, file: and relative ones are not shown)
+ok   a line says to tap a picture to enlarge it
+ok   the viewer is closed to begin with
+ok   tapping the second picture opens the viewer on it, counted 2 / 4, with both arrows, over the details
+ok   the picture is shown to fit the screen (a tall one: its height is the screen's)
+ok   the viewer covers the whole screen, above the details
+ok   the next arrow shows the third picture, 3 / 4
+ok   the last picture: 4 / 4, no next arrow; one that cannot load says so in words
+ok   back to the first: 1 / 4, no previous arrow, and the message is gone
+ok   Zoom in: 1.5 times
+ok   the zoom stops at 6 times
+ok   Zoom out goes back to fit and never below it, with the picture centred again
+ok   Fit goes straight back to the whole picture
+ok   dragging a zoomed picture moves it with the finger
+ok   (this wide picture is shorter than the screen even zoomed, so it cannot move up or down)
+ok   but never past the edge: the picture still covers the screen
+ok   a zoomed picture is not swiped away to the next one
+ok   a swipe to the left shows the next picture
+ok   a swipe to the right shows the previous one
+ok   a swipe at the first picture goes nowhere
+ok   a mostly vertical drag, or a short one, does not change picture
+ok   a double tap zooms in to 2.5 times
+ok   and a double tap on a zoomed picture goes back to fit
+ok   the mouse wheel zooms in (on a computer)
+ok   a pinch (two fingers moving apart, 100 to 200 px) zooms about twice
+ok   and pinching together again goes back to fit
+ok   lifting the fingers of a pinch does not swipe or close anything
+ok   Back closes the viewer first, and the details stay open under it
+ok   Escape closes it
+ok   the X closes it
+ok   a tap beside the picture closes it
+ok   but a tap on the picture does not
+ok   the arrow keys step through the pictures too (on a computer)
+ok   Enter on a focused picture opens it
+ok   with one picture there is no count and no arrows
+ok   without pictures there is nothing to tap and no hint
+ok   a new app brings its own pictures (2 of them)
+errors: []
+all ok

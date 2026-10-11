@@ -1,0 +1,39 @@
+ok   Settings has a My Themes card right after Palette Style
+ok   empty: no themes, and the note says how to make one
+ok   the card says what a theme holds and that Appearance is not part of it
+ok   Save asks for a name, suggesting the style and its source color
+ok   it is saved with the style, the source color and the palette
+ok   it is listed with its name and what it is, marked as the one in use, and a toast says so
+ok   the tile shows the theme's colors (accent, background, card, second accent)
+ok   another look: the saved theme is no longer marked
+ok   the suggested name of a curated palette is its name
+ok   a tweaked palette is suggested as such
+ok   newest first; the tweak and Pure black are kept, colors in lower case
+ok   the line under the name says palette, tweaked, pure black
+ok   tapping a theme applies it: palette style, source color, no tweaks, no pure black
+ok   the page wears its colors, only that theme is marked, the Palette Style card follows, and a toast names it
+ok   Appearance is untouched
+ok   another theme brings back its tweak and Pure black
+ok   Enter on a focused theme applies it too
+ok   in light mode the tiles show the light versions
+ok   saving under a name that exists (any case) asks before replacing, and No leaves everything
+ok   Yes replaces it with the look in use now (crimson), keeping three themes, the replaced one first
+ok   a name is cut at 40 characters
+ok   an empty name saves nothing
+ok   Cancel saves nothing
+ok   Rename asks with the old name, trims, and keeps everything else
+ok   a name another theme has (any case) is refused
+ok   the same name again changes nothing
+ok   Update asks first; No leaves the theme as it was
+ok   Yes puts the look in use now (Nordic Emerald) into it, same name and place
+ok   Delete asks first; No keeps it
+ok   Yes removes it, and a toast says so
+ok   a name with markup is shown as written, nothing is injected
+ok   the 31st is refused in words
+ok   but a name that exists can still be replaced when 30 are saved
+ok   a damaged list keeps only the sound entries, the first of a repeated name, cut and cleaned
+ok   something that is not a list is an empty list
+ok   an old custom palette says to choose a palette first, and nothing is asked or saved
+ok   after the app is reopened the theme is still there
+errors: []
+all ok

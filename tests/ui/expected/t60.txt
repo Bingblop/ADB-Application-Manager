@@ -1,0 +1,87 @@
+1. the Hidden Settings tab sits right after Command-Line Interface (RRO/Monet Customization, added in v6.0, follows it): true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Stores","Logcat Viewer","Task Manager","Connected Devices","Morphe Patcher","SD Maid","About"]
+   it activates its own button and view: true
+   and the neighbours still work (App Stores, About): true
+   About keeps its button: true
+2. no privileged mode: the gate shows, the controls hide, nothing is read: true {"gate":"flex","controls":"none","rows":0,"listed":0}
+   connecting a mode while the tab is open opens it and reads the tables, the shown one first: true ["global","secure","system"]
+3. each table shows its count: true ["Global 455","Secure 193","System 88"]
+   the first page is 120 rows, sorted A-Z: true
+   a "Show more" button says how many are left: true Show 120 more (335 left)
+   it adds the next page: true
+   scrolling to the end adds more by itself: true 360
+4. the Secure tab shows the secure table: true
+   its button is the active one: true
+   the table is remembered for next time: true
+   System too: true
+5. search narrows the list by name, with the matches marked: true ["adb_enabled","adb_wifi_enabled"]
+   the status line and the table button show matches / total: true 2 of 455 global settings · read <clock>
+Refresh | Global 2 / 455
+   a clear button appears: true
+   it also searches values: true
+   and the descriptions: true
+   several words must all match, in any case: true
+   no match: says so and offers to create that name: true "Nothing matches “zzz_nothing_like_this” in Global.\n＋ Create “zzz_nothing_like_this” in Global\nShow everything"
+   the offer opens the create sheet with the name filled in: true
+   clearing the search shows everything again: true
+6. "Switches" keeps only 1/0, true/false, on/off, yes/no values: true
+   "Described" keeps the ones with a description: true
+   "Edited" is empty before anything was changed, and says so: true
+7. Name Z-A: true
+   by value: true
+8. a 1 shows a switch that is on: true
+   press and hold flips 1 to 0 with one put: true {"op":"put","ns":"global","key":"heads_up_notifications_enabled","value":"0"}
+   the row shows the new state (read back): true "heads_up_notifications_enabled\nPop-up (heads-up) notifications at the top of the screen.\n0 = off; 1 = on\n0\nAsk agent"
+   an undo bar names the change: true heads_up_notifications_enabled: 1 → 0
+   Undo puts the old value back: true
+   a short press does not flip (it opens the editor): true
+   true flips to false (letter case kept): true {"op":"put","ns":"global","key":"some_flag_true","value":"false"}
+   False flips to True (letter case kept): true {"op":"put","ns":"global","key":"some_flag_False","value":"True"}
+   ON flips to OFF (letter case kept): true {"op":"put","ns":"global","key":"some_flag_UPPER","value":"OFF"}
+   yes flips to no (letter case kept): true {"op":"put","ns":"global","key":"some_yes","value":"no"}
+   a value that is not a switch is left alone, with a hint: true Not a switch: tap it to edit
+   so is a multi-line value: true
+9. a tap on the switch flips it: true
+10. a risky switch asks first, naming what it does: true ["Change adb_enabled (Global)?\n\nUSB debugging: lets a computer, or this app, talk to the phone over ADB.\n\nThis can cut the ADB connection this app uses, so you may not be able to change it back from here."]
+    declining changes nothing: true
+    accepting goes ahead: true
+11. tapping a row opens the editor with its name, table, description and value: true {"key":"screen_brightness","sub":"System · Screen brightness.","val":"128","flip":"none","note":"A whole number.","chips":7}
+    it hides Flip for a number, names its kind, and offers quick values: true "A whole number."
+    changing the text notes what it was: true
+    Save puts the new value and closes the sheet: true {"op":"put","ns":"system","key":"screen_brightness","value":"200"}
+    the list shows what Android now holds: true
+    the undo bar says Saved: true
+    Undo restores 128: true
+    saving without a change sends nothing: true
+    a value with a control character is refused on the spot: true
+    and one that is too long: true
+    a quick value fills the box: true
+    (empty) empties it: true
+    Copy command gives a shell line with every quote escaped: true settings put global 'device_name' 'Sam'\''s phone'
+    Copy name: true
+    Copy value: true
+    Reload reads the value again: true
+12. an empty value opens as an empty box and says so: true
+    Delete asks first; declining deletes nothing: true
+    accepting deletes it and it leaves the list: true
+    the undo bar offers to bring it back: true
+    Undo puts it back with its (empty) value: true
+13. the plus button opens the create sheet on the table being shown: true
+    it cannot be created empty-named: true
+    a name with a space is refused on the spot: true
+    so is a name that starts with a dash: true
+    the table can be picked: true
+    Create puts it into that table: true {"op":"put","ns":"secure","key":"my_new_setting","value":"hello world"}
+    the list moves to that table and shows it: true
+    the undo bar says Created: true
+    Undo removes it again: true
+    an existing name is called out and the button says Replace: true
+    replacing asks first: true
+    and then does it: true
+14. a refused change says so, with Android's words and what to try: true "ui_night_mode\nFAILED\nSecure\nException occurred while executing 'put':\njava.lang.SecurityException: Permission denial: writing to settings requires:android.permi"
+    the list still shows the old value and nothing is recorded as changed: true
+    a change that Android quietly puts back is reported as not kept: true
+    a request the app refuses before sending is reported too: true
+    a request nobody answers times out with a message: true {"ok":false,"timedOut":true,"error":"No answer from the device (timed out)"}
+    and a late answer does not run it twice: true 1
+errors: []
+ALL OK
