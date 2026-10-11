@@ -56,15 +56,23 @@ public final class FontScan {
         public int maxVisited = 600000;
         public long deadlineMs;                      // absolute System.currentTimeMillis() cutoff
         public boolean hitLimit;                     // set when any limit stopped the scan early
+        public Cancel cancel;                        // asked before every file; when it says yes the scan stops and {@link #cancelled} is set (null: cannot be cancelled)
+        public boolean cancelled;                    // set when {@link #cancel} stopped the scan (hitLimit is set too: the list is incomplete)
         public int visited;                          // files and folders looked at so far
+    }
+
+    /** Asked by the walk before every file whether the scan was cancelled (the page left Settings, a newer search started). Must be cheap and thread-safe. */
+    public interface Cancel {
+        boolean isCancelled();
     }
 
     /** The clock is read once per this many files, so a folder of 100,000 files cannot run far past the deadline and the walk does not spend its time on the clock. */
     static final int CLOCK_EVERY = 16;
 
-    /** True when the walk must stop: a limit was hit before, or the deadline has passed (checked every {@link #CLOCK_EVERY} files, i.e. per file and not only per folder). Sets {@code hitLimit}. */
+    /** True when the walk must stop: a limit was hit before, the scan was cancelled, or the deadline has passed (checked every {@link #CLOCK_EVERY} files, i.e. per file and not only per folder). Sets {@code hitLimit}. */
     private static boolean timeUp(Limits lim) {
         if (lim.hitLimit) return true;
+        if (lim.cancel != null && lim.cancel.isCancelled()) { lim.cancelled = true; lim.hitLimit = true; return true; }
         if ((lim.visited & (CLOCK_EVERY - 1)) == 0 && System.currentTimeMillis() > lim.deadlineMs) lim.hitLimit = true;
         return lim.hitLimit;
     }
@@ -136,7 +144,7 @@ public final class FontScan {
      * {@code total} were done before this root). Fonts lying directly in the root are added first. Returns how many top-level folders were gone through.
      */
     public static int walkRoot(File root, List<Entry> out, Set<String> seen, Limits lim, int doneBefore, int total, Progress progress) {
-        if (root == null || lim.hitLimit) return 0;
+        if (root == null || timeUp(lim)) return 0;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return 0; }
         File[] kids = root.listFiles();
         if (kids == null) return 0;
@@ -158,7 +166,7 @@ public final class FontScan {
 
     /** Walks {@code root} for fonts this app can read. Folders that can't be listed are skipped silently; symlinked folders are not followed (no loops). */
     public static void walk(File root, int depth, List<Entry> out, Set<String> seen, Limits lim) {
-        if (root == null || lim.hitLimit) return;
+        if (root == null || timeUp(lim)) return;
         if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return; }
         File[] kids = root.listFiles();
         if (kids == null) return;

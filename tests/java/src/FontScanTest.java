@@ -277,7 +277,7 @@ public class FontScanTest {
     deleteAll(stash);
 
     stalledSources();
-    deadlineInOneFolder();
+    scanInOneFolder();
 
     deleteAll(root);
     System.out.println(fails == 0 ? "ALL PASSED" : fails + " FAILED");
@@ -418,8 +418,8 @@ public class FontScanTest {
     deleteAll(d4);
   }
 
-  /** F-2: the deadline is read per file, not only when a folder is entered. */
-  static void deadlineInOneFolder() throws Exception {
+  /** F-2: the deadline is read per file, not only when a folder is entered. F-3: so is the cancel check. */
+  static void scanInOneFolder() throws Exception {
     File d = Files.createTempDirectory("fontdeadline").toFile();
     File one = new File(d, "Download");
     one.mkdirs();
@@ -443,6 +443,43 @@ public class FontScanTest {
     check("a deadline that comes while one folder is being read stops the walk inside that folder: visited " + lim.visited, lim.visited < 60000);
     check("and it says the scan stopped early", lim.hitLimit);
     check("and it stops within a small margin of the deadline (" + took + " ms)", took < 20 + Math.max(150, fullMs / 3));
+
+    // F-3: a cancel check is asked before every file
+    final int[] asked = new int[1];
+    FontScan.Limits cl = new FontScan.Limits();
+    cl.deadlineMs = System.currentTimeMillis() + 60000;
+    cl.cancel = new FontScan.Cancel() { public boolean isCancelled() { return ++asked[0] > 500; } };
+    List<FontScan.Entry> cres = FontScan.scan(roots, cl, null);
+    check("a cancel that says yes after 500 files stops the walk there: visited " + cl.visited + ", asked " + asked[0], cl.visited >= 400 && cl.visited <= 520 && asked[0] <= 520);
+    check("a cancelled scan reports cancelled, and stopped early", cl.cancelled && cl.hitLimit && cres.isEmpty());
+
+    final java.util.concurrent.atomic.AtomicBoolean flag = new java.util.concurrent.atomic.AtomicBoolean();
+    FontScan.Limits fl = new FontScan.Limits();
+    fl.deadlineMs = System.currentTimeMillis() + 60000;
+    fl.cancel = new FontScan.Cancel() { public boolean isCancelled() { return flag.get(); } };
+    final long[] flagAt = new long[1];
+    Thread canceller = new Thread(new Runnable() { public void run() { try { Thread.sleep(25); } catch (InterruptedException e) { return; } flagAt[0] = System.currentTimeMillis(); flag.set(true); } });
+    canceller.start();
+    FontScan.scan(roots, fl, null);
+    long stopped = System.currentTimeMillis();
+    canceller.join();
+    long late = flagAt[0] == 0 ? -1 : stopped - flagAt[0];
+    System.out.println("flag set from another thread after 25 ms: scan stopped " + late + " ms later, visited " + fl.visited + ", full walk " + fullMs + " ms");
+    check("a flag set from another thread stops a scan inside one big folder: visited " + fl.visited, fl.cancelled && fl.visited < 60000);
+    check("and it stops promptly after the flag (" + late + " ms)", late >= 0 && late < Math.max(150, fullMs / 3));
+
+    FontScan.Limits before = new FontScan.Limits();
+    before.deadlineMs = System.currentTimeMillis() + 60000;
+    before.cancel = new FontScan.Cancel() { public boolean isCancelled() { return true; } };
+    List<FontScan.Entry> nothing = FontScan.scan(roots, before, null);
+    check("a scan cancelled before it starts looks at nothing", before.cancelled && nothing.isEmpty() && before.visited == 0);
+
+    check("a scan that is not cancelled does not say so", !full.cancelled && !lim.cancelled);
+    FontScan.Limits never = new FontScan.Limits();
+    never.deadlineMs = System.currentTimeMillis() + 60000;
+    never.cancel = new FontScan.Cancel() { public boolean isCancelled() { return false; } };
+    FontScan.scan(roots, never, null);
+    check("a cancel check that says no lets the scan finish: visited " + never.visited, !never.cancelled && !never.hitLimit && never.visited >= 60000);
     deleteAll(d);
   }
 
