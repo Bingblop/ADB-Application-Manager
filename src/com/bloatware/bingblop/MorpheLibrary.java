@@ -65,16 +65,35 @@ public final class MorpheLibrary {
         }
     }
 
+    /** Copies a file. The target appears whole or not at all: see {@link #copy(InputStream, File)}. */
     static void copy(File from, File to) throws IOException {
         InputStream in = new FileInputStream(from);
+        try { copy(in, to); } finally { in.close(); }
+    }
+
+    /**
+     * Writes the stream into a hidden ".name.part" file beside the target and renames it over the target when it is complete. A copy that fails
+     * half way (storage full, the source unreadable, the card pulled) leaves no partial file that looks like a patched APK or a signing key, and
+     * does not damage a file that was already at the target.
+     */
+    static void copy(InputStream in, File to) throws IOException {
+        File part = new File(to.getParentFile(), "." + to.getName() + ".part");
+        boolean done = false;
         try {
-            OutputStream out = new FileOutputStream(to);
+            OutputStream out = new FileOutputStream(part);
             try {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             } finally { out.close(); }
-        } finally { in.close(); }
+            if (!part.renameTo(to)) {
+                to.delete();
+                if (!part.renameTo(to)) throw new IOException("cannot write " + to);
+            }
+            done = true;
+        } finally {
+            if (!done) part.delete();
+        }
     }
 
     /**
