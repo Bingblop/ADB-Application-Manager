@@ -1063,14 +1063,15 @@ public class MorpheStoreTest {
         JSONObject g = st.get(id);
         st.setEnabled(id, false);
         st.setPatchCount(id, 3);
-        File bf = st.bundleFile(id);
+        File bf = st.bundleFile(id);                     // switched off above: the engine is not given it
+        File bfOnDisk = new File(s(st.get(id), "file"));
         long ms = (System.nanoTime() - t0) / 1000000;
         check("list(), get() and the setters answer while it downloads (" + ms + " ms)", ms < 1500 && l.length() == 2);
-        check("... and show the bundle still installed", "1.0.0".equals(s(g, "version")) && bf != null && Arrays.equals(v1, Files.readAllBytes(bf.toPath())));
+        check("... and show the bundle still installed", "1.0.0".equals(s(g, "version")) && bf == null && Arrays.equals(v1, Files.readAllBytes(bfOnDisk.toPath())));
         slow.release.countDown();
         t.join(30000);
         slow.server.stop(0);
-        check("the update then finishes", err[0] == null && "2.0.0".equals(s(st.get(id), "version")) && Arrays.equals(v2, Files.readAllBytes(st.bundleFile(id).toPath())), String.valueOf(err[0]));
+        check("the update then finishes", err[0] == null && "2.0.0".equals(s(st.get(id), "version")) && Arrays.equals(v2, Files.readAllBytes(new File(s(st.get(id), "file")).toPath())), String.valueOf(err[0]));
         check("... the changes made meanwhile are kept (the count is reset by the new file, the switch stays)", !st.get(id).optBoolean("enabled") && st.get(id).optInt("patchCount") == -1);
     }
 

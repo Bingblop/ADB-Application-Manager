@@ -258,6 +258,10 @@ public class MainActivity extends Activity {
         // Extract binaries and ADB keys in background
         setupBinariesAndKeys();
 
+        // a copy of the Morphe signing key staged for the share sheet is short-lived; whatever a dead process left behind is removed here, however young
+        // (only the first onCreate of the process: a later one, the window opened again, may have a share sheet still reading the live copy)
+        try { KeyShare.sweepAtStart(getCacheDir()); } catch (Throwable ignored) {}
+
         if (isHeadless()) {
             runQuickAction(getIntent());
             return;
@@ -625,7 +629,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (webView != null && live.now()) {
+                if (!activityDestroyed && webView != null && live.now()) {      // checked here, on the UI thread: onDestroy may have run since the script was queued
                     webView.evaluateJavascript(script, null);
                 }
             }
@@ -636,7 +640,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (webView != null) {
+                if (!activityDestroyed && webView != null) {      // checked here, on the UI thread: onDestroy may have run since the script was queued
                     webView.evaluateJavascript(script, null);
                 }
             }
@@ -2810,6 +2814,16 @@ public class MainActivity extends Activity {
      * user answers; no answer in two minutes, or the screen closing, is a no.
      */
     private boolean confirmPrivilegedInstall(final String message) {
+        return confirmNative(InstallConfirm.title(), message, "Install", "Cancel") == BundleApprovals.Answer.ALLOW;
+    }
+
+    /**
+     * The question dialog behind {@link #confirmPrivilegedInstall} and the one asked before a patch bundle (code) is loaded: a native dialog the page
+     * cannot press, which blocks the calling (background) thread until the user answers. Only the yes button says yes; Back, a tap outside, no answer in
+     * two minutes (the same time as {@link BundleApprovals#ANSWER_WAIT_SECONDS}) and the screen closing are all no. Each question tracks and dismisses its own dialog.
+     * The answer says which kind of no it was: TIMEOUT is only "nobody answered in the whole wait"; a button, Back, a tap outside or the screen closing is DENY.
+     */
+    private BundleApprovals.Answer confirmNative(final String title, final String message, final String yesLabel, final String noLabel) {
         final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
         final boolean[] yes = { false };
         // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
@@ -2820,14 +2834,14 @@ public class MainActivity extends Activity {
                 public void run() {
                     if (isFinishing() || isDestroyed()) { answered.countDown(); return; }
                     android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
-                    b.setTitle(InstallConfirm.title());
+                    b.setTitle(title);
                     b.setMessage(message);
                     b.setCancelable(true);
-                    b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
+                    b.setPositiveButton(yesLabel, new android.content.DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; }
                     });
-                    b.setNegativeButton("Cancel", null);
+                    b.setNegativeButton(noLabel, null);
                     // Any way the dialog goes away (a button, Back, a tap outside, a timeout, the screen closing) ends the wait; only "Install" says yes.
                     b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
                         @Override
@@ -2842,18 +2856,18 @@ public class MainActivity extends Activity {
                     dlg.show();
                 }
             });
-            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!answered.await(BundleApprovals.ANSWER_WAIT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)) {
                 dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
-                return false;
+                return BundleApprovals.Answer.TIMEOUT;
             }
         } catch (InterruptedException e) {
             dismissInstallConfirm(mine);
             Thread.currentThread().interrupt();
-            return false;
+            return BundleApprovals.Answer.DENY;
         } catch (RuntimeException e) {
-            return false;
+            return BundleApprovals.Answer.DENY;
         }
-        return yes[0];
+        return yes[0] ? BundleApprovals.Answer.ALLOW : BundleApprovals.Answer.DENY;
     }
 
     /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
@@ -4836,48 +4850,149 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The longest a listing may take when the bridge thread itself is waiting for it (the page cannot cancel then, nothing else gets through). */
+    private static final long ARCHIVE_LIST_LIMIT_MS = 20000;
+    private static final String ARCHIVE_TOO_BIG = "This archive is too big to list here: extract it instead";
+
     /** The archive the page named: the file itself when this app can read it, else a copy staged through the shell. */
     private ZipTool.Archive archiveFor(String path, boolean fresh) throws Exception {
-        return archiveFor(path, fresh, null);
+        return archiveFor(path, fresh, null, null);
     }
 
     /** As {@link #archiveFor(String, boolean)}; {@code password} is tried only for a fresh open of a format whose listing itself needs one
      *  (7z with encrypted names, rar -hp) — a zip's directory is never encrypted, so a zip never needs it here. */
     private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password) throws Exception {
+        return archiveFor(path, fresh, password, null);
+    }
+
+    /**
+     * For a call that runs on the bridge thread and wants an archive that may have to be opened again (it was evicted, or changed on disk):
+     * the page's Cancel cannot get through while this waits, so a listing that needs a long unpacking is given up after
+     * {@link #ARCHIVE_LIST_LIMIT_MS} in words ("open it again": that goes through the background open, which can be cancelled).
+     */
+    private ZipTool.Archive archiveForUi(String path) throws Exception {
+        final long end = System.nanoTime() + ARCHIVE_LIST_LIMIT_MS * 1000000L;
+        final boolean[] late = {false};
+        try {
+            return archiveFor(path, false, null, new ArchiveIo.Progress() {
+                @Override
+                public boolean tick(long bytesDone) {
+                    if (System.nanoTime() - end > 0) { late[0] = true; return false; }
+                    return true;
+                }
+            });
+        } catch (IOException e) {
+            if (late[0]) throw new IOException(ARCHIVE_TOO_BIG);
+            throw e;
+        }
+    }
+
+    // Opening an archive can take long (a compressed tar is unpacked whole to list it), so the lock is never held while it runs. Each open takes a
+    // ticket, and the newest ticket per archive is the only one allowed to publish into archiveSlots: an open that was cancelled, superseded by
+    // another open of the same archive, or overtaken by Close, throws its result away (and its staged copy) instead of putting it over a newer one.
+    // A ticket is taken when the open is requested (on the bridge thread, in the page's order) and handed to the worker: workers come from a cached
+    // pool, so taking it when a worker starts would let a cancelled older open that starts late supersede the open that replaced it.
+    private static final ArchiveTickets archiveTickets = new ArchiveTickets();
+
+    /** A background open of an archive whose listing needs a full unpacking; {@code cancel} is the page's Cancel. */
+    private static final class ArchiveOpenJob {
+        final String token, path;
+        final MainActivity owner;       // the window whose page is waiting for it (released when the job ends or that window is destroyed)
+        final long ticket;              // taken when the open was requested, not when its worker starts
+        volatile boolean cancel;
+        ArchiveOpenJob(String token, String path, MainActivity owner, long ticket) { this.token = token; this.path = path; this.owner = owner; this.ticket = ticket; }
+    }
+
+    private volatile boolean activityDestroyed;     // set by onDestroy: a background job must not call into this window's page any more
+
+    /** onDestroy: the open of an archive that this window started is not wanted: it stops at its next ask, its ticket is dropped (so it publishes nothing and removes its staged copy). */
+    private void cancelArchiveOpenOnDestroy() {
+        synchronized (archiveLock) {
+            ArchiveOpenJob job = archiveOpening;
+            if (job != null && job.owner == this) {
+                job.cancel = true;
+                archiveTickets.remove(job.path);
+                archiveOpening = null;
+            }
+        }
+    }
+
+    /** True when listing this archive means unpacking all of it (a compressed tar), so it is opened in the background. A file this app cannot read is judged by its name. */
+    private boolean archiveOpenIsSlow(String canonicalPath) {
+        File f = new File(canonicalPath);
+        try {
+            if (f.isFile() && f.canRead()) return ArchiveIo.slowToList(ArchiveIo.detect(f));
+        } catch (RuntimeException ignored) {}
+        return ArchiveIo.slowToListByName(f.getName());
+    }
+
+    private static ArchiveOpenJob archiveOpening;      // the background open that is running (guarded by archiveLock)
+    private static long archiveOpenJobs;               // for the tokens
+
+    /**
+     * As {@link #archiveFor(String, boolean, char[])}. {@code cb} (may be null) is asked while the listing is unpacked and answers false to stop it
+     * ({@code IOException("Cancelled")}); it is asked once more just before the result is published.
+     */
+    private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb) throws Exception {
+        return archiveFor(path, fresh, password, cb, 0);
+    }
+
+    /** As above; {@code requested} (0: none) is the ticket the caller took when the open was asked for, so an open that a newer request or Close has overtaken ends as Cancelled before it starts. */
+    private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb, long requested) throws Exception {
         String p = fmCanonicalPath(path);
         if (fmPrivate(p)) throw new IOException(PRIVATE_WHY);
+        long ticket;
         synchronized (archiveLock) {
             ArcSlot hit = fresh ? null : archiveSlots.get(p);
             if (hit != null && !hit.archive.isStale()) return hit.archive;
+            if (requested > 0) {
+                ticket = requested;
+                if (!archiveTickets.isNewest(p, ticket)) throw new IOException("Cancelled");      // overtaken before it started: it must not touch the newer open's ticket
+            } else {
+                ticket = archiveTickets.issue(p);
+            }
+        }
+        String stagedPath = null, stamp = null;
+        boolean published = false;
+        try {
             File f = new File(p);
             File use = f;
-            String stagedPath = null, stamp = null;
-            ArcSlot old = archiveSlots.get(p);
             if (!(f.isFile() && f.canRead())) {
                 String[] st = stageArchive(p);
                 stagedPath = st[0];
                 stamp = st[1];
                 use = new File(stagedPath);
             }
-            ZipTool.Archive a;
-            try {
-                a = openAnyArchive(use, password);
-            } catch (IOException | RuntimeException bad) {
-                if (stagedPath != null) deleteStagedFiles(java.util.Collections.singletonList(stagedPath));
-                throw bad;
+            ZipTool.Archive a = openAnyArchive(use, password, cb);
+            java.util.ArrayList<String> gone = new java.util.ArrayList<String>();
+            synchronized (archiveLock) {
+                boolean newest = archiveTickets.isNewest(p, ticket);
+                if (!newest || (cb != null && !cb.tick(0))) {
+                    // a newer open of this archive (or Close) came first. A plain read is happy with what the newer one published.
+                    ArcSlot now = fresh ? null : archiveSlots.get(p);
+                    if (now != null && !now.archive.isStale() && !newest) return now.archive;
+                    throw new IOException("Cancelled");
+                }
+                ArcSlot old = archiveSlots.get(p);
+                archiveSlots.put(p, new ArcSlot(a, stagedPath, stamp));
+                published = true;
+                gone.addAll(archiveEvictedStages);
+                archiveEvictedStages.clear();
+                if (old != null && old.stagedPath != null && !old.stagedPath.equals(stagedPath)) gone.add(old.stagedPath);
             }
-            archiveSlots.put(p, new ArcSlot(a, stagedPath, stamp));
-            java.util.ArrayList<String> gone = new java.util.ArrayList<String>(archiveEvictedStages);
-            archiveEvictedStages.clear();
-            if (old != null && old.stagedPath != null && !old.stagedPath.equals(stagedPath)) gone.add(old.stagedPath);
             if (!gone.isEmpty()) deleteStagedFiles(gone);
             return a;
+        } finally {
+            synchronized (archiveLock) {
+                archiveTickets.finish(p, ticket);
+            }
+            if (!published && stagedPath != null) deleteStagedFiles(java.util.Collections.singletonList(stagedPath));
         }
     }
 
     /** Opens a zip first (a bounded scan for its end record, cheap even to rule a huge non-zip file out); a file that isn't one is tried
      *  as a RAR, then as whatever {@link ArchiveIo} recognises (7z, the tar family, or a single compressed file). */
-    private ZipTool.Archive openAnyArchive(File use, char[] password) throws IOException {
+    private ZipTool.Archive openAnyArchive(File use, char[] password, ArchiveIo.Progress cb) throws IOException {
         IOException zipErr;
         try {
             return ZipTool.open(use);
@@ -4886,7 +5001,7 @@ public class MainActivity extends Activity {
         }
         if (RarReader.isRar(use)) return RarSource.open(use, password);
         String fmt = ArchiveIo.detect(use);
-        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password);
+        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password, cb);
         throw zipErr;
     }
 
@@ -4894,6 +5009,7 @@ public class MainActivity extends Activity {
     private void dropSlot(String canonicalPath) {
         String staged = null;
         synchronized (archiveLock) {
+            archiveTickets.remove(canonicalPath);
             ArcSlot slot = archiveSlots.remove(canonicalPath);
             if (slot != null) staged = slot.stagedPath;
         }
@@ -5128,6 +5244,7 @@ public class MainActivity extends Activity {
     }
 
     private void notifyArchiveProgress(String msg) {
+        if (activityDestroyed) return;
         notifyJs("window.onArchiveProgress && window.onArchiveProgress(" + JSONObject.quote(msg) + ")");
     }
 
@@ -7207,6 +7324,72 @@ public class MainActivity extends Activity {
         return authManagerInstance;
     }
 
+    /**
+     * Opens the share sheet for the staged signing key (see {@link KeyShare}) and removes the copy, and the grant on it, {@link KeyShare#KEEP_MS} later.
+     * The timer is a static class that holds the application context, the address and the file, not this activity. If the process dies first, the next
+     * start removes what is left.
+     * The sheet is opened on the UI thread. If the UI thread has not started the task after 10 seconds (or this thread is interrupted), the task is
+     * given up before the failure is passed on: the caller then removes the copy, and a task that ran late must not open a sheet for an address that no
+     * longer resolves. Whoever gets there first decides (a compare-and-set on {@code state}): the task starts the sheet only if it can move 0 to 1, the waiter gives up
+     * only if it can move 0 to 2.
+     */
+    private void shareMorpheKey(final File staged) throws Exception {
+        final Uri uri = ShareProvider.uriForKey(staged);
+        final Context app = getApplicationContext();
+        final java.util.concurrent.atomic.AtomicInteger state = new java.util.concurrent.atomic.AtomicInteger();   // 0 waiting, 1 started, 2 given up
+        final java.util.concurrent.FutureTask<Boolean> open = new java.util.concurrent.FutureTask<Boolean>(new java.util.concurrent.Callable<Boolean>() {
+            @Override public Boolean call() {
+                if (!state.compareAndSet(0, 1)) return Boolean.FALSE;       // the caller gave up while this waited in the UI queue: no sheet
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("application/octet-stream");
+                send.putExtra(Intent.EXTRA_STREAM, uri);
+                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                Intent chooser = Intent.createChooser(send, "Share");
+                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(chooser);
+                return Boolean.TRUE;
+            }
+        });
+        runOnUiThread(open);
+        try {
+            open.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+        } catch (java.util.concurrent.TimeoutException e) {
+            if (state.compareAndSet(0, 2)) { open.cancel(false); throw e; }
+            awaitStarted(open);
+        } catch (InterruptedException e) {
+            if (state.compareAndSet(0, 2)) { open.cancel(false); Thread.currentThread().interrupt(); throw e; }
+            awaitStarted(open);
+            Thread.currentThread().interrupt();
+        }
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new KeyShareExpiry(app, uri, staged), KeyShare.KEEP_MS);
+    }
+
+    /** The UI thread had already started the sheet when the wait ended: wait for it to finish (it is running), and pass on an error it ended with. */
+    private static void awaitStarted(java.util.concurrent.FutureTask<Boolean> open) throws Exception {
+        boolean interrupted = false;
+        try {
+            for (;;) {
+                try { open.get(); return; }
+                catch (InterruptedException e) { interrupted = true; }
+                catch (java.util.concurrent.ExecutionException e) { throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e; }
+            }
+        } finally { if (interrupted) Thread.currentThread().interrupt(); }
+    }
+
+    /** Ends a key share: revokes the grant and removes the staged copy. Static, so it cannot hold the activity: only the application context, the address and the file. */
+    private static final class KeyShareExpiry implements Runnable {
+        private final Context app;
+        private final Uri uri;
+        private final File staged;
+        KeyShareExpiry(Context app, Uri uri, File staged) { this.app = app; this.uri = uri; this.staged = staged; }
+        @Override public void run() {
+            try { app.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Throwable ignored) {}
+            KeyShare.remove(staged);
+        }
+    }
+
     private synchronized MorpheBridge morphe() {
         if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
@@ -7229,10 +7412,12 @@ public class MainActivity extends Activity {
             }
             @Override public JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception { return morpheInstall(apk, pkg, uninstallFirst); }
             @Override public void share(File f, String mime) { new AndroidBridge().shareStoredFile(f.getAbsolutePath(), mime, f.getName()); }
+            @Override public void shareKey(File staged) throws Exception { shareMorpheKey(staged); }
             @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public BundleApprovals.Answer confirmBundle(String title, String text) { return confirmNative(title, text, "Allow", "Don't allow"); }
             @Override public String copyToTree(File file, String treeUri, String name) throws Exception {
                 Uri tree = Uri.parse(treeUri);
                 String safe = name == null ? "app.apk" : name.replaceAll("[^A-Za-z0-9._ ()-]", "_");
@@ -13568,26 +13753,90 @@ public class MainActivity extends Activity {
 
         // ---- Archive browser (see ZipTool). The page names the archive by path on every call. ----
 
-        /** Opens an archive for browsing: {ok, path, name, count, files, size, zip64, staged, apk, editable, whyNot}. */
+        /**
+         * Opens an archive for browsing: {ok, path, name, count, files, size, zip64, staged, apk, editable, whyNot}.
+         * A compressed tar (tar.gz / bz2 / xz / zst / lz4) has no directory, so listing it unpacks all of it, which can take minutes: that open
+         * runs in the background and this returns {ok:true, pending:true, token} at once; the answer (the JSON above, or {ok:false, error},
+         * with the token, and cancelled:true after {@link #archiveOpenCancel}) arrives as window.onArchiveOpened(json), progress as
+         * window.onArchiveProgress(text). Every other format answers here as before.
+         */
         @JavascriptInterface
         public String archiveOpen(String path) {
-            try {
-                ZipTool.Archive a = archiveFor(path, true);
-                return archiveOpenJson(a, fmCanonicalPath(path)).toString();
-            } catch (Throwable t) {
-                return archiveFail(t);
-            }
+            return archiveOpenAny(path, null);
         }
 
         /** As {@link #archiveOpen(String)}, with a password to try for a format whose listing itself needs one (not zip: a zip's directory is
          *  never encrypted, so this is the same as archiveOpen for one). {ok,...}|{ok:false,error,needPassword,wrong}. */
         @JavascriptInterface
         public String archiveOpen2(String path, String password) {
+            return archiveOpenAny(path, password == null || password.isEmpty() ? null : password.toCharArray());
+        }
+
+        /** Stops the background open that {@link #archiveOpen(String)} started (nothing happens when none runs). Its answer still arrives, with cancelled:true. */
+        @JavascriptInterface
+        public void archiveOpenCancel() {
+            synchronized (archiveLock) {
+                if (archiveOpening != null) archiveOpening.cancel = true;
+            }
+        }
+
+        private String archiveOpenAny(final String path, final char[] pw) {
             try {
-                String p = fmCanonicalPath(path);
-                char[] pw = password == null || password.isEmpty() ? null : password.toCharArray();
-                ZipTool.Archive a = archiveFor(path, true, pw);
-                return archiveOpenJson(a, p).toString();
+                final String p = fmCanonicalPath(path);
+                if (fmPrivate(p)) throw new IOException(PRIVATE_WHY);
+                if (!archiveOpenIsSlow(p)) {
+                    ZipTool.Archive a = archiveFor(path, true, pw);
+                    return archiveOpenJson(a, p).toString();
+                }
+                final ArchiveOpenJob job;
+                synchronized (archiveLock) {
+                    if (archiveOpening != null) archiveOpening.cancel = true;      // the page asked for another one: the old one ends as cancelled
+                    job = new ArchiveOpenJob("open" + (++archiveOpenJobs), p, MainActivity.this, archiveTickets.issue(p));      // the ticket now, in the page's order
+                    archiveOpening = job;
+                }
+                if (!submitJob(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            final String name = new File(p).getName();
+                            ZipTool.Archive a = archiveFor(p, true, pw, new ArchiveIo.Progress() {
+                                private long lastReport;
+                                @Override
+                                public boolean tick(long bytesDone) {
+                                    if (job.cancel || activityDestroyed) return false;
+                                    long now = System.nanoTime();
+                                    if (bytesDone > 0 && now - lastReport > 700000000L) {
+                                        lastReport = now;
+                                        notifyArchiveProgress("Opening " + name + "… " + XapkInfo.humanBytes(bytesDone) + " read");
+                                    }
+                                    return true;
+                                }
+                            }, job.ticket);
+                            res = archiveOpenJson(a, p);
+                        } catch (Throwable t) {
+                            res = new JSONObject();
+                            putArchiveError(res, t);
+                            if (job.cancel) {
+                                try { res.put("cancelled", true); } catch (Exception ignored) {}
+                            }
+                        } finally {
+                            synchronized (archiveLock) {
+                                if (archiveOpening == job) archiveOpening = null;
+                            }
+                        }
+                        if (activityDestroyed) return;      // the window that asked is gone: nobody to tell
+                        try { res.put("token", job.token); } catch (Exception ignored) {}
+                        notifyJs("window.onArchiveOpened && window.onArchiveOpened(" + res.toString() + ")");
+                    }
+                })) {
+                    synchronized (archiveLock) {
+                        if (archiveOpening == job) archiveOpening = null;
+                    }
+                    archiveTickets.finish(p, job.ticket);       // the worker will never run: its ticket must not stay behind
+                    return archiveFail("The archive could not be opened right now");
+                }
+                return new JSONObject().put("ok", true).put("pending", true).put("token", job.token).toString();
             } catch (Throwable t) {
                 return archiveFail(t);
             }
@@ -13598,7 +13847,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String archiveSetPassword(String path, String password) {
             try {
-                ZipTool.Archive a = archiveFor(path, false);
+                ZipTool.Archive a = archiveForUi(path);
                 char[] pw = password == null || password.isEmpty() ? null : password.toCharArray();
                 a.setPassword(pw);
                 if (pw != null) {
@@ -13661,7 +13910,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String archiveList(String path, String dir, String query, int offset, int limit) {
             try {
-                ZipTool.Archive a = archiveFor(path, false);
+                ZipTool.Archive a = archiveForUi(path);
                 if (limit <= 0 || limit > 2000) limit = ARCHIVE_PAGE;
                 if (offset < 0) offset = 0;
                 String q = query == null ? "" : query.trim();
@@ -13700,7 +13949,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String archiveRead(String path, String entry) {
             try {
-                ZipTool.Archive a = archiveFor(path, false);
+                ZipTool.Archive a = archiveForUi(path);
                 ZipTool.Entry e = a.find(entry);
                 if (e == null || e.dir) return archiveFail("Not found in the archive: " + entry);
                 JSONObject r = new JSONObject();
@@ -13810,7 +14059,10 @@ public class MainActivity extends Activity {
                     Runnable cancelHook = null;
                     try {
                         res.put("op", "extract");
-                        ZipTool.Archive a = archiveFor(path, false);
+                        ZipTool.Archive a = archiveFor(path, false, null, new ArchiveIo.Progress() {      // opening it first can be the longest part: Cancel stops that too
+                            @Override
+                            public boolean tick(long bytesDone) { return !archiveCancel; }
+                        });
                         String dest = fmCanonicalPath(destDir == null || destDir.trim().isEmpty() ? "/storage/emulated/0/Download" : destDir.trim());
                         File dir = new File(dest);
                         if (fmPrivate(dest)) throw new IOException(PRIVATE_WHY);                     // nothing is unpacked into the app's own private data
@@ -14078,6 +14330,8 @@ public class MainActivity extends Activity {
         public void archiveClose() {
             java.util.ArrayList<String> staged = new java.util.ArrayList<String>();
             synchronized (archiveLock) {
+                if (archiveOpening != null) archiveOpening.cancel = true;      // an open still unpacking is not wanted any more
+                archiveTickets.clear();                                           // and nothing that is still opening may publish after this
                 for (ArcSlot slot : archiveSlots.values()) if (slot.stagedPath != null) staged.add(slot.stagedPath);
                 archiveSlots.clear();
                 staged.addAll(archiveEvictedStages);
@@ -14093,6 +14347,7 @@ public class MainActivity extends Activity {
             String p = fmCanonicalPath(path);
             String staged = null;
             synchronized (archiveLock) {
+                archiveTickets.remove(p);
                 ArcSlot slot = archiveSlots.remove(p);
                 if (slot != null) staged = slot.stagedPath;
             }
@@ -15265,6 +15520,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        activityDestroyed = true;
+        cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
