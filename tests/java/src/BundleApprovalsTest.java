@@ -211,7 +211,7 @@ public class BundleApprovalsTest {
     is("a source with no file is never allowed", !a.allowedNow(src("gh-a", new File(d, "gone.mpp"))) && !a.allowedNow(null));
     BundleApprovals.Source off = src("gh-off", f1);
     off.builtIn = true;
-    is("the official source is exempt", a.allowedNow(off) && a.unapproved(java.util.Collections.singletonList(off)).isEmpty());
+    is("the official source is exempt", a.allowedNow(off));
     is("... but only with a file", !a.allowedNow(src("morphe-official", null)));
     BundleApprovals.Source claims = src("morphe-official", f2);
     is("an id is not an exemption: the name morphe-official without the store's built-in record is asked about", !a.allowedNow(claims));
@@ -367,7 +367,6 @@ public class BundleApprovalsTest {
     offi.builtIn = true;
     mix.add(0, offi);
     is("only the ones that need it are asked (the official and the approved are not)", ap2.requireAll(mix, all).isEmpty() && all.texts.size() == 1);
-    is("unapproved() lists exactly what would be asked", new BundleApprovals(new File(d, "ap3.json")).unapproved(mix).size() == 2);
 
     // no answer is a No: the asker says TIMEOUT after the whole wait, and the sources after it are not asked
     BundleApprovals ap4 = new BundleApprovals(new File(d, "ap4.json"));
@@ -498,6 +497,19 @@ public class BundleApprovalsTest {
     Files.write(live.toPath(), big);
     File fresh = ap.approvedCopy(src("gh-a", live), out);
     is("a stale file of the same name is replaced by the copy", fresh != null && java.util.Arrays.equals(Files.readAllBytes(fresh.toPath()), big));
+    // the cached list of patches: a custom bundle's is named by its approved hash (same version + same size + other bytes never share), the official one's is as before
+    byte[] bytesA = "AAAA".getBytes(StandardCharsets.UTF_8), bytesB = "BBBB".getBytes(StandardCharsets.UTF_8);
+    String ha = sha("AAAA"), hb = sha("BBBB");
+    String nA = BundleApprovals.catalogCacheName("gh-a", false, "1.0.0", bytesA.length, ha), nB = BundleApprovals.catalogCacheName("gh-a", false, "1.0.0", bytesB.length, hb);
+    is("same version and same length but other bytes: not the same cache file", bytesA.length == bytesB.length && !nA.equals(nB));
+    is("the same bytes: the same cache file, whatever the version text says", nA.equals(BundleApprovals.catalogCacheName("gh-a", false, "9.9.9", 1, ha)));
+    is("another source with the same bytes has its own file", !nA.equals(BundleApprovals.catalogCacheName("gh-b", false, "1.0.0", bytesA.length, ha)));
+    is("the official source keeps its name (id-version-length)", BundleApprovals.catalogCacheName("morphe-official", true, "1.46.0", 11282185L, null).equals("morphe-official-1.46.0-11282185.json"));
+    File cdir = dir();
+    for (String n : new String[] { nA, nB, "gh-a-sha-" + "c".repeat(64) + ".json", "gh-a-b-sha-" + ha + ".json", "gh-a-1.0.0-4.json", "morphe-official-1.0-5.json" }) Files.write(new File(cdir, n).toPath(), "{}".getBytes(StandardCharsets.UTF_8));
+    BundleApprovals.dropOtherCatalogs(cdir, "gh-a", nB);
+    is("the old lists of that source are deleted, its current one and everyone else's stay", !new File(cdir, nA).exists() && new File(cdir, nB).exists() && !new File(cdir, "gh-a-sha-" + "c".repeat(64) + ".json").exists() && new File(cdir, "gh-a-b-sha-" + ha + ".json").exists() && new File(cdir, "morphe-official-1.0-5.json").exists() && new File(cdir, "gh-a-1.0.0-4.json").exists());
+
     // descriptors: a copy that fails leaves nothing open (as non-root a folder that cannot be written is the way to make the destination fail after the source is open)
     File ro = new File(d, "readonly"); ro.mkdirs();
     boolean canBlock = ro.setWritable(false, false) && !ro.canWrite();
@@ -650,8 +662,8 @@ public class BundleApprovalsTest {
     String ce = body(br, "private JSONObject catalogEngine(");
     is("the engine's list job is made from the copies it is given", ce != null && ce.contains("MorpheJobs.listJob(needFiles, answer)") && !ce.contains("store.bundleFile") && !ce.contains("bundleSource("));
     String ba = read(d, "BundleApprovals.java");
-    String ac = body(ba, "File approvedCopy(");
-    is("the hash that is compared with the approval is the one of the bytes copied, never of the live file read again", ac != null && ac.contains("isApproved(s.id, copyAndHash(s.file, copy))") && !ac.contains("sha256(s.file)") && ac.contains("copy.delete()"));
+    String ac = body(ba, "File approvedCopy(Source s, File destDir, String[] shaOut)");
+    is("the hash that is compared with the approval is the one of the bytes copied, never of the live file read again", ac != null && ac.contains("String got = copyAndHash(s.file, copy);") && ac.contains("isApproved(s.id, got)") && !ac.contains("sha256(s.file)") && ac.contains("copy.delete()"));
     String cah = body(ba, "static String copyAndHash(");
     is("copy and hash are one pass over the same bytes", cah != null && cah.contains("md.update(buf, 0, n); out.write(buf, 0, n);"));
     is("both streams of the copy are closed by try-with-resources, whichever fails to open", cah != null && cah.contains("try (InputStream in = new FileInputStream(from);") && cah.contains("java.io.OutputStream out = Files.newOutputStream(to.toPath()") && !cah.contains("finally"));
@@ -659,6 +671,7 @@ public class BundleApprovalsTest {
     is("the call's timeout flag is checked before the next file is hashed", rq != null && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") >= 0 && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") < rq.indexOf("sha256(s.file)"));
     String go = body(ba, "synchronized boolean grandfatherOnce(");
     is("the marker is written before anything is granted", go != null && go.contains("if (write(next, true)) approved.putAll(next);") && !go.contains("approved.put("));
+    is("the catalog cache of a custom source is named by the approved hash, the official one by version and size", cat != null && cat.contains("if (!custom) cache = new File(cacheDir, BundleApprovals.catalogCacheName(MorpheJobs.safeName(id), true,") && cat.contains("else if (approvals.approvedHash(id) != null) cache") && cat.contains("catalogCacheName(MorpheJobs.safeName(id), false, \"\", 0, approvals.approvedHash(id))") && cat.contains("dropOtherCatalogs(") && cat.contains("approvedCopy(bundleSource(need.get(i)), copies, sha)"));
     String ref = body(br, "private Map<String, String> refuseUnapproved(");
     is("the catalog's question goes through the approvals", ref != null && ref.contains("approvals.requireAll(list, asker)") && ref.contains("bundleSource(id)"));
     String catOuter = body(br, "private JSONObject catalog(");
@@ -673,10 +686,10 @@ public class BundleApprovalsTest {
       is("the copies are in the job's own folder and are deleted with the run", pt.contains("new File(dir, \"bundles\")") && pt.indexOf("deleteTree(new File(dir, \"bundles\"))") > pt.indexOf("finally"));
     }
     String ab = body(br, "private void approveBundles(");
-    is("the patch route refuses a source that is switched off and asks about the rest", ab != null && ab.contains("is switched off") && ab.contains("approvals.requireAll(list, asker)") && ab.contains("throw new IOException"));
+    is("the patch route refuses a source that is switched off and asks about the rest", ab != null && ab.contains("is switched off") && ab.contains("approvals.requireAll(list, noting)") && ab.contains("throw new IOException") && !ab.contains("unapproved(") && !ab.contains("allowedNow("));
     String bs = body(br, "private BundleApprovals.Source bundleSource(");
     is("a bundle is only taken from the store's file (switched-off sources give none)", bs != null && bs.contains("store.bundleFile(id)") && bs.contains("store.bundleFacts(id)"));
-    is("the built-in exemption is not read from the call: the only builtIn in the bridge is the store's own list", br.split("builtIn", -1).length == 2 && br.contains("s.optBoolean(\"builtIn\")") && !br.contains("a.optBoolean(\"builtIn"));
+    is("the built-in exemption is not read from the call: the only builtIn in the bridge is the store's own list", br.split("builtIn", -1).length == 3 && br.contains("s.optBoolean(\"builtIn\")") && br.contains("!bs.builtIn") && !br.contains("a.optBoolean(\"builtIn"));
     is("the Host has the question and the bridge uses nothing else to ask", br.contains("BundleApprovals.Answer confirmBundle(String title, String text);") && br.contains("host.confirmBundle(title, text)"));
     is("every bridge call grandfathers first, once", body(br, "private void handle(").contains("grandfatherBundles();") && br.indexOf("grandfatherBundles();") < br.indexOf("dispatch(tag, op, a)"));
     is("removing a source forgets its approval", br.contains("store.remove(a.optString(\"id\")); approvals.forget("));

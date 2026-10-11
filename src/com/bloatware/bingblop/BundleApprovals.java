@@ -201,13 +201,6 @@ final class BundleApprovals {
         try { return isApproved(s.id, sha256(s.file)); } catch (IOException e) { return false; }
     }
 
-    /** The sources of this list that a question would be asked about (not exempt, not approved as they are). */
-    java.util.ArrayList<Source> unapproved(List<Source> list) {
-        java.util.ArrayList<Source> out = new java.util.ArrayList<Source>();
-        for (Source s : list) if (s != null && s.file != null && s.file.isFile() && !allowedNow(s)) out.add(s);
-        return out;
-    }
-
     /**
      * Makes sure every bundle of the list is approved, asking about each one that is not, one question at a time and in order. A yes is remembered
      * (for this exact file). If a question gets no answer in the whole waiting time (the asker says TIMEOUT), the sources after it in this call are
@@ -261,16 +254,46 @@ final class BundleApprovals {
      * cannot be read.
      */
     File approvedCopy(Source s, File destDir) {
+        return approvedCopy(s, destDir, null);
+    }
+
+    /** As {@link #approvedCopy(Source, File)}; {@code shaOut[0]} gets the SHA-256 of the copy that was handed out (null for the pre-installed source, which is not copied). */
+    File approvedCopy(Source s, File destDir, String[] shaOut) {
+        if (shaOut != null) shaOut[0] = null;
         if (s == null || s.file == null || !s.file.isFile()) return null;
         if (s.builtIn) return s.file;
         if (s.id == null || !ID_OK.matcher(s.id).matches()) return null;
         File copy = new File(destDir, s.id + ".mpp");
         try {
-            if (isApproved(s.id, copyAndHash(s.file, copy))) return copy;
+            String got = copyAndHash(s.file, copy);
+            if (isApproved(s.id, got)) { if (shaOut != null) shaOut[0] = got; return copy; }
         } catch (IOException ignored) { /* not readable: not handed out */ }
         copy.delete();
         return null;
     }
+
+    // ---------------------------------------------------------------------------------------------------------------- the catalog cache
+
+    /**
+     * The name of the file a bundle's catalog (its list of patches) is cached in. A custom bundle is keyed by the SHA-256 of the approved file, so an
+     * updated or swapped bundle with the same version and the same size never gets the old bundle's list; the pre-installed source keeps its
+     * version-and-size name. {@code safeId} and {@code safeVersion} are already file-name safe.
+     */
+    static String catalogCacheName(String safeId, boolean builtIn, String safeVersion, long length, String sha256) {
+        return builtIn ? safeId + "-" + safeVersion + "-" + length + ".json" : safeId + "-sha-" + sha256 + ".json";
+    }
+
+    /** Deletes the cached catalogs of this custom source that belong to any other file than {@code keepName} (they describe bundles that are gone). */
+    static void dropOtherCatalogs(File cacheDir, String safeId, String keepName) {
+        File[] all = cacheDir.listFiles();
+        if (all == null) return;
+        for (File f : all) {
+            java.util.regex.Matcher m = CACHE_SHA.matcher(f.getName());
+            if (m.matches() && m.group(1).equals(safeId) && !f.getName().equals(keepName)) f.delete();
+        }
+    }
+
+    private static final Pattern CACHE_SHA = Pattern.compile("(.*)-sha-[0-9a-f]{64}\\.json");
 
     /** Copies {@code from} to {@code to} (a new file in a folder of this app) and returns the SHA-256 of the bytes copied, in one pass. */
     static String copyAndHash(File from, File to) throws IOException {

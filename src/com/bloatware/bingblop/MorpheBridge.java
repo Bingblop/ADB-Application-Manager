@@ -368,8 +368,12 @@ public final class MorpheBridge {
             File mpp = store.bundleFile(id);                                               // null for a source that is switched off
             JSONObject s = store.get(id);
             if (mpp == null || s == null) continue;
-            File cache = new File(cacheDir, MorpheJobs.safeName(id) + "-" + MorpheJobs.safeName(s.optString("version")) + "-" + mpp.length() + ".json");
-            if (!force && cache.isFile()) {
+            BundleApprovals.Source bs = bundleSource(id);
+            boolean custom = bs != null && !bs.builtIn;
+            File cache = null;                                                             // a custom bundle's list is cached per approved file (its SHA-256), never per version and size
+            if (!custom) cache = new File(cacheDir, BundleApprovals.catalogCacheName(MorpheJobs.safeName(id), true, MorpheJobs.safeName(s.optString("version")), mpp.length(), null));
+            else if (approvals.approvedHash(id) != null) cache = new File(cacheDir, BundleApprovals.catalogCacheName(MorpheJobs.safeName(id), false, "", 0, approvals.approvedHash(id)));
+            if (cache != null && !force && cache.isFile()) {
                 try { out.put(id, new JSONObject(readText(cache))); continue; } catch (Exception bad) { cache.delete(); }
             }
             need.add(id); needFiles.add(mpp); needCache.add(cache);
@@ -378,9 +382,13 @@ public final class MorpheBridge {
         deleteTree(copies);
         try {
             for (int i = need.size() - 1; i >= 0; i--) {                                   // the file may have changed while a question was open (or since): the copy made now is checked against the approval
-                File copy = approvals.approvedCopy(bundleSource(need.get(i)), copies);
+                String[] sha = { null };
+                File copy = approvals.approvedCopy(bundleSource(need.get(i)), copies, sha);
                 if (copy != null) {
-                    if (copy.length() != needFiles.get(i).length()) needCache.set(i, null);   // not the file the cache name was made from: do not cache under that name
+                    if (sha[0] != null) {                                                  // a custom bundle: cached under the hash of the very bytes the engine reads
+                        needCache.set(i, new File(cacheDir, BundleApprovals.catalogCacheName(MorpheJobs.safeName(need.get(i)), false, "", 0, sha[0])));
+                        BundleApprovals.dropOtherCatalogs(cacheDir, MorpheJobs.safeName(need.get(i)), needCache.get(i).getName());
+                    } else if (copy.length() != needFiles.get(i).length()) needCache.set(i, null);   // not the file the cache name was made from: do not cache under that name
                     needFiles.set(i, copy);
                     continue;
                 }
@@ -466,9 +474,15 @@ public final class MorpheBridge {
             BundleApprovals.Source s = bundleSource(b.optString("id"));
             if (s != null) list.add(s);
         }
-        int n = approvals.unapproved(list).size();
-        if (n > 0) note(jobId, "INFO", "Waiting for your OK to run " + (n == 1 ? "this patch source" : n + " patch sources") + "...");
-        Map<String, String> refused = approvals.requireAll(list, asker);
+        final boolean[] told = { false };                                                  // no file is read here just to count the questions: the line is written when the first one is asked
+        final String run = jobId;
+        BundleApprovals.Asker noting = new BundleApprovals.Asker() {
+            @Override public BundleApprovals.Answer ask(String title, String text) {
+                if (!told[0]) { told[0] = true; try { note(run, "INFO", "Waiting for your OK to run a patch source..."); } catch (JSONException ignored) {} }
+                return asker.ask(title, text);
+            }
+        };
+        Map<String, String> refused = approvals.requireAll(list, noting);
         if (!refused.isEmpty()) throw new IOException(refused.values().iterator().next() + " (" + refused.keySet().iterator().next() + ")");
     }
 

@@ -31801,7 +31801,7 @@ Type any command below (e.g. pm list packages -d)
             mpIndexBuild();
             mpAppsRender();
         }
-        function mpCatKey(s) { return s.id + '|' + s.version + '|' + s.size; }
+        function mpCatKey(s) { return s.id + '|' + s.version + '|' + s.size + '|' + (s.updatedAt || 0); }
         // pkg -> what the enabled sources can do for it; patches without an app are universal
         function mpIndexBuild() {
             mp.apps = new Map();

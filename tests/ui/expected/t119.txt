@@ -78,6 +78,8 @@ ok   a refusal is shown as that source's error and its patches are not listed
 ok   the page does not ask again by itself while the source stays refused
 ok   turning it off does not ask
 ok   turning a refused source back on asks again, and the allowed bundle is listed
+ok   an unchanged source is not asked for again
+ok   the same version and size, downloaded again: asked for again
 ok   Patched APKs lists the run with its patches and Install / Share / Save / Log / Delete
 ok   an install Android refuses (other key) offers to uninstall the installed copy first
 ok   after OK it installs with the uninstall
