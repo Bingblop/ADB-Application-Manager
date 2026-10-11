@@ -4,6 +4,18 @@
 // the filters and the selection. It does not take room from the other rows and leaves the search box usable at 320 and 412 px.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
+const initMock = () => {
+      window.__loads = 0; window.__vib = 0; window.__fail = false; window.__gen = 1;
+      const apps = () => (window.__many ? Array.from({ length: 60 }, (_, i) => ({ pkg: 'com.f.n' + i, name: 'Filler ' + String(i).padStart(2, '0'), isSystem: false })) : []).concat(window.__gen === 1
+        ? [{ pkg: 'com.a.one', name: 'Alpha One', isSystem: false }, { pkg: 'com.a.two', name: 'Alpha Two', isSystem: false }, { pkg: 'com.sys.x', name: 'Alpha System', isSystem: true }, { pkg: 'com.b.zed', name: 'Zed', isSystem: false }]
+        : [{ pkg: 'com.a.one', name: 'Alpha One', isSystem: false }, { pkg: 'com.a.three', name: 'Alpha Three', isSystem: false }, { pkg: 'com.sys.x', name: 'Alpha System', isSystem: true }, { pkg: 'com.b.zed', name: 'Zed', isSystem: false }]);
+      window.AndroidBridge = {
+        vibrate() { window.__vib++; }, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
+        saveStore() { return true; }, loadStore() { return ''; }, saveSetting() {}, loadSetting() { return ''; }, getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; },
+        loadPackages() { window.__loads++; if (window.__fail) throw new Error('device not reachable'); return JSON.stringify(apps()); },
+        getWorkingMode() { return JSON.stringify({ adbTcp: {}, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'unprivileged', modeAvailable: false, isPrivileged: false }); },
+      };
+    };
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined ? '' : ': ' + extra)); }
 (async () => {
   const b = await chromium.launch();
@@ -12,18 +24,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const tag = w + 'px';
     const page = await b.newPage({ viewport: { width: w, height: h }, hasTouch: true });
     page.on('pageerror', e => errors.push(tag + ' ' + e.message));
-    await page.addInitScript(() => {
-      window.__loads = 0; window.__vib = 0; window.__fail = false; window.__gen = 1;
-      const apps = () => window.__gen === 1
-        ? [{ pkg: 'com.a.one', name: 'Alpha One', isSystem: false }, { pkg: 'com.a.two', name: 'Alpha Two', isSystem: false }, { pkg: 'com.sys.x', name: 'Alpha System', isSystem: true }, { pkg: 'com.b.zed', name: 'Zed', isSystem: false }]
-        : [{ pkg: 'com.a.one', name: 'Alpha One', isSystem: false }, { pkg: 'com.a.three', name: 'Alpha Three', isSystem: false }, { pkg: 'com.sys.x', name: 'Alpha System', isSystem: true }, { pkg: 'com.b.zed', name: 'Zed', isSystem: false }];
-      window.AndroidBridge = {
-        vibrate() { window.__vib++; }, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
-        saveStore() { return true; }, loadStore() { return ''; }, saveSetting() {}, loadSetting() { return ''; }, getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; },
-        loadPackages() { window.__loads++; if (window.__fail) throw new Error('device not reachable'); return JSON.stringify(apps()); },
-        getWorkingMode() { return JSON.stringify({ adbTcp: {}, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'unprivileged', modeAvailable: false, isPrivileged: false }); },
-      };
-    });
+    await page.addInitScript(initMock);
     await page.goto(PAGE); await page.waitForTimeout(700);
     const ev = (fn, arg) => page.evaluate(fn, arg);
     const sleep = ms => page.waitForTimeout(ms);
@@ -59,6 +60,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await page.tap('#appsRefreshBtn');
     const during = await btnState();
     check(tag + ' 2. a tap shows the busy state at once: the button is off, spinning and marked busy', during.disabled && during.busy && during.ariaBusy === 'true', JSON.stringify(during));
+    const spin = await ev(() => { const cs = getComputedStyle(document.querySelector('#appsRefreshBtn svg')); return { name: cs.animationName, dur: cs.animationDuration, iter: cs.animationIterationCount }; });
+    check(tag + '    and the icon really turns: the spin animation runs on the SVG (0.8 s, forever)', spin.name === 'appsRefreshSpin' && spin.dur === '0.8s' && spin.iter === 'infinite', JSON.stringify(spin));
     await ev(() => refreshAppsList());                                       // a second request while the first one runs
     await page.tap('#appsRefreshBtn', { force: true, timeout: 800 }).catch(() => {});     // and a second tap on the off button
     await ev(() => document.getElementById('appsRefreshBtn').click());
@@ -66,6 +69,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     check(tag + '    the phone was asked once, however often it was tapped meanwhile', (await loads()) - l0 === 1, String((await loads()) - l0));
     const after = await btnState();
     check(tag + '    when the load is done the button is on again and still', !after.disabled && !after.busy && after.ariaBusy === null, JSON.stringify(after));
+    check(tag + '    and the icon stops turning', (await ev(() => getComputedStyle(document.querySelector('#appsRefreshBtn svg')).animationName)) === 'none');
     await page.tap('#appsRefreshBtn'); await sleep(700);
     check(tag + '    and a later tap loads again', (await loads()) - l0 === 2, String((await loads()) - l0));
 
@@ -85,6 +89,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     check(tag + '    the search text, the sort and the filter are as they were', post.search === 'alpha' && post.sort === 'name' && post.filters === 'user', JSON.stringify(post));
     check(tag + '    the selected app is still selected and drawn selected', post.sel === 'com.a.one' && post.checked, JSON.stringify(post));
     await ev(() => { clearBatchSelectionNow(); setFilter('all'); clearSearch(); });
+
+    // 3b) the list stays where it was scrolled to (sixty more apps make the page long enough to scroll)
+    await ev(() => { window.__many = true; });
+    await page.tap('#appsRefreshBtn'); await sleep(700);
+    const rows = await ev(() => document.querySelectorAll('#appsListContainer .app-card').length);
+    await ev(() => { const el = document.scrollingElement; el.scrollTo({ top: 900, behavior: 'instant' }); }); await sleep(200);
+    const y0 = await ev(() => Math.round(document.scrollingElement.scrollTop));
+    await ev(() => refreshAppsList()); await sleep(700);
+    const y1 = await ev(() => Math.round(document.scrollingElement.scrollTop));
+    check(tag + ' 3b. with ' + rows + ' apps listed and the page scrolled down, a refresh keeps the scroll position', rows >= 60 && y0 > 300 && Math.abs(y1 - y0) <= 2, 'rows ' + rows + ', before ' + y0 + ', after ' + y1);
+    await ev(() => { window.__many = false; document.scrollingElement.scrollTo({ top: 0, behavior: 'instant' }); });
+    await page.tap('#appsRefreshBtn'); await sleep(700);
 
     // 4) haptic feedback like the other buttons of the tab, and none when it is off
     await ev(() => { window.__vib = 0; hapticLast = 0; });
@@ -108,6 +124,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await ev(() => { const s = document.getElementById('langSelect'); s.value = 'de'; chooseLanguage('de'); }); await sleep(600);
     const de = await ev(() => { const x = document.getElementById('appsRefreshBtn'); return { label: x.getAttribute('aria-label'), title: x.title }; });
     check(tag + ' 6. in German the name and the tool tip read "Aktualisieren"', de.label === 'Aktualisieren' && de.title === 'Aktualisieren', JSON.stringify(de));
+    await page.close();
+  }
+  // reduced motion: the icon does not turn (the button is still off and marked busy)
+  {
+    const page = await b.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, reducedMotion: 'reduce' });
+    page.on('pageerror', e => errors.push('reduced ' + e.message));
+    await page.addInitScript(initMock);
+    await page.goto(PAGE); await page.waitForTimeout(700);
+    await page.tap('#appsRefreshBtn');
+    const r = await page.evaluate(() => { const x = document.getElementById('appsRefreshBtn'); return { busy: x.classList.contains('busy'), disabled: x.disabled, anim: getComputedStyle(x.querySelector('svg')).animationName }; });
+    check('7. with "reduce motion" on, the busy button does not turn its icon, but is still off and marked busy', r.busy && r.disabled && r.anim === 'none', JSON.stringify(r));
     await page.close();
   }
   check('no page errors', errors.length === 0, errors.join(' | '));
