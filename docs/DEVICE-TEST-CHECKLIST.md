@@ -347,6 +347,10 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Morphe patch, double tap: start a patch and tap the start button again at once (or twice quickly): only one patch runs and the second says a patch is already running.
 - [ ] Morphe patch, Downloads not writable (skip if you cannot make it so): revoke the app's access to storage, patch an app: the patched APK is kept in the app folder and listed in Patched APKs; nothing is lost.
 - [ ] Morphe catalog, two sources: open the Morphe Patcher tab with two sources added and open both quickly one after the other: both lists of patches load, without the four-minute wait.
+- [ ] App menu icon, single app: in the Apps tab open the menu of an app (tap its row). The tile left of the app's name shows the app's own icon (a letter for a moment is fine if the icon is not cached yet), also with a long app name, and the header does not jump. Open the menu of another app: its own icon shows, not the previous one.
+- [ ] App menu icon, Connected Devices: with a second device connected, open the app list of that tab. Apps that are also installed on this phone show their icon in the list; an app that exists only on the other device keeps its letter. Open the menu of an app: the same tile shows left of its name.
+- [ ] Patched APKs, "File not found": patch an app with the patched APK kept in Downloads, then move that APK out of `Downloads/Morphe Patcher` (or revoke the app's storage access). Open the Patched APKs list: the entry is still there with a "File not found" chip and one sentence of explanation; Install, Share and Save to Downloads are off, Log and Delete still work. Put the file back: the label is gone and the buttons work again.
+- [ ] Font search, leaving Settings: in Settings, in the font setting, start the font search on a phone with a lot of storage, then leave Settings (back to the Apps tab) before it ends. No message appears and the phone is not left busy: open Settings again, the list is empty and the search button works at once. Start a new search: it runs normally. Fonts saved as `.ttc` (or a `.ttc` renamed to `.ttf`) are not listed.
 
 ## Report
 
