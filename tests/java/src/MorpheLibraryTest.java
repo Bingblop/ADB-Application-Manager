@@ -135,6 +135,26 @@ public class MorpheLibraryTest {
         JSONObject ok2 = lib3.add(keep2, new JSONObject().put("pkg", "com.e.f"), null, dl3);
         check("and the next attempt into Downloads works", new File(ok2.getString("file")).getParentFile().equals(dl3) && new File(ok2.getString("file")).length() == 6, ok2.toString());
 
+        // M-10: an APK kept outside (Downloads) that cannot be seen is not forgotten: the entry, its log and its record stay
+        File root5 = temp();
+        MorpheLibrary lib5 = new MorpheLibrary(new File(root5, "patched"));
+        File card = new File(root5, "card/Morphe Patcher");
+        JSONObject out5 = lib5.add(file(root5, "o.apk", "OUTSIDE"), new JSONObject().put("pkg", "com.o.p").put("versionName", "2"), file(root5, "o.log", "LOG LINE\n"), card);
+        File moved = new File(root5, "card-away");
+        check("setup: the APK is in the outside folder", new File(out5.getString("file")).isFile(), out5.toString());
+        new File(root5, "card").renameTo(moved);                                           // the card is not there for a moment
+        JSONArray l5 = lib5.list();
+        check("an entry whose outside APK cannot be seen stays in the list, marked missing", l5.length() == 1 && l5.getJSONObject(0).optBoolean("missing"), l5.toString());
+        check("its log and record are still there", lib5.readLog(out5.getString("id"), 100).equals("LOG LINE\n") && lib5.get(out5.getString("id")) != null, null);
+        moved.renameTo(new File(root5, "card"));                                           // the card is back
+        l5 = lib5.list();
+        check("when the file is back the entry is normal again (no missing mark)", l5.length() == 1 && !l5.getJSONObject(0).optBoolean("missing"), l5.toString());
+        new File(out5.getString("file")).delete();
+        check("deleting the entry still works when its APK is gone", lib5.list().length() == 1 && lib5.delete(out5.getString("id")) && lib5.list().length() == 0, null);
+        JSONObject own5 = lib5.add(file(root5, "w.apk", "OWN"), new JSONObject().put("pkg", "com.w.x"), null);
+        new File(own5.getString("file")).delete();
+        check("an APK in the library's own folder that is gone still drops its entry", lib5.list().length() == 0 && !new File(root5, "patched/" + own5.getString("id")).exists(), null);
+
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
     }
 }
