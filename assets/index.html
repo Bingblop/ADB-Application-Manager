@@ -12800,7 +12800,7 @@ Type any command below (e.g. pm list packages -d)
         // A separate app, found in a GitHub release of this repository. The page asks the app three things (is it installed and what is
         // the newest test build, open it, download and install it) and sends no package, address or checksum: the app looks all of
         // that up itself. The install goes through the same download-and-install path (and the same confirmation) as every Store app.
-        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0;   // kbPendingAt: when the question in flight was asked (0 = none)
+        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0, kbWant = 0;   // kbPendingAt: when the question in flight was asked (0 = none)
         function kbBridge() { return (window.AndroidBridge && window.AndroidBridge.kotlinBuildCheck) ? window.AndroidBridge : null; }
         function kbShow() {
             const card = document.getElementById('kotlinBuildCard');
@@ -12817,10 +12817,12 @@ Type any command below (e.g. pm list packages -d)
             kbPendingAt = Date.now();
             document.getElementById('kbCheckBtn').disabled = true;
             if (!kb) { document.getElementById('kbStatus').innerText = 'Checking…'; }
-            b.kotlinBuildCheck();
+            const token = b.kotlinBuildCheck();                                   // the number of this question; its answer carries it
+            kbWant = typeof token === 'number' ? token : 0;
         }
         function onKotlinBuild(json) {
             let d; try { d = JSON.parse(json || '{}'); } catch (e) { d = { release: 'error', error: 'bad response' }; }
+            if (kbWant && d.seq && d.seq !== kbWant) return;                     // the answer to an older question: it neither ends the wait nor changes the card
             kb = d; kbAt = Date.now(); kbPendingAt = 0;
             document.getElementById('kbCheckBtn').disabled = false;
             kbRender();

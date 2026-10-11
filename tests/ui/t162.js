@@ -26,11 +26,13 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
         kotlinBuildCheck() {
           window.__calls.push(['kotlinBuildCheck', ...arguments]);
           const k = window.__kb;
-          const o = { package: pkg, page: 'https://github.com/Bingblop/ADB-Application-Manager/releases', installed: k.installed, installedVersion: k.installedVersion, update: k.update, release: k.release };
+          const seq = (window.__kbSeq = (window.__kbSeq || 0) + 1);
+          const o = { seq, package: pkg, page: 'https://github.com/Bingblop/ADB-Application-Manager/releases', installed: k.installed, installedVersion: k.installedVersion, update: k.update, release: k.release };
           if (k.release === 'ok') { o.version = k.version; o.tag = k.tag; o.size = k.size; }
           if (k.release === 'error') o.error = k.error;
-          if (window.__kbNever) return;
+          if (window.__kbNever) return seq;
           setTimeout(() => window.onKotlinBuild(JSON.stringify(o)), window.__kbDelay || 5);
+          return seq;
         },
         kotlinBuildOpen() { window.__calls.push(['kotlinBuildOpen', ...arguments]); return window.__kb.openResult; },
         kotlinBuildInstall() { window.__calls.push(['kotlinBuildInstall', ...arguments]); },
@@ -226,6 +228,35 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
     await fp.waitForTimeout(100);
     check('    but is asked again after 90 seconds', (await asked()) === 3, 'asked ' + (await asked()));
     await fp.close();
+  }
+
+  // ---- 16c. an answer to an older question changes nothing: it neither ends the wait nor overwrites the newer state ----
+  {
+    const sp = await mkPage({});
+    const f3 = (fn, arg) => sp.evaluate(fn, arg);
+    const asked3 = () => f3(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
+    // question 1 (the app will say: not installed) is slow; the page gives up waiting after 90 s and asks again; question 2 (installed) is quick
+    await f3(() => { window.__kbDelay = 700; switchView('prefs'); });
+    await sp.waitForTimeout(100);
+    await f3(() => { window.__kb.installed = true; window.__kb.installedVersion = '2.0.0'; window.__kbDelay = 250; kbPendingAt -= 91 * 1000; switchView('apps'); switchView('prefs'); });
+    await sp.waitForTimeout(100);
+    check('16c. the page asked twice (the first answer was given up on)', (await asked3()) === 2);
+    await sp.waitForTimeout(400);
+    const mid = await f3(() => ({ status: document.getElementById('kbStatus').innerText, again: !document.getElementById('kbCheckBtn').disabled }));
+    check('    the newer answer is shown: Installed, version 2.0.0, and the wait is over', mid.status === 'Installed, version 2.0.0.' && mid.again, JSON.stringify(mid));
+    await sp.waitForTimeout(500);
+    const late = await f3(() => ({ status: document.getElementById('kbStatus').innerText, open: getComputedStyle(document.getElementById('kbOpenBtn')).display !== 'none' }));
+    check('    the older answer (not installed) arrives later and changes nothing', late.status === 'Installed, version 2.0.0.' && late.open, JSON.stringify(late));
+    // an older answer must not end the wait of a newer question either
+    await f3(() => { window.__kbDelay = 900; kbAt = 0; switchView('apps'); switchView('prefs'); });
+    await sp.waitForTimeout(100);
+    await f3(() => window.onKotlinBuild(JSON.stringify({ seq: 1, package: 'x', installed: false, release: 'none', page: 'p' })));
+    const guard = await f3(() => ({ pending: kbPendingAt > 0, btn: document.getElementById('kbCheckBtn').disabled, status: document.getElementById('kbStatus').innerText }));
+    check('    a stale answer arriving while a newer question is out does not end its wait (Check again stays off, the card keeps its text)', guard.pending && guard.btn && guard.status === 'Installed, version 2.0.0.', JSON.stringify(guard));
+    await f3(() => { switchView('apps'); switchView('prefs'); });
+    await sp.waitForTimeout(100);
+    check('    so leaving and coming back still asks nothing more', (await asked3()) === 3, 'asked ' + (await asked3()));
+    await sp.close();
   }
 
   // ---- 17. narrow screens: nothing sticks out sideways ----

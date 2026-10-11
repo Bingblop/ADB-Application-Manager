@@ -103,22 +103,23 @@ final class KotlinBuild {
         return name.length() - at >= last.length() && name.endsWith(last);
     }
 
-    /** The numbers of a version ("kotlin-8.0.10-beta" gives 8, 0, 10): the first dotted number in it; empty when there is none. */
-    static long[] versionParts(String v) {
-        if (v == null) return new long[0];
+    /**
+     * The numbers of a version ("kotlin-8.0.10-beta" gives "8", "0", "10"): the first dotted number in it, each as digits without leading
+     * zeros and without any limit on their size (so no number is cut or overflows); empty when there is none.
+     */
+    static String[] versionParts(String v) {
+        if (v == null) return new String[0];
         int i = 0, n = v.length();
         while (i < n && !(v.charAt(i) >= '0' && v.charAt(i) <= '9')) i++;
-        long[] out = new long[8];
+        String[] out = new String[8];
         int count = 0;
         while (i < n && count < out.length) {
             int j = i;
-            long val = 0;
-            while (j < n && v.charAt(j) >= '0' && v.charAt(j) <= '9') {
-                if (val < 100000000L) val = val * 10 + (v.charAt(j) - '0');
-                j++;
-            }
+            while (j < n && v.charAt(j) >= '0' && v.charAt(j) <= '9') j++;
             if (j == i) break;
-            out[count++] = val;
+            int k = i;
+            while (k < j - 1 && v.charAt(k) == '0') k++;                    // leading zeros out, a lone 0 stays
+            out[count++] = v.substring(k, j);
             if (j < n && v.charAt(j) == '.' && j + 1 < n && v.charAt(j + 1) >= '0' && v.charAt(j + 1) <= '9') i = j + 1; else break;
         }
         return java.util.Arrays.copyOf(out, count);
@@ -130,10 +131,12 @@ final class KotlinBuild {
 
     /** -1, 0 or 1 comparing the numbers of two versions ("8.0.10" is above "8.0.9"; a missing part is 0; text around the numbers is ignored). */
     static int compareVersions(String a, String b) {
-        long[] x = versionParts(a), y = versionParts(b);
+        String[] x = versionParts(a), y = versionParts(b);
         for (int i = 0; i < Math.max(x.length, y.length); i++) {
-            long p = i < x.length ? x[i] : 0, q = i < y.length ? y[i] : 0;
-            if (p != q) return p < q ? -1 : 1;
+            String p = i < x.length ? x[i] : "0", q = i < y.length ? y[i] : "0";
+            if (p.length() != q.length()) return p.length() < q.length() ? -1 : 1;          // no leading zeros: more digits is a bigger number
+            int c = p.compareTo(q);
+            if (c != 0) return c < 0 ? -1 : 1;
         }
         return 0;
     }
@@ -306,6 +309,7 @@ final class KotlinBuild {
     static Choice find(Http http, boolean allowPrerelease) throws Exception {
         Choice c = null;
         for (int page = 1; page <= MAX_PAGES; page++) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException("cancelled");       // the screen is gone: no more pages
             byte[] body = http.get(pageUrl(page), MAX_JSON_BYTES);
             if (body == null) throw new IllegalStateException("no answer from GitHub");
             if (body.length > MAX_JSON_BYTES) throw new IllegalArgumentException("the answer is too large");
@@ -314,6 +318,7 @@ final class KotlinBuild {
             if (c != null || list.length() < PAGE_SIZE) break;
         }
         if (c != null && c.sha256.isEmpty() && !c.sumsUrl.isEmpty()) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException("cancelled");
             byte[] sums;
             try {
                 sums = http.get(c.sumsUrl, MAX_SUMS_BYTES);

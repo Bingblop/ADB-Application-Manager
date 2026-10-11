@@ -2732,9 +2732,11 @@ public class MainActivity extends Activity {
     // like every Store app (the hardened download, the published SHA-256, the native confirmation of a privileged install or the system
     // installer), and the package it must turn out to be is KotlinBuild's, not anything the page sends.
 
-    private static final KotlinBuild.Http KOTLIN_HTTP = new KotlinBuild.Http() {
+    /** The web for the Kotlin lookups: refuses a request once the window is gone (a lookup of several pages stops at the next one). */
+    private final KotlinBuild.Http kotlinHttp = new KotlinBuild.Http() {
         @Override
         public byte[] get(String url, int maxBytes) throws Exception {
+            if (activityDestroyed) throw new java.io.IOException("closed");
             return UpdateManager.httpGet(url, "application/vnd.github+json", maxBytes);
         }
     };
@@ -2751,26 +2753,66 @@ public class MainActivity extends Activity {
         }
     };
 
-    /** Answer: window.onKotlinBuild(json). */
-    private void runKotlinBuildCheck() {
-        executor.submit(new Runnable() {
+    /** The Kotlin lookups and installs still running: onDestroy cancels (interrupts) them. */
+    private final java.util.Set<java.util.concurrent.Future<?>> kotlinJobs = java.util.Collections.synchronizedSet(new HashSet<java.util.concurrent.Future<?>>());
+    /** The number of the newest Kotlin check; an older one that finishes later says nothing. */
+    private final java.util.concurrent.atomic.AtomicInteger kotlinCheckSeq = new java.util.concurrent.atomic.AtomicInteger();
+    private volatile java.util.concurrent.Future<?> kotlinCheckJob;
+
+    /** Runs {@code job} on the shared pool as a job onDestroy can cancel; nothing runs once the window is gone. */
+    private java.util.concurrent.Future<?> submitKotlinJob(Runnable job) {
+        if (activityDestroyed) return null;
+        java.util.concurrent.FutureTask<Object> task = new java.util.concurrent.FutureTask<Object>(job, null) {
+            @Override
+            protected void done() { kotlinJobs.remove(this); }
+        };
+        kotlinJobs.add(task);
+        try {
+            executor.execute(task);
+        } catch (RuntimeException rejected) {
+            kotlinJobs.remove(task);
+            return null;
+        }
+        if (activityDestroyed) task.cancel(true);                 // onDestroy ran between the check and the add
+        return task;
+    }
+
+    /** onDestroy: the Kotlin lookups stop (the thread is interrupted; a lookup stops at its next page, the request in progress ends by its own timeout). */
+    private void cancelKotlinJobsOnDestroy() {
+        for (java.util.concurrent.Future<?> f : new java.util.ArrayList<java.util.concurrent.Future<?>>(kotlinJobs)) {
+            try { f.cancel(true); } catch (Throwable ignored) {}
+        }
+        kotlinJobs.clear();
+    }
+
+    /** Returns the number of this check; the answer, window.onKotlinBuild(json), carries it as "seq". */
+    private int runKotlinBuildCheck() {
+        final int seq = kotlinCheckSeq.incrementAndGet();
+        java.util.concurrent.Future<?> older = kotlinCheckJob;
+        if (older != null) older.cancel(true);                                // a newer question: the older lookup is of no use
+        kotlinCheckJob = submitKotlinJob(new Runnable() {
             @Override
             public void run() {
-                notifyUpdates("onKotlinBuild", KotlinBuild.check(KOTLIN_HTTP, kotlinPackages, KotlinBuild.ALLOW_PRERELEASE));
+                JSONObject o = KotlinBuild.check(kotlinHttp, kotlinPackages, KotlinBuild.ALLOW_PRERELEASE);
+                if (activityDestroyed || seq != kotlinCheckSeq.get()) return;  // the window is gone, or a newer check was asked: nobody wants this answer
+                try { o.put("seq", seq); } catch (Exception ignored) {}
+                notifyUpdates("onKotlinBuild", o);
             }
         });
+        return seq;
     }
 
     /** Looks the newest test build up again (the page's copy of it is never trusted), then downloads and installs it. Progress: window.onStoreInstallProgress(json). */
     private void runKotlinBuildInstall() {
         final String key = KotlinBuild.KOTLIN_PACKAGE_ID;
-        executor.submit(new Runnable() {
+        submitKotlinJob(new Runnable() {
             @Override
             public void run() {
                 if (storeInstalling.contains(key)) return;                                  // already running: its own progress goes on
                 try {
                     storeInstallProgress(key, "resolving", -1, "Finding the latest Kotlin test build…");
-                    KotlinBuild.Choice c = KotlinBuild.find(KOTLIN_HTTP, KotlinBuild.ALLOW_PRERELEASE);
+                    KotlinBuild.Choice c = KotlinBuild.find(kotlinHttp, KotlinBuild.ALLOW_PRERELEASE);
+                    if (activityDestroyed) return;
                     if (c == null) throw new IllegalStateException("No Kotlin test build has been published yet.");
                     downloadAndInstall(c.apkUrl, KotlinBuild.KOTLIN_PACKAGE_ID, "ADB Application Manager (Kotlin build)", key, c.sha256);
                 } catch (Exception e) {
@@ -11453,10 +11495,10 @@ public class MainActivity extends Activity {
 
         // ---- Settings > Try the Kotlin build (beta): none of these takes a package, an address or a checksum from the page ----
 
-        /** Whether the Kotlin app is installed (and its version) and the newest test build in the releases. Answer: window.onKotlinBuild(json). */
+        /** Whether the Kotlin app is installed (and its version) and the newest test build in the releases. Returns this check's number; the answer, window.onKotlinBuild(json), carries it as seq. */
         @JavascriptInterface
-        public void kotlinBuildCheck() {
-            runKotlinBuildCheck();
+        public int kotlinBuildCheck() {
+            return runKotlinBuildCheck();
         }
 
         /** Opens the installed Kotlin app. False when it is not installed or has nothing to launch. */
@@ -15622,6 +15664,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         activityDestroyed = true;
+        cancelKotlinJobsOnDestroy();        // a lookup of several pages must not keep this window alive for minutes
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();

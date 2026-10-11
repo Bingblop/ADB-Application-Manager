@@ -370,6 +370,28 @@ public class KotlinBuildTest {
     check("a later page that is not a list stops the lookup", throwsIn(new FakeHttp().page(1, fullPage(1)).page(2, "<html>rate limited</html>")));
     check("a later page over the size limit stops the lookup", throwsIn(new FakeHttp().page(1, fullPage(1)).page(2, "[\"" + new String(new char[KotlinBuild.MAX_JSON_BYTES + 10]).replace('\0', 'a') + "\"]")));
     check("every page is asked over https, from this address only", allHttps(new FakeHttp().page(1, fullPage(1)).page(2, fullPage(2)).page(3, "[]")));
+    // the screen closes: the lookup stops at the next page (and before the checksum file)
+    final Thread me = Thread.currentThread();
+    FakeHttp cut = new FakeHttp() {
+      public byte[] get(String url, int maxBytes) throws Exception { byte[] b = super.get(url, maxBytes); if (url.equals(KotlinBuild.pageUrl(1))) me.interrupt(); return b; }
+    };
+    cut.page(1, fullPage(1)).page(2, fullPageWith(kotlin("8.0.0")));
+    String stopped = "";
+    try { KotlinBuild.find(cut, false); } catch (InterruptedException e) { stopped = "interrupted"; }
+    Thread.interrupted();
+    check("an interrupt (the window closing) stops a lookup before the next page: page 2 is never asked", stopped.equals("interrupted") && cut.asked.size() == 1);
+    FakeHttp cut2 = new FakeHttp() {
+      public byte[] get(String url, int maxBytes) throws Exception { byte[] b = super.get(url, maxBytes); if (url.equals(KotlinBuild.pageUrl(1))) me.interrupt(); return b; }
+    };
+    cut2.page(1, list(rel("kotlin-8.0.0", asset("kotlin-8.0.0", "ADB-Manager-Kotlin.apk"), asset("kotlin-8.0.0", "SHA256SUMS.txt")))).body(P + "kotlin-8.0.0/SHA256SUMS.txt", H64 + "  ADB-Manager-Kotlin.apk\n");
+    stopped = "";
+    try { KotlinBuild.find(cut2, false); } catch (InterruptedException e) { stopped = "interrupted"; }
+    Thread.interrupted();
+    check("and before the checksum file is fetched", stopped.equals("interrupted") && cut2.asked.size() == 1);
+    check("the card reports a cancelled lookup as an error (its answer is dropped by the app)", "error".equals(KotlinBuild.check(new FakeHttp() {
+      public byte[] get(String url, int maxBytes) throws Exception { me.interrupt(); return super.get(url, maxBytes); }
+    }.page(1, fullPage(1)).page(2, "[]"), new FakePackages(null, false), false).optString("release")));
+    Thread.interrupted();
     // the rules for the files hold on every page
     JSONObject hostile = rel("kotlin-9.0.0", new JSONObject().put("name", "ADB-Manager-Kotlin.apk").put("browser_download_url", "http://evil.example/a.apk").put("size", 5));
     check("a hostile release on page 2 is ignored like on page 1", KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(hostile)).page(3, "[]"), false) == null);
@@ -440,13 +462,21 @@ public class KotlinBuildTest {
     check("an unreadable checksum file makes the card an error, not an installable build", KotlinBuild.check(sumsDown, new FakePackages(null, false), false).getString("release").equals("error"));
   }
 
-  static void versions() {
+  static void versions() throws Exception {
     check("compare: numbers, not text", KotlinBuild.compareVersions("8.0.10", "8.0.9") > 0 && KotlinBuild.compareVersions("8.0.9", "8.0.10") < 0 && KotlinBuild.compareVersions("10", "9") > 0);
     check("compare: a missing part is 0", KotlinBuild.compareVersions("8.0", "8.0.0") == 0 && KotlinBuild.compareVersions("8", "8.0.0.0") == 0 && KotlinBuild.compareVersions("8.0.1", "8") > 0);
     check("compare: text around the numbers is ignored", KotlinBuild.compareVersions("8.0.0-Pro", "8.0.0") == 0 && KotlinBuild.compareVersions("v8.1", "kotlin-8.0.9") > 0 && KotlinBuild.compareVersions("8.0.0-beta2", "8.0.0") == 0);
     check("compare: no number is below any number", KotlinBuild.compareVersions("beta", "0.0.1") < 0 && KotlinBuild.compareVersions("beta", "alpha") == 0 && KotlinBuild.compareVersions(null, "1") < 0 && KotlinBuild.compareVersions(null, null) == 0);
     check("compare: huge numbers do not overflow or throw", KotlinBuild.compareVersions("99999999999999999999999.1", "1") > 0 && KotlinBuild.compareVersions("1." + new String(new char[5000]).replace('\0', '9'), "1.1") > 0);
     check("compare: a very long dotted version is cut, not a problem", KotlinBuild.compareVersions(new String(new char[3000]).replace("\0", "1."), "1.1.1") > 0);
+    check("compare: segments of more than 9 digits keep their order (no cutoff)", KotlinBuild.compareVersions("1000000000", "999999999") > 0 && KotlinBuild.compareVersions("999999999", "1000000000") < 0
+        && KotlinBuild.compareVersions("1.1000000000", "1.999999999") > 0 && KotlinBuild.compareVersions("100000001", "100000000") > 0 && KotlinBuild.compareVersions("123456789012345678901", "123456789012345678900") > 0
+        && KotlinBuild.compareVersions("8.1000000000.0", "8.1000000001.0") < 0 && KotlinBuild.compareVersions("9223372036854775808", "9223372036854775807") > 0);
+    check("compare: leading zeros do not count", KotlinBuild.compareVersions("008.0010", "8.10") == 0 && KotlinBuild.compareVersions("8.09", "8.9") == 0 && KotlinBuild.compareVersions("8.010", "8.9") > 0 && KotlinBuild.compareVersions("0000", "0") == 0
+        && KotlinBuild.compareVersions("00000000001000000000", "999999999") > 0 && KotlinBuild.compareVersions("8.0.0", "8.00.000") == 0);
+    check("versionParts", java.util.Arrays.equals(KotlinBuild.versionParts("kotlin-8.0.10-beta"), new String[] { "8", "0", "10" }) && java.util.Arrays.equals(KotlinBuild.versionParts("v0007.000"), new String[] { "7", "0" }) && KotlinBuild.versionParts("beta").length == 0 && KotlinBuild.versionParts(null).length == 0);
+    check("a Kotlin release with a 10-digit segment is the newest (the pick uses the same compare)", ver(pick(list(kotlin("1.999999999"), kotlin("1.1000000000"), kotlin("1.5")))).equals("1.1000000000"));
+    check("an installed 1.999999999 is behind release 1.1000000000", KotlinBuild.check(new FakeHttp().releases(list(kotlin("1.1000000000"))), new FakePackages("1.999999999", false), false).optBoolean("update"));
     check("hasNumber", KotlinBuild.hasNumber("8.0") && KotlinBuild.hasNumber("v1") && !KotlinBuild.hasNumber("") && !KotlinBuild.hasNumber("beta") && !KotlinBuild.hasNumber(null));
     check("safeToken", KotlinBuild.safeToken("a-b_c.1", 10) && !KotlinBuild.safeToken("", 10) && !KotlinBuild.safeToken("a b", 10) && !KotlinBuild.safeToken("abcdefghijk", 10) && !KotlinBuild.safeToken(".x", 10) && !KotlinBuild.safeToken("a..b", 10) && !KotlinBuild.safeToken(null, 10));
   }
@@ -486,7 +516,7 @@ public class KotlinBuildTest {
     check("the confirmation comes before the privileged install in it", dai.indexOf("confirmPrivilegedInstall(") > 0 && dai.indexOf("confirmPrivilegedInstall(") < dai.indexOf("installApk(apk)"));
 
     // the bridge
-    Matcher m = Pattern.compile("public (void|boolean) (kotlinBuild\\w+)\\(([^)]*)\\)").matcher(main);
+    Matcher m = Pattern.compile("public (void|boolean|int) (kotlinBuild\\w+)\\(([^)]*)\\)").matcher(main);
     List<String> names = new ArrayList<String>();
     boolean noArgs = true;
     while (m.find()) { names.add(m.group(2)); if (!m.group(3).trim().isEmpty()) noArgs = false; }
@@ -499,8 +529,22 @@ public class KotlinBuildTest {
     check("opening uses the launch intent of the Kotlin package id", open.contains("getLaunchIntentForPackage(KotlinBuild.KOTLIN_PACKAGE_ID)"));
     String rels = between(main, "public void kotlinBuildReleases()", "/**");
     check("the releases page is opened from the constant", rels.contains("KotlinBuild.RELEASES_PAGE_URL") && rels.contains("ACTION_VIEW"));
-    String chk = between(main, "private void runKotlinBuildCheck()", "private void runKotlinBuildInstall()");
-    check("the check runs off the UI thread and answers window.onKotlinBuild", chk.contains("executor.submit(") && chk.contains("\"onKotlinBuild\"") && chk.contains("KotlinBuild.check(KOTLIN_HTTP, kotlinPackages,"));
+    String chk = between(main, "private int runKotlinBuildCheck()", "private void runKotlinBuildInstall()");
+    check("the check runs off the UI thread as a job onDestroy can cancel and answers window.onKotlinBuild", chk.contains("submitKotlinJob(") && !chk.contains("executor.submit(") && chk.contains("\"onKotlinBuild\"") && chk.contains("KotlinBuild.check(kotlinHttp, kotlinPackages,"));
+    check("it numbers each check, tells the page the number (seq), cancels the older check and stays silent when a newer one was asked or the window is gone",
+        chk.contains("kotlinCheckSeq.incrementAndGet()") && chk.contains("older.cancel(true)") && chk.contains("o.put(\"seq\", seq)") && chk.contains("activityDestroyed || seq != kotlinCheckSeq.get()") && chk.contains("return seq;"));
+    check("the bridge returns that number", Pattern.compile("public int kotlinBuildCheck\\(\\)\\s*\\{\\s*return runKotlinBuildCheck\\(\\);").matcher(main).find());
+    String jobs = between(main, "private final java.util.Set<java.util.concurrent.Future<?>> kotlinJobs", "/** Returns the number of this check");
+    check("Kotlin jobs are tracked futures that remove themselves when done, are not started once the window is gone, and are cancelled with an interrupt", jobs.contains("FutureTask") && jobs.contains("kotlinJobs.remove(this)") && jobs.contains("if (activityDestroyed) return null;") && jobs.contains("f.cancel(true)") && jobs.contains("task.cancel(true)"));
+    String onDestroy = between(main, "protected void onDestroy()", "executor.shutdown();");
+    check("onDestroy cancels them, before the pool is shut down", onDestroy.contains("cancelKotlinJobsOnDestroy();") && onDestroy.indexOf("cancelKotlinJobsOnDestroy();") > onDestroy.indexOf("activityDestroyed = true;"));
+    String http = between(main, "private final KotlinBuild.Http kotlinHttp", "private final KotlinBuild.Packages");
+    check("the lookup's web refuses a request once the window is gone", http.contains("if (activityDestroyed) throw new java.io.IOException(\"closed\");") && http.contains("UpdateManager.httpGet("));
+    String ins = between(main, "private void runKotlinBuildInstall()", "private void downloadAndInstall(");
+    check("the install is a cancellable job and does not start a download once the window is gone", ins.contains("submitKotlinJob(") && ins.indexOf("if (activityDestroyed) return;") > ins.indexOf("KotlinBuild.find(") && ins.indexOf("if (activityDestroyed) return;") < ins.indexOf("downloadAndInstall("));
+    check("notifyJs drops a script once the window is gone (the answer is a no-op then)", main.contains("if (!activityDestroyed && webView != null) {      // checked here, on the UI thread"));
+    String pjs = between(page, "function kbCheck(user)", "window.onKotlinBuild = ");
+    check("the page keeps the number of its newest question and ignores an answer to another", pjs.contains("kbWant = typeof token === 'number' ? token : 0;") && pjs.contains("if (kbWant && d.seq && d.seq !== kbWant) return;"));
     check("the web request goes through UpdateManager.httpGet (HttpSafe.open)", main.contains("UpdateManager.httpGet(url, \"application/vnd.github+json\", maxBytes)"));
     check("the package query is getPackageInfo (the app's existing package query)", Pattern.compile("kotlinPackages = new KotlinBuild\\.Packages\\(\\)[\\s\\S]{0,400}getPackageManager\\(\\)\\.getPackageInfo\\(pkg, 0\\)").matcher(main).find());
 

@@ -42,6 +42,11 @@ ok       when the answer comes the card shows it: {"status":"Not installed.","ag
 ok       and it is then asked at most once in five minutes (the visit after the answer asks nothing)
 ok       a lookup whose answer never comes is not repeated at once either: asked 2
 ok       but is asked again after 90 seconds: asked 3
+ok   16c. the page asked twice (the first answer was given up on)
+ok       the newer answer is shown: Installed, version 2.0.0, and the wait is over: {"status":"Installed, version 2.0.0.","again":true}
+ok       the older answer (not installed) arrives later and changes nothing: {"status":"Installed, version 2.0.0.","open":true}
+ok       a stale answer arriving while a newer question is out does not end its wait (Check again stays off, the card keeps its text): {"pending":true,"btn":true,"status":"Installed, version 2.0.0."}
+ok       so leaving and coming back still asks nothing more: asked 3
 ok   17. [320px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":304,"vw":320}
 ok   17. [360px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":344,"vw":360}
 ok   18. without the app (no Kotlin bridge) the card is hidden
