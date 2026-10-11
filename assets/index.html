@@ -9227,6 +9227,7 @@ Type any command below (e.g. pm list packages -d)
             if (activeView) {
                 activeView.classList.add('active');
             }
+            if (viewName !== 'files' && typeof arcOpenAbort === 'function') arcOpenAbort();       // an archive still being unpacked for its listing is not wanted any more
             if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
@@ -18637,21 +18638,68 @@ Type any command below (e.g. pm list packages -d)
             showToast('Opening ' + name + '…');
             // let the toast paint first: the bridge call is synchronous
             setTimeout(() => {
-                const r = arcBridge('archiveOpen', path);
-                if (!r.ok && r.needPassword) { arcOpenLocked(path, name, !!r.wrong, onFail); return; }
-                if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
-                arcShow(r);
+                arcOpenCall('archiveOpen', [path], name, r => {
+                    if (!r.ok && r.needPassword) { arcOpenLocked(path, name, !!r.wrong, onFail); return; }
+                    if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
+                    arcShow(r);
+                });
             }, 40);
+        }
+
+        // Opening a compressed tar (tar.gz / bz2 / xz / zst / lz4) unpacks all of it to list it, which can take minutes, and the bridge runs one call at a
+        // time: so the app answers { ok: true, pending: true, token } at once, goes on in the background and sends the answer to onArchiveOpened. Any other
+        // format answers in the call itself. done(r) gets the answer either way; Cancel (or leaving) asks the app to stop and done is never called.
+        let arcOpening = null;          // the open being waited for: { token, done, onAbort, text (the element that shows the line) }
+        function arcOpenCall(fn, args, name, done, onAbort) {
+            const r = arcBridge(fn, ...args);
+            if (!(r && r.ok && r.pending)) { done(r); return; }
+            arcOpening = { token: r.token, done, onAbort };
+            arcBusy = true;
+            closeFmAction();                                // the sheet the person tapped View contents in would cover the Cancel button
+            arcOpenStatus('Opening ' + name + '…');
+        }
+        // the same line with a Cancel button that a running extraction shows; inside an open archive it is that archive's own status line
+        function arcOpenStatus(text) {
+            const el = document.getElementById(arc ? 'arcStatus' : 'fmBatchStatus');
+            if (!el) return;
+            el.style.display = '';
+            el.innerHTML = '<span class="arc-open-text"></span> <button class="batch-tool-link" onclick="arcOpenCancelTap()">Cancel</button>';
+            if (arcOpening) arcOpening.text = el.querySelector('.arc-open-text');
+            arcOpenText(text);
+        }
+        function arcOpenText(text) { if (arcOpening && arcOpening.text) arcOpening.text.innerText = text; }
+        function arcOpenEnd() {
+            arcOpening = null;
+            arcBusy = false;
+            const a = document.getElementById('arcStatus'), f = document.getElementById('fmBatchStatus');
+            if (a && a.querySelector('.arc-open-text')) a.style.display = 'none';
+            if (f && f.querySelector('.arc-open-text') && !fmBatchRunning && !exRunning && !czRunning) f.style.display = 'none';
+        }
+        function arcOpenCancelTap() { haptic(); arcOpenAbort(); }
+        function arcOpenAbort() {
+            if (!arcOpening) return;
+            const o = arcOpening;
+            arcOpenEnd();                                   // the page is free at once; the answer of the open that was stopped is dropped (its token is no longer wanted)
+            if (o.onAbort) o.onAbort();
+            try { if (window.AndroidBridge && window.AndroidBridge.archiveOpenCancel) window.AndroidBridge.archiveOpenCancel(); } catch (e) {}
+        }
+        function onArchiveOpened(r) {
+            const o = arcOpening;
+            if (!o || !r || r.token !== o.token) return;
+            arcOpenEnd();
+            if (r.cancelled) return;
+            o.done(r);
         }
 
         // an archive that can't even be listed without its password (7z with encrypted names, rar -hp): ask, then open it with the answer
         async function arcOpenLocked(path, name, wrong, onFail) {
             const pw = await pwAsk(name, wrong, 'Open');
             if (pw === null) return;
-            const r = arcBridge('archiveOpen2', path, pw);
-            if (!r.ok && r.needPassword) { arcOpenLocked(path, name, true, onFail); return; }
-            if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
-            arcShow(r);
+            arcOpenCall('archiveOpen2', [path, pw], name, r => {
+                if (!r.ok && r.needPassword) { arcOpenLocked(path, name, true, onFail); return; }
+                if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
+                arcShow(r);
+            });
         }
 
         function arcShow(r) {
@@ -18677,6 +18725,7 @@ Type any command below (e.g. pm list packages -d)
 
         function arcClose() {
             haptic();
+            arcOpenAbort();
             if (arcDiff) { arcDiffClose(); return; }
             if (arcStack.length) {                       // leave a nested archive: back to the one it was opened from
                 const child = arc;
@@ -19123,7 +19172,16 @@ Type any command below (e.g. pm list packages -d)
                 if (r && r.ref && window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref);
                 return;
             }
-            const opened = arcBridge('archiveOpen', r.ref);
+            arcOpenCall('archiveOpen', [r.ref], r.name, opened => arcOpenedNested(r, opened), () => {
+                if (r.ref && window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref);       // the copy taken out for it is not needed now
+            });
+        }
+
+        function arcOpenedNested(r, opened) {
+            if (!arc) {                                    // the archive was closed while the nested one was being listed
+                if (r && r.ref && window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref);
+                return;
+            }
             if (!opened.ok) { showToast(opened.error || 'Not a readable archive'); if (window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref); return; }
             const parent = { arc, dir: arcDir, query: arcQuery, diff: arcDiff };       // a comparison comes back with its parent
             arcDiff = null;
@@ -19291,6 +19349,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onArchiveProgress(msg) {
+            if (arcOpening) { arcOpenText(msg); return; }
             if (signTarget && signTarget.busy) {
                 signTarget.status = msg;
                 const el = document.getElementById('signStatus');
@@ -19349,14 +19408,16 @@ Type any command below (e.g. pm list packages -d)
         function arcAfterEdit() {
             if (!arc) return;
             const keep = arcDir;
-            const r = arcBridge('archiveOpen', arc.path);
-            if (!r.ok) { showToast(r.error || 'Could not re-open the archive'); arcClose(); return; }
-            arc = r;
-            arcHeader();
-            arcDir = keep;
-            arcQuery = (document.getElementById('arcSearch').value || '').trim();
-            arcLoad(true);
-            if (arcDir && arcTotal === 0 && !arcQuery) arcUp();
+            arcOpenCall('archiveOpen', [arc.path], arc.name, r => {
+                if (!arc) return;                                  // closed while it was being listed
+                if (!r.ok) { showToast(r.error || 'Could not re-open the archive'); arcClose(); return; }
+                arc = r;
+                arcHeader();
+                arcDir = keep;
+                arcQuery = (document.getElementById('arcSearch').value || '').trim();
+                arcLoad(true);
+                if (arcDir && arcTotal === 0 && !arcQuery) arcUp();
+            });
         }
 
         // ---- Sign an APK with the app's own key ----

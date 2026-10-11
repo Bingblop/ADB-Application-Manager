@@ -278,7 +278,8 @@ public class PrivatePathsTest {
       routeHas(m, "private void runVirusTotalScan(", "copyFileChecked(f, sout)", null);
       String vt = bodyOf(m, "private void runVirusTotalScan(");
       is("VirusTotal hashes and uploads the checked copy, not the name the page gave", vt != null && vt.indexOf("f = staged;") > 0 && vt.indexOf("VirusTotal.sha256(f)") > vt.indexOf("f = staged;"));
-      routeHas(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password)", "fmPrivate(p)", null);
+      routeHas(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb)", "fmPrivate(p)", null);
+      routeHas(m, "private String archiveOpenAny(", "fmPrivate(p)", null);
       routeHas(m, "public String archiveExtract2(", "fmPrivate(dest)", null);
       routeHas(m, "public String archiveCreate(", "fmPrivate(dir.getPath())", null);
       routeHas(m, "public String archiveCreate(", "isPrivateData(f)", null);

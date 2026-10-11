@@ -1,0 +1,21 @@
+1. a zip is answered by archiveOpen itself: the archive view shows at once, no "Opening" line, no cancel asked: true null {"open":1,"cancel":0,"close":0,"release":0}
+2. a tar.zst is answered "pending": the archive view is not shown yet, the File Manager shows the Opening line with a Cancel button: false "Opening big.tar.zst… Cancel" 1
+   the page is not frozen: a second open is refused in words, not queued behind it:
+    "Another archive job is still running" {"open":2,"cancel":0,"close":1,"release":0}
+3. the app's progress text replaces the line and the Cancel button stays: "Opening big.tar.zst… 1.2 GB read Cancel" 1
+4. the final answer opens the archive: the view shows, the line is gone, the header says it is solid: true null true "10 files • 4.0 KB • TAR.ZST (solid: files are packed together)"
+   it lists its entries: 2 rows, and the list was asked of the app: true
+5. an error answer shows the app's words in a toast, no archive view, no line left: "damaged or hostile archive: header of 1610612736 bytes" false null
+6. an answer carrying another token is ignored (still waiting, still the line): false "Opening big.tar.zst… Cancel"
+   the right token opens it: true
+7. Cancel asks the app to stop (archiveOpenCancel once) and frees the page at once: 1 null false
+   the app's "cancelled" answer shows nothing (no error toast, no archive, no fallback viewer): true false false
+   even a success that was already on its way for the cancelled open is dropped: false
+   opening again right after a Cancel starts a new open with a new token: 5 "Opening big.tar.zst… Cancel"
+   ... and it opens: true
+8. leaving the File Manager asks the app to stop and clears the line: 1 null false
+   back in the File Manager nothing is waiting any more: null
+9. after an edit the archive is opened again; if that is pending, the line (with Cancel) shows inside the archive view and the old listing stays: "Opening big.tar.zst… Cancel" true 1
+   the answer refreshes the header (11 files) and the line goes: null true
+10. closing the archive view while a re-open waits asks the app to stop: 1 false null
+no page errors
