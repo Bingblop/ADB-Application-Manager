@@ -6315,6 +6315,32 @@
                 .tx-help .tx-links { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
                 .tx-err-body { font-size: 12.5px; line-height: 1.5; margin: 6px 0; overflow-wrap: anywhere; }
                 .tx-err-detail { font-family: monospace; font-size: 11px; background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px; white-space: pre-wrap; word-break: break-all; max-height: 28vh; overflow: auto; margin-top: 8px; }
+
+                /* Responsive Kotlin-Style Console & Terminal enhancements */
+                .kt-console-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+                .kt-tab-btn { flex: 1; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+                .kt-tab-btn.active { background: rgba(var(--ov), 0.12); border-color: var(--accent); color: var(--accent); font-weight: 800; }
+                .kt-quick-pills-row { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 8px; margin-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+                .kt-quick-pills-row::-webkit-scrollbar { display: none; }
+                .kt-pill-btn { flex: 0 0 auto; background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: 20px; padding: 5px 12px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+                .kt-pill-btn:active { background: rgba(var(--ov), 0.2); transform: scale(0.97); }
+                .kt-extra-keys-row { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+                .kt-key-btn { background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; color: var(--text-muted); font-size: 11px; font-weight: 700; font-family: monospace; cursor: pointer; }
+                .kt-key-btn:active { background: rgba(var(--ov), 0.15); color: var(--accent); }
+                .kt-key-ctrl { color: var(--status-bloat); border-color: rgba(239, 68, 68, 0.4); }
+                .kt-card { margin: 8px 0; border: 1px solid var(--border-glass); border-radius: 8px; background: rgba(var(--ov), 0.04); overflow: hidden; }
+                .kt-card-hdr { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(var(--ov), 0.08); font-size: 11px; }
+                .kt-badge-ok { color: #10B981; font-weight: 800; }
+                .kt-badge-err { color: #EF4444; font-weight: 800; }
+                .kt-badge-time { color: var(--text-dim); font-size: 10px; margin-left: 6px; }
+                .kt-card-body { padding: 8px 10px; font-family: monospace; font-size: 11.5px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; }
+                .kt-log-row { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); font-family: monospace; font-size: 11px; line-height: 1.4; }
+                .kt-log-badge { flex: 0 0 20px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 9.5px; color: #000; }
+                .kt-log-v { background: #64748B; color: #fff; }
+                .kt-log-d { background: #10B981; }
+                .kt-log-i { background: #06B6D4; }
+                .kt-log-w { background: #F59E0B; }
+                .kt-log-e { background: #EF4444; color: #fff; }
             </style>
 
             <div class="tx-switch" id="txSwitch" role="tablist" aria-label="Terminal or ADB Console">
@@ -6403,49 +6429,121 @@
             </div>
 
             <div id="txPaneConsole" class="tx-pane" style="display:none;">
-            <div class="bloat-card" style="margin-bottom:14px; border-color:var(--accent);">
-                <div class="bloat-header">
-                    <div>
-                        <h4 style="font-size:14px; font-weight:800; color:var(--accent);" id="termActiveModeTitle">Active Mode: ADB / Shell</h4>
-                        <p style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="termActiveModeDesc">Execute shell and package commands across multiple backends.</p>
-                    </div>
-                    <button class="bloat-btn" onclick="openWorkingModesModal()">Configure</button>
+                <!-- Subtab navigation for ADB Console: ADB Shell vs Live Logcat -->
+                <div class="kt-console-tabs" role="tablist">
+                    <button class="kt-tab-btn active" id="ktTabShell" role="tab" aria-selected="true" onclick="haptic(); ktSwitchConsoleTab('shell')">⚡ ADB Shell</button>
+                    <button class="kt-tab-btn" id="ktTabLogcat" role="tab" aria-selected="false" onclick="haptic(); ktSwitchConsoleTab('logcat')">📋 Live Logcat</button>
                 </div>
-                <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="apps-tool-btn" onclick="openWorkingModesModal()">Working Modes</button>
-                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
-                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
-                    <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
-                    <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
-                    <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
-                    <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
-                </div>
-            </div>
 
-            <div class="find-bar">
-                <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
-                <span class="manifest-meta" id="termFindCount"></span>
-                <button class="find-nav" onclick="termFind(-1)">▲</button>
-                <button class="find-nav" onclick="termFind(1)">▼</button>
-                <button class="find-nav" onclick="copyTerminal()">Copy</button>
-                <button class="find-nav" onclick="shareTerminal()">Share</button>
-            </div>
-            <div class="terminal-box" id="termOutput">ADB Application Manager Shell Terminal Ready.
+                <!-- Subtab 1: Shell View -->
+                <div id="ktConsoleShellView">
+                    <div class="bloat-card" style="margin-bottom:12px; border-color:var(--accent);">
+                        <div class="bloat-header">
+                            <div>
+                                <h4 style="font-size:14px; font-weight:800; color:var(--accent);" id="termActiveModeTitle">Active Mode: ADB / Shell</h4>
+                                <p style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="termActiveModeDesc">Execute shell and package commands across multiple backends.</p>
+                            </div>
+                            <button class="bloat-btn" onclick="openWorkingModesModal()">Configure</button>
+                        </div>
+                        <div class="mode-btn-row" style="margin-top:10px;">
+                            <button class="apps-tool-btn" onclick="openWorkingModesModal()">Working Modes</button>
+                            <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
+                            <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
+                            <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
+                            <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
+                            <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
+                            <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Command Chips Carousel -->
+                    <div class="kt-quick-pills-row" id="ktQuickPills" aria-label="Quick ADB Commands">
+                        <button class="kt-pill-btn" onclick="ktRunQuick('pm list packages -3')">📦 User Apps (-3)</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('pm list packages -d')">🚫 Disabled Apps</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('id')">👤 UID (id)</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('dumpsys battery')">🔋 Battery Stats</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('getprop ro.build.version.release')">📱 Android OS</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('df -h /data')">💾 Storage</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('top -m 5 -n 1')">⚡ Top CPU</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('uptime')">⏱️ Uptime</button>
+                        <button class="kt-pill-btn" onclick="ktRunQuick('logcat -d -t 50')">📋 Recent Logs</button>
+                    </div>
+
+                    <div class="find-bar">
+                        <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                        <span class="manifest-meta" id="termFindCount"></span>
+                        <button class="find-nav" onclick="termFind(-1)">▲</button>
+                        <button class="find-nav" onclick="termFind(1)">▼</button>
+                        <button class="find-nav" onclick="ktClearTerminal()">Clear</button>
+                        <button class="find-nav" onclick="copyTerminal()">Copy</button>
+                        <button class="find-nav" onclick="shareTerminal()">Share</button>
+                    </div>
+
+                    <div class="terminal-box" id="termOutput" style="min-height:220px; max-height:420px; overflow-y:auto;">ADB Application Manager Shell Terminal Ready.
 Type any command below (e.g. pm list packages -d)
 </div>
 
-            <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
-            <div class="term-ai-note" id="termAiNote" style="display:none; font-size:11px; color:var(--text-muted); margin-top:8px;"></div>
-            <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
-            <div class="term-input-row" style="margin-top:12px;">
-                <button class="tx-mode-btn" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
-                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term')" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
-                <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
-            </div>
-            <div class="term-input-tools">
-                <button class="term-icon-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
-                <button class="term-icon-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
-            </div>
+                    <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
+                    <div class="term-ai-note" id="termAiNote" style="display:none; font-size:11px; color:var(--text-muted); margin-top:8px;"></div>
+                    <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
+
+                    <!-- Extra Keys Row -->
+                    <div class="kt-extra-keys-row">
+                        <button class="kt-key-btn" onclick="ktKeyAction('esc')">ESC</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('tab')">TAB</button>
+                        <button class="kt-key-btn kt-key-ctrl" onclick="ktKeyAction('ctrlc')">CTRL</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('up')">▲</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('down')">▼</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('pipe')">|</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('slash')">/</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('dash')">-</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('tilde')">~</button>
+                        <button class="kt-key-btn" onclick="ktKeyAction('grep')">grep</button>
+                    </div>
+
+                    <div class="term-input-row" style="margin-top:8px;">
+                        <button class="tx-mode-btn" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
+                        <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term')" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
+                        <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
+                    </div>
+                    <div class="term-input-tools">
+                        <button class="term-icon-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
+                        <button class="term-icon-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
+                        <button class="term-icon-btn" id="ktAutoScrollBtn" onclick="ktToggleAutoScroll()">Auto-scroll: ON</button>
+                    </div>
+                </div>
+
+                <!-- Subtab 2: Live Logcat View -->
+                <div id="ktConsoleLogcatView" style="display:none;">
+                    <div class="bloat-card" style="margin-bottom:12px; border-color:var(--accent);">
+                        <div class="bloat-header">
+                            <div>
+                                <h4 style="font-size:14px; font-weight:800; color:var(--accent);">Live System Logcat</h4>
+                                <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">Real-time buffer streaming with severity filters and instant tag search.</p>
+                            </div>
+                            <button class="bloat-btn" onclick="ktFetchLogcat()">Refresh</button>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+                            <button class="apps-tool-btn active" id="ktLcFilterALL" onclick="ktSetLogcatLevel('ALL')">All</button>
+                            <button class="apps-tool-btn" id="ktLcFilterE" onclick="ktSetLogcatLevel('E')">Error (E)</button>
+                            <button class="apps-tool-btn" id="ktLcFilterW" onclick="ktSetLogcatLevel('W')">Warn (W)</button>
+                            <button class="apps-tool-btn" id="ktLcFilterI" onclick="ktSetLogcatLevel('I')">Info (I)</button>
+                            <button class="apps-tool-btn" id="ktLcFilterD" onclick="ktSetLogcatLevel('D')">Debug (D)</button>
+                            <button class="apps-tool-btn" id="ktLcFilterV" onclick="ktSetLogcatLevel('V')">Verbose (V)</button>
+                        </div>
+                    </div>
+
+                    <div class="find-bar">
+                        <input type="text" class="list-search" id="ktLogcatSearch" placeholder="Filter tag, PID, or message..." oninput="ktRenderLogcatList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                        <span class="manifest-meta" id="ktLogcatCount">0 logs</span>
+                        <button class="find-nav" onclick="ktClearLogcat()">Clear</button>
+                        <button class="find-nav" onclick="ktCopyLogcat()">Copy</button>
+                    </div>
+
+                    <div class="terminal-box" id="ktLogcatOutput" style="min-height:300px; max-height:480px; overflow-y:auto; font-family:monospace; font-size:11px;">
+                        <div style="color:var(--text-muted); padding:10px;">Tap "Refresh" to fetch recent live system logs.</div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -24688,6 +24786,11 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Terminal Console
+        let ktAutoScroll = true;
+        let ktCurrentSubtab = 'shell';
+        let ktRawLogs = [];
+        let ktSelectedLogLevel = 'ALL';
+
         function runTerminalCmd(override) {
             if (rishActive) { rishSubmit(override); return; }
             const input = document.getElementById('termCmd');
@@ -24702,26 +24805,28 @@ Type any command below (e.g. pm list packages -d)
 
             const term = document.getElementById('termOutput');
             clearFind(term);
-            term.insertAdjacentHTML('beforeend', `<span style="color:var(--text-main);">$ ${escapeHtml(cmd).replace(/\n/g, '\n<span style="color:var(--text-muted);">&gt;</span> ')}</span>\n`);
+
+            const runStartTime = performance.now();
+            const runBtn = document.getElementById('termRunBtn');
+            if (runBtn) runBtn.classList.add('busy');
 
             if (window.AndroidBridge && window.AndroidBridge.executeShellAsync) {
                 // off the page's thread: the app stays usable while a slow command runs, and the answer is added when it comes
                 const id = 's' + (++termShellSeq);
-                termShellRun = { id, cmd };
-                term.insertAdjacentHTML('beforeend', '<span class="rish-note" id="termWait">running…\n</span>');
-                term.scrollTop = term.scrollHeight;
+                termShellRun = { id, cmd, startTime: runStartTime };
+                term.insertAdjacentHTML('beforeend', '<span class="rish-note" id="termWait">running ' + escapeHtml(cmd) + '…\n</span>');
+                if (ktAutoScroll) term.scrollTop = term.scrollHeight;
                 let st = '';
                 try { st = window.AndroidBridge.executeShellAsync(id, cmd); } catch (e) { st = ''; }
                 if (st !== 'started') onShellDone(id, 'Error: the command could not be started');
                 return;
             }
             if (window.AndroidBridge) {
-                // no result modal here: an arbitrary typed command has no fixed "success" marker to show one
-                // honestly (it used to hardcode success:true), and the output is already right here in the
-                // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
-                // finding #4 / nuisance A).
                 const res = window.AndroidBridge.executeShell(cmd) || '';
-                term.appendChild(document.createTextNode(res));
+                const duration = Math.round(performance.now() - runStartTime);
+                termShellRun = { id: 'sync', cmd, startTime: runStartTime };
+                onShellDone('sync', res, 0, duration);
+                return;
             }
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
@@ -24839,7 +24944,7 @@ Type any command below (e.g. pm list packages -d)
             term.scrollTop = term.scrollHeight;
         }
 
-        function onShellDone(id, out) {
+        function onShellDone(id, out, exitCode, durationMs) {
             if (trimRun && trimRun.id === id) { trimDone(id, out); return; }
             const run = termShellRun;
             if (!run || run.id !== id) return;
@@ -24847,15 +24952,217 @@ Type any command below (e.g. pm list packages -d)
             const term = document.getElementById('termOutput');
             const wait = document.getElementById('termWait');
             if (wait) wait.remove();
+
+            const runBtn = document.getElementById('termRunBtn');
+            if (runBtn) runBtn.classList.remove('busy');
+
             const res = String(out || '');
-            term.appendChild(document.createTextNode(res));
-            // no result modal (see runTerminalCmd) - but still worth a toast if the user has since left the tab,
-            // since then the output appearing isn't something they're looking at right now.
-            if (currentViewName() !== 'terminal') showToast('Command finished: see the ADB Console');
-            term.scrollTop = term.scrollHeight;
+            const duration = durationMs !== undefined ? durationMs : Math.round(performance.now() - (run.startTime || performance.now()));
+            const isError = (exitCode !== undefined && exitCode !== 0) || 
+                            res.startsWith('Error:') || 
+                            res.startsWith('error:') || 
+                            res.includes('[Process timed out');
+            const badgeClass = isError ? 'kt-badge-err' : 'kt-badge-ok';
+            const badgeText = isError ? (exitCode ? 'EXIT ' + exitCode : 'FAILED') : 'SUCCESS (0)';
+
+            const card = document.createElement('div');
+            card.className = 'kt-card';
+            card.innerHTML = '<div class="kt-card-hdr">' +
+                '<span style="font-weight:700; color:var(--accent);">$ ' + escapeHtml(run.cmd) + '</span>' +
+                '<div><span class="' + badgeClass + '">' + badgeText + '</span><span class="kt-badge-time">[' + duration + 'ms]</span></div>' +
+                '</div>' +
+                '<div class="kt-card-body">' + escapeHtml(res) + '</div>';
+
+            term.appendChild(card);
+
+            if (currentViewName() !== 'terminal') showToast('Command finished: ' + run.cmd);
+            if (ktAutoScroll) term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
         }
         window.onShellDone = onShellDone;
+
+        window.onTerminalCommandDone = function(id, out, exitCode, durationMs) {
+            onShellDone(id, out, exitCode, durationMs);
+        };
+
+        function ktSwitchConsoleTab(tab) {
+            haptic();
+            ktCurrentSubtab = tab;
+            const shellView = document.getElementById('ktConsoleShellView');
+            const logcatView = document.getElementById('ktConsoleLogcatView');
+            const tabShell = document.getElementById('ktTabShell');
+            const tabLogcat = document.getElementById('ktTabLogcat');
+            if (shellView) shellView.style.display = tab === 'shell' ? '' : 'none';
+            if (logcatView) logcatView.style.display = tab === 'logcat' ? '' : 'none';
+            if (tabShell) {
+                tabShell.classList.toggle('active', tab === 'shell');
+                tabShell.setAttribute('aria-selected', tab === 'shell');
+            }
+            if (tabLogcat) {
+                tabLogcat.classList.toggle('active', tab === 'logcat');
+                tabLogcat.setAttribute('aria-selected', tab === 'logcat');
+            }
+            if (tab === 'logcat' && ktRawLogs.length === 0) {
+                ktFetchLogcat();
+            }
+        }
+
+        function ktRunQuick(cmd) {
+            haptic();
+            const input = document.getElementById('termCmd');
+            if (input) input.value = cmd;
+            runTerminalCmd(cmd);
+        }
+
+        function ktKeyAction(k) {
+            haptic();
+            const input = document.getElementById('termCmd');
+            if (!input) return;
+            if (k === 'esc') {
+                input.value = '';
+                input.focus();
+            } else if (k === 'tab') {
+                if (typeof acTap === 'function') acTap('term');
+            } else if (k === 'ctrlc') {
+                termShellRun = null;
+                const wait = document.getElementById('termWait');
+                if (wait) wait.remove();
+                const runBtn = document.getElementById('termRunBtn');
+                if (runBtn) runBtn.classList.remove('busy');
+                showToast('Interrupted');
+            } else if (k === 'up') {
+                termHistMove(-1);
+            } else if (k === 'down') {
+                termHistMove(1);
+            } else if (k === 'grep') {
+                input.value += ' | grep ';
+                input.focus();
+            } else {
+                input.value += k;
+                input.focus();
+            }
+        }
+
+        function ktClearTerminal() {
+            haptic();
+            const term = document.getElementById('termOutput');
+            if (term) {
+                term.innerHTML = '<span style="color:var(--text-muted); font-size:11px;">Terminal cleared. Ready for next command.</span>\n';
+            }
+        }
+
+        function ktToggleAutoScroll() {
+            ktAutoScroll = !ktAutoScroll;
+            const btn = document.getElementById('ktAutoScrollBtn');
+            if (btn) btn.textContent = 'Auto-scroll: ' + (ktAutoScroll ? 'ON' : 'OFF');
+            showToast('Auto-scroll ' + (ktAutoScroll ? 'enabled' : 'disabled'));
+        }
+
+        // --- Live Logcat Support ---
+        function ktSetLogcatLevel(lvl) {
+            haptic();
+            ktSelectedLogLevel = lvl;
+            ['ALL', 'E', 'W', 'I', 'D', 'V'].forEach(k => {
+                const b = document.getElementById('ktLcFilter' + k);
+                if (b) b.classList.toggle('active', k === lvl);
+            });
+            ktRenderLogcatList();
+        }
+
+        function ktFetchLogcat() {
+            const outEl = document.getElementById('ktLogcatOutput');
+            if (outEl) outEl.innerHTML = '<div style="color:var(--accent); padding:10px;">Streaming live logcat buffers...</div>';
+            
+            if (window.AndroidBridge && window.AndroidBridge.getRecentLogs) {
+                try {
+                    const raw = window.AndroidBridge.getRecentLogs('');
+                    ktRawLogs = JSON.parse(raw || '[]');
+                    ktRenderLogcatList();
+                    return;
+                } catch (e) {
+                    console.error('Error fetching logs:', e);
+                }
+            }
+
+            // Fallback via executeShell
+            if (window.AndroidBridge && window.AndroidBridge.executeShell) {
+                try {
+                    const res = window.AndroidBridge.executeShell('logcat -d -v time -t 150') || '';
+                    const lines = res.split('\n');
+                    const parsed = [];
+                    lines.forEach((line, idx) => {
+                        if (!line.trim()) return;
+                        let lvl = 'I';
+                        if (line.includes(' E/')) lvl = 'E';
+                        else if (line.includes(' W/')) lvl = 'W';
+                        else if (line.includes(' D/')) lvl = 'D';
+                        else if (line.includes(' V/')) lvl = 'V';
+                        parsed.push({
+                            id: idx,
+                            timestamp: line.substring(0, 18).trim(),
+                            pid: 0,
+                            level: lvl,
+                            tag: line.substring(18, 40).trim(),
+                            message: line.substring(40) || line
+                        });
+                    });
+                    ktRawLogs = parsed;
+                    ktRenderLogcatList();
+                    return;
+                } catch (_) {}
+            }
+
+            if (outEl) outEl.innerHTML = '<div style="color:var(--text-muted); padding:10px;">Logcat requires active device bridge connection.</div>';
+        }
+
+        function ktRenderLogcatList() {
+            const outEl = document.getElementById('ktLogcatOutput');
+            const searchVal = (document.getElementById('ktLogcatSearch').value || '').toLowerCase();
+            const countEl = document.getElementById('ktLogcatCount');
+            if (!outEl) return;
+
+            const filtered = ktRawLogs.filter(log => {
+                const matchesLevel = (ktSelectedLogLevel === 'ALL' || log.level === ktSelectedLogLevel);
+                const matchesSearch = !searchVal || 
+                    (log.tag && log.tag.toLowerCase().includes(searchVal)) ||
+                    (log.message && log.message.toLowerCase().includes(searchVal));
+                return matchesLevel && matchesSearch;
+            });
+
+            if (countEl) countEl.innerText = filtered.length + ' logs';
+
+            if (filtered.length === 0) {
+                outEl.innerHTML = '<div style="color:var(--text-muted); padding:12px;">No logcat entries match current filter.</div>';
+                return;
+            }
+
+            let html = '';
+            filtered.slice(-250).forEach(l => {
+                const badgeClass = 'kt-log-' + (l.level || 'i').toLowerCase();
+                html += '<div class="kt-log-row">' +
+                    '<span class="kt-log-badge ' + badgeClass + '">' + escapeHtml(l.level || 'I') + '</span>' +
+                    '<span style="color:var(--text-dim); flex:0 0 75px;">' + escapeHtml(l.timestamp || '') + '</span>' +
+                    '<span style="color:var(--accent); font-weight:700; flex:0 0 110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(l.tag || '') + '</span>' +
+                    '<span style="color:var(--text-main); word-break:break-all;">' + escapeHtml(l.message || '') + '</span>' +
+                    '</div>';
+            });
+            outEl.innerHTML = html;
+            if (ktAutoScroll) outEl.scrollTop = outEl.scrollHeight;
+        }
+
+        function ktClearLogcat() {
+            haptic();
+            ktRawLogs = [];
+            ktRenderLogcatList();
+        }
+
+        function ktCopyLogcat() {
+            haptic();
+            const text = ktRawLogs.map(l => `[${l.level}] ${l.timestamp} ${l.tag}: ${l.message}`).join('\n');
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
+                window.AndroidBridge.copyToClipboard(text);
+            }
+        }
 
         // ---------- Settings > Trim Caches in All Applications: `pm trim-caches 128G` ----------
         // Runs off the page's thread (executeShellAsync); the free space of /data is read before and after so the report can say what was freed.

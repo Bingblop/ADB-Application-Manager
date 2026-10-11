@@ -6,11 +6,9 @@ import androidx.activity.compose.setContent
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.CleanerRepository
 import com.bloatware.bingblop.data.repository.LogcatRepository
-import com.bloatware.bingblop.data.repository.MonitorRepository
-import com.bloatware.bingblop.data.repository.PatcherRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.data.repository.ShellRepository
-import com.bloatware.bingblop.ui.ADBApp
+import com.bloatware.bingblop.ui.screens.ClassicWebViewScreen
 import com.bloatware.bingblop.ui.theme.ADBTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,20 +20,17 @@ class MainActivity : ComponentActivity() {
         val appRepository = AppRepository(applicationContext, shellRepository)
         val settingsRepository = SettingsRepository(applicationContext, shellRepository)
         val cleanerRepository = CleanerRepository(applicationContext)
-        val monitorRepository = MonitorRepository(applicationContext, shellRepository)
         val logcatRepository = LogcatRepository(shellRepository)
-        val patcherRepository = PatcherRepository(applicationContext, shellRepository)
 
         setContent {
             ADBTheme {
-                ADBApp(
+                ClassicWebViewScreen(
                     appRepository = appRepository,
                     settingsRepository = settingsRepository,
                     shellRepository = shellRepository,
                     cleanerRepository = cleanerRepository,
-                    monitorRepository = monitorRepository,
                     logcatRepository = logcatRepository,
-                    patcherRepository = patcherRepository
+                    onSwitchToModern = null // Pure full-screen native WebView experience
                 )
             }
         }

@@ -39,8 +39,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +57,6 @@ import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.data.repository.ShellRepository
 import com.bloatware.bingblop.ui.theme.AccentCyan
 import com.bloatware.bingblop.ui.theme.BgBase
-import com.bloatware.bingblop.ui.theme.BgCard
 import com.bloatware.bingblop.ui.theme.BgSurface
 import com.bloatware.bingblop.ui.theme.BorderGlass
 import com.bloatware.bingblop.ui.theme.CleanGreen
@@ -69,6 +66,7 @@ import com.bloatware.bingblop.ui.theme.TextMuted
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -79,7 +77,7 @@ fun ClassicWebViewScreen(
     shellRepository: ShellRepository,
     cleanerRepository: CleanerRepository,
     logcatRepository: LogcatRepository,
-    onSwitchToModern: () -> Unit,
+    onSwitchToModern: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -89,7 +87,7 @@ fun ClassicWebViewScreen(
     BackHandler {
         if (webViewRef?.canGoBack() == true) {
             webViewRef?.goBack()
-        } else {
+        } else if (onSwitchToModern != null) {
             onSwitchToModern()
         }
     }
@@ -99,78 +97,80 @@ fun ClassicWebViewScreen(
             .fillMaxSize()
             .background(BgBase)
     ) {
-        // Coexistence Header Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BgSurface)
-                .border(width = 1.dp, color = BorderGlass)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        if (onSwitchToModern != null) {
+            // Optional coexistence header bar
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BgSurface)
+                    .border(width = 1.dp, color = BorderGlass)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onSwitchToModern,
-                    modifier = Modifier.size(32.dp).testTag("back_to_compose_btn")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Return to Modern UI",
-                        tint = AccentCyan
-                    )
-                }
-
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Classic Engine (WebView)",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Black,
-                            color = TextMain
+                    IconButton(
+                        onClick = onSwitchToModern,
+                        modifier = Modifier.size(32.dp).testTag("back_to_compose_btn")
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Return to Modern UI",
+                            tint = AccentCyan
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(CleanGreen.copy(alpha = 0.2f))
-                                .padding(horizontal = 5.dp, vertical = 1.dp)
-                        ) {
-                            Text("14 LANGUAGES", fontSize = 8.5.sp, color = CleanGreen, fontWeight = FontWeight.Bold)
-                        }
                     }
-                    Text(
-                        text = "Complete original web suite active",
-                        fontSize = 10.sp,
-                        color = TextMuted
-                    )
-                }
-            }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                IconButton(
-                    onClick = { webViewRef?.reload() },
-                    modifier = Modifier.size(32.dp).testTag("reload_webview_btn")
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = "Reload Page",
-                        tint = TextDim
-                    )
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Classic Engine (WebView)",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black,
+                                color = TextMain
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(CleanGreen.copy(alpha = 0.2f))
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text("14 LANGUAGES", fontSize = 8.5.sp, color = CleanGreen, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Text(
+                            text = "Complete original web suite active",
+                            fontSize = 10.sp,
+                            color = TextMuted
+                        )
+                    }
                 }
 
-                Button(
-                    onClick = onSwitchToModern,
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.testTag("switch_to_modern_btn")
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Modern Compose", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    IconButton(
+                        onClick = { webViewRef?.reload() },
+                        modifier = Modifier.size(32.dp).testTag("reload_webview_btn")
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Reload Page",
+                            tint = TextDim
+                        )
+                    }
+
+                    Button(
+                        onClick = onSwitchToModern,
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.testTag("switch_to_modern_btn")
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Modern Compose", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -272,6 +272,16 @@ class ModernAndroidBridge(
     }
 
     @JavascriptInterface
+    fun copyToClipboard(text: String?) {
+        if (text == null) return
+        scope.launch(Dispatchers.Main) {
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            cm?.setPrimaryClip(android.content.ClipData.newPlainText("ADB Output", text))
+            Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @JavascriptInterface
     fun openDeveloperOptions() {
         scope.launch(Dispatchers.Main) {
             try {
@@ -326,14 +336,40 @@ class ModernAndroidBridge(
     @JavascriptInterface
     fun executeShellAsync(runId: String?, cmd: String?): String {
         if (cmd.isNullOrBlank() || runId.isNullOrBlank()) return ""
+        val startMillis = System.currentTimeMillis()
         scope.launch(Dispatchers.IO) {
             val result = shellRepository.executeCommand(cmd, ShellMode.LOCAL_SHELL)
+            val duration = System.currentTimeMillis() - startMillis
             val escapedOut = JSONObject.quote(result.output)
             launch(Dispatchers.Main) {
-                webView.evaluateJavascript("if (window.onShellOutput) { window.onShellOutput('$runId', $escapedOut, ${result.exitCode}); }", null)
+                webView.evaluateJavascript(
+                    "if (window.onTerminalCommandDone) { window.onTerminalCommandDone('$runId', $escapedOut, ${result.exitCode}, $duration); }" +
+                    "else if (window.onShellDone) { window.onShellDone('$runId', $escapedOut); }",
+                    null
+                )
             }
         }
         return "started"
+    }
+
+    @JavascriptInterface
+    fun getRecentLogs(filter: String?): String {
+        return kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+            val list = logcatRepository.getRecentLogs(filter ?: "")
+            val array = JSONArray()
+            for (item in list) {
+                val obj = JSONObject()
+                obj.put("id", item.id)
+                obj.put("timestamp", item.timestamp)
+                obj.put("pid", item.pid)
+                obj.put("tid", item.tid)
+                obj.put("level", item.level)
+                obj.put("tag", item.tag)
+                obj.put("message", item.message)
+                array.put(obj)
+            }
+            array.toString()
+        }
     }
 
     @JavascriptInterface
@@ -341,7 +377,7 @@ class ModernAndroidBridge(
         val json = JSONObject()
         json.put("req", req)
         json.put("ns", ns ?: "global")
-        json.put("items", org.json.JSONArray())
+        json.put("items", JSONArray())
         return json.toString()
     }
 
