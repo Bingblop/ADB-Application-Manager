@@ -14,9 +14,11 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * A small tar.gz cannot run the app out of memory. A GNU long-name or pax header record is read whole into memory, sized by the number the
+ * A small archive cannot run the app out of memory. A GNU long-name or pax header record is read whole into memory, sized by the number the
  * header declares: a 1.5 MB tar.gz declaring (and holding, as zeros) 1.5 GiB of header gave OutOfMemoryError on open. Such a record over a sane
- * cap is refused in words, and normal long names and pax headers still list and extract. The hostile fixtures are made here, streamed, a few MB
+ * cap is refused in words, and normal long names and pax headers still list and extract. Likewise for the entry count: 2 million empty
+ * entries in a 14 MB tar.gz, or 1 million in a 300 KB 7z, gave OutOfMemoryError; more than 500,000 entries (or 40 MB of names) is refused in words
+ * instead of being listed in part. The hostile fixtures are made here, streamed, a few MB
  * at most on disk. The suite runs with a 256 MB heap (run.js), the size the limits are measured against.
  */
 public class ArchiveBoundsTest {
@@ -48,8 +50,10 @@ public class ArchiveBoundsTest {
 
     static void put(byte[] b, int off, String s) { byte[] x = s.getBytes(StandardCharsets.US_ASCII); System.arraycopy(x, 0, b, off, x.length); }
 
-    static GZIPOutputStream gz(File f) throws IOException {
-        return new GZIPOutputStream(new FileOutputStream(f), 1 << 16) { { def.setLevel(Deflater.BEST_COMPRESSION); } };
+    static GZIPOutputStream gz(File f) throws IOException { return gz(f, Deflater.BEST_COMPRESSION); }
+
+    static GZIPOutputStream gz(File f, final int level) throws IOException {
+        return new GZIPOutputStream(new FileOutputStream(f), 1 << 16) { { def.setLevel(level); } };
     }
 
     static void zeros(OutputStream o, long n) throws IOException {
@@ -147,6 +151,8 @@ public class ArchiveBoundsTest {
         long heap = Runtime.getRuntime().maxMemory();
         check("the suite runs with a small heap (" + (heap >> 20) + " MB), so a big allocation is an OutOfMemoryError (run.js passes -Xmx256m)", heap <= 300L << 20, null);
         zBound3(root);
+        zBound4(root);
+        deleteTree(root);
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
         System.out.println("ALL PASSED");
     }
@@ -244,10 +250,170 @@ public class ArchiveBoundsTest {
         try (OutputStream o = new FileOutputStream(plain)) { o.write(header("././@LongLink", big, 'L')); zeros(o, 4096); }
         Outcome pl = list(plain, null);
         check("an uncompressed tar whose long name header lies about 1.5 GiB (and is cut short) is refused as hostile: " + pl.msg(), pl.refused(), null);
+    }
 
-        for (File f : root.listFiles()) if (f.isFile()) f.delete();
-        for (File d : root.listFiles()) deleteTree(d);
-        root.delete();
+    // ------------------------------------------------------------------------------------------------------------ Z-4 / Z-5: the entry cap
+
+    /** A tar.gz of {@code n} empty files all called "e" (identical headers deflate to almost nothing; the names still count as entries). */
+    static File manyEntries(File dir, String file, int n) throws IOException {
+        File f = new File(dir, file);
+        byte[] h = header("e", 0, '0');
+        try (OutputStream o = gz(f, Deflater.BEST_SPEED)) { for (int i = 0; i < n; i++) o.write(h); end(o); }
+        return f;
+    }
+
+    /** A tar.gz of {@code n} files, each with a GNU long name of {@code len} bytes (a name record may be 1 MiB; it deflates to nothing). */
+    static File longNames(File dir, String file, int n, int len) throws IOException {
+        File f = new File(dir, file);
+        byte[] name = new byte[len];
+        Arrays.fill(name, (byte) 'n'); name[len - 1] = 0;
+        try (OutputStream o = gz(f)) {
+            for (int i = 0; i < n; i++) {
+                o.write(header("././@LongLink", len, 'L')); o.write(name); pad(o, len);
+                o.write(header("x", 0, '0'));
+            }
+            end(o);
+        }
+        return f;
+    }
+
+    static void num7(java.io.ByteArrayOutputStream o, long v) {          // 7z NUMBER, as 7-Zip writes it
+        int first = 0, mask = 0x80, i;
+        for (i = 0; i < 8; i++) {
+            if (v < (1L << (7 * (i + 1)))) { first |= (int) (v >>> (8 * i)); break; }
+            first |= mask; mask >>>= 1;
+        }
+        o.write(first);
+        for (; i > 0; i--) { o.write((int) v); v >>>= 8; }
+    }
+
+    static void le(byte[] b, int off, long v, int n) { for (int i = 0; i < n; i++) b[off + i] = (byte) (v >>> (8 * i)); }
+
+    /** A 7z of {@code n} empty files "many7/f0000000" ... with a time and attributes each, like 7-Zip writes them with the header packed with Deflate, written by hand (2.5 MB for a million; 7-Zip itself makes about 300 KB). */
+    static File sevenZEmpty(File dir, String file, int n) throws IOException {
+        java.io.ByteArrayOutputStream h = new java.io.ByteArrayOutputStream();
+        h.write(0x01); h.write(0x05); num7(h, n);
+        int bits = (n + 7) / 8;
+        h.write(0x0E); num7(h, bits); byte[] ones = new byte[bits]; Arrays.fill(ones, (byte) 0xff); h.write(ones);          // every file has no stream
+        h.write(0x0F); num7(h, bits); h.write(ones);                                                                      // ... and is a file, not a folder
+        java.io.ByteArrayOutputStream nm = new java.io.ByteArrayOutputStream();
+        nm.write(0);                                                                                                     // names are inline
+        for (int i = 0; i < n; i++) { String s = String.format("many7/f%07d", i); for (int k = 0; k < s.length(); k++) { nm.write(s.charAt(k)); nm.write(0); } nm.write(0); nm.write(0); }
+        h.write(0x11); num7(h, nm.size()); h.write(nm.toByteArray());
+        byte[] times = new byte[2 + 8 * n], attrs = new byte[2 + 4 * n];
+        times[0] = 1; attrs[0] = 1;                                                                                      // all defined, not external
+        for (int i = 0; i < n; i++) { le(times, 2 + 8 * i, 0x01D9000000000000L, 8); le(attrs, 2 + 4 * i, 0x20, 4); }
+        h.write(0x14); num7(h, times.length); h.write(times);
+        h.write(0x15); num7(h, attrs.length); h.write(attrs);
+        h.write(0x00); h.write(0x00);
+        byte[] raw = h.toByteArray();
+        Deflater d = new Deflater(Deflater.BEST_COMPRESSION, true);
+        d.setInput(raw); d.finish();
+        java.io.ByteArrayOutputStream packed = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[1 << 16];
+        while (!d.finished()) { int k = d.deflate(buf); packed.write(buf, 0, k); }
+        d.end();
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32(); crc.update(raw);
+        java.io.ByteArrayOutputStream e = new java.io.ByteArrayOutputStream();                                            // the header of the header
+        e.write(0x17);
+        e.write(0x06); num7(e, 0); num7(e, 1); e.write(0x09); num7(e, packed.size()); e.write(0x00);
+        e.write(0x07); e.write(0x0B); num7(e, 1); e.write(0); num7(e, 1); e.write(0x03); e.write(0x04); e.write(0x01); e.write(0x08);
+        e.write(0x0C); num7(e, raw.length); e.write(0x0A); e.write(1); byte[] c4 = new byte[4]; le(c4, 0, crc.getValue(), 4); e.write(c4);
+        e.write(0x00); e.write(0x00);
+        byte[] eh = e.toByteArray();
+        java.util.zip.CRC32 ec = new java.util.zip.CRC32(); ec.update(eh);
+        byte[] sig = new byte[32];
+        sig[0] = '7'; sig[1] = 'z'; sig[2] = (byte) 0xBC; sig[3] = (byte) 0xAF; sig[4] = 0x27; sig[5] = 0x1C; sig[6] = 0; sig[7] = 4;
+        le(sig, 12, packed.size(), 8); le(sig, 20, eh.length, 8); le(sig, 28, ec.getValue(), 4);
+        java.util.zip.CRC32 sc = new java.util.zip.CRC32(); sc.update(sig, 12, 20);
+        le(sig, 8, sc.getValue(), 4);
+        File f = new File(dir, file);
+        try (OutputStream o = new FileOutputStream(f)) { o.write(sig); o.write(packed.toByteArray()); o.write(eh); }
+        return f;
+    }
+
+    /** list(): the Info, or the throwable. */
+    static final class Listed {
+        ArchiveIo.Info info; Throwable error; long ms;
+    }
+
+    static Listed listInfo(File f, String format) {
+        Listed r = new Listed();
+        long t = System.nanoTime();
+        try { r.info = ArchiveIo.list(f, format, null); } catch (Throwable e) { r.error = e; }
+        r.ms = (System.nanoTime() - t) / 1000000;
+        return r;
+    }
+
+    /** What the file manager's way in does with an archive: the entry count, or the throwable. */
+    static Object open(File f, String format) {
+        try { return ArchiveIoSource.open(f, format, null).entries.size(); } catch (Throwable e) { return e; }
+    }
+
+    static boolean refusedInWords(Object o) {
+        return o instanceof IOException && ((IOException) o).getMessage().contains("too many entries");
+    }
+
+    static void zBound4(File root) throws Exception {
+        int cap = ArchiveIo.MAX_ITEMS;
+        check("the cap for tar and 7z is the zip cap, 500,000 (zip: " + ZipTool.maxEntries + ")", cap == 500000 && cap == ZipTool.maxEntries, null);
+
+        // tar: exactly at the cap lists, completely, in the heap the phone has
+        File atCap = manyEntries(root, "cap.tar.gz", cap);
+        check("the tar.gz of " + cap + " empty entries is small (" + atCap.length() / 1024 + " KB)", atCap.length() < 4_000_000, null);
+        Listed l = listInfo(atCap, null);
+        check("exactly " + cap + " entries: list() holds all of them, not truncated", l.info != null && l.info.items.size() == cap && !l.info.truncated, l.error == null ? "" : l.error.toString());
+        Object o = open(atCap, "tar.gz");
+        check("... and the file manager's way in (ArchiveIoSource.open, which copies every entry) opens it with " + cap + " entries, no OutOfMemoryError: " + o, o instanceof Integer && (Integer) o == cap, null);
+        o = null; l = null;
+
+        // one more: refused in words, not listed in part
+        File over = manyEntries(root, "over.tar.gz", cap + 1);
+        l = listInfo(over, null);
+        check("one entry over the cap: list() stops at the cap and says so (truncated)", l.info != null && l.info.items.size() == cap && l.info.truncated, l.error == null ? "" : l.error.toString());
+        l = null;
+        o = open(over, "tar.gz");
+        check("... and the file manager's way in refuses it in words (\"too many entries\"), it does not show part of the archive: " + (o instanceof Throwable ? ((Throwable) o).getMessage() : o), refusedInWords(o), null);
+        check("... with an IOException, not an OutOfMemoryError", o instanceof IOException, String.valueOf(o));
+        o = null;
+        for (File f : new File[] { atCap, over }) f.delete();
+
+        // names: a few entries with huge names are as heavy as many entries
+        File names30 = longNames(root, "names30.tar.gz", 30, 1 << 20);
+        l = listInfo(names30, null);
+        check("30 entries with 1 MiB names (30 MB of names, under the " + (ArchiveIo.MAX_NAME_BYTES >> 20) + " MB budget) list", l.info != null && l.info.items.size() == 30 && !l.info.truncated, l.error == null ? "" : l.error.toString());
+        l = null;
+        File names50 = longNames(root, "names50.tar.gz", 50, 1 << 20);
+        check("the 50 MiB of names fixture is small (" + names50.length() / 1024 + " KB)", names50.length() < 4_000_000, null);
+        l = listInfo(names50, null);
+        check("50 entries with 1 MiB names (over the budget) stop the listing, truncated", l.info != null && l.info.truncated && l.info.items.size() < 50, l.error == null ? "" : l.error.toString());
+        l = null;
+        o = open(names50, "tar.gz");
+        check("... and the file manager refuses them in words: " + (o instanceof Throwable ? ((Throwable) o).getMessage() : o), refusedInWords(o), null);
+        o = null;
+        names30.delete(); names50.delete();
+
+        // 7z: a million empty files (the audit's case; 300 KB) used to run out of memory inside the library while it read the header
+        File sz1m = sevenZEmpty(root, "million.7z", 1000000);
+        check("the 7z of a million empty files is small (" + sz1m.length() / 1024 + " KB)", sz1m.length() < 4_000_000, null);
+        long t = System.nanoTime();
+        o = open(sz1m, "7z");
+        long ms = (System.nanoTime() - t) / 1000000;
+        check("1,000,000 entries in a 7z: refused with an IOException, not an OutOfMemoryError: " + (o instanceof Throwable ? o.toString() : o), o instanceof IOException, null);
+        check("... in words: " + (o instanceof Throwable ? ((Throwable) o).getMessage() : ""), o instanceof IOException && ((IOException) o).getMessage().contains("too many entries"), null);
+        check("... quickly (" + ms + " ms)", ms < 5000, null);
+        o = null;
+        sz1m.delete();
+        File sz500k = sevenZEmpty(root, "cap.7z", cap);
+        o = open(sz500k, "7z");
+        check("a 7z of exactly " + cap + " entries opens: " + o, o instanceof Integer && (Integer) o == cap, null);
+        o = null;
+        sz500k.delete();
+        File sz500k1 = sevenZEmpty(root, "over.7z", cap + 1);
+        o = open(sz500k1, "7z");
+        check("a 7z of " + (cap + 1) + " entries is refused in words: " + (o instanceof Throwable ? ((Throwable) o).getMessage() : o), refusedInWords(o), null);
+        o = null;
+        sz500k1.delete();
     }
 
     static void deleteTree(File f) { File[] k = f.listFiles(); if (k != null) for (File c : k) deleteTree(c); f.delete(); }
