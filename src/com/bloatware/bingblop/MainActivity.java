@@ -2329,7 +2329,7 @@ public class MainActivity extends Activity {
     private boolean takeUpdateApproval(String pkg) {
         JSONObject cur = updateResults.get(pkg);
         boolean ok = approvedUpdates.take(pkg, cur == null ? null : cur.optString("availableVersion"), cur == null ? null : cur.optString("source"),
-                System.currentTimeMillis(), isPrivilegedMode(resolveExecMode()));
+                resolveExecMode(), System.currentTimeMillis());
         return ok && cur != null;
     }
 
@@ -2346,7 +2346,8 @@ public class MainActivity extends Activity {
                 JSONObject answer = new JSONObject();
                 JSONArray ok = new JSONArray();
                 try {
-                    if (isPrivilegedMode(resolveExecMode())) {
+                    final String mode = resolveExecMode();
+                    if (isPrivilegedMode(mode)) {
                         JSONArray asked = new JSONArray(pkgsJson);
                         java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<String>();
                         List<String[]> rows = new ArrayList<String[]>();
@@ -2361,8 +2362,13 @@ public class MainActivity extends Activity {
                         }
                         if (rows.isEmpty()) {
                             answer.put("error", "There is nothing to update.");
-                        } else if (confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows, resolveExecMode()), "Update", "Cancel") == BundleApprovals.Answer.ALLOW) {
-                            approvedUpdates.replace(versions, System.currentTimeMillis());
+                        } else if (confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows, mode), "Update", "Cancel") == BundleApprovals.Answer.ALLOW) {
+                            if (InstallGuards.sameMode(mode, resolveExecMode())) {
+                                approvedUpdates.replace(versions, mode, System.currentTimeMillis());
+                            } else {
+                                ok = new JSONArray();
+                                answer.put("error", InstallConfirm.MODE_CHANGED);
+                            }
                         } else {
                             ok = new JSONArray();
                         }
@@ -2441,7 +2447,7 @@ public class MainActivity extends Activity {
                         if (!isPrivilegedMode(mode)) throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                         String label = u.optString("name");
                         progress(pkg, "confirming", 100, "Waiting for your OK to update " + (label.isEmpty() ? pkg : label) + "...");
-                        if (!confirmPrivilegedInstall(InstallConfirm.messageUpdate(label, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl),
+                        if (!confirmInMode(mode, null, InstallConfirm.messageUpdate(label, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl),
                                 InstallConfirm.hostOf(url), installedVersionOrNull(pkg), mode))) {
                             throw new IllegalStateException("Update cancelled. Nothing was installed.");
                         }
@@ -2897,6 +2903,19 @@ public class MainActivity extends Activity {
      */
     private boolean confirmPrivilegedInstall(final String message) {
         return confirmNative(InstallConfirm.title(), message, "Install", "Cancel") == BundleApprovals.Answer.ALLOW;
+    }
+
+    /**
+     * {@link #confirmPrivilegedInstall} for a question that names the mode the install runs through. A Yes counts only if that mode is still the one
+     * the install would use once the answer is in (the dialog can stay open while the working mode is changed): else nothing is installed and
+     * {@link InstallCancelled} says why. {@code authorizer} is the Installer's authorizer choice when the mode came from it (null: the working mode).
+     * False is a plain No.
+     */
+    private boolean confirmInMode(String mode, String authorizer, String message) {
+        if (!confirmPrivilegedInstall(message)) return false;
+        String now = authorizer == null ? resolveExecMode() : resolveAuthorizerMode(authorizer);
+        if (!InstallGuards.sameMode(mode, now)) throw new InstallCancelled(InstallConfirm.MODE_CHANGED);
+        return true;
     }
 
     /**
@@ -4830,7 +4849,7 @@ public class MainActivity extends Activity {
                         List<String> acts = new ArrayList<String>();
                         if (viaFiles && opts.optBoolean("uninstallFirst", false)) acts.add(InstallConfirm.REMOVES_FIRST);
                         notifyInstallProgress("Waiting for your OK to install...");
-                        if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(installSourceName, pkgName, named != null ? named.versionName : null,
+                        if (!confirmInMode(mode, asked, InstallConfirm.messageLocalFile(installSourceName, pkgName, named != null ? named.versionName : null,
                                 installedVersionOrNull(pkgName), files.size(), mode, ShellArgs.join(flagArgs), acts))) {
                             throw new InstallCancelled();
                         }
@@ -4891,6 +4910,7 @@ public class MainActivity extends Activity {
     /** The person answered No to the question before a privileged install (or did not answer): nothing was installed. */
     private static final class InstallCancelled extends IllegalStateException {
         InstallCancelled() { super("Install cancelled. Nothing was installed."); }
+        InstallCancelled(String why) { super(why); }
     }
 
     /** The version name installed now, "" when the installed app has none, or null when the package is not installed (or is unknown). */
@@ -6430,8 +6450,9 @@ public class MainActivity extends Activity {
                             backupEvent("restore", "confirm", 30, "Waiting for your OK to bring back " + meta.optString("label", pkg) + "...");
                             List<String> sysActs = new ArrayList<String>();
                             sysActs.add(InstallConfirm.REINSTATES_SYSTEM);
-                            if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
-                                    installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), "", sysActs))) {
+                            final String sysMode = resolveExecMode();
+                            if (!confirmInMode(sysMode, null, InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                    installedVersionOrNull(pkg), ordered.size(), sysMode, "", sysActs))) {
                                 throw new InstallCancelled();
                             }
                             String o = new AndroidBridge().executeShell("pm install-existing " + pkg);
@@ -6451,8 +6472,9 @@ public class MainActivity extends Activity {
                         backupEvent("restore", "confirm", 38, "Waiting for your OK to install " + meta.optString("label", pkg) + "...");
                         List<String> acts = new ArrayList<String>();
                         if (wantData) acts.add(InstallConfirm.RESTORES_DATA);
-                        if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
-                                installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), "", acts))) {
+                        final String restoreMode = resolveExecMode();
+                        if (!confirmInMode(restoreMode, null, InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                installedVersionOrNull(pkg), ordered.size(), restoreMode, "", acts))) {
                             throw new InstallCancelled();
                         }
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
@@ -7673,7 +7695,7 @@ public class MainActivity extends Activity {
             if (uninstallFirst && insidePkg == null) throw new IllegalStateException("can't tell which app to uninstall first: the package name can't be read from the APK");
             List<String> acts = new ArrayList<String>();
             if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
-            if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(apk.getName(), insidePkg, inside != null ? inside.versionName : null,
+            if (!confirmInMode(mode, null, InstallConfirm.messageLocalFile(apk.getName(), insidePkg, inside != null ? inside.versionName : null,
                     installedVersionOrNull(insidePkg), files.size(), mode, "", acts))) {
                 r.put("ok", false);
                 r.put("cancelled", true);

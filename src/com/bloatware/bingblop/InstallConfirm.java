@@ -62,6 +62,9 @@ final class InstallConfirm {
     static final String REINSTATES_SYSTEM = "The system copy of this app, removed for your user, is brought back; the APK in the backup is not installed.";
     static final String RESTORES_DATA = "The app's saved data from the backup is restored as well.";
 
+    /** What is said when the working mode is not the one the question named by the time it is answered. */
+    static final String MODE_CHANGED = "The working mode changed while the question was open. Nothing was installed.";
+
     /** How the privileged working mode is named in the question ("ADB", "Wireless Debugging (ADB)", "Shizuku", "Root"); anything else is "a privileged mode". */
     static String viaText(String mode) {
         if ("adb_tcp".equals(mode)) return "ADB";

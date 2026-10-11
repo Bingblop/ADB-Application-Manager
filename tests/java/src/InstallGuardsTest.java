@@ -49,6 +49,7 @@ public class InstallGuardsTest {
     }
     check("standard is not a privileged mode", !InstallGuards.isPrivilegedMode("standard") && !InstallGuards.isPrivilegedMode("unprivileged") && !InstallGuards.isPrivilegedMode("auto"));
     check("an unknown or missing mode fails closed", "none".equals(InstallGuards.authorizerFor("root", null)) && "none".equals(InstallGuards.authorizerFor("adb", "")) && "none".equals(InstallGuards.authorizerFor("shizuku", "bogus")) && !InstallGuards.isPrivilegedMode(null));
+    check("the mode asked about is the mode now only when both are known and equal", InstallGuards.sameMode("adb_tcp", "adb_tcp") && !InstallGuards.sameMode("adb_tcp", "root") && !InstallGuards.sameMode("adb_tcp", "adb_wireless") && !InstallGuards.sameMode("root", "standard") && !InstallGuards.sameMode(null, null) && !InstallGuards.sameMode("root", null) && !InstallGuards.sameMode(null, "root"));
     System.out.println(n + " checks, " + fails + " failing");
     if (fails > 0) System.exit(1);
   }

@@ -224,7 +224,7 @@ public class InstallConfirmTest {
         is("the privileged installs are made in exactly these methods (a new one must ask, or say why not): " + callers.keySet(), callers.keySet().equals(expected));
 
         String sel = methodBody(src, "private void runInstallSelected(");
-        int asked = sel.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
+        int asked = sel.indexOf("if (!confirmInMode(mode, asked, InstallConfirm.messageLocalFile(");
         is("the Installer asks with the local-file question", asked > 0);
         is("...after the authorizer is settled and before anything is removed or installed", asked > sel.indexOf("resolveAuthorizerMode(") && asked < sel.indexOf("uninstallInstalledCopy(") && asked < sel.indexOf("installApksOptions(") && asked < sel.indexOf("signedCopies("));
         is("...and a No installs nothing (it ends the install with a message)", sel.indexOf("throw new InstallCancelled()") > asked && sel.indexOf("throw new InstallCancelled()") < sel.indexOf("installApksOptions("));
@@ -233,10 +233,10 @@ public class InstallConfirmTest {
 
         String auth = methodBody(src, "private String resolveAuthorizerMode(");
         is("the authorizer is judged by the app's own mode before it is used", auth.contains("InstallGuards.authorizerFor(authorizer, exec)") && auth.indexOf("InstallGuards.authorizerFor(") < auth.indexOf("\"shizuku\".equals(authorizer)"));
-        is("the page's authorizer reaches no install except through that method", count(src, "resolveAuthorizerMode(") == 2 && src.indexOf("optString(\"authorizer\"") == src.lastIndexOf("optString(\"authorizer\""));
+        is("the page's authorizer reaches no install except through that method", count(src, "resolveAuthorizerMode(") == 3 && src.indexOf("optString(\"authorizer\"") == src.lastIndexOf("optString(\"authorizer\""));
 
         String upd = methodBody(src, "private void runInstallUpdate(");
-        int uAsk = upd.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageUpdate(");
+        int uAsk = upd.indexOf("if (!confirmInMode(mode, null, InstallConfirm.messageUpdate(");
         is("an Updater install asks with the update question", uAsk > 0 && upd.contains("takeUpdateApproval(pkg)"));
         is("...after the file is checked (package, newer, signer) and before it is installed", uAsk > upd.indexOf("InstallGuards.checkSigners(") && uAsk < upd.indexOf("installApk(apk)") && upd.indexOf("takeUpdateApproval(pkg)") < uAsk);
         is("...a No installs nothing", upd.indexOf("Update cancelled. Nothing was installed.") > uAsk && upd.indexOf("Update cancelled. Nothing was installed.") < upd.indexOf("installApk(apk)"));
@@ -246,7 +246,7 @@ public class InstallConfirmTest {
         is("'Update all' asks once, with the list, in the native dialog", all.contains("confirmNative(InstallConfirm.titleUpdates(rows.size()), InstallConfirm.messageUpdateAll(rows,") && all.contains("approvedUpdates.replace(versions,"));
         is("...it keeps only apps the app found an update for itself, not this app, not one that opens elsewhere", all.contains("updateResults.get(p)") && all.contains("\"self\".equals(") && all.contains("\"external\".equals("));
         String take = methodBody(src, "private boolean takeUpdateApproval(");
-        is("...a yes is bound to the update the check holds now (its version and source), spent when used, and needs a privileged mode", take.contains("updateResults.get(pkg)") && take.contains("optString(\"availableVersion\")") && take.contains("optString(\"source\")") && take.contains("isPrivilegedMode(resolveExecMode())") && all.contains("versions.put(p, new String[]{u.optString(\"availableVersion\"), u.optString(\"source\")})"));
+        is("...a yes is bound to the update the check holds now (its version and source), spent when used, and needs a privileged mode", take.contains("updateResults.get(pkg)") && take.contains("optString(\"availableVersion\")") && take.contains("optString(\"source\")") && take.contains("resolveExecMode(),") && all.contains("versions.put(p, new String[]{u.optString(\"availableVersion\"), u.optString(\"source\")})"));
         is("...a new update check drops every approval, and so does the page when its queue ends", methodBody(src, "private void runUpdateCheck(").contains("approvedUpdates.clear()") && src.contains("public void endUpdateAll() {\n            approvedUpdates.clear();"));
         is("a REINSTATES_SYSTEM question says nothing of a new app, a replaced app, a bundle or a checksum", noContradiction());
         is("...and only one such question is open at a time", all.contains("updateAllAsking.compareAndSet(false, true)"));
@@ -255,19 +255,35 @@ public class InstallConfirmTest {
         is("the store install still asks (v7.12.10)", store.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.message(") > 0 && store.indexOf("if (!confirmPrivilegedInstall(") < store.indexOf("installApk(apk)"));
 
         String mor = methodBody(src, "private JSONObject morpheInstall(");
-        int mAsk = mor.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
+        int mAsk = mor.indexOf("if (!confirmInMode(mode, null, InstallConfirm.messageLocalFile(");
         is("a patched or downloaded app installed from the Morphe Patcher asks first", mAsk > 0 && mAsk < mor.indexOf("uninstallInstalledCopy(") && mAsk < mor.indexOf("installApks(files)") && mAsk > mor.indexOf("isPrivilegedMode(mode)"));
         is("...and a No installs nothing", mor.indexOf("\"cancelled\"") > mAsk && mor.indexOf("\"cancelled\"") < mor.indexOf("installApks(files)"));
 
         String res = methodBody(src, "private void runRestore(");
-        int rAsk = res.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(");
-        is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApks(ordered)") && res.indexOf("throw new InstallCancelled()") > rAsk && res.indexOf("throw new InstallCancelled()") < res.indexOf("installApks(ordered)"));
+        int rAsk = res.indexOf("if (!confirmInMode(restoreMode, null, InstallConfirm.messageLocalFile(");
+        is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApks(ordered)") && res.lastIndexOf("throw new InstallCancelled()") > rAsk && res.lastIndexOf("throw new InstallCancelled()") < res.indexOf("installApks(ordered)"));
         is("...and says when the data is restored as well", res.contains("InstallConfirm.RESTORES_DATA"));
         int existing = res.indexOf("pm install-existing ");
-        int sysAsk = res.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,\n                                    installedVersionOrNull(pkg), ordered.size(), resolveExecMode(), \"\", sysActs))");
+        int sysAsk = res.indexOf("if (!confirmInMode(sysMode, null, InstallConfirm.messageLocalFile(");
         is("bringing back a removed system app (pm install-existing) asks first too, and a No stops the restore", existing > 0 && sysAsk > 0 && sysAsk < existing && res.indexOf("throw new InstallCancelled()") > sysAsk && res.indexOf("throw new InstallCancelled()") < existing && res.contains("InstallConfirm.REINSTATES_SYSTEM"));
         is("the Morphe uninstall-first removes the package read from the APK, never the one the page sent", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && !mor.contains("uninstallInstalledCopy(mode, pkg)") && mor.contains("uninstallFirst && insidePkg == null"));
 
+        // the mode the question names is the mode the install runs through: a Yes counts only if it is still the mode when the answer is in
+        String cim = methodBody(src, "private boolean confirmInMode(");
+        is("confirmInMode asks, then compares the mode named with the mode now, and a change cancels", cim.indexOf("confirmPrivilegedInstall(message)") > 0 && cim.indexOf("InstallGuards.sameMode(mode, now)") > cim.indexOf("confirmPrivilegedInstall(message)") && cim.contains("resolveExecMode()") && cim.contains("resolveAuthorizerMode(authorizer)") && cim.contains("throw new InstallCancelled(InstallConfirm.MODE_CHANGED)"));
+        java.util.List<String> callersOfAsk = new java.util.ArrayList<String>();
+        for (int i = 0; i < lines.length; i++) {
+          if (!lines[i].contains("confirmPrivilegedInstall(") || sig.matcher(lines[i]).find()) continue;
+          String t = lines[i].trim();
+          if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) continue;
+          String method = "?";
+          for (int j = i; j >= 0; j--) { java.util.regex.Matcher sm = sig.matcher(lines[j]); if (sm.find()) { String l = lines[j]; int paren = l.indexOf('('); int st = l.lastIndexOf(' ', paren) + 1; method = l.substring(st, paren); break; } }
+          callersOfAsk.add(method);
+        }
+        is("confirmPrivilegedInstall is called only by confirmInMode and by the store route (whose question names no mode): " + callersOfAsk, new java.util.TreeSet<String>(callersOfAsk).equals(new java.util.TreeSet<String>(java.util.Arrays.asList("confirmInMode", "downloadAndInstall"))) && callersOfAsk.size() == 2);
+        is("every question that names a mode goes through confirmInMode", count(src, "confirmInMode(") == 6 && count(src, "InstallConfirm.messageLocalFile(") == 4 && count(src, "InstallConfirm.messageUpdate(") == 1);
+        is("Update all asks for one mode, keeps that mode with the approval, and drops the approval when the mode is not the same when the answer is in", all.contains("final String mode = resolveExecMode()") && all.contains("approvedUpdates.replace(versions, mode,") && all.contains("InstallGuards.sameMode(mode, resolveExecMode())") && all.contains("InstallConfirm.MODE_CHANGED") && take.contains("resolveExecMode(), System.currentTimeMillis()"));
+        is("Morphe removes the installed copy and installs only after the mode check (the question is first)", mor.indexOf("confirmInMode(") < mor.indexOf("uninstallInstalledCopy(mode, insidePkg)"));
         String self = methodBody(src, "private void runInstallSelfUpdate(");
         is("the self update asks nothing of its own: it names no address, file or authorizer of the page, and is pinned to this package, a newer version and this install's key",
             !self.contains("confirmPrivilegedInstall(") && self.contains("UpdateManager.SELF_REPO") && self.contains("InstallGuards.checkSigners(") && self.contains("!pkg.equals(archive.packageName)") && self.contains("versionCodeOf(archive) <= installedVc"));

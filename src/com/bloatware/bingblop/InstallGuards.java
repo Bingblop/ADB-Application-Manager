@@ -69,6 +69,11 @@ final class InstallGuards {
         return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
     }
 
+    /** Whether the mode the person was asked about is still the one the install would run through (both must be known). */
+    static boolean sameMode(String asked, String now) {
+        return asked != null && asked.equals(now);
+    }
+
     /**
      * The authorizer an install may use. {@code requested} is what the page asked for ("adb", "shizuku", "root", "none", or anything else, which means
      * the working mode); {@code execMode} is the mode the app itself is in right now (adb_tcp, adb_wireless, shizuku, root or standard). Standard mode
