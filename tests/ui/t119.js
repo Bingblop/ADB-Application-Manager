@@ -114,7 +114,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           case 'vtQuotaLive': return ok({ source: 'virustotal', dayAllowed: 500, dayUsed: 77, dayLeft: 423, resetDayInMs: 3600000 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
           case 'vtScan': return ok({ found: true, cached: true, verdict: M.vtVerdict, malicious: M.vtVerdict === 'clean' ? 0 : 7, suspicious: 0, total: 70, permalink: 'https://www.virustotal.com/gui/file/abc' }, 20);
-          case 'keyExport': return ok({ path: '/storage/emulated/0/Download/Morphe Patcher/morphe.keystore' });
+          case 'keyExport': return ok({ shared: true });
           default: return ok({});
         }
       }

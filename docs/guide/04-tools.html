@@ -463,12 +463,12 @@
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><b>Export KeyStore</b></td><td>Saves the signing key to <code>Downloads/Morphe Patcher/morphe.keystore</code>.</td></tr>
+      <tr><td><b>Export KeyStore</b></td><td>Asks first, then opens the Android share sheet so you choose where the key file goes. Nothing is written to <code>Downloads</code>. The copy made for the sheet is removed from the app after ten minutes.</td></tr>
       <tr><td><b>Import KeyStore</b></td><td>Opens the file picker; choose a keystore file. The app asks for its password. Leave it empty for a keystore made by Morphe.</td></tr>
       <tr><td><b>New key</b></td><td>Asks first, then makes a new key. Apps signed from now on use the new key, and Android will not install them over apps signed with the old one.</td></tr>
     </tbody>
   </table>
-  <div class="hg-warn"><b>Careful.</b> Before you press <b>New key</b>, press <b>Export KeyStore</b> so you still have the old key. Without it you cannot update the apps you signed with it: Android refuses an update signed with another key, and the only way round is to uninstall the app (its data goes with it). Treat the exported file like a password: anyone who has it can sign apps that Android takes for yours.</div>
+  <div class="hg-warn"><b>Careful.</b> Before you press <b>New key</b>, press <b>Export KeyStore</b> so you still have the old key. Without it you cannot update the apps you signed with it: Android refuses an update signed with another key, and the only way round is to uninstall the app (its data goes with it). Treat the exported file like a password: anyone who has it can sign apps that Android takes for yours. Share it only to a place that only you can open, and delete the copy you no longer need. A copy that an older version of the app saved in <code>Downloads/Morphe Patcher</code> stays there until you delete it.</div>
 
   <h4>Checks before an update installs, and messages</h4>
   <p>For every update the app downloads the file, then checks that it is the same package, a newer version, and signed with the same key as the installed app. If any check fails, nothing is installed. It then installs over the old version through your working mode, which keeps the app's data, and deletes the downloaded file.</p>
