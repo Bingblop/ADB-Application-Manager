@@ -1,0 +1,10 @@
+ok   360x800 1. a normal entry has no "File not found" label, no note, and all its buttons: {"name":"App One 1.0","chips":["Oct 3, 2026","1000 B","1 patches"],"note":[],"disabled":[],"enabled":["Install","Share","Save to Downloads","Log","Delete"]}
+ok   360x800 2. a missing entry shows the "File not found" label and the explanation: {"name":"App Two 2.0","chips":["Oct 3, 2026","2.0 KB","1 patches","File not found"],"note":["The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry."],"disabled":["Install","Share","Save to Downloads"],"enabled":["Log","Delete"]}
+ok   360x800 3. Install, Share and Save to Downloads are off for it; Log and Delete stay on: {"name":"App Two 2.0","chips":["Oct 3, 2026","2.0 KB","1 patches","File not found"],"note":["The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry."],"disabled":["Install","Share","Save to Downloads"],"enabled":["Log","Delete"]}
+ok   360x800 4. no sideways scroll
+ok   412x915 1. a normal entry has no "File not found" label, no note, and all its buttons: {"name":"App One 1.0","chips":["Oct 3, 2026","1000 B","1 patches"],"note":[],"disabled":[],"enabled":["Install","Share","Save to Downloads","Log","Delete"]}
+ok   412x915 2. a missing entry shows the "File not found" label and the explanation: {"name":"App Two 2.0","chips":["Oct 3, 2026","2.0 KB","1 patches","File not found"],"note":["The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry."],"disabled":["Install","Share","Save to Downloads"],"enabled":["Log","Delete"]}
+ok   412x915 3. Install, Share and Save to Downloads are off for it; Log and Delete stay on: {"name":"App Two 2.0","chips":["Oct 3, 2026","2.0 KB","1 patches","File not found"],"note":["The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry."],"disabled":["Install","Share","Save to Downloads"],"enabled":["Log","Delete"]}
+ok   412x915 4. no sideways scroll
+ok   no page errors:
+ALL PASSED

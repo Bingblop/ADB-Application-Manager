@@ -5571,6 +5571,8 @@ public class MainActivity extends Activity {
     private volatile long fontScanProgressAt = 0;
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
     private final java.util.concurrent.atomic.AtomicInteger fontScanSeq = new java.util.concurrent.atomic.AtomicInteger();
+    // the page's Cancel: every search numbered up to this has been cancelled (a search started after it is not), so a late Cancel can never stop a newer search
+    private final java.util.concurrent.atomic.AtomicInteger fontScanCancelledUpTo = new java.util.concurrent.atomic.AtomicInteger();
 
     private FontStore fontStore;                         // the font files and their lock: held only to swap files, never while a source is read
 
@@ -5608,11 +5610,14 @@ public class MainActivity extends Activity {
             public void run() {
                 JSONObject res = new JSONObject();
                 long t0 = System.currentTimeMillis();
+                final FontScan.Limits lim = new FontScan.Limits();
+                lim.cancel = new FontScan.Cancel() {
+                    @Override public boolean isCancelled() { return scanId != fontScanSeq.get() || scanId <= fontScanCancelledUpTo.get(); }   // cancelled, or a newer search started
+                };
                 try {
                     if (!hasStorageAccess()) {
                         res.put("status", "noaccess");
                     } else {
-                        final FontScan.Limits lim = new FontScan.Limits();
                         lim.deadlineMs = t0 + 25000;
                         List<File> roots = new ArrayList<File>();
                         roots.add(new File(fmCanonicalPath("/sdcard")));
@@ -5630,7 +5635,7 @@ public class MainActivity extends Activity {
                             doneBefore += FontScan.walkRoot(r, found, seen, lim, doneBefore, totalTop, new FontScan.Progress() {
                                 @Override
                                 public void onProgress(int done, int total, String folder, int foundNow) {
-                                    if (scanId != fontScanSeq.get()) { lim.hitLimit = true; return; }     // a newer search started: stop this walk
+                                    if (lim.cancel.isCancelled()) return;                                  // cancelled, or a newer search started: the walk stops at its next file
                                     int pct = total > 0 ? Math.min(99, done * 99 / total) : 99;
                                     sendFontScanProgress(scanId, pct, "Searched " + folder + " (" + done + " of " + total + " folders)", foundNow, done >= total);
                                 }
@@ -5646,6 +5651,10 @@ public class MainActivity extends Activity {
                     }
                 } catch (Exception e) {
                     try { res.put("status", "error"); res.put("error", e.getMessage() != null ? e.getMessage() : "search failed"); } catch (Exception ignored) {}
+                }
+                if (lim.cancelled || scanId <= fontScanCancelledUpTo.get()) {                // cancelled: no list, just the word, so the page can tidy up
+                    res = new JSONObject();
+                    try { res.put("status", "cancelled"); } catch (Exception ignored) {}
                 }
                 if (scanId == fontScanSeq.get()) notifyJs("window.onFontScan && window.onFontScan(" + JSONObject.quote(res.toString()) + ")");
             }
@@ -10699,6 +10708,12 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanFonts() {
             runFontScan();
+        }
+
+        /** Stops the font search that is running (the page left Settings). It stops at its next file and answers window.onFontScan({status:"cancelled"}); a search started later is not touched. */
+        @JavascriptInterface
+        public void cancelFontScan() {
+            fontScanCancelledUpTo.set(fontScanSeq.get());
         }
 
         /** Lets the user choose a small text file (up to 1 MB). Answer: window.onTextFilePicked({tag, name, text} or {tag, error}). */

@@ -1225,6 +1225,8 @@
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
         .sheet-avatar:empty { display: none; }          /* a sheet with no symbol to show has no empty tile either */
+        .sheet-avatar.has-icon { background: var(--bg-surface); overflow: hidden; }          /* the app's own icon instead of its first letter */
+        .sheet-avatar.has-icon img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .sheet-avatar {
             width: 44px;
             height: 44px;
@@ -1236,6 +1238,7 @@
             font-size: 20px;
             font-weight: 900;
             color: var(--on-accent);
+            flex-shrink: 0;                 /* a long title does not squeeze the tile (it stays square when the letter turns into the icon) */
         }
 
         .sheet-title h3 {
@@ -8455,6 +8458,7 @@ Type any command below (e.g. pm list packages -d)
         <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdSheetTitle">
             <div class="sheet-header">
                 <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="cdSheetAvatar"></div>
                     <div class="sheet-title">
                         <h3 id="cdSheetTitle"></h3>
                         <p id="cdSheetSub" translate="no" style="word-break:break-all;"></p>
@@ -9430,7 +9434,11 @@ Type any command below (e.g. pm list packages -d)
         // The list of fonts found is for the visit to Settings that asked for it: leaving Settings (or Clear this list) empties it
         function fontScanClear(toast) {
             fontFound = [];
-            if (fontScanning) fontScanStale = true;
+            if (fontScanning) {
+                fontScanStale = true;
+                // the search is stopped on the phone too (it answers "cancelled"); an older build without the call lets it run to its end and drops the answer
+                try { if (window.AndroidBridge && window.AndroidBridge.cancelFontScan) window.AndroidBridge.cancelFontScan(); } catch (e) {}
+            }
             const box = document.getElementById('fontScanBox'), list = document.getElementById('fontScanList'), search = document.getElementById('fontScanSearch'), clr = document.getElementById('fontScanClearBtn');
             if (list) list.innerHTML = '';
             if (search) { search.value = ''; search.style.display = 'none'; }
@@ -9458,6 +9466,7 @@ Type any command below (e.g. pm list packages -d)
             fontScanEnd();
             if (fontScanStale) { fontScanStale = false; fontScanClear(false); return; }
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'unreadable answer' }; }
+            if (d.status === 'cancelled') { fontScanClear(false); return; }
             if (d.status === 'noaccess') {
                 fontScanNote('This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).', true);
                 promptFileAccess('To search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.', fontScanStart, true);
@@ -13981,6 +13990,12 @@ Type any command below (e.g. pm list packages -d)
                 const u = appIconCache[img.getAttribute('data-icon')];
                 if (u) img.src = u;
             });
+            if (map && typeof cdIconsArrived === 'function') cdIconsArrived(map);
+            const im = document.getElementById('inspectorModal');
+            if (im && im.classList.contains('show') && inspectedPkg && map && map[inspectedPkg]) {          // the app menu is open and its icon just arrived
+                const a = allApps.find(x => x.pkg === inspectedPkg);
+                paintSheetAvatar(inspectedPkg, a ? a.name : inspectedPkg);
+            }
         };
         window.onAppIconSaved = function (r) {
             if (r && r.ok) showToast('Icon saved to ' + r.path);
@@ -20323,8 +20338,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- a sheet of buttons for one thing, and a question ----
+        let cdSheetPkg = '';
         function cdSheetOpen(o) {
             document.getElementById('cdSheetTitle').innerText = o.title || '';
+            cdSheetPkg = o.pkg || '';
+            if (cdSheetPkg) paintSheetAvatar(cdSheetPkg, o.title, 'cdSheetAvatar');
+            else { const av = document.getElementById('cdSheetAvatar'); av.classList.remove('has-icon'); av.textContent = ''; }
             const sub = document.getElementById('cdSheetSub');
             sub.innerText = o.sub || '';
             sub.style.display = o.sub ? '' : 'none';
@@ -20458,6 +20477,25 @@ Type any command below (e.g. pm list packages -d)
                 (!rows.length ? '<div class="cd-note">No app matches.</div>' : '');
             rowBusyApply();
             cdBatchBar();
+            cdLoadIcons(shown);
+        }
+        /** The icons come from this phone's icon cache, so an app that is also installed here shows its real icon; the rest keep their first letter. */
+        function cdLoadIcons(apps) {
+            if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
+            const want = [];
+            apps.forEach(a => { if (!appIconCache[a.pkg] && !appIconAsked.has(a.pkg)) { appIconAsked.add(a.pkg); want.push(a.pkg); } });
+            for (let i = 0; i < want.length; i += 24) {
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24)), iconPack); } catch (e) {}
+            }
+        }
+        /** An icon arrived: put it on the rows and in the menu of Connected Devices. */
+        function cdIconsArrived(map) {
+            document.querySelectorAll('#cdAppList .app-card').forEach(card => {
+                const u = map[card.dataset.pkg], ic = card.querySelector('.cd-icon');
+                if (u && ic && !ic.querySelector('img')) { const img = document.createElement('img'); img.alt = ''; img.draggable = false; img.src = u; ic.textContent = ''; ic.appendChild(img); }
+            });
+            const sh = document.getElementById('cdSheet');
+            if (cdSheetPkg && map[cdSheetPkg] && sh && sh.classList.contains('show')) paintSheetAvatar(cdSheetPkg, cdApp(cdSheetPkg).name, 'cdSheetAvatar');
         }
         function cdAppCardHtml(a) {
             const pk = escapeHtml(a.pkg), sel = cd.sel.has(a.pkg);
@@ -20651,10 +20689,10 @@ Type any command below (e.g. pm list packages -d)
             }
             b.push({ label: cd.sel.has(pkg) ? 'Deselect' : 'Select', fn: () => cdToggleSel(pkg) });
             b.push({ label: 'Copy package', fn: () => copyText(pkg) });
-            cdSheetOpen({ title: a.name, sub: pkg, buttons: b });
+            cdSheetOpen({ title: a.name, sub: pkg, pkg: pkg, buttons: b });
         }
         async function cdAppInfo(pkg) {
-            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
+            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, pkg: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
             const out = await cdSh('dumpsys package ' + cdQ(pkg) + ' | grep -E "versionCode|versionName|firstInstallTime|lastUpdateTime|installerPackageName|targetSdk|minSdk|userId=|codePath|pkgFlags=" | head -24', { timeout: 30000 });
             const f = cdFail(out);
             document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
@@ -22673,6 +22711,30 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
         }
 
+        /** The tile left of the app's name in the app menu: the app's own icon when it is known (asked for when it is not), its first letter until then or when it cannot be drawn. */
+        const sheetIconAsked = new Set();
+        function paintSheetAvatar(pkg, name, elId) {
+            const av = document.getElementById(elId || 'sheetAvatar');
+            if (!av) return;
+            const letter = String(name || pkg || '?').charAt(0).toUpperCase();
+            const url = appIconCache[pkg];
+            if (url) {
+                const img = document.createElement('img');
+                img.alt = ''; img.draggable = false;
+                img.onerror = () => { av.classList.remove('has-icon'); av.textContent = letter; };
+                img.src = url;
+                av.classList.add('has-icon');
+                av.replaceChildren(img);
+                return;
+            }
+            av.classList.remove('has-icon');
+            av.textContent = letter;
+            if (window.AndroidBridge && window.AndroidBridge.loadAppIcons && !sheetIconAsked.has(pkg)) {      // the list may have asked and been told nothing: ask once more from here
+                sheetIconAsked.add(pkg); appIconAsked.add(pkg);
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify([pkg]), iconPack); } catch (e) {}
+            }
+        }
+
         function openInspector(pkg) {
             inspectedPkg = pkg;
             haptic();
@@ -22686,7 +22748,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetDates').innerText = '';
             renderInspectorUpdateHint(pkg);
             renderInspectorSizes(pkg);
-            document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
+            paintSheetAvatar(app.pkg, app.name);
 
             refreshInspectorButtons(pkg);
             loadSheetUad(pkg);
@@ -32203,10 +32265,11 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="color-card" style="margin:0 0 10px;"><div class="mp-name" translate="no">' + escapeHtml(p.appName || p.pkg) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(p.versionName || '') + '</span></div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(p.pkg) + '</div>' +
                 '<div class="mp-badges"><span class="mp-chip">' + escapeHtml(mpFmtDate(p.patchedAt)) + '</span><span class="mp-chip">' + escapeHtml(formatBytes(p.size)) + '</span><span class="mp-chip">' + ((p.patches || []).length) + ' patches</span>' +
-                (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + '</div>' +
+                (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + (p.missing ? '<span class="mp-chip bad">File not found</span>' : '') + '</div>' +
+                (p.missing ? '<div class="mp-note">The patched APK is not where it was saved. It is listed again when that storage can be reached; Delete removes this entry.</div>' : '') +
                 '<div class="mp-note" translate="no">' + escapeHtml((p.patches || []).slice(0, 8).join(', ')) + ((p.patches || []).length > 8 ? ' +' + ((p.patches || []).length - 8) : '') + '</div>' +
-                '<div class="mp-row"><button class="mp-act" onclick="mpPatchedInstall(' + jsArg(p.id) + ')">Install</button><button class="mp-act" onclick="mpPatchedShare(' + jsArg(p.id) + ')">Share</button>' +
-                '<button class="mp-act" onclick="mpPatchedSave(' + jsArg(p.id) + ')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(' + jsArg(p.id) + ')">Log</button>' +
+                '<div class="mp-row"><button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedInstall(' + jsArg(p.id) + ')">Install</button><button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedShare(' + jsArg(p.id) + ')">Share</button>' +
+                '<button class="mp-act"' + (p.missing ? ' disabled' : '') + ' onclick="mpPatchedSave(' + jsArg(p.id) + ')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(' + jsArg(p.id) + ')">Log</button>' +
                 '<button class="mp-act danger" onclick="mpPatchedDelete(' + jsArg(p.id) + ')">Delete</button></div></div>').join(''));
         }
         async function mpPatchedInstall(id) {
