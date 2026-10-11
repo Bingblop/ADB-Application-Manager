@@ -54,16 +54,16 @@ ok   9. no working mode: the card says "Needs a working mode…", offers Set Up,
 ok      pressing a preset opens the "requires working mode" sheet and sends nothing: {"open":true,"ops":0,"text":"Action \"Private DNS\" requires working mode"}
 ok      Apply with no working mode sends nothing either
 ok      in a browser (no bridge): "This works in the app on a phone, not in a browser.", every control off, no error when forced: {"now":"This works in the app on a phone, not in a browser.","allOff":true}
-ok   10. 320px wide, dark: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
-ok   10.    with a long name in the field: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
-ok       dark / amoled: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 17.4 / 13.7
-ok   10.     dark / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
-ok       light / amoled: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 18.0 / 18.0
-ok   10.     light / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
-ok       dark / ocean: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 12.6 / 12.6
-ok   10.     dark / ocean: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
-ok       light / sunset: the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3): 14.9 / 14.9
-ok   10.     light / sunset: nothing sticks out of the card or the page, buttons are at least 32px tall: {"page":true,"out":[],"small":[],"w":288}
+ok   10. 320px wide, dark: nothing sticks out of the card or the page, buttons are at least 32px tall
+ok   10.    with a long name in the field: nothing sticks out of the card or the page, buttons are at least 32px tall
+ok       dark / amoled: the colours settled; the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)
+ok   10.     dark / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall
+ok       light / amoled: the colours settled; the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)
+ok   10.     light / amoled: nothing sticks out of the card or the page, buttons are at least 32px tall
+ok       dark / ocean: the colours settled; the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)
+ok   10.     dark / ocean: nothing sticks out of the card or the page, buttons are at least 32px tall
+ok       light / sunset: the colours settled; the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)
+ok   10.     light / sunset: nothing sticks out of the card or the page, buttons are at least 32px tall
 ok       with reduced motion the card runs no animation (it has none of its own): []
 ok       the card adds no keyframes and no hard-coded colours of its own (it uses the page tokens)
 ok   11. in German: title, state line, buttons, label and group names are translated; the host names, the presets and the hint are left alone: {"title":"Privates DNS","now":"Privates DNS ist jetzt: Hostname dns.adguard-dns.com","host":"dns.adguard-dns.com","btns":"AdGuard DNS dns.adguard-dns.com | Cloudflare one.one.one.one | Quad9 dns.quad9.net | Automatisch | Aus","label":"Anderer Hostname","ph":"dns.nextdns.io","group":"Dienste für privates DNS | Automatisch oder Aus","refresh":"Erneut prüfen","apply":"Anwenden"}

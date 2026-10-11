@@ -297,6 +297,7 @@ const BAD = [
   // ---- 10. narrow, themes, motion ----
   const p4 = await mkPage({ w: 320, h: 700, reduce: true });
   const e4 = (fn, a) => p4.evaluate(fn, a);
+  await e4(() => { const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st); });         // colours are measured, not caught half way through a fade
   await e4(() => switchView('prefs')); await p4.waitForTimeout(400);
   const fit = async label => {
     const r = await e4(() => {
@@ -306,7 +307,8 @@ const BAD = [
       const small = [...c.querySelectorAll('button')].filter(b => b.offsetParent !== null && b.getBoundingClientRect().height < 32).map(b => b.id);
       return { page: de.scrollWidth <= window.innerWidth, out, small, w: Math.round(cr.width) };
     });
-    check('10. ' + label + ': nothing sticks out of the card or the page, buttons are at least 32px tall', r.page && r.out.length === 0 && r.small.length === 0, JSON.stringify(r));
+    const fits = r.page && r.out.length === 0 && r.small.length === 0;
+    check('10. ' + label + ': nothing sticks out of the card or the page, buttons are at least 32px tall', fits, fits ? undefined : JSON.stringify(r));
   };
   await fit('320px wide, dark');
   await e4(() => { document.getElementById('pdnsHost').value = 'a-very-long-name.' + 'b'.repeat(60) + '.example.com'; pdnsHostInput(); });
@@ -316,16 +318,20 @@ const BAD = [
   const lum = c => { const v = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
   for (const [mode, preset] of themes) {
     await e4(a => { applyPalettePreset(a[1]); setAppearance(a[0]); }, [mode, preset]); await p4.waitForTimeout(150);
-    const colours = await e4(() => {
+    const sample = () => e4(() => {
       const rgb = e => (getComputedStyle(e).color.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
       const bg = e => { for (let n = e; n; n = n.parentElement) { const m = getComputedStyle(n).backgroundColor.match(/[\d.]+/g) || []; if (m.length && !(m.length === 4 && +m[3] === 0)) return m.slice(0, 3).map(Number); } return [0, 0, 0]; };
       const now = document.getElementById('pdnsNow'), btn = document.getElementById('pdnsAuto');
-      return { now: [rgb(now), bg(now)], btn: [rgb(btn.querySelector('b')), bg(btn)], dark: document.documentElement.classList.contains('light') };
+      btn.setAttribute('aria-pressed', 'true');
+      const out = { now: [rgb(now), bg(now)], btn: [rgb(btn), bg(btn)] };
+      btn.setAttribute('aria-pressed', 'false');
+      return out;
     });
+    let colours = await sample(), same = 0;                                          // wait until two reads in a row agree (the theme has been applied for good)
+    for (let i = 0; i < 40 && same < 2; i++) { await p4.waitForTimeout(100); const nx = await sample(); same = JSON.stringify(nx) === JSON.stringify(colours) ? same + 1 : 0; colours = nx; }
     const cr = (a, b2) => { const l1 = lum(a), l2 = lum(b2); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); };
-    const pr = await e4(() => { document.getElementById('pdnsAuto').setAttribute('aria-pressed', 'true'); const b = document.getElementById('pdnsAuto'); const rgb = e => (getComputedStyle(e).color.match(/[\d.]+/g) || []).slice(0, 3).map(Number); const bgc = (getComputedStyle(b).backgroundColor.match(/[\d.]+/g) || []).slice(0, 3).map(Number); document.getElementById('pdnsAuto').setAttribute('aria-pressed', 'false'); return [rgb(b), bgc]; });
-    const c1 = cr(colours.now[0], colours.now[1]), c2 = cr(pr[0], pr[1]);
-    check('    ' + mode + ' / ' + preset + ': the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)', c1 >= 4.5 && c2 >= 3, c1.toFixed(1) + ' / ' + c2.toFixed(1));
+    const c1 = cr(colours.now[0], colours.now[1]), c2 = cr(colours.btn[0], colours.btn[1]);
+    check('    ' + mode + ' / ' + preset + ': the colours settled; the state text reads on the card (contrast >= 4.5) and the marked button reads (>= 3)', same >= 2 && c1 >= 4.5 && c2 >= 3, same >= 2 && c1 >= 4.5 && c2 >= 3 ? undefined : same + ' ' + c1.toFixed(2) + ' / ' + c2.toFixed(2));
     await fit('    ' + mode + ' / ' + preset);
   }
   const motion = await e4(() => { const out = []; for (const e of document.querySelectorAll('#privateDnsCard *')) { const cs = getComputedStyle(e); if (cs.animationName !== 'none') out.push(e.id || e.tagName); } return out; });
