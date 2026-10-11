@@ -118,11 +118,12 @@ Entries below come from a read-only review by a Claude subagent at commit `ac77d
 
 Status of the rows above: everything marked "in v7.12.9" is merged and has passed CI; **none of it has been run on a device**. The on-device checklist is `docs/DEVICE-TEST-CHECKLIST.md`, section 19.
 
-Open pull requests (written after #135 was merged; all CI-green and held for the owner, none merged):
+Pull requests of this round (written after #135 was merged; now all merged into `main` and part of v7.12.10, none run on a device):
 
-- **#136 (audit Z-4 / Z-5):** the tar and 7z entry cap and the silent truncation of a listing. Needs the owner's OK on the 100 MiB limit for the 7z reader.
-- **#137 (audit M-1, option B):** a native question before a custom patch bundle loads. Needs a phone try-out of the Allow / Don't allow dialog.
+- **#136 (audit Z-4 / Z-5):** the tar and 7z entry cap and the silent truncation of a listing (merged). Its side effect, a 100 MiB memory limit for the 7z reader, is in the changelog.
+- **#137 (audit M-1, option B):** a native question before a custom patch bundle loads (merged as da71c9f). The Allow / Don't allow dialog still needs a phone try-out (`docs/DEVICE-TEST-CHECKLIST.md`, section 20).
 - **#138 (audit Z-6):** listing a compressed tar in the background, with a cancel (merged as 38d1299, after #136). It leaves rows Z-6a to Z-6d above open.
+- **#141 (audit M-13, export half):** the signing key is shared through the share sheet (merged as 78b1bc1); the share sheet needs a phone try-out (section 20).
 
 Status and follow-ups (items that say "done" are done and in v7.12.9; the others are open, in the order I would take them):
 
