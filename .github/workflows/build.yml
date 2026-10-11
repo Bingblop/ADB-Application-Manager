@@ -67,7 +67,7 @@ jobs:
         run: |
           mkdir -p dist
           for ABI in arm64-v8a armeabi-v7a universal; do
-            ABI=$ABI ./build.sh
+            ABI=$ABI bash build.sh
             case "$ABI" in arm64-v8a) F=bin/ADB_Application_Manager_Pro.apk ;; *) F="bin/ADB_Application_Manager_Pro-$ABI.apk" ;; esac
             cp "$F" "dist/ADB_Application_Manager_Pro-$ABI.apk"
           done
