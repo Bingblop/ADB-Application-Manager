@@ -258,6 +258,9 @@ public class MainActivity extends Activity {
         // Extract binaries and ADB keys in background
         setupBinariesAndKeys();
 
+        // a copy of the Morphe signing key staged for the share sheet is short-lived; one that a dead process left behind is removed here
+        try { KeyShare.sweep(getCacheDir(), KeyShare.KEEP_MS, System.currentTimeMillis()); } catch (Throwable ignored) {}
+
         if (isHeadless()) {
             runQuickAction(getIntent());
             return;
@@ -7207,6 +7210,39 @@ public class MainActivity extends Activity {
         return authManagerInstance;
     }
 
+    /**
+     * Opens the share sheet for the staged signing key (see {@link KeyShare}) and removes the copy, and the grant on it, {@link KeyShare#KEEP_MS} later.
+     * The timer holds the application context and the file only, not this activity. If the process dies first, the next start removes what is left.
+     */
+    private void shareMorpheKey(final File staged) throws Exception {
+        final Uri uri = ShareProvider.uriForKey(staged);
+        final Context app = getApplicationContext();
+        java.util.concurrent.FutureTask<Boolean> open = new java.util.concurrent.FutureTask<Boolean>(new java.util.concurrent.Callable<Boolean>() {
+            @Override public Boolean call() {
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("application/octet-stream");
+                send.putExtra(Intent.EXTRA_STREAM, uri);
+                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                Intent chooser = Intent.createChooser(send, "Share");
+                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(chooser);
+                return Boolean.TRUE;
+            }
+        });
+        runOnUiThread(open);
+        try {
+            open.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+        }
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override public void run() {
+                try { app.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Throwable ignored) {}
+                KeyShare.remove(staged);
+            }
+        }, KeyShare.KEEP_MS);
+    }
+
     private synchronized MorpheBridge morphe() {
         if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
@@ -7229,6 +7265,7 @@ public class MainActivity extends Activity {
             }
             @Override public JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception { return morpheInstall(apk, pkg, uninstallFirst); }
             @Override public void share(File f, String mime) { new AndroidBridge().shareStoredFile(f.getAbsolutePath(), mime, f.getName()); }
+            @Override public void shareKey(File staged) throws Exception { shareMorpheKey(staged); }
             @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }

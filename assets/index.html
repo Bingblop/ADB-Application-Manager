@@ -32326,7 +32326,12 @@ Type any command below (e.g. pm list packages -d)
                 buttons: [{ label: 'Done' }]
             });
         }
-        async function mpKeyExport() { const r = await mpCall('keyExport', {}); showToast(r.ok ? 'Saved to ' + ((r.data && r.data.path) || 'Downloads') : (r.error || 'There is no key yet')); }
+        // The key goes out through the system share sheet (nothing is written to Downloads); the question says what the file allows before the sheet opens
+        async function mpKeyExport() {
+            if (!await mpAsk({ title: 'Share the signing key?', text: 'Whoever gets this file can sign apps as you, and Android will install them as updates of the apps you patched here. Send it only to a place that only you can open.', ok: 'Share' })) return;
+            const r = await mpCall('keyExport', {});
+            if (!r.ok) showToast(r.error || 'There is no key yet');
+        }
         async function mpKeyImport() {
             const f = await mpCall('pick', { kind: 'keystore' });
             const file = f.ok && f.data && f.data.files && f.data.files[0];

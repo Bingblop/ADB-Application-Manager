@@ -42,6 +42,11 @@ public final class MorpheBridge {
         /** Installs an APK through the working mode: {ok, output, advice, retry}. */
         JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception;
         void share(File f, String mime);
+        /**
+         * Opens the share sheet for the staged copy of the signing key ({@link KeyShare#stage}) and arranges for the copy to be removed (and the grant
+         * revoked) {@link KeyShare#KEEP_MS} later. Throws when the sheet cannot be opened; the caller then removes the copy.
+         */
+        void shareKey(File staged) throws Exception;
         boolean privileged();
         /** "both", "wifi" or "mobile": whether the network now fits the choice. */
         boolean connectionOk(String conn);
@@ -597,14 +602,23 @@ public final class MorpheBridge {
 
     // ------------------------------------------------------------------------------------------------------------------------ keys
 
+    /**
+     * Export goes through the share sheet, never to a shared folder: the key lets whoever holds it sign apps as this person (and Android installs them as
+     * updates of the apps patched here), so a copy in Downloads would stay readable for other apps for good. The private key file is copied once into a
+     * folder of its own (KeyShare) and handed to the sheet; the copy is removed after a short time. The shareFile call is not used for this and is not
+     * widened: it only reaches the folders of allowedRoots(), which do not include that folder.
+     */
     private JSONObject keyExport() throws Exception {
         File k = new File(base, "morphe.keystore");
         if (!k.isFile()) throw new IOException("There is no signing key yet: it is made the first time you patch.");
-        File dir = new File(host.downloadsDir(), "Morphe Patcher");
-        dir.mkdirs();
-        File dest = new File(dir, "morphe.keystore");
-        MorpheLibrary.copy(k, dest);
-        return new JSONObject().put("path", dest.getAbsolutePath());
+        File staged = KeyShare.stage(host.context().getCacheDir(), k);
+        try {
+            host.shareKey(staged);
+        } catch (Throwable t) {
+            KeyShare.remove(staged);
+            throw t instanceof Exception ? (Exception) t : new IOException(String.valueOf(t));
+        }
+        return new JSONObject().put("shared", true);
     }
 
     private JSONObject keyImport(JSONObject a) throws Exception {

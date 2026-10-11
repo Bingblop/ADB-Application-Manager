@@ -23,6 +23,9 @@ import java.util.regex.Pattern;
  * Every share gets its own random folder (cache/share/<id>/<name>), so a later share can never replace
  * a file an earlier recipient still has access to, and old shares are only removed once they are an
  * hour old, so a receiving app that is slow to open its file never loses it.
+ *
+ * The Morphe signing key is the one exception: it is never put in cache/share. {@link KeyShare} stages it in a folder of its own and this provider
+ * serves it only by the address content://.../key/<id>/morphe.keystore (see {@link #uriForKey}); nothing else can be read through that route.
  */
 public class ShareProvider extends ContentProvider {
 
@@ -50,6 +53,13 @@ public class ShareProvider extends ContentProvider {
                 .appendPath(f.getParentFile().getName()).appendPath(f.getName()).build();
     }
 
+    /** The address of a staged signing key (see {@link KeyShare#stage}); not a file of cache/share. */
+    static Uri uriForKey(File staged) {
+        Uri.Builder b = new Uri.Builder().scheme("content").authority(AUTHORITY);
+        for (String s : KeyShare.segments(staged)) b.appendPath(s);
+        return b.build();
+    }
+
     private static void deleteOlderThan(File root, long cutoff) {
         File[] dirs = root.listFiles();
         if (dirs == null) return;
@@ -68,6 +78,11 @@ public class ShareProvider extends ContentProvider {
 
     private File fileFor(Uri uri) throws FileNotFoundException {
         java.util.List<String> seg = uri.getPathSegments();
+        if (!seg.isEmpty() && KeyShare.ROUTE.equals(seg.get(0))) {
+            File key = KeyShare.resolve(getContext().getCacheDir(), seg);
+            if (key == null) throw new FileNotFoundException("bad path");
+            return key;
+        }
         if (seg.size() != 2 || !ID.matcher(seg.get(0)).matches() || !seg.get(1).equals(safeName(seg.get(1)))) {
             throw new FileNotFoundException("bad path");
         }
