@@ -105,6 +105,36 @@ public class MorpheLibraryTest {
         boolean threw2 = false;
         try { MorpheLibrary.unzipApks(nothing, new File(root, "un3")); } catch (IOException e) { threw2 = true; }
         check("a bundle without an APK is refused", threw2, null);
+        // M-3: filing never reuses an id, and a filing that fails leaves nothing behind (the fallback into the app folder then works at once)
+        File root3 = temp();
+        MorpheLibrary lib3 = new MorpheLibrary(new File(root3, "patched"));
+        java.util.Set<String> ids = new java.util.HashSet<String>();
+        for (int i = 0; i < 300; i++) {
+            JSONObject r = lib3.add(file(root3, "q" + i + ".apk", "D" + i), new JSONObject().put("pkg", "com.a.b").put("versionName", "1"), null);
+            ids.add(r.getString("id"));
+        }
+        check("300 filings of one app back to back get 300 different ids and all are listed", ids.size() == 300 && lib3.list().length() == 300, ids.size() + " " + lib3.list().length());
+
+        File notDir = file(root3, "blocker", "x");
+        File badDownloads = new File(notDir, "Morphe Patcher");                       // its parent is a file: the folder cannot be made
+        File keep = file(root3, "fresh.apk", "FRESH");
+        int folders0 = new File(root3, "patched").list().length;
+        boolean refused = false;
+        try { lib3.add(keep, new JSONObject().put("pkg", "com.c.d"), null, badDownloads); } catch (IOException e) { refused = true; }
+        check("Downloads that cannot be made refuses the filing", refused, null);
+        check("the failed filing left no folder and the APK where it was", new File(root3, "patched").list().length == folders0 && keep.isFile() && keep.length() == 5, new File(root3, "patched").list().length + " vs " + folders0);
+        JSONObject fb = lib3.add(keep, new JSONObject().put("pkg", "com.c.d"), null);
+        check("the fallback into the app folder works straight after, in the same millisecond", new File(fb.getString("file")).isFile() && !keep.exists() && new File(root3, "patched").list().length == folders0 + 1, fb.toString());
+
+        File dl3 = new File(root3, "Downloads/Morphe Patcher");
+        File keep2 = file(root3, "second.apk", "SECOND");
+        File logDir = new File(root3, "logdir"); logDir.mkdirs();                    // a log that cannot be read: fails after the APK was already moved
+        boolean refused2 = false;
+        try { lib3.add(keep2, new JSONObject().put("pkg", "com.e.f"), logDir, dl3); } catch (IOException e) { refused2 = true; }
+        check("a failure after the move puts the APK back and removes what was written", refused2 && keep2.isFile() && keep2.length() == 6 && (!dl3.exists() || dl3.list().length == 0) && new File(root3, "patched").list().length == folders0 + 1, null);
+        JSONObject ok2 = lib3.add(keep2, new JSONObject().put("pkg", "com.e.f"), null, dl3);
+        check("and the next attempt into Downloads works", new File(ok2.getString("file")).getParentFile().equals(dl3) && new File(ok2.getString("file")).length() == 6, ok2.toString());
+
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
     }
 }
