@@ -1,0 +1,6 @@
+ok   first poll uses the incremental parser and groups a continuation line: {"fullParses":0,"entries":[{"messages":2,"raw":2}],"info":2}
+ok   next poll appends just new lines, retaining multiline groups and counts: {"fullParses":0,"entries":[{"messages":2,"raw":2},{"messages":2,"raw":2}],"info":4,"rows":2}
+ok   changing the filter starts a fresh store and fresh counters: {"entries":["Crash"],"info":0,"error":1}
+ok   when the bounded store trims, a full reparse keeps the newest log and correct counts: {"fullParses":1,"stored":8000,"containsNewest":true,"warning":1}
+ok   no page errors:
+ALL PASSED

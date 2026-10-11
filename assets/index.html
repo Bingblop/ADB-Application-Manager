@@ -21602,11 +21602,17 @@ Type any command below (e.g. pm list packages -d)
         function lcSigNow() {
             return [document.getElementById('logcatLevel').value, (document.getElementById('logcatFilter').value || '').trim(), logcatApp ? logcatApp.pkg : ''].join('|');
         }
-        function lcStoreReset() { lcStore = []; lcSeen = new Set(); lcNote = ''; lcLastText = null; }
+        let lcRenderedNote = '';
+        function lcStoreReset() {
+            lcStore = []; lcSeen = new Set(); lcNote = ''; lcLastText = null;
+            lcRenderedNote = ''; logcatEntries = [];
+            logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+        }
         // Identical lines inside one fetch (a recursion's stack frames) are all kept: a line's key is the line plus how many of it came before it in the fetch.
         function lcMerge(text) {
             const here = new Map();
-            let added = 0;
+            const appended = [];
+            let trimmed = false;
             String(text).split('\n').forEach(line => {
                 const raw = line.replace(/\r$/, '');
                 if (!raw.trim()) return;
@@ -21615,11 +21621,44 @@ Type any command below (e.g. pm list packages -d)
                 here.set(raw, k + 1);
                 const key = raw + '\u0001' + k;
                 if (lcSeen.has(key)) return;
-                lcSeen.add(key); lcStore.push(raw); added++;
+                lcSeen.add(key); lcStore.push(raw); appended.push(raw);
             });
-            if (lcStore.length > LC_STORE_MAX) lcStore = lcStore.slice(lcStore.length - LC_STORE_MAX);
+            if (lcStore.length > LC_STORE_MAX) {
+                lcStore = lcStore.slice(lcStore.length - LC_STORE_MAX);
+                trimmed = true;
+            }
             while (lcSeen.size > LC_SEEN_MAX) lcSeen.delete(lcSeen.values().next().value);
-            return added;
+            return { appended, trimmed };
+        }
+
+        // Add only the new batch. Carry the last entry across batches so wrapped messages and stack traces
+        // still join the entry whose header arrived in an earlier poll.
+        function lcParseAppended(rawLines, entries) {
+            let cur = entries.length && entries[entries.length - 1].kind === 'entry' ? entries[entries.length - 1] : null;
+            const counts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+            rawLines.forEach(raw => {
+                if (!raw.trim()) return;
+                const m = lcMatch(raw);
+                if (m) {
+                    const date = m[1], time = m[2], pid = m[3], tid = m[4], lvl = m[5], tag = m[6], msg = m[7];
+                    if (cur && cur.time === time && cur.pid === pid && cur.tid === tid && cur.lvl === lvl && cur.tag === tag) {
+                        cur.lines.push(msg); cur.raws.push(raw);
+                    } else {
+                        cur = { kind: 'entry', date, time, pid, tid, lvl, tag, lines: [msg], raws: [raw] };
+                        entries.push(cur);
+                    }
+                    counts[lvl]++;
+                } else if (/^-{3,}\s*beginning of/i.test(raw)) {
+                    cur = null;
+                    entries.push({ kind: 'meta', text: raw.replace(/^-+\s*/, ''), raws: [raw] });
+                } else if (cur) {
+                    cur.lines.push(raw); cur.raws.push(raw);
+                    counts[cur.lvl]++;
+                } else {
+                    entries.push({ kind: 'meta', text: raw, raws: [raw] });
+                }
+            });
+            return counts;
         }
 
         // sig: the level / filter / app the text was fetched for; text for a view that has since changed is dropped.
@@ -21635,15 +21674,26 @@ Type any command below (e.g. pm list packages -d)
                 else if (!live) showToast(notice);
                 return;
             }
-            const added = lcMerge(t);
-            if (!added && logcatEntries.length) {                      // nothing new since the last draw
+            const oldNote = lcNote;
+            const merged = lcMerge(t);
+            if (!merged.appended.length && oldNote === lcNote && logcatEntries.length) { // nothing new since the last draw
                 if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) box.scrollTop = box.scrollHeight; }
                 return;
             }
             lcLastText = t;
-            logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(logcatParse(lcStore.join('\n')));
-            logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
-            logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
+            if (merged.trimmed) {
+                const parsed = logcatParse(lcStore.join('\n'));
+                logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(parsed);
+                lcRenderedNote = lcNote;
+                logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+                logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
+            } else {
+                if (lcRenderedNote && logcatEntries.length && logcatEntries[0].kind === 'meta' && logcatEntries[0].text === lcRenderedNote) logcatEntries.shift();
+                const delta = lcParseAppended(merged.appended, logcatEntries);
+                Object.keys(logcatCounts).forEach(k => { logcatCounts[k] += delta[k]; });
+                if (lcNote) logcatEntries.unshift({ kind: 'meta', text: lcNote, raws: [lcNote] });
+                lcRenderedNote = lcNote;
+            }
             logcatRenderKey();
             logcatDraw(toBottom);
         }
