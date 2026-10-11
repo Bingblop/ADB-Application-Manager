@@ -165,6 +165,7 @@ public class ArchiveCancelTest {
         pure();
         File root = Files.createTempDirectory("archivecancel").toFile();
         try {
+            shortReads();
             smallArchives(root);
             bigArchives(root);
             sourceScan();
@@ -173,6 +174,47 @@ public class ArchiveCancelTest {
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
         System.out.println("ALL PASSED");
+    }
+
+    // ------------------------------------------------------------------------------------------------------------ short reads
+
+    /** A source that hands out at most {@code 1..max} bytes per call (whatever was asked), as a decompressor does at a block boundary. */
+    static final class Trickle extends InputStream {
+        final long total; final int max; long pos; final java.util.Random rnd = new java.util.Random(12345);
+        Trickle(long total, int max) { this.total = total; this.max = max; }
+        @Override public int read() { if (pos >= total) return -1; pos++; return 0; }
+        @Override public int read(byte[] b, int off, int len) {
+            if (pos >= total) return -1;
+            int n = (int) Math.min(Math.min(len, 1 + rnd.nextInt(max)), total - pos);
+            pos += n;
+            return n;
+        }
+        @Override public long skip(long n) { long k = Math.min(Math.min(n, 1 + rnd.nextInt(max)), total - pos); pos += k; return k; }
+    }
+
+    /** The asks are never more than POLL_BYTES of data apart however the source cuts its reads: a short read must not leave room for a full one before the next ask. */
+    static void shortReads() throws Exception {
+        final long total = 3L << 20;
+        for (int max : new int[] {1000, 40000, ArchiveIo.POLL_BYTES, 3 * ArchiveIo.POLL_BYTES}) {
+            for (int mode = 0; mode < 3; mode++) {      // 0: read(byte[]), 1: single bytes mixed in, 2: skip
+                Probe p = new Probe(-1);
+                ArchiveIo.PollIn in = new ArchiveIo.PollIn(new Trickle(total, max), p);
+                byte[] buf = new byte[3 * ArchiveIo.POLL_BYTES];
+                java.util.Random r = new java.util.Random(7 + max + mode);
+                long got = 0;
+                for (;;) {
+                    int k;
+                    if (mode == 1 && r.nextInt(5) == 0) { k = in.read(); if (k >= 0) got++; }
+                    else if (mode == 2 && r.nextBoolean()) { long s = in.skip(1 + r.nextInt(buf.length)); k = s > 0 ? 1 : -1; got += s; }
+                    else { k = in.read(buf, 0, 1 + r.nextInt(buf.length)); if (k > 0) got += k; }
+                    if (k < 0) break;
+                }
+                p.tick(got);   // the closing step: what went by after the last ask
+                String what = "short reads (at most " + max + " bytes per call, " + (mode == 0 ? "arrays" : mode == 1 ? "arrays and single bytes" : "arrays and skip") + ")";
+                check(what + ": the whole stream goes through (" + got + " of " + total + ")", got == total, null);
+                check(what + ": asked at least every 64 KB of data (largest step " + p.maxStep + " over " + p.asks + " asks)", p.maxStep <= ArchiveIo.POLL_BYTES && p.asks >= total / ArchiveIo.POLL_BYTES, "maxStep=" + p.maxStep);
+            }
+        }
     }
 
     // ------------------------------------------------------------------------------------------------------------ the decision
@@ -339,7 +381,17 @@ public class ArchiveCancelTest {
         String any = bodyOf(m, "private String archiveOpenAny(");
         check("source: archiveOpen answers pending for a slow format and runs it on a worker thread, with a token",
                 any != null && any.contains("archiveOpenIsSlow(") && any.contains("submitJob(") && any.contains("\"pending\", true") && any.contains("\"token\"") && any.contains("window.onArchiveOpened"), null);
-        check("source: the worker passes the page's cancel flag, and its answer carries cancelled:true after a Cancel", any != null && any.contains("if (job.cancel) return false;") && any.contains("\"cancelled\", true"), null);
+        check("source: the worker passes the page's cancel flag, and its answer carries cancelled:true after a Cancel", any != null && any.contains("if (job.cancel || activityDestroyed) return false;") && any.contains("\"cancelled\", true"), null);
+        String od = bodyOf(m, "protected void onDestroy()");
+        String cd = bodyOf(m, "private void cancelArchiveOpenOnDestroy()");
+        check("source: onDestroy marks the activity destroyed and cancels the archive open it started (a huge tar must not keep the window alive)",
+                od != null && od.contains("activityDestroyed = true;") && od.contains("cancelArchiveOpenOnDestroy();"), null);
+        check("source: ... that sets the job's cancel flag, drops its ticket (so it publishes nothing and removes its staged copy) and lets go of the job, under the lock, only for this window's job",
+                cd != null && cd.contains("job.owner == this") && cd.contains("job.cancel = true;") && cd.contains("archiveOpenNewest.remove(job.path);") && cd.contains("archiveOpening = null;") && cd.contains("synchronized (archiveLock)"), null);
+        check("source: the worker's progress ask stops once the activity is destroyed, and its answer is not delivered to a destroyed page",
+                any != null && any.contains("if (job.cancel || activityDestroyed) return false;") && any.indexOf("if (activityDestroyed) return;") > 0
+                && any.indexOf("if (activityDestroyed) return;") < any.indexOf("window.onArchiveOpened"), null);
+        check("source: the progress callback to the page is a no-op once the activity is destroyed", m.contains("private void notifyArchiveProgress(String msg) {\n        if (activityDestroyed) return;"), null);
         check("source: a fast format is still answered in the call (archiveFor then archiveOpenJson)", any != null && any.indexOf("archiveOpenJson(a, p).toString()") > 0, null);
         check("source: archiveOpen and archiveOpen2 both go through it", m.contains("return archiveOpenAny(path, null);") && m.contains("return archiveOpenAny(path, password == null"), null);
         String cancel = bodyOf(m, "public void archiveOpenCancel()");

@@ -4882,8 +4882,23 @@ public class MainActivity extends Activity {
     /** A background open of an archive whose listing needs a full unpacking; {@code cancel} is the page's Cancel. */
     private static final class ArchiveOpenJob {
         final String token, path;
+        final MainActivity owner;       // the window whose page is waiting for it (released when the job ends or that window is destroyed)
         volatile boolean cancel;
-        ArchiveOpenJob(String token, String path) { this.token = token; this.path = path; }
+        ArchiveOpenJob(String token, String path, MainActivity owner) { this.token = token; this.path = path; this.owner = owner; }
+    }
+
+    private volatile boolean activityDestroyed;     // set by onDestroy: a background job must not call into this window's page any more
+
+    /** onDestroy: the open of an archive that this window started is not wanted: it stops at its next ask, its ticket is dropped (so it publishes nothing and removes its staged copy). */
+    private void cancelArchiveOpenOnDestroy() {
+        synchronized (archiveLock) {
+            ArchiveOpenJob job = archiveOpening;
+            if (job != null && job.owner == this) {
+                job.cancel = true;
+                archiveOpenNewest.remove(job.path);
+                archiveOpening = null;
+            }
+        }
     }
 
     /** True when listing this archive means unpacking all of it (a compressed tar), so it is opened in the background. A file this app cannot read is judged by its name. */
@@ -5205,6 +5220,7 @@ public class MainActivity extends Activity {
     }
 
     private void notifyArchiveProgress(String msg) {
+        if (activityDestroyed) return;
         notifyJs("window.onArchiveProgress && window.onArchiveProgress(" + JSONObject.quote(msg) + ")");
     }
 
@@ -13683,7 +13699,7 @@ public class MainActivity extends Activity {
                 final ArchiveOpenJob job;
                 synchronized (archiveLock) {
                     if (archiveOpening != null) archiveOpening.cancel = true;      // the page asked for another one: the old one ends as cancelled
-                    job = new ArchiveOpenJob("open" + (++archiveOpenJobs), p);
+                    job = new ArchiveOpenJob("open" + (++archiveOpenJobs), p, MainActivity.this);
                     archiveOpening = job;
                 }
                 if (!submitJob(new Runnable() {
@@ -13696,7 +13712,7 @@ public class MainActivity extends Activity {
                                 private long lastReport;
                                 @Override
                                 public boolean tick(long bytesDone) {
-                                    if (job.cancel) return false;
+                                    if (job.cancel || activityDestroyed) return false;
                                     long now = System.nanoTime();
                                     if (bytesDone > 0 && now - lastReport > 700000000L) {
                                         lastReport = now;
@@ -13717,6 +13733,7 @@ public class MainActivity extends Activity {
                                 if (archiveOpening == job) archiveOpening = null;
                             }
                         }
+                        if (activityDestroyed) return;      // the window that asked is gone: nobody to tell
                         try { res.put("token", job.token); } catch (Exception ignored) {}
                         notifyJs("window.onArchiveOpened && window.onArchiveOpened(" + res.toString() + ")");
                     }
@@ -15410,6 +15427,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        activityDestroyed = true;
+        cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()

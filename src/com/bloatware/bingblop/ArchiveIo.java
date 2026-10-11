@@ -361,19 +361,21 @@ public final class ArchiveIo {
     public static boolean slowToListByName(String fileName) { return fileName != null && slowToList(byExt(fileName)); }
 
     /** Passes the unpacked bytes of a tar through, asking {@code cb} often enough that a listing can be stopped within a moment. */
-    private static final class PollIn extends InputStream {
+    static final class PollIn extends InputStream {
         private final InputStream in; private final Progress cb;
         private long done, since;
         PollIn(InputStream in, Progress cb) { this.in = in; this.cb = cb; }
         void poll() throws IOException { since = 0; if (!cb.tick(done)) throw new IOException("Cancelled"); }
+        /** Bytes that may still pass before the next ask (always at least 1: a poll resets {@code since} the moment it reaches the limit). */
+        private long room() { return Math.max(1, POLL_BYTES - since); }
         private void count(long n) throws IOException { if (n > 0) { done += n; since += n; if (since >= POLL_BYTES) poll(); } }
         @Override public int read() throws IOException { int b = in.read(); if (b >= 0) count(1); return b; }
         @Override public int read(byte[] b, int off, int len) throws IOException {
-            int n = in.read(b, off, Math.min(len, POLL_BYTES));      // never one long read between two questions
+            int n = in.read(b, off, (int) Math.min(len, room()));    // never more than is left before the next question, however short the last read was
             count(n);
             return n;
         }
-        @Override public long skip(long n) throws IOException { long k = in.skip(Math.min(n, POLL_BYTES)); count(k); return k; }
+        @Override public long skip(long n) throws IOException { long k = in.skip(Math.min(n, room())); count(k); return k; }
         @Override public int available() throws IOException { return in.available(); }
         @Override public void close() throws IOException { in.close(); }
     }
