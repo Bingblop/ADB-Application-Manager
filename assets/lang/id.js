@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "Seluruh nama paling banyak 253 karakter.",
 "This works in the app on a phone, not in a browser.": "Ini berfungsi di aplikasi pada ponsel, bukan di browser.",
 "Type a host name first.": "Ketik nama host terlebih dahulu.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Gunakan hanya huruf a-z, angka, tanda hubung, dan titik. Tulis nama internasional dalam bentuk xn--."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Gunakan hanya huruf a-z, angka, tanda hubung, dan titik. Tulis nama internasional dalam bentuk xn--.",
+"Android did not keep the new value": "Android tidak mempertahankan nilai baru",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android menolak permintaan. Beberapa ponsel (Xiaomi, Redmi, POCO) hanya mengizinkannya jika \"Debugging USB (Pengaturan keamanan)\" aktif di Opsi pengembang, dan beberapa kunci dikunci oleh sistem.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android menolak nilai itu untuk pengaturan ini. Coba nilai dengan jenis yang sama seperti nilai saat ini.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "Koneksi ke perangkat terputus. Hubungkan ulang di Mode Kerja, lalu coba lagi.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "Layanan pengaturan tidak menjawab. Coba lagi sebentar lagi, atau mulai ulang ponsel.",
+"This Android version did not understand the command.": "Versi Android ini tidak memahami perintah tersebut.",
+"Check again": "Periksa lagi"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "DNS pribadi tidak dapat diubah: {0}"],
 ["Could not confirm the change: {0}", "Perubahan tidak dapat dikonfirmasi: {0}"],
 ["Could not read Private DNS: {0}", "DNS pribadi tidak dapat dibaca: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "DNS pribadi sekarang: mode tidak dikenal “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "DNS pribadi sekarang: mode tidak dikenal “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "Ponsel memiliki pengaturan ini, tetapi satu langkah melaporkan masalah: {0}"]
 ]
 };

@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "Der gesamte Name darf höchstens 253 Zeichen lang sein.",
 "This works in the app on a phone, not in a browser.": "Das funktioniert in der App auf einem Telefon, nicht in einem Browser.",
 "Type a host name first.": "Geben Sie zuerst einen Hostnamen ein.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Verwenden Sie nur Buchstaben a-z, Ziffern, Bindestriche und Punkte. Schreiben Sie einen internationalen Namen in seiner xn--Form."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Verwenden Sie nur Buchstaben a-z, Ziffern, Bindestriche und Punkte. Schreiben Sie einen internationalen Namen in seiner xn--Form.",
+"Android did not keep the new value": "Android hat den neuen Wert nicht übernommen",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android hat die Anfrage abgelehnt. Manche Telefone (Xiaomi, Redmi, POCO) erlauben das erst, wenn in den Entwickleroptionen „USB-Debugging (Sicherheitseinstellungen)“ eingeschaltet ist, und manche Schlüssel sind vom System gesperrt.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android hat diesen Wert für diese Einstellung abgelehnt. Versuchen Sie einen Wert derselben Art wie den aktuellen.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "Die Verbindung zum Gerät wurde unterbrochen. Verbinden Sie sich in den Betriebsmodi neu und versuchen Sie es dann erneut.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "Der Einstellungsdienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal oder starten Sie das Telefon neu.",
+"This Android version did not understand the command.": "Diese Android-Version hat den Befehl nicht verstanden.",
+"Check again": "Erneut prüfen"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "Privates DNS konnte nicht geändert werden: {0}"],
 ["Could not confirm the change: {0}", "Die Änderung konnte nicht bestätigt werden: {0}"],
 ["Could not read Private DNS: {0}", "Privates DNS konnte nicht gelesen werden: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "Privates DNS ist jetzt: unbekannter Modus „{0}“"]
+["Private DNS is now: an unknown mode “{0}”", "Privates DNS ist jetzt: unbekannter Modus „{0}“"],
+["The phone has this setting, but one step reported a problem: {0}", "Das Telefon hat diese Einstellung, aber ein Schritt meldete ein Problem: {0}"]
 ]
 };

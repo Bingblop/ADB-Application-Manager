@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "整个名称最多 253 个字符。",
 "This works in the app on a phone, not in a browser.": "这在手机上的应用中可用，在浏览器中不可用。",
 "Type a host name first.": "请先输入主机名。",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "只能使用字母 a-z、数字、连字符和点。国际化名称请写成 xn-- 形式。"
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "只能使用字母 a-z、数字、连字符和点。国际化名称请写成 xn-- 形式。",
+"Android did not keep the new value": "Android 没有保留新值",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android 拒绝了该请求。部分手机（小米、红米、POCO）只有在开发者选项中打开“USB 调试（安全设置）”后才允许，而且有些键已被系统锁定。",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android 拒绝了此设置的该值。请尝试与当前值类型相同的值。",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "与设备的连接已断开。请在工作模式中重新连接，然后重试。",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
+"This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
+"Check again": "重新检查"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "无法更改私人 DNS：{0}"],
 ["Could not confirm the change: {0}", "无法确认更改：{0}"],
 ["Could not read Private DNS: {0}", "无法读取私人 DNS：{0}"],
-["Private DNS is now: an unknown mode “{0}”", "私人 DNS 当前：未知模式“{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "私人 DNS 当前：未知模式“{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "手机已有此设置，但有一个步骤报告了问题：{0}"]
 ]
 };

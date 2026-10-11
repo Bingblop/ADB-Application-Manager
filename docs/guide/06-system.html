@@ -431,8 +431,8 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
-    <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
+    <li>No permission, no computer and no working mode are needed, with one exception: the <b>Private DNS</b> card changes a setting of the phone itself and needs a working mode (ADB, Wireless Debugging, Shizuku or Root). Every other control works at once; there is no Save button, and what you choose is kept on the phone.</li>
+    <li>These settings are about this app only, except <b>Private DNS</b>. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
     <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Private DNS</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
@@ -604,7 +604,7 @@
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>When to use it</th></tr></thead>
     <tbody>
-      <tr><td><b>AdGuard DNS</b> (<code>dns.adguard.com</code>)</td><td>Sets the host name, then switches Private DNS to <i>hostname</i>.</td><td>To block ads and trackers in every app.</td></tr>
+      <tr><td><b>AdGuard DNS</b> (<code>dns.adguard-dns.com</code>)</td><td>Sets the host name, then switches Private DNS to <i>hostname</i>.</td><td>To block ads and trackers in every app.</td></tr>
       <tr><td><b>Cloudflare</b> (<code>one.one.one.one</code>)</td><td>The same, with Cloudflare's host name. It blocks nothing.</td><td>For a fast, encrypted DNS with no filtering.</td></tr>
       <tr><td><b>Quad9</b> (<code>dns.quad9.net</code>)</td><td>The same, with Quad9's host name. It blocks known malicious sites.</td><td>For protection from known bad sites.</td></tr>
       <tr><td><b>Automatic</b></td><td>Sets the mode to <i>opportunistic</i>: the phone uses Private DNS when the network offers it and plain DNS when it does not. A saved host name is kept.</td><td>The way back to Android's normal behaviour.</td></tr>

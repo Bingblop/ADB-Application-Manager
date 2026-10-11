@@ -5672,7 +5672,7 @@
                     <div id="pdnsMsg" style="display:none;"></div>
                 </div>
                 <div class="pdns-grid" role="group" aria-label="Private DNS services">
-                    <button class="mode-action-btn pdns-btn" id="pdnsAdguard" data-host="dns.adguard.com" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>AdGuard DNS</b><small>dns.adguard.com</small></button>
+                    <button class="mode-action-btn pdns-btn" id="pdnsAdguard" data-host="dns.adguard-dns.com" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>AdGuard DNS</b><small>dns.adguard-dns.com</small></button>
                     <button class="mode-action-btn pdns-btn" id="pdnsCloudflare" data-host="one.one.one.one" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Cloudflare</b><small>one.one.one.one</small></button>
                     <button class="mode-action-btn pdns-btn" id="pdnsQuad9" data-host="dns.quad9.net" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Quad9</b><small>dns.quad9.net</small></button>
                 </div>
@@ -12874,7 +12874,7 @@ Type any command below (e.g. pm list packages -d)
         // mode, with the shell quoting and the read-back of SettingsDb) and nothing else: no new bridge call, no command text built here.
         // What the card reports comes from reading the settings back, never from the write alone.
         const PDNS_MODE = 'private_dns_mode', PDNS_HOST = 'private_dns_specifier';
-        let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsWasPriv = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
+        let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsBackend = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
 
         // The host name that may be written, or why not. Pure: no page, no bridge. { ok: true, host } (lower case, one trailing dot dropped) or { ok: false, why }.
         function pdnsCheckHost(text) {
@@ -12925,10 +12925,22 @@ Type any command below (e.g. pm list packages -d)
         function pdnsAsk(op, key, value) {                                          // one settingsOp, as a promise (the Hidden Settings tab's request/answer pairing, its timeout)
             return new Promise(done => { sdbRequest(id => window.AndroidBridge.settingsOp(id, op, 'global', key, value), done, 60000); });
         }
+        // The app (SettingsDb.advice, and the verdict of a put) answers in English; the card puts it in the person's language. What it does not know it shows as it came.
+        function pdnsAppText(t) {
+            switch (t) {
+                case 'The connection to the device was lost. Reconnect in Working Modes, then try again.': return txT('The connection to the device was lost. Reconnect in Working Modes, then try again.');
+                case 'Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once "USB debugging (Security settings)" is on in Developer options, and some keys are locked by the system.': return txT('Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once "USB debugging (Security settings)" is on in Developer options, and some keys are locked by the system.');
+                case 'Android rejected that value for this setting. Try a value of the same kind as the current one.': return txT('Android rejected that value for this setting. Try a value of the same kind as the current one.');
+                case 'The settings service did not answer. Try again in a moment, or restart the phone.': return txT('The settings service did not answer. Try again in a moment, or restart the phone.');
+                case 'This Android version did not understand the command.': return txT('This Android version did not understand the command.');
+                case 'Android did not keep the new value': return txT('Android did not keep the new value');
+            }
+            return t;
+        }
         function pdnsFailText(r) {
             if (r && r.needsPrivilege) return txT('Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)');
-            let t = r && (r.timedOut || r.unknown) ? txT('The phone did not answer.') : (r && r.error) || txT('It did not work.');
-            if (r && r.advice) t += ' ' + r.advice;
+            let t = r && (r.timedOut || r.unknown) ? txT('The phone did not answer.') : (r && r.error) ? pdnsAppText(r.error) : txT('It did not work.');
+            if (r && r.advice) t += ' ' + pdnsAppText(r.advice);
             return t;
         }
         // The two settings, read from the phone. null: an answer to a question that is not current any more. { err } when the phone could not say.
@@ -13007,12 +13019,14 @@ Type any command below (e.g. pm list packages -d)
             pdnsState = back; pdnsAt = Date.now();
             pdnsRender();
         }
-        // The working mode came or went (or changed): what was asked under the old one is not answered here any more.
+        // The working mode came, went or changed (Wireless ADB to Root, say): what was asked of the old backend is not answered here any more,
+        // and a change that was half done does not go on through another one.
+        function pdnsBackendKey() { return (isPrivilegedActive ? '1' : '0') + '|' + currentWorkingMode; }
         function pdnsOnModeChange() {
             if (!document.getElementById('privateDnsCard')) return;
-            const priv = !!isPrivilegedActive;
-            if (pdnsWasPriv === priv) return;
-            pdnsWasPriv = priv;
+            const key = pdnsBackendKey();
+            if (pdnsBackend === key) return;
+            pdnsBackend = key;
             pdnsSeq++; pdnsBusy = false; pdnsReading = false; pdnsState = null; pdnsAt = 0;
             pdnsMsg('');
             if (currentViewName() === 'prefs') pdnsShow(); else pdnsRender();
@@ -13039,11 +13053,13 @@ Type any command below (e.g. pm list packages -d)
             pdnsState = back; pdnsAt = Date.now();
             const got = back && !back.err ? pdnsClassify(back.mode, back.spec) : null;
             try { sdbLoadedAt.global = 0; sdbDirty(); } catch (e) {}                      // the Hidden Settings tab lists these two keys: it reads the table again when it is next shown
-            if (fail) {
+            const matches = !!back && !back.err && pdnsSame(plan.want, got);
+            if (matches && fail) pdnsMsg(txF('The phone has this setting, but one step reported a problem: {0}', pdnsFailText(fail)), false);     // the confirmed state decides first (a refused second write can leave the first one in force)
+            else if (fail) {
                 const maybe = fail.timedOut || fail.unknown;
                 pdnsMsg(txF('Could not change Private DNS: {0}', pdnsFailText(fail)) + (maybe && got ? ' ' + txT('It may still have been applied: the state above is what the phone reports now.') : ''), true);
             } else if (!back || back.err) pdnsMsg(txF('Could not confirm the change: {0}', pdnsFailText(back && back.err)), true);
-            else if (!pdnsSame(plan.want, got)) pdnsMsg(txT('Not applied: the phone does not report the new setting. The state above is what it reports.'), true);
+            else if (!matches) pdnsMsg(txT('Not applied: the phone does not report the new setting. The state above is what it reports.'), true);
             else pdnsMsg(txT('Changed, and read back from the phone.') + (soft ? ' ' + txT('The saved host name could not be cleared.') : ''), false);
             pdnsRender();
         }

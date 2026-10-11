@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "पूरा नाम अधिकतम 253 अक्षरों का हो सकता है।",
 "This works in the app on a phone, not in a browser.": "यह फ़ोन पर ऐप में काम करता है, ब्राउज़र में नहीं।",
 "Type a host name first.": "पहले होस्ट नाम लिखें।",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "सिर्फ़ अक्षर a-z, अंक, हाइफ़न और बिंदु इस्तेमाल करें। अंतरराष्ट्रीय नाम को xn-- रूप में लिखें।"
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "सिर्फ़ अक्षर a-z, अंक, हाइफ़न और बिंदु इस्तेमाल करें। अंतरराष्ट्रीय नाम को xn-- रूप में लिखें।",
+"Android did not keep the new value": "Android ने नया मान नहीं रखा",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android ने अनुरोध अस्वीकार कर दिया। कुछ फ़ोन (Xiaomi, Redmi, POCO) इसे तभी अनुमति देते हैं जब डेवलपर विकल्प में “USB डीबगिंग (सुरक्षा सेटिंग)” चालू हो, और कुछ कुंजियाँ सिस्टम ने लॉक कर रखी हैं।",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android ने इस सेटिंग के लिए वह मान अस्वीकार कर दिया। मौजूदा मान जैसी ही तरह का मान आज़माएँ।",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "डिवाइस से कनेक्शन टूट गया। वर्किंग मोड में फिर से कनेक्ट करें, फिर दोबारा कोशिश करें।",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "सेटिंग सेवा ने जवाब नहीं दिया। थोड़ी देर में फिर से कोशिश करें, या फ़ोन रीस्टार्ट करें।",
+"This Android version did not understand the command.": "इस Android संस्करण ने कमांड नहीं समझा।",
+"Check again": "फिर से जांचें"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "निजी DNS बदला नहीं जा सका: {0}"],
 ["Could not confirm the change: {0}", "बदलाव की पुष्टि नहीं हो सकी: {0}"],
 ["Could not read Private DNS: {0}", "निजी DNS पढ़ा नहीं जा सका: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "निजी DNS अभी: अज्ञात मोड “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "निजी DNS अभी: अज्ञात मोड “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "फ़ोन में यह सेटिंग है, लेकिन एक चरण ने समस्या बताई: {0}"]
 ]
 };

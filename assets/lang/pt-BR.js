@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "O nome inteiro pode ter no máximo 253 caracteres.",
 "This works in the app on a phone, not in a browser.": "Isso funciona no app em um telefone, não em um navegador.",
 "Type a host name first.": "Digite primeiro um nome de host.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Use apenas letras a-z, dígitos, hífens e pontos. Escreva um nome internacional na forma xn--."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Use apenas letras a-z, dígitos, hífens e pontos. Escreva um nome internacional na forma xn--.",
+"Android did not keep the new value": "O Android não manteve o novo valor",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "O Android recusou a solicitação. Alguns telefones (Xiaomi, Redmi, POCO) só permitem isso quando a \"Depuração USB (configurações de segurança)\" está ativada nas opções do desenvolvedor, e algumas chaves são bloqueadas pelo sistema.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "O Android rejeitou esse valor para esta configuração. Tente um valor do mesmo tipo que o atual.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "A conexão com o dispositivo foi perdida. Reconecte em Modos de operação e tente de novo.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "O serviço de configurações não respondeu. Tente de novo daqui a pouco ou reinicie o telefone.",
+"This Android version did not understand the command.": "Esta versão do Android não entendeu o comando.",
+"Check again": "Verificar de novo"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "Não foi possível alterar o DNS privado: {0}"],
 ["Could not confirm the change: {0}", "Não foi possível confirmar a alteração: {0}"],
 ["Could not read Private DNS: {0}", "Não foi possível ler o DNS privado: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "O DNS privado agora é: um modo desconhecido “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "O DNS privado agora é: um modo desconhecido “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "O telefone tem esta configuração, mas uma etapa informou um problema: {0}"]
 ]
 };

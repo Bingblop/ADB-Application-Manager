@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "El nombre completo puede tener 253 caracteres como máximo.",
 "This works in the app on a phone, not in a browser.": "Esto funciona en la app de un teléfono, no en un navegador.",
 "Type a host name first.": "Escribe primero un nombre de host.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Usa solo letras a-z, dígitos, guiones y puntos. Escribe un nombre internacional en su forma xn--."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Usa solo letras a-z, dígitos, guiones y puntos. Escribe un nombre internacional en su forma xn--.",
+"Android did not keep the new value": "Android no conservó el nuevo valor",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android rechazó la solicitud. Algunos teléfonos (Xiaomi, Redmi, POCO) solo lo permiten cuando «Depuración USB (ajustes de seguridad)» está activada en las opciones para desarrolladores, y el sistema bloquea algunas claves.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android rechazó ese valor para este ajuste. Prueba con un valor del mismo tipo que el actual.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "Se perdió la conexión con el dispositivo. Vuelve a conectar en Modos de operación y inténtalo de nuevo.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "El servicio de ajustes no respondió. Inténtalo de nuevo en un momento o reinicia el teléfono.",
+"This Android version did not understand the command.": "Esta versión de Android no entendió el comando.",
+"Check again": "Comprobar de nuevo"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "No se pudo cambiar el DNS privado: {0}"],
 ["Could not confirm the change: {0}", "No se pudo confirmar el cambio: {0}"],
 ["Could not read Private DNS: {0}", "No se pudo leer el DNS privado: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "El DNS privado ahora es: un modo desconocido “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "El DNS privado ahora es: un modo desconocido “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "El teléfono tiene este ajuste, pero un paso informó de un problema: {0}"]
 ]
 };

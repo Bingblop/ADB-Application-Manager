@@ -2,15 +2,17 @@
 // Presets AdGuard DNS, Cloudflare, Quad9, Automatic, Off and a host name of your own. The host name check is pure and is run on hostile text (shell characters, IP addresses, look-alike
 // letters, over-long names). What the card reports comes from reading the settings back (the host is written before the mode; a refused write stops the change; a write that the phone
 // does not keep is reported as such); buttons are off while a change is out; an answer to an old question is dropped; no working mode and no bridge are explained, not hidden.
-const { chromium, PAGE } = require('./lib/pw');
+const fs = require('fs');
+const path = require('path');
+const { chromium, PAGE, REPO } = require('./lib/pw');
 const mock = require('./lib/sdb_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
 
 // ---- the host name rules: [input, expected host or the reason it is refused] ----
 const GOOD = [
-  ['dns.adguard.com', 'dns.adguard.com'], ['one.one.one.one', 'one.one.one.one'], ['dns.quad9.net', 'dns.quad9.net'], ['dns.nextdns.io', 'dns.nextdns.io'],
-  ['DNS.AdGuard.COM', 'dns.adguard.com'], ['  dns.adguard.com  ', 'dns.adguard.com'], ['\tdns.adguard.com\t', 'dns.adguard.com'], ['dns.adguard.com.', 'dns.adguard.com'], ['dns.adguard.com. ', 'dns.adguard.com'],
+  ['dns.adguard-dns.com', 'dns.adguard-dns.com'], ['one.one.one.one', 'one.one.one.one'], ['dns.quad9.net', 'dns.quad9.net'], ['dns.nextdns.io', 'dns.nextdns.io'],
+  ['DNS.AdGuard-DNS.COM', 'dns.adguard-dns.com'], ['  dns.adguard-dns.com  ', 'dns.adguard-dns.com'], ['\tdns.adguard-dns.com\t', 'dns.adguard-dns.com'], ['dns.adguard-dns.com.', 'dns.adguard-dns.com'], ['dns.adguard-dns.com. ', 'dns.adguard-dns.com'],
   ['a.b', 'a.b'], ['a-b.c-d.example', 'a-b.c-d.example'], ['xn--bcher-kva.example', 'xn--bcher-kva.example'], ['1dns.example.com', '1dns.example.com'],
   ['abc123.def456.ghi', 'abc123.def456.ghi'], ['x'.repeat(63) + '.example', 'x'.repeat(63) + '.example'], ['a.' + 'b'.repeat(63) + '.com', 'a.' + 'b'.repeat(63) + '.com'],
   ['dns.example.0x1', 'dns.example.0x1'], ['12abc.34def.example', '12abc.34def.example'],
@@ -23,21 +25,21 @@ const BAD = [
   ['1.1.1.1', 'ip'], ['8.8.8.8', 'ip'], ['255.255.255.255', 'ip'], ['999.999.999.999', 'ip'], ['1.1.1.1.', 'ip'], ['1.2.3', 'ip'], ['1.2.3.4.5', 'ip'], ['0x7f.0x0.0x0.0x1', 'ip'], ['0x7f.1', 'ip'], ['01.02.03.04', 'ip'], ['127.1', 'ip'],
   ['2606:4700:4700::1111', 'chars'], ['[2606:4700:4700::1111]', 'chars'], ['::1', 'chars'], ['1.1.1.1:853', 'chars'],
   ['dns.example.1', 'tld'], ['dns.example.123', 'tld'],
-  ['dns adguard.com', 'chars'], ['dns.adguard.com extra', 'chars'], ['dns.adguard.com\n', 'chars'], ['dns.adguard.com\r\n', 'chars'], ['dns.adguard.com\nb.example', 'chars'], ['\ndns.adguard.com', 'chars'],
-  ['dns.adguard.com ', 'chars'], ['dns.adguard.com​', 'chars'], [' dns.adguard.com', 'chars'], ['dns.adguard.com\u0000', 'chars'],
-  ['dns.adguard.com;reboot', 'chars'], ['dns.adguard.com; reboot', 'chars'], ["dns.adguard.com'", 'chars'], ["'dns.adguard.com'", 'chars'], ['"dns.adguard.com"', 'chars'], ['dns.adguard.com`id`', 'chars'],
+  ['dns adguard.com', 'chars'], ['dns.adguard-dns.com extra', 'chars'], ['dns.adguard-dns.com\n', 'chars'], ['dns.adguard-dns.com\r\n', 'chars'], ['dns.adguard-dns.com\nb.example', 'chars'], ['\ndns.adguard-dns.com', 'chars'],
+  ['dns.adguard-dns.com ', 'chars'], ['dns.adguard-dns.com​', 'chars'], [' dns.adguard-dns.com', 'chars'], ['dns.adguard-dns.com\u0000', 'chars'],
+  ['dns.adguard-dns.com;reboot', 'chars'], ['dns.adguard-dns.com; reboot', 'chars'], ["dns.adguard-dns.com'", 'chars'], ["'dns.adguard-dns.com'", 'chars'], ['"dns.adguard-dns.com"', 'chars'], ['dns.adguard-dns.com`id`', 'chars'],
   ['$(id).example.com', 'chars'], ['dns.$HOME.com', 'chars'], ['${IFS}.example.com', 'chars'], ['a.com|b.com', 'chars'], ['a.com&b.com', 'chars'], ['a.com>b', 'chars'], ['a.com\\b', 'chars'], ['a.com/b', 'chars'],
-  ['https://dns.adguard.com', 'chars'], ['dns.adguard.com/dns-query', 'chars'], ['user@dns.adguard.com', 'chars'], ['dns.adguard.com:853', 'chars'], ['*.adguard.com', 'chars'], ['dns_adguard.com', 'chars'], ['dns.adguard.com?x=1', 'chars'],
-  ['dns.adguard.com%00', 'chars'], ['dns.adguard.com#x', 'chars'], ['(dns).adguard.com', 'chars'], ['dns,adguard.com', 'chars'], ['dns.adguard.com=1', 'chars'], ['-rf.example.com', 'hyphen'],
+  ['https://dns.adguard-dns.com', 'chars'], ['dns.adguard-dns.com/dns-query', 'chars'], ['user@dns.adguard-dns.com', 'chars'], ['dns.adguard-dns.com:853', 'chars'], ['*.adguard.com', 'chars'], ['dns_adguard.com', 'chars'], ['dns.adguard-dns.com?x=1', 'chars'],
+  ['dns.adguard-dns.com%00', 'chars'], ['dns.adguard-dns.com#x', 'chars'], ['(dns).adguard.com', 'chars'], ['dns,adguard.com', 'chars'], ['dns.adguard-dns.com=1', 'chars'], ['-rf.example.com', 'hyphen'],
   ['dns.аdguard.com', 'chars'],              // Cyrillic a
   ['dns.adguard.cοm', 'chars'],              // Greek omicron
   ['ｄns.adguard.com', 'chars'],              // fullwidth d
   ['dns。adguard。com', 'chars'],            // ideographic full stop
   ['dns．adguard．com', 'chars'],            // fullwidth full stop
   ['dns․adguard․com', 'chars'],    // one dot leader
-  ['bücher.example', 'chars'], ['naïve.example.com', 'chars'], ['straße.example', 'chars'], ['日本語.jp', 'chars'], ['dns.adguard.com‮', 'chars'], ['﻿dns.adguard.com', 'chars'], ['\u212a.example', 'chars'], ['\u0131.example', 'chars'],
-  ['a..com', 'dots'], ['.com', 'dots'], ['.dns.adguard.com', 'dots'], ['dns.adguard.com..', 'dots'], ['dns..adguard.com', 'dots'], 
-  ['-dns.adguard.com', 'hyphen'], ['dns-.adguard.com', 'hyphen'], ['dns.-adguard.com', 'hyphen'], ['dns.adguard-.com', 'hyphen'], ['dns.adguard.-com', 'hyphen'], ['dns.adguard.com-', 'hyphen'], ['-', 'hyphen'], ['a', 'onedot'],
+  ['bücher.example', 'chars'], ['naïve.example.com', 'chars'], ['straße.example', 'chars'], ['日本語.jp', 'chars'], ['dns.adguard-dns.com‮', 'chars'], ['﻿dns.adguard-dns.com', 'chars'], ['\u212a.example', 'chars'], ['\u0131.example', 'chars'],
+  ['a..com', 'dots'], ['.com', 'dots'], ['.dns.adguard-dns.com', 'dots'], ['dns.adguard-dns.com..', 'dots'], ['dns..adguard.com', 'dots'], 
+  ['-dns.adguard-dns.com', 'hyphen'], ['dns-.adguard.com', 'hyphen'], ['dns.-adguard.com', 'hyphen'], ['dns.adguard-.com', 'hyphen'], ['dns.adguard.-com', 'hyphen'], ['dns.adguard-dns.com-', 'hyphen'], ['-', 'hyphen'], ['a', 'onedot'],
   ['x'.repeat(64) + '.example', 'label'], ['a.' + 'b'.repeat(64) + '.com', 'label'], ['a.b.' + 'c'.repeat(100), 'label'],
   [('a'.repeat(63) + '.').repeat(3) + 'a'.repeat(62), 'long'], [('a'.repeat(63) + '.').repeat(3) + 'a'.repeat(63), 'long'], [('abcd.').repeat(60) + 'com', 'long'],
 ];
@@ -106,7 +108,7 @@ const BAD = [
     };
   });
   check('2. Settings has the card "Private DNS", straight after "Reconnecting devices" (the connection settings), with a plain explanation', card.inPrefs && card.after === 'cdReconnectCard' && card.title === 'Private DNS' && /DNS-over-TLS/.test(card.sub) && /Android 9/.test(card.sub), JSON.stringify({ inPrefs: card.inPrefs, after: card.after, title: card.title }));
-  check('   the three Kotlin presets with the same host names, not translated: AdGuard DNS, Cloudflare, Quad9', card.presets === 'AdGuard DNS=dns.adguard.com/dns.adguard.com/no | Cloudflare=one.one.one.one/one.one.one.one/no | Quad9=dns.quad9.net/dns.quad9.net/no', card.presets);
+  check('   the three presets, not translated: AdGuard DNS (the host name AdGuard uses now), Cloudflare, Quad9', card.presets === 'AdGuard DNS=dns.adguard-dns.com/dns.adguard-dns.com/no | Cloudflare=one.one.one.one/one.one.one.one/no | Quad9=dns.quad9.net/dns.quad9.net/no', card.presets);
   check('   Automatic and Off, and a field for another host name (hint dns.nextdns.io, not translated) with its Apply button and a label', card.modes === 'auto=Automatic | off=Off' && card.input.ph === 'dns.nextdns.io' && card.input.tr === 'no' && card.input.label === 'Another host name' && card.input.type === 'text' && card.input.desc === 'pdnsProblem', JSON.stringify(card.input) + card.modes);
   check('   the notes say: a host name not an IP, some networks block it, a wrong host can cost the connection, and Automatic or Off is the way back', /host name, never an IP address/.test(card.notes) && /networks and hotspots block it/.test(card.notes) && /lose its internet/.test(card.notes) && /Automatic or Off/.test(card.notes), card.notes);
   check('   the status is a polite live region read as a whole; the problem line too; every button has a pressed state', card.live === 'status/polite true problem:status/polite' && card.pressedAttr, card.live);
@@ -140,8 +142,8 @@ const BAD = [
   check('4. AdGuard DNS: while the change is out every control is off, the card is busy, and a line says "Changing Private DNS…"', mid.busy === 'true' && mid.dis && mid.msg === 'Changing Private DNS…', JSON.stringify(mid));
   await ev(() => { pdnsPick(document.getElementById('pdnsOff')); pdnsApplyCustom(); document.getElementById('pdnsCloudflare').click(); pdnsChange({ want: { kind: 'auto' }, steps: [['put', PDNS_MODE, 'opportunistic']] }); pdnsRefresh(true); }); await sleep(30);
   await idle(); await sleep(60);
-  check('   presses while it runs do nothing', JSON.stringify(await ops()) === '["put private_dns_specifier=dns.adguard.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]', JSON.stringify(await ops()));
-  check('   the phone holds it, and the card says what the phone reports: "hostname dns.adguard.com", with "Changed, and read back from the phone."', JSON.stringify(await phone()) === '{"mode":"hostname","spec":"dns.adguard.com"}' && (await now()) === 'Private DNS is now: hostname dns.adguard.com' && (await msg()) === 'Changed, and read back from the phone.', (await now()) + ' / ' + await msg());
+  check('   presses while it runs do nothing', JSON.stringify(await ops()) === '["put private_dns_specifier=dns.adguard-dns.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]', JSON.stringify(await ops()));
+  check('   the phone holds it, and the card says what the phone reports: "hostname dns.adguard-dns.com", with "Changed, and read back from the phone."', JSON.stringify(await phone()) === '{"mode":"hostname","spec":"dns.adguard-dns.com"}' && (await now()) === 'Private DNS is now: hostname dns.adguard-dns.com' && (await msg()) === 'Changed, and read back from the phone.', (await now()) + ' / ' + await msg());
   check('   the Hidden Settings tab is told its Global table is out of date (it reads it again when shown)', (await ev(() => sdbLoadedAt.global)) === 0);
   check('   AdGuard DNS is marked and nothing else; the controls are back', (await pressed()) === 'pdnsAdguard' && (await enabled()) === (await total()), (await pressed()) + ' ' + await enabled() + '/' + await total());
   await clear();
@@ -175,9 +177,9 @@ const BAD = [
   check('   the field has the focus after a refusal, so it can be fixed', (await ev(() => document.activeElement && document.activeElement.id)) === 'pdnsHost');
 
   // ---- 6. Automatic and Off ----
-  await clear(); await setPhone('hostname', 'dns.adguard.com'); await press('pdnsRefresh'); await clear();
+  await clear(); await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
   await press('pdnsAuto');
-  check('6. Automatic writes private_dns_mode=opportunistic (the host stays), reads back, and says Automatic', JSON.stringify(await ops()) === '["put private_dns_mode=opportunistic","get private_dns_mode"]' && JSON.stringify(await phone()) === '{"mode":"opportunistic","spec":"dns.adguard.com"}' && (await now()) === 'Private DNS is now: Automatic' && (await pressed()) === 'pdnsAuto', JSON.stringify(await ops()));
+  check('6. Automatic writes private_dns_mode=opportunistic (the host stays), reads back, and says Automatic', JSON.stringify(await ops()) === '["put private_dns_mode=opportunistic","get private_dns_mode"]' && JSON.stringify(await phone()) === '{"mode":"opportunistic","spec":"dns.adguard-dns.com"}' && (await now()) === 'Private DNS is now: Automatic' && (await pressed()) === 'pdnsAuto', JSON.stringify(await ops()));
   await clear();
   await press('pdnsOff');
   check('   Off writes private_dns_mode=off and resets the host (as the Kotlin app does), reads back, and says Off', JSON.stringify(await ops()) === '["put private_dns_mode=off","delete private_dns_specifier","get private_dns_mode"]' && JSON.stringify(await phone()) === '{"mode":"off"}' && (await now()) === 'Private DNS is now: Off' && (await pressed()) === 'pdnsOff' && (await msg()) === 'Changed, and read back from the phone.', JSON.stringify(await ops()) + await now());
@@ -188,42 +190,74 @@ const BAD = [
   await press('pdnsOff');
   check('7. a write the phone claims but does not keep: the read-back says Automatic, and the card says "Not applied", not success', (await now()) === 'Private DNS is now: Automatic' && /^Not applied: the phone does not report the new setting/.test(await msg()) && (await ev(() => document.getElementById('pdnsMsg').classList.contains('is-err'))) && (await pressed()) === 'pdnsAuto', (await now()) + ' / ' + await msg());
   await ev(() => { window.AndroidBridge.settingsOp = window.__o; });
-  await clear(); await setPhone('hostname', 'dns.adguard.com'); await press('pdnsRefresh'); await clear();
-  await ev(() => { window.__revert['global/private_dns_specifier'] = 'dns.adguard.com'; });
+  await clear(); await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
+  await ev(() => { window.__revert['global/private_dns_specifier'] = 'dns.adguard-dns.com'; });
   await press('pdnsQuad9');
-  check('   a write Android puts back: the error is shown, the mode is not touched, and the card shows what the phone really has', (await ops()).join() === 'put private_dns_specifier=dns.quad9.net,get private_dns_mode,get private_dns_specifier' && /^Could not change Private DNS: Android did not keep the new value/.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.adguard.com' && (await pressed()) === 'pdnsAdguard', (await ops()).join() + ' / ' + await msg());
+  check('   a write Android puts back: the error is shown, the mode is not touched, and the card shows what the phone really has', (await ops()).join() === 'put private_dns_specifier=dns.quad9.net,get private_dns_mode,get private_dns_specifier' && /^Could not change Private DNS: Android did not keep the new value/.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.adguard-dns.com' && (await pressed()) === 'pdnsAdguard', (await ops()).join() + ' / ' + await msg());
   await clear();
   await ev(() => { window.__deny['global/private_dns_specifier'] = 'java.lang.SecurityException: Permission denial: writing to settings requires android.permission.WRITE_SECURE_SETTINGS'; });
   await press('pdnsCloudflare');
   const denied = await msg();
-  check('   permission missing: the phone\'s refusal is shown (with the advice), the mode is not written, the old state stays', (await ops()).join() === 'put private_dns_specifier=one.one.one.one,get private_dns_mode,get private_dns_specifier' && /^Could not change Private DNS: java.lang.SecurityException/.test(denied) && /Android refused the request|Xiaomi/.test(denied) && (await now()) === 'Private DNS is now: hostname dns.adguard.com', denied);
+  check('   permission missing: the phone\'s refusal is shown (with the advice), the mode is not written, the old state stays', (await ops()).join() === 'put private_dns_specifier=one.one.one.one,get private_dns_mode,get private_dns_specifier' && /^Could not change Private DNS: java.lang.SecurityException/.test(denied) && /Android refused the request|Xiaomi/.test(denied) && (await now()) === 'Private DNS is now: hostname dns.adguard-dns.com', denied);
   await clear();
-  await ev(() => { window.__unknown['global/private_dns_specifier'] = { apply: true }; });
+  await ev(() => { window.__unknown['global/private_dns_specifier'] = { apply: false }; });
   await press('pdnsQuad9');
-  check('   no answer from the phone: said so, and the state read afterwards is the one shown (the change may have been made)', /^Could not change Private DNS: The phone did not answer\./.test(await msg()) && /It may still have been applied/.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.quad9.net', (await msg()) + ' / ' + await now());
+  check('   no answer from the phone: said so, and the state read afterwards is the one shown (the change may have been made)', /^Could not change Private DNS: The phone did not answer\./.test(await msg()) && /It may still have been applied/.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.adguard-dns.com', (await msg()) + ' / ' + await now());
   await clear(); await ev(() => { window.__noAnswer = false; });
-  await setPhone('hostname', 'dns.adguard.com'); await press('pdnsRefresh'); await clear();
+  await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
   await ev(() => { window.__deny['global/private_dns_specifier'] = 'java.lang.SecurityException: not allowed'; });
   await press('pdnsOff');
   check('   Off where the host cannot be cleared: the mode is Off (read back) and the card says the saved host name stayed', (await now()) === 'Private DNS is now: Off' && /^Changed, and read back from the phone\. The saved host name could not be cleared\.$/.test(await msg()), (await now()) + ' / ' + await msg());
+
+
+  // ---- 7b. the confirmed state decides: a refused redundant write after the one that applied it ----
+  await clear(); await setPhone('hostname', 'dns.quad9.net'); await press('pdnsRefresh'); await clear();
+  await ev(() => { window.__deny['global/private_dns_mode'] = 'java.lang.SecurityException: not allowed'; });
+  await press('pdnsQuad9');
+  const warn = await msg(), warnErr = await ev(() => document.getElementById('pdnsMsg').classList.contains('is-err'));
+  check('   the phone already in hostname mode: the host write applies at once and the redundant mode write is refused; the read-back has the host, so the card does not say "Could not change" but shows the state and the step\'s problem as a warning', (await ops()).join() === 'put private_dns_specifier=dns.quad9.net,put private_dns_mode=hostname,get private_dns_mode,get private_dns_specifier'
+    && /^The phone has this setting, but one step reported a problem: java.lang.SecurityException: not allowed/.test(warn) && !/Could not change/.test(warn) && !warnErr && (await now()) === 'Private DNS is now: hostname dns.quad9.net' && (await pressed()) === 'pdnsQuad9', warn + ' / ' + (await now()));
+  await clear();
+  await ev(() => { window.__unknown['global/private_dns_mode'] = { apply: false }; });
+  await press('pdnsQuad9');
+  check('   the same when the second write gets no answer', /^The phone has this setting, but one step reported a problem: The phone did not answer\./.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.quad9.net', await msg());
+  await clear(); await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
+  await ev(() => { window.__deny['global/private_dns_mode'] = 'java.lang.SecurityException: not allowed'; window.__deny['global/private_dns_specifier'] = 'java.lang.SecurityException: not allowed'; });
+  await press('pdnsQuad9');
+  check('   but a refused change that left the old state is still a failure', /^Could not change Private DNS: /.test(await msg()) && (await now()) === 'Private DNS is now: hostname dns.adguard-dns.com' && (await ev(() => document.getElementById('pdnsMsg').classList.contains('is-err'))), await msg());
+  await clear();
 
   // ---- 8. stale answers ----
   await clear(); await setPhone('opportunistic', ''); await press('pdnsRefresh'); await clear();
   await ev(() => { window.__delay = 300; });
   await ev(() => document.getElementById('pdnsAdguard').click()); await sleep(80);
-  await ev(() => { isPrivilegedActive = false; pdnsWasPriv = true; pdnsOnModeChange(); });                     // the working mode went away while the change was out
+  await ev(() => { isPrivilegedActive = false; pdnsOnModeChange(); });                     // the working mode went away while the change was out
   const st = await ev(() => ({ busy: pdnsBusy, now: document.getElementById('pdnsNow').innerText, setup: getComputedStyle(document.getElementById('pdnsSetup')).display }));
   await sleep(1200);
   const after = await ev(() => ({ busy: pdnsBusy, now: document.getElementById('pdnsNow').innerText, msg: document.getElementById('pdnsMsg').style.display, state: pdnsState }));
   check('8. the working mode goes while a change is out: the card explains it at once, and the late answers change nothing (no message, no state, not busy)', st.now === 'Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)' && st.setup !== 'none' && !st.busy && !after.busy && after.now === st.now && after.msg === 'none' && after.state === null, JSON.stringify([st, after]));
-  await ev(() => { isPrivilegedActive = true; pdnsWasPriv = false; pdnsOnModeChange(); }); await sleep(500); await idle();
-  check('   when the mode is back, the card reads the phone again: the dropped change stopped after its first step (the host was written, the mode never was), and that is what it shows', (await now()) === 'Private DNS is now: Automatic' && JSON.stringify(await phone()) === '{"mode":"opportunistic","spec":"dns.adguard.com"}', (await now()) + JSON.stringify(await phone()));
+  await ev(() => { isPrivilegedActive = true; pdnsOnModeChange(); }); await sleep(500); await idle();
+  check('   when the mode is back, the card reads the phone again: the dropped change stopped after its first step (the host was written, the mode never was), and that is what it shows', (await now()) === 'Private DNS is now: Automatic' && JSON.stringify(await phone()) === '{"mode":"opportunistic","spec":"dns.adguard-dns.com"}', (await now()) + JSON.stringify(await phone()));
   await clear(); await ev(() => { window.__delay = 300; });
   await ev(() => { pdnsRefresh(false); }); await sleep(50);
   const seqA = await ev(() => pdnsSeq);
   await ev(() => { pdnsSeq++; pdnsBusy = false; pdnsReading = false; pdnsState = { mode: 'off', spec: null }; pdnsRender(); });         // a newer question took over
   await sleep(900);
   check('   an answer to an older question never overwrites a newer state (sequence number)', (await ev(() => pdnsState.mode)) === 'off' && (await now()) === 'Private DNS is now: Off' && seqA > 0, await now());
+  await clear();
+
+
+  // ---- 8b. the backend changes (not only on and off) while a change is out ----
+  await clear(); await setPhone('opportunistic', ''); await press('pdnsRefresh'); await clear();
+  await ev(() => { window.__delay = 300; });
+  await ev(() => { const i = document.getElementById('pdnsHost'); i.value = 'dns.nextdns.io'; pdnsApplyCustom(); }); await sleep(80);
+  await ev(() => { currentWorkingMode = 'root'; pdnsOnModeChange(); });                  // Wireless ADB / TCP to Root: still privileged, another backend
+  await sleep(1500); await idle(); await sleep(100);
+  const be = await ev(() => ({ now: document.getElementById('pdnsNow').innerText, msg: document.getElementById('pdnsMsg').style.display, busy: pdnsBusy }));
+  check('8b. the backend changes (adb_tcp to root, still privileged) while a change is out: the old answers are dropped, the second step never runs on the other backend (only the host was written), and the card reads the phone again and shows what it has', (await ops()).join() === 'put private_dns_specifier=dns.nextdns.io,get private_dns_mode'
+    && be.now === 'Private DNS is now: Automatic' && be.msg === 'none' && !be.busy && JSON.stringify(await phone()) === '{"mode":"opportunistic","spec":"dns.nextdns.io"}', JSON.stringify([await ops(), be]));
+  await ev(() => { currentWorkingMode = 'adb_tcp'; pdnsOnModeChange(); }); await sleep(400); await idle();
+  check('   and the same again when it goes back; the same backend reported twice changes nothing', (await ops()).filter(o => /^get/.test(o)).length === 2 && (await ev(() => { const n = window.__calls.op.length; pdnsOnModeChange(); return window.__calls.op.length === n; })), JSON.stringify(await ops()));
   await clear();
 
   // ---- 9. no working mode, no bridge ----
@@ -287,15 +321,15 @@ const BAD = [
   await p4.close();
 
   // ---- 11. translation ----
-  await clear(); await setPhone('hostname', 'dns.adguard.com'); await press('pdnsRefresh'); await clear();
+  await clear(); await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
   await ev(() => LANG_ENGINE.set('de')); await sleep(500);
   await ev(() => pdnsRender());
   const de = await ev(() => ({
     title: document.querySelector('#privateDnsCard .color-card-title').innerText, now: document.getElementById('pdnsNow').innerText, host: document.querySelector('#pdnsNow .pdns-host').innerText,
     btns: [...document.querySelectorAll('#privateDnsCard .pdns-btn')].map(x => x.innerText.replace(/\s+/g, ' ').trim()).join(' | '), label: document.querySelector('label[for=pdnsHost]').innerText, ph: document.getElementById('pdnsHost').placeholder,
     group: [...document.querySelectorAll('#privateDnsCard [role=group]')].map(g => g.getAttribute('aria-label')).join(' | '), refresh: document.getElementById('pdnsRefresh').innerText, apply: document.getElementById('pdnsApply').innerText }));
-  check('11. in German: title, state line, buttons, label and group names are translated; the host names, the presets and the hint are left alone', de.title === 'Privates DNS' && de.now === 'Privates DNS ist jetzt: Hostname dns.adguard.com' && de.host === 'dns.adguard.com'
-    && de.btns === 'AdGuard DNS dns.adguard.com | Cloudflare one.one.one.one | Quad9 dns.quad9.net | Automatisch | Aus' && de.label === 'Anderer Hostname' && de.ph === 'dns.nextdns.io' && de.group === 'Dienste für privates DNS | Automatisch oder Aus' && de.refresh === 'Erneut prüfen' && de.apply === 'Anwenden', JSON.stringify(de));
+  check('11. in German: title, state line, buttons, label and group names are translated; the host names, the presets and the hint are left alone', de.title === 'Privates DNS' && de.now === 'Privates DNS ist jetzt: Hostname dns.adguard-dns.com' && de.host === 'dns.adguard-dns.com'
+    && de.btns === 'AdGuard DNS dns.adguard-dns.com | Cloudflare one.one.one.one | Quad9 dns.quad9.net | Automatisch | Aus' && de.label === 'Anderer Hostname' && de.ph === 'dns.nextdns.io' && de.group === 'Dienste für privates DNS | Automatisch oder Aus' && de.refresh === 'Erneut prüfen' && de.apply === 'Anwenden', JSON.stringify(de));
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = '8.8.8.8'; pdnsApplyCustom(); });
   const deProb = await txt('pdnsProblem');
   await press('pdnsAuto');
@@ -304,17 +338,28 @@ const BAD = [
   await ev(() => { window.__deny['global/private_dns_specifier'] = 'x'; document.getElementById('pdnsHost').value = 'dns.nextdns.io'; pdnsApplyCustom(); }); await sleep(30); await idle(); await sleep(40);
   const deFail = await msg();
   check('    a failure line with the phone\'s own text (not translated) in a German sentence', /^Privates DNS konnte nicht geändert werden: x/.test(deFail), deFail);
-  await clear(); await setPhone('hostname', 'dns.adguard.com'); await press('pdnsRefresh'); await clear();
+  const src = fs.readFileSync(path.join(REPO, 'src', 'com', 'bloatware', 'bingblop', 'SettingsDb.java'), 'utf8');
+  const adviceBody = src.slice(src.indexOf('static String advice('), src.indexOf('\n    }\n', src.indexOf('static String advice(')));
+  const advList = [...adviceBody.matchAll(/return "((?:[^"\\]|\\.)*)";/g)].map(m => JSON.parse('"' + m[1] + '"')).filter(t => t !== '');
+  const advDe = await ev(l => l.map(a => pdnsAppText(a)), advList);
+  check('    every advice sentence the app can send (read from SettingsDb.java: ' + advList.length + ') is translated by the card, none is left in English', advList.length === 5 && advDe.every((t, i) => t && t !== advList[i]) && (await ev(l => l.every(a => (LANG_ENGINE.set('en'), pdnsAppText(a) === a)), advList)) === true, JSON.stringify(advDe).slice(0, 300));
+  await ev(() => LANG_ENGINE.set('de')); await sleep(300);
+  await ev(a => { window.__o2 = window.AndroidBridge.settingsOp; window.AndroidBridge.settingsOp = (req, op, ns, key, v) => { setTimeout(() => window.onSettingsOp(JSON.stringify({ req, op, ns, key, ok: false, error: 'Android did not keep the new value', advice: a })), 10); return 'started'; }; }, advList[1]);
+  await ev(() => { document.getElementById('pdnsHost').value = 'dns.nextdns.io'; pdnsApplyCustom(); }); await sleep(30); await idle(); await sleep(40);
+  const deAdv = await msg();
+  await ev(() => { window.AndroidBridge.settingsOp = window.__o2; });
+  check('    a refusal with the app\'s advice, in German: the verdict and the advice are German sentences (the sentence of the app is not shown in English)', /^Privates DNS konnte nicht geändert werden: Android hat den neuen Wert nicht übernommen Android hat die Anfrage abgelehnt\. Manche Telefone/.test(deAdv) && !/Android refused|did not keep/.test(deAdv), deAdv);
+  await clear(); await setPhone('hostname', 'dns.adguard-dns.com'); await press('pdnsRefresh'); await clear();
   const langs = {};
   for (const code of ['ar', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt-BR', 'ru', 'tr', 'zh-CN']) {
     await ev(c => LANG_ENGINE.set(c), code); await sleep(250);
     await ev(() => pdnsRender());
-    langs[code] = await ev(() => ({ t: document.querySelector('#privateDnsCard .color-card-title').innerText, n: document.getElementById('pdnsNow').innerText, h: document.querySelector('#pdnsNow .pdns-host') ? document.querySelector('#pdnsNow .pdns-host').innerText : null, ph: document.getElementById('pdnsHost').placeholder,
-      b: document.getElementById('pdnsAuto').innerText.trim(), p: pdnsProblemText('ip'), f: txF('Could not change Private DNS: {0}', 'zz') }));
+    langs[code] = await ev(adv => ({ t: document.querySelector('#privateDnsCard .color-card-title').innerText, n: document.getElementById('pdnsNow').innerText, h: document.querySelector('#pdnsNow .pdns-host') ? document.querySelector('#pdnsNow .pdns-host').innerText : null, ph: document.getElementById('pdnsHost').placeholder,
+      b: document.getElementById('pdnsAuto').innerText.trim(), a: pdnsAppText(adv[1]), k: pdnsAppText('Android did not keep the new value'), p: pdnsProblemText('ip'), f: txF('Could not change Private DNS: {0}', 'zz') }), advList);
   }
   const L = Object.entries(langs);
-  check('    in the 12 other languages the title, the state line, the Automatic button, a refusal and a failure line are all translated (none is the English text), the host name and the hint are not', L.every(([c, v]) => v.t && v.t !== 'Private DNS' && v.n && !/^Private DNS is now/.test(v.n) && v.b !== 'Automatic' && v.p !== 'That looks like an IP address. Private DNS needs a host name.' && v.f.indexOf('zz') >= 0 && v.f !== 'Could not change Private DNS: zz' && v.ph === 'dns.nextdns.io'), JSON.stringify(langs).slice(0, 600));
-  check('    and the state line keeps the host name as it is, whatever the language', L.every(([c, v]) => v.n.indexOf('dns.adguard.com') >= 0 && v.h === 'dns.adguard.com'), JSON.stringify(L.filter(([c, v]) => v.n.indexOf('dns.adguard.com') < 0).map(x => x[0])));
+  check('    in the 12 other languages the title, the state line, the Automatic button, a refusal, a failure line and the advice of the app are all translated (none is the English text), the host name and the hint are not', L.every(([c, v]) => v.t && v.t !== 'Private DNS' && v.n && !/^Private DNS is now/.test(v.n) && v.b !== 'Automatic' && v.p !== 'That looks like an IP address. Private DNS needs a host name.' && v.f.indexOf('zz') >= 0 && v.f !== 'Could not change Private DNS: zz' && v.a && v.a !== advList[1] && v.k && v.k !== 'Android did not keep the new value' && v.ph === 'dns.nextdns.io'), JSON.stringify(langs).slice(0, 600));
+  check('    and the state line keeps the host name as it is, whatever the language', L.every(([c, v]) => v.n.indexOf('dns.adguard-dns.com') >= 0 && v.h === 'dns.adguard-dns.com'), JSON.stringify(L.filter(([c, v]) => v.n.indexOf('dns.adguard-dns.com') < 0).map(x => x[0])));
   await ev(() => LANG_ENGINE.set('en')); await sleep(300);
 
   check('no page errors', errors.length === 0, errors.join(' | '));

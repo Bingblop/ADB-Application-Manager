@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "名前全体は253文字までです。",
 "This works in the app on a phone, not in a browser.": "これはスマートフォン上のアプリで使えます。ブラウザでは使えません。",
 "Type a host name first.": "先にホスト名を入力してください。",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "使えるのは英字a-z、数字、ハイフン、ドットだけです。国際化ドメイン名はxn--形式で入力してください。"
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "使えるのは英字a-z、数字、ハイフン、ドットだけです。国際化ドメイン名はxn--形式で入力してください。",
+"Android did not keep the new value": "Androidが新しい値を保持しませんでした",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Androidがリクエストを拒否しました。一部のスマートフォン（Xiaomi、Redmi、POCO）では、開発者向けオプションで「USBデバッグ（セキュリティ設定）」をオンにしないと許可されません。また、一部のキーはシステムによってロックされています。",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Androidはこの設定に対するその値を拒否しました。現在の値と同じ種類の値を試してください。",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "デバイスとの接続が失われました。動作モードで再接続してから、もう一度お試しください。",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "設定サービスから応答がありませんでした。しばらくしてからもう一度試すか、スマートフォンを再起動してください。",
+"This Android version did not understand the command.": "このAndroidのバージョンはコマンドを理解できませんでした。",
+"Check again": "もう一度確認"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "プライベートDNSを変更できませんでした：{0}"],
 ["Could not confirm the change: {0}", "変更を確認できませんでした：{0}"],
 ["Could not read Private DNS: {0}", "プライベートDNSを読み取れませんでした：{0}"],
-["Private DNS is now: an unknown mode “{0}”", "プライベートDNSは現在：不明なモード「{0}」"]
+["Private DNS is now: an unknown mode “{0}”", "プライベートDNSは現在：不明なモード「{0}」"],
+["The phone has this setting, but one step reported a problem: {0}", "スマートフォンにはこの設定がありますが、1つの手順で問題が報告されました：{0}"]
 ]
 };

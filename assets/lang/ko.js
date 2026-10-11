@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "전체 이름은 최대 253자입니다.",
 "This works in the app on a phone, not in a browser.": "이 기능은 휴대전화의 앱에서 작동하며 브라우저에서는 작동하지 않습니다.",
 "Type a host name first.": "먼저 호스트 이름을 입력하세요.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "영문 a-z, 숫자, 하이픈, 점만 사용하세요. 국제화 이름은 xn-- 형식으로 입력하세요."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "영문 a-z, 숫자, 하이픈, 점만 사용하세요. 국제화 이름은 xn-- 형식으로 입력하세요.",
+"Android did not keep the new value": "Android가 새 값을 유지하지 않았습니다",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android가 요청을 거부했습니다. 일부 휴대전화(Xiaomi, Redmi, POCO)는 개발자 옵션에서 'USB 디버깅(보안 설정)'을 켜야만 허용하며, 일부 키는 시스템에서 잠겨 있습니다.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android가 이 설정에 대해 해당 값을 거부했습니다. 현재 값과 같은 종류의 값을 시도해 보세요.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "기기와의 연결이 끊어졌습니다. 작동 모드에서 다시 연결한 뒤 다시 시도하세요.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "설정 서비스가 응답하지 않았습니다. 잠시 후 다시 시도하거나 휴대전화를 다시 시작하세요.",
+"This Android version did not understand the command.": "이 Android 버전은 명령을 이해하지 못했습니다.",
+"Check again": "다시 확인"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "비공개 DNS를 변경하지 못했습니다: {0}"],
 ["Could not confirm the change: {0}", "변경 사항을 확인하지 못했습니다: {0}"],
 ["Could not read Private DNS: {0}", "비공개 DNS를 읽지 못했습니다: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "비공개 DNS 현재 상태: 알 수 없는 모드 “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "비공개 DNS 현재 상태: 알 수 없는 모드 “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "휴대전화에 이 설정이 있지만 한 단계에서 문제가 보고되었습니다: {0}"]
 ]
 };

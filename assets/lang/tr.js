@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "Adın tamamı en fazla 253 karakter olabilir.",
 "This works in the app on a phone, not in a browser.": "Bu, bir telefondaki uygulamada çalışır, tarayıcıda çalışmaz.",
 "Type a host name first.": "Önce bir ana makine adı yazın.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Yalnızca a-z harflerini, rakamları, tireleri ve noktaları kullanın. Uluslararası bir adı xn-- biçiminde yazın."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Yalnızca a-z harflerini, rakamları, tireleri ve noktaları kullanın. Uluslararası bir adı xn-- biçiminde yazın.",
+"Android did not keep the new value": "Android yeni değeri korumadı",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android isteği reddetti. Bazı telefonlar (Xiaomi, Redmi, POCO) buna yalnızca Geliştirici seçeneklerinde “USB hata ayıklama (Güvenlik ayarları)” açıkken izin verir; bazı anahtarlar da sistem tarafından kilitlenmiştir.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android bu ayar için bu değeri reddetti. Geçerli değerle aynı türde bir değer deneyin.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "Cihazla bağlantı kesildi. Çalışma Modları’nda yeniden bağlanın, sonra tekrar deneyin.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
+"This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
+"Check again": "Yeniden denetle"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "Özel DNS değiştirilemedi: {0}"],
 ["Could not confirm the change: {0}", "Değişiklik doğrulanamadı: {0}"],
 ["Could not read Private DNS: {0}", "Özel DNS okunamadı: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "Özel DNS şu anda: bilinmeyen bir mod “{0}”"]
+["Private DNS is now: an unknown mode “{0}”", "Özel DNS şu anda: bilinmeyen bir mod “{0}”"],
+["The phone has this setting, but one step reported a problem: {0}", "Telefonda bu ayar var, ancak bir adım sorun bildirdi: {0}"]
 ]
 };

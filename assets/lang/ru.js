@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "Всё имя может содержать не более 253 символов.",
 "This works in the app on a phone, not in a browser.": "Это работает в приложении на телефоне, а не в браузере.",
 "Type a host name first.": "Сначала введите имя хоста.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Используйте только буквы a-z, цифры, дефисы и точки. Международное имя записывайте в форме xn--."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "Используйте только буквы a-z, цифры, дефисы и точки. Международное имя записывайте в форме xn--.",
+"Android did not keep the new value": "Android не сохранил новое значение",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "Android отклонил запрос. Некоторые телефоны (Xiaomi, Redmi, POCO) разрешают это только при включённой в параметрах разработчика «Отладке по USB (настройки безопасности)», а некоторые ключи заблокированы системой.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "Android отклонил это значение для данной настройки. Попробуйте значение того же вида, что и текущее.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "Соединение с устройством потеряно. Подключитесь заново в «Режимах работы» и повторите попытку.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "Служба настроек не ответила. Повторите попытку через минуту или перезагрузите телефон.",
+"This Android version did not understand the command.": "Эта версия Android не поняла команду.",
+"Check again": "Проверить снова"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "Не удалось изменить частный DNS: {0}"],
 ["Could not confirm the change: {0}", "Не удалось подтвердить изменение: {0}"],
 ["Could not read Private DNS: {0}", "Не удалось считать частный DNS: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "Частный DNS сейчас: неизвестный режим «{0}»"]
+["Private DNS is now: an unknown mode “{0}”", "Частный DNS сейчас: неизвестный режим «{0}»"],
+["The phone has this setting, but one step reported a problem: {0}", "У телефона такая настройка, но один из шагов сообщил о проблеме: {0}"]
 ]
 };

@@ -4511,7 +4511,14 @@ x: {
 "The whole name can be 253 characters at most.": "يمكن أن يصل الاسم كله إلى 253 حرفًا كحد أقصى.",
 "This works in the app on a phone, not in a browser.": "يعمل هذا في التطبيق على الهاتف، وليس في المتصفح.",
 "Type a host name first.": "اكتب اسم مضيف أولًا.",
-"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "استخدم الحروف a-z والأرقام والواصلات والنقاط فقط. اكتب الاسم الدولي بصيغة xn--."
+"Use only letters a-z, digits, hyphens and dots. Write an international name in its xn-- form.": "استخدم الحروف a-z والأرقام والواصلات والنقاط فقط. اكتب الاسم الدولي بصيغة xn--.",
+"Android did not keep the new value": "لم يحتفظ أندرويد بالقيمة الجديدة",
+"Android refused the request. Some phones (Xiaomi, Redmi, POCO) only allow it once \"USB debugging (Security settings)\" is on in Developer options, and some keys are locked by the system.": "رفض أندرويد الطلب. بعض الهواتف (شاومي وريدمي وPOCO) لا تسمح بذلك إلا بعد تشغيل «تصحيح أخطاء USB (إعدادات الأمان)» في خيارات المطوّرين، وبعض المفاتيح مقفلة من النظام.",
+"Android rejected that value for this setting. Try a value of the same kind as the current one.": "رفض أندرويد هذه القيمة لهذا الإعداد. جرّب قيمة من النوع نفسه كالقيمة الحالية.",
+"The connection to the device was lost. Reconnect in Working Modes, then try again.": "فُقد الاتصال بالجهاز. أعد الاتصال في أوضاع التشغيل ثم حاول مرة أخرى.",
+"The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
+"This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
+"Check again": "فحص مرة أخرى"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5566,6 +5573,7 @@ p: [
 ["Could not change Private DNS: {0}", "تعذّر تغيير DNS الخاص: {0}"],
 ["Could not confirm the change: {0}", "تعذّر تأكيد التغيير: {0}"],
 ["Could not read Private DNS: {0}", "تعذّر قراءة DNS الخاص: {0}"],
-["Private DNS is now: an unknown mode “{0}”", "DNS الخاص الآن: وضع غير معروف «{0}»"]
+["Private DNS is now: an unknown mode “{0}”", "DNS الخاص الآن: وضع غير معروف «{0}»"],
+["The phone has this setting, but one step reported a problem: {0}", "الإعداد موجود في الهاتف، لكن إحدى الخطوات أبلغت عن مشكلة: {0}"]
 ]
 };
