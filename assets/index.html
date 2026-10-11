@@ -8888,10 +8888,10 @@ Type any command below (e.g. pm list packages -d)
             return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
         }
 
-        // Black or white text for something painted with a gradient from color a to color b: the one whose WORST contrast over the two ends is the better
+        // Black or white text for something painted with a gradient from color a to color b: the one whose WORST contrast over the whole gradient is the better
         // (the accent alone is not enough: a bright accent with a dark secondary needs the choice that reads over both)
         function onGradientColor(a, b) {
-            // the colors along the gradient too, not only its two ends: with channels moving in opposite directions the middle can be darker than both ends
+            // nine samples: both ends and seven mixes between them, because with channels moving in opposite directions the middle can be darker than both ends
             const pts = []; for (let i = 0; i <= 8; i++) pts.push(i === 0 ? a : i === 8 ? b : mixColors(a, b, i / 8));
             const worst = c => Math.min.apply(null, pts.map(p => contrastRatio(p, c)));
             return worst('#000000') >= worst('#FFFFFF') ? '#000000' : '#FFFFFF';
