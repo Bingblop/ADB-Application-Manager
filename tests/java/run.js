@@ -70,6 +70,7 @@ const SUITES = [
   { name: 'sdmstatframe', title: 'SD Maid stat records carry the scan\'s own random tag, so a file name with a newline cannot forge the record of another file', tests: ['SdmStatFrameTest'], main: 'com.bloatware.bingblop.SdmStatFrameTest', needs: ['json'] },
   { name: 'zipextraalign', title: 'Rewriting a zip with alignment aligns a stored entry even when its local extra field is almost 64 KB (the unknown records go, the padding stays)', tests: ['ZipExtraAlignTest'], main: 'com.bloatware.bingblop.ZipExtraAlignTest' },
   { name: 'zipbounds', title: 'A small zip cannot fill the storage (extraction stops at the entry\'s declared size) or list millions of files (entry cap)', tests: ['ZipBoundsTest'], main: 'com.bloatware.bingblop.ZipBoundsTest' },
+  { name: 'archivebounds', title: 'A small tar.gz cannot run the app out of memory: a GNU long-name or pax header declaring 1.5 GiB is refused in words (an IOException in under a second, never an allocation by the declared size), while normal long names and pax headers still list and extract (runs with a 256 MB heap)', tests: ['ArchiveBoundsTest'], main: 'com.bloatware.bingblop.ArchiveBoundsTest', jvm: ['-Xmx256m'] },
   { name: 'apkflags', title: 'Found package files: identical copies (hash) and older versions of a package, which one is kept', tests: ['ApkFlagsTest'], main: 'com.bloatware.bingblop.ApkFlagsTest' },
   { name: 'procstats', title: '`ps` output: toybox\'s `-o PID,PPID,USER,RSS,%CPU,NAME` (by header column, not fixed offsets) and a degraded busybox-style `ps -A` fallback, truncated rows, package name vs. kernel/native process, top by CPU / RSS', tests: ['ProcStatsTest'], main: 'com.bloatware.bingblop.ProcStatsTest' },
   { name: 'gpustats', title: 'GPU load/frequency sysfs text parsing: Adreno gpubusy/gpu_busy_percentage, Mali utilization, the devfreq frequency-ratio fallback, combine() priority and the UI label', tests: ['GpuStatsTest'], main: 'com.bloatware.bingblop.GpuStatsTest' },
@@ -298,7 +299,7 @@ async function runSuite(suite, timeoutS) {
     res = await exec(process.execPath, [path.join(HERE, 'parity', 'parity_all.js')], { cwd: work, env: penv }, timeoutS);
   } else {
     const jvm = suite.utf8 ? ['-Dfile.encoding=UTF-8', '-Dsun.jnu.encoding=UTF-8'] : [];
-    res = await exec('java', jvm.concat(props, ['-cp', [classes].concat(need.cp).join(cpSep), suite.main]), { cwd: work, env }, timeoutS);
+    res = await exec('java', jvm.concat(suite.jvm || [], props, ['-cp', [classes].concat(need.cp).join(cpSep), suite.main]), { cwd: work, env }, timeoutS);
   }
   const text = clean(res.out);
   fs.writeFileSync(path.join(dir, 'output.txt'), text);
