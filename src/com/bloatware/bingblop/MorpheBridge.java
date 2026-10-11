@@ -151,7 +151,11 @@ public final class MorpheBridge {
             case "apkInspect": return apkInspect(a.optString("path"));
             case "pick": return pick(tag, a.optString("kind", "any"));
             case "patch": return startPatch(a);
-            case "cancel": runner.markCancelled(a.optString("job")); MorpheService.cancel(host.context()); return null;
+            case "cancel": {
+                String job = a.optString("job");
+                if (MorpheJobs.validJobId(job) && job.equals(slot.current())) runner.cancel(job);   // only the run that is going; a stale or foreign id changes nothing
+                return null;
+            }
             case "patchedList": adoptOrphans(); return new JSONObject().put("items", library.list());
             case "patchedDelete": library.delete(a.optString("id")); return null;
             case "patchedExport": return patchedExport(a.optString("id"));
