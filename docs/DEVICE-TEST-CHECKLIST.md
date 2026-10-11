@@ -357,6 +357,23 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Font search, leaving Settings: in Settings, in the font setting, start the font search on a phone with a lot of storage, then leave Settings (back to the Apps tab) before it ends. No message appears and the phone is not left busy: open Settings again, the list is empty and the search button works at once. Start a new search: it runs normally. Fonts saved as `.ttc` (or a `.ttc` renamed to `.ttf`) are not listed.
 - [ ] Apps, Refresh button: in the Apps tab, the round Refresh button is the last control of the search bar. Install or remove an app with another tool, tap Refresh: the list shows the change, the button spins while it loads and the search text, sort and scroll position stay. Tap it twice quickly: it loads once. With the phone's animations turned off (Android's reduce motion), it does not spin.
 
+## 21. Private DNS (Settings)
+
+None of this has been run on a phone yet; this section is the first run. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root) and a Wi-Fi network that does not block Private DNS. Keep a way to reach the internet in case a host fails, and know the way back: **Automatic** or **Off** in the card.
+
+- [ ] Open Settings > **Private DNS**: the line at the top says what Android has now, the same as Android's own Settings > Network > Private DNS (`adb shell settings get global private_dns_mode` and `... private_dns_specifier` agree), and the matching button is marked.
+- [ ] **AdGuard DNS**: tap it. The card says "Changed, and read back from the phone." and "Private DNS is now: hostname dns.adguard-dns.com". In Android's own Private DNS screen the provider host name is `dns.adguard-dns.com`. Pages load; an ad test page shows fewer ads.
+- [ ] **Cloudflare** (`one.one.one.one`) and **Quad9** (`dns.quad9.net`): the same checks, each shows its own host name and the marked button follows.
+- [ ] **Another host name**: type `dns.nextdns.io` (or a resolver of your own), tap **Apply**: it is applied and shown the same way, and no preset is marked. Type `DNS.NextDNS.io.` with capitals and a final dot: the field is cleaned up to `dns.nextdns.io`.
+- [ ] A bad host is refused with a sentence beside the field and nothing changes on the phone: `1.1.1.1`, `dns`, `dns.example.com; reboot`, `a b.com`, `-x.example.com`, a name with an accent, a name of 64 characters in one part.
+- [ ] **Off**: the card says "Private DNS is now: Off"; Android's own screen shows Off, and `adb shell settings get global private_dns_specifier` says `null` (the saved host is cleared).
+- [ ] **Automatic**: the card says "Private DNS is now: Automatic"; Android's own screen shows Automatic.
+- [ ] Read-back: change Private DNS in Android's own Settings, then open this card again or tap **Check again**: it shows the new state, not the old one.
+- [ ] A host that does not work (for example `dns.invalid.example`): Android accepts it and the card shows it, but pages stop loading on a network that cannot reach it; **Automatic** or **Off** brings the internet back. Tell which phone and what the network did.
+- [ ] Without a working mode (set the mode to Read-Only): the card says it needs a working mode, offers **Set Up**, and tapping a button opens the "requires working mode" sheet; nothing changes.
+- [ ] On a phone that refuses the write (some Xiaomi, Redmi and POCO phones until "USB debugging (Security settings)" is on): the card says the change could not be made, with Android's own words, and shows the state the phone still has.
+- [ ] The card in another language (Settings > Language): the sentences are translated, the host names are not.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
