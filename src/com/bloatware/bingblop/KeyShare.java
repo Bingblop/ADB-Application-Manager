@@ -15,7 +15,10 @@ import java.util.regex.Pattern;
  * (the bridge's allowed folders) and not one of the places the file manager or VirusTotal may read from (PrivatePaths.exportable): only the share
  * provider's key route reads it, for exactly this name, and only through the one-off grant on the share intent.</li>
  * <li>The folder and the file are readable by this app only. The recipient reads through the provider.</li>
- * <li>It is short-lived: removed {@link #KEEP_MS} after it was made, before the next export, and at the next start of the app.</li>
+ * <li>It is short-lived: removed {@link #KEEP_MS} after it was made, before the next export, and at the next start of the app (the first thing a new process
+ * does is {@link #sweepAtStart}: a process that is new has no share in flight, so whatever is left is removed, however young).</li>
+ * <li>One copy at a time, also when exports overlap: staging, the removal of the copy before it and the removal of a copy are serialized by one lock, so two
+ * calls from the bridge's thread pool cannot both sweep before either creates its folder.</li>
  * </ul>
  * Pure Java (no android.*), so the rules can be tested with real files.
  */
@@ -33,6 +36,9 @@ final class KeyShare {
 
     private static final Pattern ID = Pattern.compile("[0-9a-f]{16}");
     private static final SecureRandom RANDOM = new SecureRandom();
+    /** One lock for every change to the key-share folder (stage, remove, sweep): sweep-then-create is one step, so two exports end with one copy. */
+    private static final Object LOCK = new Object();
+    private static final java.util.concurrent.atomic.AtomicBoolean SWEPT_AT_START = new java.util.concurrent.atomic.AtomicBoolean();
 
     static File root(File cacheDir) { return new File(cacheDir, DIR); }
 
@@ -43,6 +49,10 @@ final class KeyShare {
      */
     static File stage(File cacheDir, File key) throws IOException {
         if (key == null || !key.isFile()) throw new IOException("There is no signing key yet: it is made the first time you patch.");
+        synchronized (LOCK) { return stageLocked(cacheDir, key); }
+    }
+
+    private static File stageLocked(File cacheDir, File key) throws IOException {
         File root = root(cacheDir);
         sweep(cacheDir, 0, System.currentTimeMillis());
         if (!root.isDirectory() && !root.mkdirs() && !root.isDirectory()) throw new IOException("cannot make " + root);
@@ -75,21 +85,37 @@ final class KeyShare {
         if (staged == null) return true;
         File dir = staged.getParentFile();
         if (dir == null || !ID.matcher(dir.getName()).matches() || !NAME.equals(staged.getName()) || dir.getParentFile() == null || !DIR.equals(dir.getParentFile().getName())) return false;
-        deleteTree(dir);
-        return !dir.exists();
+        synchronized (LOCK) {
+            deleteTree(dir);
+            return !dir.exists();
+        }
     }
 
     /** Removes the staged copies made before {@code now - olderThanMs} (0: all of them). Returns how many folders were removed. */
     static int sweep(File cacheDir, long olderThanMs, long now) {
-        File[] dirs = root(cacheDir).listFiles();
-        int n = 0;
-        if (dirs == null) return 0;
-        for (File d : dirs) {
-            if (olderThanMs > 0 && d.lastModified() > now - olderThanMs) continue;
-            deleteTree(d);
-            if (!d.exists()) n++;
+        synchronized (LOCK) {
+            File[] dirs = root(cacheDir).listFiles();
+            int n = 0;
+            if (dirs == null) return 0;
+            for (File d : dirs) {
+                if (olderThanMs > 0 && d.lastModified() > now - olderThanMs) continue;
+                deleteTree(d);
+                if (!d.exists()) n++;
+            }
+            return n;
         }
-        return n;
+    }
+
+    /**
+     * The start-up sweep: removes every staged copy, whatever its age, the first time it is called in this process, and does nothing after that. A copy that
+     * is there when the process starts was left by a process that died, and no share of it can be in flight (the timer that would remove it died with that
+     * process), so it is not kept for the keep time. The activity calls this from onCreate, which also runs again in a live process (the window is
+     * recreated or opened again); then a share sheet may still be reading the copy, so only the first call of the process sweeps.
+     * Returns how many folders were removed.
+     */
+    static int sweepAtStart(File cacheDir) {
+        if (!SWEPT_AT_START.compareAndSet(false, true)) return 0;
+        return sweep(cacheDir, 0, System.currentTimeMillis());
     }
 
     /**

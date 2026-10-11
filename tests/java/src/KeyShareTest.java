@@ -176,6 +176,50 @@ public class KeyShareTest {
         check("short-lived: the keep time is a few minutes, not hours (the ordinary share keeps its files an hour)", KeyShare.KEEP_MS >= 60000 && KeyShare.KEEP_MS <= 15 * 60000L, String.valueOf(KeyShare.KEEP_MS));
         check("short-lived: sweep(0) removes every copy, and sweeping with no folder at all is fine", KeyShare.sweep(cache, 0, now) == 1 && !fresh.exists() && KeyShare.sweep(new File(tmp, "nothing"), 0, now) == 0);
 
+        // the first sweep of a process removes every copy, however young (nothing of a new process can be sharing one); a later one in the same process leaves the live copy
+        File leftYoung = new File(cache, "morphe_keyshare/eeeeeeeeeeeeeeee"); leftYoung.mkdirs(); Files.write(new File(leftYoung, "morphe.keystore").toPath(), keyBytes);
+        leftYoung.setLastModified(System.currentTimeMillis() - 1000);
+        int atStart = KeyShare.sweepAtStart(cache);
+        check("start-up: the first sweepAtStart of the process removes a copy that is only a second old (a dead process left it; no share of it can be in flight)", atStart == 1 && !leftYoung.exists(), String.valueOf(atStart));
+        File live = KeyShare.stage(cache, key);
+        check("start-up: a later sweepAtStart in the same process (the window opened again while a share sheet is reading the copy) leaves the live copy", KeyShare.sweepAtStart(cache) == 0 && live.isFile());
+        KeyShare.remove(live);
+
+        // ---- exports at the same time (the bridge runs calls on a cached thread pool): sweep-then-create is one step, so one copy is left ----
+        final File cacheC = cache, keyC = key;
+        final int threads = 16, rounds = 40;
+        int roundsWithOne = 0, errors = 0, wrongBytes = 0;
+        File lastErr = null; String firstErr = null;
+        for (int r = 0; r < rounds; r++) {
+            final java.util.concurrent.CyclicBarrier gate = new java.util.concurrent.CyclicBarrier(threads);
+            final List<File> made = Collections.synchronizedList(new ArrayList<File>());
+            final List<String> failures = Collections.synchronizedList(new ArrayList<String>());
+            List<Thread> ts = new ArrayList<Thread>();
+            for (int i = 0; i < threads; i++) {
+                Thread t = new Thread(new Runnable() {
+                    @Override public void run() {
+                        try { gate.await(); made.add(KeyShare.stage(cacheC, keyC)); }
+                        catch (Throwable e) { failures.add(e.toString()); }
+                    }
+                });
+                ts.add(t); t.start();
+            }
+            for (Thread t : ts) t.join();
+            File[] left = new File(cache, "morphe_keyshare").listFiles();
+            int copies = 0;
+            if (left != null) for (File d : left) if (new File(d, "morphe.keystore").isFile()) copies++;
+            if (left != null && left.length == 1 && copies == 1) roundsWithOne++;
+            errors += failures.size();
+            if (!failures.isEmpty() && firstErr == null) firstErr = failures.get(0);
+            if (left != null) for (File d : left) { File f = new File(d, "morphe.keystore"); if (f.isFile() && !Arrays.equals(Files.readAllBytes(f.toPath()), keyBytes)) wrongBytes++; }
+            KeyShare.sweep(cache, 0, System.currentTimeMillis());
+        }
+        check("one at a time, at once: " + threads + " exports in the same moment, " + rounds + " times, always end with exactly one key copy (one folder, one file)", roundsWithOne == rounds, roundsWithOne + " of " + rounds + " rounds had one copy");
+        check("one at a time, at once: none of those exports fails (one is never swept while it is being copied) and the copy that is left is whole", errors == 0 && wrongBytes == 0, errors + " errors " + wrongBytes + " wrong " + firstErr);
+        check("one at a time, at once: the changes to the key-share folder (stage, remove, sweep) take the same lock", has(read(new File(repo(), "src/com/bloatware/bingblop/KeyShare.java")), "synchronized (LOCK) { return stageLocked(cacheDir, key); }")
+            && body(read(new File(repo(), "src/com/bloatware/bingblop/KeyShare.java")), "static boolean remove(").contains("synchronized (LOCK)")
+            && body(read(new File(repo(), "src/com/bloatware/bingblop/KeyShare.java")), "static int sweep(File cacheDir, long olderThanMs, long now)").contains("synchronized (LOCK)"));
+
         // ---- failures leave nothing ----
         String why = null;
         try { KeyShare.stage(cache, new File(base, "missing.keystore")); } catch (java.io.IOException e) { why = e.getMessage(); }
@@ -209,10 +253,22 @@ public class KeyShareTest {
         check("activity: the Host's shareKey is shareMorpheKey", has(main, "@Override public void shareKey(File staged) throws Exception { shareMorpheKey(staged); }"));
         check("activity: the share sheet gets the key route address with a read grant, not a generic share address or a path", has(sk, "ShareProvider.uriForKey(staged)", "Intent.ACTION_SEND", "FLAG_GRANT_READ_URI_PERMISSION", "Intent.createChooser")
             && !sk.contains("ShareProvider.uriFor(") && !sk.contains("newShareFile") && !sk.contains("shareStoredFile") && !sk.contains("downloadsDir"), sk);
+        String expiry = body(main, "private static final class KeyShareExpiry");
         check("activity: the copy is removed and the grant revoked after KeyShare.KEEP_MS, by a timer that holds the application context and the file (not the activity)",
-            has(sk, "postDelayed", "KeyShare.KEEP_MS", "KeyShare.remove(staged)", "revokeUriPermission(uri", "getApplicationContext()") && !sk.contains("MainActivity.this"), sk);
+            has(sk, "postDelayed(new KeyShareExpiry(app, uri, staged), KeyShare.KEEP_MS)", "getApplicationContext()") && !sk.contains("MainActivity.this") && !sk.contains("new Runnable"), sk);
+        check("activity: that timer is a static nested class (it cannot capture the activity), with only the application context, the address and the file, and it revokes the grant and removes the copy",
+            expiry.startsWith("private static final class KeyShareExpiry implements Runnable") && has(expiry, "private final Context app;", "private final Uri uri;", "private final File staged;", "revokeUriPermission(uri", "KeyShare.remove(staged)")
+            && !expiry.contains("MainActivity.this") && !expiry.contains("this$0") && !expiry.contains("runOnUiThread") && !expiry.contains("getApplicationContext") && !expiry.contains("Activity "), expiry);
+        check("activity: no anonymous Runnable or Handler callback is created in shareMorpheKey (an anonymous class would hold the activity)", !sk.isEmpty() && !sk.contains("new Runnable") && !sk.contains("new android.os.Handler.Callback") && !sk.contains("new Thread"), sk);
         check("activity: a sheet that cannot be opened is an error to the page (the exception is passed on, not swallowed)", has(sk, "open.get(", "throw e.getCause()"), sk);
-        check("activity: a copy a dead process left behind is swept on the next start", has(main, "KeyShare.sweep(getCacheDir(), KeyShare.KEEP_MS"));
+        int cas1 = sk.indexOf("state.compareAndSet(0, 1)"), sa = sk.indexOf("startActivity(chooser)");
+        check("activity: the task checks, before it opens the sheet, that the waiting caller has not given up (compare-and-set 0 to 1 comes before startActivity, and fails with no sheet)", cas1 > 0 && sa > cas1 && has(sk, "if (!state.compareAndSet(0, 1)) return Boolean.FALSE;"), sk);
+        int toCatch = sk.indexOf("catch (java.util.concurrent.TimeoutException"), inCatch = sk.indexOf("catch (InterruptedException");
+        check("activity: a wait that times out or is interrupted gives the task up (compare-and-set 0 to 2 and cancel) before the failure is passed on",
+            toCatch > 0 && inCatch > toCatch && has(sk.substring(toCatch, inCatch), "state.compareAndSet(0, 2)", "open.cancel(false)", "throw e;") && has(sk.substring(inCatch), "state.compareAndSet(0, 2)", "open.cancel(false)", "Thread.currentThread().interrupt()", "throw e;"), sk);
+        check("activity: when the UI thread had already started the sheet as the wait ended, the sheet is treated as open (the timer is set), and an error it ended with is still passed on",
+            has(sk, "awaitStarted(open)") && has(body(main, "private static void awaitStarted("), "open.get()", "ExecutionException") && sk.indexOf("awaitStarted(open)") < sk.indexOf("postDelayed"), sk);
+        check("activity: a copy a dead process left behind is swept at the first start of the process, whatever its age", has(main, "KeyShare.sweepAtStart(getCacheDir())") && !main.contains("KeyShare.sweep(getCacheDir()"));
 
         String prov = read(new File(repo, "src/com/bloatware/bingblop/ShareProvider.java"));
         String ff = body(prov, "private File fileFor(");
