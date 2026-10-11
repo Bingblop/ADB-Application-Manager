@@ -4,7 +4,7 @@ The release is a pull request (this one), then the `release.yml` workflow with t
 
 ## The sequence, in order
 
-1. [ ] Every pull request that belongs in the release is merged into `main`: the native install confirmation (#109), the audit fixes (#119 to #122, #123, #124, #125 and the Stop fix M-4 if it is in the changelog) and whatever the phone check of v7.12.9 turned up. CI on `main` is green for the head commit.
+1. [ ] Every pull request named in the `## v7.12.10-Pro` section of `CHANGELOG.md` is merged into `main` (the changelog is the list; this page keeps no list of its own), and so is whatever the phone check of v7.12.9 turned up. CI on `main` is green for the head commit.
 2. [ ] The release pull request is merged. It changes no code, only the version, the changelog, the README, the guides and these checklists.
 3. [ ] Repository secrets are set: `KEYSTORE_BASE64` (the release keystore, base64), and `KEYSTORE_PASSWORD` and `KEY_ALIAS` if the keystore does not use the defaults (`password` and `adbmanager`). Without `KEYSTORE_BASE64` the run now fails at "Prepare signing key"; it no longer publishes anything.
 4. [ ] Read the `## v7.12.10-Pro (versionCode 852)` section of `CHANGELOG.md` once as the person who will see it: the workflow copies it into the release text, so every sentence must be true of this build.
