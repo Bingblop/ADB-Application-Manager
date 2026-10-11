@@ -54,6 +54,11 @@ public final class MorpheBridge {
         BrowserDownload.Cookies cookies();
         /** Copies a file into a folder the person chose with Android's folder picker (a content:// tree); returns the name it was saved as. */
         String copyToTree(File file, String treeUri, String name) throws Exception;
+        /**
+         * Asks, in a dialog of the app that the page cannot press, whether a patch bundle (code) may be loaded. Blocks the calling (background) thread until
+         * the person answers; no answer in {@link BundleApprovals#ANSWER_WAIT_SECONDS} seconds, or the screen closing, is false.
+         */
+        boolean confirmBundle(String title, String text);
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -71,6 +76,12 @@ public final class MorpheBridge {
         @Override public boolean alive() { return serviceAlive(); }
     });
     private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
+    private final BundleApprovals approvals;                                            // which custom bundles the person has allowed to run (see BundleApprovals)
+    private final BundleApprovals.Asker asker = new BundleApprovals.Asker() {
+        @Override public boolean ask(String title, String text) { return host.confirmBundle(title, text); }
+    };
+    private final Object grandfatherLock = new Object();
+    private boolean grandfatherDone;
 
     public MorpheBridge(Host host, File base) {
         this.host = host;
@@ -78,6 +89,25 @@ public final class MorpheBridge {
         base.mkdirs();
         this.store = new MorpheStore(new File(base, "sources"));
         this.library = new MorpheLibrary(new File(base, "patched"));
+        this.approvals = new BundleApprovals(new File(base, "bundle_approvals.json"));
+    }
+
+    /** The first call of all: bundles already on disk when this check first runs count as approved, once (before a call can add another). */
+    private void grandfatherBundles() {
+        synchronized (grandfatherLock) {
+            if (grandfatherDone) return;
+            grandfatherDone = true;
+            try {
+                Map<String, File> present = new java.util.LinkedHashMap<String, File>();
+                JSONArray all = store.list();
+                for (int i = 0; i < all.length(); i++) {
+                    JSONObject s = all.getJSONObject(i);
+                    if (s.optBoolean("builtIn") || s.optString("file").isEmpty()) continue;
+                    present.put(s.optString("id"), new File(s.optString("file")));
+                }
+                approvals.grandfatherOnce(present);
+            } catch (Exception ignored) { /* nothing approved: the person is asked */ }
+        }
     }
 
     // ------------------------------------------------------------------------------------------------------------------------ calls
@@ -94,6 +124,7 @@ public final class MorpheBridge {
 
     private void handle(String tag, String op, String argsJson) {
         try {
+            grandfatherBundles();
             JSONObject a = argsJson == null || argsJson.isEmpty() ? new JSONObject() : new JSONObject(argsJson);
             Object data = dispatch(tag, op, a);
             if (data == NO_REPLY) return;
@@ -141,7 +172,7 @@ public final class MorpheBridge {
             }
             case "sourceUpdate": return new JSONObject().put("source", store.update(a.optString("id"), null));
             case "sourceCheck": return store.checkUpdate(a.optString("id"));
-            case "sourceRemove": store.remove(a.optString("id")); return null;
+            case "sourceRemove": store.remove(a.optString("id")); approvals.forget(a.optString("id")); return null;
             case "sourceRename": store.rename(a.optString("id"), a.optString("name")); return null;
             case "sourceEnable": store.setEnabled(a.optString("id"), a.optBoolean("on")); return null;
             case "sourcePre": store.setPrerelease(a.optString("id"), a.optBoolean("on")); return null;
@@ -329,9 +360,11 @@ public final class MorpheBridge {
         List<File> needFiles = new ArrayList<File>();
         List<File> needCache = new ArrayList<File>();
         if (ids == null) ids = new JSONArray();
+        Map<String, String> refused = refuseUnapproved(ids);                               // asks about each custom bundle not yet allowed, before anything is read
         for (int i = 0; i < ids.length(); i++) {
             String id = ids.getString(i);
-            File mpp = store.bundleFile(id);
+            if (refused.containsKey(id)) { out.put(id, denied(refused.get(id))); continue; }
+            File mpp = store.bundleFile(id);                                               // null for a source that is switched off
             JSONObject s = store.get(id);
             if (mpp == null || s == null) continue;
             File cache = new File(cacheDir, MorpheJobs.safeName(id) + "-" + MorpheJobs.safeName(s.optString("version")) + "-" + mpp.length() + ".json");
@@ -339,6 +372,11 @@ public final class MorpheBridge {
                 try { out.put(id, new JSONObject(readText(cache))); continue; } catch (Exception bad) { cache.delete(); }
             }
             need.add(id); needFiles.add(mpp); needCache.add(cache);
+        }
+        for (int i = need.size() - 1; i >= 0; i--) {                                       // the file may have changed while a question was open: only what is still allowed goes to the engine
+            if (approvals.allowedNow(bundleSource(need.get(i)))) continue;
+            out.put(need.get(i), denied(BundleApprovals.NOT_ALLOWED));
+            need.remove(i); needFiles.remove(i); needCache.remove(i);
         }
         if (need.isEmpty()) return new JSONObject().put("catalogs", out);
         if (!engineThere()) {
@@ -372,7 +410,50 @@ public final class MorpheBridge {
         return new JSONObject().put("catalogs", out);
     }
 
+    private static JSONObject denied(String error) throws JSONException {
+        return new JSONObject().put("ok", false).put("error", error).put("patches", new JSONArray());
+    }
+
+    /** The bundle a source id would hand to the engine, with what the store itself knows about it; null when there is none or the source is switched off. */
+    private BundleApprovals.Source bundleSource(String id) {
+        File f = store.bundleFile(id);
+        JSONObject facts = store.bundleFacts(id);
+        return f == null || facts == null ? null : BundleApprovals.Source.of(facts, f);
+    }
+
+    /** Asks about every custom bundle of these ids that is not approved yet, one question at a time; the answer is source id -> error for each one that is not allowed. */
+    private Map<String, String> refuseUnapproved(JSONArray ids) throws JSONException {
+        List<BundleApprovals.Source> list = new ArrayList<BundleApprovals.Source>();
+        java.util.Set<String> seen = new java.util.HashSet<String>();
+        for (int i = 0; i < ids.length(); i++) {
+            String id = ids.getString(i);
+            BundleApprovals.Source s = seen.add(id) ? bundleSource(id) : null;
+            if (s != null) list.add(s);
+        }
+        return approvals.requireAll(list, asker);
+    }
+
     // ------------------------------------------------------------------------------------------------------------------------ patching
+
+    /** Every bundle the patch job names must be allowed before the engine starts: a switched-off source is refused, the ones not approved are asked about. */
+    private void approveBundles(JSONObject a, String jobId) throws Exception {
+        JSONArray in = a.optJSONArray("bundles");
+        if (in == null) return;                                                            // the job file says "no patch is selected"
+        List<BundleApprovals.Source> list = new ArrayList<BundleApprovals.Source>();
+        java.util.Set<String> seen = new java.util.HashSet<String>();
+        for (int i = 0; i < in.length(); i++) {
+            JSONObject b = in.optJSONObject(i);
+            if (b == null || !seen.add(b.optString("id"))) continue;
+            JSONObject facts = store.bundleFacts(b.optString("id"));
+            if (facts != null && !facts.optBoolean("enabled", true)) throw new IOException("The source \"" + facts.optString("name") + "\" is switched off. Turn it on to use it.");
+            BundleApprovals.Source s = bundleSource(b.optString("id"));
+            if (s != null) list.add(s);
+        }
+        int n = approvals.unapproved(list).size();
+        if (n > 0) note(jobId, "INFO", "Waiting for your OK to run " + (n == 1 ? "this patch source" : n + " patch sources") + "...");
+        Map<String, String> refused = approvals.requireAll(list, asker);
+        if (!refused.isEmpty()) throw new IOException(refused.values().iterator().next() + " (" + refused.keySet().iterator().next() + ")");
+    }
 
     private JSONObject startPatch(final JSONObject a) throws Exception {
         if (!engineThere()) throw new IOException("This build of the app does not contain the Morphe engine.");
@@ -419,6 +500,7 @@ public final class MorpheBridge {
             deleteTree(dir);
             dir.mkdirs();
             step(jobId, "Preparing", "RUNNING");
+            approveBundles(a, jobId);
             File input = prepareInput(a, dir, jobId);
             File output = new File(dir, "patched.apk");
             File keystore = new File(base, "morphe.keystore");
@@ -426,7 +508,12 @@ public final class MorpheBridge {
             File ki = new File(base, "morphe_key.json");
             if (ki.isFile()) try { keyInfo = new JSONObject(readText(ki)); } catch (Exception ignored) {}
             JSONObject job = MorpheJobs.patchJob(a, input, output, new File(dir, "work"), new MorpheJobs.Bundles() {
-                @Override public File fileOf(String id) { return store.bundleFile(id); }
+                @Override public File fileOf(String id) {
+                    BundleApprovals.Source s = bundleSource(id);                           // null: not downloaded, or switched off
+                    if (s == null) return null;
+                    if (!approvals.allowedNow(s)) throw new IllegalStateException(BundleApprovals.NOT_ALLOWED);   // changed since the question
+                    return s.file;
+                }
             }, keystore, keyInfo, MorpheJobs.abiName(Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""));
             step(jobId, "Preparing", "OK");
             final JSONObject engineResult = runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
