@@ -336,12 +336,46 @@ public final class ArchiveIo {
         IOException mapRead(IOException e) { return e; }
     }
 
-    private static Reader openReader(File f, String format, char[] pw) throws IOException {
+    private static Reader openReader(File f, String format, char[] pw) throws IOException { return openReader(f, format, pw, null); }
+
+    /** {@code cb} (may be null) is asked every {@link #POLL_BYTES} of unpacked tar data and at every entry; false stops with {@code IOException("Cancelled")}. */
+    private static Reader openReader(File f, String format, char[] pw, Progress cb) throws IOException {
         if (format == null) format = detect(f);
         if (format == null || !supportsRead(format)) throw new IOException("unsupported-format" + (format == null ? "" : ":" + format));
         if ("7z".equals(format)) return new SevenZReader(f, pw);
-        if (isTar(format)) return new TarReader(f, compOf(format));
+        if (isTar(format)) return new TarReader(f, compOf(format), cb);
         return new SingleReader(f, format);
+    }
+
+    /** How often (in unpacked bytes) a listing asks whether to go on. */
+    static final int POLL_BYTES = 64 * 1024;
+
+    /**
+     * Whether listing an archive of this format means unpacking all of it: a compressed tar has no directory, so every entry's data (an 8 GiB
+     * entry of zeros in a 290 KB file) is decompressed just to find the next header. A plain tar skips over data, 7z / zip / RAR read a
+     * directory, a single compressed file is one entry. The page should not wait on such a listing in one call.
+     */
+    public static boolean slowToList(String format) { return isTar(format) && !"tar".equals(format); }
+
+    /** As {@link #slowToList(String)} for a file this app cannot read itself (so its content cannot be sniffed): by its name. */
+    public static boolean slowToListByName(String fileName) { return fileName != null && slowToList(byExt(fileName)); }
+
+    /** Passes the unpacked bytes of a tar through, asking {@code cb} often enough that a listing can be stopped within a moment. */
+    private static final class PollIn extends InputStream {
+        private final InputStream in; private final Progress cb;
+        private long done, since;
+        PollIn(InputStream in, Progress cb) { this.in = in; this.cb = cb; }
+        void poll() throws IOException { since = 0; if (!cb.tick(done)) throw new IOException("Cancelled"); }
+        private void count(long n) throws IOException { if (n > 0) { done += n; since += n; if (since >= POLL_BYTES) poll(); } }
+        @Override public int read() throws IOException { int b = in.read(); if (b >= 0) count(1); return b; }
+        @Override public int read(byte[] b, int off, int len) throws IOException {
+            int n = in.read(b, off, Math.min(len, POLL_BYTES));      // never one long read between two questions
+            count(n);
+            return n;
+        }
+        @Override public long skip(long n) throws IOException { long k = in.skip(Math.min(n, POLL_BYTES)); count(k); return k; }
+        @Override public int available() throws IOException { return in.available(); }
+        @Override public void close() throws IOException { in.close(); }
     }
 
     /** The longest GNU long name / link name record we read into memory (a path is at most 4096 bytes on Linux). */
@@ -373,15 +407,18 @@ public final class ArchiveIo {
 
     private static final class TarReader extends Reader {
         private final TarArchiveInputStream in;
-        TarReader(File f, String comp) throws IOException {
+        private final PollIn poll;
+        TarReader(File f, String comp, Progress cb) throws IOException {
             InputStream raw = new FileInputStream(f);
             try {
                 InputStream chain = comp == null ? new BufferedInputStream(raw, BUF) : decompress(comp, raw);
-                in = new GuardedTarInputStream(chain);
+                poll = cb == null ? null : new PollIn(chain, cb);
+                in = new GuardedTarInputStream(poll == null ? chain : poll);
             } catch (IOException e) { closeQuietly(raw); throw e; } catch (RuntimeException e) { closeQuietly(raw); throw new IOException(e); }
         }
         boolean next() throws IOException {
             for (;;) {
+                if (poll != null) poll.poll();
                 TarArchiveEntry e = in.getNextEntry();
                 if (e == null) return false;
                 if (e.isCharacterDevice() || e.isBlockDevice() || e.isFIFO() || e.isGlobalPaxHeader() || e.isPaxHeader()) continue;
@@ -973,9 +1010,15 @@ public final class ArchiveIo {
     /** Lists an archive: 7z, the tar family, or a single compressed file (one item). */
     public static Info list(File f, char[] password) throws IOException { return list(f, null, password); }
 
-    public static Info list(File f, String format, char[] password) throws IOException {
+    public static Info list(File f, String format, char[] password) throws IOException { return list(f, format, password, null); }
+
+    /**
+     * As {@link #list(File, String, char[])}; {@code cb} (may be null) is asked every 64 KB of unpacked data and at every entry of a tar, and
+     * answers false to stop: the listing then ends with {@code IOException("Cancelled")} and holds nothing open.
+     */
+    public static Info list(File f, String format, char[] password, Progress cb) throws IOException {
         if (format == null) format = detect(f);
-        Reader r = openReader(f, format, password);
+        Reader r = openReader(f, format, password, cb);
         try {
             Info info = new Info();
             info.format = format;
