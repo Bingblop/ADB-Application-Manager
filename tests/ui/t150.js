@@ -33,7 +33,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         else if (op === 'vtScan') r.data = { found: true, verdict: window.__vt || 'clean', malicious: window.__vt === 'malicious' ? 7 : 0, suspicious: 0, total: 70 };
         else if (op === 'install') r.data = { ok: true, output: 'Success' };
         else if (op === 'copyToTree') r.data = { name: 'x.apk' };
-        else if (op === 'keyExport') r.data = { path: '/sdcard/Download/Morphe Patcher/morphe.keystore' };
+        else if (op === 'keyExport') r.data = { shared: true };
         else if (op === 'helperManual') r.data = { url: 'https://www.apkmirror.com/?s=' + x.pkg };
         // __vtHold keeps a scan's answer until the test lets it go (window.__vtHeld), so what the page does while a scan runs does not depend on timing
         if (op === 'vtScan' && window.__vtHold) (window.__vtHeld = window.__vtHeld || []).push(() => window.onMorphe && window.onMorphe(r));
@@ -230,9 +230,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { document.getElementById('usAgent').checked = false; usSave(); });
 
   // ---- 21. the KeyStore ----
-  await ev(() => { window.__calls.length = 0; }); await page.click('#usKeyExportBtn'); await sleep(150);
+  await ev(() => { window.__calls.length = 0; }); await page.click('#usKeyExportBtn'); await sleep(150); await page.click('#mpAskOk'); await sleep(150);
   const k = await ev(() => ({ ops: window.__calls.map(c => c[0]), btns: [...document.querySelectorAll('#usKeyCard button')].map(x => x.innerText) }));
-  check('21. the KeyStore card has Export KeyStore, Import KeyStore and New key; Export asks the app to save the key', k.btns.join() === 'Export KeyStore,Import KeyStore,New key' && k.ops.includes('keyExport'), JSON.stringify(k));
+  check('21. the KeyStore card has Export KeyStore, Import KeyStore and New key; Export asks first, then asks the app to share the key', k.btns.join() === 'Export KeyStore,Import KeyStore,New key' && k.ops.includes('keyExport'), JSON.stringify(k));
 
   // ---- 22. Settings > Feature List ----
   await ev(() => { switchView('prefs'); featureRender(); }); await sleep(200);

@@ -159,6 +159,11 @@ public final class MorpheNet {
 
     /** Downloads url to dest (via dest.part, renamed when whole). Returns the size. A cancel leaves nothing behind. */
     public static long download(String url, File dest, Map<String, String> headers, Progress progress) throws IOException {
+        return download(url, dest, headers, progress, null);
+    }
+
+    /** As above; {@code finalUrl[0]} (when given) is set to the address the bytes finally came from, after redirects. */
+    public static long download(String url, File dest, Map<String, String> headers, Progress progress, String[] finalUrl) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) throw new IOException("cannot create " + parent);
         File part = new File(dest.getPath() + ".part");
@@ -178,6 +183,7 @@ public final class MorpheNet {
                     continue;
                 }
                 if (code < 200 || code >= 300) throw new HttpError(code, cur, errorBody(c));
+                if (finalUrl != null && finalUrl.length > 0) finalUrl[0] = cur;
                 long total = c.getContentLengthLong();
                 if (total > MAX_DOWNLOAD_BYTES) throw new IOException("the file is bigger than " + (MAX_DOWNLOAD_BYTES >> 20) + " MB: refused");
                 long done = 0;

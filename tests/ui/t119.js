@@ -30,7 +30,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
       { path: '/storage/emulated/0/Download/youtube_20.21.37_apkmirror.com.apkm', name: 'youtube_20.21.37_apkmirror.com.apkm', folder: '', size: 90000000, modified: 1791000000000, format: 'apkm', pkg: 'com.google.android.youtube', versionName: '20.21.37', versionCode: 1546420000, splits: 5, abis: ['arm64-v8a'] },
       { path: '/storage/emulated/0/Download/yt-old.apk', name: 'yt-old.apk', folder: 'Browser', size: 120000000, modified: 1790000000000, format: 'apk', pkg: 'com.google.android.youtube', versionName: '19.0.0', versionCode: 1500000000, splits: 0, abis: [] }] };
     const M = window.__mp;
-    const src = () => ({ id: 'morphe-official', name: 'Morphe Patches', kind: 'remote', host: 'github', repo: 'MorpheApp/morphe-patches', version: M.downloaded ? '1.46.0' : '', patchCount: M.downloaded ? 8 : -1, file: M.downloaded ? '/data/x/bundle.mpp' : '', size: M.downloaded ? 11282185 : 0, enabled: M.enabled, builtIn: true, prerelease: false, meta: null, error: '', needsNewerPatcher: false, updatedAt: 1791000000000 });
+    const src = () => ({ id: 'morphe-official', name: 'Morphe Patches', kind: 'remote', host: 'github', repo: 'MorpheApp/morphe-patches', version: M.downloaded ? '1.46.0' : '', patchCount: M.downloaded ? 8 : -1, file: M.downloaded ? '/data/x/bundle.mpp' : '', size: M.downloaded ? 11282185 : 0, enabled: M.enabled, builtIn: true, prerelease: false, meta: null, error: '', needsNewerPatcher: false, updatedAt: M.updatedAt || 1791000000000 });
     const sources = () => [src()].concat(M.added.map(r => ({ id: 'gh-' + r.replace('/', '-'), name: r.split('/')[1], kind: 'remote', host: 'github', repo: r, version: '1.0.0', patchCount: 3, file: '/x', size: 1000, enabled: true, builtIn: false, prerelease: false, error: '' })));
     const ev = (e) => window.onMorpheEvent && window.onMorpheEvent(e);
     window.AndroidBridge = {
@@ -52,7 +52,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           case 'sourceEnable': M.enabled = a.on; return ok({});
           case 'sourceCheck': return ok({ id: a.id, newer: false, latest: '1.46.0' });
           case 'sourceRename': case 'sourcePre': case 'sourceRemove': M.calls.push(op + ':' + a.id); if (a.id !== 'morphe-official') M.added = M.added.filter(r => 'gh-' + r.replace('/', '-') !== a.id); return ok({});
-          case 'catalog': { const o = {}; a.ids.forEach(id => { o[id] = id === 'morphe-official' ? window.__catalog : { ok: true, patches: [] }; }); return ok({ catalogs: o }); }
+          case 'catalog': { (M.catalogCalls = M.catalogCalls || []).push(a.ids.slice()); const o = {}; a.ids.forEach(id => { o[id] = id === 'morphe-official' ? (M.denyOfficial ? { ok: false, error: 'Not allowed: you did not approve this source', patches: [] } : window.__catalog) : { ok: true, patches: [] }; }); return ok({ catalogs: o }); }
           case 'community': return ok(JSON.parse(comm));
           case 'apkInstalled': return a.pkg === 'com.google.android.youtube' ? ok({ ok: true, label: 'YouTube', versionName: M.instVer, versionCode: '1546420000', paths: ['/data/app/yt/base.apk'] }) : ok({ ok: false });
           case 'apkInspect': return ok({ ok: true, pkg: 'com.google.android.youtube', versionName: '20.51.39', versionCode: '1546999999', label: 'YouTube', format: 'apk', size: 123456789 });
@@ -114,7 +114,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           case 'vtQuotaLive': return ok({ source: 'virustotal', dayAllowed: 500, dayUsed: 77, dayLeft: 423, resetDayInMs: 3600000 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
           case 'vtScan': return ok({ found: true, cached: true, verdict: M.vtVerdict, malicious: M.vtVerdict === 'clean' ? 0 : 7, suspicious: 0, total: 70, permalink: 'https://www.virustotal.com/gui/file/abc' }, 20);
-          case 'keyExport': return ok({ path: '/storage/emulated/0/Download/Morphe Patcher/morphe.keystore' });
+          case 'keyExport': return ok({ shared: true });
           default: return ok({});
         }
       }
@@ -313,7 +313,31 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await ev(() => mpSheetClose());
   await ev(() => mpSourceToggle('morphe-official')); await wait(300);
   check('turning the official source off empties the app list', /No patches to show|Get the Morphe patches/.test(await text('#mpAppList')) || (await ev(() => document.querySelectorAll('#mpAppList .mp-card').length)) === 0);
-  await ev(() => mpSourceToggle('morphe-official')); await wait(300);
+  // a source that is off is never asked about (its bundle is code the engine would load), and one the person refused is asked about again when it is turned back on
+  const official = () => ev(() => window.__mp.catalogCalls.filter(c => c.includes('morphe-official')).length);
+  const nCalls = () => ev(() => window.__mp.catalogCalls.length);
+  const offN = await official(), allN = await nCalls();
+  await ev(() => mpCatalogsLoad(true)); await wait(300);
+  const forcedCalls = await ev(n => window.__mp.catalogCalls.slice(n), allN);
+  check('with the source off, reloading every catalog does not ask the app for it (the others are asked)', forcedCalls.length === 1 && forcedCalls[0].length > 0 && !forcedCalls[0].includes('morphe-official') && (await official()) === offN, JSON.stringify(forcedCalls));
+  await ev(() => { window.__mp.denyOfficial = true; mp.catalogs = {}; });                   // as after a restart, with the source off and the person about to refuse it
+  await ev(() => mpSourceToggle('morphe-official')); await wait(400);
+  check('turning the source on asks the app for its patches', (await official()) === offN + 1);
+  check('a refusal is shown as that source\'s error and its patches are not listed', await ev(() => !mp.catalogs['morphe-official'].ok && /Not allowed/.test(mp.catalogs['morphe-official'].error) && mp.apps.size === 0));
+  await ev(() => mpCatalogsLoad(false)); await wait(300);
+  check('the page does not ask again by itself while the source stays refused', (await official()) === offN + 1);
+  await ev(() => { window.__mp.denyOfficial = false; });
+  await ev(() => mpSourceToggle('morphe-official')); await wait(300);                        // off
+  check('turning it off does not ask', (await official()) === offN + 1);
+  await ev(() => mpSourceToggle('morphe-official')); await wait(400);                        // on again
+  check('turning a refused source back on asks again, and the allowed bundle is listed', (await official()) === offN + 2 && (await ev(() => mp.catalogs['morphe-official'].ok && mp.apps.size > 0)));
+  // a source downloaded again with the same version and size is another file: the page asks for its patches again (and not otherwise)
+  const nBefore = await official();
+  await ev(() => mpSourcesLoad()); await wait(300);
+  check('an unchanged source is not asked for again', (await official()) === nBefore);
+  await ev(() => { window.__mp.updatedAt = 1791999999000; });
+  await ev(() => mpSourcesLoad()); await wait(300);
+  check('the same version and size, downloaded again: asked for again', (await official()) === nBefore + 1);
   await ev(() => mpSheetClose());
 
   // ---- Patched APKs ----
