@@ -444,6 +444,7 @@ public final class RarReader {
                 if (it.dir && !nm.endsWith("/")) nm += "/";
                 it.name = nm;
                 it.size = it.dir ? 0 : h.getFullUnpackSize();
+                if (it.size < 0) throw new IOException("Corrupted archive: entry has negative unpacked size (" + it.size + ")");
                 it.csize = h.getFullPackSize();
                 Date d = h.getMTime();
                 it.mtime = d == null ? 0 : d.getTime();
@@ -782,7 +783,7 @@ public final class RarReader {
      * check value (folded to 8 bytes). Package-private for the test, which compares it with the JDK's PBKDF2.
      */
     static Keys deriveKeys(byte[] pwUtf8, byte[] salt, int lg2) throws IOException {
-        if (lg2 < 0 || lg2 > 24) throw new IOException("unsupported-kdf");
+        if (lg2 < 0 || lg2 > 20) throw new IOException("unsupported-kdf");
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(pwUtf8.length == 0 ? new byte[1] : pwUtf8, "HmacSHA256"));
@@ -796,6 +797,9 @@ public final class RarReader {
             byte[][] outs = new byte[3][];
             for (int s = 0; s < 3; s++) {
                 for (long i = 0; i < steps[s]; i++) {
+                    if ((i & 0x7fff) == 0 && Thread.currentThread().isInterrupted()) {
+                        throw new IOException("kdf-cancelled");
+                    }
                     mac.update(u, 0, 32);
                     mac.doFinal(u, 0);
                     for (int j = 0; j < 32; j++) t[j] ^= u[j];

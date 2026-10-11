@@ -188,6 +188,8 @@ fun ClassicWebViewScreen(
                             domStorageEnabled = true
                             allowFileAccess = true
                             allowContentAccess = true
+                            allowFileAccessFromFileURLs = false
+                            allowUniversalAccessFromFileURLs = false
                             databaseEnabled = true
                             useWideViewPort = true
                             loadWithOverviewMode = true
