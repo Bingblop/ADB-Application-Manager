@@ -374,6 +374,10 @@ None of this has been run on a phone yet; this section is the first run. It need
 - [ ] On a phone that refuses the write (some Xiaomi, Redmi and POCO phones until "USB debugging (Security settings)" is on): the card says the change could not be made, with Android's own words, and shows the state the phone still has.
 - [ ] The card in another language (Settings > Language): the sentences are translated, the host names are not.
 
+## 22. ADB Console result line
+
+- [ ] Command-Line Interface > **ADB Console**: run `pm list packages -3`: under the list one plain line reads "Finished. No error text in the output." (no exit number, no "success"). Run `cat /nonexistent/file`: the line still reads "Finished" if the phone prints no error words, which is expected. Run `pm install /sdcard/nonexistent.apk`: if the output starts with `Error:` or `Failure [` the line reads "Looks like a failure: the output reports an error." in bold with a red bar (if the phone words it some other way, "Finished" is the correct line: the check only looks at how the output starts, so a launch error such as `am start -n no.such/.Activity`, which prints `Starting: Intent ...` first, also reads "Finished"). Run `sleep 30`: after the mode's time limit the line reads "Looks like a failure: the command timed out.". In ADB or Wireless mode run `adb devices` while a device shows `unauthorized`, or a command your mode may not run (for example `settings put secure x 1` without WRITE_SECURE_SETTINGS): "permission denied". In ADB mode, with the target not connected (adb prints something like `error: device offline` or `error: no devices/emulators found`), run any command: the line reads "Looks like a failure: the output reports an error.". In **Rish mode** no result line is added; a command that fails there still shows `[exit 1]`. Check it is readable in a light and a dark theme, and that Copy holds the line.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

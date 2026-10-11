@@ -1,0 +1,77 @@
+ok   classifier: empty output
+ok   classifier: only white space
+ok   classifier: null
+ok   classifier: undefined
+ok   classifier: a number
+ok   classifier: a package listing
+ok   classifier: id
+ok   classifier: "Error:" at the start
+ok   classifier: "Error:" after leading blank lines
+ok   classifier: "Failure [" at the start
+ok   classifier: "Error:" only on a later line is not enough
+ok   classifier: a sentence that merely mentions Error: is not a failure
+ok   classifier: adb's lower-case "error:" at the start
+ok   classifier: adb: no devices
+ok   classifier: the start is matched ignoring case
+ok   classifier: mixed case at the start
+ok   classifier: "adb: device " at the start
+ok   classifier: "ADB: DEVICE " at the start, ignoring case
+ok   classifier: "adb: device unauthorized" is a permission problem
+ok   classifier: "error:" in the middle of a line is not a failure
+ok   classifier: a listing that has "error: " on a later line is not a failure
+ok   classifier: "adb: device " not at the start is not a failure
+ok   classifier: "error" without the colon at the start
+ok   classifier: "error :" with a space is not the indicator
+ok   classifier: "adb:device" without the space is not the indicator
+ok   classifier: "adb: devices" (no space right after device) is not the indicator
+ok   classifier: "Failure" without the bracket
+ok   classifier: "Failure[" without the space
+ok   classifier: "Failure [" on a later line is not enough
+ok   classifier: "adb: error:" anywhere
+ok   classifier: the timeout marker the app appends
+ok   classifier: "timed out" without the marker is not a failure by itself
+ok   classifier: SecurityException anywhere
+ok   classifier: "Permission Denial" anywhere
+ok   classifier: "unauthorized" anywhere (adb devices)
+ok   classifier: upper-case "Unauthorized" is not the indicator
+ok   classifier: lower-case "securityexception" is not the indicator
+ok   classifier: "Error:" and a permission word: permission wins over error
+ok   classifier: "Error:" with "timed out" in it: timeout
+ok   classifier: timeout is matched ignoring case
+ok   classifier: a permission word and a timeout: timeout first
+ok   classifier: permission words are matched ignoring case for the kind
+ok   classifier: the page's own start failure
+ok   classifier: markup in the output
+ok   classifier: a very long output without any sign
+ok   classifier: a very long output with the sign at the end
+ok   classifier: the result never carries an exit code
+ok   a listing gets the neutral line, on a line of its own after the output
+ok   the neutral line is not styled as a failure and is announced (role="status")
+ok   the line does not claim a success or show an exit number
+ok   output that already ends in a newline gets no blank line before the result
+ok   no output: the line follows the command directly, once
+ok   Failure [ ... ]: the error line, in the failure style
+ok   the failure line is announced too and sits after the output
+ok   a timeout says it timed out
+ok   a permission problem says permission denied
+ok   an unauthorized device counts as permission denied (as ShellSafety does)
+ok   a sentence that only mentions the words is not marked as a failure
+ok   output with markup stays text (no element made from it)
+ok   an answer for a command that is not the current one adds nothing
+ok   a start the app refuses ends in the error line
+ok   Copy holds the result line with the output
+ok   Find in output finds the line
+ok   themes: the appearance really switched in the checks (14 combinations)
+ok   themes: the neutral line reads at 4.5:1 on the console in every theme
+ok   themes: the failure line reads at 4.5:1 on the console in every theme
+ok   themes: the failure line differs from the neutral one: bold with a bar in front, in every theme (the words carry the meaning, the style only helps)
+ok   the line is translated (German)
+ok   left-to-right: the failure bar is on the left
+ok   right-to-left (Arabic): the bar and its gap are on the right, in front of the translated words
+ok   without executeShellAsync the same line follows the output
+ok   Rish mode is on and a command goes to the Rish shell, not to executeShellAsync
+ok   Rish mode: the command output is shown and no result line is added (its persistent shell keeps its own notes)
+ok   Rish mode: a non-zero exit still gets its own [exit 1] note, and still no result line
+ok   after leaving Rish mode a normal command gets the result line again
+errors: []
+all passed
