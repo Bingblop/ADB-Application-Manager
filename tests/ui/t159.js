@@ -24,6 +24,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     });
     check(size + ' Settings labels the Kotlin build experimental and separate', copy.title === 'Kotlin test build' && /Experimental Kotlin app/.test(copy.subtitle) && /installs separately/.test(copy.subtitle), JSON.stringify(copy));
 
+    await page.evaluate(() => I18N.set('es'));
+    await page.waitForTimeout(60);
+    const spanish = await page.evaluate(() => ({
+      title: document.querySelector('#kotlinTestBuildCard .color-card-title').textContent.trim(),
+      subtitle: document.querySelector('#kotlinTestBuildCard .color-card-subtitle').textContent.trim(),
+      button: document.getElementById('kotlinTestBuildBtn').textContent.trim()
+    }));
+    check(size + ' card text is translated using the real Spanish dictionary', spanish.title === 'Versión de prueba de Kotlin' && /Aplicación Kotlin experimental/.test(spanish.subtitle) && spanish.button === 'Ver versiones de prueba de Kotlin', JSON.stringify(spanish));
+    await page.evaluate(() => I18N.set('en'));
+
     const opened = await page.evaluate(() => {
       window.__openedUrls = [];
       window.AndroidBridge = window.AndroidBridge || {};

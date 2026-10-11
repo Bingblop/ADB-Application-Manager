@@ -1,0 +1,10 @@
+ok   360x800 Settings labels the Kotlin build experimental and separate: {"title":"Kotlin test build","subtitle":"Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.","button":"View Kotlin test builds"}
+ok   360x800 card text is translated using the real Spanish dictionary: {"title":"Versión de prueba de Kotlin","subtitle":"Aplicación Kotlin experimental para pruebas. Se instala por separado y no sustituye esta app WebView ni comparte sus datos.","button":"Ver versiones de prueba de Kotlin"}
+ok   360x800 button opens the stable repository releases page: ["https://github.com/Bingblop/ADB-Application-Manager/releases"]
+ok   360x800 no sideways scroll
+ok   412x915 Settings labels the Kotlin build experimental and separate: {"title":"Kotlin test build","subtitle":"Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.","button":"View Kotlin test builds"}
+ok   412x915 card text is translated using the real Spanish dictionary: {"title":"Versión de prueba de Kotlin","subtitle":"Aplicación Kotlin experimental para pruebas. Se instala por separado y no sustituye esta app WebView ni comparte sus datos.","button":"Ver versiones de prueba de Kotlin"}
+ok   412x915 button opens the stable repository releases page: ["https://github.com/Bingblop/ADB-Application-Manager/releases"]
+ok   412x915 no sideways scroll
+ok   no page errors:
+ALL PASSED
