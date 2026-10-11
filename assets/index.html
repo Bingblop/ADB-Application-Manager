@@ -17,6 +17,7 @@
             --secondary: #7C4DFF;
             --text-main: #FFFFFF;
             --on-accent: #000000;
+            --on-gradient: #000000;   /* text on the accent-to-secondary gradient: black or white, whichever reads better over both ends (set by applyTheme) */
             --bg-sheet: #0E121B;
             --input-bg: rgba(0, 0, 0, 0.35);
             --ov: 255, 255, 255;
@@ -1267,7 +1268,7 @@
             justify-content: center;
             font-size: 20px;
             font-weight: 900;
-            color: var(--on-accent);
+            color: var(--on-gradient);      /* the tile is painted with the accent-to-secondary gradient */
             flex-shrink: 0;                 /* a long title does not squeeze the tile (it stays square when the letter turns into the icon) */
         }
 
@@ -2813,7 +2814,7 @@
 
         .mode-action-btn.primary {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
-            color: var(--on-accent);
+            color: var(--on-gradient);
             border: none;
         }
 
@@ -5114,7 +5115,7 @@
                 .store-subtab.store-add { padding:7px 16px; font-size:17px; font-weight:900; line-height:1; color:var(--accent); border-style:dashed; }
                 .store-subtab.store-add.hasnone { animation:none; }
                 .store-row[data-src] { cursor:pointer; }
-                .store-subtab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
+                .store-subtab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-gradient); border-color:transparent; }
                 .store-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 2px; }
                 /* search on its own full row; the category and sort dropdowns share the next one */
                 .store-toolbar .list-search { flex:1 1 100%; min-width:0; }
@@ -5122,11 +5123,11 @@
                 .store-rows { display:flex; flex-direction:column; gap:10px; }
                 .store-row { display:flex; gap:12px; align-items:flex-start; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); border-radius:14px; padding:12px; }
                 .store-row .sr-icon { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; background:rgba(var(--ov),0.08); }
-                .store-row .sr-fallback { width:46px; height:46px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); font-weight:800; color:#fff; }
+                .store-row .sr-fallback { width:46px; height:46px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); font-weight:800; color:var(--on-gradient); }
                 .store-row { min-width:0; }
                 .store-row .sr-chip { overflow-wrap:anywhere; max-width:100%; font-size:11px; color:var(--text-muted); background:rgba(var(--ov),0.08); border-radius:8px; padding:2px 7px; }
                 .store-row .sr-chip.cat { color:var(--accent); background:rgba(var(--ov),0.1); font-weight:700; }
-                .store-inst-btn { flex-shrink:0; align-self:center; border:none; border-radius:10px; padding:9px 12px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--secondary)); cursor:pointer; }
+                .store-inst-btn { flex-shrink:0; align-self:center; border:none; border-radius:10px; padding:9px 12px; font-weight:800; color:var(--on-gradient); background:linear-gradient(135deg,var(--accent),var(--secondary)); cursor:pointer; }
                 .store-inst-btn:disabled { opacity:0.55; }
                 .sr-status { font-size:11px; margin-top:6px; color:var(--text-muted); }
                 .store-more { text-align:center; margin:10px 0 4px; }
@@ -8956,6 +8957,22 @@ Type any command below (e.g. pm list packages -d)
             return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
         }
 
+        // Black or white text for something painted with a gradient from color a to color b: the one whose WORST contrast over the whole gradient is the better
+        // (the accent alone is not enough: a bright accent with a dark secondary needs the choice that reads over both).
+        // The luminance along an sRGB gradient is convex: its darkest point can lie between the ends (red to teal), found here by a ternary search
+        // on the unrounded mix; its brightest point is always one of the two ends.
+        function onGradientColor(a, b) {
+            const x = hexToRgb(a), y = hexToRgb(b);
+            const lum = t => {
+                const c = x.map((v, i) => { const u = (v + (y[i] - v) * t) / 255; return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); });
+                return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+            };
+            let lo = 0, hi = 1;
+            for (let i = 0; i < 60; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (lum(m1) <= lum(m2)) hi = m2; else lo = m1; }
+            const lMin = Math.min(lum(0), lum(1), lum((lo + hi) / 2)), lMax = Math.max(lum(0), lum(1));
+            return (lMin + 0.05) / 0.05 >= 1.05 / (lMax + 0.05) ? '#000000' : '#FFFFFF';
+        }
+
         // Darkens (or lightens) a color step by step until it reaches the contrast target against bg
         function ensureContrast(color, bg, target) {
             const towards = luminance(bg) > 0.5 ? '#000000' : '#FFFFFF';
@@ -12502,7 +12519,7 @@ Type any command below (e.g. pm list packages -d)
             const esc = escapeHtml;
             const rows = apps.slice(0, storeShown).map(a => {
                 const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
-                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:#fff;">${esc(firstChar(a.name))}</div>`;
+                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
                 const chips = [];
                 if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
                 if (a.versionName) chips.push('v' + esc(a.versionName));
@@ -24126,6 +24143,8 @@ Type any command below (e.g. pm list packages -d)
             css.setProperty('--accent', t.accent);
             css.setProperty('--accent-glow', hexToRgba(t.accent, light ? 0.2 : 0.27));
             css.setProperty('--on-accent', contrastRatio(t.accent, '#000000') >= contrastRatio(t.accent, '#FFFFFF') ? '#000000' : '#FFFFFF');
+            // Buttons and tiles painted with the accent-to-secondary gradient: the text colour that reads worst-case best over BOTH ends, not over the accent alone
+            css.setProperty('--on-gradient', onGradientColor(t.accent, t.secondary));
             css.setProperty('--bg-base', t.bg);
             css.setProperty('--bg-surface', t.surface);
             css.setProperty('--bg-card', t.card);
