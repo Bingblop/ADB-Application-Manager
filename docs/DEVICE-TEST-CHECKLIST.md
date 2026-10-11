@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.12.9)
+# On-device test checklist (v7.1 to v7.12.10)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -333,6 +333,20 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Standby bucket, set: pick **rare**, Apply: the toast says "Standby bucket changed" and `am get-standby-bucket <pkg>` reports rare. Pick **restricted**, then **active**: same. On the current launcher or another exempted app the sheet shows the bucket greyed out and a set is refused with the phone's words.
 - [ ] Task Manager: open the Task Manager tab, then close the app from Recents: the phone shows no leftover activity from the app (battery stats show no polling after closing).
 - [ ] Command output in the log: on a release build, first clear the log from a computer (`adb logcat -c`; installing the update does not clear it, and lines from the previous version would look like a leak), then run a privileged action (for example Freeze an app), then `adb logcat -d -s ADBAppManager`. The tag lines show the mode and sizes of a command, not its text or output. (A debuggable build still logs the whole line, by design.)
+
+## 20. Install question, archive and Morphe Patcher fixes (v7.12.10)
+
+None of these has been run on a phone yet; this section is the first run.
+
+- [ ] Install question, adb / Shizuku / root mode: in the Updater (or an App Stores tab) download an app and install it. A dialog of the app opens before anything is installed. Its first lines say the host the file came from, "new app" or "replaces the installed one", and whether the file matched the checksum that came with the request. Below them, in quotation marks and labelled "not checked", are the package, version and the name the page gave. Tap **Cancel**: the card says "Install cancelled." and nothing is installed. Repeat and tap the install button: the app installs.
+- [ ] Install question, no answer: start an install in one of those modes and do not touch the dialog for two minutes: it closes by itself and nothing is installed. Start another and press Home or switch app: the dialog is gone when you come back and nothing is installed.
+- [ ] Install question, standard mode: an install from the Updater shows only the system installer's question, with no dialog of the app first.
+- [ ] Archives, free space: extract a normal zip and a normal tar.gz (as in the quick check, step 8): they extract with the right sizes. Extract an archive larger than the free space of the phone (a test archive you made): the entry is refused in words, no `.part` file is left, and the phone's storage is not full afterwards.
+- [ ] Archives, hard links: extract a tar made with `tar cf t.tar a b` where `b` is a hard link to `a` (`ln a b` first): both files appear with the same size and content.
+- [ ] Morphe key import: Morphe Patcher > signing key > import a text file: the app says it is not a keystore and the old key is unchanged. Import the exported key with the right password: it is accepted, and a backup of the old key stays next to it. Import it with a wrong password: refused, key unchanged.
+- [ ] Morphe patch, double tap: start a patch and tap the start button again at once (or twice quickly): only one patch runs and the second says a patch is already running.
+- [ ] Morphe patch, Downloads not writable (skip if you cannot make it so): revoke the app's access to storage, patch an app: the patched APK is kept in the app folder and listed in Patched APKs; nothing is lost.
+- [ ] Morphe catalog, two sources: open the Morphe Patcher tab with two sources added and open both quickly one after the other: both lists of patches load, without the four-minute wait.
 
 ## Report
 

@@ -2,20 +2,21 @@
 
 ## v7.12.10-Pro (versionCode 852)
 
-TODO: DRAFT. This is the skeleton for the patch release after v7.12.9. Fill it from `docs/PHONE-CHECK-RESULTS-v7.12.9.md` (what the phone check found), keep only what is merged and true of the build, and delete every line that starts with TODO before the release pull request is merged.
+TODO: DRAFT, held until the phone check of v7.12.9 is back. Add one bullet per finding of `docs/PHONE-CHECK-RESULTS-v7.12.9.md` (in words a user can follow; say which phones and modes) and delete every line that starts with TODO before the release pull request is merged.
 
-TODO: one sentence on what this release is (for example "A patch release: fixes for what the first phone check of v7.12.9 found, and four fixes from the read-only audits").
+A patch release: the app now asks before it installs a downloaded app in adb, Shizuku or root mode, and eight fixes from two read-only audits of the archive code and the Morphe Patcher. Each is tested on a computer.
 
-TODO: bullets for what the phone check found (one per finding, in words a user can follow; say which phones and modes).
-
-TODO: the four audit fixes below are all merged into `main` (#119, #120, #121, #122); check each sentence against the final code once more, and add the phone-check findings.
-
+- **Installs of downloaded apps in adb, Shizuku and root mode ask first (#109, C-011).** In those modes a store install used to run with no question, taking the address, package and checksum from the page; a script in the page could install any `https` APK as a new app. A dialog of the app itself (the page cannot press it) now asks before the install. It lists what the app found out for itself first: the host the file finally came from after redirects (a name with non-ASCII letters is shown in its `xn--` form), whether the app is new or replaces the installed one, and whether the file matched the checksum that came with the install request. Below it, labelled "not checked" and always in quotation marks, are the package and version written in the file and the name the page gave. No answer in two minutes, or leaving the screen, counts as No. Standard mode is unchanged (the system installer already asks). The dialog is not a boundary against a page that already has a shell in the active mode (such a page can tap Install itself); the decision is recorded in `docs/COPILOT_CLAUDE_HANDOFF.md` (C-011). Not run on a device.
 - **Archives: an entry is capped by the free space (#121, audit Z-1).** Extracting a zip, tar, 7z or RAR archive could write far more than the archive's file size suggests (a 10 KB sparse tar that declares 6 GiB, a small 7z of zeros) and fill the phone's storage. Each entry may now write only what is free less a 64 MB reserve, and one that declares more is refused in words before anything is written. Tested on a computer; not run on a device.
 - **Archives: tar hard links (#122, audit Z-2).** A hard link in a tar was extracted as an empty file and counted as done. It is now a copy of the file it shares, or skipped with a note when that file is not part of the extraction. Tested on a computer; not run on a device.
 - **Morphe Patcher: a job id that names a folder (#119, audit M-8).** A patch started with the job id `..` emptied the whole Morphe folder (sources, signing key, patched APKs). Job ids are now 1 to 40 letters, digits, dashes and underscores. Tested on a computer; not run on a device.
 - **Morphe Patcher: importing a signing key (#120, audit M-5).** Importing a text file, or a keystore with the wrong password, replaced the signing key and the failure only showed at the next patch. The file is now opened with the password and must hold a key named Morphe first; the old key is kept as a backup file. Tested on a computer; not run on a device.
+- **Morphe Patcher: one patch at a time, really (#123, audit M-7).** The check for a patch already running read a name and then wrote it, so two patch calls arriving together (a double tap, or a script in the page) could both be accepted. Taking the one run slot is now a single atomic step. Tested on a computer; not run on a device.
+- **Morphe Patcher: a finished patch is not lost when Downloads cannot be written (#124, audit M-3).** When the copy into `Downloads/Morphe Patcher` failed, the fallback into the app folder reused the same folder name (the millisecond) and failed too, losing the patched APK and leaving an empty folder. Each filing now gets a free name, and a failed one removes what it wrote and puts the APK back. Tested on a computer; not run on a device.
+- **Morphe Patcher: two source reads at once no longer cut each other's files (#125, audit M-2).** Reading the patches of two sources at the same time rewrote the job file and deleted the events file the first read was using, so the first waited its full four minutes. A run now takes the engine before it touches its files, and the second read finds the first one's answer in the cache. Tested on a computer against a fake service; not run on a device.
+TODO (M-4): add the Stop-before-the-service-starts bullet here when its pull request is merged, or delete this line.
 
-TODO: "Not run on a device" line for the whole release (what was and was not checked on a phone), and the "Known gaps" line (the remaining audit findings are items 11 and 12 of `docs/COPILOT_CLAUDE_HANDOFF.md`; the native install confirmation #109 if it is still open).
+TODO: "Not run on a device" line for the whole release, once the phone check is back (what was and was not checked on a phone), and the "Known gaps" line: the remaining audit findings are items 11 and 12 of `docs/COPILOT_CLAUDE_HANDOFF.md` (among them M-1 and M-13, which need the owner's design decision).
 
 ## v7.12.9-Pro (versionCode 851)
 
