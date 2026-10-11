@@ -18,10 +18,10 @@ final class KotlinBuild {
     // ---- The configuration: everything that names the Kotlin build or its release layout is in this block ------------------------------
 
     /**
-     * applicationId of the Kotlin app (app/build.gradle.kts on copilot/review-native-app, PR #84, read on 2026-10-11). It is a different id
-     * from this app's, so the two install side by side. It may change before the Kotlin app ships: change it here and nowhere else.
+     * applicationId of the Kotlin app, as the owner decided it: the Kotlin app's applicationId (app/build.gradle.kts) must be changed to this
+     * before its first release. It is a different id from this app's, so the two install side by side. See docs/KOTLIN-SWAP-CONTRACT.md.
      */
-    static final String KOTLIN_PACKAGE_ID = "com.aistudio.adbmanager.pkzgwt";
+    static final String KOTLIN_PACKAGE_ID = "com.bloatware.bingblop.kotlin";
     /** The repository whose releases hold the Kotlin test builds. */
     static final String REPO = "Bingblop/ADB-Application-Manager";
     /** The releases list, newest first, 100 to a page; page N is this address plus "&page=N" (see {@link #pageUrl}). */

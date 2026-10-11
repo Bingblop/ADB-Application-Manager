@@ -63,8 +63,8 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
   const s0 = await state();
   const card = await ev(() => { const c = document.getElementById('kotlinBuildCard'); const prefs = document.getElementById('view-prefs'); return { inPrefs: prefs.contains(c), shown: getComputedStyle(c).display !== 'none', title: c.querySelector('.color-card-title').innerText, note: c.querySelector('.color-card-subtitle').innerText }; });
   check('1. Settings has the card "Try the Kotlin build (beta)", with the note that it is a separate app', card.inPrefs && card.shown && card.title === 'Try the Kotlin build (beta)' && /separate app/.test(card.note), JSON.stringify(card));
-  check('   the note says: its own app id, fewer features (no Morphe, File Manager, archives, no real ADB, Shizuku or root yet), does not replace or update this app, keep both',
-    /own app id/.test(card.note) && /smaller feature set/.test(card.note) && /no Morphe, File Manager or archives/.test(card.note) && /no real ADB, Shizuku or root yet/.test(card.note) && /does not replace or update this app/.test(card.note) && /you keep both/.test(card.note), card.note);
+  check('   the note says: its own app id, fewer features (no Morphe, File Manager, archives, no real ADB, Shizuku or root yet), does not replace or update this app, keep both, and the Kotlin version has the swap back',
+    /way to move to the Kotlin version/.test(card.note) && /own app id/.test(card.note) && /smaller feature set/.test(card.note) && /no Morphe, File Manager or archives/.test(card.note) && /no real ADB, Shizuku or root yet/.test(card.note) && /does not replace or update this app/.test(card.note) && /you keep both/.test(card.note) && /same swap back to this one/.test(card.note), card.note);
   check('   opening Settings asked the app once', (await countOf('kotlinBuildCheck')) === 1, JSON.stringify(await calls()));
 
   // ---- 2. not installed, a test build in a release ----
