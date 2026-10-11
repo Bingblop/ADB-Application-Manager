@@ -144,7 +144,7 @@ public class KotlinBuildTest {
     };
     boolean none = true;
     for (String u : urls) {
-      JSONObject a = new JSONObject().put("name", f).put("browser_download_url", u).put("size", 100);
+      JSONObject a = new JSONObject().put("name", f).put("browser_download_url", u).put("state", "uploaded").put("size", 100);
       KotlinBuild.Choice c = pick(list(rel(t, a)));
       if (c != null) { none = false; System.out.println("  taken: " + u); }
     }
@@ -165,7 +165,7 @@ public class KotlinBuildTest {
     };
     none = true;
     for (String nm : names) {
-      JSONObject a = new JSONObject().put("name", nm).put("browser_download_url", P + t + "/" + nm).put("size", 100);
+      JSONObject a = new JSONObject().put("name", nm).put("browser_download_url", P + t + "/" + nm).put("state", "uploaded").put("size", 100);
       if (pick(list(rel(t, a))) != null) { none = false; System.out.println("  taken: " + nm.replace("\n", "\\n")); }
     }
     check("a file name with a path, a space, a control or direction character, a quote, a shell character or a length over 120 is ignored (" + names.length + " tried)", none);
@@ -186,7 +186,13 @@ public class KotlinBuildTest {
     String t = "kotlin-8.0.0", f = "ADB-Manager-Kotlin.apk";
     check("a size of 0, a negative size or one over 600 MB is ignored", pick(list(rel(t, asset(t, f).put("size", 0)))) == null && pick(list(rel(t, asset(t, f).put("size", -5)))) == null && pick(list(rel(t, asset(t, f).put("size", 700L * 1024 * 1024)))) == null
         && pick(list(rel(t, asset(t, f).put("size", 50L * 1024 * 1024)))) != null);
-    check("no size at all is allowed (the download is bounded by its own check)", pick(list(rel(t, new JSONObject().put("name", f).put("browser_download_url", P + t + "/" + f)))) != null);
+    JSONObject noSize = new JSONObject().put("name", f).put("browser_download_url", P + t + "/" + f).put("state", "uploaded");
+    check("an asset with no size is not published (the 600 MB limit cannot be skipped by leaving it out)", pick(list(rel(t, noSize))) == null && pick(list(rel(t, noSize.put("size", 5)))) != null);
+    check("a size that is text, null, a list or an object counts as none", pick(list(rel(t, asset(t, f).put("size", JSONObject.NULL)))) == null && pick(list(rel(t, asset(t, f).put("size", new JSONArray().put(5))))) == null && pick(list(rel(t, asset(t, f).put("size", new JSONObject().put("a", 5))))) == null
+        && pick(list(rel(t, asset(t, f).put("size", "abc")))) == null && pick(list(rel(t, asset(t, f).put("size", 0.0)))) == null);
+    check("exactly the limit is allowed, one byte over is not", pick(list(rel(t, asset(t, f).put("size", KotlinBuild.MAX_APK_BYTES)))) != null && pick(list(rel(t, asset(t, f).put("size", KotlinBuild.MAX_APK_BYTES + 1)))) == null);
+    JSONObject noState = new JSONObject().put("name", f).put("browser_download_url", P + t + "/" + f).put("size", 5);
+    check("an asset with no state is not published either (GitHub always says 'uploaded' for a finished file)", pick(list(rel(t, noState))) == null && pick(list(rel(t, noState.put("state", "uploaded")))) != null && pick(list(rel(t, asset(t, f).put("state", JSONObject.NULL)))) == null);
 
     // malformed
     String[] junk = { null, "", " ", "{", "[", "[{", "}", "null", "true", "123", "\"x\"", "{}", "{\"message\":\"API rate limit exceeded\"}", "<html><body>rate limited</body></html>", "[1,2,", "[{\"tag_name\":\"kotlin-1\"", "\u0000\u0001", "{\"a\":[]}" };
@@ -403,7 +409,7 @@ public class KotlinBuildTest {
     }.page(1, fullPage(1)).page(2, "[]"), new FakePackages(null, false), false).optString("release")));
     Thread.interrupted();
     // the rules for the files hold on every page
-    JSONObject hostile = rel("kotlin-9.0.0", new JSONObject().put("name", "ADB-Manager-Kotlin.apk").put("browser_download_url", "http://evil.example/a.apk").put("size", 5));
+    JSONObject hostile = rel("kotlin-9.0.0", new JSONObject().put("name", "ADB-Manager-Kotlin.apk").put("browser_download_url", "http://evil.example/a.apk").put("state", "uploaded").put("size", 5));
     check("a hostile release on page 2 is ignored like on page 1", KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(hostile)).page(3, "[]"), false) == null);
     check("a draft or pre-release on page 2 is ignored like on page 1", KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("9.0.0").put("draft", true))).page(3, "[]"), false) == null
         && KotlinBuild.find(new FakeHttp().page(1, fullPage(1)).page(2, fullPageWith(kotlin("9.0.0").put("prerelease", true))).page(3, "[]"), false) == null);
@@ -485,8 +491,12 @@ public class KotlinBuildTest {
     check("compare: leading zeros do not count", KotlinBuild.compareVersions("008.0010", "8.10") == 0 && KotlinBuild.compareVersions("8.09", "8.9") == 0 && KotlinBuild.compareVersions("8.010", "8.9") > 0 && KotlinBuild.compareVersions("0000", "0") == 0
         && KotlinBuild.compareVersions("00000000001000000000", "999999999") > 0 && KotlinBuild.compareVersions("8.0.0", "8.00.000") == 0);
     check("versionParts", java.util.Arrays.equals(KotlinBuild.versionParts("kotlin-8.0.10-beta"), new String[] { "8", "0", "10" }) && java.util.Arrays.equals(KotlinBuild.versionParts("v0007.000"), new String[] { "7", "0" }) && KotlinBuild.versionParts("beta").length == 0 && KotlinBuild.versionParts(null).length == 0);
+    check("a tag with 9 components: the later one is the newest", ver(pick(list(kotlin("1.0.0.0.0.0.0.0.1"), kotlin("1.0.0.0.0.0.0.0.2"), kotlin("1.0.0.0.0.0.0.0.0")))).equals("1.0.0.0.0.0.0.0.2"));
     check("a Kotlin release with a 10-digit segment is the newest (the pick uses the same compare)", ver(pick(list(kotlin("1.999999999"), kotlin("1.1000000000"), kotlin("1.5")))).equals("1.1000000000"));
     check("an installed 1.999999999 is behind release 1.1000000000", KotlinBuild.check(new FakeHttp().releases(list(kotlin("1.1000000000"))), new FakePackages("1.999999999", false), false).optBoolean("update"));
+    check("compare: every dotted component counts, not only the first eight", KotlinBuild.compareVersions("1.0.0.0.0.0.0.0.1", "1.0.0.0.0.0.0.0.2") < 0 && KotlinBuild.compareVersions("1.0.0.0.0.0.0.0.0.0.5", "1.0.0.0.0.0.0.0.0.0.4") > 0
+        && KotlinBuild.compareVersions("1.0.0.0.0.0.0.0.1", "1.0.0.0.0.0.0.0") > 0 && KotlinBuild.compareVersions("1.0.0.0.0.0.0.0.0", "1") == 0 && KotlinBuild.compareVersions("1" + new String(new char[30]).replace("\0", ".0") + ".7", "1" + new String(new char[30]).replace("\0", ".0") + ".8") < 0);
+    check("versionParts keeps all components", KotlinBuild.versionParts("kotlin-1.2.3.4.5.6.7.8.9.10").length == 10 && KotlinBuild.versionParts("1.2.3.4.5.6.7.8.9.10")[9].equals("10"));
     check("hasNumber", KotlinBuild.hasNumber("8.0") && KotlinBuild.hasNumber("v1") && !KotlinBuild.hasNumber("") && !KotlinBuild.hasNumber("beta") && !KotlinBuild.hasNumber(null));
     check("safeToken", KotlinBuild.safeToken("a-b_c.1", 10) && !KotlinBuild.safeToken("", 10) && !KotlinBuild.safeToken("a b", 10) && !KotlinBuild.safeToken("abcdefghijk", 10) && !KotlinBuild.safeToken(".x", 10) && !KotlinBuild.safeToken("a..b", 10) && !KotlinBuild.safeToken(null, 10));
   }
@@ -547,6 +557,10 @@ public class KotlinBuildTest {
     String jobs = between(main, "private final java.util.Set<java.util.concurrent.Future<?>> kotlinJobs", "/** Returns the number of this check");
     check("Kotlin jobs are tracked futures that remove themselves when done, are not started once the window is gone, and are cancelled with an interrupt", jobs.contains("FutureTask") && jobs.contains("kotlinJobs.remove(this)") && jobs.contains("if (activityDestroyed) return null;") && jobs.contains("f.cancel(true)") && jobs.contains("task.cancel(true)"));
     String onDestroy = between(main, "protected void onDestroy()", "executor.shutdown();");
+    String cancelAll = between(main, "private void cancelKotlinJobsOnDestroy()", "/** Returns the number of this check");
+    check("the jobs are copied and cleared in one synchronized step and cancelled outside the lock, and nothing else iterates the set", cancelAll.contains("synchronized (kotlinJobs) {") && cancelAll.indexOf("new java.util.ArrayList<java.util.concurrent.Future<?>>(kotlinJobs)") > cancelAll.indexOf("synchronized (kotlinJobs) {")
+        && cancelAll.indexOf("kotlinJobs.clear()") > cancelAll.indexOf("new java.util.ArrayList") && cancelAll.indexOf("kotlinJobs.clear()") < cancelAll.indexOf("f.cancel(true)") && cancelAll.indexOf("for (java.util.concurrent.Future<?> f : running)") > cancelAll.indexOf("kotlinJobs.clear()")
+        && !Pattern.compile("for \\([^)]*: kotlinJobs\\)").matcher(main).find());
     check("onDestroy cancels them, before the pool is shut down", onDestroy.contains("cancelKotlinJobsOnDestroy();") && onDestroy.indexOf("cancelKotlinJobsOnDestroy();") > onDestroy.indexOf("activityDestroyed = true;"));
     String http = between(main, "private final KotlinBuild.Http kotlinHttp", "private final KotlinBuild.Packages");
     check("the lookup's web refuses a request once the window is gone", http.contains("if (activityDestroyed) throw new java.io.IOException(\"closed\");") && http.contains("UpdateManager.httpGet("));

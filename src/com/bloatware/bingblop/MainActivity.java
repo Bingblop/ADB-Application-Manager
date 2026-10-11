@@ -2779,10 +2779,14 @@ public class MainActivity extends Activity {
 
     /** onDestroy: the Kotlin lookups stop (the thread is interrupted; a lookup stops at its next page, the request in progress ends by its own timeout). */
     private void cancelKotlinJobsOnDestroy() {
-        for (java.util.concurrent.Future<?> f : new java.util.ArrayList<java.util.concurrent.Future<?>>(kotlinJobs)) {
+        java.util.List<java.util.concurrent.Future<?>> running;
+        synchronized (kotlinJobs) {                                    // one step: a job that finishes (and removes itself) meanwhile cannot disturb it, and none added meanwhile is missed
+            running = new java.util.ArrayList<java.util.concurrent.Future<?>>(kotlinJobs);
+            kotlinJobs.clear();
+        }
+        for (java.util.concurrent.Future<?> f : running) {            // cancelled outside the lock: a cancelled job's done() takes it again
             try { f.cancel(true); } catch (Throwable ignored) {}
         }
-        kotlinJobs.clear();
     }
 
     /** Returns the number of this check; the answer, window.onKotlinBuild(json), carries it as "seq". */

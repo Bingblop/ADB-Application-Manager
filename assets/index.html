@@ -12831,7 +12831,7 @@ Type any command below (e.g. pm list packages -d)
         // A separate app, found in a GitHub release of this repository. The page asks the app three things (is it installed and what is
         // the newest test build, open it, download and install it) and sends no package, address or checksum: the app looks all of
         // that up itself. The install goes through the same download-and-install path (and the same confirmation) as every Store app.
-        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0, kbWant = 0, kbAfterDone = false;   // kbPendingAt: when the question in flight was asked (0 = none)
+        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0, kbWant = 0, kbAfterDone = false, kbDoneTimer = 0;   // kbPendingAt: when the question in flight was asked (0 = none)
         function kbBridge() { return (window.AndroidBridge && window.AndroidBridge.kotlinBuildCheck) ? window.AndroidBridge : null; }
         function kbShow() {
             const card = document.getElementById('kotlinBuildCard');
@@ -12928,7 +12928,9 @@ Type any command below (e.g. pm list packages -d)
                 kbAfterDone = true;
                 document.getElementById('kbInstallBtn').disabled = true;
                 kbCheck(false, true);
-                setTimeout(() => { if (kbAfterDone) { kbAfterDone = false; kbBusy = false; kbRender(); } }, 90 * 1000);   // no answer: give up waiting
+                const wait = kbWant;                                                       // the number of the look this wait is for
+                clearTimeout(kbDoneTimer);                                                 // a timer of an earlier install has nothing to do with this one
+                kbDoneTimer = setTimeout(() => { if (kbAfterDone && kbWant === wait) { kbAfterDone = false; kbBusy = false; kbRender(); } }, 90 * 1000);   // no answer: give up waiting
                 return;
             }
             kbBusy = false;

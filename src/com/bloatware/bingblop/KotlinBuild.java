@@ -105,24 +105,23 @@ final class KotlinBuild {
 
     /**
      * The numbers of a version ("kotlin-8.0.10-beta" gives "8", "0", "10"): the first dotted number in it, each as digits without leading
-     * zeros and without any limit on their size (so no number is cut or overflows); empty when there is none.
+     * zeros and without any limit on their size or on how many there are (so none is cut or overflows); empty when there is none.
      */
     static String[] versionParts(String v) {
         if (v == null) return new String[0];
         int i = 0, n = v.length();
         while (i < n && !(v.charAt(i) >= '0' && v.charAt(i) <= '9')) i++;
-        String[] out = new String[8];
-        int count = 0;
-        while (i < n && count < out.length) {
+        java.util.List<String> out = new java.util.ArrayList<String>();
+        while (i < n) {                                                          // every contiguous dotted component, however many
             int j = i;
             while (j < n && v.charAt(j) >= '0' && v.charAt(j) <= '9') j++;
             if (j == i) break;
             int k = i;
             while (k < j - 1 && v.charAt(k) == '0') k++;                    // leading zeros out, a lone 0 stays
-            out[count++] = v.substring(k, j);
+            out.add(v.substring(k, j));
             if (j < n && v.charAt(j) == '.' && j + 1 < n && v.charAt(j + 1) >= '0' && v.charAt(j + 1) <= '9') i = j + 1; else break;
         }
-        return java.util.Arrays.copyOf(out, count);
+        return out.toArray(new String[0]);
     }
 
     static boolean hasNumber(String v) {
@@ -244,10 +243,10 @@ final class KotlinBuild {
             String name = (String) nameObj, url = (String) urlObj;
             if (!safeToken(name, MAX_NAME)) continue;
             if (!url.equals(DOWNLOAD_URL_PREFIX + tag + "/" + name)) continue;               // https, this repository, this release, this file: nothing else
-            if (a.has("state") && !"uploaded".equals(a.optString("state", ""))) continue;     // still uploading
+            if (!"uploaded".equals(a.optString("state", ""))) continue;                          // still uploading, or no state: not a published file (GitHub always says)
             if (c == null && globMatch(ASSET_PATTERN, name)) {
                 long size = a.optLong("size", 0);
-                if (a.has("size") && (size <= 0 || size > MAX_APK_BYTES)) continue;
+                if (size <= 0 || size > MAX_APK_BYTES) continue;                                 // GitHub always reports the size of an uploaded file: none, zero or too large is not published
                 c = new Choice();
                 c.tag = tag;
                 c.version = tag.substring(TAG_PREFIX.length());

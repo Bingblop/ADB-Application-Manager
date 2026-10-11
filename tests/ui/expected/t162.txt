@@ -52,7 +52,9 @@ ok       the newer answer is shown: Installed, version 2.0.0, and the wait is ov
 ok       the older answer (not installed) arrives later and changes nothing: {"status":"Installed, version 2.0.0.","open":true}
 ok       a stale answer arriving while a newer question is out does not end its wait (Check again stays off, the card keeps its text): {"pending":true,"btn":true,"status":"Installed, version 2.0.0."}
 ok       so leaving and coming back still asks nothing more: asked 3
-ok   16e. with no answer to the look after the install, Download and install is held, then freed by itself after 90 s; and the look after the install is asked even while an older question is out: [{"off":true,"timer":true},{"off":false,"shown":true},2,3]
+ok   16e. with no answer to the look after the install, Download and install is held, then freed by itself after 90 s; and the look after the install is asked even while an older question is out: [{"off":true,"shown":true},{"off":false,"shown":true},2,3,1]
+ok   16f. a second install finishing soon after the first: the old timer is cleared, and if it fires anyway it does not release the second wait (the button stays off): [{"n":2,"cleared":[0,1001],"off":true},{"off":true,"shown":true}]
+ok       the second wait's own timer releases it: {"off":false,"shown":true}
 ok   17. [320px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":304,"vw":320}
 ok   17. [360px] the card and its buttons fit the width: {"overflowX":false,"inside":true,"cardRight":344,"vw":360}
 ok   18. without the app (no Kotlin bridge) the card is hidden

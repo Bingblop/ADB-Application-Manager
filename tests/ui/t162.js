@@ -285,22 +285,41 @@ const PKG = 'com.example.kotlinapp';   // what the mock app reports as the Kotli
     await sp.close();
   }
 
-  // ---- 16e. the look after the install gets no answer: the wait ends by itself after 90 s ----
+  // ---- 16e. the look after the install gets no answer: the wait ends by itself after 90 s, and a timer of an earlier install cannot end a later wait ----
   {
     const tp = await mkPage({});
     const f4 = (fn, arg) => tp.evaluate(fn, arg);
+    const done = () => f4(a => window.onStoreInstallProgress(JSON.stringify({ pkg: a, stage: 'done', percent: 100, message: 'Installed', installedPkg: '', label: '' })), PKG);
+    const btn = () => f4(() => ({ off: document.getElementById('kbInstallBtn').disabled, shown: getComputedStyle(document.getElementById('kbInstallBtn')).display !== 'none' }));
     await f4(() => switchView('prefs'));
     await tp.waitForTimeout(200);
-    await f4(() => { window.__t90 = null; const orig = window.setTimeout; window.setTimeout = function (f, ms, ...a) { if (ms === 90000) { window.__t90 = f; return 0; } return orig.call(window, f, ms, ...a); }; window.__kbNever = true; });
+    await f4(() => {
+      window.__t90 = []; window.__cleared = []; let id = 1000;
+      const orig = window.setTimeout, origClear = window.clearTimeout;
+      window.setTimeout = function (f, ms, ...a) { if (ms === 90000) { window.__t90.push(f); return ++id; } return orig.call(window, f, ms, ...a); };
+      window.clearTimeout = function (t) { window.__cleared.push(t); return origClear.call(window, t); };
+      window.__kbNever = true;
+    });
     await f4(() => kbCheck(true)); await tp.waitForTimeout(50);
     const before = await f4(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
-    await f4(a => window.onStoreInstallProgress(JSON.stringify({ pkg: a, stage: 'done', percent: 100, message: 'Installed', installedPkg: '', label: '' })), PKG);
+    await done();
     await tp.waitForTimeout(100);
     const askedAtDone = await f4(() => window.__calls.filter(c => c[0] === 'kotlinBuildCheck').length);
-    const held = await f4(() => ({ off: document.getElementById('kbInstallBtn').disabled, timer: typeof window.__t90 === 'function' }));
-    await f4(() => window.__t90());
-    const freed = await f4(() => ({ off: document.getElementById('kbInstallBtn').disabled, shown: getComputedStyle(document.getElementById('kbInstallBtn')).display !== 'none' }));
-    check('16e. with no answer to the look after the install, Download and install is held, then freed by itself after 90 s; and the look after the install is asked even while an older question is out', held.off && held.timer && !freed.off && freed.shown && askedAtDone === before + 1, JSON.stringify([held, freed, before, askedAtDone]));
+    const held = await btn();
+    const one = await f4(() => window.__t90.length);
+    await f4(() => window.__t90[0]());
+    const freed = await btn();
+    check('16e. with no answer to the look after the install, Download and install is held, then freed by itself after 90 s; and the look after the install is asked even while an older question is out', held.off && one === 1 && !freed.off && freed.shown && askedAtDone === before + 1, JSON.stringify([held, freed, before, askedAtDone, one]));
+    // a second install finishes within 90 s of the first: the first timer is cancelled and, if it fires anyway, it does not end the second wait
+    await done();
+    await tp.waitForTimeout(100);
+    const second = await f4(() => ({ n: window.__t90.length, cleared: window.__cleared.slice(), off: document.getElementById('kbInstallBtn').disabled }));
+    await f4(() => window.__t90[0]());
+    const stale = await btn();
+    check('16f. a second install finishing soon after the first: the old timer is cleared, and if it fires anyway it does not release the second wait (the button stays off)', second.n === 2 && second.cleared.includes(1001) && second.off && stale.off, JSON.stringify([second, stale]));
+    await f4(() => window.__t90[1]());
+    const released = await btn();
+    check('    the second wait\'s own timer releases it', !released.off && released.shown, JSON.stringify(released));
     await tp.close();
   }
 
