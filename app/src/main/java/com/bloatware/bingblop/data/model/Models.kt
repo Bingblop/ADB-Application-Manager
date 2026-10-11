@@ -150,3 +150,28 @@ data class MonitorTelemetry(
     val batteryCharging: Boolean,
     val uptimeSeconds: Long
 )
+
+enum class WirelessAdbState {
+    DISCONNECTED,
+    PAIRING,
+    CONNECTING,
+    CONNECTED,
+    FAILED
+}
+
+data class WirelessAdbInfo(
+    val state: WirelessAdbState = WirelessAdbState.DISCONNECTED,
+    val ipAddress: String = "127.0.0.1",
+    val pairingPort: String = "",
+    val pairingCode: String = "",
+    val connectPort: String = "",
+    val lastOutput: String = ""
+)
+
+data class PowerUserApp(
+    val appName: String,
+    val packageName: String,
+    val description: String,
+    val isInstalled: Boolean = false,
+    val hasWriteSecureSettings: Boolean = false
+)

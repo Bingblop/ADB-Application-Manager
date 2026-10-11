@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
 
         val shellRepository = ShellRepository()
         val appRepository = AppRepository(applicationContext, shellRepository)
-        val settingsRepository = SettingsRepository(shellRepository)
+        val settingsRepository = SettingsRepository(applicationContext, shellRepository)
         val cleanerRepository = CleanerRepository(applicationContext)
         val monitorRepository = MonitorRepository(applicationContext, shellRepository)
         val logcatRepository = LogcatRepository(shellRepository)
