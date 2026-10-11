@@ -357,6 +357,7 @@ None of these has been run on a phone yet; this section is the first run.
 - [ ] Font search, leaving Settings: in Settings, in the font setting, start the font search on a phone with a lot of storage, then leave Settings (back to the Apps tab) before it ends. No message appears and the phone is not left busy: open Settings again, the list is empty and the search button works at once. Start a new search: it runs normally. Fonts saved as `.ttc` (or a `.ttc` renamed to `.ttf`) are not listed.
 
 ## Report
+- [ ] Apps, Refresh button: in the Apps tab, the round Refresh button is the last control of the search bar. Install or remove an app with another tool, tap Refresh: the list shows the change, the button spins while it loads and the search text, sort and scroll position stay. Tap it twice quickly: it loads once. With the phone's animations turned off (Android's reduce motion), it does not spin.
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
 at https://github.com/Bingblop/ADB-Application-Manager/issues.
