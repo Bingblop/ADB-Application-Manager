@@ -4475,6 +4475,9 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。"
 },
 p: [
+["Kotlin test build", "Kotlin テストビルド"],
+["Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.", "テスト用の実験的な Kotlin アプリです。別にインストールされ、この WebView アプリを置き換えたり、データを共有したりしません。"],
+["View Kotlin test builds", "Kotlin テストビルドを見る"],
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "「{0}」がクイックリストになりました。使うには「アプリを停止」タイルまたはウィジェットを追加してください。"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} 行 • {2}"],

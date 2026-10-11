@@ -4475,6 +4475,9 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>."
 },
 p: [
+["Kotlin test build", "Build pengujian Kotlin"],
+["Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.", "Aplikasi Kotlin eksperimental untuk pengujian. Dipasang terpisah dan tidak menggantikan aplikasi WebView ini atau berbagi datanya."],
+["View Kotlin test builds", "Lihat build pengujian Kotlin"],
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” kini menjadi daftar cepat. Tambahkan ubin “Hentikan aplikasi” atau widget untuk menggunakannya."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} baris • {2}"],

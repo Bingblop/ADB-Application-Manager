@@ -4475,6 +4475,9 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다."
 },
 p: [
+["Kotlin test build", "Kotlin 테스트 빌드"],
+["Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.", "테스트용 실험적 Kotlin 앱입니다. 별도로 설치되며 이 WebView 앱을 대체하거나 데이터를 공유하지 않습니다."],
+["View Kotlin test builds", "Kotlin 테스트 빌드 보기"],
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "\"{0}\" 목록이 이제 빠른 목록입니다. 사용하려면 \"앱 중지\" 타일이나 위젯을 추가하세요."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1}줄 • {2}"],

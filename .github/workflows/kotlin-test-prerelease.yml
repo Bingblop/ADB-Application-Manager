@@ -1,0 +1,63 @@
+name: Kotlin test APK prerelease
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Build Kotlin test APK
+        run: ./gradlew --no-daemon :app:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-test-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 1
+
+  draft-prerelease:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: kotlin-test-apk
+          path: dist
+
+      - name: Create draft Kotlin prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          tag="kotlin-test-${RUN_ID}-${RUN_ATTEMPT}"
+          gh release create "$tag" dist/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$COMMIT_SHA" \
+            --title "Kotlin test build ${RUN_ID}" \
+            --notes "Experimental Kotlin test build. This APK installs as a separate app and does not update the WebView release. Review the APK and release notes before publishing." \
+            --draft \
+            --prerelease

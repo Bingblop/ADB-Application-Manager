@@ -4475,6 +4475,9 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Al momento l’app è in <1>Modalità di sola lettura</1>. Le operazioni sui pacchetti di sistema (come Congela, Attiva, Forza arresto, Cancella dati o Disinstalla) richiedono autorizzazioni elevate tramite <2>ADB TCP (5555)</2>, <3>Debug wireless</3>, <4>Shizuku</4> o <5>Root</5>."
 },
 p: [
+["Kotlin test build", "Build di test Kotlin"],
+["Experimental Kotlin app for testing. It installs separately and does not replace this WebView app or share its data.", "App Kotlin sperimentale per i test. Si installa separatamente e non sostituisce questa app WebView né ne condivide i dati."],
+["View Kotlin test builds", "Visualizza le build di test Kotlin"],
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” è ora l’elenco rapido. Aggiungi il riquadro “Arresta app” o il widget per usarlo."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} righe • {2}"],
