@@ -13000,11 +13000,11 @@ Type any command below (e.g. pm list packages -d)
             else now.textContent = txF('Private DNS is now: an unknown mode “{0}”', got.raw);
         }
 
-        // Called when Settings opens: read the phone (again when the last look is a minute old).
+        // Called every time Settings opens: read the phone again (it may have been changed in Android's own settings meanwhile). A change or a read already out is left alone.
         function pdnsShow() {
             if (!document.getElementById('privateDnsCard')) return;
             if (pdnsBusy || !pdnsBridgeOk() || !isPrivilegedActive) { pdnsRender(); return; }
-            if (!pdnsState || Date.now() - pdnsAt > 60000) pdnsRefresh(false); else pdnsRender();
+            pdnsRefresh(false);
         }
         async function pdnsRefresh(user) {
             if (pdnsBusy || !pdnsBridgeOk() || !isPrivilegedActive) { if (user && !pdnsBusy && pdnsBridgeOk()) guardPrivilege('Private DNS'); pdnsRender(); return; }

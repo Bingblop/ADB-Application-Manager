@@ -135,6 +135,20 @@ const BAD = [
   check('   when the phone cannot say, the card says it could not read (no guess)', (await now()) === 'Could not read Private DNS: The settings service did not answer Try again.' && (await pressed()) === '', await now());
   await ev(() => { window.AndroidBridge.settingsOp = window.__o; }); await setPhone('opportunistic', ''); await press('pdnsRefresh');
 
+  // ---- 3b. every time Settings opens the phone is read again ----
+  await clear(); await setPhone('opportunistic', ''); await press('pdnsRefresh'); await clear();
+  await setPhone('off', null);                                                 // changed in Android's own Settings meanwhile (the last look is a moment old)
+  await ev(() => switchView('apps')); await sleep(100); await toSettings();
+  check('3b. leaving Settings and coming back reads the phone again, even a moment after the last look: the change made in Android\'s own settings shows (Off, Off marked), after exactly one read', (await now()) === 'Private DNS is now: Off' && (await pressed()) === 'pdnsOff' && JSON.stringify(await ops()) === '["get private_dns_mode"]', (await now()) + JSON.stringify(await ops()));
+  await clear(); await ev(() => switchView('apps')); await setPhone('opportunistic', ''); await toSettings();
+  check('   and again the next time', (await now()) === 'Private DNS is now: Automatic' && JSON.stringify(await ops()) === '["get private_dns_mode"]', (await now()) + JSON.stringify(await ops()));
+  await clear(); await ev(() => { window.__delay = 250; });
+  await ev(() => document.getElementById('pdnsCloudflare').click()); await sleep(60);
+  await ev(() => { switchView('apps'); switchView('prefs'); }); await sleep(30);
+  await idle(); await sleep(60);
+  check('   a change that is out is not disturbed by opening Settings again: no extra read, one change, read back once', JSON.stringify(await ops()) === '["put private_dns_specifier=one.one.one.one","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]' && (await now()) === 'Private DNS is now: hostname one.one.one.one' && (await msg()) === 'Changed, and read back from the phone.', JSON.stringify(await ops()) + await now());
+  await clear(); await setPhone('opportunistic', ''); await press('pdnsRefresh'); await clear();
+
   // ---- 4. a preset ----
   await clear(); await ev(() => { window.__delay = 250; sdbLoadedAt.global = Date.now(); });
   await ev(() => document.getElementById('pdnsAdguard').click()); await sleep(60);
