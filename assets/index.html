@@ -13610,7 +13610,7 @@ Type any command below (e.g. pm list packages -d)
             pdnsWatchReset();                                                       // only an answer that counts keeps the scan alive
             if (!(e.host in s.res)) s.n++;
             const st0 = String(e.status || '');
-            s.res[e.host] = { status: st0 === 'dns' && /resolver busy/i.test(String(e.error || '')) ? 'busy' : st0, ip: e.ip || '', connectMs: e.connectMs, tlsMs: e.tlsMs, queryMs: e.queryMs, samples: +e.samples || 0, okSamples: +e.okSamples || 0, error: e.error || '' };
+            s.res[e.host] = { status: st0 === 'dns' && /resolver\s+busy|lookup timed out/i.test(String(e.error || '')) ? 'busy' : st0, ip: e.ip || '', connectMs: e.connectMs, tlsMs: e.tlsMs, queryMs: e.queryMs, samples: +e.samples || 0, okSamples: +e.okSamples || 0, error: e.error || '' };
             if (s.n >= s.hosts.length) { pdnsScanFinish(); return; }
             pdnsScanRender();
         };

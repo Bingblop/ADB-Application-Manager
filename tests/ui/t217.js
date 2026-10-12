@@ -203,6 +203,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await clearOps();
   await ev(() => document.getElementById('pdnsGoogle').click()); await sleep(60); await page.waitForFunction(() => !pdnsBusy, null, { timeout: 8000 });
   check('   a tile that answered (or was never tested) is applied by ONE tap, and the tile that matches the phone is marked', (await ops()).slice(0, 2).join() === 'put private_dns_specifier=dns.google,put private_dns_mode=hostname' && (await ev(() => document.getElementById('pdnsGoogle').getAttribute('aria-pressed'))) === 'true');
+  await ev(() => __dnsEmit({ id: window.__dns.starts[window.__dns.starts.length - 1].id, host: 'dot.sb', status: 'dns', ip: '', connectMs: null, tlsMs: null, queryMs: null, samples: 3, okSamples: 0, error: 'name lookup timed out' }));
+  check('   a name lookup that timed out on the phone (status dns, error "name lookup timed out") reads the same way: "… Couldn’t test now", not "Name not found", no second tap', (await row('pdnsDnssb')).tag === '… Couldn’t test now' && !/is-fail/.test((await row('pdnsDnssb')).cls));
   const busy = await row('pdnsNextdns');
   check('   a name the app could not look up because its resolver was busy (status dns, error "resolver busy") is not a failure of the service: "… Couldn’t test now" and "Couldn’t test right now, try again.", not marked failed, no warning about losing the internet', busy.tag === '… Couldn’t test now' && busy.warn === 'Couldn’t test right now, try again.' && !/is-fail/.test(busy.cls), JSON.stringify(busy));
   await clearOps();

@@ -46,6 +46,7 @@ ok   11. tapping a tile that failed does NOT apply it: nothing is sent to the ph
 ok      tapping another failed tile first arms that one instead (still nothing sent, the first is not armed any more)
 ok      the second tap on the same tile applies it (host first, then mode, read back), the arm is gone: ["put private_dns_specifier=dns.opendns.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]
 ok      a tile that answered (or was never tested) is applied by ONE tap, and the tile that matches the phone is marked
+ok      a name lookup that timed out on the phone (status dns, error "name lookup timed out") reads the same way: "… Couldn’t test now", not "Name not found", no second tap
 ok      a name the app could not look up because its resolver was busy (status dns, error "resolver busy") is not a failure of the service: "… Couldn’t test now" and "Couldn’t test right now, try again.", not marked failed, no warning about losing the internet: {"cls":"","ms":"","det":"","tag":"… Couldn’t test now","warn":"Couldn’t test right now, try again."}
 ok      and tapping it applies at once (nothing was learned against it)
 ok      Automatic / Off are never asked twice, and they clear a waiting second tap
