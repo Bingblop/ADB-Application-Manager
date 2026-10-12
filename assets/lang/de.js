@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Der Einstellungsdienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal oder starten Sie das Telefon neu.",
 "This Android version did not understand the command.": "Diese Android-Version hat den Befehl nicht verstanden.",
 "Check again": "Erneut prüfen",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Das Installieren aus dem Dateimanager braucht ADB, Wireless Debugging, Shizuku oder Root. Richte unter Betriebsmodi einen davon ein und versuche es erneut."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Das Installieren aus dem Dateimanager braucht ADB, Wireless Debugging, Shizuku oder Root. Richte unter Betriebsmodi einen davon ein und versuche es erneut.",
+"Animations": "Animationen",
+"Bottom bar + top bar": "Untere Leiste + obere Leiste",
+"Bottom bar only": "Nur untere Leiste",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Wähle, was das Menü jedes angehefteten Tabs auflistet und in welcher Reihenfolge. Ein Menü zeigt höchstens vier Einträge; der erste liegt unter deinem Daumen.",
+"Customize tabs": "Tabs anpassen",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "APKs im Speicher suchen",
+"Full-screen terminal": "Terminal im Vollbild",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Halte einen Tab in der unteren Leiste gedrückt, um ein kleines Menü mit schnellen Zielen zu öffnen. Sie öffnen nur eine Ansicht oder einen Abschnitt; keines davon ändert dein Telefon.",
+"Long-press a tab for shortcuts": "Tab lange drücken für Kurzbefehle",
+"Long-press shortcuts": "Kurzbefehle per langem Drücken",
+"Main navigation": "Hauptnavigation",
+"Monet": "Monet",
+"More tabs": "Weitere Tabs",
+"Reset shortcuts": "Kurzbefehle zurücksetzen",
+"Shortcuts": "Kurzbefehle",
+"Shortcuts are back to the default": "Die Kurzbefehle sind wieder auf Standard",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Tippe auf die Stecknadel, um einen Tab in der unteren Leiste zu halten. Sie fasst vier, der App-Manager ist immer der erste; die anderen warten unter „Mehr“.",
+"Tasks": "Tasks",
+"Telemetry": "Telemetrie",
+"Top bar only": "Nur obere Leiste",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Wo die Tabs sind. Die untere Leiste zeigt die angehefteten Tabs und eine Schaltfläche „Mehr“ für den Rest; die obere Leiste zeigt alle.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "Die Änderung konnte nicht bestätigt werden: {0}"],
 ["Could not read Private DNS: {0}", "Privates DNS konnte nicht gelesen werden: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Privates DNS ist jetzt: unbekannter Modus „{0}“"],
-["The phone has this setting, but one step reported a problem: {0}", "Das Telefon hat diese Einstellung, aber ein Schritt meldete ein Problem: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Das Telefon hat diese Einstellung, aber ein Schritt meldete ein Problem: {0}"],
+["A menu lists at most {0} shortcuts.", "Ein Menü zeigt höchstens {0} Kurzbefehle."],
+["The bottom bar holds {0} tabs. Unpin one first.", "Die untere Leiste fasst {0} Tabs. Hefte zuerst einen ab."]
 ]
 };

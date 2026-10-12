@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-nav="bottom">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -60,6 +60,7 @@
             background-color: var(--bg-base);
             /* the header and the tab bar stay on top: scrolling to something (a focused control, a card) stops below them */
             scroll-padding-top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px) + 8px);
+            scroll-padding-bottom: calc(var(--bnav-h, 0px) + 8px);
         }
 
         /* Material 3 Expressive, the "Expressive Animations" setting (default on): every transition in the app gets a
@@ -81,7 +82,7 @@
         body {
             background-color: var(--bg-base);
             color: var(--text-main);
-            padding: 0 0 160px 0;
+            padding: 0 0 calc(160px + var(--bnav-h, 0px)) var(--bnav-w, 0px);          /* the bottom bar (or the side rail) never covers the end of a page */
             min-height: 100vh;
             /* Text can be long-pressed, highlighted and copied */
             -webkit-user-select: text;
@@ -317,6 +318,219 @@
             color: var(--on-accent);
             background: var(--accent);
             box-shadow: 0 2px 12px var(--accent-glow);
+        }
+
+        /* ---- Navigation: the bottom bar (a side rail on a wide screen) next to the top tab bar ----
+           Settings > Navigation chooses (html[data-nav]): "both", "bottom" (the default) or "top" (the tab bar alone, as before). --bnav-h is the height the bar takes at the bottom
+           (0 when it is off or away), --bnav-w the width the rail takes at the left; everything that sits at the bottom of the screen adds --bnav-h to its own offset. */
+        :root {
+            --bnav-bar: 56px;
+            --bnav-full: calc(var(--bnav-bar) + env(safe-area-inset-bottom, 0px));
+            --bnav-h: 0px;
+            --bnav-w: 0px;
+        }
+        html:not([data-nav="top"]) { --bnav-h: var(--bnav-full); }
+        html[data-nav="bottom"] #tabBar { display: none; }
+        html[data-nav="top"] .bnav { display: none; }
+        html.bnav-away { --bnav-h: 0px; }
+
+        .bnav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 95;
+            height: var(--bnav-full);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            display: flex;
+            align-items: stretch;
+            background: var(--bg-sheet);
+            border-top: 1px solid var(--border-glass);
+            box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.22);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0s;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .bnav:empty { display: none; }
+        .bnav.bnav-off { transform: translateY(105%); visibility: hidden; pointer-events: none; transition: transform 0.26s cubic-bezier(0.4, 0, 1, 1), visibility 0s linear 0.26s; }
+        /* the sliding pill behind the active icon (placed by bnavPlace from the active slot) */
+        .bn-ind {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 52px;
+            height: 28px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            box-shadow: 0 2px 12px var(--accent-glow);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.34s cubic-bezier(0.2, 0.9, 0.25, 1.05), width 0.2s ease, opacity 0.2s ease;
+            will-change: transform;
+        }
+        .bn-item {
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 4px 2px 3px;
+            background: none;
+            border: 0;
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 10.5px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: 0.1px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+        .bn-ico {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease, transform 0.15s ease;
+        }
+        .bn-ico svg { width: 21px; height: 21px; fill: currentColor; display: block; }
+        .bn-lbl { max-width: 100%; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+        .bn-item.active { color: var(--text-main); }
+        .bn-item.active .bn-ico { color: var(--on-gradient); }
+        .bn-item:active .bn-ico { transform: scale(0.9); }
+        .bn-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+        .bn-badge {
+            position: absolute;
+            top: -4px;
+            right: 4px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 8px;
+            background: #D32F2F;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 16px;
+            text-align: center;
+            box-shadow: 0 0 0 2px var(--bg-sheet);
+            font-variant-numeric: tabular-nums;
+        }
+        .bn-badge.dot { min-width: 10px; width: 10px; height: 10px; padding: 0; top: -1px; right: 10px; }
+        @media (prefers-reduced-motion: no-preference) {
+            html.expressive-anim .bn-item.active .bn-ico svg { animation: bnPop 0.42s both; }
+            @keyframes bnPop { 0% { transform: scale(0.7); } 60% { transform: scale(1.14); } 100% { transform: scale(1); } }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bnav, .bnav.bnav-off, .bn-ind, .bn-ico { transition: none !important; }
+        }
+
+        /* the More sheet: the tabs that are not on the bar, three to a row */
+        .bn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .bn-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            padding: 12px 6px 10px;
+            min-height: 92px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-glass);
+            background: rgba(var(--ov), 0.05);
+            color: var(--text-main);
+            font-size: 11.5px;
+            font-weight: 800;
+            line-height: 1.2;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .bn-tile .bn-ico { width: 44px; height: 44px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+        .bn-tile .bn-ico svg { width: 24px; height: 24px; }
+        .bn-tile .bn-tl { white-space: pre-line; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+        .bn-tile .bn-badge { top: -5px; right: -5px; }
+        .bn-tile .bn-badge.dot { top: -2px; right: 0; }
+        .bn-tile.current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+        .bn-tile:active { transform: scale(0.97); }
+        .bn-tile:focus-visible { outline-offset: 2px; }
+        .bn-custom { display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border-glass); border-radius: 999px; background: none; color: var(--accent); font-size: 13px; font-weight: 800; cursor: pointer; }
+        .bn-custom:active { background: var(--accent-glow); }
+
+        /* Settings > Navigation: three choices; Feature List: the pin */
+        .nav-opts { display: grid; gap: 8px; margin-top: 12px; }
+        .nav-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; }
+        .nav-opt .nav-dot { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-muted); position: relative; }
+        .nav-opt[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--input-bg)); }
+        .nav-opt[aria-checked="true"] .nav-dot { border-color: var(--accent); }
+        .nav-opt[aria-checked="true"] .nav-dot::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+        .fl-pin { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .fl-pin svg { width: 17px; height: 17px; fill: currentColor; }
+        .fl-pin[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+        .fl-pin:disabled { opacity: 0.3; cursor: default; }
+        @media (max-width: 359px) { #featureList .fl-row { flex-wrap: wrap; } #featureList .fl-row .fl-name { flex: 1 1 100%; } #featureList .fl-row .fl-pin { margin-left: auto; } }          /* a narrow screen: the name on its own line, the buttons under it */
+
+        /* Long-press menu, the one-time hint, the section highlight */
+        .bn-menu { position: fixed; z-index: 210; min-width: 190px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--bg-sheet); border: 1px solid var(--border-glass); border-radius: 18px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .bn-menu.up { flex-direction: column-reverse; }
+        /* the small point towards the slot that was held */
+        .bn-menu::after { content: ""; position: absolute; width: 12px; height: 12px; background: var(--bg-sheet); border: solid var(--border-glass); border-width: 0 1px 1px 0; pointer-events: none; }
+        .bn-menu.up::after { bottom: -7px; left: var(--bn-cx, 50%); transform: translateX(-50%) rotate(45deg); }
+        .bn-menu.side::after { left: -7px; top: var(--bn-cy, 50%); transform: translateY(-50%) rotate(135deg); }
+        .bn-sc { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 8px 14px 8px 12px; border: 0; border-radius: 13px; background: none; color: var(--text-main); font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; }
+        .bn-sc svg { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; color: var(--accent); }
+        .bn-sc span { min-width: 0; overflow-wrap: anywhere; }
+        .bn-sc.fav { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+        .bn-sc.hot, .bn-sc:active { background: var(--accent); color: var(--on-accent); }
+        .bn-sc.hot svg, .bn-sc:active svg { color: var(--on-accent); }
+        .bn-sc:focus-visible { outline-offset: -2px; }
+        @media (prefers-reduced-motion: no-preference) {
+            .bn-menu { animation: bnMenuIn 0.18s ease-out; transform-origin: 50% 100%; }
+            @keyframes bnMenuIn { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: none; } }
+        }
+        .bn-tip { position: fixed; z-index: 205; left: 50%; bottom: calc(var(--bnav-h, 0px) + 12px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 9px 16px; border-radius: 999px; background: var(--bg-card); border: 1px solid var(--accent); color: var(--text-main); font-size: 12px; font-weight: 800; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); cursor: pointer; text-align: center; }
+        @media (min-width: 720px) { .bn-tip { left: calc(var(--bnav-w, 0px) + 14px); bottom: 16px; transform: none; } }
+        .bn-flash { animation: bnFlash 1.6s ease-out; border-radius: var(--radius-lg); }
+        @keyframes bnFlash { 0% { box-shadow: 0 0 0 0 var(--accent); } 25% { box-shadow: 0 0 0 4px var(--accent), 0 0 24px var(--accent-glow); } 100% { box-shadow: 0 0 0 0 transparent; } }
+        @media (prefers-reduced-motion: reduce) { .bn-flash { animation: none; outline: 2px solid var(--accent); outline-offset: 2px; } }
+        .nav-sc-details { margin-top: 12px; border-top: 1px solid var(--border-glass); padding-top: 4px; }
+        .nav-sc-details summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; cursor: pointer; list-style: none; }
+        .nav-sc-details summary::-webkit-details-marker { display: none; }
+        .nav-sc-details summary::after { content: "▾"; margin-left: auto; color: var(--text-muted); transition: transform 0.2s ease; }
+        .nav-sc-details[open] summary::after { transform: rotate(180deg); }
+        .nav-sc-title { margin-top: 12px; font-size: 12px; font-weight: 800; color: var(--accent); }
+
+        /* A wide screen (a tablet, a phone on its side): the same slots stand in a rail at the left edge, and the page makes room for it */
+        @media (min-width: 720px) {
+            html:not([data-nav="top"]) { --bnav-h: 0px; --bnav-w: 76px; }
+            html.bnav-away { --bnav-w: 0px; }
+            .bnav {
+                top: 0;
+                right: auto;
+                bottom: 0;
+                width: 76px;
+                height: auto;
+                padding: 10px 0;
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 4px;
+                overflow-y: auto;
+                scrollbar-width: none;
+                border-top: 0;
+                border-right: 1px solid var(--border-glass);
+                box-shadow: 8px 0 28px rgba(0, 0, 0, 0.18);
+            }
+            .bnav.bnav-off { transform: translateX(-105%); }
+            .bn-item { flex: 0 0 auto; min-height: 64px; width: 100%; }
         }
 
         /* Main Container */
@@ -789,8 +1003,8 @@
         /* DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) */
         .batch-bottom-sheet {
             position: fixed;
-            bottom: 0;
-            left: 0;
+            bottom: var(--bnav-h, 0px);                 /* docked on top of the bottom navigation bar */
+            left: var(--bnav-w, 0px);
             right: 0;
             background: var(--bg-sheet);
             border-top: 2px solid var(--accent);
@@ -798,7 +1012,7 @@
             box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.9), 0 0 24px var(--accent-glow);
             padding: 12px 16px 24px 16px;
             z-index: 200;
-            transform: translateY(120%);
+            transform: translateY(calc(120% + var(--bnav-h, 0px)));
             transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
             max-width: 600px;
             margin: 0 auto;
@@ -980,7 +1194,7 @@
         .batch-fab {
             position: fixed;
             right: 20px;
-            bottom: 24px;
+            bottom: calc(24px + var(--bnav-h, 0px));
             width: 56px;
             height: 56px;
             border-radius: 50%;
@@ -2639,9 +2853,9 @@
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 24px;
+            bottom: calc(24px + var(--bnav-h, 0px));
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
+            transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px)));
             background: var(--bg-card);
             border: 1px solid var(--accent);
             color: var(--text-main);
@@ -3605,6 +3819,9 @@
     <!-- Top Navigation Tabs -->
     <nav class="tab-bar" id="tabBar" aria-label="Tabs"></nav>
 
+    <!-- Bottom navigation: four pinned tabs and More (a rail at the left on a wide screen). It starts away; bnavSync brings it in once the page is up. -->
+    <nav class="bnav bnav-off" id="bnav" aria-label="Main navigation" inert></nav>
+
     <div class="container">
 
         <!-- VIEW 1: APPLICATIONS LIST -->
@@ -4370,7 +4587,7 @@
                 .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
                 .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
-                .cd-batch { position: sticky; bottom: 10px; z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
+                .cd-batch { position: sticky; bottom: calc(10px + var(--bnav-h, 0px)); z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
                     background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .cd-batch.show { display: flex; }
                 .cd-batch b { font-size: 12px; margin-right: auto; }
@@ -4880,7 +5097,7 @@
                 .sdb-jrow .sdb-key { font-size:12px; }
                 .sdb-jrow .sdb-change { font-family:ui-monospace,monospace; font-size:11px; color:var(--text-muted); margin-top:3px; overflow-wrap:anywhere; }
                 .sdb-jrow .sdb-change em { color:var(--accent); font-style:normal; }
-                .sdb-snack { position:fixed; left:12px; right:12px; bottom:72px; margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:14px; padding:8px 8px 8px 14px; display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
+                .sdb-snack { position:fixed; left:12px; right:12px; bottom:calc(72px + var(--bnav-h, 0px)); margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:14px; padding:8px 8px 8px 14px; display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
                 .sdb-snack.show { transform:translateY(0); opacity:1; pointer-events:auto; }
                 .sdb-snack span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:ui-monospace,monospace; font-size:11.5px; }
                 .sdb-snack button { flex:0 0 auto; border:none; border-radius:10px; padding:8px 14px; font-weight:800; font-size:12px; background:var(--accent); color:var(--on-accent); cursor:pointer; }
@@ -5753,9 +5970,36 @@
                 </div>
             </div>
 
+            <div class="color-card" id="navCard">
+                <div class="color-card-title">Navigation</div>
+                <div class="color-card-subtitle">Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.</div>
+                <div class="nav-opts" role="radiogroup" aria-label="Navigation">
+                    <button type="button" class="nav-opt" role="radio" aria-checked="false" data-nav-mode="both" onclick="setNavMode('both')"><span class="nav-dot"></span><span>Bottom bar + top bar</span></button>
+                    <button type="button" class="nav-opt" role="radio" aria-checked="false" data-nav-mode="bottom" onclick="setNavMode('bottom')"><span class="nav-dot"></span><span>Bottom bar only</span></button>
+                    <button type="button" class="nav-opt" role="radio" aria-checked="false" data-nav-mode="top" onclick="setNavMode('top')"><span class="nav-dot"></span><span>Top bar only</span></button>
+                </div>
+                <label class="switch-row" style="margin-top:12px;">
+                    <div>
+                        <div class="switch-title">Long-press shortcuts</div>
+                        <div class="switch-sub">Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="bnavScToggle" checked onchange="setBnavShortcuts(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+                <details class="nav-sc-details">
+                    <summary>Shortcuts</summary>
+                    <div class="color-card-subtitle">Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.</div>
+                    <div id="navScList" class="fl-list"></div>
+                    <div class="mode-btn-row" style="margin-top:12px;">
+                        <button class="mode-action-btn" onclick="navScReset()">Reset shortcuts</button>
+                    </div>
+                </details>
+            </div>
+
             <div class="color-card" id="featureCard">
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
+                <div class="color-card-subtitle">Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</div>
                 <div id="featureList" class="fl-list"></div>
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
@@ -5832,7 +6076,7 @@
                 .mp-patch-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
                 .mp-gear { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); color: var(--text-main); cursor: pointer; font-size: 15px; }
                 .mp-group { font-size: 11px; font-weight: 900; letter-spacing: .4px; text-transform: uppercase; color: var(--text-muted); margin: 14px 2px 4px; display: flex; justify-content: space-between; gap: 8px; }
-                .mp-bar { position: sticky; bottom: 8px; z-index: 30; margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
+                .mp-bar { position: sticky; bottom: calc(8px + var(--bnav-h, 0px)); z-index: 30; margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .mp-bar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
                 .mp-bar .mp-check { flex: 1 1 130px; font-size: 12px; }
                 .mp-go { flex: 0 0 auto; min-width: 110px; height: 44px; border-radius: 12px; border: 0; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 900; font-size: 14px; cursor: pointer; }
@@ -6077,7 +6321,7 @@
                 .sd-set input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
                 .sd-set .modal-text-input { flex: 0 0 110px; min-width: 0; margin: 0; }
                 .sd-set .op-select { flex: 0 0 140px; min-width: 0; font-size: 13px; padding: 8px 6px; }
-                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: 76px; z-index: 340; display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 700; }
+                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: calc(76px + var(--bnav-h, 0px)); z-index: 340; display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 700; }
                 .sd-undo.on { display: flex; }
                 .sd-undo button { border: 0; background: transparent; color: var(--accent); font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; }
             </style>
@@ -6554,6 +6798,20 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- Batch Ops: pick app ops and a value for each, set on every selected app -->
+    <!-- Bottom navigation: More (the tabs that are not pinned to the bar) -->
+    <div class="modal-overlay" id="bnavMoreModal" onclick="if(event.target===this) bnavMoreClose()">
+        <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="bnavMoreTitle">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="bnavMoreTitle">More tabs</h3>
+                </div>
+                <button type="button" class="fl-move" aria-label="Close" onclick="bnavMoreClose()">✕</button>
+            </div>
+            <div class="bn-grid" id="bnavMoreGrid"></div>
+            <button type="button" class="bn-custom" onclick="bnavCustomize()">Customize tabs</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="batchOpsModal" onclick="if(event.target===this) closeBatchOps()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -9252,7 +9510,7 @@ Type any command below (e.g. pm list packages -d)
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
         const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key));          // the updater is a box of the APK Installer/Updater tab now
-        let tabConfig = { order: TAB_MOVABLE.slice(), off: [] };
+        let tabConfig = { order: TAB_MOVABLE.slice(), off: [], pinned: ['apps'], shortcuts: {} };          // pinned: the tabs on the bottom bar (see Navigation below)
 
         // The saved choice (kv 'tab_config') is checked against the tabs this version has: unknown keys go, a tab it has never
         // seen (added by an update) lands after the tab that precedes it by default, so an old choice keeps working.
@@ -9265,7 +9523,7 @@ Type any command below (e.g. pm list packages -d)
                 order.splice(prev && order.includes(prev) ? order.indexOf(prev) + 1 : (i === 0 ? 0 : order.length), 0, k);
             });
             const off = saved && Array.isArray(saved.off) ? saved.off.filter((k, i, a) => TAB_MOVABLE.includes(k) && a.indexOf(k) === i) : [];
-            tabConfig = { order, off };
+            tabConfig = { order, off, pinned: tabCleanPinned(saved && saved.pinned, off), shortcuts: tabCleanShortcuts(saved && saved.shortcuts) };          // (a record from before the bottom bar has no pinned: it gets the defaults)
         }
         function tabSaveConfig() { kvSet('tab_config', tabConfig); }
 
@@ -9279,6 +9537,7 @@ Type any command below (e.g. pm list packages -d)
             const cur = currentViewName();
             bar.innerHTML = tabsShown().map(k => '<button class="tab-btn' + (k === cur ? ' active' : '') + '" data-tab="' + k + '"' + (k === 'installer' ? ' id="updatesTabBtn"' : '') + ' onclick="switchView(\'' + k + '\')">' + escapeHtml(tabDef(k).label) + '</button>').join('');
             if (typeof updateUpdatesTabBadge === 'function') updateUpdatesTabBadge();
+            bnavRender();
         }
 
         // A tab that was switched off cannot be the Back target any more
@@ -9286,6 +9545,509 @@ Type any command below (e.g. pm list packages -d)
             viewStack = viewStack.filter(tabIsOn);
             renderTabBar();
             if (typeof featureRender === 'function') featureRender();
+            if (typeof navScRender === 'function') navScRender();
+        }
+
+        // ---- Navigation: the bottom bar (a rail at the left on a wide screen) ----
+        // Four pinned tabs and More. Which tabs are pinned is tabConfig.pinned (Settings > Feature List); Settings > Navigation chooses whether the bar, the top tab bar or both are on.
+        // The bar follows the Feature List order, so moving a tab there moves it here. It goes away (slides down) while the on-screen keyboard is up, while something covers the screen
+        // (a sheet, the full-screen Terminal) and until the page has started; it stays on Settings, with no slot lit.
+        const BNAV_MAX = 4;                                                          // pinned tabs, Application Manager included; More is the fifth slot
+        const BNAV_DEFAULT = ['apps', 'installer', ['extra-settings', 'settings'], 'terminal'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings)
+        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', terminal: 'Terminal', settings: 'Hidden', overlays: 'Monet', store: 'Stores', logcat: 'Logcat', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', about: 'About' };
+        const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
+            apps: '<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',
+            'saved-lists': '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>',
+            debloater: '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>',
+            installer: '<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>',
+            files: '<path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>',
+            terminal: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/>',
+            settings: '<path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>',
+            'extra-settings': '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
+            overlays: '<path d="M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>',
+            store: '<path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>',
+            logcat: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>',
+            taskmgr: '<path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/>',
+            devices: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>',
+            morphe: '<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
+            sdm: '<path d="M18 2h-8L4.02 8 4 20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/>',
+            about: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
+        };
+        const BNAV_ICON_MORE = '<path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>';
+        const BNAV_ICON_FALLBACK = '<path d="M12 2l-5.5 9h11L12 2zm5.5 11c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zM3 21.5h8v-8H3v8z"/>';          // a tab without a symbol of its own
+        const BNAV_ICON_PIN = '<path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>';
+        const bnavSvg = p => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + p + '</svg>';          // p: the <path> of a symbol
+        const bnavIcon = k => bnavSvg(BNAV_ICONS[k] || BNAV_ICON_FALLBACK);
+        const bnavShort = k => BNAV_SHORT[k] || String(tabDef(k).label || tabDef(k).name).split('\n')[0];          // (a tab added later without a short label shows the first line of its label)
+
+        let navMode = 'bottom';                       // 'both' | 'bottom' | 'top' (kv 'nav_mode')
+        let bnavBoot = true;                          // the page is still starting
+        let bnavBadges = {};                          // tab key -> number (or true: a dot) shown on its slot / tile
+        let bnavFullH = 0, bnavFullW = 0;             // the tallest the window has been at this width: a window much shorter than that, with a field in use, is the keyboard
+
+        function tabDefaultPinned() {
+            const out = [];
+            BNAV_DEFAULT.forEach(c => { const k = [].concat(c).find(x => TAB_DEFS.some(t => t.key === x)); if (k && !out.includes(k)) out.push(k); });
+            return out;
+        }
+        // The pinned tabs from a saved record (or the defaults when it has none): only tabs this version has, only the ones that are on, Application Manager always, at most four
+        function tabCleanPinned(list, off) {
+            let pinned = (Array.isArray(list) ? list : tabDefaultPinned()).filter((k, i, a) => (k === 'apps' || TAB_MOVABLE.includes(k)) && a.indexOf(k) === i && !off.includes(k));
+            if (!pinned.includes('apps')) pinned.unshift('apps');
+            return pinned.slice(0, BNAV_MAX);
+        }
+
+        const bnavEl = () => document.getElementById('bnav');
+        const bnavWide = () => window.matchMedia ? window.matchMedia('(min-width: 720px)').matches : window.innerWidth >= 720;
+        function bnavPinnedShown() { return tabsShown().filter(k => tabConfig.pinned.includes(k)); }                    // on the bar, in the Feature List order
+        function bnavMoreKeys() { return tabsShown().filter(k => !tabConfig.pinned.includes(k)); }                     // under More
+        function bnavBadgeHtml(v) { return v ? (v === true ? '<span class="bn-badge dot" aria-hidden="true"></span>' : '<span class="bn-badge">' + escapeHtml(String(v > 99 ? '99+' : v)) + '</span>') : ''; }
+        function bnavSetBadge(key, v) {
+            if (key === 'updates') key = 'installer';
+            const n = v === true ? true : (Number(v) > 0 ? Math.floor(Number(v)) : 0);
+            if (bnavBadges[key] === n || (!bnavBadges[key] && !n)) return;
+            if (n) bnavBadges[key] = n; else delete bnavBadges[key];
+            bnavRender();
+        }
+
+        // The slots. Drawn again when the tabs, their order, the pins or a badge change (and the language); a tap on a slot only moves the pill (bnavSync).
+        function bnavRender() {
+            const nav = bnavEl();
+            if (!nav) return;
+            const pinned = bnavPinnedShown(), more = bnavMoreKeys();
+            const item = k => '<button type="button" class="bn-item" data-tab="' + k + '"' + (bnavScList(k).length ? ' aria-haspopup="menu" aria-keyshortcuts="Shift+Enter"' : '') + ' onclick="bnavTap(\'' + k + '\')"><span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-lbl">' + escapeHtml(bnavShort(k)) + '</span></button>';
+            nav.innerHTML = '<span class="bn-ind" aria-hidden="true"></span>' + pinned.map(item).join('')
+                + '<button type="button" class="bn-item" data-more="1" aria-haspopup="dialog" aria-expanded="false" onclick="bnavMoreOpen()"></button>';
+            bnavSync(false);
+        }
+
+        // Which slot is lit: the current tab's, or More when the current tab is not pinned; none on Settings (it has no tab)
+        function bnavSync(animate) {
+            const nav = bnavEl();
+            if (!nav) return;
+            const cur = currentViewName(), pinned = bnavPinnedShown(), inMore = cur !== 'prefs' && !pinned.includes(cur) && !!tabDef(cur);
+            nav.querySelectorAll('.bn-item[data-tab]').forEach(b => {
+                const on = b.dataset.tab === cur;
+                b.classList.toggle('active', on);
+                if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+            });
+            const mb = nav.querySelector('.bn-item[data-more]');
+            if (mb) {
+                const moreBadge = bnavMoreKeys().some(k => bnavBadges[k]);
+                const html = '<span class="bn-ico">' + bnavSvg(inMore ? (BNAV_ICONS[cur] || BNAV_ICON_FALLBACK) : BNAV_ICON_MORE) + (moreBadge ? bnavBadgeHtml(true) : '') + '</span><span class="bn-lbl">' + escapeHtml(inMore ? bnavShort(cur) : 'More') + '</span>';
+                if (mb.dataset.shows !== (inMore ? cur : 'more') + (moreBadge ? '!' : '')) { mb.innerHTML = html; mb.dataset.shows = (inMore ? cur : 'more') + (moreBadge ? '!' : ''); }
+                mb.classList.toggle('active', inMore);
+                if (inMore) mb.setAttribute('aria-current', 'page'); else mb.removeAttribute('aria-current');
+            }
+            bnavPlace(animate !== false);
+        }
+
+        // The pill goes where the lit slot's icon is (the same code serves the bar and the rail); the first placement and a resize jump, a tap on another slot slides
+        function bnavPlace(animate) {
+            const nav = bnavEl(), ind = nav && nav.querySelector('.bn-ind');
+            if (!ind) return;
+            const ico = nav.querySelector('.bn-item.active .bn-ico');
+            if (!ico || !nav.offsetWidth) { ind.style.opacity = '0'; return; }
+            const nr = nav.getBoundingClientRect(), ar = ico.getBoundingClientRect();
+            if (!animate || ind.style.opacity !== '1') ind.style.transition = 'none';
+            ind.style.width = ar.width + 'px';
+            ind.style.height = ar.height + 'px';
+            ind.style.transform = 'translate(' + (ar.left - nr.left - nav.clientLeft) + 'px,' + (ar.top - nr.top - nav.clientTop + nav.scrollTop) + 'px)';
+            ind.style.opacity = '1';
+            if (ind.style.transition === 'none') { void ind.offsetWidth; ind.style.transition = ''; }
+        }
+
+        function bnavTap(key) {
+            haptic();
+            if (currentViewName() === key) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }          // the lit slot again: back to the top, like the apps on a phone
+            switchView(key);
+        }
+
+        // ---- More: the tabs that are on but not pinned ----
+        function bnavMoreOpen() {
+            haptic();
+            const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
+            if (!grid) return;
+            grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
+                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span></button>').join('');
+            document.getElementById('bnavMoreModal').classList.add('show');
+            const mb = document.querySelector('#bnav .bn-item[data-more]');
+            if (mb) mb.setAttribute('aria-expanded', 'true');
+            const first = grid.querySelector('.bn-tile');
+            if (first) first.focus({ preventScroll: true });
+        }
+        function bnavMoreClose() {
+            document.getElementById('bnavMoreModal').classList.remove('show');
+            const mb = document.querySelector('#bnav .bn-item[data-more]');
+            if (mb) { mb.setAttribute('aria-expanded', 'false'); }
+        }
+        function bnavMoreGo(key) {
+            bnavMoreClose();
+            switchView(key);
+        }
+        function bnavCustomize() {                                    // the Feature List in Settings
+            bnavMoreClose();
+            if (!switchView('prefs')) return;
+            setTimeout(() => { const c = document.getElementById('featureCard'); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+        }
+
+        // ---- Away: the keyboard, anything that covers the screen, the start-up ----
+        function bnavTextFocus() {
+            const a = document.activeElement;
+            if (!a || a === document.body) return false;
+            if (a.isContentEditable || a.tagName === 'TEXTAREA') return true;
+            return a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|file|color|range|image)$/i.test(a.type || 'text');
+        }
+        function bnavKeyboardUp() {
+            if (bnavWide()) return false;                              // the rail is at the side: the keyboard does not reach it
+            if (bnavTextFocus()) return true;
+            const vv = window.visualViewport, h = vv ? vv.height : window.innerHeight;
+            return !!bnavFullH && h < bnavFullH - Math.max(150, bnavFullH * 0.2) && !!document.activeElement && document.activeElement !== document.body;
+        }
+        function bnavCovered() {
+            if (document.querySelector('.modal-overlay.show:not(#bnavMoreModal)')) return true;          // every sheet and dialog, the picture viewer and the first-launch permission sheet among them
+            if (document.querySelector('#txPaneTerminal.tx-full, .rt-overlay.show')) return true;        // the Terminal's full screen, the real terminal
+            return false;
+        }
+        function bnavAway() { return bnavBoot || bnavCovered() || bnavKeyboardUp(); }
+        function bnavVisibility() {
+            const nav = bnavEl();
+            if (!nav) return;
+            const vv = window.visualViewport;
+            const w = window.innerWidth, h = Math.max(window.innerHeight, vv ? vv.height : 0);
+            if (w !== bnavFullW) { bnavFullW = w; bnavFullH = 0; }                               // turned around, or a different window: measure again
+            if (h > bnavFullH) bnavFullH = h;
+            const away = bnavAway();
+            if (away) { bnavMenuClose(true); bnavTipHide(); }
+            document.documentElement.classList.toggle('bnav-away', away);
+            nav.classList.toggle('bnav-off', away);
+            if (away) { nav.setAttribute('inert', ''); nav.setAttribute('aria-hidden', 'true'); } else { nav.removeAttribute('inert'); nav.removeAttribute('aria-hidden'); bnavPlace(false); }
+        }
+        let bnavQueued = false;
+        function bnavQueue() { if (bnavQueued) return; bnavQueued = true; requestAnimationFrame(() => { bnavQueued = false; bnavVisibility(); }); }
+        function bnavInit() {
+            document.addEventListener('focusin', bnavQueue);
+            document.addEventListener('focusout', () => setTimeout(bnavQueue, 120));           // moving from one field to the next does not make the bar flicker
+            window.addEventListener('resize', () => { bnavQueue(); bnavPlace(false); });
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', bnavQueue);
+            document.addEventListener('i18nchange', () => bnavPlace(false));
+            if (window.MutationObserver) new MutationObserver(list => {
+                for (const m of list) { const t = m.target; if (t === document.body || (t.classList && (t.classList.contains('modal-overlay') || t.classList.contains('rt-overlay') || t.id === 'txPaneTerminal'))) { bnavQueue(); return; } }
+            }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            if (window.ResizeObserver) new ResizeObserver(() => bnavPlace(false)).observe(bnavEl());
+            bnavShortcutsInit();
+            bnavVisibility();
+            requestAnimationFrame(() => requestAnimationFrame(() => { bnavBoot = false; bnavVisibility(); setTimeout(bnavTipMaybe, 1200); }));          // the page is up: the bar comes in
+        }
+
+        // ---- Settings > Navigation ----
+        function navLoad() { const m = kvGet('nav_mode', 'bottom'); navMode = m === 'both' || m === 'top' ? m : 'bottom'; navScLoad(); }
+        function navApply() {
+            document.documentElement.setAttribute('data-nav', navMode);
+            document.querySelectorAll('.nav-opt').forEach(b => b.setAttribute('aria-checked', b.dataset.navMode === navMode ? 'true' : 'false'));
+            syncChromeVars();
+            bnavVisibility();
+            bnavSync(false);
+            navScRender();
+        }
+        function setNavMode(m) {
+            if (m !== 'both' && m !== 'bottom' && m !== 'top') return;
+            haptic();
+            navMode = m;
+            kvSet('nav_mode', m);
+            navApply();
+        }
+
+        // ---- Long-press shortcuts: hold a slot of the bar (or the rail) for a small menu of quick destinations ----
+        // SAFETY RULE for every entry of TAB_SHORTCUTS: a shortcut only NAVIGATES, or opens a screen or a section of one (it may also start a harmless read-only check, "Check for updates").
+        // A run() must never execute a command that changes the phone or its apps: no reboot or power off, kill, install, uninstall, DNS or setting change. tests/ui (t191) reads the
+        // source of every run() and fails when it calls anything that is not on the list of navigation functions in that test.
+        // The ONE exception, approved by the owner: "Update All (N)" on the Installer/Updater slot. Its run() only switches to the Updater and calls updateAllUI(), exactly what the Update All
+        // button does, so the app's own question (the install question with the mode, approvals bound to version, source and mode) is asked and nothing installs without an answer.
+        // There is no other install path here. A tab adds its own entries: { id, label (text, or a function for a changing text), name (what Settings > Navigation calls it), icon (a key of
+        // BNAV_SC_ICONS), first (listed before the others when it applies), when() (false: the entry is not listed, e.g. its section is not on the page), run() }.
+        const BNAV_SC_MAX = 4;                                                       // entries a menu lists
+        const BNAV_SC_ICONS = {
+            search: '<path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>',
+            sync: '<path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>',
+            check: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>',
+            folder: BNAV_ICONS.files,
+            updateall: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-1-6h-3V8h-2v5H8l4 4 4-4z"/>',
+            fullscreen: '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>',
+            list: '<path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>',
+            chip: BNAV_ICONS.taskmgr,
+            battery: '<path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/>',
+            net: '<path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>',
+            tune: BNAV_ICONS.settings
+        };
+        // what a run() may call (besides the arrow functions it is made of): see t191
+        function bnavGo(tab, then) { switchView(tab); if (then) setTimeout(then, 90); }
+        function bnavFocus(id) { const e = document.getElementById(id); if (e) e.focus(); }
+        function bnavReveal(sel) {                                    // scroll a section into view and light it up for a moment
+            const e = document.querySelector(sel);
+            if (!e) return;
+            e.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            e.classList.remove('bn-flash'); void e.offsetWidth; e.classList.add('bn-flash');
+            setTimeout(() => e.classList.remove('bn-flash'), 1700);
+        }
+        const bnavUpdatePending = () => updList.filter(u => updIsInstallable(u) && updCanStartAll(u)).length;          // what the Update All button counts
+        const bnavSection = (tab, id, label, sel) => ({ id, label, icon: 'tune', when: () => tabIsOn(tab) && !!document.querySelector(sel), run: () => bnavGo(tab, () => bnavReveal(sel)) });
+        const bnavTmSub = (id, label, icon) => ({ id, label, icon, when: () => typeof tmSetSub === 'function', run: () => bnavGo('taskmgr', () => tmSetSub(id)) });
+        const TAB_SHORTCUTS = {
+            apps: [
+                { id: 'search', label: 'Search apps', icon: 'search', when: () => !!document.getElementById('searchInput'), run: () => bnavGo('apps', () => bnavFocus('searchInput')) }
+            ],
+            installer: [
+                { id: 'updateall', label: () => txF('Update All ({0})', bnavUpdatePending()), name: 'Update All', icon: 'updateall', first: true, when: () => bnavUpdatePending() > 1, run: () => { switchView('updates'); setTimeout(() => updateAllUI(), 90); } },
+                { id: 'updater', label: 'Updater', icon: 'sync', run: () => switchView('updates') },
+                { id: 'check', label: 'Check for updates', icon: 'check', run: () => { switchView('updates'); setTimeout(() => checkUpdatesUI(), 90); } },
+                { id: 'apks', label: 'Find APKs on storage', icon: 'folder', when: () => !!document.getElementById('apkScanBtn'), run: () => bnavGo('installer', () => { instPaneShow('install'); bnavReveal('#apkScanBtn'); }) }
+            ],
+            terminal: [
+                { id: 'full', label: 'Full-screen terminal', icon: 'fullscreen', run: () => bnavGo('terminal', () => txFullToggle(true)) }
+            ],
+            settings: [
+                { id: 'search', label: 'Search settings', icon: 'search', when: () => typeof sdbUsable === 'function' && sdbUsable() && !!document.getElementById('sdbSearch'), run: () => bnavGo('settings', () => bnavFocus('sdbSearch')) }
+            ],
+            'extra-settings': [                                       // one entry per section that is on the page (the ids are the cards of the Extra Settings tab)
+                bnavSection('extra-settings', 'dns', 'Private DNS', '#privateDnsCard'),
+                bnavSection('extra-settings', 'animations', 'Animations', '#animationsCard'),
+                bnavSection('extra-settings', 'brightness', 'Brightness', '#brightnessCard'),
+                bnavSection('extra-settings', 'telemetry', 'Telemetry', '#telemetryCard'),
+                bnavSection('extra-settings', 'power', 'Power', '#powerCard'),
+                bnavSection('extra-settings', 'doze', 'Doze', '#dozeCard'),
+                bnavSection('extra-settings', 'zram', 'Zram', '#zramCard')
+            ],
+            taskmgr: [
+                bnavTmSub('processes', 'Processes', 'list'), bnavTmSub('cpu', 'CPU', 'chip'), bnavTmSub('ram', 'RAM', 'chip'),
+                bnavTmSub('gpu', 'GPU', 'chip'), bnavTmSub('battery', 'Battery', 'battery'), bnavTmSub('network', 'Network', 'net')
+            ]
+        };
+        const bnavScLabel = it => typeof it.label === 'function' ? it.label() : it.label;
+        const bnavScName = it => it.name || (typeof it.label === 'function' ? it.label() : it.label);
+        let bnavScOn = true;                                          // Settings > Navigation > Long-press shortcuts (kv 'bnav_shortcuts')
+
+        // The saved choice of what a slot's menu lists: only tabs and entries this version has, no repeats, at most four; a tab with no choice shows the first four entries
+        function tabCleanShortcuts(o) {
+            const out = {};
+            if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(k => {
+                const reg = TAB_SHORTCUTS[k];
+                if (!reg || !(k === 'apps' || TAB_MOVABLE.includes(k)) || !Array.isArray(o[k])) return;
+                out[k] = o[k].filter((id, i, a) => reg.some(r => r.id === id) && a.indexOf(id) === i).slice(0, BNAV_SC_MAX);
+            });
+            return out;
+        }
+        const bnavScChosen = k => tabConfig.shortcuts[k] || (TAB_SHORTCUTS[k] || []).slice(0, BNAV_SC_MAX).map(i => i.id);
+        // What the menu of a slot lists now: the chosen entries whose target is there, the "first" one (Update All) on top, at most four
+        function bnavScList(k) {
+            if (!bnavScOn) return [];
+            const reg = TAB_SHORTCUTS[k] || [];
+            const list = bnavScChosen(k).map(id => reg.find(i => i.id === id)).filter(i => { try { return i && (!i.when || i.when()); } catch (e) { return false; } });
+            return list.filter(i => i.first).concat(list.filter(i => !i.first)).slice(0, BNAV_SC_MAX);
+        }
+
+        // ---- the menu ----
+        let bnavMenuSt = null, bnavSwallow = 0, bnavLP = null;
+        const BNAV_HOLD_MS = 450, BNAV_SLOP = 10;
+        function bnavMenuOpen(key, slot, byKey) {
+            const items = bnavScList(key);
+            if (!items.length || !slot) return false;
+            bnavMenuClose(true);
+            haptic();
+            const wide = bnavWide(), m = document.createElement('div');
+            m.className = 'bn-menu ' + (wide ? 'side' : 'up');
+            m.id = 'bnavMenu';
+            m.setAttribute('role', 'menu');
+            m.setAttribute('aria-label', tabDef(key).name);
+            m.innerHTML = items.map((it, i) => '<button type="button" class="bn-sc' + (i === 0 ? ' fav' : '') + '" role="menuitem" data-id="' + it.id + '" onclick="bnavMenuRun(\'' + key + '\', \'' + it.id + '\')">' + bnavSvg(BNAV_SC_ICONS[it.icon] || BNAV_ICON_FALLBACK) + '<span>' + escapeHtml(bnavScLabel(it)) + '</span></button>').join('');
+            document.body.appendChild(m);
+            const sr = slot.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+            let left, top;
+            if (wide) { left = Math.min(sr.right + 8, vw - mw - 8); top = Math.max(8, Math.min(sr.top, vh - mh - 8)); }
+            else { left = Math.max(8, Math.min(sr.left + sr.width / 2 - mw / 2, vw - mw - 8)); top = Math.max(8, sr.top - mh - 8); }
+            m.style.left = left + 'px';
+            m.style.top = top + 'px';
+            if (wide) m.style.setProperty('--bn-cy', Math.max(14, Math.min(mh - 14, sr.top + sr.height / 2 - top)) + 'px');
+            else m.style.setProperty('--bn-cx', Math.max(16, Math.min(mw - 16, sr.left + sr.width / 2 - left)) + 'px');
+            bnavMenuSt = { key, slot, byKey: !!byKey };
+            slot.setAttribute('aria-expanded', 'true');
+            document.addEventListener('pointerdown', bnavMenuOutside, true);
+            document.addEventListener('keydown', bnavMenuKey, true);
+            document.addEventListener('scroll', bnavMenuScroll, true);
+            if (byKey) m.querySelector('.bn-sc').focus({ preventScroll: true });
+            return true;
+        }
+        function bnavMenuClose(quiet) {
+            const m = document.getElementById('bnavMenu');
+            if (!m) return false;
+            const st = bnavMenuSt;
+            m.remove();
+            bnavMenuSt = null;
+            document.removeEventListener('pointerdown', bnavMenuOutside, true);
+            document.removeEventListener('keydown', bnavMenuKey, true);
+            document.removeEventListener('scroll', bnavMenuScroll, true);
+            if (st && st.slot) { st.slot.removeAttribute('aria-expanded'); if (st.byKey && !quiet) st.slot.focus({ preventScroll: true }); }
+            return true;
+        }
+        function bnavMenuRun(key, id) {
+            if (!bnavMenuSt) return;
+            const it = (TAB_SHORTCUTS[key] || []).find(i => i.id === id);
+            bnavMenuClose(true);
+            if (!it) return;
+            haptic();
+            try { it.run(); } catch (e) { console.error(e); }
+        }
+        function bnavMenuOutside(e) {
+            if (e.target && e.target.closest && e.target.closest('#bnavMenu')) return;
+            bnavMenuClose(true);
+            bnavSwallow = Date.now() + 400;                           // the tap that closed it does nothing else
+        }
+        function bnavMenuScroll(e) { if (!(e.target && e.target.closest && e.target.closest('#bnavMenu'))) bnavMenuClose(true); }
+        function bnavMenuKey(e) {
+            const m = document.getElementById('bnavMenu');
+            if (!m) return;
+            const its = Array.from(m.querySelectorAll('.bn-sc')), i = its.indexOf(document.activeElement), up = !bnavWide();
+            let to = null;
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bnavMenuClose(); return; }
+            if (e.key === 'Tab') to = (i + (e.shiftKey ? -1 : 1) + its.length) % its.length;                                  // the focus stays in the menu
+            else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') to = (i + ((e.key === 'ArrowDown') !== up ? 1 : -1) + its.length) % its.length;
+            else if (e.key === 'Home') to = 0;
+            else if (e.key === 'End') to = its.length - 1;
+            if (to !== null) { e.preventDefault(); its[to].focus({ preventScroll: true }); }
+        }
+
+        // The hold on a slot: 450 ms without the finger moving more than 10 px. Once it is open, sliding onto an entry and letting go runs it.
+        function bnavHoldStart(e) {
+            const slot = e.target.closest && e.target.closest('.bn-item[data-tab]');
+            if (!slot || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (!bnavScList(slot.dataset.tab).length) return;
+            bnavLP = { slot, x: e.clientX, y: e.clientY, fired: false };
+            bnavLP.timer = setTimeout(() => {
+                if (!bnavLP) return;
+                bnavLP.fired = true;
+                if (!bnavMenuOpen(slot.dataset.tab, slot)) bnavLP.fired = false;
+            }, BNAV_HOLD_MS);
+            document.addEventListener('pointermove', bnavHoldMove);
+            document.addEventListener('pointerup', bnavHoldEnd);
+            document.addEventListener('pointercancel', bnavHoldEnd);
+        }
+        function bnavHoldMove(e) {
+            if (!bnavLP) return;
+            if (!bnavLP.fired) { if (Math.hypot(e.clientX - bnavLP.x, e.clientY - bnavLP.y) > BNAV_SLOP) bnavHoldStop(); return; }
+            const hit = document.elementFromPoint(e.clientX, e.clientY), on = hit && hit.closest ? hit.closest('#bnavMenu .bn-sc') : null;
+            document.querySelectorAll('#bnavMenu .bn-sc.hot').forEach(b => { if (b !== on) b.classList.remove('hot'); });
+            if (on) on.classList.add('hot');
+        }
+        function bnavHoldEnd(e) {
+            const lp = bnavLP;
+            const fired = !!(lp && lp.fired);
+            bnavHoldStop();
+            if (!fired) return;
+            bnavSwallow = Date.now() + 500;                           // no click follows a long press
+            if (e.type !== 'pointerup') return;
+            const hit = document.elementFromPoint(e.clientX, e.clientY), on = hit && hit.closest ? hit.closest('#bnavMenu .bn-sc') : null;
+            if (on) bnavMenuRun(bnavMenuSt ? bnavMenuSt.key : lp.slot.dataset.tab, on.dataset.id);
+        }
+        function bnavHoldStop() {
+            if (bnavLP) clearTimeout(bnavLP.timer);
+            bnavLP = null;
+            document.removeEventListener('pointermove', bnavHoldMove);
+            document.removeEventListener('pointerup', bnavHoldEnd);
+            document.removeEventListener('pointercancel', bnavHoldEnd);
+        }
+        function bnavShortcutsInit() {
+            const nav = bnavEl();
+            nav.addEventListener('pointerdown', bnavHoldStart);
+            nav.addEventListener('contextmenu', e => {                // a mouse's right button, the accessibility long-press gesture, a keyboard's menu key
+                const slot = e.target.closest && e.target.closest('.bn-item[data-tab]');
+                if (!slot) return;
+                e.preventDefault();
+                if (!bnavMenuSt && bnavScList(slot.dataset.tab).length) { bnavSwallow = Date.now() + 500; bnavMenuOpen(slot.dataset.tab, slot, e.detail === 0 && !bnavLP); }
+            });
+            nav.addEventListener('keydown', e => {                    // Shift+Enter on a slot
+                const slot = e.target.closest && e.target.closest('.bn-item[data-tab]');
+                if (slot && e.key === 'Enter' && e.shiftKey && bnavScList(slot.dataset.tab).length) { e.preventDefault(); bnavMenuOpen(slot.dataset.tab, slot, true); }
+            });
+            document.addEventListener('click', e => {
+                if (Date.now() < bnavSwallow && e.target.closest && e.target.closest('#bnav')) { e.stopPropagation(); e.preventDefault(); }
+            }, true);
+        }
+
+        // One-time hint on the first start with the bar: "Long-press a tab for shortcuts" (tap it to dismiss; it is shown once, ever)
+        function bnavTipMaybe() {
+            if (!bnavScOn || kvGet('bnav_tip', false) || document.getElementById('bnavTip')) return;
+            const nav = bnavEl();
+            if (!nav || nav.classList.contains('bnav-off') || navMode === 'top' || !nav.querySelector('.bn-item[aria-haspopup="menu"]')) return;
+            kvSet('bnav_tip', true);
+            const t = document.createElement('div');
+            t.className = 'bn-tip';
+            t.id = 'bnavTip';
+            t.setAttribute('role', 'status');
+            t.textContent = 'Long-press a tab for shortcuts';
+            t.onclick = bnavTipHide;
+            document.body.appendChild(t);
+            setTimeout(bnavTipHide, 7000);
+        }
+        function bnavTipHide() { const t = document.getElementById('bnavTip'); if (t) t.remove(); }
+
+        // ---- Settings > Navigation: Long-press shortcuts, and which entries each slot lists ----
+        function navScLoad() { bnavScOn = kvGet('bnav_shortcuts', true) !== false; }
+        function setBnavShortcuts(on) {
+            bnavScOn = !!on;
+            kvSet('bnav_shortcuts', bnavScOn);
+            if (!bnavScOn) { bnavMenuClose(true); bnavTipHide(); }
+            bnavRender();
+            navScRender();
+        }
+        function navScRender() {
+            const t = document.getElementById('bnavScToggle');
+            if (t) t.checked = bnavScOn;
+            const box = document.getElementById('navScList');
+            if (!box) return;
+            const keys = bnavPinnedShown().filter(k => TAB_SHORTCUTS[k]);
+            box.innerHTML = keys.map(k => {
+                const reg = TAB_SHORTCUTS[k], chosen = bnavScChosen(k), rows = chosen.concat(reg.map(i => i.id).filter(id => !chosen.includes(id)));
+                return '<div class="nav-sc-group" data-tab="' + k + '"><div class="nav-sc-title">' + escapeHtml(tabDef(k).name) + '</div>'
+                    + rows.map((id, i) => {
+                        const it = reg.find(x => x.id === id), name = escapeHtml(bnavScName(it)), on = chosen.includes(id);
+                        return '<div class="fl-row' + (on ? '' : ' off') + '" data-sc="' + k + ':' + id + '"><div class="fl-name">' + name + '</div>'
+                            + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (!on || i === 0 ? ' disabled' : '') + ' onclick="navScMove(\'' + k + '\', \'' + id + '\', -1)">▲</button>'
+                            + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (!on || i >= chosen.length - 1 ? ' disabled' : '') + ' onclick="navScMove(\'' + k + '\', \'' + id + '\', 1)">▼</button>'
+                            + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="navScToggle(\'' + k + '\', \'' + id + '\', this.checked)"><span class="switch-track"></span></label></div>';
+                    }).join('') + '</div>';
+            }).join('');
+        }
+        function navScSave(k, list) {
+            tabConfig.shortcuts[k] = list;
+            tabSaveConfig();
+            bnavRender();
+            navScRender();
+        }
+        function navScToggle(k, id, on) {
+            haptic();
+            const list = bnavScChosen(k).filter(x => x !== id);
+            if (on) {
+                if (list.length >= BNAV_SC_MAX) { showToast('A menu lists at most ' + BNAV_SC_MAX + ' shortcuts.'); navScRender(); return; }
+                list.push(id);
+            }
+            navScSave(k, list);
+        }
+        function navScMove(k, id, dir) {
+            const list = bnavScChosen(k).slice(), i = list.indexOf(id), j = i + dir;
+            if (i < 0 || j < 0 || j >= list.length) return;
+            haptic();
+            [list[i], list[j]] = [list[j], list[i]];
+            navScSave(k, list);
+            const b = document.querySelector('#navScList .fl-row[data-sc="' + k + ':' + id + '"] .fl-move:nth-of-type(' + (dir < 0 ? 1 : 2) + ')');
+            if (b && !b.disabled) b.focus({ preventScroll: true });
+        }
+        function navScReset() {
+            haptic();
+            tabConfig.shortcuts = {};
+            tabSaveConfig();
+            bnavRender();
+            navScRender();
+            showToast('Shortcuts are back to the default');
         }
 
         // Tabs visited before this one (most recent last), so Back can retrace them
@@ -9370,6 +10132,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'overlays') onOverlaysShown();
             if (viewName === 'store') onStoreShown();
             if (viewName === 'about') onAboutShown();
+            bnavSync();
             haptic();
             return true;
         }
@@ -9707,6 +10470,7 @@ Type any command below (e.g. pm list packages -d)
         function backNavigate() {
             if (typeof closeInstallCombo === 'function' && closeInstallCombo()) return true;
             if (closeSearchMenu()) return true;
+            if (bnavMenuClose()) return true;
             if (typeof rt === 'object' && rt && rt.open && !document.querySelector('.modal-overlay.show')) { rtHide(); return true; }
             const sheets = document.querySelectorAll('.modal-overlay.show');
             if (sheets.length) {
@@ -11716,6 +12480,7 @@ Type any command below (e.g. pm list packages -d)
             const btn = document.getElementById('updatesTabBtn');
             const pending = updList.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done')).length;
             if (btn) btn.innerText = pending ? `${tabDef('installer').label} (${pending})` : tabDef('installer').label;
+            bnavSetBadge('installer', pending);
             const sw = document.getElementById('instSwitchUpdater');
             if (sw) sw.innerText = pending ? txF('Application Updater ({0})', pending) : txT('Application Updater');
         }
@@ -24332,9 +25097,10 @@ Type any command below (e.g. pm list packages -d)
             if (!box) return;
             const last = tabConfig.order.length - 1;
             box.innerHTML = tabConfig.order.map((k, i) => {
-                const name = escapeHtml(tabDef(k).name), on = !tabConfig.off.includes(k);
+                const name = escapeHtml(tabDef(k).name), on = !tabConfig.off.includes(k), pin = tabConfig.pinned.includes(k);
                 return '<div class="fl-row' + (on ? '' : ' off') + '" data-tab="' + k + '">'
                     + '<div class="fl-name">' + name + '</div>'
+                    + '<button type="button" class="fl-pin" aria-pressed="' + pin + '" aria-label="' + (pin ? 'Unpin ' + name + ' from the bottom bar' : 'Pin ' + name + ' to the bottom bar') + '"' + (on ? '' : ' disabled') + ' onclick="featurePin(\'' + k + '\')">' + bnavSvg(BNAV_ICON_PIN) + '</button>'
                     + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', -1)">▲</button>'
                     + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', 1)">▼</button>'
                     + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="featureToggle(\'' + k + '\', this.checked)"><span class="switch-track"></span></label>'
@@ -24357,10 +25123,23 @@ Type any command below (e.g. pm list packages -d)
             if (!TAB_MOVABLE.includes(key)) return;
             haptic();
             tabConfig.off = tabConfig.off.filter(k => k !== key);
-            if (!on) tabConfig.off.push(key);
+            if (!on) { tabConfig.off.push(key); tabConfig.pinned = tabConfig.pinned.filter(k => k !== key); }          // a tab that is off leaves the bottom bar
             tabSaveConfig();
             tabsApplyConfig();
             featureFocus(key, 'switch');
+        }
+
+        // Pin a tab to the bottom bar, or take it off (at most four, Application Manager is one of them)
+        function featurePin(key) {
+            if (!TAB_MOVABLE.includes(key) || tabConfig.off.includes(key)) return;
+            haptic();
+            if (tabConfig.pinned.includes(key)) tabConfig.pinned = tabConfig.pinned.filter(k => k !== key);
+            else if (tabConfig.pinned.length >= BNAV_MAX) { showToast('The bottom bar holds ' + BNAV_MAX + ' tabs. Unpin one first.'); return; }
+            else tabConfig.pinned.push(key);
+            tabSaveConfig();
+            tabsApplyConfig();
+            const b = document.querySelector('#featureList .fl-row[data-tab="' + key + '"] .fl-pin');
+            if (b) b.focus({ preventScroll: true });
         }
 
         function featureMove(key, dir) {
@@ -24380,7 +25159,7 @@ Type any command below (e.g. pm list packages -d)
 
         function featureReset() {
             haptic();
-            tabConfig = { order: TAB_MOVABLE.slice(), off: [] };
+            tabConfig = { order: TAB_MOVABLE.slice(), off: [], pinned: tabCleanPinned(null, []), shortcuts: tabConfig.shortcuts };
             tabSaveConfig();
             tabsApplyConfig();
             showToast('Tabs are back in their default order, all turned on');
@@ -35312,7 +36091,10 @@ Type any command below (e.g. pm list packages -d)
         // SDM:JS:END
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();
+            navLoad();
             tabsApplyConfig();
+            navApply();
+            bnavInit();
             initLanguageUi();
             initAppFont();
             syncChromeVars();

@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
 "This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
 "Check again": "重新检查",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。",
+"Animations": "动画",
+"Bottom bar + top bar": "底部栏 + 顶部栏",
+"Bottom bar only": "仅底部栏",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "选择每个已固定标签页的菜单列出什么、按什么顺序。一个菜单最多列出四项；第一项就在你的拇指下方。",
+"Customize tabs": "自定义标签页",
+"Debloat": "精简",
+"Doze": "Doze",
+"Find APKs on storage": "在存储中查找 APK",
+"Full-screen terminal": "全屏终端",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "长按底部栏的标签页，会打开一个快速前往的小菜单。它们只会打开某个界面或某一部分，都不会改动你的手机。",
+"Long-press a tab for shortcuts": "长按标签页使用快捷方式",
+"Long-press shortcuts": "长按快捷方式",
+"Main navigation": "主导航",
+"Monet": "Monet",
+"More tabs": "更多标签页",
+"Reset shortcuts": "重置快捷方式",
+"Shortcuts": "快捷方式",
+"Shortcuts are back to the default": "快捷方式已恢复默认",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "点按图钉可把标签页留在底部栏。底部栏可放四个，第一个是应用管理；其余的在“更多”里。",
+"Tasks": "任务",
+"Telemetry": "遥测",
+"Top bar only": "仅顶部栏",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "标签页放在哪里。底部栏放你固定的标签页，其余的收在“更多”按钮里；顶部栏放全部标签页。",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "无法确认更改：{0}"],
 ["Could not read Private DNS: {0}", "无法读取私人 DNS：{0}"],
 ["Private DNS is now: an unknown mode “{0}”", "私人 DNS 当前：未知模式“{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "手机已有此设置，但有一个步骤报告了问题：{0}"]
+["The phone has this setting, but one step reported a problem: {0}", "手机已有此设置，但有一个步骤报告了问题：{0}"],
+["A menu lists at most {0} shortcuts.", "一个菜单最多列出 {0} 个快捷方式。"],
+["The bottom bar holds {0} tabs. Unpin one first.", "底部栏可放 {0} 个标签页。请先取消固定一个。"]
 ]
 };

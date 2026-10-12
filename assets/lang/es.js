@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "El servicio de ajustes no respondió. Inténtalo de nuevo en un momento o reinicia el teléfono.",
 "This Android version did not understand the command.": "Esta versión de Android no entendió el comando.",
 "Check again": "Comprobar de nuevo",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Instalar desde el Gestor de archivos requiere ADB, Wireless Debugging, Shizuku o Root. Configura uno en Modos de operación y vuelve a intentarlo."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Instalar desde el Gestor de archivos requiere ADB, Wireless Debugging, Shizuku o Root. Configura uno en Modos de operación y vuelve a intentarlo.",
+"Animations": "Animaciones",
+"Bottom bar + top bar": "Barra inferior + barra superior",
+"Bottom bar only": "Solo barra inferior",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Elige qué lista el menú de cada pestaña fijada y en qué orden. Un menú muestra cuatro como máximo; la primera queda bajo tu pulgar.",
+"Customize tabs": "Personalizar pestañas",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Buscar APK en el almacenamiento",
+"Full-screen terminal": "Terminal a pantalla completa",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Mantén pulsada una pestaña de la barra inferior para ver un menú pequeño de destinos rápidos. Solo abren una pantalla o una sección; ninguno cambia tu teléfono.",
+"Long-press a tab for shortcuts": "Mantén pulsada una pestaña para ver atajos",
+"Long-press shortcuts": "Atajos con pulsación larga",
+"Main navigation": "Navegación principal",
+"Monet": "Monet",
+"More tabs": "Más pestañas",
+"Reset shortcuts": "Restablecer atajos",
+"Shortcuts": "Atajos",
+"Shortcuts are back to the default": "Los atajos vuelven a los predeterminados",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Toca la chincheta para mantener una pestaña en la barra inferior. Caben cuatro, con el Gestor de aplicaciones como primera; las demás esperan en «Más».",
+"Tasks": "Tareas",
+"Telemetry": "Telemetría",
+"Top bar only": "Solo barra superior",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Dónde están las pestañas. La barra inferior muestra las pestañas que fijas y un botón «Más» para el resto; la barra superior las muestra todas.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "No se pudo confirmar el cambio: {0}"],
 ["Could not read Private DNS: {0}", "No se pudo leer el DNS privado: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "El DNS privado ahora es: un modo desconocido “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "El teléfono tiene este ajuste, pero un paso informó de un problema: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "El teléfono tiene este ajuste, pero un paso informó de un problema: {0}"],
+["A menu lists at most {0} shortcuts.", "Un menú muestra como máximo {0} atajos."],
+["The bottom bar holds {0} tabs. Unpin one first.", "La barra inferior admite {0} pestañas. Desfija una primero."]
 ]
 };

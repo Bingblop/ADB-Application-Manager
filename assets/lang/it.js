@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Il servizio delle impostazioni non ha risposto. Riprova tra un momento o riavvia il telefono.",
 "This Android version did not understand the command.": "Questa versione di Android non ha capito il comando.",
 "Check again": "Controlla di nuovo",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Installare da Gestione file richiede ADB, Wireless Debugging, Shizuku o Root. Configurane uno in Modalità operative, poi riprova."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Installare da Gestione file richiede ADB, Wireless Debugging, Shizuku o Root. Configurane uno in Modalità operative, poi riprova.",
+"Animations": "Animazioni",
+"Bottom bar + top bar": "Barra in basso + barra in alto",
+"Bottom bar only": "Solo barra in basso",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Scegli cosa elenca il menu di ogni scheda fissata e in quale ordine. Un menu ne elenca al massimo quattro; la prima è quella sotto il pollice.",
+"Customize tabs": "Personalizza le schede",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Cerca APK nell’archiviazione",
+"Full-screen terminal": "Terminale a schermo intero",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Tieni premuta una scheda della barra in basso per un piccolo menu di destinazioni rapide. Aprono solo una schermata o una sezione; nessuna modifica il telefono.",
+"Long-press a tab for shortcuts": "Tieni premuta una scheda per le scorciatoie",
+"Long-press shortcuts": "Scorciatoie con pressione lunga",
+"Main navigation": "Navigazione principale",
+"Monet": "Monet",
+"More tabs": "Altre schede",
+"Reset shortcuts": "Ripristina le scorciatoie",
+"Shortcuts": "Scorciatoie",
+"Shortcuts are back to the default": "Le scorciatoie sono tornate predefinite",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Tocca la puntina per tenere una scheda nella barra in basso. Ne contiene quattro, con Gestione app come prima; le altre aspettano sotto Altro.",
+"Tasks": "Attività",
+"Telemetry": "Telemetria",
+"Top bar only": "Solo barra in alto",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Dove stanno le schede. La barra in basso contiene le schede che fissi e un pulsante Altro per le restanti; la barra in alto le contiene tutte.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "Impossibile confermare la modifica: {0}"],
 ["Could not read Private DNS: {0}", "Impossibile leggere il DNS privato: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Il DNS privato ora è: una modalità sconosciuta “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "Il telefono ha questa impostazione, ma un passaggio ha segnalato un problema: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Il telefono ha questa impostazione, ma un passaggio ha segnalato un problema: {0}"],
+["A menu lists at most {0} shortcuts.", "Un menu elenca al massimo {0} scorciatoie."],
+["The bottom bar holds {0} tabs. Unpin one first.", "La barra in basso contiene {0} schede. Rimuovine prima una."]
 ]
 };

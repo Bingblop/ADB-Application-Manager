@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
 "This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
 "Check again": "فحص مرة أخرى",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى.",
+"Animations": "الرسوم المتحركة",
+"Bottom bar + top bar": "الشريط السفلي + الشريط العلوي",
+"Bottom bar only": "الشريط السفلي فقط",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "اختر ما تعرضه قائمة كل تبويب مثبّت وبأي ترتيب. تعرض القائمة أربعة عناصر كحد أقصى، والأول هو الأقرب إلى إبهامك.",
+"Customize tabs": "تخصيص التبويبات",
+"Debloat": "إزالة",
+"Doze": "Doze",
+"Find APKs on storage": "البحث عن ملفات APK في التخزين",
+"Full-screen terminal": "طرفية بملء الشاشة",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "اضغط مطولًا على تبويب في الشريط السفلي لعرض قائمة صغيرة بوجهات سريعة. هي تفتح شاشة أو قسمًا فقط، ولا يغيّر أيٌّ منها هاتفك.",
+"Long-press a tab for shortcuts": "اضغط مطولًا على تبويب للاختصارات",
+"Long-press shortcuts": "اختصارات الضغط المطوّل",
+"Main navigation": "التنقل الرئيسي",
+"Monet": "Monet",
+"More tabs": "المزيد من التبويبات",
+"Reset shortcuts": "إعادة ضبط الاختصارات",
+"Shortcuts": "الاختصارات",
+"Shortcuts are back to the default": "عادت الاختصارات إلى الوضع الافتراضي",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "اضغط على الدبوس لإبقاء تبويب في الشريط السفلي. يتّسع لأربعة، أولها مدير التطبيقات، وتنتظر البقية تحت «المزيد».",
+"Tasks": "المهام",
+"Telemetry": "القياس عن بُعد",
+"Top bar only": "الشريط العلوي فقط",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "مكان التبويبات. يحمل الشريط السفلي التبويبات التي تثبّتها وزر «المزيد» للباقي، ويحمل الشريط العلوي جميعها.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "تعذّر تأكيد التغيير: {0}"],
 ["Could not read Private DNS: {0}", "تعذّر قراءة DNS الخاص: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "DNS الخاص الآن: وضع غير معروف «{0}»"],
-["The phone has this setting, but one step reported a problem: {0}", "الإعداد موجود في الهاتف، لكن إحدى الخطوات أبلغت عن مشكلة: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "الإعداد موجود في الهاتف، لكن إحدى الخطوات أبلغت عن مشكلة: {0}"],
+["A menu lists at most {0} shortcuts.", "تعرض القائمة {0} اختصارات كحد أقصى."],
+["The bottom bar holds {0} tabs. Unpin one first.", "يتّسع الشريط السفلي لـ {0} تبويبات. ألغِ تثبيت أحدها أولًا."]
 ]
 };

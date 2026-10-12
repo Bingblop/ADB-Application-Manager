@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
 "This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
 "Check again": "Yeniden denetle",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin.",
+"Animations": "Animasyonlar",
+"Bottom bar + top bar": "Alt çubuk + üst çubuk",
+"Bottom bar only": "Yalnızca alt çubuk",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Sabitlenen her sekmenin menüsünde neyin hangi sırayla listeleneceğini seçin. Bir menü en fazla dört öğe listeler; ilki başparmağınızın altında olur.",
+"Customize tabs": "Sekmeleri özelleştir",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Depolamada APK bul",
+"Full-screen terminal": "Tam ekran terminal",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Alt çubuktaki bir sekmeye uzun basın, hızlı hedeflerden oluşan küçük bir menü açılır. Bunlar yalnızca bir ekranı veya bölümü açar; hiçbiri telefonunuzu değiştirmez.",
+"Long-press a tab for shortcuts": "Kısayollar için bir sekmeye uzun basın",
+"Long-press shortcuts": "Uzun basma kısayolları",
+"Main navigation": "Ana gezinme",
+"Monet": "Monet",
+"More tabs": "Diğer sekmeler",
+"Reset shortcuts": "Kısayolları sıfırla",
+"Shortcuts": "Kısayollar",
+"Shortcuts are back to the default": "Kısayollar varsayılana döndü",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Bir sekmeyi alt çubukta tutmak için iğneye dokunun. Dört sekme sığar, ilki Uygulama Yöneticisi’dir; diğerleri “Daha fazla” altında bekler.",
+"Tasks": "Görevler",
+"Telemetry": "Telemetri",
+"Top bar only": "Yalnızca üst çubuk",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Sekmelerin yeri. Alt çubukta sabitlediğiniz sekmeler ve diğerleri için bir “Daha fazla” düğmesi bulunur; üst çubukta hepsi bulunur.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "Değişiklik doğrulanamadı: {0}"],
 ["Could not read Private DNS: {0}", "Özel DNS okunamadı: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Özel DNS şu anda: bilinmeyen bir mod “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "Telefonda bu ayar var, ancak bir adım sorun bildirdi: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Telefonda bu ayar var, ancak bir adım sorun bildirdi: {0}"],
+["A menu lists at most {0} shortcuts.", "Bir menü en fazla {0} kısayol listeler."],
+["The bottom bar holds {0} tabs. Unpin one first.", "Alt çubuk {0} sekme alır. Önce birinin sabitlemesini kaldırın."]
 ]
 };

@@ -4526,7 +4526,31 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "सेटिंग सेवा ने जवाब नहीं दिया। थोड़ी देर में फिर से कोशिश करें, या फ़ोन रीस्टार्ट करें।",
 "This Android version did not understand the command.": "इस Android संस्करण ने कमांड नहीं समझा।",
 "Check again": "फिर से जांचें",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "फ़ाइल मैनेजर से इंस्टॉल करने के लिए ADB, Wireless Debugging, Shizuku या Root चाहिए। वर्किंग मोड में कोई एक सेट करें, फिर दोबारा कोशिश करें।"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "फ़ाइल मैनेजर से इंस्टॉल करने के लिए ADB, Wireless Debugging, Shizuku या Root चाहिए। वर्किंग मोड में कोई एक सेट करें, फिर दोबारा कोशिश करें।",
+"Animations": "एनिमेशन",
+"Bottom bar + top bar": "नीचे की बार + ऊपर की बार",
+"Bottom bar only": "सिर्फ़ नीचे की बार",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "चुनें कि हर पिन किए टैब का मेन्यू क्या दिखाए और किस क्रम में। मेन्यू में अधिकतम चार आइटम होते हैं; पहला आपके अँगूठे के नीचे रहता है।",
+"Customize tabs": "टैब अनुकूलित करें",
+"Debloat": "डीब्लोट",
+"Doze": "Doze",
+"Find APKs on storage": "स्टोरेज में APK खोजें",
+"Full-screen terminal": "फ़ुल-स्क्रीन टर्मिनल",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "नीचे की बार के किसी टैब को देर तक दबाएँ, तेज़ ठिकानों का छोटा मेन्यू खुलेगा। ये सिर्फ़ कोई स्क्रीन या सेक्शन खोलते हैं; इनमें से कोई भी आपका फ़ोन नहीं बदलता।",
+"Long-press a tab for shortcuts": "शॉर्टकट के लिए टैब को देर तक दबाएँ",
+"Long-press shortcuts": "देर तक दबाने के शॉर्टकट",
+"Main navigation": "मुख्य नेविगेशन",
+"Monet": "Monet",
+"More tabs": "और टैब",
+"Reset shortcuts": "शॉर्टकट रीसेट करें",
+"Shortcuts": "शॉर्टकट",
+"Shortcuts are back to the default": "शॉर्टकट डिफ़ॉल्ट पर लौट आए",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "किसी टैब को नीचे की बार पर रखने के लिए पिन पर टैप करें। इसमें चार आ सकते हैं, पहला ऐप मैनेजर रहता है; बाकी “और” के नीचे रहते हैं।",
+"Tasks": "कार्य",
+"Telemetry": "टेलीमेट्री",
+"Top bar only": "सिर्फ़ ऊपर की बार",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "टैब कहाँ दिखें। नीचे की बार में आपके पिन किए टैब और बाकी के लिए “और” बटन रहता है; ऊपर की बार में सभी टैब रहते हैं।",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5582,6 +5606,8 @@ p: [
 ["Could not confirm the change: {0}", "बदलाव की पुष्टि नहीं हो सकी: {0}"],
 ["Could not read Private DNS: {0}", "निजी DNS पढ़ा नहीं जा सका: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "निजी DNS अभी: अज्ञात मोड “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "फ़ोन में यह सेटिंग है, लेकिन एक चरण ने समस्या बताई: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "फ़ोन में यह सेटिंग है, लेकिन एक चरण ने समस्या बताई: {0}"],
+["A menu lists at most {0} shortcuts.", "एक मेन्यू में अधिकतम {0} शॉर्टकट दिखते हैं।"],
+["The bottom bar holds {0} tabs. Unpin one first.", "नीचे की बार में {0} टैब आते हैं। पहले किसी एक का पिन हटाएँ।"]
 ]
 };
