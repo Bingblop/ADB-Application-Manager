@@ -4,7 +4,7 @@ The release is run from the branch `release/v7.12.12` (the branch kept the name 
 
 ## The sequence, in order
 
-1. [ ] Every pull request named in the `## v7.13.0-Pro` section of `CHANGELOG.md` is merged into `release/v7.12.12`: #156, #157, #158, #159, #160, #161, #162, #163, #164, #170, #172, #173 (the port of #165), the dictionary dedupe, and the version bump. The changelog is the list; this page keeps no list of its own.
+1. [ ] Every pull request named in the `## v7.13.0-Pro` section of `CHANGELOG.md` is merged into `release/v7.12.12`: #156, #157, #158, #159, #160, #161, #162, #163, #164, #170, #172, #173 (the port of #165), #174 (the dictionary dedupe), #175 (Connected Devices wording), and the version bump. The changelog is the list; this page keeps no list of its own.
 2. [ ] The branch changes only what the changelog says, the version, the README, the guides and these checklists. Nothing else is added to it before the release.
 3. [ ] Repository secrets are set: `KEYSTORE_BASE64` (the release keystore, base64), and `KEYSTORE_PASSWORD` and `KEY_ALIAS` if the keystore does not use the defaults (`password` and `adbmanager`). Without `KEYSTORE_BASE64` the run fails at "Prepare signing key".
 4. [ ] Read the `## v7.13.0-Pro (versionCode 854)` section of `CHANGELOG.md` once as the person who will see it: the workflow copies it into the release text, so every sentence must be true of this build.

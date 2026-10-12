@@ -164,9 +164,10 @@ Pull requests, all squash-merged into `release/v7.12.12`, each green on CI, none
 | #159 | Application Updater: rebuilt check engine and result screen | dc65e4c | `updatechecker` (134 checks), t200; goldens t13, t14 | 23 |
 | #172 | Extra Settings: power & reboot, Doze & governor, zram & memory | 05f020b | t251 (91), `powertweaks` (156) | 25 |
 | #164 | Bottom navigation bar, More sheet, long-press shortcuts | 3be3407 | t260 to t263; goldens t69, t76, t80, t81 | 27 |
-| #170 | Extra Settings: animation speed, brightness bias, device telemetry | (see git log) | t250, t170, `telemetry` (66) | 26 |
-| #173 | Port of #165 (Morphe sources: Official / Custom) | (see git log) | t119 | none (a label; section 20 covers the sources sheet) |
-| dedupe | 58 keys written twice removed from each dictionary; check.js refuses repeats | (see git log) | i18n strict, t81, t146 | none (no visible change) |
+| #170 | Extra Settings: animation speed, brightness bias, device telemetry | 1fcc9a2 | t250, t170, `telemetry` (66) | 26 |
+| #173 | Port of #165 (Morphe sources: Official / Custom) | 5a3a296 | t119 | none (a label; section 20 covers the sources sheet) |
+| #174 | 58 keys written twice removed from each dictionary; check.js refuses repeats | a75c8f9 | i18n strict, t81, t146 | none (no visible change) |
+| #175 | Connected Devices: Freeze / Frozen wording, stronger FROZEN badge, blue Freeze menu entry (owner's request) | (merged after the bump was written) | t109, t158 | none (a wording change; the Connected Devices steps of the checklist say Disable until a later edit) |
 
 Things the next person should know:
 
