@@ -30,7 +30,7 @@
 <tr><td><b>Hidden Settings</b></td><td>Unlikely for ordinary ones. Real for those marked "careful": they can cut the connection this app uses or lock you out of the keyboard or screen.</td><td>The Undo bar (about 7 seconds), then <b>Changes</b> and <b>Revert</b>. If locked out, use the phone's own Settings, or a computer (below).</td><td><a href="#tab-settings">Hidden Settings</a>, <a href="#settings-journal">Undoing settings changes</a></td></tr>
 <tr><td><b>Overlays</b> and system colours</td><td>Unlikely to possible. The wrong overlay can make the screen harder to use.</td><td>The Undo bar, <b>Default</b>, or switch the overlay off.</td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
 <tr><td>Screen <b>density or size</b></td><td>Unlikely on a connected device (it undoes itself after 15 seconds unless you tap Keep). Real on this phone typed in a terminal: no safety net, and it normally survives a restart.</td><td><b>Put it back</b>, <b>Reset to default</b>, or <code>wm density reset</code> and <code>wm size reset</code>.</td><td><a href="#devices-display">Screen density and size</a></td></tr>
-<tr><td><b>Commands</b> typed in a terminal or console</td><td>From none (commands that only read) to severe (<code>rm</code>, <code>pm clear</code>, <code>settings put</code>, <code>reboot</code>). No undo.</td><td>The opposite command, if there is one. Otherwise only a backup.</td><td><a href="#tab-terminal">Command-Line Interface</a></td></tr>
+<tr><td><b>Commands</b> typed in a terminal or console</td><td>From none (commands that only read) to severe (<code>rm</code>, <code>pm clear</code>, <code>settings put</code>, <code>reboot</code>). No undo.</td><td>The opposite command, if there is one. Otherwise only a backup.</td><td><a href="#tab-console">Console</a>, <a href="#tab-terminal">Terminal</a></td></tr>
 <tr><td><b>Coding agents</b></td><td>Depends on what you approve. What you type goes to the provider.</td><td>File changes: <code>/undo</code>. Commands cannot be undone.</td><td><a href="#terminal-agents">Coding agents</a></td></tr>
 <tr><td><b>Delete</b> in the File Manager</td><td>No recycle bin. Serious in system folders: the app refuses to delete a storage's root or a top-level system folder, but the files inside them are not protected.</td><td>Only a copy made earlier.</td><td><a href="#tab-files">File Manager</a></td></tr>
 <tr><td>Installing an <b>APK file</b></td><td>Possible: an APK can do whatever an app can. The Block switches stop look-alikes.</td><td>Uninstall it. Keep both Block switches on.</td><td><a href="#tab-installer">APK Installer/Updater</a></td></tr>
@@ -274,7 +274,7 @@
 <table class="hg-table">
 <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
 <tbody>
-<tr><td>A command never ends</td><td>Some run until stopped: <code>logcat</code> without <code>-d</code>, <code>top</code> without <code>-n 1</code>, <code>ping</code> without a count.</td><td>Tap <b>STOP</b> or <b>CTRL</b>. A command stops itself after 30 minutes (<a href="#tab-terminal">Command-Line Interface</a>).</td></tr>
+<tr><td>A command never ends</td><td>Some run until stopped: <code>logcat</code> without <code>-d</code>, <code>top</code> without <code>-n 1</code>, <code>ping</code> without a count.</td><td>Tap <b>STOP</b> or <b>CTRL</b>. A command stops itself after 30 minutes (<a href="#tab-terminal">Terminal</a>).</td></tr>
 <tr><td>"The shell is still busy with an earlier command"</td><td>An earlier command has not finished.</td><td>Tap <b>STOP</b>. If "The shell is not running", press Enter or tap <b>Restart shell</b>.</td></tr>
 <tr><td>"No working mode is connected: connect ADB, Shizuku or Root first"</td><td>You chose the working-mode shell with no mode ready.</td><td>Tap <b>Working Modes</b>, or choose another shell.</td></tr>
 <tr><td>"needs a real terminal" (nano, vim, top)</td><td>Full-screen programs cannot run here.</td><td>Tap <b>Open in Termux</b>.</td></tr>
@@ -288,7 +288,7 @@
 <table class="hg-table">
 <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
 <tbody>
-<tr><td><b>Working Mode Required</b>, "reading logcat needs ADB, Shizuku or Root"</td><td>Read-Only mode cannot read the log.</td><td>Set up a mode (<a href="#tab-logcat">Logcat Viewer</a>).</td></tr>
+<tr><td><b>Working Mode Required</b>, "reading logcat needs ADB, Shizuku or Root"</td><td>Read-Only mode cannot read the log.</td><td>Set up a mode (<a href="#console-logcat">Live Logcat</a>).</td></tr>
 <tr><td>"(no matching log lines)", "(no output)"</td><td>The level is too high, the filter matches nothing, or the app wrote nothing.</td><td>Set the level to Verbose, empty the filter, or choose <b>All apps</b>.</td></tr>
 <tr><td>Empty after <b>Clear</b></td><td>Clear empties the log for every app, and the log is short.</td><td>Make the problem happen again, then <b>Refresh</b>.</td></tr>
 <tr><td>Task Manager: "Needs ADB, Wireless Debugging, Shizuku or Root"</td><td>Processes and GPU need a mode. Battery needs none. CPU, RAM and Network work without one only on some phones.</td><td>Tap <b>Set Up</b> (<a href="#tab-taskmgr">Task Manager</a>).</td></tr>
@@ -348,7 +348,7 @@
 <ol class="hg-steps">
 <li><b>Wait 15 seconds</b> if you changed a connected device from its <b>Display</b> sub-tab. The change undoes itself unless you tapped <b>Keep</b>.</li>
 <li><b>Tap Put it back</b>, or <b>Reset to default</b> (<b>Reset</b> for the size). A reset has no countdown.</li>
-<li><b>Run the rescue command</b> in the device's Console sub-tab (or the ADB Console for this phone): <code>wm density reset</code> and, for the size, <code>wm size reset</code>. They work while the connection is up, even when you cannot read the screen.</li>
+<li><b>Run the rescue command</b> in the device's Console sub-tab (or the ADB Shell of the Console tab for this phone): <code>wm density reset</code> and, for the size, <code>wm size reset</code>. They work while the connection is up, even when you cannot read the screen.</li>
 <li><b>If the connection is gone,</b> connect again, then do step 3. If it is this phone and the screen is unusable, use a computer (<a href="#safety">Staying safe</a>).</li>
 </ol>
 <div class="hg-warn"><b>Careful.</b> A density or size change normally stays after a restart, so restarting does not fix it. If the app is closed during the 15 seconds, the automatic undo may not happen (<a href="#devices-display">Screen density and size</a>).</div>
@@ -380,7 +380,7 @@
 <li><b>The app's details.</b> In the <b>About</b> tab, <b>This build</b> card, tap <b>Copy debug info</b> (or <b>Share it</b>). It holds the app's version and package name, your Android version, the phone model and processor, the WebView version, the working mode and the signing fingerprint, but no names, accounts or app lists. Paste it into the report.</li>
 <li><b>The exact message.</b> Copy it, or screenshot the note or the <b>Command Result</b> box. Add your phone's make and which working mode was on.</li>
 <li><b>The steps.</b> Which tab and button, in what order, whether it happens every time, and what you expected.</li>
-<li><b>For a crash or restart,</b> the log: in the <b>Logcat Viewer</b> tap <b>All apps</b>, choose ADB Application Manager Pro, set the level to Error, make it happen again, then <b>Share</b> or <b>Save</b>. Read the file first: a log can hold personal details.</li>
+<li><b>For a crash or restart,</b> the log: in <b>Console</b>, <b>Live Logcat</b>, tap <b>All apps</b>, choose ADB Application Manager Pro, set the level to Error, make it happen again, then <b>Share</b> or <b>Save</b>. Read the file first: a log can hold personal details.</li>
 </ol>
 <p><b>Where to report.</b> In the About tab tap <b>Report a bug or idea</b>. It opens GitHub's page for a new issue on <code>github.com/Bingblop/ADB-Application-Manager</code>. You need a GitHub account to post. Look through the existing issues first.</p>
 <div class="hg-warn"><b>Careful.</b> Issues on GitHub are public. Never paste an API key, a token, a password or a pairing code, and remove personal details from screenshots and logs.</div>
@@ -652,7 +652,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>Galaxy Store</b></td><td>Samsung's app store. The Application Updater checks it for Samsung apps. See <a href="#tab-updates">Application Updater</a>.</td></tr>
-<tr><td><b>gist</b></td><td>A small page on GitHub where someone shares a note or a list. The ADB Cheat Sheet can load Pulimet's gist of ADB commands. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>gist</b></td><td>A small page on GitHub where someone shares a note or a list. The ADB Cheat Sheet can load Pulimet's gist of ADB commands. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>GitHub</b></td><td>A website where developers keep their code and publish app releases. This app's own releases, the UAD-NG list and many update sources are there. See <a href="#privacy">Privacy</a>.</td></tr>
 <tr><td><b>GitHub token</b></td><td>An optional code that raises GitHub's limit for update checks from 60 to 5,000 an hour. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>GPU</b></td><td>The chip that draws the picture on your screen. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
@@ -698,7 +698,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>launcher</b></td><td>The home screen app. Do not remove yours unless another is chosen. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
-<tr><td><b>logcat</b></td><td>The phone's running diary, in which Android and every app write short notes. See <a href="#tab-logcat">Logcat Viewer</a>.</td></tr>
+<tr><td><b>logcat</b></td><td>The phone's running diary, in which Android and every app write short notes. See <a href="#console-logcat">Live Logcat</a>.</td></tr>
 </tbody>
 </table>
 
@@ -751,7 +751,7 @@
 <tr><td><b>permission</b></td><td>What an app is allowed to do, such as use the camera. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>pill</b></td><td>The same as a chip: one of the small rounded filter buttons under the count boxes at the top of the Application Manager. Tap it to turn that filter on or off. See <b>chip</b> above and <a href="#tab-apps">Application Manager</a>.</td></tr>
 <tr><td><b>Play Protect</b></td><td>Google's scanner for apps. It can refuse or delay an install. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
-<tr><td><b>pm</b></td><td>Android's package manager command, behind many buttons: <code>pm disable-user</code>, <code>pm uninstall</code> and others. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>pm</b></td><td>Android's package manager command, behind many buttons: <code>pm disable-user</code>, <code>pm uninstall</code> and others. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>port</b></td><td>The number after the colon in an address. It says which service on the device you are talking to. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
 <tr><td><b>process</b></td><td>One running program. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>profile</b></td><td>A saved list of which apps are frozen, suspended or removed, which you can apply again later. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
@@ -776,7 +776,7 @@
 <tr><td><b>recovery mode</b></td><td>A small maintenance menu the phone can start instead of Android. It has the wipe options: wipe cache partition (temporary system files only) and factory reset. See <a href="#safety">Staying safe</a>.</td></tr>
 <tr><td><b>regex</b></td><td>A small pattern language for searching text. The search box can use it. See <a href="#tab-apps">Application Manager</a>.</td></tr>
 <tr><td><b>removal level</b></td><td>The UAD-NG rating of how risky it is to remove an app: Recommended, Advanced, Expert or Unsafe. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
-<tr><td><b>Rish</b></td><td>Shizuku's remote shell. The ADB Console's Rish mode keeps it open between commands. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>Rish</b></td><td>Shizuku's remote shell. The Console's Rish mode keeps it open between commands. See <a href="#tab-console">Console</a>.</td></tr>
 <tr><td><b>root</b></td><td>Full administrator access to the phone, beyond what ADB can do. The phone must already be rooted. See <a href="#mode-root">Root</a>.</td></tr>
 <tr><td><b>root manager</b></td><td>The app on a rooted phone that decides which apps may use root, such as Magisk, KernelSU or APatch. See <b>Magisk</b> above and <a href="#mode-root">Root</a>.</td></tr>
 <tr><td><b>runtime permission</b></td><td>A permission Android asks you about, which can be switched on and off. See <a href="#apps-menu">The app menu</a>.</td></tr>
@@ -789,7 +789,7 @@
 <tbody>
 <tr><td><b>SAF</b></td><td>Storage Access Framework: Android's own file picker, through which you give an app one folder. See <a href="#files-storage">SD cards and other storage</a>.</td></tr>
 <tr><td><b>safe mode</b></td><td>Starts the phone with only the apps that came with it. This app does not run there. See <a href="#safety">Staying safe</a>.</td></tr>
-<tr><td><b>sandbox</b></td><td>In the Terminal, the shell that runs as this app in its private folder and cannot touch other apps. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>sandbox</b></td><td>In the Terminal, the shell that runs as this app in its private folder and cannot touch other apps. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>SDK</b></td><td>Software development kit. In the APK Installer, <b>Min SDK</b> is the oldest Android an app runs on and <b>Target SDK</b> the one it was built for; both are API levels. See <b>API level</b> above and <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>SDK Platform-Tools</b></td><td>Google's small download for a computer that contains the <code>adb</code> program. You need it only for the computer steps. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
 <tr><td><b>SecurityException</b></td><td>Android's way of saying that an app was not allowed to do something. Nothing was changed. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
@@ -797,7 +797,7 @@
 <tr><td><b>SHA-256</b></td><td>A common kind of checksum: a long code worked out from a file's exact contents. Downloads, the VirusTotal lookup and signing fingerprints use it. See <b>checksum</b> above and <a href="#privacy">Privacy</a>.</td></tr>
 <tr><td><b>shared library</b></td><td>A piece of code that several apps use together instead of each carrying its own copy. Android links it into an app that asks for it. The Libraries tab of <a href="#apps-menu">the app menu</a> lists the ones an app asks for and the ones linked in.</td></tr>
 <tr><td><b>sheet</b></td><td>A panel that slides up over the screen. App menus, Working Modes and this guide are sheets. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
-<tr><td><b>shell</b></td><td>A program that reads your lines and runs them. Also the name of the Android user (UID 2000) that ADB runs as. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>shell</b></td><td>A program that reads your lines and runs them. Also the name of the Android user (UID 2000) that ADB runs as. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>Shizuku</b></td><td>A separate free app that starts a helper with ADB-level power and lets other apps use it. See <a href="#mode-shizuku">Shizuku</a>.</td></tr>
 <tr><td><b>ShizuStore</b></td><td>A catalog by timschneeb of apps that work with Shizuku. The <b>ShizuStore</b> button in App Stores browses it. See <a href="#credits">Credits</a>.</td></tr>
 <tr><td><b>sideload</b></td><td>To install an app from a file instead of a store. An app installed that way is called sideloaded. See <a href="#install-and-update">Installing and updating the app</a>.</td></tr>
@@ -821,7 +821,7 @@
 <tbody>
 <tr><td><b>table</b></td><td>In Hidden Settings, one of the three groups of settings: Global, Secure or System. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
 <tr><td><b>target</b></td><td>The app, or part of Android, that an overlay changes. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
-<tr><td><b>Termux</b></td><td>A terminal app for Android. The Terminal tab can use it as a shell. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>Termux</b></td><td>A terminal app for Android. The Terminal tab can use it as a shell. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>tile</b></td><td>A button in Android's Quick Settings panel. This app adds two, Working mode and Stop apps. See <a href="#quick-tiles">Quick Settings tiles</a>.</td></tr>
 <tr><td><b>toast</b></td><td>A small message that slides up at the bottom of the screen and fades. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
 <tr><td><b>token</b></td><td>In a coding agent chat, a piece of text that the AI counts, and that the provider may bill for. The state line shows how many tokens were sent and received. A <b>GitHub token</b> is a different thing, see above. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
@@ -982,7 +982,7 @@
 <li><b>Komi Store</b> (komi-store/komi-store), whose catalog of GitHub projects with an installable APK is what the <b>GitHub</b> catalog in <a href="#tab-store">App Stores</a> browses.</li>
 <li><b>Orion Store</b> by RookieEnough, whose public catalog the <b>Orion</b> button in App Stores browses.</li>
 <li><b>Pulimet's ADB gist</b>, from which the ADB Cheat Sheet is compiled and which it can load live.</li>
-<li><b>Termux</b>, whose documented <code>RUN_COMMAND</code> feature the Terminal's Termux shell uses (<a href="#tab-terminal">Command-Line Interface</a>), and <b>Aurora Store</b>, which the Application Updater offers to open for Play Store apps.</li>
+<li><b>Termux</b>, whose documented <code>RUN_COMMAND</code> feature the Terminal's Termux shell uses (<a href="#tab-terminal">Terminal</a>), and <b>Aurora Store</b>, which the Application Updater offers to open for Play Store apps.</li>
 </ul>
 
 <h4>The 32-bit adb</h4>

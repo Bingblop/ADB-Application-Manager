@@ -194,7 +194,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   adaptive brightness on again: the notice goes', !s.notice && (await pill('brPill')) === '● 0.00 []');
   check('   the hint says why there is no live preview', (await txt('#brightnessCard .br-hint')) === 'No live preview here: the phone sets the brightness from the light around it, so you see the effect after Apply, as the light changes.');
   const brLine = await ev(() => { const e = document.querySelector('#brightnessCard .br-scale'); return e.innerText.replace(/\s+/g, ' ').trim(); });
-  check('   the track is labelled "−1 darker  0  +1 brighter"', brLine === '−1 darker 0 +1 brighter', brLine);
+  check('   the track is labelled "Darker −1  0  Brighter +1"', brLine === 'Darker −1 0 Brighter +1', brLine);
 
   // ---- 7. Device telemetry ----
   let d = await tel();
