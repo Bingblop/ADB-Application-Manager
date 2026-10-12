@@ -6,8 +6,9 @@
 //   node i18n/check.js --strict        a missing translation is an error (without it only a count is shown)
 //   node i18n/check.js --lang-dir D    another folder of dictionaries (the default is assets/lang)
 //
-// An error: a dictionary that does not load, an entry that is not text, a changing part ({0}) or a numbered tag (<1>) that a translation lost, added or
-// renamed, markup that is not one of the tags, a key that is not in the page any more. A warning: a long string left as it is, a language whose
+// An error: a dictionary that does not load, an entry that is not text, a key written twice (the later line silently wins and the earlier one
+// is dead text; a merge of two branches that both appended keys leaves these), a changing part ({0}) or a numbered tag (<1>) that a translation
+// lost, added or renamed, markup that is not one of the tags, a key that is not in the page any more. A warning: a long string left as it is, a language whose
 // script does not show in most of its translations, strings with no translation yet.
 'use strict';
 const ENTITY = /&(gt|lt|amp|quot|apos|nbsp|#\d+|#x[0-9a-f]+);/i;
@@ -56,6 +57,17 @@ for (const code of files.filter(c => !only.length || only.includes(c))) {
   let d;
   try { d = load(code); } catch (e) { err(code, 'does not load: ' + e.message); continue; }
   if (!d || typeof d !== 'object' || typeof d.x !== 'object' || d.x === null || (d.p !== undefined && !Array.isArray(d.p))) { err(code, 'is not { x: {...}, p: [...] }'); continue; }
+  // a key written twice: the loaded object cannot show it (the later line wins), so the source text is read, one entry per line
+  const src = fs.readFileSync(path.join(LANG_DIR, code + '.js'), 'utf8');
+  const seen = new Map();
+  for (const line of src.split('\n')) {
+    const m = /^\s*"((?:[^"\\]|\\.)*)"\s*:/.exec(line) || /^\s*\["((?:[^"\\]|\\.)*)"\s*,/.exec(line);
+    if (!m) continue;
+    let k; try { k = JSON.parse('"' + m[1] + '"'); } catch (e) { continue; }
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  const twice = [...seen].filter(([, c]) => c > 1).map(([k]) => k);
+  if (twice.length) err(code, twice.length + ' key(s) written more than once (the later line wins): ' + twice.slice(0, 3).map(k => JSON.stringify(k.slice(0, 50))).join(', '));
   const entries = Object.entries(d.x).concat((d.p || []).map(e => Array.isArray(e) && e.length === 2 ? e : [null, null]));
   let n = 0, same = 0, scripted = 0, scriptable = 0;
   for (const [k, v] of entries) {
