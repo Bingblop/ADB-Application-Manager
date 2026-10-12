@@ -12017,8 +12017,18 @@ Type any command below (e.g. pm list packages -d)
             const B = updBridge();
             if (B && B.endUpdateAll) { try { B.endUpdateAll(); } catch (e) { console.error(e); } }
         }
+        // The queue is abandoned (no privileged mode any more): the apps that were still waiting go back to a normal row, so Update and Update All work again
+        // as soon as a privileged mode returns. Only the 'queued' entries of the apps that were waiting are dropped; a download or install already running,
+        // and finished rows, are left alone.
+        function updAbandonQueue() {
+            const waiting = updQueue;
+            updQueue = [];
+            let changed = false;
+            waiting.forEach(p => { if (updProgress[p] && updProgress[p].stage === 'queued') { delete updProgress[p]; changed = true; } });
+            if (changed) renderUpdates();
+        }
         function updOnModeChange() {
-            if (!isPrivilegedActive) { updQueue = []; updEndAll(); }
+            if (!isPrivilegedActive) { updAbandonQueue(); updEndAll(); }
         }
 
         function updStartQueue(pkgs) {
