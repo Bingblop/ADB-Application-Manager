@@ -449,7 +449,7 @@
             top: 0;
             width: 52px;
             height: 28px;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             background: linear-gradient(135deg, var(--accent), var(--secondary));
             box-shadow: 0 2px 12px var(--accent-glow);
             opacity: 0;
@@ -466,13 +466,13 @@
             align-items: center;
             justify-content: center;
             gap: 2px;
-            padding: 4px 2px 3px;
+            padding: var(--space-1) 2px var(--space-1);
             background: none;
             border: 0;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             color: var(--text-muted);
-            font-size: 10.5px;
-            font-weight: 800;
+            font-size: var(--fs-caption);
+            font-weight: var(--fw-heavy);
             line-height: 1.15;
             letter-spacing: 0.1px;
             cursor: pointer;
@@ -483,14 +483,14 @@
             position: relative;
             width: 52px;
             height: 28px;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: color 0.2s ease, transform 0.15s ease;
         }
         .bn-ico svg { width: 21px; height: 21px; fill: currentColor; display: block; }
-        .bn-lbl { max-width: 100%; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+        .bn-lbl { max-width: 100%; padding: 0 var(--space-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
         .bn-item.active { color: var(--text-main); }
         .bn-item.active .bn-ico { color: var(--on-gradient); }
         .bn-item:active .bn-ico { transform: scale(0.9); }
@@ -501,12 +501,12 @@
             right: 4px;
             min-width: 16px;
             height: 16px;
-            padding: 0 4px;
-            border-radius: 8px;
+            padding: 0 var(--space-1);
+            border-radius: var(--radius-sm);
             background: #D32F2F;
             color: #fff;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: var(--fs-pkg);
+            font-weight: var(--fw-heavy);
             line-height: 16px;
             text-align: center;
             box-shadow: 0 0 0 2px var(--bg-sheet);
@@ -522,27 +522,27 @@
         }
 
         /* the More sheet: the tabs that are not on the bar, three to a row */
-        .bn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .bn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3h); margin-bottom: var(--space-5); }
         .bn-tile {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            gap: 8px;
-            padding: 12px 6px 10px;
+            gap: var(--space-3);
+            padding: var(--space-4) var(--space-2) var(--space-3h);
             min-height: 92px;
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-glass);
             background: rgba(var(--ov), 0.05);
             color: var(--text-main);
-            font-size: 11.5px;
-            font-weight: 800;
+            font-size: var(--fs-pill);
+            font-weight: var(--fw-heavy);
             line-height: 1.2;
             text-align: center;
             cursor: pointer;
             position: relative;
         }
-        .bn-tile .bn-ico { width: 44px; height: 44px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+        .bn-tile .bn-ico { width: 44px; height: 44px; border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
         .bn-tile .bn-ico svg { width: 24px; height: 24px; }
         .bn-tile .bn-tl { white-space: pre-line; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
         .bn-tile .bn-badge { top: -5px; right: -5px; }
@@ -550,30 +550,30 @@
         .bn-tile.current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .bn-tile:active { transform: scale(0.97); }
         .bn-tile:focus-visible { outline-offset: 2px; }
-        .bn-custom { display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border-glass); border-radius: 999px; background: none; color: var(--accent); font-size: 13px; font-weight: 800; cursor: pointer; }
+        .bn-custom { display: block; width: 100%; min-height: 44px; padding: var(--space-3h) var(--space-5); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: none; color: var(--accent); font-size: var(--fs-item); font-weight: var(--fw-heavy); cursor: pointer; }
         .bn-custom:active { background: var(--accent-glow); }
 
         /* Settings > Navigation: three choices; Feature List: the pin */
-        .nav-opts { display: grid; gap: 8px; margin-top: 12px; }
-        .nav-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; }
+        .nav-opts { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+        .nav-opt { display: flex; align-items: center; gap: var(--space-4); width: 100%; min-height: 48px; padding: var(--space-3h) var(--space-5); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); font-size: var(--fs-item); font-weight: var(--fw-heavy); text-align: left; cursor: pointer; }
         .nav-opt .nav-dot { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-muted); position: relative; }
         .nav-opt[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--input-bg)); }
         .nav-opt[aria-checked="true"] .nav-dot { border-color: var(--accent); }
         .nav-opt[aria-checked="true"] .nav-dot::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
-        .fl-pin { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .fl-pin { flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--radius-sm); background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
         .fl-pin svg { width: 17px; height: 17px; fill: currentColor; }
         .fl-pin[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
         .fl-pin:disabled { opacity: 0.3; cursor: default; }
         @media (max-width: 359px) { #featureList .fl-row { flex-wrap: wrap; } #featureList .fl-row .fl-name { flex: 1 1 100%; } #featureList .fl-row .fl-pin { margin-left: auto; } }          /* a narrow screen: the name on its own line, the buttons under it */
 
         /* Long-press menu, the one-time hint, the section highlight */
-        .bn-menu { position: fixed; z-index: 210; min-width: 190px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--bg-sheet); border: 1px solid var(--border-glass); border-radius: 18px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .bn-menu { position: fixed; z-index: 210; min-width: 190px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--bg-sheet); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .bn-menu.up { flex-direction: column-reverse; }
         /* the small point towards the slot that was held */
         .bn-menu::after { content: ""; position: absolute; width: 12px; height: 12px; background: var(--bg-sheet); border: solid var(--border-glass); border-width: 0 1px 1px 0; pointer-events: none; }
         .bn-menu.up::after { bottom: -7px; left: var(--bn-cx, 50%); transform: translateX(-50%) rotate(45deg); }
         .bn-menu.side::after { left: -7px; top: var(--bn-cy, 50%); transform: translateY(-50%) rotate(135deg); }
-        .bn-sc { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 8px 14px 8px 12px; border: 0; border-radius: 13px; background: none; color: var(--text-main); font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; }
+        .bn-sc { display: flex; align-items: center; gap: var(--space-4); width: 100%; min-height: 46px; padding: var(--space-3) var(--space-5) var(--space-3) var(--space-4); border: 0; border-radius: var(--radius-md); background: none; color: var(--text-main); font-size: var(--fs-item); font-weight: var(--fw-heavy); text-align: left; cursor: pointer; }
         .bn-sc svg { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; color: var(--accent); }
         .bn-sc span { min-width: 0; overflow-wrap: anywhere; }
         .bn-sc.fav { background: color-mix(in srgb, var(--accent) 15%, transparent); }
@@ -584,17 +584,17 @@
             .bn-menu { animation: bnMenuIn 0.18s ease-out; transform-origin: 50% 100%; }
             @keyframes bnMenuIn { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: none; } }
         }
-        .bn-tip { position: fixed; z-index: 205; left: 50%; bottom: calc(var(--bnav-h, 0px) + 12px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 9px 16px; border-radius: 999px; background: var(--bg-card); border: 1px solid var(--accent); color: var(--text-main); font-size: 12px; font-weight: 800; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); cursor: pointer; text-align: center; }
+        .bn-tip { position: fixed; z-index: 205; left: 50%; bottom: calc(var(--bnav-h, 0px) + 12px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: var(--space-3h) var(--space-5); border-radius: var(--radius-pill); background: var(--bg-card); border: 1px solid var(--accent); color: var(--text-main); font-size: var(--fs-body); font-weight: var(--fw-heavy); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); cursor: pointer; text-align: center; }
         @media (min-width: 720px) { .bn-tip { left: calc(var(--bnav-w, 0px) + 14px); bottom: 16px; transform: none; } }
         .bn-flash { animation: bnFlash 1.6s ease-out; border-radius: var(--radius-lg); }
         @keyframes bnFlash { 0% { box-shadow: 0 0 0 0 var(--accent); } 25% { box-shadow: 0 0 0 4px var(--accent), 0 0 24px var(--accent-glow); } 100% { box-shadow: 0 0 0 0 transparent; } }
         @media (prefers-reduced-motion: reduce) { .bn-flash { animation: none; outline: 2px solid var(--accent); outline-offset: 2px; } }
-        .nav-sc-details { margin-top: 12px; border-top: 1px solid var(--border-glass); padding-top: 4px; }
-        .nav-sc-details summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; cursor: pointer; list-style: none; }
+        .nav-sc-details { margin-top: var(--space-4); border-top: 1px solid var(--border-glass); padding-top: var(--space-1); }
+        .nav-sc-details summary { min-height: 44px; display: flex; align-items: center; font-size: var(--fs-item); font-weight: var(--fw-heavy); cursor: pointer; list-style: none; }
         .nav-sc-details summary::-webkit-details-marker { display: none; }
         .nav-sc-details summary::after { content: "▾"; margin-left: auto; color: var(--text-muted); transition: transform 0.2s ease; }
         .nav-sc-details[open] summary::after { transform: rotate(180deg); }
-        .nav-sc-title { margin-top: 12px; font-size: 12px; font-weight: 800; color: var(--accent); }
+        .nav-sc-title { margin-top: var(--space-4); font-size: var(--fs-body); font-weight: var(--fw-heavy); color: var(--accent); }
 
         /* A wide screen (a tablet, a phone on its side): the same slots stand in a rail at the left edge, and the page makes room for it */
         @media (min-width: 720px) {
@@ -606,10 +606,10 @@
                 bottom: 0;
                 width: 76px;
                 height: auto;
-                padding: 10px 0;
+                padding: var(--space-3h) 0;
                 flex-direction: column;
                 justify-content: flex-start;
-                gap: 4px;
+                gap: var(--space-1);
                 overflow-y: auto;
                 scrollbar-width: none;
                 border-top: 0;
@@ -6029,37 +6029,37 @@
                 html[data-appearance="light"] #view-extrasettings { --xs-ok: #065F46; --xs-warn: #78350F; --xs-bad: #9F1239; }
                 #extraSettingsRoot { display: flex; flex-direction: column; min-width: 0; }
                 #extraSettingsRoot .xs-sec { margin: 0; min-width: 0; scroll-margin-top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px) + 8px); }
-                #extraSettingsRoot .xs-card { padding: 16px 14px; overflow: hidden; min-width: 0; }
+                #extraSettingsRoot .xs-card { padding: var(--space-5) var(--space-5); overflow: hidden; min-width: 0; }
                 #extraSettingsRoot .xs-head { background: linear-gradient(135deg, rgba(var(--ov), 0.06), transparent 70%), var(--bg-card); }
                 #extraSettingsRoot .xs-head .color-card-title { font-size: 20px; letter-spacing: -0.2px; padding-right: 34px; }
-                #extraSettingsRoot .xs-head .color-card-subtitle { font-size: 12px; margin-bottom: 12px; }
-                #extraSettingsRoot .xs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-                #extraSettingsRoot .xs-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; max-width: 100%; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: 11.5px; cursor: pointer; text-align: left; }
+                #extraSettingsRoot .xs-head .color-card-subtitle { font-size: var(--fs-body); margin-bottom: var(--space-4); }
+                #extraSettingsRoot .xs-chips { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+                #extraSettingsRoot .xs-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; max-width: 100%; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: var(--fs-pill); cursor: pointer; text-align: left; }
                 #extraSettingsRoot .xs-chip:active { transform: scale(0.97); }
                 #extraSettingsRoot .xs-chip:focus-visible, #extraSettingsRoot .xs-btn:focus-visible, #extraSettingsRoot .xs-more summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                #extraSettingsRoot .xs-chip-k { color: var(--text-muted); font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
-                #extraSettingsRoot .xs-chip-v { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-variant-numeric: tabular-nums; }
-                #extraSettingsRoot .xs-sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; min-width: 0; }
-                #extraSettingsRoot .xs-ico { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 12px var(--accent-glow); }
+                #extraSettingsRoot .xs-chip-k { color: var(--text-muted); font-weight: var(--fw-bold); white-space: nowrap; flex: 0 0 auto; }
+                #extraSettingsRoot .xs-chip-v { font-weight: var(--fw-heavy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-variant-numeric: tabular-nums; }
+                #extraSettingsRoot .xs-sec-head { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-3); min-width: 0; }
+                #extraSettingsRoot .xs-ico { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 12px var(--accent-glow); }
                 #extraSettingsRoot .xs-ico svg { width: 22px; height: 22px; }
-                #extraSettingsRoot .xs-sec-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; flex: 1 1 auto; }
-                #extraSettingsRoot .xs-sec-line .color-card-title { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-                #extraSettingsRoot .xs-card > .color-card-subtitle, #extraSettingsRoot .xs-sec-text .color-card-subtitle { font-size: 12px; line-height: 1.45; margin: 0 0 10px; }
-                #extraSettingsRoot .xs-pill { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; max-width: 58%; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); color: var(--text-main); overflow: hidden; }
+                #extraSettingsRoot .xs-sec-line { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-width: 0; flex: 1 1 auto; }
+                #extraSettingsRoot .xs-sec-line .color-card-title { margin: 0; font-size: var(--fs-lead); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+                #extraSettingsRoot .xs-card > .color-card-subtitle, #extraSettingsRoot .xs-sec-text .color-card-subtitle { font-size: var(--fs-body); line-height: 1.45; margin: 0 0 var(--space-3h); }
+                #extraSettingsRoot .xs-pill { display: inline-flex; align-items: center; gap: var(--space-2); flex: 0 1 auto; min-width: 0; max-width: 58%; height: 26px; padding: 0 var(--space-3h); border-radius: var(--radius-pill); font-size: var(--fs-pill); font-weight: var(--fw-heavy); white-space: nowrap; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); color: var(--text-main); overflow: hidden; }
                 #extraSettingsRoot .xs-pill > span:last-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
                 #extraSettingsRoot .xs-pill.is-ok { color: var(--xs-ok); border-color: color-mix(in srgb, var(--xs-ok) 45%, transparent); background: color-mix(in srgb, var(--xs-ok) 13%, var(--bg-card)); }
                 #extraSettingsRoot .xs-pill.is-warn { color: var(--xs-warn); border-color: color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
                 #extraSettingsRoot .xs-pill.is-bad { color: var(--xs-bad); border-color: color-mix(in srgb, var(--xs-bad) 45%, transparent); background: color-mix(in srgb, var(--xs-bad) 13%, var(--bg-card)); }
-                #extraSettingsRoot .xs-trust { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; line-height: 1.4; color: var(--text-muted); margin: 0 0 12px; }
+                #extraSettingsRoot .xs-trust { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin: 0 0 var(--space-4); }
                 #extraSettingsRoot .xs-trust svg { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; color: var(--xs-ok); }
-                #extraSettingsRoot .xs-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+                #extraSettingsRoot .xs-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); min-height: 44px; padding: var(--space-3) 18px; border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: var(--fs-code); font-weight: var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 #extraSettingsRoot .xs-btn:active:not(:disabled) { transform: scale(0.97); }
                 #extraSettingsRoot .xs-btn:disabled { opacity: 0.6; cursor: default; }
                 #extraSettingsRoot .xs-btn.is-primary { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); border-color: transparent; }
-                #extraSettingsRoot .xs-more { margin-top: 12px; border-top: 1px solid var(--border-glass); }
-                #extraSettingsRoot .xs-more summary { display: flex; align-items: center; min-height: 44px; font-size: 12px; font-weight: 800; cursor: pointer; list-style: none; color: var(--accent); }
+                #extraSettingsRoot .xs-more { margin-top: var(--space-4); border-top: 1px solid var(--border-glass); }
+                #extraSettingsRoot .xs-more summary { display: flex; align-items: center; min-height: 44px; font-size: var(--fs-body); font-weight: var(--fw-heavy); cursor: pointer; list-style: none; color: var(--accent); }
                 #extraSettingsRoot .xs-more summary::-webkit-details-marker { display: none; }
-                #extraSettingsRoot .xs-more summary::after { content: '\25BE'; margin-left: 6px; display: inline-block; }
+                #extraSettingsRoot .xs-more summary::after { content: '\25BE'; margin-left: var(--space-2); display: inline-block; }
                 #extraSettingsRoot .xs-more[open] summary::after { transform: rotate(180deg); }
                 @media (prefers-reduced-motion: no-preference) {
                     #extraSettingsRoot .xs-chip, #extraSettingsRoot .xs-btn { transition: transform 0.12s; }
@@ -6082,59 +6082,59 @@
                 </div>
                 <section id="extraDnsSection" class="xs-sec" aria-label="Private DNS">
                     <style>
-                        #privateDnsCard .pdns-status { font-size: 12px; line-height: 1.45; margin: 4px 0 12px; }
-                        #privateDnsCard #pdnsNow { font-weight: 700; overflow-wrap: anywhere; }
-                        #privateDnsCard .pdns-host { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: 800; }
-                        #privateDnsCard #pdnsMsg { margin-top: 4px; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #privateDnsCard #pdnsMsg.is-err { color: var(--status-bloat); font-weight: 700; }
-                        #privateDnsCard .pdns-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
-                        #privateDnsCard .pdns-btn { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; padding: 7px 8px; text-align: center; min-width: 0; }
-                        #privateDnsCard .pdns-btn b { font-weight: 800; overflow-wrap: anywhere; }
-                        #privateDnsCard .pdns-btn small { font-size: 10.5px; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
+                        #privateDnsCard .pdns-status { font-size: var(--fs-body); line-height: 1.45; margin: var(--space-1) 0 var(--space-4); }
+                        #privateDnsCard #pdnsNow { font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-host { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: var(--fw-heavy); }
+                        #privateDnsCard #pdnsMsg { margin-top: var(--space-1); color: var(--text-muted); overflow-wrap: anywhere; }
+                        #privateDnsCard #pdnsMsg.is-err { color: var(--status-bloat); font-weight: var(--fw-bold); }
+                        #privateDnsCard .pdns-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+                        #privateDnsCard .pdns-btn { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; padding: var(--space-3) var(--space-3); text-align: center; min-width: 0; }
+                        #privateDnsCard .pdns-btn b { font-weight: var(--fw-heavy); overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-btn small { font-size: var(--fs-caption); font-weight: var(--fw-semibold); color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
                         #privateDnsCard .pdns-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
                         #privateDnsCard .pdns-btn[aria-pressed="true"] small { color: inherit; }
                         #privateDnsCard .pdns-btn[aria-pressed="true"] b::before { content: '\2713\00a0'; }
                         #privateDnsCard .pdns-btn:focus-visible, #privateDnsCard .list-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                        #privateDnsCard .pdns-label { display: block; font-size: 11px; font-weight: 800; color: var(--text-muted); margin: 14px 0 6px; }
-                        #privateDnsCard .pdns-custom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+                        #privateDnsCard .pdns-label { display: block; font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--text-muted); margin: var(--space-5) 0 var(--space-2); }
+                        #privateDnsCard .pdns-custom { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
                         #privateDnsCard .pdns-custom .list-search { flex: 1 1 150px; min-width: 0; min-height: 44px; }
                         #privateDnsCard .pdns-custom .mode-action-btn, #privateDnsCard #pdnsRefresh, #privateDnsCard #pdnsSetup { min-height: 44px; justify-content: center; }
-                        #privateDnsCard .pdns-problem { font-size: 11px; min-height: 14px; margin-top: 4px; overflow-wrap: anywhere; }
-                        #privateDnsCard .pdns-notes p { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin: 8px 0 0; }
+                        #privateDnsCard .pdns-problem { font-size: var(--fs-pill); min-height: 14px; margin-top: var(--space-1); overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-notes p { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin: var(--space-3) 0 0; }
                         #privateDnsCard .pdns-btn:disabled, #privateDnsCard .list-search:disabled { opacity: 0.6; cursor: default; }
-                        #privateDnsCard .pdns-testrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+                        #privateDnsCard .pdns-testrow { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
                         #privateDnsCard #pdnsTest { flex: 1 1 150px; }
                         #privateDnsCard .pdns-sweep { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(var(--ov), 0.28); pointer-events: none; }
-                        #privateDnsCard .pdns-prog { font-size: 11.5px; font-weight: 700; margin-top: 8px; min-height: 16px; overflow-wrap: anywhere; }
-                        #privateDnsCard .pdns-testnote { font-size: 11px; line-height: 1.45; color: var(--text-muted); margin: 6px 0 0; }
-                        #privateDnsCard .pdns-sortrow { margin-top: 8px; padding-top: 6px; min-height: 44px; }
+                        #privateDnsCard .pdns-prog { font-size: var(--fs-pill); font-weight: var(--fw-bold); margin-top: var(--space-3); min-height: 16px; overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-testnote { font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin: var(--space-2) 0 0; }
+                        #privateDnsCard .pdns-sortrow { margin-top: var(--space-3); padding-top: var(--space-2); min-height: 44px; }
                         #privateDnsCard .pdns-sortrow .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
-                        #privateDnsCard .pdns-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 6px 0 4px; }
+                        #privateDnsCard .pdns-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-2) 0 var(--space-1); }
                         @media (min-width: 640px) { #privateDnsCard .pdns-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
                         @media (min-width: 900px) { #privateDnsCard .pdns-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-                        #privateDnsCard .pdns-tile { flex-direction: column; align-items: stretch; justify-content: flex-start; text-align: left; gap: 8px; min-height: 132px; padding: 10px; border-radius: 14px; box-sizing: border-box; background: var(--bg-surface); }
-                        #privateDnsCard .pdns-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
-                        #privateDnsCard .pdns-mono { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; color: var(--xs-mono-ink); background: hsl(var(--h, 200) 62% 34%); }
-                        #privateDnsCard .pdns-ms { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+                        #privateDnsCard .pdns-tile { flex-direction: column; align-items: stretch; justify-content: flex-start; text-align: left; gap: var(--space-3); min-height: 132px; padding: var(--space-3h); border-radius: var(--radius-md); box-sizing: border-box; background: var(--bg-surface); }
+                        #privateDnsCard .pdns-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-width: 0; }
+                        #privateDnsCard .pdns-mono { flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-body); font-weight: var(--fw-heavy); letter-spacing: 0.3px; color: var(--xs-mono-ink); background: hsl(var(--h, 200) 62% 34%); }
+                        #privateDnsCard .pdns-ms { font-size: var(--fs-sheet); font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; white-space: nowrap; }
                         #privateDnsCard .pdns-ms:empty, #privateDnsCard .pdns-det:empty, #privateDnsCard .pdns-tag:empty, #privateDnsCard .pdns-warn:empty { display: none; }
                         #privateDnsCard .pdns-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-                        #privateDnsCard .pdns-main b { font-size: 12.5px; line-height: 1.25; }
-                        #privateDnsCard .pdns-hostline { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: 10px; overflow-wrap: break-word; }
+                        #privateDnsCard .pdns-main b { font-size: var(--fs-code); line-height: 1.25; }
+                        #privateDnsCard .pdns-hostline { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: var(--fs-pkg); overflow-wrap: break-word; }
                         #privateDnsCard .pdns-desc { line-height: 1.35; }
-                        #privateDnsCard .pdns-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: auto; min-width: 0; }
+                        #privateDnsCard .pdns-foot { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); margin-top: auto; min-width: 0; }
                         #privateDnsCard .pdns-det { font-variant-numeric: tabular-nums; }
-                        #privateDnsCard .pdns-tag { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 22px; padding: 0 8px; border-radius: 999px; white-space: nowrap; font-size: 10.5px; font-weight: 800; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
+                        #privateDnsCard .pdns-tag { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 22px; padding: 0 var(--space-3); border-radius: var(--radius-pill); white-space: nowrap; font-size: var(--fs-caption); font-weight: var(--fw-heavy); color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
                         #privateDnsCard .pdns-tag > span:last-child { overflow: hidden; text-overflow: ellipsis; }
                         #privateDnsCard .pdns-tile.is-ok .pdns-tag { color: var(--xs-ok); border-color: color-mix(in srgb, var(--xs-ok) 45%, transparent); background: color-mix(in srgb, var(--xs-ok) 13%, var(--bg-surface)); }
                         #privateDnsCard .pdns-tile.is-fail .pdns-tag { color: var(--xs-bad); border-color: color-mix(in srgb, var(--xs-bad) 45%, transparent); background: color-mix(in srgb, var(--xs-bad) 13%, var(--bg-surface)); }
                         #privateDnsCard .pdns-tile.is-fastest { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 6px 16px var(--accent-glow); }
                         #privateDnsCard .pdns-tile.is-fastest .pdns-tag { background: var(--accent); color: var(--on-accent); border-color: transparent; }
                         #privateDnsCard .pdns-tile.is-fail { border-style: dashed; }
-                        #privateDnsCard .pdns-tile.is-armed { border-color: var(--accent); border-width: 2px; padding: 9px; }
-                        #privateDnsCard .pdns-tile[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface)); color: var(--text-main); border: 2px solid var(--accent); padding: 9px; }
+                        #privateDnsCard .pdns-tile.is-armed { border-color: var(--accent); border-width: 2px; padding: var(--space-3h); }
+                        #privateDnsCard .pdns-tile[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface)); color: var(--text-main); border: 2px solid var(--accent); padding: var(--space-3h); }
                         #privateDnsCard .pdns-tile[aria-pressed="true"] small { color: var(--text-muted); }
                         #privateDnsCard .pdns-tile[aria-pressed="true"] b::before { content: '\2713\00a0'; color: var(--accent); }
-                        #privateDnsCard .pdns-warn { font-size: 10px; line-height: 1.35; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-warn { font-size: var(--fs-pkg); line-height: 1.35; font-weight: var(--fw-semibold); color: var(--text-muted); overflow-wrap: anywhere; }
                         #privateDnsCard .pdns-warn b { color: var(--text-main); }
                         #privateDnsCard .pdns-tile.is-wait .pdns-ms { color: var(--text-muted); }
                         @media (prefers-reduced-motion: no-preference) {
@@ -6201,39 +6201,39 @@
                      one Apply, one Reset to 1x; read through the working mode (settingsOp) and shown from the read-back, like Private DNS. -->
                 <section id="extraAnimSection" class="xs-sec" aria-label="Animation speed">
                     <style>
-                        #animSpeedCard .xs-status { font-size: 12px; line-height: 1.45; margin: 4px 0 12px; overflow-wrap: anywhere; }
-                        #animSpeedCard .xs-msg, #brightnessCard .xs-msg { font-size: 12px; line-height: 1.45; margin-top: 8px; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #animSpeedCard .xs-msg.is-err, #brightnessCard .xs-msg.is-err { color: var(--xs-bad); font-weight: 700; }
+                        #animSpeedCard .xs-status { font-size: var(--fs-body); line-height: 1.45; margin: var(--space-1) 0 var(--space-4); overflow-wrap: anywhere; }
+                        #animSpeedCard .xs-msg, #brightnessCard .xs-msg { font-size: var(--fs-body); line-height: 1.45; margin-top: var(--space-3); color: var(--text-muted); overflow-wrap: anywhere; }
+                        #animSpeedCard .xs-msg.is-err, #brightnessCard .xs-msg.is-err { color: var(--xs-bad); font-weight: var(--fw-bold); }
                         #animSpeedCard .xs-msg:empty, #brightnessCard .xs-msg:empty { display: none; }
-                        #animSpeedCard .anim-row { padding: 12px 0 10px; border-top: 1px solid var(--border-glass); }
-                        #animSpeedCard .anim-row:first-child { border-top: 0; padding-top: 4px; }
-                        #animSpeedCard .anim-head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-                        #animSpeedCard .anim-name { font-size: 13px; font-weight: 800; line-height: 1.3; }
-                        #animSpeedCard .anim-what { font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-top: 1px; }
-                        #animSpeedCard .anim-tag { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 24px; margin-top: 6px; padding: 0 9px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
+                        #animSpeedCard .anim-row { padding: var(--space-4) 0 var(--space-3h); border-top: 1px solid var(--border-glass); }
+                        #animSpeedCard .anim-row:first-child { border-top: 0; padding-top: var(--space-1); }
+                        #animSpeedCard .anim-head { display: flex; align-items: flex-start; gap: var(--space-3); min-width: 0; }
+                        #animSpeedCard .anim-name { font-size: var(--fs-item); font-weight: var(--fw-heavy); line-height: 1.3; }
+                        #animSpeedCard .anim-what { font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin-top: 1px; }
+                        #animSpeedCard .anim-tag { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 24px; margin-top: var(--space-2); padding: 0 var(--space-3h); border-radius: var(--radius-pill); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-caption); font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
                         #animSpeedCard .anim-tag.is-warn { color: var(--xs-warn); border-color: color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
                         #animSpeedCard .anim-tag:empty { display: none; }
-                        #animSpeedCard .anim-ctl { display: flex; align-items: center; gap: 10px; margin-top: 8px; min-width: 0; }
+                        #animSpeedCard .anim-ctl { display: flex; align-items: center; gap: var(--space-3h); margin-top: var(--space-3); min-width: 0; }
                         #animSpeedCard .anim-range { -webkit-appearance: none; appearance: none; flex: 1 1 auto; min-width: 0; height: 44px; background: transparent; margin: 0; outline: none; }
                         #animSpeedCard .anim-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--secondary)); opacity: 0.9; }
                         #animSpeedCard .anim-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: var(--bg-card); border: 3px solid var(--accent); box-shadow: 0 2px 8px var(--accent-glow); }
                         #animSpeedCard .anim-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent); }
                         #animSpeedCard .anim-range:disabled { opacity: 0.5; }
-                        #animSpeedCard .anim-num { flex: 0 0 76px; width: 76px; min-height: 44px; margin: 0; padding: 0 10px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
-                        #animSpeedCard .anim-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-                        #animSpeedCard .anim-chip { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
+                        #animSpeedCard .anim-num { flex: 0 0 76px; width: 76px; min-height: 44px; margin: 0; padding: 0 var(--space-3h); text-align: center; font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; }
+                        #animSpeedCard .anim-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+                        #animSpeedCard .anim-chip { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: var(--fs-pill); font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
                         #animSpeedCard .anim-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
                         #animSpeedCard .anim-chip:disabled { opacity: 0.6; cursor: default; }
                         #animSpeedCard .anim-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                        #animSpeedCard .anim-preview { position: relative; height: 18px; margin: 10px 0 2px; border-radius: 9px; background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); overflow: hidden; }
+                        #animSpeedCard .anim-preview { position: relative; height: 18px; margin: var(--space-3h) 0 2px; border-radius: var(--radius-sm); background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); overflow: hidden; }
                         #animSpeedCard .anim-dot { position: absolute; top: 3px; left: 3px; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--secondary)); box-shadow: 0 0 6px var(--accent-glow); --anim-d: 0.7s; }
-                        #animSpeedCard .anim-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-top: 4px; min-width: 0; }
+                        #animSpeedCard .anim-foot { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin-top: var(--space-1); min-width: 0; }
                         #animSpeedCard .anim-phone { font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                        #animSpeedCard .anim-problem { font-size: 11px; line-height: 1.4; color: var(--xs-bad); font-weight: 700; margin-top: 4px; overflow-wrap: anywhere; }
+                        #animSpeedCard .anim-problem { font-size: var(--fs-pill); line-height: 1.4; color: var(--xs-bad); font-weight: var(--fw-bold); margin-top: var(--space-1); overflow-wrap: anywhere; }
                         #animSpeedCard .anim-problem:empty { display: none; }
-                        #animSpeedCard .anim-actions, #brightnessCard .br-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+                        #animSpeedCard .anim-actions, #brightnessCard .br-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
                         #animSpeedCard .anim-actions .xs-btn, #brightnessCard .br-actions .xs-btn { flex: 1 1 auto; min-width: 0; }
-                        #animSpeedCard .xs-notes p, #brightnessCard .xs-notes p, #telemetryCard .xs-notes p { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin: 8px 0 0; }
+                        #animSpeedCard .xs-notes p, #brightnessCard .xs-notes p, #telemetryCard .xs-notes p { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin: var(--space-3) 0 0; }
                         #animSpeedCard.is-off .anim-range, #animSpeedCard.is-off .anim-num, #animSpeedCard.is-off .anim-chip { cursor: default; }
                         @media (prefers-reduced-motion: no-preference) {
                             #animSpeedCard .anim-row.is-live .anim-dot { animation: animDotMove var(--anim-d) ease-in-out infinite alternate; }
@@ -6275,31 +6275,31 @@
                      screen_brightness_mode says whether adaptive brightness is on at all (off: a notice and a button to Android's Display settings, never switched on by the app). -->
                 <section id="extraBrightnessSection" class="xs-sec" aria-label="Brightness bias">
                     <style>
-                        #brightnessCard .br-hero { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--ov), 0.06), transparent 70%), var(--bg-surface); border: 1px solid var(--border-glass); min-width: 0; }
-                        #brightnessCard .br-big { font-size: 34px; font-weight: 900; letter-spacing: -0.5px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; flex: 0 0 auto; }
+                        #brightnessCard .br-hero { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-4) var(--space-5); border-radius: var(--radius-md); background: linear-gradient(135deg, rgba(var(--ov), 0.06), transparent 70%), var(--bg-surface); border: 1px solid var(--border-glass); min-width: 0; }
+                        #brightnessCard .br-big { font-size: 34px; font-weight: var(--fw-black); letter-spacing: -0.5px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; flex: 0 0 auto; }
                         #brightnessCard .br-hero-text { min-width: 0; flex: 1 1 auto; }
-                        #brightnessCard .br-phrase { font-size: 13px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
-                        #brightnessCard .br-phone { font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
-                        #brightnessCard .br-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-size: 12px; line-height: 1.45; color: var(--text-main); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
+                        #brightnessCard .br-phrase { font-size: var(--fs-item); font-weight: var(--fw-heavy); line-height: 1.3; overflow-wrap: anywhere; }
+                        #brightnessCard .br-phone { font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+                        #brightnessCard .br-notice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin-top: var(--space-3h); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); font-size: var(--fs-body); line-height: 1.45; color: var(--text-main); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
                         #brightnessCard .br-notice span { flex: 1 1 180px; min-width: 0; }
                         #brightnessCard .br-notice .xs-btn { flex: 0 1 auto; }
-                        #brightnessCard .br-ctl { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-width: 0; }
+                        #brightnessCard .br-ctl { display: flex; align-items: center; gap: var(--space-3h); margin-top: var(--space-4); min-width: 0; }
                         #brightnessCard .br-range { -webkit-appearance: none; appearance: none; flex: 1 1 auto; min-width: 0; height: 44px; background: transparent; margin: 0; outline: none; }
-                        #brightnessCard .br-range::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; border: 1px solid var(--border-glass); background: linear-gradient(90deg, #0b0f1a 0%, var(--bg-surface) 50%, #fff7d6 100%); }
+                        #brightnessCard .br-range::-webkit-slider-runnable-track { height: 10px; border-radius: var(--radius-xs); border: 1px solid var(--border-glass); background: linear-gradient(90deg, #0b0f1a 0%, var(--bg-surface) 50%, #fff7d6 100%); }
                         #brightnessCard .br-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; background: var(--bg-card); border: 3px solid var(--accent); box-shadow: 0 2px 8px var(--accent-glow); }
                         #brightnessCard .br-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent); }
                         #brightnessCard .br-range:disabled { opacity: 0.5; }
-                        #brightnessCard .br-scale { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin: -4px 2px 0; }
-                        #brightnessCard .br-num { flex: 0 0 82px; width: 82px; min-height: 44px; margin: 0; padding: 0 10px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
-                        #brightnessCard .br-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-                        #brightnessCard .br-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
+                        #brightnessCard .br-scale { display: flex; justify-content: space-between; font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); margin: -4px 2px 0; }
+                        #brightnessCard .br-num { flex: 0 0 82px; width: 82px; min-height: 44px; margin: 0; padding: 0 var(--space-3h); text-align: center; font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; }
+                        #brightnessCard .br-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+                        #brightnessCard .br-chip { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: var(--fs-pill); font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
                         #brightnessCard .br-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
                         #brightnessCard .br-chip:disabled { opacity: 0.6; cursor: default; }
                         #brightnessCard .br-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                        #brightnessCard .br-problem { font-size: 11px; line-height: 1.4; color: var(--xs-bad); font-weight: 700; margin-top: 6px; overflow-wrap: anywhere; }
+                        #brightnessCard .br-problem { font-size: var(--fs-pill); line-height: 1.4; color: var(--xs-bad); font-weight: var(--fw-bold); margin-top: var(--space-2); overflow-wrap: anywhere; }
                         #brightnessCard .br-problem:empty { display: none; }
-                        #brightnessCard .br-hint { font-size: 11px; line-height: 1.45; color: var(--text-muted); margin: 8px 0 0; }
-                        #brightnessCard .br-status { font-size: 12px; line-height: 1.45; margin: 4px 0 10px; overflow-wrap: anywhere; }
+                        #brightnessCard .br-hint { font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin: var(--space-3) 0 0; }
+                        #brightnessCard .br-status { font-size: var(--fs-body); line-height: 1.45; margin: var(--space-1) 0 var(--space-3h); overflow-wrap: anywhere; }
                         #brightnessCard .xs-pill, #animSpeedCard .xs-pill, #telemetryCard .xs-pill { flex: 0 0 auto; max-width: 50%; }
                     </style>
                     <div class="color-card xs-card" id="brightnessCard">
@@ -6355,7 +6355,7 @@
                 <!-- Device telemetry: three rings (RAM, /data, battery) and six spec chips from AndroidBridge.getTelemetry (no working mode), refreshed every 5 s while the tab is in view. -->
                 <section id="extraTelemetrySection" class="xs-sec" aria-label="Device telemetry and specs">
                     <style>
-                        #telemetryCard .tel-rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 12px; }
+                        #telemetryCard .tel-rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); margin: 2px 0 var(--space-4); }
                         #telemetryCard .tel-ring { display: flex; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
                         #telemetryCard .tel-gauge { position: relative; width: 84px; height: 84px; max-width: 100%; }
                         #telemetryCard .tel-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -6364,31 +6364,31 @@
                         #telemetryCard .tel-ring.is-warn .tel-fill { stroke: var(--xs-warn); }
                         #telemetryCard .tel-ring.is-bad .tel-fill { stroke: var(--xs-bad); }
                         #telemetryCard .tel-ring.is-none .tel-fill { stroke: rgba(var(--ov), 0.18); }
-                        #telemetryCard .tel-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 900; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-                        #telemetryCard .tel-pct.is-small { font-size: 11px; font-weight: 800; color: var(--text-muted); white-space: normal; line-height: 1.15; padding: 0 12px; }
+                        #telemetryCard .tel-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: var(--fw-black); letter-spacing: -0.4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+                        #telemetryCard .tel-pct.is-small { font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--text-muted); white-space: normal; line-height: 1.15; padding: 0 var(--space-4); }
                         #telemetryCard .tel-bolt { position: absolute; right: 2px; bottom: 2px; width: 22px; height: 22px; border-radius: 50%; display: none; align-items: center; justify-content: center; background: var(--accent); color: var(--on-accent); box-shadow: 0 2px 6px var(--accent-glow); }
                         #telemetryCard .tel-bolt svg { width: 13px; height: 13px; }
                         #telemetryCard .tel-ring.is-charging .tel-bolt { display: inline-flex; }
-                        #telemetryCard .tel-label { font-size: 12px; font-weight: 800; line-height: 1.2; margin-top: 6px; max-width: 100%; overflow-wrap: anywhere; }
-                        #telemetryCard .tel-sub { font-size: 10.5px; line-height: 1.3; color: var(--text-muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; max-width: 100%; min-height: 14px; }
-                        #telemetryCard .tel-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+                        #telemetryCard .tel-label { font-size: var(--fs-body); font-weight: var(--fw-heavy); line-height: 1.2; margin-top: var(--space-2); max-width: 100%; overflow-wrap: anywhere; }
+                        #telemetryCard .tel-sub { font-size: var(--fs-caption); line-height: 1.3; color: var(--text-muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; max-width: 100%; min-height: 14px; }
+                        #telemetryCard .tel-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
                         @media (min-width: 640px) { #telemetryCard .tel-specs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-                        #telemetryCard .tel-spec { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
-                        #telemetryCard .tel-spec-ic { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--ov), 0.06); color: var(--accent); }
+                        #telemetryCard .tel-spec { display: flex; align-items: center; gap: var(--space-3h); min-height: 52px; padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
+                        #telemetryCard .tel-spec-ic { flex: 0 0 auto; width: 30px; height: 30px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--ov), 0.06); color: var(--accent); }
                         #telemetryCard .tel-spec-ic svg { width: 16px; height: 16px; }
                         #telemetryCard .tel-spec-t { min-width: 0; flex: 1 1 auto; }
-                        #telemetryCard .tel-spec-k { font-size: 10px; font-weight: 700; line-height: 1.2; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #telemetryCard .tel-spec-v { font-size: 12px; font-weight: 800; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-                        #telemetryCard .tel-spec-v.is-none, #telemetryCard .tel-sub.is-none { color: var(--text-muted); font-weight: 600; }
-                        #telemetryCard .tel-spec-sub { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); line-height: 1.3; }
-                        #telemetryCard .tel-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+                        #telemetryCard .tel-spec-k { font-size: var(--fs-pkg); font-weight: var(--fw-bold); line-height: 1.2; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #telemetryCard .tel-spec-v { font-size: var(--fs-body); font-weight: var(--fw-heavy); line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+                        #telemetryCard .tel-spec-v.is-none, #telemetryCard .tel-sub.is-none { color: var(--text-muted); font-weight: var(--fw-semibold); }
+                        #telemetryCard .tel-spec-sub { display: block; font-size: var(--fs-pkg); font-weight: var(--fw-semibold); color: var(--text-muted); line-height: 1.3; }
+                        #telemetryCard .tel-actions { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
                         #telemetryCard .tel-actions .xs-btn { flex: 1 1 auto; }
                         #telemetryCard .tel-refresh { flex: 0 0 44px; width: 44px; padding: 0; }
                         #telemetryCard .tel-refresh svg { width: 18px; height: 18px; }
-                        #telemetryCard .tel-when { flex: 1 1 100%; font-size: 10.5px; color: var(--text-muted); margin-top: -2px; }
+                        #telemetryCard .tel-when { flex: 1 1 100%; font-size: var(--fs-caption); color: var(--text-muted); margin-top: -2px; }
                         #telemetryCard.is-loading .tel-pct, #telemetryCard.is-loading .tel-sub, #telemetryCard.is-loading .tel-spec-v { color: transparent !important; }
-                        #telemetryCard.is-loading .tel-sub, #telemetryCard.is-loading .tel-spec-v { border-radius: 6px; background: rgba(var(--ov), 0.1); min-height: 14px; }
-                        #telemetryCard.is-loading .tel-pct::after { content: ''; width: 40px; height: 16px; border-radius: 6px; background: rgba(var(--ov), 0.1); }
+                        #telemetryCard.is-loading .tel-sub, #telemetryCard.is-loading .tel-spec-v { border-radius: var(--radius-xs); background: rgba(var(--ov), 0.1); min-height: 14px; }
+                        #telemetryCard.is-loading .tel-pct::after { content: ''; width: 40px; height: 16px; border-radius: var(--radius-xs); background: rgba(var(--ov), 0.1); }
                         @media (prefers-reduced-motion: no-preference) {
                             #telemetryCard .tel-fill { transition: stroke-dashoffset 0.6s ease; }
                             #telemetryCard .tel-refresh.is-busy svg { animation: telSpin 0.9s linear infinite; }
@@ -6452,25 +6452,25 @@
                     <style>
                         /* shared by the three sections (xq-): the confirm sheet (built on the body when first needed), the status lines, the action cards */
                         #xqSheet .modal-sheet { max-width: 520px; }
-                        #xqSheet .xq-ico { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); }
+                        #xqSheet .xq-ico { flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); }
                         #xqSheet .xq-ico svg { width: 24px; height: 24px; }
-                        #xqSheet .sheet-title h3 { font-size: 17px; }
-                        #xqSheet .sheet-title p { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
-                        #xqSheet .xq-text { font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
-                        #xqSheet .xq-cmd { margin-top: 10px; padding: 9px 11px; border-radius: 12px; background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-                        #xqSheet .xq-cmd-k { font-weight: 800; color: var(--text-muted); font-size: 11px; display: block; margin-bottom: 2px; }
-                        #xqSheet .xq-cmd code { display: block; white-space: pre-wrap; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: 700; }
-                        #xqSheet .xq-cmd-m { display: block; font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-                        #xqSheet .xq-expect { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 11.5px; line-height: 1.45; color: var(--text-muted); }
+                        #xqSheet .sheet-title h3 { font-size: var(--fs-title); }
+                        #xqSheet .sheet-title p { font-size: var(--fs-body); color: var(--text-muted); margin: 2px 0 0; }
+                        #xqSheet .xq-text { font-size: var(--fs-item); line-height: 1.55; overflow-wrap: anywhere; }
+                        #xqSheet .xq-cmd { margin-top: var(--space-3h); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); background: rgba(var(--ov), 0.06); border: 1px solid var(--border-glass); font-size: var(--fs-body); line-height: 1.5; overflow-wrap: anywhere; }
+                        #xqSheet .xq-cmd-k { font-weight: var(--fw-heavy); color: var(--text-muted); font-size: var(--fs-pill); display: block; margin-bottom: 2px; }
+                        #xqSheet .xq-cmd code { display: block; white-space: pre-wrap; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: var(--fw-bold); }
+                        #xqSheet .xq-cmd-m { display: block; font-size: var(--fs-pill); color: var(--text-muted); margin-top: var(--space-1); }
+                        #xqSheet .xq-expect { display: flex; gap: var(--space-3); align-items: flex-start; margin-top: var(--space-3h); font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); }
                         #xqSheet .xq-expect svg { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; color: var(--xs-ok); }
                         #xqSheet .xq-expect:empty { display: none; }
-                        #xqSheet .xq-result { margin-top: 10px; font-size: 12.5px; line-height: 1.5; font-weight: 700; overflow-wrap: anywhere; min-height: 0; }
+                        #xqSheet .xq-result { margin-top: var(--space-3h); font-size: var(--fs-code); line-height: 1.5; font-weight: var(--fw-bold); overflow-wrap: anywhere; min-height: 0; }
                         #xqSheet .xq-result:empty { display: none; }
                         #xqSheet .xq-result.is-bad { color: var(--xs-bad); }
                         #xqSheet .xq-result.is-ok { color: var(--xs-ok); }
-                        #xqSheet .xq-result pre { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: 11px; font-weight: 500; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; max-height: 120px; overflow: auto; }
-                        #xqSheet .xq-btns { display: flex; gap: 8px; margin-top: 14px; }
-                        #xqSheet .xq-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 0; min-width: 0; min-height: 48px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+                        #xqSheet .xq-result pre { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: var(--fs-pill); font-weight: var(--fw-medium); color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--space-2) 0 0; max-height: 120px; overflow: auto; }
+                        #xqSheet .xq-btns { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
+                        #xqSheet .xq-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); flex: 1 1 0; min-width: 0; min-height: 48px; padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: var(--fs-item); font-weight: var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                         #xqSheet .xq-btn > span:last-child { overflow: hidden; text-overflow: ellipsis; }
                         #xqSheet .xq-btn:disabled { opacity: 0.6; cursor: default; }
                         #xqSheet .xq-btn:active:not(:disabled) { transform: scale(0.97); }
@@ -6483,42 +6483,42 @@
                         #xqSheet .xq-ring { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: conic-gradient(currentColor calc(var(--p) * 100%), rgba(255, 255, 255, 0.3) 0); -webkit-mask: radial-gradient(circle, transparent 46%, #000 48%); mask: radial-gradient(circle, transparent 46%, #000 48%); }
                         #xqSheet .xq-hold.is-holding { transform: scale(0.97); }
                         #xqSheet .xq-hold.is-done .xq-ring { -webkit-mask: none; mask: none; background: currentColor; }
-                        #extraSettingsRoot .xq-status { font-size: 12px; line-height: 1.45; margin: 0 0 10px; overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-status { font-size: var(--fs-body); line-height: 1.45; margin: 0 0 var(--space-3h); overflow-wrap: anywhere; }
                         #extraSettingsRoot .xq-status:empty { display: none; }
-                        #extraSettingsRoot .xq-status.is-bad { color: var(--xs-bad); font-weight: 700; }
-                        #extraSettingsRoot .xq-status.is-ok { color: var(--xs-ok); font-weight: 700; }
-                        #extraSettingsRoot .xq-lock { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 10px; padding: 9px 11px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 10%, var(--bg-card)); font-size: 11.5px; line-height: 1.45; color: var(--text-main); }
+                        #extraSettingsRoot .xq-status.is-bad { color: var(--xs-bad); font-weight: var(--fw-bold); }
+                        #extraSettingsRoot .xq-status.is-ok { color: var(--xs-ok); font-weight: var(--fw-bold); }
+                        #extraSettingsRoot .xq-lock { display: flex; gap: var(--space-3); align-items: flex-start; margin: 0 0 var(--space-3h); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 10%, var(--bg-card)); font-size: var(--fs-pill); line-height: 1.45; color: var(--text-main); }
                         #extraSettingsRoot .xq-lock:empty { display: none; }
                         #extraSettingsRoot .xq-lock b { color: var(--xs-warn); }
-                        #extraSettingsRoot .xq-notes p { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin: 8px 0 0; overflow-wrap: anywhere; }
-                        #extraSettingsRoot .xq-notes code { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: 10.5px; }
-                        #extraSettingsRoot .xq-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+                        #extraSettingsRoot .xq-notes p { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin: var(--space-3) 0 0; overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-notes code { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: var(--fs-caption); }
+                        #extraSettingsRoot .xq-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3h); }
                         #extraSettingsRoot .xq-row .xs-btn { flex: 1 1 140px; min-width: 0; }
                         #extraSettingsRoot .xq-row .xs-btn > span { overflow: hidden; text-overflow: ellipsis; }
                         /* the tiles of Power & reboot: a 2-column grid, an icon tile in the action's own colour, a bold title, one line in plain words */
                         /* the head: the pill keeps its own width (one word, a mode name, a size); the title gives way, and the long Doze title may wrap to two lines */
                         #extraPowerSection .xs-sec-line .xs-pill, #extraDozeSection .xs-sec-line .xs-pill, #extraZramSection .xs-sec-line .xs-pill { flex: 0 0 auto; max-width: 52%; }
                         #extraPowerSection .xs-sec-line .color-card-title, #extraDozeSection .xs-sec-line .color-card-title, #extraZramSection .xs-sec-line .color-card-title { white-space: normal; line-height: 1.2; overflow-wrap: anywhere; }
-                        #extraPowerSection .xpw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+                        #extraPowerSection .xpw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
                         @media (min-width: 640px) { #extraPowerSection .xpw-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-                        #extraPowerSection .xpw-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 112px; padding: 11px 11px 10px; border-radius: 14px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
+                        #extraPowerSection .xpw-tile { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); min-height: 112px; padding: var(--space-4) var(--space-4) var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
                         #extraPowerSection .xpw-tile:active:not(:disabled) { transform: scale(0.97); }
                         #extraPowerSection .xpw-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
                         #extraPowerSection .xpw-tile:disabled { cursor: default; }
                         #extraPowerSection .xpw-tile:disabled .xpw-ico { opacity: 0.45; filter: saturate(0.5); }
                         #extraPowerSection .xpw-tile:disabled b, #extraPowerSection .xpw-tile:disabled .xpw-sub { opacity: 0.6; }
                         #extraPowerSection .xpw-tile.is-busy { border-color: var(--accent); }
-                        #extraPowerSection .xpw-ico { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); box-shadow: 0 3px 10px hsl(var(--h, 210) 60% 42% / 0.35); }
+                        #extraPowerSection .xpw-ico { flex: 0 0 auto; width: 36px; height: 36px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); box-shadow: 0 3px 10px hsl(var(--h, 210) 60% 42% / 0.35); }
                         #extraPowerSection .xpw-ico svg { width: 20px; height: 20px; }
                         #extraPowerSection .xpw-tile.is-warn { background: color-mix(in srgb, #F59E0B 9%, var(--bg-surface)); border-color: color-mix(in srgb, #F59E0B 40%, var(--border-glass)); }
                         #extraPowerSection .xpw-tile.is-danger { background: color-mix(in srgb, #EF4444 9%, var(--bg-surface)); border-color: color-mix(in srgb, #EF4444 40%, var(--border-glass)); }
                         #extraPowerSection .xpw-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; width: 100%; }
-                        #extraPowerSection .xpw-main b { font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
-                        #extraPowerSection .xpw-sub { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #extraPowerSection .xpw-why { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 20px; padding: 0 7px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; overflow: hidden; color: var(--xs-warn); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 12%, var(--bg-surface)); margin-top: auto; }
+                        #extraPowerSection .xpw-main b { font-size: var(--fs-item); line-height: 1.25; overflow-wrap: anywhere; }
+                        #extraPowerSection .xpw-sub { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #extraPowerSection .xpw-why { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 20px; padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--fs-pkg); font-weight: var(--fw-heavy); white-space: nowrap; overflow: hidden; color: var(--xs-warn); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 12%, var(--bg-surface)); margin-top: auto; }
                         #extraPowerSection .xpw-why > span { overflow: hidden; text-overflow: ellipsis; }
                         #extraPowerSection .xpw-why:empty { display: none; }
-                        #extraPowerSection .xpw-hold { display: inline-flex; align-items: flex-start; gap: 4px; max-width: 100%; min-width: 0; font-size: 10px; line-height: 1.3; font-weight: 800; color: var(--text-muted); margin-top: auto; }          /* the hint may wrap (Russian is long) */
+                        #extraPowerSection .xpw-hold { display: inline-flex; align-items: flex-start; gap: var(--space-1); max-width: 100%; min-width: 0; font-size: var(--fs-pkg); line-height: 1.3; font-weight: var(--fw-heavy); color: var(--text-muted); margin-top: auto; }          /* the hint may wrap (Russian is long) */
                         #extraPowerSection .xpw-hold > span { min-width: 0; overflow-wrap: anywhere; }
                         #extraPowerSection .xpw-hold svg { flex: 0 0 auto; margin-top: 0.5px; }
                         #extraPowerSection .xpw-hold svg { width: 12px; height: 12px; }
@@ -6561,54 +6561,54 @@
                 </section>
                 <section id="extraDozeSection" class="xs-sec" aria-label="Doze and power governor">
                     <style>
-                        #extraDozeSection .xdz-now { font-size: 12.5px; font-weight: 700; margin: 0 0 10px; overflow-wrap: anywhere; }
-                        #extraDozeSection .xdz-now .xdz-tok { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+                        #extraDozeSection .xdz-now { font-size: var(--fs-code); font-weight: var(--fw-bold); margin: 0 0 var(--space-3h); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-now .xdz-tok { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
                         /* the phase timeline: five deep-Doze phases on one line, joined by a track; the current one lit in the gradient and named below */
-                        #extraDozeSection .xdz-line { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; list-style: none; margin: 4px 0 2px; padding: 0; position: relative; }
+                        #extraDozeSection .xdz-line { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; list-style: none; margin: var(--space-1) 0 2px; padding: 0; position: relative; }
                         #extraDozeSection .xdz-line::before { content: ''; position: absolute; left: 10%; right: 10%; top: 13px; height: 3px; border-radius: 2px; background: var(--border-glass); }
                         #extraDozeSection .xdz-line .xdz-fill { position: absolute; left: 10%; top: 13px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--secondary)); width: 0; }
-                        #extraDozeSection .xdz-ph { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
-                        #extraDozeSection .xdz-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--bg-card); background: var(--bg-surface); box-shadow: 0 0 0 1px var(--border-glass); display: inline-flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 11px; font-weight: 800; }
+                        #extraDozeSection .xdz-ph { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 0; text-align: center; }
+                        #extraDozeSection .xdz-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--bg-card); background: var(--bg-surface); box-shadow: 0 0 0 1px var(--border-glass); display: inline-flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: var(--fs-pill); font-weight: var(--fw-heavy); }
                         #extraDozeSection .xdz-ph.is-past .xdz-dot { background: color-mix(in srgb, var(--accent) 35%, var(--bg-surface)); color: var(--text-main); }
                         #extraDozeSection .xdz-ph.is-now .xdz-dot { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 0 0 1px var(--accent), 0 4px 12px var(--accent-glow); transform: scale(1.12); }
-                        #extraDozeSection .xdz-lbl { width: 128%; font-size: 9.5px; line-height: 1.2; font-weight: 700; letter-spacing: -0.1px; color: var(--text-muted); overflow-wrap: normal; }          /* a label may be wider than its column (the columns are narrow at 320 px); a word is never cut */
-                        #extraDozeSection .xdz-ph.is-now .xdz-lbl { color: var(--text-main); font-weight: 800; }
-                        #extraDozeSection .xdz-sub { font-size: 9.5px; color: var(--accent); font-weight: 800; min-height: 12px; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; }
-                        #extraDozeSection .xdz-light { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin: 8px 0 2px; }
-                        #extraDozeSection .xdz-light-k { font-size: 10.5px; font-weight: 800; color: var(--text-muted); margin-right: 2px; white-space: nowrap; }
-                        #extraDozeSection .xdz-lc { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid var(--border-glass); color: var(--text-muted); background: rgba(var(--ov), 0.04); }
+                        #extraDozeSection .xdz-lbl { width: 128%; font-size: var(--fs-overline); line-height: 1.2; font-weight: var(--fw-bold); letter-spacing: -0.1px; color: var(--text-muted); overflow-wrap: normal; }          /* a label may be wider than its column (the columns are narrow at 320 px); a word is never cut */
+                        #extraDozeSection .xdz-ph.is-now .xdz-lbl { color: var(--text-main); font-weight: var(--fw-heavy); }
+                        #extraDozeSection .xdz-sub { font-size: var(--fs-overline); color: var(--accent); font-weight: var(--fw-heavy); min-height: 12px; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; }
+                        #extraDozeSection .xdz-light { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0 2px; }
+                        #extraDozeSection .xdz-light-k { font-size: var(--fs-caption); font-weight: var(--fw-heavy); color: var(--text-muted); margin-right: 2px; white-space: nowrap; }
+                        #extraDozeSection .xdz-lc { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--fs-pkg); font-weight: var(--fw-heavy); white-space: nowrap; border: 1px solid var(--border-glass); color: var(--text-muted); background: rgba(var(--ov), 0.04); }
                         #extraDozeSection .xdz-lc.is-now { background: var(--accent); color: var(--on-accent); border-color: transparent; }
-                        #extraDozeSection .xdz-h { font-size: 11px; font-weight: 800; color: var(--text-muted); margin: 14px 0 6px; }
+                        #extraDozeSection .xdz-h { font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--text-muted); margin: var(--space-5) 0 var(--space-2); }
                         /* actions: one card per action, the whole card is the button (44 px or more), a title and one sentence */
-                        #extraDozeSection .xdz-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+                        #extraDozeSection .xdz-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
                         @media (max-width: 359px) { #extraDozeSection .xdz-acts { grid-template-columns: minmax(0, 1fr); } }
                         @media (min-width: 640px) { #extraDozeSection .xdz-acts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-                        #extraDozeSection .xdz-act { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 92px; padding: 10px; border-radius: 14px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
+                        #extraDozeSection .xdz-act { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); min-height: 92px; padding: var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
                         #extraDozeSection .xdz-act:active:not(:disabled) { transform: scale(0.97); }
                         #extraDozeSection .xdz-act:focus-visible, #extraDozeSection .xdz-prof:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
                         #extraDozeSection .xdz-act:disabled, #extraDozeSection .xdz-prof:disabled { cursor: default; opacity: 0.6; }
                         #extraDozeSection .xdz-act.is-primary { border-color: var(--accent); }
-                        #extraDozeSection .xdz-act-top { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; }
-                        #extraDozeSection .xdz-act-ico { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); }
+                        #extraDozeSection .xdz-act-top { display: flex; align-items: center; gap: var(--space-3); min-width: 0; width: 100%; }
+                        #extraDozeSection .xdz-act-ico { flex: 0 0 auto; width: 30px; height: 30px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; background: hsl(var(--h, 210) 60% 42%); }
                         #extraDozeSection .xdz-act-ico svg { width: 17px; height: 17px; }
-                        #extraDozeSection .xdz-act b { font-size: 12.5px; line-height: 1.2; overflow-wrap: anywhere; min-width: 0; }
-                        #extraDozeSection .xdz-act small { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #extraDozeSection .xdz-motion { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); min-width: 0; }
+                        #extraDozeSection .xdz-act b { font-size: var(--fs-code); line-height: 1.2; overflow-wrap: anywhere; min-width: 0; }
+                        #extraDozeSection .xdz-act small { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-motion { display: flex; align-items: center; gap: var(--space-3h); margin-top: var(--space-3); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); min-width: 0; }
                         #extraDozeSection .xdz-motion-t { flex: 1 1 auto; min-width: 0; }
-                        #extraDozeSection .xdz-motion-t b { display: block; font-size: 12.5px; }
-                        #extraDozeSection .xdz-motion-t small { display: block; font-size: 10.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; margin-top: 2px; }
-                        #extraDozeSection .xdz-motion .xs-btn { flex: 0 0 auto; padding: 8px 14px; }
+                        #extraDozeSection .xdz-motion-t b { display: block; font-size: var(--fs-code); }
+                        #extraDozeSection .xdz-motion-t small { display: block; font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; margin-top: 2px; }
+                        #extraDozeSection .xdz-motion .xs-btn { flex: 0 0 auto; padding: var(--space-3) var(--space-5); }
                         /* the three profiles: cards; the one the phone reports has the gradient border */
-                        #extraDozeSection .xdz-profs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+                        #extraDozeSection .xdz-profs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
                         @media (max-width: 399px) { #extraDozeSection .xdz-profs { grid-template-columns: minmax(0, 1fr); } #extraDozeSection .xdz-prof { flex-direction: row; align-items: center; min-height: 56px; } #extraDozeSection .xdz-prof .xdz-prof-t { flex: 1 1 auto; } }
-                        #extraDozeSection .xdz-prof { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 108px; padding: 11px; border-radius: 14px; border: 2px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
+                        #extraDozeSection .xdz-prof { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); min-height: 108px; padding: var(--space-4); border-radius: var(--radius-md); border: 2px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
                         #extraDozeSection .xdz-prof[aria-pressed="true"] { border-color: transparent; background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box, linear-gradient(135deg, var(--accent), var(--secondary)) border-box; box-shadow: 0 6px 16px var(--accent-glow); }
                         #extraDozeSection .xdz-prof:active:not(:disabled) { transform: scale(0.97); }
                         #extraDozeSection .xdz-prof-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-                        #extraDozeSection .xdz-prof b { font-size: 12.5px; line-height: 1.2; }
+                        #extraDozeSection .xdz-prof b { font-size: var(--fs-code); line-height: 1.2; }
                         #extraDozeSection .xdz-prof[aria-pressed="true"] b::before { content: '\2713\00a0'; color: var(--accent); }
-                        #extraDozeSection .xdz-prof small { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #extraDozeSection .xdz-prof-why { font-size: 10px; font-weight: 800; color: var(--xs-warn); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-prof small { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-prof-why { font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--xs-warn); overflow-wrap: anywhere; }
                         #extraDozeSection .xdz-prof-why:empty { display: none; }
                         @media (prefers-reduced-motion: no-preference) {
                             #extraDozeSection .xdz-act, #extraDozeSection .xdz-prof, #extraDozeSection .xdz-dot { transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s; }
@@ -6673,47 +6673,47 @@
                 </section>
                 <section id="extraZramSection" class="xs-sec" aria-label="Zram and memory">
                     <style>
-                        #extraZramSection .xzr-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; margin: 2px 0 6px; }
-                        #extraZramSection .xzr-badge { display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%; min-width: 0; flex: 0 1 auto; height: 40px; padding: 0 14px; border-radius: 999px; white-space: nowrap; overflow: hidden; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 14px var(--accent-glow); }
-                        #extraZramSection .xzr-badge b { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
-                        #extraZramSection .xzr-badge span { font-size: 11.5px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+                        #extraZramSection .xzr-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3h); min-width: 0; margin: 2px 0 var(--space-2); }
+                        #extraZramSection .xzr-badge { display: inline-flex; align-items: baseline; gap: var(--space-2); max-width: 100%; min-width: 0; flex: 0 1 auto; height: 40px; padding: 0 var(--space-5); border-radius: var(--radius-pill); white-space: nowrap; overflow: hidden; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 14px var(--accent-glow); }
+                        #extraZramSection .xzr-badge b { font-size: 19px; font-weight: var(--fw-black); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+                        #extraZramSection .xzr-badge span { font-size: var(--fs-pill); font-weight: var(--fw-heavy); overflow: hidden; text-overflow: ellipsis; }
                         #extraZramSection .xzr-badge.is-na { background: rgba(var(--ov), 0.06); color: var(--text-muted); box-shadow: none; border: 1px solid var(--border-glass); }
-                        #extraZramSection .xzr-cap { display: block; font-size: 11px; line-height: 1.4; color: var(--text-muted); overflow-wrap: anywhere; margin: 0 0 10px; }
+                        #extraZramSection .xzr-cap { display: block; font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); overflow-wrap: anywhere; margin: 0 0 var(--space-3h); }
                         #extraZramSection .xzr-cap:empty { display: none; }
                         #extraZramSection .xzr-ref { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
                         #extraZramSection .xzr-ref svg { width: 20px; height: 20px; }
                         #extraZramSection .xzr-ref:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
                         #extraZramSection .xzr-ref:disabled { opacity: 0.6; cursor: default; }
                         /* the stacked bar: three parts of the zram disk */
-                        #extraZramSection .xzr-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: rgba(var(--ov), 0.08); border: 1px solid var(--border-glass); }
+                        #extraZramSection .xzr-bar { display: flex; height: 14px; border-radius: var(--radius-pill); overflow: hidden; background: rgba(var(--ov), 0.08); border: 1px solid var(--border-glass); }
                         #extraZramSection .xzr-bar > span { height: 100%; min-width: 0; }
                         #extraZramSection .xzr-s-c { background: linear-gradient(90deg, var(--accent), var(--secondary)); }
                         #extraZramSection .xzr-s-s { background: var(--xs-ok); opacity: 0.85; }
                         #extraZramSection .xzr-s-f { background: transparent; }
-                        #extraZramSection .xzr-leg { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 7px 0 2px; }
-                        #extraZramSection .xzr-leg span { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+                        #extraZramSection .xzr-leg { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0 2px; }
+                        #extraZramSection .xzr-leg span { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); white-space: nowrap; }
                         #extraZramSection .xzr-leg i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
                         #extraZramSection .xzr-leg b { color: var(--text-main); font-variant-numeric: tabular-nums; }
-                        #extraZramSection .xzr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+                        #extraZramSection .xzr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-3h); }
                         @media (min-width: 640px) { #extraZramSection .xzr-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-                        #extraZramSection .xzr-stat { padding: 10px 11px; border-radius: 12px; border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
-                        #extraZramSection .xzr-stat small { display: block; font-size: 10.5px; font-weight: 700; color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
-                        #extraZramSection .xzr-stat b { display: block; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+                        #extraZramSection .xzr-stat { padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
+                        #extraZramSection .xzr-stat small { display: block; font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
+                        #extraZramSection .xzr-stat b { display: block; font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: -0.2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
                         #extraZramSection .xzr-stat.is-ok b { color: var(--xs-ok); }
-                        #extraZramSection .xzr-stat em { display: block; font-style: normal; font-size: 10px; font-weight: 800; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; }
+                        #extraZramSection .xzr-stat em { display: block; font-style: normal; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; }
                         #extraZramSection .xzr-stat em.is-up { color: var(--xs-warn); }
                         #extraZramSection .xzr-stat em.is-down { color: var(--xs-ok); }
-                        #extraZramSection .xzr-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
-                        #extraZramSection .xzr-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 60px; padding: 9px 12px; border-radius: 14px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
+                        #extraZramSection .xzr-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+                        #extraZramSection .xzr-btn { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-height: 60px; padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
                         #extraZramSection .xzr-btn.is-primary { border-color: transparent; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); }
                         #extraZramSection .xzr-btn.is-primary small { color: inherit; opacity: 0.85; }
                         #extraZramSection .xzr-btn:disabled { cursor: default; background: var(--bg-surface); color: var(--text-main); }
                         #extraZramSection .xzr-btn:disabled b, #extraZramSection .xzr-btn:disabled small { opacity: 0.6; }
                         #extraZramSection .xzr-btn:active:not(:disabled) { transform: scale(0.97); }
                         #extraZramSection .xzr-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                        #extraZramSection .xzr-btn b { font-size: 12.5px; line-height: 1.2; overflow-wrap: anywhere; }
-                        #extraZramSection .xzr-btn small { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
-                        #extraZramSection .xzr-btn .xzr-why { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 20px; padding: 0 7px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; overflow: hidden; color: var(--xs-warn); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 12%, var(--bg-surface)); margin-top: 2px; }
+                        #extraZramSection .xzr-btn b { font-size: var(--fs-code); line-height: 1.2; overflow-wrap: anywhere; }
+                        #extraZramSection .xzr-btn small { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #extraZramSection .xzr-btn .xzr-why { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 20px; padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--fs-pkg); font-weight: var(--fw-heavy); white-space: nowrap; overflow: hidden; color: var(--xs-warn); border: 1px solid color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 12%, var(--bg-surface)); margin-top: 2px; }
                         #extraZramSection .xzr-btn .xzr-why:empty { display: none; }
                         @media (prefers-reduced-motion: no-preference) {
                             #extraZramSection .xzr-bar > span { transition: width 0.4s ease; }
@@ -7263,8 +7263,8 @@
                    8 px fields with the accent border on focus, the accent Run button with a play icon (a spinner while a command runs), and the history as
                    cards (16 px corners, `$ command` bold monospace 12 px in the accent colour on the left, the outcome 10 px bold on the right, the output
                    11 px monospace in the muted colour). Only theme tokens are used, so every palette, light and dark work. */
-                .cn-tabs { position: relative; display: flex; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; }
-                .cn-tab { flex: 1 1 0; min-width: 0; height: 48px; padding: 0 12px; background: none; border: 0; border-radius: 8px; color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .cn-tabs { position: relative; display: flex; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); }
+                .cn-tab { flex: 1 1 0; min-width: 0; height: 48px; padding: 0 var(--space-4); background: none; border: 0; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--fs-label); font-weight: var(--fw-bold); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .cn-tab[aria-selected="true"] { color: var(--accent); }
                 .cn-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
                 .cn-ind { position: absolute; inset-inline-start: 0; bottom: 0; width: 50%; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); pointer-events: none; transition: transform .25s; }
@@ -7272,14 +7272,14 @@
                 :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
                 .cn-tabs .help-q { top: 11px; }
-                .cn-seg { margin-top: 12px; }
+                .cn-seg { margin-top: var(--space-4); }
                 .cn-seg[hidden] { display: none; }
-                .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 10px; margin-bottom: 0; }
-                .cn-row { display: flex; align-items: center; gap: 8px; }
-                .cn-field { flex: 1 1 auto; min-width: 0; height: 56px; padding: 0 16px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--text-main); font: 14px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; outline: none; }
+                .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 var(--space-3h); margin-bottom: 0; }
+                .cn-row { display: flex; align-items: center; gap: var(--space-3); }
+                .cn-field { flex: 1 1 auto; min-width: 0; height: 56px; padding: 0 var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--text-main); font: 14px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; outline: none; }
                 .cn-field::placeholder { color: var(--text-dim); font: 12px/1.4 var(--ui-font, system-ui, sans-serif); }
                 .cn-field:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-                .cn-run { flex: 0 0 auto; min-width: 58px; height: 40px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; position: relative; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+                .cn-run { flex: 0 0 auto; min-width: 58px; height: 40px; padding: 0 var(--space-5); display: inline-flex; align-items: center; justify-content: center; position: relative; border: 0; border-radius: var(--radius-sm); background: var(--accent); color: var(--on-accent); cursor: pointer; }
                 .cn-run svg { width: 24px; height: 24px; display: block; }
                 .cn-run.is-idle { background: rgba(var(--ov), 0.12); color: rgba(var(--ov), 0.38); }
                 .cn-run.stop { background: #E53935; color: #fff; }
@@ -7290,74 +7290,74 @@
                 .cn-run.busy .cn-spin { display: block; }
                 @keyframes cnSpin { to { transform: rotate(360deg); } }
                 @media (prefers-reduced-motion: reduce) { .cn-spin { animation-duration: 3s; } }
-                .cn-icon { flex: 0 0 auto; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); cursor: pointer; padding: 0; }
+                .cn-icon { flex: 0 0 auto; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); cursor: pointer; padding: 0; }
                 .cn-icon.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
                 .cn-icon svg { width: 24px; height: 24px; display: block; }
-                .cn-mode { flex: 0 0 auto; width: 40px; height: 40px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font: 800 14px ui-monospace, monospace; cursor: pointer; padding: 0; }
+                .cn-mode { flex: 0 0 auto; width: 40px; height: 40px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font: 800 14px ui-monospace, monospace; cursor: pointer; padding: 0; }
                 .cn-mode.chat { color: var(--secondary); border-color: var(--secondary); }
                 .cn-mode:disabled { opacity: .55; }
-                .cn-note { font-size: 10px; color: var(--text-muted); margin: 6px 2px 0; }
-                .cn-card, .cn-mcard { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 16px; }
-                .cn-mcard { display: flex; align-items: center; gap: 8px; padding: 10px; margin-top: 10px; }
+                .cn-note { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-2) 2px 0; }
+                .cn-card, .cn-mcard { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); }
+                .cn-mcard { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3h); margin-top: var(--space-3h); }
                 .cn-mcard-main { flex: 1 1 auto; min-width: 0; }
-                .cn-mcard h4 { font-size: 12px; font-weight: 700; color: var(--accent); overflow-wrap: anywhere; }
-                .cn-mcard p { font-size: 10px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
-                .cn-mini { flex: 0 0 auto; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+                .cn-mcard h4 { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--accent); overflow-wrap: anywhere; }
+                .cn-mcard p { font-size: var(--fs-pkg); color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+                .cn-mini { flex: 0 0 auto; height: 32px; padding: 0 var(--space-4); display: inline-flex; align-items: center; gap: var(--space-2); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); cursor: pointer; white-space: nowrap; }
                 .cn-mini:active { background: var(--accent); color: var(--on-accent); }
                 .cn-mini svg { width: 16px; height: 16px; flex: 0 0 auto; }
-                .cn-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+                .cn-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3h); }
                 /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
-                .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: 16px; }
+                .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
                 .cn-tools.cn-scroll::-webkit-scrollbar, #cnSegLog .lc-key::-webkit-scrollbar { display: none; }
                 #cnSegLog .lc-chip { flex: 0 0 auto; }
-                .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 12px; display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; line-height: 1; width: auto; box-shadow: none; }
-                .cn-tools .op-select { color: var(--text-main); padding: 0 8px; max-width: 46vw; }
+                .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 var(--space-4); display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: 1; width: auto; box-shadow: none; }
+                .cn-tools .op-select { color: var(--text-main); padding: 0 var(--space-3); max-width: 46vw; }
                 .cn-tools .apps-tool-btn.term-pin { border-color: var(--accent); }
                 .cn-tools .apps-tool-btn.rish-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
                 .cn-tools .apps-tool-btn:active, .cn-tools .batch-tool-link:active { background: var(--accent); color: var(--on-accent); }
-                .cn-find { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; }
-                .cn-find .list-search { flex: 1 1 100px; min-width: 100px; height: 36px; margin: 0; padding: 0 12px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; font-size: 12px; }
+                .cn-find { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3h) 0 0; }
+                .cn-find .list-search { flex: 1 1 100px; min-width: 100px; height: 36px; margin: 0; padding: 0 var(--space-4); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); font-size: var(--fs-body); }
                 .cn-find .list-search:focus { border-color: var(--accent); }
-                .cn-find .find-nav { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; }
+                .cn-find .find-nav { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); }
                 .cn-find .find-nav.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
                 .cn-find .find-nav svg { width: 20px; height: 20px; display: block; }
-                .cn-find .manifest-meta { font-size: 10px; color: var(--text-muted); }
+                .cn-find .manifest-meta { font-size: var(--fs-pkg); color: var(--text-muted); }
                 @media (max-width: 340px) { .cn-find .list-search { flex-basis: 100%; } }
-                .cn-promptline { margin-top: 8px; font: 700 11px ui-monospace, monospace; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .cn-promptline { margin-top: var(--space-3); font: 700 11px ui-monospace, monospace; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 /* the history: newest card first */
-                .cn-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-                .cn-card { padding: 10px; min-width: 0; }
-                .cn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+                .cn-list { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3h); }
+                .cn-card { padding: var(--space-3h); min-width: 0; }
+                .cn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
                 .cn-cmd { flex: 1 1 auto; min-width: 0; font: 700 12px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; color: var(--accent); white-space: pre-wrap; overflow-wrap: anywhere; }
                 .cn-card.k-ai .cn-cmd { color: var(--secondary); }
-                .cn-badge { flex: 0 0 auto; font-size: 10px; font-weight: 700; line-height: 1.4; white-space: nowrap; color: var(--text-muted); padding-top: 1px; }
+                .cn-badge { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-bold); line-height: 1.4; white-space: nowrap; color: var(--text-muted); padding-top: 1px; }
                 .cn-card.is-run .cn-badge { color: var(--accent); }
                 .cn-card.is-ok .cn-badge { color: color-mix(in srgb, var(--status-running) 72%, var(--text-main)); }
                 .cn-card.is-fail .cn-badge { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
-                .cn-out { margin-top: 4px; font: 11px/1.45 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+                .cn-out { margin-top: var(--space-1); font: 11px/1.45 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
                 .cn-out:empty { display: none; }
                 .cn-card.k-ai .cn-out { color: var(--text-main); }
                 .cn-card.is-run .cn-out { max-height: 40vh; overflow-y: auto; }
                 .cn-card.is-fold .cn-out { max-height: 11em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
                 .cn-card.is-open .cn-out { max-height: 60vh; overflow-y: auto; }
-                .cn-card .term-result { display: block; margin-top: 6px; font-size: 10px; line-height: 1.4; }
-                .cn-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+                .cn-card .term-result { display: block; margin-top: var(--space-2); font-size: var(--fs-pkg); line-height: 1.4; }
+                .cn-acts { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
                 .cn-acts:empty { display: none; }
-                .cn-acts .cn-mini { height: 28px; padding: 0 10px; font-size: 11px; }
+                .cn-acts .cn-mini { height: 28px; padding: 0 var(--space-3h); font-size: var(--fs-pill); }
                 .cn-card.is-note { background: transparent; border-style: dashed; }
                 .cn-card.is-note .cn-head { display: none; }
                 .cn-card.is-note .cn-out { margin-top: 0; font-style: italic; max-height: 40vh; overflow-y: auto; }
-                .cn-empty { margin-top: 10px; font-size: 11px; color: var(--text-muted); padding: 10px 2px; white-space: pre-wrap; }
+                .cn-empty { margin-top: var(--space-3h); font-size: var(--fs-pill); color: var(--text-muted); padding: var(--space-3h) 2px; white-space: pre-wrap; }
                 .cn-empty:has(+ .cn-list > .cn-card) { display: none; }
                 .cn-card .rish-note { color: var(--text-muted); font-style: italic; }
                 .cn-card .rish-prompt { color: var(--text-main); }
                 /* Live Logcat: the engine's rows, in the Kotlin idiom (a card per line, `E/tag` bold in the level colour, the message muted) */
-                #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: 10px 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
-                #cnSegLog .lc-row { display: flex; gap: 4px; align-items: baseline; margin-bottom: 4px; padding: 6px 8px; background: var(--bg-card); border: 0; border-radius: 4px; }
+                #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: var(--space-3h) 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
+                #cnSegLog .lc-row { display: flex; gap: var(--space-1); align-items: baseline; margin-bottom: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--bg-card); border: 0; border-radius: 4px; }
                 #cnSegLog .lc-row.lvl-W, #cnSegLog .lc-row.lvl-E, #cnSegLog .lc-row.lvl-F { background: var(--bg-card); }
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
                 #cnSegLog .lc-badge::after { content: '/'; }
-                #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: 700; font-family: ui-monospace, monospace; font-size: 11px; }
+                #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: var(--fw-bold); font-family: ui-monospace, monospace; font-size: var(--fs-pill); }
                 /* the colours the script sets on Play and Record are kept readable on a light page too */
                 #cnSegLog #logcatPlayBtn { color: color-mix(in srgb, #2EBD6B 72%, var(--text-main)) !important; }
                 #cnSegLog #logcatPlayBtn.is-playing { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
@@ -7365,7 +7365,7 @@
                 #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
                 #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
                 #cnSegLog .lc-key { margin: 10px -16px 0; }
-                #cnSegLog #logcatScope { font-size: 10px; color: var(--text-muted); margin: 8px 2px 0; overflow-wrap: anywhere; }
+                #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
                 #cnSegLog #logcatScope:empty { display: none; }
             </style>
 
