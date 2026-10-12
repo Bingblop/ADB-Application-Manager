@@ -59,7 +59,7 @@ const appBatchMock = require('./lib/appbatch_mock');
   await page.evaluate(() => shareManifest());
   await page.evaluate(() => closeInspector());
   // terminal find
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.fill('#termCmd', 'x');
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.fill('#termCmd', 'x');
   await page.evaluate(() => runTerminalCmd()); await page.waitForTimeout(200);
   await page.fill('#termSearch', 'alpha');
   console.log('terminal find:', await page.innerText('#termFindCount'));

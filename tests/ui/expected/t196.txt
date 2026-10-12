@@ -1,0 +1,34 @@
+ok   no saved choice: the default bar has Console right before Terminal and no logcat
+ok   an old choice (everything on, the old order): Console takes the place of the Command-Line Interface, Terminal follows, Logcat Viewer is gone
+ok   a moved Command-Line Interface keeps its place for Console (first), Terminal right after it
+ok   the Command-Line Interface was off: Console is off and so is Terminal
+ok   the Feature List shows both switched off and has no row for the Logcat Viewer
+ok   switching Console on again brings it back before the (still off) Terminal
+ok   the Logcat Viewer was off (and File Manager): Console is still on, only File Manager stays off, the old logcat state is dropped
+ok   an old choice without a logcat entry at all, the Command-Line Interface off: Console off too
+ok   a choice that already knows Console is left alone (here Console after Terminal and off, Terminal on; the Extra Settings tab it does not know is slotted in after Hidden Settings)
+ok   a choice that knows Console with only Terminal off keeps Console on
+ok   migrating writes nothing by itself
+ok   the first change saves the migrated shape (Console in, logcat out)
+ok   a damaged or odd saved choice ({"order": 7, "off": "x"}) leaves a sane bar: first Application Manager, last About, Console and Terminal each once, no logcat
+ok   a damaged or odd saved choice ({"order":["logcat","terminal"],"off":["logcat"]}) leaves a sane bar: first Application Manager, last About, Console and Terminal each once, no logcat
+ok   a damaged or odd saved choice (null) leaves a sane bar: first Application Manager, last About, Console and Terminal each once, no logcat
+ok   a damaged or odd saved choice ([]) leaves a sane bar: first Application Manager, last About, Console and Terminal each once, no logcat
+ok   a damaged or odd saved choice ("x") leaves a sane bar: first Application Manager, last About, Console and Terminal each once, no logcat
+ok   a short old choice with logcat and terminal: Console right before Terminal, logcat gone, the rest in their default places
+ok   switchView('logcat') opens Console on Live Logcat and starts the log
+ok   ...also when Console is already open on ADB Shell: it goes to Live Logcat
+ok   the Back trail goes terminal -> console -> files
+ok   All apps opens the app picker over Live Logcat
+ok   picking an app limits the log, relabels the button, shows Show all apps and says which package
+ok   Show all apps goes back to the whole log and clears the note
+ok   Logs in an app's sheet: closes the sheet, opens Console on Live Logcat limited to that app, reading
+ok   the tab has a ? that opens the guide at the Console topic
+ok   ...and the guide opens
+ok   the guide has Console, Live Logcat and Terminal pages, and no Logcat Viewer page
+ok   Console off: Logs in an app's sheet says Console is off, keeps the sheet, sets no filter, reads nothing and keeps the saved part
+ok   Console off: switchView('logcat') returns false and stays
+ok   the Terminal tab is the terminal and the coding agents only: its pane shows at once, with agents, shells, Full screen, Real terminal and the input; no console box, no switch
+ok   no text of the page names the Command-Line Interface tab; the Default Ask Agent texts say the Terminal tab
+errors: []
+all passed

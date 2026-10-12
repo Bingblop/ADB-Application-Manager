@@ -55,13 +55,13 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
-  const term = () => page.locator('#termOutput').innerText();
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.waitForTimeout(150);
+  const term = () => page.evaluate(() => termText());          // the history as text, oldest first
   const sleep = ms => page.waitForTimeout(ms);
   const type = async cmd => { await page.fill('#termCmd', cmd); await page.press('#termCmd', 'Enter'); };
 
   // 1) The ADB-devices button is gone; a Rish mode button replaced it.
-  const btns = await page.locator('#view-terminal .mode-btn-row button').allInnerTexts();
+  const btns = await page.locator('#view-console .mode-btn-row button').allInnerTexts();
   console.log('1. no "adb devices" button:', !btns.some(t => /adb devices/i.test(t)), '| Rish button present:', btns.some(t => /Rish mode/.test(t)), JSON.stringify(btns));
   const html = await page.content();
   console.log('   no stale adb-devices handler in markup:', !/value = 'adb devices'/.test(html));
@@ -223,8 +223,8 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   await page.evaluate(() => { let s = ''; for (let i = 0; i < 3000; i++) s += 'line number ' + i + ' of the stream\n'; for (let k = 0; k < 40; k++) window.onRishOutput('x', s + (k === 39 ? 'THE-END\n' : '')); });
   const dt = Date.now() - t0;
   await sleep(100);
-  const big = await page.evaluate(() => { const t = document.getElementById('termOutput'); return { len: t.textContent.length, head: t.firstChild.textContent, tail: t.textContent.slice(-8), top: t.scrollTop, max: t.scrollHeight - t.clientHeight }; });
-  console.log('    4 MB streamed in under 3 s stays responsive and bounded:', dt < 3000 && big.len < 900000 && big.len > 400000, 'len=' + big.len);
+  const big = await page.evaluate(() => { const t = document.querySelector('#termOutput > .cn-card .cn-out'); return { len: t.textContent.length, head: t.firstChild.textContent, tail: t.textContent.slice(-8), top: t.scrollTop, max: t.scrollHeight - t.clientHeight }; });          // the card the stream went into
+  console.log('    4 MB streamed in under 3 s stays responsive and bounded:', dt < 3000 && big.len < 300000 && big.len > 100000, 'len=' + big.len);
   console.log('    older output trimmed with a marker, newest kept, scrolled to the end:', /older output trimmed/.test(big.head) && big.tail === 'THE-END\n' && big.max - big.top < 5, JSON.stringify({ head: big.head.trim(), top: big.top, max: big.max }));
 
   // 17) Long prompts are shortened from the left so the folder at the end stays visible.

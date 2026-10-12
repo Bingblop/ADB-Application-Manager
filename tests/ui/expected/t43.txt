@@ -1,4 +1,4 @@
-1. no "adb devices" button: true | Rish button present: true ["Working Modes","Rish mode","UID (id)","Connect 5555","tcpip 5555","Dev Options","Cheat Sheet"]
+1. no "adb devices" button: true | Rish button present: true ["Rish mode","Cheat Sheet","History","Saved","UID (id)","Connect 5555","tcpip 5555","Dev Options"]
    no stale adb-devices handler in markup: true
 2. normal mode uses executeShell: true
 3. switched to Shizuku, then started the shell: true ["exec:id","select:shizuku","rishStart"]
@@ -32,7 +32,7 @@
     a denied prompt does not start anything: true
 15. start failure leaves Rish off and the button usable: true "Rish mode"
 16. root shell labelled and # prompt: true {"title":"Rish shell • root (uid 0)","pl":"husky:/ #"}
-    4 MB streamed in under 3 s stays responsive and bounded: true len=776782
-    older output trimmed with a marker, newest kept, scrolled to the end: true {"head":"[older output trimmed]","top":455651,"max":455651}
+    4 MB streamed in under 3 s stays responsive and bounded: true len=200023
+    older output trimmed with a marker, newest kept, scrolled to the end: true {"head":"[older output trimmed]","top":103648,"max":103648}
 17. long prompt shortened from the left: true "…example.verylongpackagename/files $"
 errors: []

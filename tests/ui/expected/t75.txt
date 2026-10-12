@@ -35,6 +35,40 @@
    and not again when nothing changed: true
    closing the first-launch sheet after something was allowed starts the app again: true
    closing it with nothing allowed does not start the app again: true
+DUMP. without a working mode the row is not in the sheet at all (there is nothing to open for it): true ["All files access","Usage access","Display over other apps"]
+   with a working mode, a build that does not report DUMP shows no row for it (an older app never shows a row it cannot fill in): true []
+   with a working mode and a build that reports it, the row is there right after Write Secure Settings, rows otherwise in the same order: true ["All files access","Allow Restricted Settings","Usage access","Display over other apps","Read/Write External Storage","Write Secure Settings","Dump system services (DUMP)"]
+   it says in plain words what it is for, and that it is granted through the working mode: true Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.
+   its Allow button is told apart for a screen reader: true
+   not allowed yet: no tick, the sheet is not "Done": true ✓ ✓ ✓ ✓ ✓ ✓ —
+   Allow asks the app (requestDumpAccess) and, when the phone holds the permission, the row shows the tick and the sheet reads "Done": true ✓ ✓ ✓ ✓ ✓ ✓ ✓
+   something was allowed in the first-launch sheet: closing it starts the app again: true
+   from About: a granted DUMP shows the tick, "Allowed", and the sheet reads "Done": true {"name":"Dump system services (DUMP)","ok":true,"btn":false}
+   the tick says "✓ Allowed": true
+   "Allow all" is offered while DUMP and one more are missing: true ✓ ✓ ✓ ✓ ✓ — —
+   "Allow all" grants it through the mode (one call), the status then holds DUMP, and the sheet closes: true {"files":true,"usage":true,"overlay":true,"storage_legacy":true,"secure_settings":true,"restricted_settings":true,"dump":true}
+   if the grant-all leaves it, "Allow all" walks on to it: Write Secure Settings, then DUMP; both end up ticked: true ["secure_settings,dump","✓ ✓ ✓ ✓ ✓ ✓ ✓"]
+   when the phone does not hold the permission after the grant, nothing is ticked and the Allow button stays: true ✓ ✓ ✓ ✓ ✓ ✓ —
+   the sheet is open with DUMP not allowed yet: true
+   the app comes back after DUMP was granted from a computer (adb shell pm grant): the open sheet shows the tick by itself: true
+   a sheet opened again reads the phone anew (the grant was taken away: the row asks again): true
+   copied list, files missing: the appops line and both storage grants: true ["adb shell appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow\nadb shell pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_EXTERNAL_STORAGE"]
+   copied list, install_unknown missing: its appops line only: true ["adb shell appops set com.bloatware.bingblop REQUEST_INSTALL_PACKAGES allow"]
+   copied list, storage_legacy missing: both storage grants: true ["adb shell pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_EXTERNAL_STORAGE"]
+   copied list, files and storage_legacy missing: the storage grants once, not twice: true ["adb shell appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow\nadb shell pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_EXTERNAL_STORAGE"]
+   copied list, usage missing: the appops line and the grant: true ["adb shell appops set com.bloatware.bingblop GET_USAGE_STATS allow\nadb shell pm grant com.bloatware.bingblop android.permission.PACKAGE_USAGE_STATS"]
+   copied list, all missing: every line once, in order, and none for Allow Restricted Settings (the app could not see that it was done): true ["adb shell appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow\nadb shell pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_EXTERNAL_STORAGE\nadb shell appops set com.bloatware.bingblop GET_USAGE_STATS allow\nadb shell pm grant com.bloatware.bingblop android.permission.PACKAGE_USAGE_STATS\nadb shell appops set com.bloatware.bingblop SYSTEM_ALERT_WINDOW allow\nadb shell appops set com.bloatware.bingblop REQUEST_INSTALL_PACKAGES allow\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS\nadb shell pm grant com.bloatware.bingblop android.permission.DUMP"]
+   none missing: no button: true
+   only Allow Restricted Settings missing: its row asks for it, but there is nothing to copy for it, so no button: true
+15. Copy grant commands: shown while something is missing - also without a working mode, where the privileged rows are not in the sheet: true {"shown":true,"text":"Copy grant commands","h":44,"inside":true}
+   it copies the exact adb lines, one per line, with this app's package filled in, for what is not held (and nothing else): true ["adb shell appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow\nadb shell pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_EXTERNAL_STORAGE\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS\nadb shell pm grant com.bloatware.bingblop android.permission.DUMP"]
+   and the confirmation says where to run them: true ["Copied. Run these on a computer with USB debugging"]
+   when the app comes back and everything is held the button is gone: true
+   nothing missing: no button: true
+   in the file-access prompt (one row) there is no button either: true
+   a build that cannot list the commands (the bridge has no getGrantCommands answer) shows no button: true
+   [320x640] the button is inside the sheet, 44 px tall, no sideways scroll: true {"shown":true,"text":"Copy grant commands","h":44,"inside":true}
+   [360x800] the button is inside the sheet, 44 px tall, no sideways scroll: true {"shown":true,"text":"Copy grant commands","h":44,"inside":true}
 7. "Not now" closes the first-launch sheet and it is not offered again: true
    a second look finds it done: nothing opens: true
 7. the ✕ at the top closes the first-launch sheet and it is not offered again: true

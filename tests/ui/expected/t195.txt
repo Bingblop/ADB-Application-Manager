@@ -1,0 +1,72 @@
+ok   the history as text (Copy, Share, Find) has one declaration: termText
+ok   the tab bar has Console and Terminal side by side and no Logcat Viewer
+ok   Console opens on ADB Shell: the shell part shows, the log part is hidden, the tab is marked selected
+ok   the log is not read while ADB Shell shows (no poll, no bridge call)
+ok   the command box says "Enter shell command..."
+ok   the underline is under the first tab (half the row wide)
+ok   Live Logcat shows, is remembered, and starts reading at once (Pause shown, polling, the lines drawn)
+ok   the underline moved under the second tab
+ok   the filter box has the Kotlin console's hint, with "text" (the filter is plain text, not a regex)
+ok   everything of the old Logcat Viewer is in the segment (level, lines, app picker, Play, Record to file, Recordings, key, Copy, Save, Share)
+ok   ADB Shell stops the log: no timer, Play is back, and no more reads for a second and a half
+ok   leaving the tab while Live Logcat shows stops the reading
+ok   coming back opens on Live Logcat again (the part used last) and it reads again
+ok   opening the tab that is already open does not stop the log
+ok   after a restart Console opens on the part saved last (Live Logcat) and reads at once
+ok   a saved value that is not one of the two means ADB Shell
+ok   before any command the page says it is ready, and no card is drawn
+ok   Run is dimmed while the box is empty, says RUN, and is not busy
+ok   typing in the box lights Run up
+ok   a command makes a card at once: $ command, Running... on the right, no output yet
+ok   while it runs Run shows a spinner instead of the play symbol (and still reads RUN for a screen reader)
+ok   the answer fills the card: Finished, the output, the plain result line, and Copy / Run again
+ok   Run is idle again after the answer
+ok   newest first: the latest command is the top card
+ok   a failure says Looks like a failure, in the failure style, with the reason line
+ok   no card of a normal command shows an exit number or says success (the page gets no exit code from the shell)
+ok   the Kotlin look: `$ command` bold 12 px in the accent colour, outcome 10 px, output 11 px monospace, cards 16 px round
+ok   Copy on a card puts its command and output on the clipboard
+ok   Run again sends the same command again and makes a new card at the top
+ok   a second command while one runs is refused, and what was typed stays
+ok   a long output is folded to a few lines, with Show all first
+ok   Show all opens it (taller, now Show less) and Show less folds it again
+ok      folded again
+ok   Copy / Share of the history is the text of every card, oldest first, with the result lines
+ok   Find in output marks the matches inside the cards
+ok   the history keeps 60 cards, the newest
+ok   the clear button empties the history and brings back the ready text
+ok   Rish: a command with exit 0 given shows "exit 0" (the shell said so)
+ok   Rish: a failing command shows "exit 1" in the failure style
+ok   Rish: with no exit code given the card says only Finished (no number is made up)
+ok   Rish: while a command runs, Run turns into a red STOP with the stop symbol
+ok   Rish: the name of the button (for a screen reader, and its tool tip) says Stop with the symbol
+ok   Rish: while a command runs, output with another run id is dropped and the running command's own output is taken
+ok   Rish: after STOP the name of the button is Run again
+ok   Rish: between commands output is accepted whatever its run id (it goes to a card, none is lost)
+ok   the name of the button is translated (German Run label differs from the English one)
+ok   Rish: STOP ends it and the card says Stopped
+ok   Rish: the card has Copy and Run again, Run is back to RUN
+ok   Rish: Run again sends the command to the Rish shell again
+ok   [360 px dark] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
+ok   [360 px dark] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [360 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
+ok   [360 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
+ok   [360 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [360 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/7/7.6, 5.6, 8.1)
+ok   [412 px dark] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
+ok   [412 px dark] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [412 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
+ok   [412 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
+ok   [412 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [412 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/7/7.6, 5.6, 8.1)
+ok   palette amoled: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette cyberpunk: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette emerald: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette amber: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette slate: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette crimson: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   palette material3: the card text follows the theme (no sideways scroll, outcome colours differ)
+ok   reduced motion: the underline has no transition and the spinner is slowed right down
+ok   motion allowed: the underline slides (0.25 s) and, with Expressive Animations on, with the springy curve
+errors: []
+all passed

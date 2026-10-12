@@ -285,9 +285,36 @@
 <div class="hg-note"><b>If it fails.</b> The picker does not show the card: remove and re-insert it, or look in the picker's side menu. A folder lists as empty or gives an error: the card may be out or locked; put it back and tap its button again. <i>This file is over 300 MB, too big to open from added storage here</i>: copy it to the phone with Copy and Paste here instead. <i>Could not read this file</i>: the provider refused it; try again, or copy it first.</div>
 </section>
 
-<section id="tab-terminal" data-title="Command-Line Interface" data-group="The tabs">
-<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells. A second pane, the <b>ADB Console</b>, is the older command box of this app. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>.</p>
-<p><b>Where to find it:</b> the tab named <b>Command-Line Interface</b>. Two big buttons at the top, <b>Terminal</b> and <b>ADB Console</b>, switch between the panes; the tab remembers the one you used last.</p>
+<section id="tab-console" data-title="Console" data-group="The tabs">
+<p class="hg-lead">The Console runs one shell command at a time on your phone and keeps every answer on a card of its own, and it shows the phone's running log live. Two tabs at the top, <b>ADB Shell</b> and <b>Live Logcat</b>, switch between the two. For a terminal that stays open, with coding assistants, see <a href="#tab-terminal">Terminal</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b> (it holds what used to be the ADB Console pane of the Command-Line Interface tab and the whole Logcat Viewer tab). The tab remembers which of the two parts you used last. A small <b>?</b> at the right end of the two tabs opens this guide at this page. If the tab is missing it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>. The details of Live Logcat are in <a href="#console-logcat">Live Logcat</a>.</p>
+
+<h4>ADB Shell</h4>
+<ul>
+<li><b>The command box and Run.</b> Type a command in the box (<i>Enter shell command...</i>) and tap the accent-coloured <b>Run</b> button with the play symbol (or Enter on the keyboard). While a command runs, Run shows a small spinner; in Rish mode it turns into a red <b>STOP</b> while a command runs. The box and Run stay at the top of the screen while you scroll the cards. The small <b>$</b> button at the left switches to <b>AI</b>: see <a href="#terminal-agents">Coding agents in the terminal</a>.</li>
+<li><b>The cards.</b> Every command you run gets a card at the top of the list (the newest first). The first line is <code>$ command</code> in the accent colour; at its right is how it ended: <b>Running…</b>, <b>Finished</b> or <b>Looks like a failure</b>. In Rish mode it reads <b>exit N</b> with the number the shell gave, <b>Stopped</b> or <b>Finished</b>. The command's output is under it in small monospace text. A long output is folded to a few lines; <b>Show all</b> opens it and <b>Show less</b> folds it again. <b>Copy</b> copies the command and its output, and <b>Run again</b> runs the command once more (as a new card). The list keeps the last 60 cards, and a card keeps about the last 200,000 characters (<i>older output trimmed</i>). The cards are not saved: they are gone when the app is closed. <b>History</b> keeps the commands.</li>
+<li><b>The working mode and the buttons.</b> A card shows the active working mode, with <b>Configure</b> (the Working Modes sheet). Under it is one row of small buttons that scrolls sideways: <b>Rish mode</b> (a long-lived Shizuku shell where <code>cd</code> sticks), <b>Cheat Sheet</b>, <b>History</b>, <b>Saved</b>, <b>UID (id)</b>, <b>Connect 5555</b>, <b>tcpip 5555</b>, <b>Dev Options</b> and the commands you pinned. See <a href="#modes-overview">Working modes</a>.</li>
+<li>Each command is run on its own through the active mode, so <code>cd</code> does not carry over (Rish mode does). Without a working mode the commands run as this app, like the sandbox.</li>
+<li><b>Find in output...</b> highlights matches (<i>2 / 7 matches</i>) in all the cards with arrows to jump; the next three small buttons <b>copy</b> the whole history as text (oldest first), <b>share</b> it as a text file, and <b>clear</b> the cards (it does not close a Rish shell).</li>
+<li><b>The result line.</b> Under the output of each command you run here, a card adds one line: <i>Finished. No error text in the output.</i>, or <i>Looks like a failure:</i> with the reason (the output reports an error, the command timed out, or permission denied). It is a guess from the words in the output: a failure is an output that starts with <code>Error:</code> (any capitals, so adb's own <code>error: device offline</code> counts), <code>adb: device </code> (as in <code>adb: device offline</code>) or <code>Failure [</code>, or that holds <code>adb: error:</code>, <code>SecurityException</code>, <code>Permission Denial</code>, <code>unauthorized</code> or the app's own time-out note. Only the very start of the output counts for <code>Error:</code> and <code>adb: device </code>: a later line that begins with <code>error:</code> does not make a listing a failure. Android does not hand the command's exit code to the page here, so the card never shows an exit number for these commands and never says <i>success</i>: a command that fails without printing any of these words can still read <i>Finished</i>, and a listing that happens to contain one of them reads as a failure. In <b>Rish mode</b> there is no such line: that shell keeps its own note (<code>[exit 1]</code> after a command that fails) and the card shows the exit number it was given.</li>
+<li><b>Suggestions.</b> The ADB Shell completes as you type, the same way the Terminal does: a grey line above the box shows the rest of the command, from your history first, then from the packages on your phone and a list of common <code>adb</code>/shell commands. <b>Right arrow</b> (cursor at the end) or a <b>tap on the line</b> accepts it. Nothing runs until you tap <b>Run</b>.</li>
+<li><b>History</b> lists the last 80 commands (tap one to edit it, <b>Run</b>, <b>Save</b>, or the X). <b>Saved</b> keeps named commands or several-line scripts; <b>Pin</b> turns up to six into one-tap buttons.</li>
+<li>If the command takes long, you can leave the tab: when it ends elsewhere, a message says <i>Command finished: see the Console</i>.</li>
+</ul>
+
+<h4>Live Logcat</h4>
+<p>The second tab at the top is the phone's live log: the filter box with <b>Refresh</b> and <b>Clear</b>, a row of buttons (Play, level, lines, All apps, Record to file, Recordings, Copy, Save, Share), the colour key and one small card per log entry. It reads only while it is on screen: leaving it for ADB Shell or another tab stops the reading. Everything about it is in <a href="#console-logcat">Live Logcat</a>.</p>
+
+<h4>If it fails</h4>
+<ul>
+<li><i>Working Mode Required</i>: the log, and commands that need privileges, need a working mode: tap <b>Configure</b> and set one up.</li>
+<li>A command that never ends (<code>logcat</code> without <code>-d</code>, <code>top</code> without <code>-n 1</code>) keeps its card on <i>Running…</i>: use the Terminal for those, where <b>STOP</b> ends them.</li>
+</ul>
+</section>
+
+<section id="tab-terminal" data-title="Terminal" data-group="The tabs">
+<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells, with a full-screen real terminal and coding assistants. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>. Single commands with a history of cards, and the phone's log, are in the <a href="#tab-console">Console</a> tab.</p>
+<p><b>Where to find it:</b> the tab named <b>Terminal</b> (before v7.12.12 the tab was called <b>Command-Line Interface</b> and held the ADB Console as its second pane; the ADB Console is now the ADB Shell of the Console tab).</p>
 
 <h4>Before you start</h4>
 <p>A command is a line of text that tells the phone to do one thing. A shell is the program that reads your lines and runs them. Which shell you pick decides what the commands may do. Pick it with <b>Shell</b> above the screen. Words such as ADB and root are explained in the <a href="#glossary">Glossary</a>.</p>
@@ -304,7 +331,7 @@
 
 <h4>Run your first command</h4>
 <ol class="hg-steps">
-<li>Open the <b>Terminal</b> pane. The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
+<li>Open the <b>Terminal</b> tab. The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b> (or Enter on the keyboard).</li>
 <li>Your line is echoed as <i>folder $ command</i> and the answer appears under it: the model name of your phone. The prompt shows <i>#</i> instead of <i>$</i> when the shell is root.</li>
 </ol>
@@ -342,7 +369,7 @@
 <tbody>
 <tr><td>This app</td><td>Sandbox Cheat Sheet</td><td>Files, Text, Process / system</td></tr>
 <tr><td>Termux</td><td>Termux Cheat Sheet</td><td>Packages, Files, Text, Git, Network, Process / system</td></tr>
-<tr><td>Working mode, and the ADB Console</td><td>ADB Cheat Sheet</td><td>Device info, Current app / focus, Packages, App control, Permissions, Activity Manager / intents, Input, Key events, Screen, Connectivity, Battery (testing), Logs, Files, Reboot</td></tr>
+<tr><td>Working mode, and the ADB Shell of the Console</td><td>ADB Cheat Sheet</td><td>Device info, Current app / focus, Packages, App control, Permissions, Activity Manager / intents, Input, Key events, Screen, Connectivity, Battery (testing), Logs, Files, Reboot</td></tr>
 </tbody>
 </table>
 <p>The ADB sheet also has a button, <b>Load the full reference from the gist</b>, that loads a longer list live from a public page on GitHub (Pulimet's ADB gist). Pressing it contacts GitHub.</p>
@@ -367,16 +394,6 @@
 <li><b>Keys</b> (bottom): <b>ESC</b>, <b>TAB</b>, the arrows (hold to repeat), <b>HOME</b>, <b>END</b>, <b>PGUP</b>, <b>PGDN</b>, <b>/</b> and <b>&minus;</b>, a row of symbols (<code>| ~ $ ; : " ' \ { } [ ] ( ) &lt; &gt; * &amp; # = + _ ? ! @ % ^ . ,</code> and the backtick), <b>FN</b> for F1 to F12, and the keyboard key that shows or hides the keyboard. <b>CTRL</b> and <b>ALT</b> are sticky: tap once and the next key you type gets it (CTRL then <b>c</b> is Ctrl-C); tap twice to lock it (it shows a line under it), a third time to free it.</li>
 <li><b>A&minus;</b> and <b>A+</b> change the text size (remembered). <b>Copy</b> copies the selected text, or with nothing selected the whole screen. <b>Paste</b> types the clipboard in. <b>Restart</b> ends the session and starts a new one.</li>
 <li>Behind it is a small helper program that comes with the app (<code>libptyexec.so</code>), for 64-bit and 32-bit phones; Android does not let an app open a terminal by itself.</li>
-</ul>
-
-<h4>The ADB Console pane</h4>
-<ul>
-<li>A card shows the active working mode, with <b>Configure</b> and <b>Working Modes</b>, and buttons <b>Rish mode</b> (a long-lived Shizuku shell where <code>cd</code> sticks), <b>UID (id)</b>, <b>Connect 5555</b>, <b>tcpip 5555</b>, <b>Dev Options</b> and <b>Cheat Sheet</b>. See <a href="#modes-overview">Working modes</a>.</li>
-<li>Each command is run on its own through the active mode, so <code>cd</code> does not carry over (Rish mode does). Without a working mode the commands run as this app, like the sandbox.</li>
-<li><b>Find in output...</b> highlights matches (<i>2 / 7 matches</i>) with arrows to jump; <b>Copy</b> puts the whole output on the clipboard and <b>Share</b> sends it as a text file.</li>
-<li><b>The result line.</b> Under the output of each command you run in the console the console adds one line: <i>Finished. No error text in the output.</i>, or <i>Looks like a failure:</i> with the reason (the output reports an error, the command timed out, or permission denied). It is a guess from the words in the output: a failure is an output that starts with <code>Error:</code> (any capitals, so adb's own <code>error: device offline</code> counts), <code>adb: device </code> (as in <code>adb: device offline</code>) or <code>Failure [</code>, or that holds <code>adb: error:</code>, <code>SecurityException</code>, <code>Permission Denial</code>, <code>unauthorized</code> or the app's own time-out note. Only the very start of the output counts for <code>Error:</code> and <code>adb: device </code>: a later line that begins with <code>error:</code> does not make a listing a failure. Android does not hand the command's exit code to the page here, so the line never shows an exit number and never says <i>success</i>: a command that fails without printing any of these words can still read <i>Finished</i>, and a listing that happens to contain one of them reads as a failure. <b>Copy</b> and <b>Share</b> include the line. In <b>Rish mode</b> the line is not added: that shell keeps its own note (<code>[exit 1]</code> after a command that fails).</li>
-<li><b>Suggestions.</b> The ADB Console completes as you type, the same way the Terminal does: a grey line above the box shows the rest of the command, from your history first, then from the packages on your phone and a list of common <code>adb</code>/shell commands. <b>Right arrow</b> (cursor at the end) or a <b>tap on the line</b> accepts it. Nothing runs until you tap <b>Run</b>.</li>
-<li><b>History</b> lists the last 80 commands (tap one to edit it, <b>Run</b>, <b>Save</b>, or the X). <b>Saved</b> keeps named commands or several-line scripts; <b>Pin</b> turns up to six into one-tap buttons.</li>
 </ul>
 
 <h4>Safety: what some commands do</h4>
@@ -405,7 +422,7 @@
 
 <section id="terminal-agents" data-title="Coding agents in the terminal" data-group="The tabs">
 <p class="hg-lead">A coding agent is an AI assistant you chat with inside the Terminal. It can suggest commands, read files and propose changes to files. You approve each step before anything runs.</p>
-<p><b>Where to find it:</b> <a href="#tab-terminal">Command-Line Interface</a>, <b>Terminal</b> pane, the drop-down <b>Coding Agents</b> at the top. Choose <b>None</b> to use the Terminal on your own.</p>
+<p><b>Where to find it:</b> <a href="#tab-terminal">Terminal</a>, the drop-down <b>Coding Agents</b> at the top. Choose <b>None</b> to use the Terminal on your own.</p>
 
 <div class="hg-danger"><b>Risky.</b> An agent can be wrong, and it runs commands with the rights of the shell you chose. In the working mode shell or as root, one command can remove apps, erase data or change settings. Read every command and every file change before you press <b>Run</b> or <b>Apply</b>. Do not press <b>Always allow in this chat</b> unless you are ready to accept whatever follows. Before you start, make a backup (<a href="#apps-backup">App backups</a>). Commands cannot be undone; only file changes can (<code>/undo</code>).</div>
 
@@ -476,8 +493,8 @@
 <h4>Agents that sign in through Termux</h4>
 <p>For the tools that run in Termux (Claude Code, Gemini CLI, Codex CLI, Copilot CLI, Cursor CLI, OpenCode), the app sends your message to the tool and shows its answer. The approval cards above do not apply: the tool follows its own rules. The switch <b>Let them act without asking</b> (in the gear, under <i>Sign-in tools in Termux</i>, off by default) passes each tool's own option to skip its approvals (Claude Code, Gemini CLI, Codex CLI, Copilot CLI and Cursor CLI have one; OpenCode does not). With it off, a tool only does what needs no approval. Leave it off. Its sheet has the steps <b>Termux</b>, <b>Install</b>, <b>Sign in</b> and <b>Chat here</b> under <b>Sign in with subscription</b>. Installing takes several minutes and up to about 1 GB. The providers do not support Android officially, so a tool may not run on every phone; the Terminal then shows its exact message. The <b>MCP</b> button adds extra tools (such as access to files or the web) to these agents; MCP is a standard way of giving an AI assistant such tools.</p>
 
-<h4>The AI button in the ADB Console</h4>
-<p>In the ADB Console pane, the small <b>$</b> button switches to <b>AI</b> and asks the same agent, model and effort for help with a command. It cannot read or change files. A reply may propose one command, shown with <b>Run</b> and <b>Skip</b>; Run sends it through the console's working mode (with <b>Ask before running commands</b> switched off it runs at once). It needs an agent that is connected with a key or server, set up in the Terminal pane first (<i>Pick a Coding Agent in the Terminal first</i>).</p>
+<h4>The AI button in the Console</h4>
+<p>In the ADB Shell of the <a href="#tab-console">Console</a> tab, the small <b>$</b> button switches to <b>AI</b> and asks the same agent, model and effort for help with a command. It cannot read or change files. A reply may propose one command, shown with <b>Run</b> and <b>Skip</b>; Run sends it through the console's working mode (with <b>Ask before running commands</b> switched off it runs at once). It needs an agent that is connected with a key or server, set up in the Terminal tab first (<i>Pick a Coding Agent in the Terminal first</i>).</p>
 
 <h4>Privacy: what leaves the phone</h4>
 <ul>
@@ -498,17 +515,17 @@
 </ul>
 </section>
 
-<section id="tab-logcat" data-title="Logcat Viewer" data-group="The tabs">
-<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. The Logcat Viewer lets you read it, filter it and save or share it, which is the best way to find out why an app crashes.</p>
-<p><b>Where to find it:</b> the tab named <b>Logcat Viewer</b>. An app's own menu also has a <b>Logs</b> button that opens this tab for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
+<section id="console-logcat" data-title="Live Logcat" data-group="The tabs">
+<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. Live Logcat, the second part of the <a href="#tab-console">Console</a> tab, lets you read it as it is written, filter it and save or share it, which is the best way to find out why an app crashes.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b>, then <b>Live Logcat</b> at the top (before v7.12.12 this was the Logcat Viewer tab). An app's own menu also has a <b>Logs</b> button that opens Live Logcat for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
 
 <h4>Before you start</h4>
-<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening the tab starts reading right away.</p>
+<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening Live Logcat starts reading right away; leaving it (for <b>ADB Shell</b> or for another tab) stops it.</p>
 
 <h4>How to read a line</h4>
-<p>Each entry is a row with a coloured square at the left holding one letter, the level, then:</p>
+<p>Each entry is a small card. Its first line starts with the level letter and the tag in bold, both in the colour of the level (for example <i>E/AndroidRuntime</i>), then:</p>
 <ul>
-<li>the <b>tag</b> in bold: who wrote it (an app part or a system part, for example <i>AndroidRuntime</i>);</li>
+<li>the <b>tag</b>: who wrote it (an app part or a system part, for example <i>AndroidRuntime</i>);</li>
 <li>the <b>time</b>, as hours, minutes, seconds and thousandths;</li>
 <li>two numbers such as <i>1234/1250</i>: the process id and the thread id (who ran the code; a process is one running program);</li>
 <li>the <b>message</b> underneath. A message of several lines, such as the list of steps in a crash, stays together as one entry.</li>
@@ -526,18 +543,19 @@
 </table>
 
 <h4>The controls</h4>
+<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Pause</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
 <table class="hg-table">
 <thead><tr><th>Control</th><th>What it does</th></tr></thead>
 <tbody>
 <tr><td>Level drop-down</td><td>Starts at <b>Info</b>. Shows this level and every more serious one. <b>Error</b> shows E and F; <b>Verbose</b> shows everything.</td></tr>
 <tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
-<tr><td>Filter box</td><td>Type a word or a tag and press Enter. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
+<tr><td>Filter box (<b>Filter tag / text...</b>, at the top)</td><td>Type a word or a tag and press Enter. It matches plain text, not a regular expression. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
 <tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
 <tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
-<tr><td><b>Refresh</b></td><td>Reads once, adds what is new and jumps to the newest line.</td></tr>
+<tr><td><b>Refresh</b> (the circular arrow at the right of the filter box)</td><td>Reads once, adds what is new and jumps to the newest line.</td></tr>
 <tr><td><b>Record to file</b></td><td>Writes the log to a file while it is on, so you can look at it afterwards. See <i>Record to a file and look at it later</i> below. While it records, the button reads <b>Stop recording</b> with the number of lines written.</td></tr>
 <tr><td><b>Recordings</b></td><td>The list of recordings, newest first. Tap one to open it; the cross at the right deletes it.</td></tr>
-<tr><td><b>Clear</b></td><td>Empties the phone's log buffer and the screen (<i>Log cleared</i>). It clears it for every app, not only the one you chose.</td></tr>
+<tr><td><b>Clear</b> (the red cross at the right of the filter box)</td><td>Empties the phone's log buffer and the screen (<i>Log cleared</i>). It clears it for every app, not only the one you chose.</td></tr>
 <tr><td><b>Copy</b>, <b>Save</b>, <b>Share</b></td><td>Copy the lines as text; save them as a text file in <code>Download/ADB App Manager/</code> (on Android 9 and older, in the app's own folder instead), named <code>logcat_all_</code> plus the date and time, with the app's package name in place of <code>all</code> when you picked one app; or share that file with Android's share sheet. Lines of hidden levels are left out, and a short header says the filters used.</td></tr>
 </tbody>
 </table>
@@ -548,7 +566,7 @@
 <p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
 
 <h4>Record to a file and look at it later</h4>
-<p>Live logs scroll by too fast to read. <b>Record to file</b> writes everything to a file on the phone while you use the app, whether or not the Logcat tab is open, and then lets you open it as a still picture. It records what the view is set to: the level, the filter text and the app you picked.</p>
+<p>Live logs scroll by too fast to read. <b>Record to file</b> writes everything to a file on the phone while you use the app, whether or not Live Logcat is on screen, and then lets you open it as a still picture. It records what the view is set to: the level, the filter text and the app you picked.</p>
 <ol class="hg-steps">
 <li>Set the <b>Level</b> (Error is a good start for a crash), pick the app if you like, and tap <b>Record to file</b>. A message says <i>Recording the log to a file</i> and the button becomes <b>Stop recording</b> with a count of lines.</li>
 <li>Use the phone until the problem happens. Every couple of seconds the new lines are added to the file; a line is written once, however often it appears in the phone's buffer. A recording stops by itself at 25 MB, and says so.</li>
@@ -567,7 +585,7 @@
 
 <h4>Example: why does my app crash?</h4>
 <ol class="hg-steps">
-<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Logcat Viewer and use <b>All apps</b> to pick it. The log is now only that app's.</li>
+<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Console, Live Logcat and use <b>All apps</b> to pick it. The log is now only that app's.</li>
 <li>Set the <b>Level</b> to <b>Warn</b> or <b>Error</b>, and <b>Lines</b> to 2000 so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b> so the log only holds what comes next. This empties the log for every app.</li>
 <li>Use the app until it crashes.</li>

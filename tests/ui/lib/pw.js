@@ -54,9 +54,23 @@ const chromium = {
     if (process.env.CHROMIUM_PATH && !o.executablePath) o.executablePath = process.env.CHROMIUM_PATH;
     const browser = await playwright.chromium.launch(o);
     const newContext = browser.newContext.bind(browser);
+    // The page starts with the bottom navigation bar and no top tab bar (Settings > Navigation, the default). The scripts written before that bar existed drive the top tab bar, so
+    // after every load of the page they are put in "Top bar only" (in memory: nothing is saved) unless the script sets page.bottomNav = true first.
+    const topBar = (page) => {
+      const go = (fn) => async (...a) => {
+        const r = await fn(...a);
+        if (!page.bottomNav) await page.evaluate(() => { try { if (typeof navApply === 'function') { navMode = 'top'; navApply(); } } catch (e) {} }).catch(() => {});
+        return r;
+      };
+      page.goto = go(page.goto.bind(page));
+      page.reload = go(page.reload.bind(page));
+      return page;
+    };
     browser.newContext = async (co = {}) => {
       const ctx = await newContext(Object.assign({ locale: 'en-US', timezoneId: 'UTC' }, co));
       await ctx.addInitScript(PAGE_CLOCK);
+      const np = ctx.newPage.bind(ctx);
+      ctx.newPage = async (...a) => topBar(await np(...a));
       return ctx;
     };
     browser.newPage = async (po = {}) => {          // like Playwright's: a page in a context of its own, closed with it

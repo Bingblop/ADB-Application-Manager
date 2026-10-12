@@ -63,7 +63,7 @@ ok   Copy holds the result line with the output
 ok   Find in output finds the line
 ok   themes: the appearance really switched in the checks (14 combinations)
 ok   themes: the neutral line reads at 4.5:1 on the console in every theme
-ok   themes: the failure line reads at 4.5:1 on the console in every theme
+ok   themes: the failure line reads at 4.5:1 on its card in every theme
 ok   themes: the failure line differs from the neutral one: bold with a bar in front, in every theme (the words carry the meaning, the style only helps)
 ok   the line is translated (German)
 ok   left-to-right: the failure bar is on the left

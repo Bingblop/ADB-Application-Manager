@@ -1,0 +1,29 @@
+1. five slots: the default pinned tabs and More: true
+   short one-line labels: true
+   Application Manager is lit and carries aria-current="page": true
+   the top tab bar is not shown (Bottom bar only is the default): true
+2. the bar is 56 px high and sits at the bottom, a navigation landmark with a label: true
+   every slot has an icon, a one-line label that fits and a target of at least 44 px: true
+   --bnav-h is the bar height: true
+3. the gradient pill is behind the lit icon: true
+4. a tap on Console opens that tab and lights its slot: true
+   the pill followed to the new slot: true
+   the tap gave a haptic tick: true
+   a tap on the lit slot scrolls to the top (and does not reload the tab): true
+5. More opens the sheet with every other tab, in the Feature List order, and About last: true
+   three columns, a title, the Customize tabs link, aria-expanded on the slot: true
+6. a tile switches to its tab and closes the sheet: true
+7. on a tab that is not pinned, More is lit and shows that tab's label: true
+   its icon is the tab's own (not the dots): true
+   the sheet marks the current tab: true
+8. Android Back closes the More sheet first: true
+   a tap above the sheet closes it: true
+9. Customize tabs opens Settings at the Feature List and no slot is lit there: true
+10. the Installer slot shows the number of updates found: true
+    unpinned, the count shows as a dot on More and as the number on its tile: true
+11. nothing is wider than the screen at 360 px: true
+    the end of the page is above the bar (the page has room of at least the bar height): true
+12. a long (translated) label stays on one line and is cut with an ellipsis inside its slot: true
+13. every tab of the registry has its own icon (a tab without one gets the generic symbol): true
+    a tab key without an icon uses the fallback and a first-line label: true
+errors: []

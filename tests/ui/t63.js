@@ -37,7 +37,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // 1) placement
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
   const iSet = tabs.findIndex(t => /Hidden Settings/.test(t)), iOvl = tabs.findIndex(t => /RRO\/Monet/.test(t)), iUpd = tabs.findIndex(t => /App Stores/.test(t));
-  check('1. RRO/Monet Customization sits right of Hidden Settings and before App Stores', iOvl === iSet + 1 && iUpd === iOvl + 1, JSON.stringify(tabs));
+  check('1. RRO/Monet Customization sits right of Hidden Settings and its Extra Settings tab (added in v7.12.12), and before App Stores', iOvl === iSet + 2 && /Extra Settings/.test(tabs[iSet + 1]) && iUpd === iOvl + 1, JSON.stringify(tabs));
   await ev(() => switchView('overlays')); await sleep(150);
   check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'RRO/Monet Customization' && (await ev(() => currentViewName())) === 'overlays');
   await ev(() => switchView('settings')); await sleep(100);
