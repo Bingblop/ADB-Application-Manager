@@ -1,0 +1,5 @@
+Power manager (power) commands:
+  help
+    Print this help text.
+  set-adaptive-power-saver-enabled [true|false]
+    enables or disables adaptive power saver.
