@@ -180,6 +180,23 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   the working mode goes read-only: the page\'s queue is emptied and the app is told', (await ev(() => updQueue.length)) === 0 && (await ev(() => window.__upd.ended)) > endedBefore);
   await setMode('adb_tcp');
 
+  // 7c) Read-Only mode abandons the queue: the apps that were waiting are normal rows again (not stuck on "Queued"), so Update and Update All work once a privileged mode is back
+  await ev(() => { updProgress['com.c'] = { stage: 'queued', percent: 0, message: '' }; updProgress['com.d'] = { stage: 'queued', percent: 0, message: '' }; updQueue = ['com.c', 'com.d']; renderUpdates(); });
+  const q0 = await ev(() => ({ rows: [...document.querySelectorAll('#updContainer .upd-row')].map(r => r.querySelector('.upd-head button').innerText.trim() + ':' + r.querySelector('.upd-head button').disabled), all: document.getElementById('updAllBtn').style.display }));
+  check('7c. before: the two waiting apps show Queued and cannot be pressed', q0.rows.filter(x => x === 'Queued:true').length === 2, JSON.stringify(q0));
+  await setMode('unprivileged');
+  const q1 = await ev(() => ({ queue: updQueue.length, prog: Object.keys(updProgress).sort(), stages: ['com.c', 'com.d'].map(p => updProgress[p] && updProgress[p].stage),
+    rows: [...document.querySelectorAll('#updContainer .upd-row')].map(r => r.innerText.replace(/\s+/g, ' ').slice(0, 30) + '|' + r.querySelector('.upd-head button').innerText.trim() + ':' + r.querySelector('.upd-head button').disabled) }));
+  check('   Read-Only: the queued entries of the waiting apps are removed (the finished rows stay)', q1.queue === 0 && q1.stages[0] === undefined && q1.stages[1] === undefined && JSON.stringify(q1.prog) === '["com.a","com.b"]', JSON.stringify(q1));
+  check('   their rows show Update again, not Queued, and can be pressed', q1.rows.filter(x => /^(Charlie|Delta)/.test(x) && /\|Update:false$/.test(x)).length === 2, JSON.stringify(q1.rows));
+  await setMode('adb_tcp');
+  const q2 = await ev(() => ({ txt: document.getElementById('updAllBtn').innerText.trim(), shown: getComputedStyle(document.getElementById('updAllBtn')).display, off: document.getElementById('updAllBtn').disabled }));
+  check('   a privileged mode is back: Update All counts the two again and is usable', q2.txt === 'Update All (2)' && q2.shown !== 'none' && q2.off === false, JSON.stringify(q2));
+  const askedQ = await ev(() => window.__upd.approve.length);
+  await page.click('#updAllBtn'); await sleep(60);
+  check('   and it asks about exactly those two', (await ev(() => window.__upd.approve.length)) === askedQ + 1 && (await ev(() => JSON.stringify(window.__upd.approve[window.__upd.approve.length - 1]))) === '["com.c","com.d"]');
+  await ev(() => window.onUpdateAllAnswer(JSON.stringify({ ok: false, pkgs: [] }))); await sleep(30);
+
   // 8) A single Update goes straight to the app, which asks after the download; the row shows it is waiting for the person
   await ev(() => { window.__upd.confirmFirst = 'com.c'; });
   const askedBefore = await ev(() => window.__upd.approve.length);

@@ -37,6 +37,11 @@
    an error from the app is shown as it is: true
 7b. the app is told when the queue is over (every approval left is dropped): true
    the working mode goes read-only: the page's queue is emptied and the app is told: true
+7c. before: the two waiting apps show Queued and cannot be pressed: true {"rows":["✓ Updated:true","✓ Updated:true","Queued:true","Queued:true"],"all":"none"}
+   Read-Only: the queued entries of the waiting apps are removed (the finished rows stay): true {"queue":0,"prog":["com.a","com.b"],"stages":[null,null],"rows":["Alpha com.a GITHUBYOUR SOURCE |✓ Updated:true","Bravo com.b GITHUBYOUR SOURCE |✓ Updated:true","Charlie com.c GITHUBYOUR SOURC|Update:false","Delta com.d GITHUBYOUR SOURCE |Update:false"]}
+   their rows show Update again, not Queued, and can be pressed: true ["Alpha com.a GITHUBYOUR SOURCE |✓ Updated:true","Bravo com.b GITHUBYOUR SOURCE |✓ Updated:true","Charlie com.c GITHUBYOUR SOURC|Update:false","Delta com.d GITHUBYOUR SOURCE |Update:false"]
+   a privileged mode is back: Update All counts the two again and is usable: true {"txt":"Update All (2)","shown":"flex","off":false}
+   and it asks about exactly those two: true
 8. one Update asks nothing of the page: the app asks after the download, and the row says it is waiting: true Waiting for OK
    the waiting button cannot be pressed: true
    an update check that ends while the question is open keeps the row waiting (Update stays off): true Waiting for OK

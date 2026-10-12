@@ -2281,6 +2281,21 @@ public class MainActivity extends Activity {
      * answers); this method lists the installed apps, passes updates on to the page as they are found, and sends the summary at the end on every way out.
      * {@code force}: ignore the saved answers. {@code retryFailed}: check only the apps the last check could not.
      */
+    // ---------------------------------------------------------------------------------------------
+    // DNS speed test: DnsProbe (pure Java) does the work; this is the bridge. Needs no working mode: it only opens TCP/TLS connections of its own to
+    // port 853 of the hosts the page names (checked again in Java), and sends one DNS query on each. A pool of its own, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService dnsProbeExec = Executors.newFixedThreadPool(DnsProbe.MAX_PARALLEL);
+    private final DnsProbe.Runner dnsProbe = new DnsProbe.Runner(new DnsProbe.Env());
+
+    private final DnsProbe.Sink dnsProbeSink = new DnsProbe.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onDnsProbe && window.onDnsProbe(" + JSONObject.quote(json) + ")");
+        }
+    };
+
+
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
@@ -2452,6 +2467,8 @@ public class MainActivity extends Activity {
      */
     private void runApproveUpdateAll(final String pkgsJson) {
         if (!updateAllAsking.compareAndSet(false, true)) return;     // a question is already on screen: its answer is coming
+        // A new question replaces every earlier yes, whatever the answer turns out to be (No, a failed mode check, a lost answer): clear before the dialog opens
+        approvedUpdates.clear();
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -7617,12 +7634,13 @@ public class MainActivity extends Activity {
             files.add(apk);
         }
         String out;
+        String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
             PackageInfo inside = getPackageManager().getPackageArchiveInfo(files.get(0).getAbsolutePath(), 0);
-            String insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
+            insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
             if (uninstallFirst && insidePkg == null) throw new IllegalStateException("can't tell which app to uninstall first: the package name can't be read from the APK");
             List<String> acts = new ArrayList<String>();
             if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
@@ -7647,7 +7665,8 @@ public class MainActivity extends Activity {
         r.put("output", notes + (out == null ? "" : out.trim()));
         if (!ok) {
             r.put("advice", InstallHints.advice(out));
-            if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
+            // eligibility is judged on the app the APK is (the one an uninstall-first retry would remove), not on the package name the page sent; unreadable: no retry
+            if (!uninstallFirst && insidePkg != null && InstallHints.updateIncompatible(out) && canUninstallFirst(insidePkg, mode)) r.put("retry", "uninstall");
         }
         return r;
     }
@@ -11593,6 +11612,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void storeSourceDetail(String itemJson) {
             if (itemJson != null && !itemJson.isEmpty()) runStoreSourceDetail(itemJson);
+        }
+
+        /**
+         * DNS speed test: starts a scan of DNS-over-TLS hosts (see DnsProbe for the contract and limits). Returns {"ok":true,"id":..} or {"ok":false,"error":..};
+         * results arrive in window.onDnsProbe(json), one per host and then {"id":..,"done":true,"count":..}. A new scan cancels the running one.
+         */
+        @JavascriptInterface
+        public String dnsProbeStart(String requestJson) {
+            return dnsProbe.start(requestJson, dnsProbeExec, dnsProbeSink);
+        }
+
+        /** Cancels the running DNS speed test if it has this id (its sockets are closed; the rest is reported as cancelled). */
+        @JavascriptInterface
+        public void dnsProbeCancel(String id) {
+            dnsProbe.cancel(id);
         }
 
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
@@ -15701,6 +15735,9 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
+        try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {
