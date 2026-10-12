@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <!-- DUMP: a signature|privileged|development permission, grantable only with pm grant through ADB/Shizuku/root; lets this app run dumpsys itself -->
+    <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
