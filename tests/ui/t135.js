@@ -44,13 +44,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(i => { const r = [...document.querySelectorAll('#ovlRows .ovl-row')].find(x => x.dataset.id === i); r.querySelector('.sdb-sw').click(); }, stateAfter); await sleep(500);
   check('   switching one on moves it up to the Enabled section', await ev(i => { const rows = [...document.querySelectorAll('#ovlRows .ovl-row')]; const r = rows.find(x => x.dataset.id === i); return !!r && r.querySelector('.sdb-sw').classList.contains('on') && rows.indexOf(r) < rows.findIndex(x => !x.querySelector('.sdb-sw').classList.contains('on')); }, stateAfter));
 
-  // ---- 2. suggestions in the ADB Console ----
-  await ev(() => { switchView('terminal'); });
+  // ---- 2. suggestions in the Console ----
+  await ev(() => { cnApplySeg('shell'); switchView('console'); });
   await sleep(300);
-  await ev(() => txShowPane('console')); await sleep(200);
   await ev(() => { termHistory = ['pm list packages -3 | grep google', 'dumpsys battery']; });
   const hasTerm = await ev(() => !!document.getElementById('termCmd'));
-  check('2. the ADB Console has a box and a suggestion line above it', hasTerm && await ev(() => !!document.getElementById('termAc')));
+  check('2. the Console has a box and a suggestion line above it', hasTerm && await ev(() => !!document.getElementById('termAc')));
   const type = async (sel, text) => { await ev(([s, t]) => { const i = document.querySelector(s); i.focus(); i.value = t; i.setSelectionRange(t.length, t.length); i.dispatchEvent(new Event('input', { bubbles: true })); }, [sel, text]); await sleep(60); };
   const hint = id => ev(i => { const e = document.getElementById(i); return e.hidden ? '' : e.innerText.replace(/\s*→\s*$/, ''); }, id);
   await type('#termCmd', 'pm list p');
@@ -89,7 +88,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { termMode = 'shell'; });
 
   // ---- 3. suggestions in the Terminal ----
-  await ev(() => txShowPane('terminal')); await sleep(200);
+  await ev(() => switchView('terminal')); await sleep(200);
   await ev(() => { txHist = ['ls -la /sdcard/Download']; });
   check('3. the Terminal has the suggestion line too', await ev(() => !!document.getElementById('txAc') && !!document.getElementById('txInput')));
   await ev(() => { txState.mode = 'shell'; });

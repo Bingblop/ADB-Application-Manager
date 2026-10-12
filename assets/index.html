@@ -2229,7 +2229,7 @@
             border-radius: 3px;
         }
 
-        /* the suggestion line above the command box of the Terminal and the ADB Console: what you typed, and in bold what Right arrow adds */
+        /* the suggestion line above the command box of the Terminal and the Console: what you typed, and in bold what Right arrow adds */
         .ac-hint { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 5px 10px; border: 1px dashed var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.05);
             font: 12px/1.3 ui-monospace, monospace; color: var(--text-muted); cursor: pointer; min-width: 0; }
         .ac-hint[hidden] { display: none; }
@@ -2595,7 +2595,7 @@
             font-style: italic;
         }
 
-        /* The line under a command in the ADB Console (termResultHtml). The words carry the meaning. A failure is main-text colour (readable in every theme, which the
+        /* The line under a command in the Console (termResultHtml). The words carry the meaning. A failure is main-text colour (readable in every theme, which the
            red status colour is not on a light page), bold, with a bar in the status colour in front. */
         .term-result {
             color: var(--text-muted);
@@ -4286,43 +4286,6 @@
             </div>
         </section>
 
-        <!-- VIEW: LOGCAT -->
-        <section id="view-logcat" class="view-content">
-            <div class="color-card">
-                <div class="color-card-title">Logcat Viewer</div>
-                <div class="color-card-subtitle">Read the device log with ADB / Shizuku / Root.</div>
-                <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()">
-                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
-                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
-                    </select>
-                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()">
-                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
-                    </select>
-                    <input type="text" class="list-search" id="logcatFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
-                </div>
-                <div class="batch-sheet-tools" style="margin:0 0 8px; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
-                    <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
-                </div>
-                <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
-                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">Play</button>
-                    <button class="batch-tool-link" onclick="logcatRefresh()">Refresh</button>
-                    <button class="batch-tool-link" onclick="logcatClear()">Clear</button>
-                    <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
-                    <button class="batch-tool-link" onclick="logcatSave()">Save</button>
-                    <button class="batch-tool-link" onclick="logcatShare()">Share</button>
-                </div>
-                <div class="batch-sheet-tools" style="margin:0 0 4px; gap:14px; flex-wrap:wrap;">
-                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
-                    <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
-                </div>
-                <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
-                <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
-            </div>
-            <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
-        </section>
-
         <!-- VIEW: CONNECTED DEVICES (adb to another device: a Wear OS watch first, any Android device works) -->
         <section id="view-devices" class="view-content">
             <style>
@@ -5323,7 +5286,7 @@
 
             <div class="color-card" id="agentCard">
                 <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Command-Line Interface tab.</div>
+                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
@@ -6364,8 +6327,8 @@
                     <li><b>Press and hold</b> opens an app's menu, or starts selecting files. Settings has a full guide to what can be held.</li>
                     <li><b>File Manager → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>Sign</b>, then install it.</li>
                     <li>Installs started from <b>File Manager</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
-                    <li><b>ADB Console → Rish</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
-                    <li><b>Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
+                    <li><b>Console → ADB Shell → Rish mode</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
+                    <li><b>Console → Live Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
                 </ul>
             </div>
 
@@ -6387,7 +6350,209 @@
             </div>
         </section>
 
-        <!-- VIEW 4: TERMINAL / ADB CONSOLE -->
+        <!-- VIEW: CONSOLE (the Kotlin console's structure: a two-tab row, ADB Shell | Live Logcat) -->
+        <section id="view-console" class="view-content">
+            <style>
+                /* The Kotlin console, in the WebView: a two-text-tab row (surface fill, accent text and underline, 1 px glass border, 8 px corners), outlined
+                   8 px fields with the accent border on focus, the accent Run button with a play icon (a spinner while a command runs), and the history as
+                   cards (16 px corners, `$ command` bold monospace 12 px in the accent colour on the left, the outcome 10 px bold on the right, the output
+                   11 px monospace in the muted colour). Only theme tokens are used, so every palette, light and dark work. */
+                .cn-tabs { position: relative; display: flex; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; }
+                .cn-tab { flex: 1 1 0; min-width: 0; height: 48px; padding: 0 12px; background: none; border: 0; border-radius: 8px; color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .cn-tab[aria-selected="true"] { color: var(--accent); }
+                .cn-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+                .cn-ind { position: absolute; inset-inline-start: 0; bottom: 0; width: 50%; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); pointer-events: none; transition: transform .25s; }
+                .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
+                :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
+                @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
+                .cn-tabs .help-q { top: 11px; }
+                .cn-seg { margin-top: 12px; }
+                .cn-seg[hidden] { display: none; }
+                .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 10px; margin-bottom: 0; }
+                .cn-row { display: flex; align-items: center; gap: 8px; }
+                .cn-field { flex: 1 1 auto; min-width: 0; height: 56px; padding: 0 16px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--text-main); font: 14px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; outline: none; }
+                .cn-field::placeholder { color: var(--text-dim); font: 12px/1.4 var(--ui-font, system-ui, sans-serif); }
+                .cn-field:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+                .cn-run { flex: 0 0 auto; min-width: 58px; height: 40px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; position: relative; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+                .cn-run svg { width: 24px; height: 24px; display: block; }
+                .cn-run.is-idle { background: rgba(var(--ov), 0.12); color: rgba(var(--ov), 0.38); }
+                .cn-run.stop { background: #E53935; color: #fff; }
+                .cn-run:focus-visible, .cn-icon:focus-visible, .cn-mode:focus-visible, .cn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                .cn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+                .cn-spin { width: 16px; height: 16px; box-sizing: border-box; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: cnSpin .8s linear infinite; display: none; }
+                .cn-run.busy svg { display: none; }
+                .cn-run.busy .cn-spin { display: block; }
+                @keyframes cnSpin { to { transform: rotate(360deg); } }
+                @media (prefers-reduced-motion: reduce) { .cn-spin { animation-duration: 3s; } }
+                .cn-icon { flex: 0 0 auto; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); cursor: pointer; padding: 0; }
+                .cn-icon.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .cn-icon svg { width: 24px; height: 24px; display: block; }
+                .cn-mode { flex: 0 0 auto; width: 40px; height: 40px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font: 800 14px ui-monospace, monospace; cursor: pointer; padding: 0; }
+                .cn-mode.chat { color: var(--secondary); border-color: var(--secondary); }
+                .cn-mode:disabled { opacity: .55; }
+                .cn-note { font-size: 10px; color: var(--text-muted); margin: 6px 2px 0; }
+                .cn-card, .cn-mcard { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 16px; }
+                .cn-mcard { display: flex; align-items: center; gap: 8px; padding: 10px; margin-top: 10px; }
+                .cn-mcard-main { flex: 1 1 auto; min-width: 0; }
+                .cn-mcard h4 { font-size: 12px; font-weight: 700; color: var(--accent); overflow-wrap: anywhere; }
+                .cn-mcard p { font-size: 10px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+                .cn-mini { flex: 0 0 auto; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+                .cn-mini:active { background: var(--accent); color: var(--on-accent); }
+                .cn-mini svg { width: 16px; height: 16px; flex: 0 0 auto; }
+                .cn-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+                /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
+                .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: 16px; }
+                .cn-tools.cn-scroll::-webkit-scrollbar, #cnSegLog .lc-key::-webkit-scrollbar { display: none; }
+                #cnSegLog .lc-chip { flex: 0 0 auto; }
+                .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 12px; display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; line-height: 1; width: auto; box-shadow: none; }
+                .cn-tools .op-select { color: var(--text-main); padding: 0 8px; max-width: 46vw; }
+                .cn-tools .apps-tool-btn.term-pin { border-color: var(--accent); }
+                .cn-tools .apps-tool-btn.rish-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+                .cn-tools .apps-tool-btn:active, .cn-tools .batch-tool-link:active { background: var(--accent); color: var(--on-accent); }
+                .cn-find { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; }
+                .cn-find .list-search { flex: 1 1 100px; min-width: 100px; height: 36px; margin: 0; padding: 0 12px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; font-size: 12px; }
+                .cn-find .list-search:focus { border-color: var(--accent); }
+                .cn-find .find-nav { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; }
+                .cn-find .find-nav.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .cn-find .find-nav svg { width: 20px; height: 20px; display: block; }
+                .cn-find .manifest-meta { font-size: 10px; color: var(--text-muted); }
+                @media (max-width: 340px) { .cn-find .list-search { flex-basis: 100%; } }
+                .cn-promptline { margin-top: 8px; font: 700 11px ui-monospace, monospace; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                /* the history: newest card first */
+                .cn-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+                .cn-card { padding: 10px; min-width: 0; }
+                .cn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+                .cn-cmd { flex: 1 1 auto; min-width: 0; font: 700 12px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; color: var(--accent); white-space: pre-wrap; overflow-wrap: anywhere; }
+                .cn-card.k-ai .cn-cmd { color: var(--secondary); }
+                .cn-badge { flex: 0 0 auto; font-size: 10px; font-weight: 700; line-height: 1.4; white-space: nowrap; color: var(--text-muted); padding-top: 1px; }
+                .cn-card.is-run .cn-badge { color: var(--accent); }
+                .cn-card.is-ok .cn-badge { color: color-mix(in srgb, var(--status-running) 72%, var(--text-main)); }
+                .cn-card.is-fail .cn-badge { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .cn-out { margin-top: 4px; font: 11px/1.45 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+                .cn-out:empty { display: none; }
+                .cn-card.k-ai .cn-out { color: var(--text-main); }
+                .cn-card.is-run .cn-out { max-height: 40vh; overflow-y: auto; }
+                .cn-card.is-fold .cn-out { max-height: 11em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+                .cn-card.is-open .cn-out { max-height: 60vh; overflow-y: auto; }
+                .cn-card .term-result { display: block; margin-top: 6px; font-size: 10px; line-height: 1.4; }
+                .cn-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+                .cn-acts:empty { display: none; }
+                .cn-acts .cn-mini { height: 28px; padding: 0 10px; font-size: 11px; }
+                .cn-card.is-note { background: transparent; border-style: dashed; }
+                .cn-card.is-note .cn-head { display: none; }
+                .cn-card.is-note .cn-out { margin-top: 0; font-style: italic; max-height: 40vh; overflow-y: auto; }
+                .cn-empty { margin-top: 10px; font-size: 11px; color: var(--text-muted); padding: 10px 2px; white-space: pre-wrap; }
+                .cn-empty:has(+ .cn-list > .cn-card) { display: none; }
+                .cn-card .rish-note { color: var(--text-muted); font-style: italic; }
+                .cn-card .rish-prompt { color: var(--text-main); }
+                /* Live Logcat: the engine's rows, in the Kotlin idiom (a card per line, `E/tag` bold in the level colour, the message muted) */
+                #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: 10px 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
+                #cnSegLog .lc-row { display: flex; gap: 4px; align-items: baseline; margin-bottom: 4px; padding: 6px 8px; background: var(--bg-card); border: 0; border-radius: 4px; }
+                #cnSegLog .lc-row.lvl-W, #cnSegLog .lc-row.lvl-E, #cnSegLog .lc-row.lvl-F { background: var(--bg-card); }
+                #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
+                #cnSegLog .lc-badge::after { content: '/'; }
+                #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: 700; font-family: ui-monospace, monospace; font-size: 11px; }
+                /* the colours the script sets on Play and Record are kept readable on a light page too */
+                #cnSegLog #logcatPlayBtn { color: color-mix(in srgb, #2EBD6B 72%, var(--text-main)) !important; }
+                #cnSegLog #logcatPlayBtn.is-playing { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
+                #cnSegLog #logcatRecBtn { color: color-mix(in srgb, #FF5252 80%, var(--text-main)) !important; }
+                #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
+                #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
+                #cnSegLog .lc-key { margin: 10px -16px 0; }
+                #cnSegLog #logcatScope { font-size: 10px; color: var(--text-muted); margin: 8px 2px 0; overflow-wrap: anywhere; }
+                #cnSegLog #logcatScope:empty { display: none; }
+            </style>
+
+            <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+                <symbol id="cn-i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
+                <symbol id="cn-i-stop" viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h12v12H6z"/></symbol>
+                <symbol id="cn-i-copy" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></symbol>
+                <symbol id="cn-i-rerun" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></symbol>
+            </defs></svg>
+            <div class="cn-tabs" id="cnTabs" data-seg="shell" role="tablist" aria-label="Console">
+                <button class="cn-tab" id="cnTabShell" role="tab" aria-selected="true" aria-controls="cnSegShell" onclick="cnShowSeg('shell')">ADB Shell</button>
+                <button class="cn-tab" id="cnTabLog" role="tab" aria-selected="false" aria-controls="cnSegLog" onclick="cnShowSeg('log')">Live Logcat</button>
+                <span class="cn-ind" aria-hidden="true"></span>
+            </div>
+
+            <!-- ADB Shell: the command box and Run on top, then the history of cards (newest first) -->
+            <div id="cnSegShell" class="cn-seg" role="tabpanel" aria-labelledby="cnTabShell">
+                <div class="cn-sticky">
+                    <div class="cn-row">
+                        <button class="cn-mode" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
+                        <input type="text" class="cn-field" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term'); termSyncRunBtn()" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
+                        <button class="cn-run is-idle" id="termRunBtn" onclick="termRunClick()" aria-label="Run"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cn-i-play"/></svg><span class="cn-spin" aria-hidden="true"></span><span class="cn-sr">RUN</span></button>
+                    </div>
+                    <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
+                    <div class="cn-promptline" id="termPromptLine" style="display:none;"></div>
+                    <div class="cn-note term-ai-note" id="termAiNote" style="display:none;"></div>
+                </div>
+
+                <div class="cn-mcard">
+                    <div class="cn-mcard-main">
+                        <h4 id="termActiveModeTitle">Active Mode: ADB / Shell</h4>
+                        <p id="termActiveModeDesc">Execute shell and package commands across multiple backends.</p>
+                    </div>
+                    <button class="cn-mini" onclick="openWorkingModesModal()">Configure</button>
+                </div>
+                <div class="cn-tools cn-scroll mode-btn-row">
+                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
+                    <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
+                    <button class="apps-tool-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
+                    <button class="apps-tool-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
+                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
+                    <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
+                    <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
+                    <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
+                </div>
+                <div class="find-bar cn-find">
+                    <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <span class="manifest-meta" id="termFindCount"></span>
+                    <button class="find-nav" onclick="termFind(-1)" aria-label="Previous">▲</button>
+                    <button class="find-nav" onclick="termFind(1)" aria-label="Next">▼</button>
+                    <button class="find-nav" onclick="copyTerminal()" title="Copy" aria-label="Copy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cn-i-copy"/></svg></button>
+                    <button class="find-nav" onclick="shareTerminal()" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>
+                    <button class="find-nav danger" onclick="cnClearAll()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                </div>
+                <div class="cn-empty" id="termEmpty">ADB Application Manager Shell Terminal Ready.
+Type any command above (e.g. pm list packages -d)</div>
+                <div class="cn-list" id="termOutput" translate="no"></div>
+            </div>
+
+            <!-- Live Logcat: the Logcat Viewer, moved in whole -->
+            <div id="cnSegLog" class="cn-seg" role="tabpanel" aria-labelledby="cnTabLog" hidden>
+                <div class="cn-sticky">
+                    <div class="cn-row">
+                        <input type="text" class="cn-field" id="logcatFilter" placeholder="Filter tag / text..." autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
+                        <button class="cn-icon" onclick="logcatRefresh()" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+                        <button class="cn-icon danger" onclick="logcatClear()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                    </div>
+                </div>
+                <div class="cn-tools cn-scroll">
+                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">Play</button>
+                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()" aria-label="Level">
+                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
+                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
+                    </select>
+                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()" aria-label="Lines">
+                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
+                    </select>
+                    <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
+                    <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
+                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
+                    <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
+                    <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
+                    <button class="batch-tool-link" onclick="logcatSave()">Save</button>
+                    <button class="batch-tool-link" onclick="logcatShare()">Share</button>
+                </div>
+                <div id="logcatScope"></div>
+                <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
+                <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
+                <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: TERMINAL (the real terminal and the Coding Agents; the ADB console and the log are in the Console tab) -->
         <section id="view-terminal" class="view-content">
             <style>
                 .tx-switch { display: flex; gap: 8px; margin: 2px 0 12px; }
@@ -6504,11 +6669,6 @@
                 .tx-err-detail { font-family: monospace; font-size: 11px; background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px; white-space: pre-wrap; word-break: break-all; max-height: 28vh; overflow: auto; margin-top: 8px; }
             </style>
 
-            <div class="tx-switch" id="txSwitch" role="tablist" aria-label="Terminal or ADB Console">
-                <button class="tx-switch-btn active" id="txSwitchTerminal" role="tab" aria-selected="true" onclick="haptic(); txShowPane('terminal')">Terminal</button>
-                <button class="tx-switch-btn" id="txSwitchConsole" role="tab" aria-selected="false" onclick="haptic(); txShowPane('console')">ADB Console</button>
-            </div>
-
             <div id="txPaneTerminal" class="tx-pane">
                 <div class="tx-bar">
                     <label class="tx-field">
@@ -6587,52 +6747,6 @@
                     <button class="term-icon-btn" id="txNewChatBtn" onclick="txNewChat()" style="display:none;">New chat</button>
                     <button class="term-icon-btn" id="txRestartBtn" onclick="txRestartShell()">Restart shell</button>
                 </div>
-            </div>
-
-            <div id="txPaneConsole" class="tx-pane" style="display:none;">
-            <div class="bloat-card" style="margin-bottom:14px; border-color:var(--accent);">
-                <div class="bloat-header">
-                    <div>
-                        <h4 style="font-size:14px; font-weight:800; color:var(--accent);" id="termActiveModeTitle">Active Mode: ADB / Shell</h4>
-                        <p style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="termActiveModeDesc">Execute shell and package commands across multiple backends.</p>
-                    </div>
-                    <button class="bloat-btn" onclick="openWorkingModesModal()">Configure</button>
-                </div>
-                <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="apps-tool-btn" onclick="openWorkingModesModal()">Working Modes</button>
-                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
-                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
-                    <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
-                    <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
-                    <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
-                    <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
-                </div>
-            </div>
-
-            <div class="find-bar">
-                <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
-                <span class="manifest-meta" id="termFindCount"></span>
-                <button class="find-nav" onclick="termFind(-1)">▲</button>
-                <button class="find-nav" onclick="termFind(1)">▼</button>
-                <button class="find-nav" onclick="copyTerminal()">Copy</button>
-                <button class="find-nav" onclick="shareTerminal()">Share</button>
-            </div>
-            <div class="terminal-box" id="termOutput">ADB Application Manager Shell Terminal Ready.
-Type any command below (e.g. pm list packages -d)
-</div>
-
-            <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
-            <div class="term-ai-note" id="termAiNote" style="display:none; font-size:11px; color:var(--text-muted); margin-top:8px;"></div>
-            <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
-            <div class="term-input-row" style="margin-top:12px;">
-                <button class="tx-mode-btn" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
-                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term')" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
-                <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
-            </div>
-            <div class="term-input-tools">
-                <button class="term-icon-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
-                <button class="term-icon-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
-            </div>
             </div>
         </section>
 
@@ -6988,7 +7102,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="tx-help" id="txHelpBody" style="max-height:70vh; overflow-y:auto;">
                 <h4>Overview</h4>
                 <p>The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <b>Coding Agents</b> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <b>None</b> to use the Terminal on your own.</p>
-                <p><b>ADB Console</b>, next to it, is the classic console of this app (Rish mode, cheat sheet, saved commands). The tab remembers which of the two you used last.</p>
+                <p><b>Console</b> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.</p>
 
                 <h4>The three shells</h4>
                 <ul>
@@ -9020,11 +9134,7 @@ Type any command below (e.g. pm list packages -d)
         let rishCurrentRun = null;     // id of the command in flight (null while one that started before a reload is adopted)
         let rishAwaitingAuthAt = 0;    // when the permission prompt was asked for
         let rishEndsNl = true;         // did the last output end with a newline?
-        let rishStick = true;          // keep the terminal scrolled to the newest output
         let rishScrollQueued = false;
-        let rishTermChars = 0;         // streamed characters currently in the terminal (older ones get trimmed)
-        const RISH_TERM_MAX = 800000;
-        const RISH_TERM_KEEP = 500000;
         let customLists = [];
         let pendingBatchAction = null;
         let pendingDeleteListId = null;
@@ -9370,12 +9480,12 @@ Type any command below (e.g. pm list packages -d)
             { key: 'debloater', label: 'UAD-NG\nDebloater', name: 'UAD-NG Debloater' },
             { key: 'installer', label: 'Installer/\nUpdater', name: 'APK Installer/Updater' },
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
-            { key: 'terminal', label: 'Command-Line\nInterface', name: 'Command-Line Interface' },
+            { key: 'console', label: 'Console', name: 'Console' },                        // the ADB shell and the live log (the former ADB Console pane and Logcat Viewer tab)
+            { key: 'terminal', label: 'Terminal', name: 'Terminal' },                     // the real terminal and the Coding Agents (the key of the former Command-Line Interface tab)
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
             { key: 'extrasettings', label: 'Extra\nSettings', name: 'Extra Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
             { key: 'store', label: 'App\nStores', name: 'App Stores' },
-            { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
             { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
@@ -9383,13 +9493,25 @@ Type any command below (e.g. pm list packages -d)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
-        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key));          // the updater is a box of the APK Installer/Updater tab now
+        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key === 'logcat' ? 'console' : key));          // the updater is a box of the APK Installer/Updater tab now, the log a segment of Console
         let tabConfig = { order: TAB_MOVABLE.slice(), off: [] };
 
         // The saved choice (kv 'tab_config') is checked against the tabs this version has: unknown keys go, a tab it has never
         // seen (added by an update) lands after the tab that precedes it by default, so an old choice keeps working.
+        // v7.12.12: the Command-Line Interface tab ('terminal') became Console ('console': the ADB shell and the live log) plus Terminal ('terminal': the real
+        // terminal and the Coding Agents), and the Logcat Viewer tab ('logcat') moved into Console. A choice saved before that has 'terminal' and no 'console':
+        // Console takes the place of 'terminal' (and is off when 'terminal' was off); what was saved for 'logcat' is dropped with the other unknown keys.
+        function tabMigrateConsole(saved) {
+            if (!saved || !Array.isArray(saved.order) || saved.order.includes('console') || (Array.isArray(saved.off) && saved.off.includes('console'))) return saved;
+            const order = saved.order.slice(), off = Array.isArray(saved.off) ? saved.off.slice() : [];
+            const i = order.indexOf('terminal');
+            if (i >= 0) order.splice(i, 0, 'console');
+            else if (!off.includes('terminal')) return saved;                              // neither in the list: the generic placing below puts Console in its default place
+            if (off.includes('terminal')) off.push('console');
+            return Object.assign({}, saved, { order, off });
+        }
         function tabLoadConfig() {
-            const saved = kvGet('tab_config', null);
+            const saved = tabMigrateConsole(kvGet('tab_config', null));
             let order = saved && Array.isArray(saved.order) ? saved.order.filter((k, i, a) => TAB_MOVABLE.includes(k) && a.indexOf(k) === i) : [];
             TAB_MOVABLE.forEach((k, i) => {
                 if (order.includes(k)) return;
@@ -9403,7 +9525,7 @@ Type any command below (e.g. pm list packages -d)
 
         // The tabs on the bar, left to right
         function tabsShown() { return ['apps'].concat(tabConfig.order.filter(k => !tabConfig.off.includes(k)), ['about']); }
-        function tabIsOn(key) { if (key === 'updates') key = 'installer'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
+        function tabIsOn(key) { if (key === 'updates') key = 'installer'; if (key === 'logcat') key = 'console'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
 
         function renderTabBar() {
             const bar = document.getElementById('tabBar');
@@ -9444,6 +9566,11 @@ Type any command below (e.g. pm list packages -d)
                 instKeep = false;
                 return ok;
             }
+            if (viewName === 'logcat') {                                    // the Logcat Viewer is the Live Logcat segment of Console now: old links land there
+                if (!tabNeed('console')) return false;
+                cnApplySeg('log');
+                viewName = 'console';
+            }
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
@@ -9479,13 +9606,13 @@ Type any command below (e.g. pm list packages -d)
                 activeView.classList.add('active');
             }
             if (viewName !== 'files' && typeof arcOpenAbort === 'function') arcOpenAbort();       // an archive still being unpacked for its listing is not wanted any more
-            if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
+            if (viewName !== 'console' && typeof logcatStop === 'function') logcatStop();          // the live log runs only while Console is open on Live Logcat
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'installer') { if (!instKeep && fromView !== 'installer') instPane = 'install'; onInstallerShown(); instPaneShow(instPane, true); }
             if (viewName === 'files') onFilesShown();
-            if (viewName === 'logcat') onLogcatShown();
+            if (viewName === 'console') onConsoleShown();
             if (viewName === 'taskmgr') onTaskMgrShown();
             if (viewName === 'devices') onDevicesShown();
             if (viewName === 'extrasettings') pdnsShow();
@@ -11153,7 +11280,7 @@ Type any command below (e.g. pm list packages -d)
         }
         // ---- The default agent, and the "Ask agent" buttons ----
         // One Coding Agent answers every "Ask agent" button (what a hidden setting, a permission, a process, a log line or an app is). It is chosen
-        // in Settings, under Language; the key or sign-in and the model are the ones set up in the Command-Line Interface tab. Without one, the
+        // in Settings, under Language; the key or sign-in and the model are the ones set up in the Terminal tab. Without one, the
         // button leads to Settings instead.
         // ---- Row tints (Settings): 0 Off, 1 Subtle (default), 2 Normal ----
         function rowTintApply() {
@@ -11200,7 +11327,7 @@ Type any command below (e.g. pm list packages -d)
             const ag = askAgentDef();
             if (!ag) { el.textContent = 'No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you.'; return; }
             txRefreshVault();
-            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Terminal tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
             el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
         }
@@ -11227,7 +11354,7 @@ Type any command below (e.g. pm list packages -d)
                 out.style.display = 'none';
                 res.classList.add('is-err');
                 res.textContent = !ag ? txT('No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
-                    : txF('{0} is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.', ag.name);
+                    : txF('{0} is not connected yet. Add its key or sign-in in the Terminal tab first.', ag.name);
                 return;
             }
             if (txEngine(ag) === 'cli' || ag.api === 'cli') {
@@ -20598,13 +20725,13 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
                 const sec = document.getElementById('view-' + view);
                 if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
-                const card = sec.querySelector('.color-card');
+                const card = sec.querySelector('.color-card, .cn-tabs');          // Console has no card: its ? sits on the tab row
                 if (!card) return;
                 card.classList.add('has-help');
                 const b = document.createElement('button');
@@ -22535,7 +22662,7 @@ Type any command below (e.g. pm list packages -d)
         // starts live-tailing right away, instead of a one-off read that needs Play pressed by hand.
         function onLogcatShown() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            logcatTogglePlay();
+            if (!logcatTimer) logcatTogglePlay();
             lcRecPoll();
         }
 
@@ -22743,6 +22870,7 @@ Type any command below (e.g. pm list packages -d)
             if (logcatTimer) { logcatStop(); return; }
             if (!guardPrivilege('Logcat')) return;
             btn.innerText = 'Pause';
+            btn.classList.add('is-playing');
             btn.style.color = '#FFA726';
             lcShowAll = false;
             lcLastText = null;
@@ -22753,7 +22881,7 @@ Type any command below (e.g. pm list packages -d)
             if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
             if (lcPending && lcPending.live) lcPending = null;
             const btn = document.getElementById('logcatPlayBtn');
-            if (btn) { btn.innerText = 'Play'; btn.style.color = '#4ADE80'; }
+            if (btn) { btn.innerText = 'Play'; btn.classList.remove('is-playing'); btn.style.color = '#4ADE80'; }
         }
         function logcatClear() {
             if (!guardPrivilege('Logcat')) return;
@@ -22871,6 +22999,7 @@ Type any command below (e.g. pm list packages -d)
             const btn = document.getElementById('logcatRecBtn');
             if (!btn) return;
             btn.innerText = st && st.running ? '■ Stop recording · ' + st.lines + ' lines' : '● Record to file';
+            btn.classList.toggle('is-recording', !!(st && st.running));
             btn.style.color = st && st.running ? '#FFA726' : '#FF5252';
         }
         // Asks the phone how the recording is doing; keeps asking while one runs. A recording that ended by itself (the size limit) is announced once.
@@ -22932,7 +23061,7 @@ Type any command below (e.g. pm list packages -d)
             lcRecItems = items;
             box.innerHTML = items.length
                 ? items.map((it, i) => `<div class="lc-rec-row" onclick="lcvOpen(lcRecItems[${i}].name)" role="button" tabindex="0"><div class="lc-rec-main"><div class="lc-rec-name" translate="no">${escapeHtml(lcRecWhen(it.name, it.modified))}</div><div class="lc-rec-sub" translate="no">${escapeHtml(it.name)} · ${lcRecSize(it.size)}</div></div><div class="lc-rec-del" onclick="event.stopPropagation(); lcRecDelete(${i})" role="button" aria-label="Delete">✕</div></div>`).join('')
-                : '<div class="lc-meta">No recordings yet. Tap Record to file in the Logcat tab to make one.</div>';
+                : '<div class="lc-meta">No recordings yet. Tap Record to file in Console, Live Logcat to make one.</div>';
         }
         let lcRecItems = [];
         function lcRecDelete(i) {
@@ -23025,7 +23154,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function aiOpenAgentSetup() { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); switchView('terminal'); }
-        // Asks the Coding Agent chosen in the Command-Line Interface tab to explain something, and streams the answer into box.
+        // Asks the Coding Agent chosen in the Terminal tab to explain something, and streams the answer into box.
         // Says what is missing when there is no agent. Returns the answer ('' when there is none). isCurrent(): false once the window moved on.
         // ---- No agent connected: a built-in web lookup (free, no key, no account) ----
         // It does what a crawler does, in a small way: searches the web for the item's name, reads the first page that has something about it into plain text and shows
@@ -23198,9 +23327,9 @@ Type any command below (e.g. pm list packages -d)
             if (btn) btn.innerText = logcatApp ? logcatApp.name + ' ▾' : 'All apps ▾';
             const clr = document.getElementById('logcatAppClear');
             if (clr) clr.style.display = logcatApp ? '' : 'none';
-            const sub = document.querySelector('#view-logcat .color-card-subtitle');
-            if (sub) sub.innerText = logcatApp ? 'Only the lines written by ' + logcatApp.pkg + ' (every process it has run as).' : 'Read the device log with ADB / Shizuku / Root.';
-            if (currentViewName() === 'logcat') logcatRefresh();
+            const sub = document.getElementById('logcatScope');
+            if (sub) sub.innerText = logcatApp ? txF('Only the lines written by {0} (every process it has run as).', logcatApp.pkg) : '';
+            if (currentViewName() === 'console' && cnSeg === 'log') logcatRefresh();
         }
 
         function lcAppOpen() {
@@ -23231,12 +23360,13 @@ Type any command below (e.g. pm list packages -d)
 
         // From the app sheet: the log of that app
         function openAppLog() {
-            if (!inspectedPkg || !tabNeed('logcat')) return;
+            if (!inspectedPkg || !tabNeed('console')) return;
             const a = inspectedApp();
             const app = { pkg: inspectedPkg, name: a ? a.name : inspectedPkg };
             closeInspector();
             logcatApp = null;
-            switchView('logcat');
+            cnApplySeg('log');                    // Console opens on Live Logcat
+            switchView('console');
             logcatSetApp(app);
         }
         logcatRenderKey();
@@ -24400,10 +24530,6 @@ Type any command below (e.g. pm list packages -d)
             runFind('term', term, document.getElementById('termFindCount'), q, dir);
         }
 
-        function termText() {
-            return document.getElementById('termOutput').innerText;
-        }
-
         function copyTerminal() {
             haptic();
             if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(termText());
@@ -25518,11 +25644,201 @@ Type any command below (e.g. pm list packages -d)
             } catch (e) {}
         }
 
+        // ---------- Console: the ADB Shell and Live Logcat segments, and the history cards ----------
+        // The Console tab has two segments. ADB Shell is the command box with Run and a history of cards, newest first (`$ command`, how it ended, the output,
+        // Copy and Re-run). Live Logcat is the Logcat Viewer. The segment last used is kept ('console_seg'); the log streams only while it is on screen.
+        let cnSeg = kvGet('console_seg', 'shell') === 'log' ? 'log' : 'shell';
+        function cnApplySeg(seg) {
+            cnSeg = seg === 'log' ? 'log' : 'shell';
+            kvSet('console_seg', cnSeg);
+            const tabs = document.getElementById('cnTabs');
+            if (tabs) tabs.dataset.seg = cnSeg;
+            [['cnTabShell', 'shell', 'cnSegShell'], ['cnTabLog', 'log', 'cnSegLog']].forEach(([tid, k, sid]) => {
+                const t = document.getElementById(tid), p = document.getElementById(sid);
+                if (t) t.setAttribute('aria-selected', cnSeg === k ? 'true' : 'false');
+                if (p) p.hidden = cnSeg !== k;
+            });
+        }
+        function cnShowSeg(seg) {
+            seg = seg === 'log' ? 'log' : 'shell';
+            if (seg === cnSeg && currentViewName() === 'console') return;
+            cnApplySeg(seg);
+            if (currentViewName() !== 'console') return;
+            if (cnSeg === 'log') onLogcatShown(); else logcatStop();
+        }
+        function onConsoleShown() {
+            cnApplySeg(cnSeg);
+            termSyncRunBtn();
+            if (cnSeg === 'log') onLogcatShown(); else window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const CN_MAX_CARDS = 60;          // cards kept; the oldest go
+        const CN_TRIM_AT = 300000, CN_KEEP = 200000;          // characters of output in one card: over the first, the oldest are cut down to the second
+        const CN_FOLD_LINES = 12;         // output longer than this is folded behind Show all
+        let cnCur = null;                 // the card output goes to (a command still running, or the last note)
+        let cnRishRun = null;             // the card of the Rish command that is running
+        function cnList() { return document.getElementById('termOutput'); }
+        const CN_KIND_CLASS = { sh: 'k-sh', rish: 'k-rish', ai: 'k-ai', note: 'k-note' };          // what a card is: a typed command, a Rish command, a question to the agent, a note
+        function cnHeadSh(cmd) { return '$ ' + String(cmd).replace(/\n/g, '\n> '); }
+
+        // A new card at the top of the history. kind: 'sh' (a typed command), 'rish' (a command in the Rish shell), 'ai' (a question to the coding agent), 'note' (no command: a message).
+        function cnCardNew(kind, head, cmd) {
+            const list = cnList();
+            if (!list) return null;
+            const el = document.createElement('div');
+            el.classList.add('cn-card', CN_KIND_CLASS[kind], kind === 'note' ? 'is-note' : 'is-run');
+            const h = document.createElement('div'); h.className = 'cn-head';
+            const c = document.createElement('span'); c.className = 'cn-cmd'; c.textContent = head || '';
+            const b = document.createElement('span'); b.className = 'cn-badge';
+            h.appendChild(c); h.appendChild(b);
+            const out = document.createElement('div'); out.className = 'cn-out';
+            const acts = document.createElement('div'); acts.className = 'cn-acts';
+            el.appendChild(h); el.appendChild(out); el.appendChild(acts);
+            const card = { el, kind, cmd: cmd || '', head: head || '', badge: b, out, acts, chars: 0, done: false, stick: true };
+            el.__cn = card;
+            out.addEventListener('scroll', () => { card.stick = out.scrollHeight - out.scrollTop - out.clientHeight < 80; }, { passive: true });
+            list.insertBefore(el, list.firstChild);
+            const all = list.querySelectorAll(':scope > .cn-card');
+            for (let i = all.length - 1; i >= CN_MAX_CARDS; i--) { if (all[i] === cnCur) cnCur = null; all[i].remove(); }
+            if (kind !== 'note') { cnCur = card; cnState(card, 'run', txT('Running…')); }
+            return card;
+        }
+        // state: run | ok | fail | stop | note. The badge is the outcome text at the right of the head.
+        function cnState(card, state, badge) {
+            card.state = state;
+            card.el.classList.remove('is-run', 'is-ok', 'is-fail', 'is-stop', 'is-note');
+            card.el.classList.add('is-' + state);
+            card.badge.textContent = badge || '';
+        }
+        function cnMini(label, d, fn) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'cn-mini';
+            if (d) b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#' + d + '"/></svg>';
+            b.appendChild(document.createTextNode(label));
+            b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
+            return b;
+        }
+        // The command is over: fold long output behind Show all, and offer Copy and Re-run.
+        function cnFinish(card) {
+            card.done = true;
+            if (cnRishRun === card) cnRishRun = null;
+            const el = card.el;
+            el.classList.remove('is-fold', 'is-open');
+            card.acts.textContent = '';
+            if (card.kind === 'note') return;
+            const text = card.out.textContent;
+            if (card.kind !== 'ai' && text && (text.match(/\n/g) || []).length >= CN_FOLD_LINES) {
+                el.classList.add('is-fold');
+                card.acts.appendChild(cnMini(txT('Show all'), '', b => {
+                    const open = !el.classList.contains('is-open');
+                    el.classList.toggle('is-open', open); el.classList.toggle('is-fold', !open);
+                    b.textContent = txT(open ? 'Show less' : 'Show all');
+                }));
+            }
+            card.acts.appendChild(cnMini(txT('Copy'), 'cn-i-copy', () => copyText(cnCardText(card, false))));
+            if (card.kind === 'sh') card.acts.appendChild(cnMini(txT('Run again'), 'cn-i-rerun', () => { cnRevealTop(); runTerminalCmd(card.cmd); }));
+            if (card.kind === 'rish') card.acts.appendChild(cnMini(txT('Run again'), 'cn-i-rerun', () => { if (!rishActive) { showToast('The Rish shell is no longer running.'); return; } cnRevealTop(); rishSubmit(card.cmd); }));
+        }
+        // The card as plain text: its head, the output, and (withResult) the result line.
+        function cnCardText(card, withResult) {
+            const out = card.out.textContent;
+            const res = withResult ? card.el.querySelector('.term-result') : null;
+            return (card.head ? card.head + '\n' : '') + out + (out && !out.endsWith('\n') ? '\n' : '') + (res ? res.textContent + '\n' : '');
+        }
+        // A command that was typed: the output and the result line replace "Running…".
+        function cnShFinish(card, out) {
+            out = String(out == null ? '' : out);
+            card.out.textContent = out.length > CN_TRIM_AT ? txT('[older output trimmed]') + '\n' + out.slice(-CN_KEEP) : out;
+            card.chars = card.out.textContent.length;
+            const c = termClassifyOutput(out);
+            cnState(card, c.failed ? 'fail' : 'ok', c.failed ? txT('Looks like a failure') : txT('Finished'));
+            card.out.insertAdjacentHTML('afterend', termResultHtml(out));
+            cnFinish(card);
+            if (card.el.isConnected && document.getElementById('termSearch').value) termFind(0);
+        }
+        // Where text that belongs to no command goes (a note, output between commands): the card being written, or a new note card.
+        function cnSink() {
+            const c = cnCur;
+            if (c && c.el.isConnected && (!c.done || c.kind === 'note')) return c;
+            const n = cnCardNew('note', '');
+            cnCur = n;
+            return n;
+        }
+        // Over CN_TRIM_AT characters in a card, the oldest are cut (a chatty command cannot make the page heavy).
+        function cnTrim(card) {
+            const out = card.out;
+            let excess = card.chars - CN_KEEP;
+            if (excess <= 0) return;
+            let n = out.firstChild;
+            if (n && n.nodeType === 1 && n.classList.contains('rish-trim')) n = n.nextSibling;          // keep the marker
+            let removed = 0;
+            while (n && excess > 0) {
+                const len = (n.textContent || '').length;
+                if (n.nodeType === 3 && len > excess) { n.data = n.data.slice(excess); removed += excess; excess = 0; break; }          // one big text node: cut just its front
+                const next = n.nextSibling;
+                if (!next) break;                                                                  // never drop the newest node whole
+                out.removeChild(n);
+                excess -= len; removed += len;
+                n = next;
+            }
+            card.chars -= removed;
+            const first = out.firstChild;
+            if (removed && !(first && first.nodeType === 1 && first.classList.contains('rish-trim'))) {
+                const m = document.createElement('span');
+                m.className = 'rish-note rish-trim';
+                m.textContent = txT('[older output trimmed]') + '\n';
+                out.insertBefore(m, first);
+            }
+        }
+        function cnAppend(card, text) {
+            card.out.appendChild(document.createTextNode(text));
+            card.chars += text.length;
+            if (card.chars > CN_TRIM_AT) cnTrim(card);
+        }
+        function cnClearAll() {
+            const list = cnList();
+            if (!list) return;
+            clearFind(list);
+            list.querySelectorAll(':scope > .cn-card').forEach(c => c.remove());
+            cnCur = null; cnRishRun = null;
+            const fc = document.getElementById('termFindCount'); if (fc) fc.innerText = '';
+        }
+        // The whole history as text, oldest first (what Copy and Share give).
+        function termText() {
+            const list = cnList();
+            if (!list) return '';
+            const cards = Array.from(list.querySelectorAll(':scope > .cn-card')).reverse();
+            return cards.map(c => cnCardText(c.__cn, true)).join('');
+        }
+        // After a command is run from a card far down the page, the new card (at the top) is brought into view below the command box.
+        function cnRevealTop() {
+            const list = cnList(), box = document.querySelector('#cnSegShell .cn-sticky');
+            if (!list || !box) return;
+            const d = list.getBoundingClientRect().top - box.getBoundingClientRect().bottom;
+            if (d < 0) window.scrollBy(0, d - 8);
+        }
+        // Run turns into Stop while a Rish command runs and shows a spinner while a typed command runs; without text it is dimmed like a disabled Material button.
+        function termSyncRunBtn() {
+            const b = document.getElementById('termRunBtn');
+            if (!b) return;
+            const stopping = !!(rishActive && rishRunning);
+            const busy = !stopping && !!(termShellRun || termAiBusy);
+            const input = document.getElementById('termCmd');
+            b.classList.toggle('stop', stopping);
+            b.classList.toggle('busy', busy);
+            b.classList.toggle('is-idle', !stopping && !busy && !(input && input.value.trim()));
+            b.setAttribute('aria-busy', busy ? 'true' : 'false');
+            const u = b.querySelector('svg use'); if (u) u.setAttribute('href', stopping ? '#cn-i-stop' : '#cn-i-play');
+            const t = b.querySelector('.cn-sr'); if (t) t.textContent = stopping ? 'STOP' : 'RUN';
+            const nm = txT(stopping ? 'Stop' : 'Run');          // the name for a screen reader and the tool tip follow the symbol
+            b.setAttribute('aria-label', nm); b.title = nm;
+        }
+
         // Terminal Console
         function runTerminalCmd(override) {
             if (rishActive) { rishSubmit(override); return; }
             const input = document.getElementById('termCmd');
-            if (termMode === 'chat' && typeof override !== 'string') { const q = input.value.trim(); if (q) { input.value = ''; termAiSend(q); } return; }
+            if (termMode === 'chat' && typeof override !== 'string') { const q = input.value.trim(); if (q) { input.value = ''; termSyncRunBtn(); termAiSend(q); } return; }
             const cmd = (typeof override === 'string' ? override : input.value).trim();
             if (!cmd) return;
             if (termShellRun) { showToast('A command is still running. Wait for it to finish.'); return; }      // before the box is cleared: what was typed stays
@@ -25531,30 +25847,25 @@ Type any command below (e.g. pm list packages -d)
             acUpdate('term');
             termRemember(cmd);
 
-            const term = document.getElementById('termOutput');
-            clearFind(term);
-            term.insertAdjacentHTML('beforeend', `<span style="color:var(--text-main);">$ ${escapeHtml(cmd).replace(/\n/g, '\n<span style="color:var(--text-muted);">&gt;</span> ')}</span>\n`);
+            clearFind(cnList());
+            const card = cnCardNew('sh', cnHeadSh(cmd), cmd);
 
             if (window.AndroidBridge && window.AndroidBridge.executeShellAsync) {
                 // off the page's thread: the app stays usable while a slow command runs, and the answer is added when it comes
                 const id = 's' + (++termShellSeq);
-                termShellRun = { id, cmd };
-                term.insertAdjacentHTML('beforeend', '<span class="rish-note" id="termWait">running…\n</span>');
-                term.scrollTop = term.scrollHeight;
+                termShellRun = { id, cmd, card };
+                termSyncRunBtn();
                 let st = '';
                 try { st = window.AndroidBridge.executeShellAsync(id, cmd); } catch (e) { st = ''; }
                 if (st !== 'started') onShellDone(id, 'Error: the command could not be started');
                 return;
             }
-            if (window.AndroidBridge) {
-                // no result modal here: an arbitrary typed command has no fixed "success" marker to show one
-                // honestly (it used to hardcode success:true), and the output is already right here in the
-                // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
-                // finding #4 / nuisance A).
-                termAppendOutput(term, window.AndroidBridge.executeShell(cmd) || '');
-            }
-            term.scrollTop = term.scrollHeight;
-            if (document.getElementById('termSearch').value) termFind(0);
+            // no result modal here: an arbitrary typed command has no fixed "success" marker to show one
+            // honestly (it used to hardcode success:true), and the output is already right here in the
+            // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
+            // finding #4 / nuisance A).
+            cnShFinish(card, window.AndroidBridge ? (window.AndroidBridge.executeShell(cmd) || '') : 'Error: the command could not be started');
+            termSyncRunBtn();
         }
 
         let termShellRun = null;       // the command running in the normal terminal: { id, cmd }
@@ -25584,12 +25895,6 @@ Type any command below (e.g. pm list packages -d)
             return '<span class="term-result' + (c.failed ? ' is-fail' : '') + '" role="status">' + escapeHtml(msg) + '</span>';
         }
 
-        // A command's output, then the result line on a line of its own.
-        function termAppendOutput(term, res) {
-            term.appendChild(document.createTextNode(res));
-            term.insertAdjacentHTML('beforeend', (res && !res.endsWith('\n') ? '\n' : '') + termResultHtml(res) + '\n');
-        }
-
         // ---------- ADB Console: the same Coding Agent picked in the Terminal, for syntax/code help here too ----------
         // A smaller, one-shot cousin of the Terminal's own agent engine: no file reads or edits, at most one proposed
         // command per answer, run through this console's own execution path (so it follows the active Working Mode
@@ -25609,6 +25914,7 @@ Type any command below (e.g. pm list packages -d)
             if (btn) { btn.textContent = termMode === 'chat' ? 'AI' : '$'; btn.classList.toggle('chat', termMode === 'chat'); btn.disabled = termAiBusy; }
             const input = document.getElementById('termCmd');
             if (input) input.placeholder = termMode === 'chat' ? 'Ask about a command...' : 'Enter shell command...';
+            termSyncRunBtn();
             const note = document.getElementById('termAiNote');
             if (note) {
                 if (termMode === 'chat' && ag && ag.id !== 'none') { note.style.display = ''; note.textContent = txF('Asking {0} ({1})', ag.name, txModelFor(ag) || txT('default model')); }
@@ -25627,11 +25933,11 @@ Type any command below (e.g. pm list packages -d)
             termSyncModeUi();
         }
 
+        let termAiCard = null;         // the card of the question being answered
         function termAiAsk(ag, cmd) {
             const who = ag.name.replace(/\s*\(.*\)$/, '');
-            const term = document.getElementById('termOutput');
-            term.insertAdjacentHTML('beforeend', '<span style="color:var(--text-muted);">? ' + escapeHtml(cmd) + '</span>\n');
-            term.scrollTop = term.scrollHeight;
+            clearFind(cnList());
+            termAiCard = cnCardNew('ai', '? ' + cmd, cmd);
             return who;
         }
 
@@ -25642,32 +25948,33 @@ Type any command below (e.g. pm list packages -d)
             const who = termAiAsk(ag, q);
             termAiBusy = true;
             termSyncModeUi();
-            const term = document.getElementById('termOutput');
+            const card = termAiCard;
             const span = document.createElement('span');
-            span.style.color = 'var(--text-main)';
-            term.appendChild(span);
+            card.out.appendChild(span);
             let shown = '';
             try {
                 const model = txModelFor(ag);
                 const effort = txEffortFor(ag);
                 const msgs = termAiHist.concat([{ role: 'user', text: q }]);
-                const r = await txTurnApi(ag, model, effort, TX_CONSOLE_SYSTEM, msgs, t => { shown += t; span.textContent = txForModel(shown); term.scrollTop = term.scrollHeight; });
+                const r = await txTurnApi(ag, model, effort, TX_CONSOLE_SYSTEM, msgs, t => { shown += t; span.textContent = txForModel(shown); if (card.stick) card.out.scrollTop = card.out.scrollHeight; });
                 termAiHist = msgs.concat([{ role: 'assistant', text: r.text }]).slice(-12);
                 const act = txParseAction(r.text);
                 span.textContent = txForModel((act ? act.before : r.text).trim());
-                term.appendChild(document.createTextNode('\n'));
+                card.out.appendChild(document.createTextNode('\n'));
                 if (act && act.type === 'run' && act.body.trim() && !act.truncated) termAiProposeRun(who, act.body.trim());
+                cnState(card, 'ok', '');
             } catch (e) {
                 span.textContent = '';
-                term.insertAdjacentHTML('beforeend', '<span class="is-err">' + escapeHtml((e && e.msg) || (e && e.message) || String(e)) + '</span>\n');
+                card.out.insertAdjacentHTML('beforeend', '<span class="is-err">' + escapeHtml((e && e.msg) || (e && e.message) || String(e)) + '</span>\n');
+                cnState(card, 'fail', txT('Error'));
             }
+            cnFinish(card);
             termAiBusy = false;
             termSyncModeUi();
-            term.scrollTop = term.scrollHeight;
         }
 
         function termAiProposeRun(who, cmd) {
-            const term = document.getElementById('termOutput');
+            const term = (termAiCard && termAiCard.out) || cnSink().out;
             const id = 'tac' + (++termAiSeq);
             termAiPending[id] = cmd;
             if (!txSettings.askRun) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
@@ -25675,7 +25982,6 @@ Type any command below (e.g. pm list packages -d)
                 + '<div style="color:var(--text-muted); font-size:11px;">' + escapeHtml(who) + ' wants to run this:</div>'
                 + '<div style="color:var(--text-main); word-break:break-all;" translate="no">' + escapeHtml(cmd) + '</div>'
                 + '<div class="mode-btn-row" style="margin-top:6px;"><button class="mode-action-btn primary" onclick="termAiRunProposed(\'' + id + '\')">Run</button><button class="mode-action-btn" onclick="termAiSkipProposed(\'' + id + '\')">Skip</button></div></div>');
-            term.scrollTop = term.scrollHeight;
         }
 
         function termAiRunProposed(id) {
@@ -25692,11 +25998,10 @@ Type any command below (e.g. pm list packages -d)
             if (termAiPending[id] === undefined) return;
             delete termAiPending[id];
             haptic();
-            const term = document.getElementById('termOutput');
-            const card = document.getElementById(id);
-            if (card) card.remove();
-            term.insertAdjacentHTML('beforeend', '<span class="rish-note">[skipped]\n</span>');
-            term.scrollTop = term.scrollHeight;
+            const prop = document.getElementById(id);
+            const host = prop && prop.closest('.cn-out');
+            if (prop) prop.remove();
+            (host || cnSink().out).insertAdjacentHTML('beforeend', '<span class="rish-note">[skipped]\n</span>');
         }
 
         function onShellDone(id, out) {
@@ -25704,17 +26009,15 @@ Type any command below (e.g. pm list packages -d)
             const run = termShellRun;
             if (!run || run.id !== id) return;
             termShellRun = null;
-            const term = document.getElementById('termOutput');
-            const wait = document.getElementById('termWait');
-            if (wait) wait.remove();
-            termAppendOutput(term, String(out || ''));
+            let card = run.card;
+            if (!card || !card.el.isConnected) { card = cnCardNew('sh', cnHeadSh(run.cmd), run.cmd); }          // the history was cleared while it ran
+            cnShFinish(card, String(out || ''));
+            termSyncRunBtn();
             // no result modal (see runTerminalCmd) - but still worth a toast if the user has since left the tab,
             // since then the output appearing isn't something they're looking at right now.
-            if (currentViewName() !== 'terminal') showToast('Command finished: see the ADB Console');
-            term.scrollTop = term.scrollHeight;
-            if (document.getElementById('termSearch').value) termFind(0);
+            if (currentViewName() !== 'console' || cnSeg !== 'shell') showToast('Command finished: see the Console');
         }
-        window.onShellDone = onShellDone;
+                window.onShellDone = onShellDone;
 
         // ---------- Settings > Trim Caches in All Applications: `pm trim-caches 128G` ----------
         // Runs off the page's thread (executeShellAsync); the free space of /data is read before and after so the report can say what was freed.
@@ -25955,6 +26258,7 @@ Type any command below (e.g. pm list packages -d)
             return '';
         }
         function acUpdate(which) {
+            if (which === 'term' && typeof termSyncRunBtn === 'function') termSyncRunBtn();          // the Run button lights up when the box has text, however the text got there
             const inp = acInput(which), box = acBox(which);
             if (!inp || !box) return;
             const atEnd = inp.selectionStart === inp.value.length && inp.selectionEnd === inp.value.length;
@@ -26079,6 +26383,7 @@ Type any command below (e.g. pm list packages -d)
             if (c == null) return;
             const input = document.getElementById('termCmd');
             input.value = c;
+            termSyncRunBtn();
             termCloseModal();
             input.focus();
         }
@@ -26162,9 +26467,9 @@ Type any command below (e.g. pm list packages -d)
             runTerminalCmd(x.cmd);
         }
 
-        // Pinned saved commands become one-tap chips in the terminal card
+        // Pinned saved commands become one-tap chips under the command box of the Console
         function termRenderPins() {
-            const row = document.querySelector('#view-terminal .mode-btn-row');
+            const row = document.querySelector('#view-console .cn-tools.mode-btn-row');
             if (!row) return;
             row.querySelectorAll('.term-pin').forEach(b => b.remove());
             termSaved.forEach((x, i) => {
@@ -26181,7 +26486,7 @@ Type any command below (e.g. pm list packages -d)
         if (document.readyState !== 'loading') termRenderPins();
 
         // ======================================================================================
-        // Terminal (v7.8): a Termux-style terminal with coding agents, the first page of the "Command-Line Interface" tab
+        // Terminal (v7.8): a Termux-style terminal with coding agents, the Terminal tab
         // (named Terminal / ADB Console through v7.8; the two panes inside it, Terminal and ADB Console, keep their own names).
         // Shells are persistent native sessions, one per backend (MainActivity termStart / termRun):
         //   app    - this app's own sandbox (always there)
@@ -26205,7 +26510,6 @@ Type any command below (e.g. pm list packages -d)
         const TX_FULLSCREEN_BARE = /^(?:sudo\s+)?(top|irb|ghci|lua|bc|python3?|node|bash|zsh|fish|sh|claude|gemini|codex|copilot|opencode|agent|cursor-agent|ollama\s+run\s+\S+|ssh\s+[^\s-]\S*)\s*$/;
         function txIsFullscreen(cmd) { const c = String(cmd || '').trim(); return TX_FULLSCREEN_ANY.test(c) || TX_FULLSCREEN_BARE.test(c); }
 
-        let txPane = kvGet('term_subtab', 'terminal') === 'console' ? 'console' : 'terminal';
         const txState = Object.assign({ agent: 'none', models: {}, efforts: {}, shell: '', mode: 'shell' }, kvGet('tx_state', {}) || {});
         if (!txState.models || typeof txState.models !== 'object') txState.models = {};
         if (!txState.efforts || typeof txState.efforts !== 'object') txState.efforts = {};
@@ -26237,23 +26541,8 @@ Type any command below (e.g. pm list packages -d)
         // A sentence with changing parts ({0}, {1} ...): translated as a pattern, then filled in, so a model or key name is never looked up in a dictionary
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
-        function txShowPane(p) {
-            if (txFullOn && p === 'console') txFullToggle(false);
-            txPane = p === 'console' ? 'console' : 'terminal';
-            kvSet('term_subtab', txPane);
-            const t = document.getElementById('txPaneTerminal'), c = document.getElementById('txPaneConsole');
-            if (t) t.style.display = txPane === 'terminal' ? '' : 'none';
-            if (c) c.style.display = txPane === 'console' ? '' : 'none';
-            [['txSwitchTerminal', 'terminal'], ['txSwitchConsole', 'console']].forEach(([id, k]) => {
-                const b = document.getElementById(id);
-                if (!b) return;
-                b.classList.toggle('active', txPane === k);
-                b.setAttribute('aria-selected', txPane === k ? 'true' : 'false');
-            });
-            if (txPane === 'terminal') txOnShown();
-        }
-
-        function onTerminalShown() { txShowPane(txPane); }
+        // The Terminal tab is the real terminal and the Coding Agents only (the ADB console and the log are in the Console tab).
+        function onTerminalShown() { txOnShown(); }
 
         // ---------------------------------------------------------------- shells
         function txCurShell() { return TX_SHELLS[txState.shell] ? txState.shell : txDefaultShell(); }
@@ -29114,7 +29403,6 @@ Type any command below (e.g. pm list packages -d)
 
         function rishSyncUi() {
             const btn = document.getElementById('rishBtn');
-            const run = document.getElementById('termRunBtn');
             const line = document.getElementById('termPromptLine');
             const input = document.getElementById('termCmd');
             const box = document.getElementById('termOutput');
@@ -29128,11 +29416,7 @@ Type any command below (e.g. pm list packages -d)
                 line.style.display = rishActive ? '' : 'none';
                 line.innerText = rishShortPrompt();
             }
-            if (run) {
-                const stopping = rishActive && rishRunning;
-                run.classList.toggle('stop', stopping);
-                run.innerText = stopping ? 'STOP' : 'RUN';
-            }
+            termSyncRunBtn();
             if (input) input.placeholder = rishActive ? 'Rish shell command…' : 'Enter shell command...';
             if (rishActive) {
                 const title = document.getElementById('termActiveModeTitle');
@@ -29142,21 +29426,21 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        // The normal terminal and the Rish shell share one output box, so ask the box itself rather than remembering.
-        function rishLineStart(term) {
-            const n = term.lastChild;
+        // A note goes on a line of its own in the card it belongs to, so ask the card's text rather than remembering.
+        function rishLineStart(out) {
+            const n = out.lastChild;
             const t = n ? (n.textContent || '') : '';
             rishEndsNl = !t || t.charAt(t.length - 1) === '\n';
             return rishEndsNl;
         }
 
         function rishNote(text) {
-            const term = document.getElementById('termOutput');
-            if (!term) return;
-            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
+            const card = cnSink();
+            const out = card.out;
+            if (!rishLineStart(out)) cnAppend(card, '\n');
             rishEndsNl = true;
-            term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(text) + '</span>\n');
-            term.scrollTop = term.scrollHeight;
+            out.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(text) + '</span>\n');
+            card.chars += text.length + 1;
         }
 
         function toggleRishMode() {
@@ -29211,14 +29495,10 @@ Type any command below (e.g. pm list packages -d)
             rishRunning = false;
             rishUid = typeof res.uid === 'number' ? res.uid : -1;
             rishPromptText = res.prompt || '$';
-            const term = document.getElementById('termOutput');
-            clearFind(term);
-            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
-            rishEndsNl = true;
-            term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(
-                (res.reused ? 'Back in the open Rish shell' : 'Rish shell ready') + ' — running as ' + rishWho() + ' through Shizuku.\n' +
-                'cd and exports persist between commands. Type exit (or tap Exit Rish) to leave.') + '</span>\n');
-            term.scrollTop = term.scrollHeight;
+            clearFind(cnList());
+            cnCur = null;                                  // the welcome is a card of its own
+            rishNote((res.reused ? 'Back in the open Rish shell' : 'Rish shell ready') + ' — running as ' + rishWho() + ' through Shizuku.\n' +
+                'cd and exports persist between commands. Type exit (or tap Exit Rish) to leave.');
             rishSyncUi();
             showToast('Rish shell ready • working mode: Shizuku');
             const input = document.getElementById('termCmd');
@@ -29228,6 +29508,7 @@ Type any command below (e.g. pm list packages -d)
         function leaveRish(note) {
             if (window.AndroidBridge && window.AndroidBridge.rishClose) { try { window.AndroidBridge.rishClose(); } catch (e) {} }
             const wasActive = rishActive;
+            if (cnRishRun) { cnState(cnRishRun, 'stop', txT('Stopped')); cnFinish(cnRishRun); }          // the command it was running is over with the shell
             rishActive = false;
             rishRunning = false;
             rishCurrentRun = null;
@@ -29258,86 +29539,46 @@ Type any command below (e.g. pm list packages -d)
             if (typeof override !== 'string') input.value = '';
             acUpdate('term');
             termRemember(cmd);
-            const term = document.getElementById('termOutput');
-            clearFind(term);
-            if (/^(clear|cls|reset)$/.test(cmd)) { term.textContent = ''; rishEndsNl = true; rishTermChars = 0; return; }
-            rishStick = true;
+            clearFind(cnList());
+            if (/^(clear|cls|reset)$/.test(cmd)) { cnClearAll(); rishEndsNl = true; return; }
             if (/^exit(\s+-?\d+)?$/.test(cmd)) { leaveRish('Left the Rish shell. The working mode is still Shizuku.'); return; }
-            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
             rishEndsNl = true;
-            term.insertAdjacentHTML('beforeend', '<span class="rish-prompt">' + escapeHtml(rishShortPrompt()) + '</span> ' + escapeHtml(cmd).replace(/\n/g, '\n<span class="rish-note">&gt;</span> ') + '\n');
-            term.scrollTop = term.scrollHeight;
+            const card = cnCardNew('rish', rishShortPrompt() + ' ' + cmd.replace(/\n/g, '\n> '), cmd);
+            cnRevealTop();
             const runId = 'r' + (++rishRunSeq);
             let st = 'no_shell';
             try {
                 if (window.AndroidBridge) st = String(window.AndroidBridge.rishRun(cmd, runId) || '');
             } catch (e) { st = 'error'; }
-            if (st === 'ok') { rishRunning = true; rishCurrentRun = runId; rishSyncUi(); return; }
+            if (st === 'ok') { rishRunning = true; rishCurrentRun = runId; cnRishRun = card; rishSyncUi(); return; }
             if (st === 'busy') {
                 // the shell is already running something (it started before the page was reloaded): show STOP, keep what was typed
                 rishRunning = true;
                 rishCurrentRun = null;
                 if (typeof override !== 'string') input.value = cmd;
+                cnRishRun = card;
                 rishNote('[a command is still running in the shell: tap STOP to end it, then run this again]');
                 rishSyncUi();
                 return;
             }
+            cnState(card, 'fail', txT('Error')); cnFinish(card);
             leaveRish('The Rish shell is no longer running.');
         }
 
         // Output streams in from the app while a command runs (and from background jobs between commands).
-        // Appending a text node is cheap; the scroll is done once per frame, and the oldest output is trimmed so
-        // a very chatty command cannot make the page heavy.
-        function rishTrim(term) {
-            let excess = rishTermChars - RISH_TERM_KEEP;
-            if (excess <= 0) return;
-            let n = term.firstChild;
-            if (n && n.nodeType === 1 && n.classList.contains('rish-trim')) n = n.nextSibling;   // keep the marker
-            let removed = 0;
-            while (n && excess > 0) {
-                const len = (n.textContent || '').length;
-                if (n.nodeType === 3 && len > excess) {          // one big text node (the box was normalized): cut just its front
-                    n.data = n.data.slice(excess);
-                    removed += excess;
-                    excess = 0;
-                    break;
-                }
-                const next = n.nextSibling;
-                if (!next) break;                                 // never drop the newest node whole
-                term.removeChild(n);
-                excess -= len;
-                removed += len;
-                n = next;
-            }
-            rishTermChars -= removed;
-            const first = term.firstChild;
-            if (removed && !(first && first.nodeType === 1 && first.classList.contains('rish-trim'))) {
-                const m = document.createElement('span');
-                m.className = 'rish-note rish-trim';
-                m.textContent = '[older output trimmed]\n';
-                term.insertBefore(m, first);
-            }
-        }
-
+        // Appending a text node is cheap; the scroll is done once per frame, and the oldest output of a card is
+        // trimmed (cnTrim) so a very chatty command cannot make the page heavy.
         function onRishOutput(runId, text) {
-            const term = document.getElementById('termOutput');
-            if (!term || !text || !rishActive) return;       // output of a shell that was left in the meantime is dropped
-            term.appendChild(document.createTextNode(text));
-            rishTermChars += text.length;
+            if (!text || !rishActive) return;                // output of a shell that was left in the meantime is dropped
+            if (rishRunning && rishCurrentRun !== null && runId !== rishCurrentRun) return;          // while a command runs, the late output of an earlier one is not its output (between commands anything is accepted)
+            const card = cnRishRun && cnRishRun.el.isConnected ? cnRishRun : cnSink();          // between commands it goes to the last card or a note
+            cnAppend(card, text);
             rishEndsNl = text.charAt(text.length - 1) === '\n';
-            if (rishTermChars > RISH_TERM_MAX) rishTrim(term);
-            if (rishStick && !rishScrollQueued) {
+            if (card.stick && !rishScrollQueued) {
                 rishScrollQueued = true;
-                requestAnimationFrame(() => { rishScrollQueued = false; term.scrollTop = term.scrollHeight; });
+                requestAnimationFrame(() => { rishScrollQueued = false; card.out.scrollTop = card.out.scrollHeight; });
             }
         }
-
-        (function initRishScroll() {
-            const term = document.getElementById('termOutput');
-            if (term) term.addEventListener('scroll', () => {
-                rishStick = term.scrollHeight - term.scrollTop - term.clientHeight < 80;
-            }, { passive: true });
-        })();
 
         function onRishDone(runId, info) {
             if (!rishActive) return;          // the shell was closed while the command was running
@@ -29346,6 +29587,8 @@ Type any command below (e.g. pm list packages -d)
             info = info || {};
             rishRunning = false;
             rishCurrentRun = null;
+            const card = cnRishRun && cnRishRun.el.isConnected ? cnRishRun : null;
+            if (card) cnCur = card;
             if (info.prompt) rishPromptText = info.prompt;
             let note = '';
             if (info.error) note = info.error;
@@ -29354,11 +29597,15 @@ Type any command below (e.g. pm list packages -d)
             else if (info.timedOut) note = 'stopped after 10 minutes without finishing';
             else if (info.stopped) note = 'stopped';
             else if (!info.exited && typeof info.exit === 'number' && info.exit !== 0) note = 'exit ' + info.exit;
-            if (note) {
-                rishNote('[' + note + ']');
-            } else if (!rishLineStart(document.getElementById('termOutput'))) {
-                document.getElementById('termOutput').appendChild(document.createTextNode('\n'));
-                rishEndsNl = true;
+            if (note) rishNote('[' + note + ']');
+            if (card) {
+                // the outcome at the right of the card: the exit code only where the shell gave one
+                const code = typeof info.exit === 'number' && info.exit >= 0 ? info.exit : null;
+                if (info.error) cnState(card, 'fail', txT('Error'));
+                else if (info.restarted || info.timedOut || info.stopped) cnState(card, 'stop', txT('Stopped'));
+                else if (code !== null) cnState(card, code === 0 ? 'ok' : 'fail', txF('exit {0}', code));
+                else cnState(card, 'ok', txT('Finished'));
+                cnFinish(card);
             }
             if (info.exited) {
                 leaveRish('The Rish shell ended' + (typeof info.exit === 'number' && info.exit >= 0 ? ' (exit ' + info.exit + ')' : '') + '. Tap Rish mode to open a new one.');
@@ -31062,7 +31309,7 @@ Type any command below (e.g. pm list packages -d)
             const val = document.getElementById('sdbEditText').value;
             if (what === 'name') copyText(key);
             else if (what === 'value') copyText(val);
-            else { copyText(sdbShellCommand(ns, key, val)); showToast('Copied: it runs on the phone (paste it in the ADB Console)'); return; }
+            else { copyText(sdbShellCommand(ns, key, val)); showToast('Copied: it runs on the phone (paste it in the Console)'); return; }
         }
 
         function sdbEditReload() {

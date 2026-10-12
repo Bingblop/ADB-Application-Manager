@@ -4,7 +4,7 @@ ok      with everything shown, all three kinds are there and a section heading s
 ok      every overlay has a few words on what it is for: []
 ok      the words fit the overlay: the three-button bar, the dark theme, the icon pack, a config of an app: ["Classic three-button navigation bar","Dark theme colors","Icon set for the status bar and settings"]
 ok      switching one on moves it up to the Enabled section
-ok   2. the ADB Console has a box and a suggestion line above it
+ok   2. the Console has a box and a suggestion line above it
 ok      typing shows the newest command of your history that starts the same way: pm list packages -3 | grep google
 ok      history first; then the common commands (dumpsys bat -> dumpsys battery)
 ok      from the list of common commands when the history has nothing: getprop ro.product.model

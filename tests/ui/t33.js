@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const tabs = (await page.locator('.tab-btn').allInnerTexts()).map(t => t.trim());
   console.log('1. tab order:', JSON.stringify(tabs));
   console.log('   Saved Applications right after Application Manager:', tabs[0].includes('Application') && tabs[1].includes('Saved'));
-  console.log('   About is the last tab, Connected Devices right before it (Task Manager right before that, Logcat Viewer before that):', tabs[tabs.length - 1].includes('About') && tabs[tabs.length - 2].includes('Connected') && tabs[tabs.length - 3].includes('Task') && tabs[tabs.length - 4].includes('Logcat'));
+  console.log('   About is the last tab, Task Manager and Connected Devices in a row before the patcher tabs, no Logcat Viewer tab (it moved into Console), Console right before Terminal:', tabs[tabs.length - 1].includes('About') && tabs.findIndex(t => t.includes('Task')) + 1 === tabs.findIndex(t => t.includes('Connected')) && !tabs.some(t => t.includes('Logcat')) && tabs.findIndex(t => t === 'Console') + 1 === tabs.findIndex(t => t === 'Terminal'));
   console.log('   no "Color" tab button:', !tabs.some(t => t.includes('Color')));
 
   // ---- the header gear opens Settings ----
@@ -29,7 +29,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('.tab-btn[data-tab="apps"]'); await page.waitForTimeout(100);
   console.log('3. back to Applications active:', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Application'); }));
   await page.evaluate(() => switchView('logcat')); await page.waitForTimeout(100);
-  console.log('   switchView(logcat) activates the Logcat Viewer tab:', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Logcat'); }));
+  console.log('   switchView(logcat) activates the Console tab, on Live Logcat (the Logcat Viewer tab moved into it):', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Console') && cnSeg === 'log' && !document.getElementById('cnSegLog').hidden; }));
 
   // ---- main "Check for Updates" also triggers the self-update check ----
   await page.evaluate(() => {

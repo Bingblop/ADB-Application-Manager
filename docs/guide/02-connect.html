@@ -264,7 +264,7 @@
 <p>The app notices Shizuku starting while it is open and refreshes the card by itself. You can take the approval back at any time in the Shizuku app, under its list of authorized apps.</p>
 
 <h4>After a restart</h4>
-<p>Shizuku stops when the phone restarts, unless it was started with root and set to start by itself. After a restart the badge turns orange: "Shizuku ADB (UID 2000) (not ready)" if you chose Shizuku, or "Setup Mode (Read-Only)" on Auto. Open Shizuku, start it again by the same method, and the badge turns green again without any new approval. The ADB Console in the <a href="#tab-terminal">Command-Line Interface</a> tab also has a Shizuku-only <b>Rish</b> mode.</p>
+<p>Shizuku stops when the phone restarts, unless it was started with root and set to start by itself. After a restart the badge turns orange: "Shizuku ADB (UID 2000) (not ready)" if you chose Shizuku, or "Setup Mode (Read-Only)" on Auto. Open Shizuku, start it again by the same method, and the badge turns green again without any new approval. The ADB Shell of the <a href="#tab-console">Console</a> tab also has a Shizuku-only <b>Rish</b> mode.</p>
 
 <h4>If it does not work</h4>
 <ul>
@@ -362,7 +362,7 @@
 <li>Freeze, enable, suspend, force stop, clear data, uninstall, reinstall, or launch an app through the menu.</li>
 <li>Run batch actions, apply profiles, or make or restore backups.</li>
 <li>Switch permissions, app ops or components on and off.</li>
-<li>Read the log in the Logcat Viewer, change Hidden Settings or overlays, or use the working-mode shell in the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
+<li>Read the log in Live Logcat (Console tab), change Hidden Settings or overlays, or use the working-mode shell in the Console or the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
 <li>Trim the caches of every app (<b>Trim Caches</b> in the SD Maid tab, see <a href="#tab-sdm">SD Maid</a>). The button shows a padlock.</li>
 <li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps" (it has its own row, <b>Install unknown apps</b>, in the <a href="#app-permissions">Permissions sheet</a>), and Android asks whether to allow it the first time an install is made this way.</li>
 </ul>
