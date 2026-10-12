@@ -203,6 +203,146 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
     check('   closing it with nothing allowed does not start the app again', (await closed(page)) && !(await ev(page, () => window.__calls.reload)));
   });
 
+  // android.permission.DUMP: privileged-only (needs a working mode) and `known` (only when this build reports it), placed right after Write Secure Settings
+  const names = page => ev(page, () => Array.from(document.querySelectorAll('#permRows .pm-name')).map(n => n.innerText.trim()));
+  const DUMP = 'Dump system services (DUMP)';
+  await scenario({ kv: {}, mode: { priv: false }, perm: { files: false, usage: false, overlay: false, dump: false } }, async page => {
+    await intro(page);
+    check('DUMP. without a working mode the row is not in the sheet at all (there is nothing to open for it)', !(await names(page)).includes(DUMP), JSON.stringify(await names(page)));
+  });
+  await scenario({ kv: {}, mode: { priv: true }, perm: { files: true, usage: true, overlay: true } }, async page => {
+    await intro(page);
+    check('   with a working mode, a build that does not report DUMP shows no row for it (an older app never shows a row it cannot fill in)', !(await names(page)).includes(DUMP) && (await ev(page, () => 'dump' in permStatus)) === false, JSON.stringify(await names(page)));
+  });
+  await scenario({ kv: {}, mode: { priv: true }, perm: { files: true, usage: true, overlay: true, dump: false } }, async page => {
+    await intro(page);
+    const n = await names(page);
+    check('   with a working mode and a build that reports it, the row is there right after Write Secure Settings, rows otherwise in the same order',
+      n.join('|') === ['All files access', 'Allow Restricted Settings', 'Usage access', 'Display over other apps', 'Read/Write External Storage', 'Write Secure Settings', DUMP].join('|'), JSON.stringify(n));
+    const why = await ev(page, () => Array.from(document.querySelectorAll('#permRows .pm-why')).pop().innerText.trim());
+    check('   it says in plain words what it is for, and that it is granted through the working mode', /dumpsys/.test(why) && /battery, power and memory/.test(why) && /working mode/.test(why), why);
+    check('   its Allow button is told apart for a screen reader', (await ev(page, () => document.querySelector('#permRows .pm-row:last-child button').getAttribute('aria-label'))) === 'Allow ' + DUMP);
+    let s = await sheet(page);
+    check('   not allowed yet: no tick, the sheet is not "Done"', rowsOf(s) === '✓ ✓ ✓ ✓ ✓ ✓ —' && s.close === 'Not now' && !s.all, rowsOf(s));
+    await allow(page, 7);
+    s = await sheet(page);
+    check('   Allow asks the app (requestDumpAccess) and, when the phone holds the permission, the row shows the tick and the sheet reads "Done"', (await perms(page)) === 'dump' && rowsOf(s) === '✓ ✓ ✓ ✓ ✓ ✓ ✓' && s.close === 'Done' && s.rows[6].ok && !s.rows[6].btn, rowsOf(s));
+    await page.click('#permCloseBtn');
+    await settle(page);
+    check('   something was allowed in the first-launch sheet: closing it starts the app again', (await closed(page)) && (await ev(page, () => window.__calls.reload)) === 1);
+  });
+  await scenario({ kv: FLAG, mode: { priv: true }, perm: { files: true, usage: true, overlay: true, dump: true } }, async page => {
+    await ev(page, () => switchView('about'));
+    await page.click('#view-about button:has-text("Permissions")');
+    const s = await sheet(page);
+    check('   from About: a granted DUMP shows the tick, "Allowed", and the sheet reads "Done"', s.title === 'Permissions' && s.rows.length === 7 && s.rows[6].name === DUMP && s.rows[6].ok && s.close === 'Done' && !s.all, JSON.stringify(s.rows[6]));
+    check('   the tick says "✓ Allowed"', (await ev(page, () => document.querySelector('#permRows .pm-row:last-child .pm-ok').innerText.trim())) === '✓ Allowed');
+  });
+  // "Allow all" through the working mode: the app is asked once (grantAllPermissions) and DUMP is among what it grants
+  await scenario({ kv: FLAG, mode: { priv: true }, grantAll: true, perm: { files: true, usage: true, overlay: true, dump: false, secure_settings: false } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    let s = await sheet(page);
+    check('   "Allow all" is offered while DUMP and one more are missing', s.all && rowsOf(s) === '✓ ✓ ✓ ✓ ✓ — —', rowsOf(s));
+    await page.click('#permAllBtn');
+    await settle(page);
+    check('   "Allow all" grants it through the mode (one call), the status then holds DUMP, and the sheet closes', (await ev(page, () => window.__calls.grantAll)) === 1 && (await ev(page, () => window.__perm.dump)) === true && (await ev(page, () => permStatus.dump)) === true && (await closed(page)), JSON.stringify(await ev(page, () => window.__perm)));
+  });
+  // when the phone refuses the grant-all, the walk reaches DUMP too (it is asked for with its own command, after Write Secure Settings)
+  await scenario({ kv: FLAG, mode: { priv: true }, perm: { files: true, usage: true, overlay: true, dump: false, secure_settings: false } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    await page.click('#permAllBtn');
+    await waitPerms(page, 2);
+    await settle(page);
+    const s = await sheet(page);
+    check('   if the grant-all leaves it, "Allow all" walks on to it: Write Secure Settings, then DUMP; both end up ticked', (await perms(page)) === 'secure_settings,dump' && rowsOf(s) === '✓ ✓ ✓ ✓ ✓ ✓ ✓' && s.close === 'Done', JSON.stringify([await perms(page), rowsOf(s)]));
+  });
+  // a refused grant (the phone still does not hold it) leaves the row as it was
+  await scenario({ kv: FLAG, mode: { priv: true }, perm: { files: true, usage: true, overlay: true, dump: false } }, async page => {
+    await ev(page, () => { window.AndroidBridge.requestDumpAccess = function () { window.__calls.perms.push('dump'); return 'settings'; }; openPermSheet('manual'); });
+    await allow(page, 7);
+    const s = await sheet(page);
+    check('   when the phone does not hold the permission after the grant, nothing is ticked and the Allow button stays', rowsOf(s) === '✓ ✓ ✓ ✓ ✓ ✓ —' && s.rows[6].btn && !s.rows[6].ok, rowsOf(s));
+  });
+
+  // the sheet reads the phone again when the app comes back (a grant made by hand, or by the copied commands, shows its tick without reopening the app)
+  await scenario({ kv: FLAG, mode: { priv: true }, perm: { files: true, usage: true, overlay: true, dump: false } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   the sheet is open with DUMP not allowed yet', rowsOf(await sheet(page)) === '✓ ✓ ✓ ✓ ✓ ✓ —');
+    await back(page, { dump: true });
+    check('   the app comes back after DUMP was granted from a computer (adb shell pm grant): the open sheet shows the tick by itself', rowsOf(await sheet(page)) === '✓ ✓ ✓ ✓ ✓ ✓ ✓' && (await sheet(page)).close === 'Done');
+    await ev(page, () => closePermSheet());
+    await ev(page, () => { window.__perm.dump = false; });
+    await ev(page, () => openPermSheet('manual'));
+    check('   a sheet opened again reads the phone anew (the grant was taken away: the row asks again)', rowsOf(await sheet(page)) === '✓ ✓ ✓ ✓ ✓ ✓ —');
+  });
+
+  // "Copy grant commands": the adb lines for what is still missing, copied for a computer; hidden when nothing is missing and in the file-access prompt
+  const copyBtn = async page => { await page.waitForFunction(() => document.querySelector('#permModal .modal-sheet').getBoundingClientRect().bottom <= innerHeight + 0.5); return ev(page, () => { const b = document.getElementById('permCopyBtn'), r = b.getBoundingClientRect(), m = document.querySelector('#permModal .modal-sheet').getBoundingClientRect();
+    return { shown: getComputedStyle(b).display !== 'none', text: b.innerText.trim(), h: Math.round(r.height), inside: r.left >= m.left && r.right <= m.right && r.bottom <= innerHeight + 0.5 }; }); };
+  // the exact lists, written out here (not computed) so that they are checked against what MainActivity.getGrantCommands builds
+  const PKGN = 'com.bloatware.bingblop', PM = 'adb shell pm grant ' + PKGN + ' android.permission.', APP = 'adb shell appops set ' + PKGN + ' ';
+  const L = (prefix, tail) => prefix + tail;
+  const ALLOK = { files: true, usage: true, overlay: true, install_unknown: true, storage_legacy: true, secure_settings: true, dump: true, restricted_settings: true };
+  const STATES = [
+    ['files missing: the appops line and both storage grants', { files: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['install_unknown missing: its appops line only', { install_unknown: false }, [L(APP, 'REQUEST_INSTALL_PACKAGES allow')]],
+    ['storage_legacy missing: both storage grants', { storage_legacy: false }, [L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['files and storage_legacy missing: the storage grants once, not twice', { files: false, storage_legacy: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['usage missing: the appops line and the grant', { usage: false }, [L(APP, 'GET_USAGE_STATS allow'), L(PM, 'PACKAGE_USAGE_STATS')]],
+    ['all missing: every line once, in order, and none for Allow Restricted Settings (the app could not see that it was done)', { files: false, usage: false, overlay: false, install_unknown: false, storage_legacy: false, secure_settings: false, dump: false, restricted_settings: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE'), L(APP, 'GET_USAGE_STATS allow'), L(PM, 'PACKAGE_USAGE_STATS'),
+        L(APP, 'SYSTEM_ALERT_WINDOW allow'), L(APP, 'REQUEST_INSTALL_PACKAGES allow'), L(PM, 'WRITE_SECURE_SETTINGS'), L(PM, 'DUMP')]],
+  ];
+  for (const [label, miss, lines] of STATES) {
+    await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: Object.assign({}, ALLOK, miss) }, async page => {
+      await ev(page, () => openPermSheet('manual'));
+      await page.click('#permCopyBtn');
+      const got = await ev(page, () => window.__calls.copied);
+      check('   copied list, ' + label, JSON.stringify(got) === JSON.stringify([lines.join('\n')]), JSON.stringify(got));
+    });
+  }
+  await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: Object.assign({}, ALLOK) }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   none missing: no button', !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: true }, grantCommands: true, perm: Object.assign({}, ALLOK, { restricted_settings: false }) }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   only Allow Restricted Settings missing: its row asks for it, but there is nothing to copy for it, so no button', rowsOf(await sheet(page)).includes('—') && !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: { files: false, usage: true, overlay: true, restricted_settings: true, secure_settings: false, dump: false } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    const b = await copyBtn(page);
+    check('15. Copy grant commands: shown while something is missing - also without a working mode, where the privileged rows are not in the sheet', b.shown && b.text === 'Copy grant commands' && b.h >= 44 && b.inside, JSON.stringify(b));
+    await page.click('#permCopyBtn');
+    const got = await ev(page, () => window.__calls.copied);
+    check('   it copies the exact adb lines, one per line, with this app\'s package filled in, for what is not held (and nothing else)', JSON.stringify(got) === JSON.stringify([L(APP, 'MANAGE_EXTERNAL_STORAGE allow') + '\n' + L(PM, 'READ_EXTERNAL_STORAGE') + '\n' + L(PM, 'WRITE_EXTERNAL_STORAGE') + '\n' + L(PM, 'WRITE_SECURE_SETTINGS') + '\n' + L(PM, 'DUMP')]), JSON.stringify(got));
+    check('   and the confirmation says where to run them', await wasToast(page, /^Copied\. Run these on a computer with USB debugging$/), JSON.stringify(await toasts(page)));
+    await ev(page, () => { Object.assign(window.__perm, { files: true, secure_settings: true, dump: true }); window.onAppResume(); });
+    check('   when the app comes back and everything is held the button is gone', !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: true }, grantCommands: true, perm: { files: true, usage: true, overlay: true } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   nothing missing: no button', !(await copyBtn(page)).shown);
+    await ev(page, () => closePermSheet());
+    await ev(page, () => { window.__perm.files = false; onFileAccessNeeded('To save a file there'); });
+    check('   in the file-access prompt (one row) there is no button either', (await sheet(page)).title === 'File access needed' && !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: true }, perm: { files: false, usage: true, overlay: true } }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   a build that cannot list the commands (the bridge has no getGrantCommands answer) shows no button', !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: { files: false, usage: false, overlay: false, dump: false } }, async page => {
+    for (const [w, h] of [[320, 640], [360, 800]]) {
+      await page.setViewportSize({ width: w, height: h });
+      await ev(page, () => openPermSheet('manual'));
+      const b = await copyBtn(page), sh = await ev(page, () => { const m = document.querySelector('#permModal .modal-sheet'); return m.scrollWidth <= m.clientWidth + 1; });
+      check('   [' + w + 'x' + h + '] the button is inside the sheet, 44 px tall, no sideways scroll', b.shown && b.inside && b.h >= 44 && sh, JSON.stringify(b));
+      await ev(page, () => closePermSheet());
+    }
+  });
+
   // ---------------------------------------------------------------------------------------------------------------------------------------------
   // 3) every way of closing the first-launch sheet remembers it
   for (const [how, close] of [['"Not now"', p => p.click('#permCloseBtn')], ['the ✕ at the top', p => p.click('#permModal .sheet-header > div:last-child')],
