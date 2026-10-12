@@ -117,7 +117,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.12.11 is the latest build** (a Private DNS card in Settings, a result line in the ADB Console, the install question on every install path and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.12.11 is the latest build** (a Private DNS card in Settings, a result line in the ADB Console, the app's own question before an install from the Installer, the Updater (and Update All), a restore or the Morphe Patcher (not before updating the app itself), and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
