@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "インストール中…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "TermuxにOllamaをインストールして起動し、小型のコーディングモデル（qwen2.5-coder 1.5B、約1 GB）をダウンロードします。数分かかります。",
 "Installs from": "インストール元",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "ファイル管理からのインストールには、ADB、ワイヤレスデバッグ、Shizukuのいずれかが必要です",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "バックアップしたAPKをインストール済みのAPKに上書きインストールし、その権限とAppOpsを再適用します。",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "パッチ適用後のアプリを、ビルド完了後すぐに動作モード（ADB、Shizuku、Root）でインストールします。",
 "Interface": "インターフェース",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Android版がないため、Termux内のDebianコンテナにインストールします（数分、数百MB）。インストール済みのステップはすぐにスキップされます。",
 "It has no value right now.": "現在は値がありません。",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "現在接続中で、そのまま接続されます。次回接続したときに再び保存されます。",
-"It is installed silently through the working mode.": "動作モードでサイレントにインストールされます。",
+"It is installed through the working mode after you answer the app's question.": "アプリの確認に答えると、動作モードでインストールされます。",
 "It is not set any more": "もう設定されていません",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "端末のユーザーから削除されます。システムアプリは「再インストール」で元に戻せます。",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "まずそのままインストールを試し、Androidに拒否された場合は、このアプリのキーで署名したコピーをインストールします。",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "名前に含まれる語：<1>写真</1>（すべて一致が必要。<2/> と <3/> はワイルドカード。<4>-語</4> でその名前を除外。\"2語\" は引用符で囲みます）。<br> <5>ext:jpg,png</5> または <6>.pdf</6> · <7>type:image</7>（image、video、audio、text、doc、archive、apk、font、folder、file）· <8>size:>10mb</8>、<9>size:1k..5m</9> · <10>date:today</10>、<11>date:7d</11>、<12>date:2025-03-01..2025-03-31</12>、<13>date:<2024-01-01</13><br> <14>content:語</14> はテキストファイルの中を検索します（最大 4 MB）。<15>archive:名前</15> は zip、apk、jar などのアーカイブ内のエントリ名を検索します。",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "メッセージを入力して<1>送信</1>をタップすると、メールアプリが準備済みのメッセージとともに開きます。宛先は開発者に転送される連絡用エイリアス（<2/>）です。件名は <3>ADB App Manager</3> です。開発者自身のアドレスはこのアプリにはなく、メッセージはこのアプリではなくメールアプリから送信されます。",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。",
+
+"Waiting for OK": "OKを待っています",
+"Updates cancelled": "更新をキャンセルしました",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "読み取り専用モード：何かをインストールする前にシステムのインストーラーが確認するため、ここではADB、Shizuku、Rootは表示されません。",
 "Finished. No error text in the output.": "完了しました。出力にエラーのテキストはありません。",
 "Looks like a failure: the command timed out.": "失敗のようです: コマンドがタイムアウトしました。",
 "Looks like a failure: permission denied.": "失敗のようです: 権限が拒否されました。",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "デバイスとの接続が失われました。動作モードで再接続してから、もう一度お試しください。",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "設定サービスから応答がありませんでした。しばらくしてからもう一度試すか、スマートフォンを再起動してください。",
 "This Android version did not understand the command.": "このAndroidのバージョンはコマンドを理解できませんでした。",
-"Check again": "もう一度確認"
+"Check again": "もう一度確認",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "ファイルマネージャーからのインストールには、ADB、ワイヤレスデバッグ、Shizuku、Rootのいずれかが必要です。動作モードでどれかを設定してから、もう一度お試しください。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],

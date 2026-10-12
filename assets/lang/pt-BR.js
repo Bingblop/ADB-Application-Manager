@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Instalando…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Instala o Ollama no Termux, inicia-o e baixa um modelo de código pequeno (qwen2.5-coder 1.5B, cerca de 1 GB). Isso leva alguns minutos.",
 "Installs from": "Instala de",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Instalar pelo Gerenciador de arquivos exige ADB, Depuração sem fio ou Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Instala o APK do backup sobre o instalado e depois reaplica as permissões e os app ops.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Instala o app modificado pelo modo de operação (ADB, Shizuku ou Root) assim que fica pronto.",
 "Interface": "Interface",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Não tem versão para Android, então vai para um contêiner Debian dentro do Termux (vários minutos, algumas centenas de MB). O que já estiver instalado é pulado rapidamente.",
 "It has no value right now.": "Não tem valor no momento.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "Está conectado agora e continua conectado. É salvo de novo na próxima vez que você o conectar.",
-"It is installed silently through the working mode.": "É instalado em silêncio pelo modo de operação.",
+"It is installed through the working mode after you answer the app's question.": "É instalado pelo modo de operação depois que você responde à pergunta do app.",
 "It is not set any more": "Não está mais definido",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Ele é removido para o usuário do dispositivo. Um app do sistema pode ser restaurado com Reinstalar.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Primeiro ele é instalado como está; se o Android o recusar, é instalada uma cópia assinada com a chave deste app.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Palavras em um nome: <1>photo</1> (todas devem corresponder; <2/> e <3/> são curingas; <4>-word</4> exclui um nome; \"two words\" entre aspas).<br> <5>ext:jpg,png</5> ou <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> busca dentro de arquivos de texto (até 4 MB). <15>archive:name</15> busca nos nomes das entradas de zip, apk, jar e arquivos compactados semelhantes.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Escreva sua mensagem e toque em <1>Enviar</1>: seu app de e-mail abre com ela pronta, endereçada a um alias de contato (<2/>) que a encaminha ao desenvolvedor. O assunto é <3>ADB App Manager</3>. O endereço do próprio desenvolvedor não está neste app, e a mensagem é enviada pelo seu app de e-mail, não por este.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "No momento, você está no <1>Modo somente leitura</1>. As operações em pacotes do sistema (como Congelar, Ativar, Forçar parada, Limpar dados ou Desinstalar) exigem permissões elevadas por <2>ADB TCP (5555)</2>, <3>Depuração sem fio</3>, <4>Shizuku</4> ou <5>Root</5>.",
+
+"Waiting for OK": "Aguardando seu OK",
+"Updates cancelled": "Atualizações canceladas",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "Modo somente leitura: o instalador do sistema pergunta a você antes de instalar qualquer coisa, por isso ADB, Shizuku e Root não são oferecidos aqui.",
 "Finished. No error text in the output.": "Concluído. Nenhum texto de erro na saída.",
 "Looks like a failure: the command timed out.": "Parece uma falha: o comando excedeu o tempo limite.",
 "Looks like a failure: permission denied.": "Parece uma falha: permissão negada.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "A conexão com o dispositivo foi perdida. Reconecte em Modos de operação e tente de novo.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "O serviço de configurações não respondeu. Tente de novo daqui a pouco ou reinicie o telefone.",
 "This Android version did not understand the command.": "Esta versão do Android não entendeu o comando.",
-"Check again": "Verificar de novo"
+"Check again": "Verificar de novo",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Instalar pelo Gerenciador de arquivos exige ADB, Wireless Debugging, Shizuku ou Root. Configure um deles em Modos de operação e tente de novo."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],

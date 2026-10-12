@@ -3915,10 +3915,11 @@
             <div class="color-card" id="installOptionsCard" style="display:none;">
                 <div class="color-card-title">Install options</div>
                 <div class="mode-tip-box" id="installFilesNote" style="display:none;"></div>
+                <div class="mode-tip-box" id="installStandardNote" style="display:none;">Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.</div>
 
                 <label class="switch-row">
                     <div><div class="switch-title">Authorizer</div><div class="switch-sub">Which backend performs the install</div></div>
-                    <select class="op-select" id="optAuthorizer" onchange="installAuthorizerChanged()">
+                    <select class="op-select" id="optAuthorizer" onchange="installAuthorizerChanged(true)">
                         <option value="adb">ADB</option>
                         <option value="shizuku">Shizuku</option>
                         <option value="root">Root</option>
@@ -4043,7 +4044,7 @@
                     <input type="checkbox" class="switch-input" id="optSelectAllSplits" onchange="renderInstallSplits()"><span class="switch-track"></span>
                 </label>
 
-                <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">Install</button>
+                <button class="batch-grid-btn accent" id="installRunBtn" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">Install</button>
                 <div id="installProgress" class="uad-status" style="display:none;margin-top:10px;"></div>
                 <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
@@ -9690,7 +9691,7 @@ Type any command below (e.g. pm list packages -d)
         function backBusyReason() {
             if (typeof installRunning !== 'undefined' && installRunning) return 'an install is running';
             if (typeof selfUpdBusy !== 'undefined' && selfUpdBusy) return 'the app update is downloading';
-            if (typeof updProgress !== 'undefined' && Object.keys(updProgress || {}).some(k => updProgress[k] && ['downloading', 'installing'].includes(updProgress[k].stage))) return 'an update is downloading';
+            if (typeof updProgress !== 'undefined' && Object.keys(updProgress || {}).some(k => updProgress[k] && ['downloading', 'installing', 'confirming'].includes(updProgress[k].stage))) return 'an update is downloading';
             if (typeof fmBatchRunning !== 'undefined' && fmBatchRunning) return 'a file operation is running';
             if (typeof arcBusy !== 'undefined' && arcBusy) return 'an archive job is running';
             if (typeof backupRunning !== 'undefined' && backupRunning) return 'a backup or restore is running';
@@ -10500,6 +10501,8 @@ Type any command below (e.g. pm list packages -d)
                 try { if (typeof pdnsOnModeChange === 'function') pdnsOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
+                try { if (typeof installerOnModeChange === 'function') installerOnModeChange(); } catch (e) { console.error(e); }
+                try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -11697,7 +11700,7 @@ Type any command below (e.g. pm list packages -d)
             updList = (r.updates || []).filter(u => u.source !== 'self');  // self-update has its own card
             updUntracked = (r.untracked || []).sort((a, b) => a.name.localeCompare(b.name));
             updExternal = (r.external || []).sort((a, b) => a.name.localeCompare(b.name));
-            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued'].includes(updProgress[k].stage)) delete updProgress[k]; });
+            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued', 'confirming'].includes(updProgress[k].stage)) delete updProgress[k]; });
             document.getElementById('updCheckBtn').disabled = false;
             const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`,
                 `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
@@ -11722,7 +11725,7 @@ Type any command below (e.g. pm list packages -d)
             renderUpdateExtras();
             const galaxy = updList.filter(u => updIsInstallable(u));
             const allBtn = document.getElementById('updAllBtn');
-            const pending = galaxy.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done'));
+            const pending = galaxy.filter(u => updCanStartAll(u));
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
             if (st && st.checkedAt) {
@@ -11738,8 +11741,8 @@ Type any command below (e.g. pm list packages -d)
                 let btn;
                 if (u.noApk) {
                     btn = `<button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">Release</button>`;
-                } else if (pr && (pr.stage === 'downloading' || pr.stage === 'installing' || pr.stage === 'queued')) {
-                    btn = `<button class="mode-action-btn" disabled>${pr.stage === 'queued' ? 'Queued' : pr.stage === 'installing' ? 'Installing' : 'Downloading ' + (pr.percent >= 0 ? pr.percent + '%' : '...')}</button>`;
+                } else if (pr && (pr.stage === 'downloading' || pr.stage === 'installing' || pr.stage === 'queued' || pr.stage === 'confirming')) {
+                    btn = `<button class="mode-action-btn" disabled>${pr.stage === 'queued' ? 'Queued' : pr.stage === 'confirming' ? 'Waiting for OK' : pr.stage === 'installing' ? 'Installing' : 'Downloading ' + (pr.percent >= 0 ? pr.percent + '%' : '...')}</button>`;
                 } else if (pr && pr.stage === 'done') {
                     btn = '<button class="mode-action-btn" disabled>✓ Updated</button>';
                 } else {
@@ -11768,6 +11771,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Installable here: Galaxy Store and open-source sources with an APK for this phone
+        // An app Update All would still start: not done, queued, downloading, waiting for the question, or installing. The button's count and updateAllUI share it.
+        function updCanStartAll(u) {
+            const pr = updProgress[u.pkg];
+            return !(pr && ['done', 'queued', 'downloading', 'installing', 'confirming'].includes(pr.stage));
+        }
+
         function updIsInstallable(u) {
             return ['galaxy', 'github', 'codeberg', 'fdroid', 'izzy'].includes(u.source) && !u.noApk;
         }
@@ -11979,22 +11988,60 @@ Type any command below (e.g. pm list packages -d)
             updBridge().installUpdate(pkg);
         }
 
-        // One at a time, so downloads don't compete and installs don't overlap
+        // One at a time, so downloads don't compete and installs don't overlap.
+        // The question is asked once for the whole list, by the app in a dialog of its own (a dialog of the page could be pressed by the page);
+        // its answer (onUpdateAllAnswer) starts the queue with the apps it approved.
+        let updAllAsking = false;
         function updateAllUI() {
             if (!guardPrivilege('Install updates')) return;
-            const pending = updList.filter(u => updIsInstallable(u) && !(updProgress[u.pkg] && ['done', 'downloading', 'installing'].includes(updProgress[u.pkg].stage)));
+            if (updAllAsking) return;
+            const pending = updList.filter(u => updIsInstallable(u) && updCanStartAll(u));
             if (!pending.length) return;
+            const B = updBridge();
+            if (B && B.approveUpdateAll) {
+                haptic();
+                updAllAsking = true;
+                const btn = document.getElementById('updAllBtn');
+                if (btn) btn.disabled = true;
+                B.approveUpdateAll(JSON.stringify(pending.map(u => u.pkg)));
+                return;
+            }
             if (!confirm(`Update ${pending.length} apps?`)) return;
             haptic();
-            updQueue = pending.map(u => u.pkg);
+            updStartQueue(pending.map(u => u.pkg));
+        }
+
+        // Tells the app the queue is over (finished, or the working mode went read-only): approvals of "Update All" that were not used are dropped.
+        function updEndAll() {
+            const B = updBridge();
+            if (B && B.endUpdateAll) { try { B.endUpdateAll(); } catch (e) { console.error(e); } }
+        }
+        function updOnModeChange() {
+            if (!isPrivilegedActive) { updQueue = []; updEndAll(); }
+        }
+
+        function updStartQueue(pkgs) {
+            updQueue = pkgs.slice();
             updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
             renderUpdates();
             startNextQueuedUpdate();
         }
 
+        // The app's answer to the one question for all updates: ok with the apps it approved, or nothing started.
+        function onUpdateAllAnswer(json) {
+            let r; try { r = JSON.parse(json || '{}'); } catch (e) { r = {}; }
+            updAllAsking = false;
+            const btn = document.getElementById('updAllBtn');
+            if (btn) btn.disabled = false;
+            if (r.ok && Array.isArray(r.pkgs) && r.pkgs.length) { updStartQueue(r.pkgs); return; }
+            showToast(r.error ? String(r.error) : 'Updates cancelled');
+        }
+        window.onUpdateAllAnswer = onUpdateAllAnswer;
+
         function startNextQueuedUpdate() {
-            const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing');
-            if (busy || !updQueue.length) return;
+            const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing' || p.stage === 'confirming');
+            if (busy) return;
+            if (!updQueue.length) { updEndAll(); return; }          // the queue is over: a yes that was not used is dropped
             const next = updQueue.shift();
             updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
@@ -16111,14 +16158,51 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // The authorizer follows the working mode until the person picks one: the active mode's backend when it is privileged, the system installer
+        // (No privilege) when it is not. In standard mode (Read-Only) ADB, Shizuku and Root are not offered at all, whatever was picked before: the
+        // app would not honour them (the system installer asks instead), so the page does not pretend. A pick made before the mode went read-only
+        // comes back with the mode.
+        let installerAuthPick = '';               // what the person last picked by hand ('' = nothing yet)
+        function installerSyncAuthorizer() {
+            const sel = document.getElementById('optAuthorizer');
+            if (!sel) return;
+            const standard = !isPrivilegedActive;
+            ['adb', 'shizuku', 'root'].forEach(v => {
+                const o = sel.querySelector('option[value="' + v + '"]');
+                if (o) { o.disabled = standard; o.hidden = standard; }
+            });
+            const note = document.getElementById('installStandardNote');
+            if (note) note.style.display = standard && !installFromFiles ? '' : 'none';
+            const runBtn0 = document.getElementById('installRunBtn');
+            if (runBtn0 && !installFromFiles) runBtn0.disabled = false;
+            if (installFromFiles) {
+                // A package from the file manager has its own rule (applyFilesInstallMode) and needs a privileged working mode: when the mode goes
+                // read-only the stale backend is cleared, a sentence says what is needed and Install is off until a working mode is back.
+                const fnote = document.getElementById('installFilesNote'), btn = document.getElementById('installRunBtn');
+                if (btn) btn.disabled = standard;
+                if (standard) {
+                    sel.value = 'none';
+                    if (fnote) { fnote.style.display = ''; fnote.innerText = 'Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.'; }
+                } else {
+                    applyFilesInstallMode();
+                }
+                return;
+            }
+            const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
+            if (standard) sel.value = 'none';
+            else if (installerAuthPicked && installerAuthPick) sel.value = installerAuthPick;
+            else sel.value = map[currentWorkingMode] || 'adb';
+        }
+
+        // The working mode was read again: re-default the authorizer (when it was not picked by hand) and hide what read-only cannot do.
+        function installerOnModeChange() {
+            installerSyncAuthorizer();
+            installAuthorizerChanged();
+        }
+
         function onInstallerShown() {
             closeInstallCombo();
-            // First time in (before a package is loaded), default the authorizer to the active mode.
-            if (!installerAuthPicked && !installData) {
-                const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
-                const sel = document.getElementById('optAuthorizer');
-                if (sel) { sel.value = map[currentWorkingMode] || (isPrivilegedActive ? 'adb' : 'none'); }
-            }
+            installerSyncAuthorizer();
             installAuthorizerChanged();
             // Search storage for package files automatically the first time this tab opens.
             if (!apkScanDone && !apkScanning) scanApkFiles(true);
@@ -16623,15 +16707,11 @@ Type any command below (e.g. pm list packages -d)
         let installFilesGatesOff = false;      // this mode switched the two signature gates off (so leaving it switches them back on)
         let installRunning = false;            // an install is in flight (Back asks before leaving)
 
-        // The backend a file-manager install runs on: the active working mode when it is privileged, else any other
-        // privileged backend that is ready. null when there is none.
+        // The backend a file-manager install runs on: the backend of the active working mode when it is privileged. null in read-only
+        // mode: the app does not use a backend that happens to be connected while the working mode is Read-Only, so there is none to offer.
         function privilegedInstallBackend() {
             const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
             if (isPrivilegedActive && map[currentWorkingMode]) return map[currentWorkingMode];
-            const d = lastModesData || {};
-            if (d.shizuku && d.shizuku.running && d.shizuku.authorized) return 'shizuku';
-            if ((d.adbWireless && d.adbWireless.connected) || (d.adbTcp && d.adbTcp.connected)) return 'adb';
-            if (d.rootAvailable) return 'root';
             return null;
         }
 
@@ -16661,6 +16741,8 @@ Type any command below (e.g. pm list packages -d)
             const none = sel && sel.querySelector('option[value="none"]');
             const note = document.getElementById('installFilesNote');
             const gates = ['optBlockMismatch', 'optBlockUnknown'].map(id => document.getElementById(id));
+            const runBtn = document.getElementById('installRunBtn');
+            if (runBtn) runBtn.disabled = installFromFiles && !isPrivilegedActive;       // a package from the file manager needs a privileged working mode
             if (installFromFiles) {
                 const auth = privilegedInstallBackend();
                 if (sel && auth) sel.value = auth;
@@ -17068,7 +17150,8 @@ Type any command below (e.g. pm list packages -d)
             updateInstallPreview();
         }
 
-        function installAuthorizerChanged() {
+        // fromUser: the person changed the drop-down (the page itself re-sets it when the working mode changes and does not count as a pick)
+        function installAuthorizerChanged(fromUser) {
             const none = document.getElementById('optAuthorizer').value === 'none';
             document.querySelectorAll('#installOptionsCard [data-priv="1"]').forEach(el => {
                 el.disabled = none;
@@ -17082,7 +17165,7 @@ Type any command below (e.g. pm list packages -d)
                 if (btn) btn.disabled = none;
             });
             if (none) closeInstallCombo();
-            installerAuthPicked = true;
+            if (fromUser === true) { installerAuthPicked = true; installerAuthPick = document.getElementById('optAuthorizer').value; }
             updateInstallPreview();
         }
 
@@ -17290,7 +17373,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.installSelected) { showToast('Installer needs the app build'); return; }
             const name = installData.label || installData.pkg;
-            if (installFromFiles && built.opts.authorizer === 'none') { showToast('Installs from File Manager need ADB, Wireless Debugging or Shizuku'); return; }
+            if (installFromFiles && (built.opts.authorizer === 'none' || !isPrivilegedActive)) { showToast('Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.'); return; }
             // Known before trying: an installed copy signed with another key can't be updated, only replaced.
             if (installFromFiles && uninstallFirst !== true && installData.installed && installData.signed && installData.signerMatchesInstalled === false) {
                 if (!confirm(installUninstallAsk(name, installData.pkg))) return;
@@ -32818,7 +32901,7 @@ Type any command below (e.g. pm list packages -d)
             if (!a || !d) return;
             d.disabled = !a.checked;                                  // there is nothing to delete after an install that does not happen
             const n = document.getElementById('mpBarNote');
-            if (n) n.textContent = a.checked ? (isPrivilegedActive ? 'It is installed silently through the working mode.' : 'No working mode is active: the system installer will ask you.') : 'The patched APK is only saved. Install it from Patched APKs.';
+            if (n) n.textContent = a.checked ? (isPrivilegedActive ? 'It is installed through the working mode after you answer the app\'s question.' : 'No working mode is active: the system installer will ask you.') : 'The patched APK is only saved. Install it from Patched APKs.';
         }
         function mpShowPage(on) {
             mp.page = on;

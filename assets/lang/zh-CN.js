@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "正在安装…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "在 Termux 中安装并启动 Ollama，然后下载一个小型编程模型（qwen2.5-coder 1.5B，约 1 GB）。这需要几分钟。",
 "Installs from": "安装来源",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "通过文件管理安装需要 ADB、无线调试或 Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "用备份的 APK 覆盖安装当前应用，然后重新应用其权限和 App Ops。",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "打过补丁的应用一构建完成就通过工作模式（ADB、Shizuku 或 Root）安装。",
 "Interface": "界面",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "它没有 Android 版本，因此会安装到 Termux 内的 Debian 容器中（需要几分钟，占用几百 MB）。已安装的步骤会被快速跳过。",
 "It has no value right now.": "它目前没有值。",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "它现在已连接，并保持连接。下次连接时会再次保存。",
-"It is installed silently through the working mode.": "通过工作模式静默安装。",
+"It is installed through the working mode after you answer the app's question.": "你回答应用的提问后，会通过工作模式安装。",
 "It is not set any more": "已不再设置该项",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "它会为设备用户移除。系统应用可通过“重新安装”恢复。",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "将先按原样尝试安装；如果 Android 拒绝，则会安装一个用本应用密钥签名的副本。",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "名称中的词：<1>照片</1>（须全部匹配；<2/> 和 <3/> 为通配符；<4>-词</4> 排除某个名称；用引号表示 \"两个词\"）。<br> <5>ext:jpg,png</5> 或 <6>.pdf</6> · <7>type:image</7>（image、video、audio、text、doc、archive、apk、font、folder、file）· <8>size:>10mb</8>、<9>size:1k..5m</9> · <10>date:today</10>、<11>date:7d</11>、<12>date:2025-03-01..2025-03-31</12>、<13>date:<2024-01-01</13><br> <14>content:词</14> 在文本文件内搜索（最大 4 MB）。<15>archive:名称</15> 搜索 zip、apk、jar 等压缩包内条目的名称。",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "写下你的消息并点按<1>发送</1>：你的邮件应用会打开并带上写好的消息，收件人是转发给开发者的联系别名（<2/>）。主题为 <3>ADB App Manager</3>。开发者本人的地址不在本应用中，消息由你的邮件应用发送，而不是由本应用发送。",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "你当前处于<1>只读模式</1>。系统软件包操作（如冻结、启用、强行停止、清除数据或卸载）需要通过 <2>ADB TCP (5555)</2>、<3>无线调试</3>、<4>Shizuku</4> 或 <5>Root</5> 获得更高权限。",
+
+"Waiting for OK": "等待你确认",
+"Updates cancelled": "已取消更新",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "只读模式：安装任何内容之前，系统安装程序都会先询问你，因此这里不提供 ADB、Shizuku 和 Root。",
 "Finished. No error text in the output.": "已完成。输出中没有错误文本。",
 "Looks like a failure: the command timed out.": "看起来失败了：命令已超时。",
 "Looks like a failure: permission denied.": "看起来失败了：权限被拒绝。",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "与设备的连接已断开。请在工作模式中重新连接，然后重试。",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
 "This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
-"Check again": "重新检查"
+"Check again": "重新检查",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],

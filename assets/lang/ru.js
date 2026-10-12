@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Установка…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Устанавливает Ollama в Termux, запускает его и скачивает небольшую модель для кода (qwen2.5-coder 1.5B, около 1 GB). Это займёт несколько минут.",
 "Installs from": "Устанавливается из",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Для установки из файлового менеджера нужны ADB, отладка по Wi-Fi или Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Устанавливает APK из резервной копии поверх установленного, затем заново применяет его разрешения и App Ops.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Устанавливает пропатченное приложение через режим работы (ADB, Shizuku или Root), как только оно собрано.",
 "Interface": "Интерфейс",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "У него нет сборки для Android, поэтому он устанавливается в контейнер Debian внутри Termux (несколько минут, несколько сотен MB). Уже выполненные шаги быстро пропускаются.",
 "It has no value right now.": "Сейчас у неё нет значения.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "Оно подключено сейчас и остаётся подключённым. Сохранится снова при следующем подключении.",
-"It is installed silently through the working mode.": "Устанавливается тихо через режим работы.",
+"It is installed through the working mode after you answer the app's question.": "Устанавливается через режим работы после вашего ответа на вопрос приложения.",
 "It is not set any more": "Больше не задано",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Оно удаляется для пользователя устройства. Системное приложение можно вернуть кнопкой «Переустановить».",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Сначала он устанавливается как есть; если Android его отклонит, устанавливается копия, подписанная ключом этого приложения.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Слова в имени: <1>фото</1> (должны совпасть все; <2/> и <3/> — подстановочные знаки; <4>-слово</4> исключает имя; \"два слова\" в кавычках).<br> <5>ext:jpg,png</5> или <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:слово</14> ищет внутри текстовых файлов (до 4 МБ). <15>archive:имя</15> ищет по именам записей внутри архивов zip, apk, jar и подобных.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Напишите сообщение и нажмите <1>Отправить</1>: откроется ваше почтовое приложение с готовым письмом на контактный псевдоним (<2/>), который пересылает его разработчику. Тема — <3>ADB App Manager</3>. Собственного адреса разработчика в этом приложении нет, а письмо отправляется вашим почтовым приложением, а не этим.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
+
+"Waiting for OK": "Ждём вашего «ОК»",
+"Updates cancelled": "Обновления отменены",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "Режим «только чтение»: системный установщик спрашивает вас, прежде чем что-либо установить, поэтому ADB, Shizuku и Root здесь не предлагаются.",
 "Finished. No error text in the output.": "Завершено. В выводе нет текста ошибки.",
 "Looks like a failure: the command timed out.": "Похоже на сбой: время выполнения команды истекло.",
 "Looks like a failure: permission denied.": "Похоже на сбой: доступ запрещён.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Соединение с устройством потеряно. Подключитесь заново в «Режимах работы» и повторите попытку.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Служба настроек не ответила. Повторите попытку через минуту или перезагрузите телефон.",
 "This Android version did not understand the command.": "Эта версия Android не поняла команду.",
-"Check again": "Проверить снова"
+"Check again": "Проверить снова",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Для установки из Диспетчера файлов нужен ADB, Wireless Debugging, Shizuku или Root. Настройте один из них в разделе «Режимы работы» и повторите попытку."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
