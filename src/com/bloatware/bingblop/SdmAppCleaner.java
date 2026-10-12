@@ -1529,6 +1529,14 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
 
         // ---- the lines of the result (spec 7.3)
 
+        /** Why the automation did not run, in words: the state of the service when the deletion started (the default is the general setup text). */
+        static String notReadyText(String why) {
+            if ("NOT_ENABLED".equals(why)) return "The accessibility service is switched off, so the caches that only it can clear stay. Turn it on in the SD Maid tab (Accessibility service) or in the accessibility settings.";
+            if ("NOT_CONNECTED".equals(why)) return "The accessibility service is switched on but Android is not running it, so the caches that only it can clear stay. Turn it off and on again in the accessibility settings, or restart the phone.";
+            if ("NO_CONSENT".equals(why)) return "The accessibility service has no consent from you yet, so the caches that only it can clear stay. Tap Give consent in the SD Maid tab (Accessibility service).";
+            return "Accessibility service is not set up. Complete the setup and give consent.";
+        }
+
         private void writeNotes(int affectedCount) {
             int skipped = inac == null ? 0 : inac.skippedNoConsent.size();
             String primary;
@@ -1546,7 +1554,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             if (stopped != null) report.notes.add("stopped: " + stopped);
             if (skipped > 0) report.notes.add("skipped: " + skipped);
             if (error != null) report.notes.add("error: " + error);
-            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: Accessibility service is not set up. Complete the setup and give consent.");
+            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: " + notReadyText(ctx.automationNotReady));
             if (cancelled) report.notes.add("cancelled");
         }
     }

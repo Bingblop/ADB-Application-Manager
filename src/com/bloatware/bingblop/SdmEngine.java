@@ -411,6 +411,7 @@ public final class SdmEngine {
         try {
             Sdm.Automation a = env.automation();
             if (a != null && a.ready()) ctx.automation = a;
+            else if (a != null && "delete".equals(task.kind)) ctx.automationNotReady = a.notReadyReason();
         } catch (RuntimeException ignored) {}
         ps.update("Loading", "", 0, -1, 0);
         fireState(tool);

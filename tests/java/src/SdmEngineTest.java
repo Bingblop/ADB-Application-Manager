@@ -32,10 +32,12 @@ public class SdmEngineTest {
         final AtomicInteger running = new AtomicInteger();
         volatile boolean started;
         volatile int groups = 2;
+        volatile Sdm.Ctx scanCtx, deleteCtx;       // what the engine gave the last scan / delete
         FakeTool(Sdm.Tool t) { tool = t; }
         @Override public Sdm.Tool tool() { return tool; }
         @Override public Sdm.Result scan(Sdm.Ctx ctx) throws Exception {
             started = true;
+            scanCtx = ctx;
             running.incrementAndGet();
             try {
                 ctx.progress.update("Searching", "/some/path", 1, 4, 100);
@@ -44,6 +46,7 @@ public class SdmEngineTest {
             return new FakeResult(tool, groups);
         }
         @Override public Sdm.DeleteReport delete(Sdm.Result result, Sdm.Selection sel, Sdm.Ctx ctx) {
+            deleteCtx = ctx;
             FakeResult r = (FakeResult) result;
             Sdm.DeleteReport rep = new Sdm.DeleteReport();
             for (int g = 0; g < r.groups; g++) {
@@ -89,13 +92,25 @@ public class SdmEngineTest {
         return c.call();
     }
 
-    static SdmEngine engine(File dir, final List<String> events) {
+    /** An automation that is, or is not, ready; when not, for this reason. */
+    static final class FakeAuto implements Sdm.Automation {
+        final boolean ready;
+        final String why;
+        FakeAuto(boolean ready, String why) { this.ready = ready; this.why = why; }
+        @Override public boolean ready() { return ready; }
+        @Override public String notReadyReason() { return why; }
+        @Override public java.util.Set<String> clearCaches(List<String> pkgs, Sdm.Progress progress, Sdm.Cancel cancel) { return new java.util.HashSet<String>(); }
+    }
+
+    static SdmEngine engine(File dir, final List<String> events) { return engine(dir, events, null); }
+
+    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation) {
         SdmEngine.Env env = new SdmEngine.Env() {
             @Override public Sdm.Fs fs() { return null; }
             @Override public Sdm.Areas areas() { return null; }
             @Override public Sdm.Packages pkgs() { return null; }
             @Override public Sdm.Shell shell() { return null; }
-            @Override public Sdm.Automation automation() { return null; }
+            @Override public Sdm.Automation automation() { return automation; }
             @Override public File dataDir() { return dir; }
             @Override public long nowSec() { return System.currentTimeMillis() / 1000; }
         };
@@ -106,6 +121,8 @@ public class SdmEngineTest {
         };
         return new SdmEngine(env, ev);
     }
+
+    static boolean e3Has(SdmEngine e) { return e.hasData(Sdm.Tool.APPCLEANER); }
 
     static String st(SdmEngine e, Sdm.Tool t) { return e.state(t).optString("state"); }
 
@@ -244,6 +261,33 @@ public class SdmEngineTest {
         b.shutdown();
         b2.shutdown();
         e.shutdown();
+
+        // ---- the engine tells a deletion why the accessibility automation is not available (and only a deletion: a scan never needs it)
+        String[][] cases = { { "NOT_CONNECTED", "x" }, { "NOT_ENABLED", "x" }, { "NO_CONSENT", "x" } };
+        for (String[] c : cases) {
+            SdmEngine e3 = engine(dir, Collections.synchronizedList(new ArrayList<String>()), new FakeAuto(false, c[0]));
+            e3.setTimeoutMs(60000);
+            FakeTool t3 = new FakeTool(Sdm.Tool.APPCLEANER);
+            t3.release.countDown();
+            e3.register(t3);
+            e3.scan(Sdm.Tool.APPCLEANER);
+            is(c[0] + ": the scan finished", waitFor(() -> e3Has(e3), 3000), "");
+            is(c[0] + ": a scan is not told", t3.scanCtx != null && t3.scanCtx.automation == null && t3.scanCtx.automationNotReady == null, "");
+            e3.delete(Sdm.Tool.APPCLEANER, new Sdm.Selection());
+            is(c[0] + ": the delete ran", waitFor(() -> t3.deleteCtx != null && !e3.busy(Sdm.Tool.APPCLEANER), 3000), "");
+            is(c[0] + ": the deletion has no automation and knows why", t3.deleteCtx.automation == null && c[0].equals(t3.deleteCtx.automationNotReady), t3.deleteCtx.automationNotReady);
+            e3.shutdown();
+        }
+        SdmEngine e4 = engine(dir, Collections.synchronizedList(new ArrayList<String>()), new FakeAuto(true, null));
+        FakeTool t4 = new FakeTool(Sdm.Tool.APPCLEANER);
+        t4.release.countDown();
+        e4.register(t4);
+        e4.scan(Sdm.Tool.APPCLEANER);
+        is("ready: the scan finished", waitFor(() -> e3Has(e4), 3000), "");
+        e4.delete(Sdm.Tool.APPCLEANER, new Sdm.Selection());
+        is("ready: the delete ran", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");
+        is("a ready automation is handed over, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null, "");
+        e4.shutdown();
         System.out.println((fails == 0 ? "PASS" : "FAIL") + " SdmEngineTest: " + n + " checks, " + fails + " failed");
         if (fails > 0) System.exit(1);
     }

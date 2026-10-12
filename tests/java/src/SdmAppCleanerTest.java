@@ -140,6 +140,7 @@ public class SdmAppCleanerTest {
         final JSONObject settings = new JSONObject();
         FakeShell shell;
         FakeAuto auto;
+        String notReady;                // what the engine saw as the reason the automation was not ready (Ctx.automationNotReady)
         Sdm.Cancel cancel = Sdm.NEVER;
         final List<String> progress = new ArrayList<String>();
 
@@ -176,6 +177,7 @@ public class SdmAppCleanerTest {
             Sdm.Progress p = new Sdm.Progress() { @Override public void update(String a, String b, long d, long t, long by) { progress.add(a); } };
             Sdm.Ctx c = new Sdm.Ctx(new SdmFsJava(), areas, pkgs, excl, shell, settings, p, cancel, NOW);
             c.automation = auto;
+            c.automationNotReady = notReady;
             return c;
         }
 
@@ -912,6 +914,20 @@ public class SdmAppCleanerTest {
             eq("0 items deleted, 1 cache needs the service", note(rep, "primary"), "0 expendable items deleted, 1 cache still needs the accessibility service");
             eq("and the error of upstream", note(rep, "error"), "Accessibility service is not set up. Complete the setup and give consent.");
         } finally { p.cleanup(); }
+        // ... and when the engine knows why the service is not ready, the message says which of the three it is
+        String[][] whys = { { "NOT_ENABLED", "switched off" }, { "NOT_CONNECTED", "Android is not running it" }, { "NO_CONSENT", "no consent from you yet" } };
+        for (String[] why : whys) {
+            p = deletePhone();
+            try {
+                p.pkgs.setTotal("com.alpha", 10000L);
+                p.auto.ready = false;
+                p.notReady = why[0];
+                SdmAppCleaner.AppResult r = p.scan();
+                Sdm.DeleteReport rep = p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+                is(why[0] + ": the error says what is wrong", note(rep, "error") != null && note(rep, "error").contains(why[1]), true);
+                is(why[0] + ": and what to do", note(rep, "error").contains("SD Maid tab") || note(rep, "error").contains("accessibility settings"), true);
+            } finally { p.cleanup(); }
+        }
 
         // --- the screen went off after the first app
         p = deletePhone();
