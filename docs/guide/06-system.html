@@ -233,13 +233,16 @@
   </ul>
 </section>
 <section id="tab-extrasettings" data-title="Extra Settings" data-group="The tabs">
-  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other; today the first and only section is Private DNS, with its speed test.</p>
+  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other: Private DNS with its speed test first, and at the end Power &amp; reboot, Doze &amp; power governor and Zram &amp; memory.</p>
   <p><b>Where to find it:</b> the tab named <b>Extra Settings</b> (two lines on the tab bar: Extra and Settings), right after <a href="#tab-settings">Hidden Settings</a> in the default order. It is not the gear icon, and it is not Hidden Settings: Hidden Settings edits Android's own settings tables one by one, Extra Settings has ready-made controls. If the tab is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
   <h4>The top of the tab</h4>
-  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>. Tap a chip and the page scrolls to its section. After a speed test a second chip, <i>Fastest</i>, names the quickest service.</p>
+  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>, <i>Doze  Active</i> or <i>RAM saved  1.7 GB</i>. Tap a chip and the page scrolls to its section. After a speed test a second chip, <i>Fastest</i>, names the quickest service.</p>
   <h4>The sections</h4>
   <ul>
     <li><a href="#extra-dns">Private DNS</a>: choose a Private DNS service for the whole phone and test how fast each one answers on your network.</li>
+    <li><a href="#extra-power">Power &amp; reboot</a>: reboot, soft reboot, recovery, power off, bootloader and a System UI restart, each behind a confirm sheet.</li>
+    <li><a href="#extra-doze">Doze &amp; power governor</a>: see the Doze phase the phone is in, force or step it, and pick a power profile.</li>
+    <li><a href="#extra-zram">Zram &amp; memory</a>: how much RAM the compressed swap saves, and buttons that free caches.</li>
   </ul>
   <p>Every section has a coloured icon, a title, a one-line status at the right and a <b>What does this do?</b> note that opens the details.</p>
 </section>
@@ -284,6 +287,60 @@
   <p><b>A service that did not answer.</b> Its tile says <i>Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.</i> Tapping it does not apply it: the first tap only repeats that warning and marks the tile, and a second tap on the same tile within ten seconds applies it anyway. (For the typed host name, press <b>Apply</b> twice.)</p>
   <p><b>What the section says is what the phone has.</b> The line near the top reads <i>Private DNS is now: Off</i>, <i>Automatic</i> or <i>hostname</i> with the host name, and the pill at the top right and the chip at the top of the tab repeat it in one word. It always comes from reading the settings back from the phone, never from the change alone. The tile or button that matches the phone's state is marked (a tick and a pressed state, not only a colour). While a change is out, the controls that change Private DNS are off (the speed test and the sort switch change nothing and stay on). When the phone refuses a change, or keeps something else, the section says so in words (for example that Android refused the write, or that the phone does not report the new setting) and shows what the phone really holds. A change is made host first, then mode, and stops at the first step the phone refuses. Nothing changes until you tap.</p>
   <div class="hg-note"><b>If the internet stops.</b> A host name that is wrong, or a service that is down, can leave the phone without internet, and some Wi-Fi networks and hotspots block Private DNS altogether. The way back is <b>Automatic</b> or <b>Off</b> here, or <b>Private DNS</b> in Android's network settings (in the Internet or Connections section, under More connection settings on some phones); both bring normal DNS back. This section has not been tried on a phone yet.</div>
+</section>
+
+<section id="extra-power" data-title="Extra Settings: Power and reboot" data-group="The tabs">
+  <p class="hg-lead">Restart the phone, a part of it, or switch it off from inside the app: the power menu plus the modes Android hides.</p>
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the section <b>Power &amp; reboot</b> (after Private DNS). It needs a working mode (ADB, Wireless Debugging, Shizuku or Root): without one every tile is greyed out with <i>Viewing only</i>, a box at the top says why and offers <b>Set Up</b>. Nothing is hidden, nothing runs.</p>
+  <h4>The tiles</h4>
+  <table class="hg-table">
+    <thead><tr><th>Tile</th><th>What happens</th><th>Confirm</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reboot</b></td><td>The phone restarts, like Restart in the power menu (<code>reboot</code>).</td><td>Tap</td></tr>
+      <tr><td><b>Soft reboot</b></td><td>Only Android restarts: the screen goes black for a few seconds and every app closes, no boot screen (<code>setprop ctl.restart zygote</code>). <b>Root mode only</b>; in the other modes the tile is locked and says <i>Needs Root mode</i>.</td><td>Tap</td></tr>
+      <tr><td><b>Recovery</b></td><td>Restarts into recovery mode (<code>reboot recovery</code>). On that screen, Reboot system now brings Android back.</td><td>Press and hold</td></tr>
+      <tr><td><b>Power off</b></td><td>Switches the phone off (<code>reboot -p</code>, then <code>svc power shutdown</code> if the first did nothing). Hold the power button to switch it on again.</td><td>Press and hold</td></tr>
+      <tr><td><b>Bootloader</b></td><td>Restarts into fastboot mode (<code>reboot bootloader</code>). START on that screen brings Android back.</td><td>Press and hold</td></tr>
+      <tr><td><b>Restart SystemUI</b></td><td>Android closes and restarts its System UI (<code>am crash com.android.systemui</code>): the status bar and lock screen vanish for a second; apps stay open.</td><td>Tap</td></tr>
+    </tbody>
+  </table>
+  <h4>The sheet</h4>
+  <p>A tap on a tile opens a sheet from the bottom. It says in plain words what will happen, shows the exact command and the working mode it runs through, and what to expect afterwards. Nothing runs until you confirm there. Reboot, Soft reboot and Restart SystemUI confirm with one tap on the button named after the action. Recovery, Power off and Bootloader need a <b>press-and-hold</b> of about one second: a ring fills while you hold; let go early and nothing happens.</p>
+  <p>A phone cannot answer after a reboot, so the sheet says what to expect instead (<i>the screen goes dark and the phone restarts within a few seconds</i>). If the app is still there after ten seconds, the sheet says that nothing happened and that the mode could not do it, and shows what the command printed. A command the mode refuses is reported at once with the phone's own words. Restart SystemUI is the one action that can be checked: the sheet reads the process id of System UI before and after and says whether it really restarted.</p>
+  <div class="hg-warn"><b>Careful.</b> Every tile closes your open apps and loses unsaved work in them. In recovery, do not choose Wipe unless you mean it: it erases the phone. None of this has been tried on a phone yet.</div>
+</section>
+
+<section id="extra-doze" data-title="Extra Settings: Doze and power governor" data-group="The tabs">
+  <p class="hg-lead">See which Doze phase the phone is in, push it through the phases to test how an app behaves when the phone sleeps, and choose a power profile.</p>
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the section <b>Doze &amp; power governor</b>. Reading and changing needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the section says so and its buttons are off.</p>
+  <h4>The timeline</h4>
+  <p>Doze is Android's deep sleep (a glossary word: the phone stops most background work when it lies still with the screen off). The timeline shows five phases, <b>Active</b>, <b>Inactive</b>, <b>Idle pending</b>, <b>Idle (deep)</b> and <b>Maintenance</b>, with the phone's current phase lit and the exact state Android reports under it (for example <code>SENSING</code> under Idle pending). A row of small chips below shows the state of <b>Light Doze</b>, the lighter version that starts a few minutes after the screen goes off. Both come from <code>dumpsys deviceidle get deep</code> and <code>get light</code>, read when the tab opens and after every action; <b>Check again</b> reads them again.</p>
+  <h4>Actions</h4>
+  <ul>
+    <li><b>Force deep Doze</b>: puts the phone into deep Doze now (<code>dumpsys deviceidle force-idle deep</code>). Most apps lose background work and network until the next maintenance window; the phone still rings. It stays forced until you wake the device or the phone restarts.</li>
+    <li><b>Step to next phase</b>: moves Doze one phase forward (<code>dumpsys deviceidle step deep</code>).</li>
+    <li><b>Wake device</b>: ends a forced Doze and lets Android decide again (<code>dumpsys deviceidle unforce</code>).</li>
+    <li><b>Simulate motion</b>: tells Doze the phone was picked up (<code>dumpsys deviceidle motion</code>); a Doze that Android entered on its own ends, a forced one does not.</li>
+  </ul>
+  <p>Each action opens the confirm sheet with one sentence on what it does and the command; after it runs, the section reads the phase back from the phone and shows that, with the command's own words under it. A phone that refuses (for example <i>Unable to go deep idle; not enabled</i>) is reported as such. The <b>Motion sensor</b> line says what the phone's own Doze report says (whether Doze uses the sensor, whether it is listening now, the sensor's name); a phone that does not print those lines reads as <i>state unknown</i>. Android has no switch for that sensor, so the section does not offer one.</p>
+  <h4>Power profiles</h4>
+  <p>Three cards: <b>Performance</b> (fixed performance mode on, battery saver off), <b>Balanced</b> (battery saver off, adaptive saver on: Android's default) and <b>Ultra saver</b> (battery saver on). A tap opens the sheet with the commands; <b>Apply</b> runs them through the working mode (<code>settings put global low_power 0</code> or <code>1</code> through the same path as Hidden Settings, and <code>cmd power set-fixed-performance-mode-enabled</code> / <code>set-adaptive-power-saver-enabled</code> where the phone knows them). The marked card always comes from reading the phone back, never from the tap: <code>low_power</code> decides Balanced or Ultra saver, and Performance is marked only when the phone reports fixed performance mode on. Most phones do not report that state; the section then says so and keeps Balanced marked. On Android 10 and older the Performance card is locked with <i>Not on this Android version</i>.</p>
+  <div class="hg-note"><b>Not tried on a phone yet.</b> Samsung and other makers may ignore or reset <code>low_power</code>; the section shows what the phone really holds.</div>
+</section>
+
+<section id="extra-zram" data-title="Extra Settings: Zram and memory" data-group="The tabs">
+  <p class="hg-lead">How much RAM the phone's compressed swap (zram) gives back, and buttons that free the memory caches hold.</p>
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the last section, <b>Zram &amp; memory</b>. Reading needs a working mode (ADB, Wireless Debugging, Shizuku or Root).</p>
+  <h4>The numbers</h4>
+  <p>Zram is a piece of RAM that works as compressed swap: when memory runs low Android squeezes the memory of idle apps into it instead of closing them. The badge at the top says the compression, for example <i>3.0x compression</i>; the bar under it shows what the zram disk holds: <b>Compressed in RAM</b>, <b>RAM saved</b> and <b>Free swap</b>. Four boxes give <b>Allocated</b> (the size of the zram disk), <b>Compressed in RAM</b>, <b>Uncompressed data</b> and <b>RAM saved</b> (uncompressed data minus the RAM the compressed copy takes). They come from <code>/sys/block/zram0/mm_stat</code>, <code>/sys/block/zram0/disksize</code> and <code>/proc/meminfo</code>, read every 5 seconds while the tab is on the screen (the timer stops when you leave the tab or the app goes to the background); the round button reads at once. A phone without zram, or one whose shell may not read the counters, shows <i>Not available</i> with what the phone said.</p>
+  <h4>The buttons</h4>
+  <ul>
+    <li><b>Reclaim disk caches</b> (<code>sync; echo 3 &gt; /proc/sys/vm/drop_caches</code>): writes pending data, then frees the page, folder and inode caches. <b>Root mode only.</b></li>
+    <li><b>Drop page caches</b> (<code>sync; echo 1 &gt; /proc/sys/vm/drop_caches</code>): frees only the page cache. <b>Root mode only.</b></li>
+    <li><b>Trim app caches</b>: the same as Settings &gt; <b>Trim Caches in All Applications</b> (<code>pm trim-caches 128G</code>), works in every working mode; the result opens in its own sheet.</li>
+  </ul>
+  <p>Each button opens the confirm sheet; nothing runs before you confirm. After an action the numbers are read again and the change is shown in the sheet and under each box (for example <i>-95 MB</i> under Compressed in RAM). In ADB, Wireless Debugging and Shizuku mode the two root buttons are locked with <i>Needs Root mode</i>; they are never hidden.</p>
+  <div class="hg-note"><b>Freed cache does not stay freed.</b> The kernel keeps those caches because they make the phone faster, and fills them again as apps read files. Not tried on a phone yet.</div>
 </section>
 
 <section id="tab-overlays" data-title="RRO/Monet Customization" data-group="The tabs">
