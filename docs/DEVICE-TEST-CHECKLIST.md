@@ -401,7 +401,7 @@ None of this has been run on a phone yet. Take your time; each item says exactly
 - [ ] **Help Guide.** Open About > **Help Guide**, search for "Private DNS": the section "Extra Settings: Private DNS" starts with where it is and says it is not in Hidden Settings.
 - [ ] **The speed test.** In Extra Settings tap **Test speed**: see the checklist section 21 (the speed test items).
 
-## 25. Wireless Debugging: the port changed
+## 29. Wireless Debugging: the port changed
 
 Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-Fi it uses switched on. None of this has been run on a phone yet.
 
