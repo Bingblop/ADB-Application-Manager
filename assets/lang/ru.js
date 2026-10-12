@@ -4582,7 +4582,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Проверка VirusTotal<1>Проверяет файл по хешу после загрузки</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Слова в имени: <1>фото</1> (должны совпасть все; <2/> и <3/> — подстановочные знаки; <4>-слово</4> исключает имя; \"два слова\" в кавычках).<br> <5>ext:jpg,png</5> или <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:слово</14> ищет внутри текстовых файлов (до 4 МБ). <15>archive:имя</15> ищет по именам записей внутри архивов zip, apk, jar и подобных.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Напишите сообщение и нажмите <1>Отправить</1>: откроется ваше почтовое приложение с готовым письмом на контактный псевдоним (<2/>), который пересылает его разработчику. Тема — <3>ADB App Manager</3>. Собственного адреса разработчика в этом приложении нет, а письмо отправляется вашим почтовым приложением, а не этим.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
+"Copy screen report": "Скопировать отчёт об экране",
+"Screen report copied": "Отчёт об экране скопирован",
+"The automation gave up after several apps in a row failed.": "Автоматизация прекратила работу после того, как подряд завершились ошибкой несколько приложений.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Отчёт об экране содержит названия и расположение элементов на экране настроек, где остановилась последняя попытка, список того, что пробовали, название приложения, а также модель телефона и версию Android. Ничего другого с вашего телефона в нём нет: ни файлов, ни сообщений, ни контактов. Отправьте его разработчику, если автоматическая очистка кэша не работает на вашем телефоне.",
+"The screen turned off or was locked, so the automation stopped.": "Экран выключился или заблокировался, поэтому автоматизация остановлена.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Служба включена, но Android её не запускает, поэтому AppCleaner пока не может нажимать в настройках. Выключите и снова включите её в настройках специальных возможностей или перезагрузите телефон.",
+"There is no screen report yet": "Отчёта об экране пока нет",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5646,6 +5653,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ подходит этому телефону ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} подписана тем же ключом, что и это приложение, поэтому обновление пройдёт поверх"],
 ["✓ {0}: done", "✓ {0}: готово"],
-["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"]
+["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
+["Android refused to open the App info page of {0}.", "Android отказал в открытии страницы «О приложении» для {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Застряли на странице «О приложении» для {0}: пункт «Хранилище» найден, но ничто из испробованного (касание, жест, клавиши) его не открыло."],
+["The Clear cache button was not found on the Storage page of {0}.", "Кнопка «Очистить кэш» не найдена на странице хранилища {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Настройки не вышли на передний план для {0}, и ни одно окно не удалось прочитать."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Настройки не вышли на передний план для {0}. На переднем плане было окно {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Настройки открыты, но не показывают название {0}, поэтому ничего не нажималось."],
+["The Storage entry was not found on the App info page of {0}.", "Пункт «Хранилище» не найден на странице «О приложении» для {0}."],
+["The automation could not finish for {0}.", "Автоматизация не смогла завершить работу для {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Кэш приложения {0} так не очистить: Android блокирует его кнопку «Очистить кэш»."],
+["{0} has no settings page to tap through.", "У приложения {0} нет страницы настроек, по которой можно пройти нажатиями."],
+["{0} is turned off, so it has no App info page to tap through.", "Приложение {0} отключено, поэтому у него нет страницы «О приложении», по которой можно пройти нажатиями."]
 ]
 };

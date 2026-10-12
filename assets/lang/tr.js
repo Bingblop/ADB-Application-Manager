@@ -4582,7 +4582,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal taraması<1>Dosyayı indirildikten sonra hash'iyle denetler</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Addaki sözcükler: <1>photo</1> (hepsi eşleşmeli; <2/> ve <3/> joker karakterdir; <4>-word</4> bir adı hariç tutar; \"iki sözcük\" tırnak içinde).<br> <5>ext:jpg,png</5> veya <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> metin dosyalarının içine bakar (4 MB'a kadar). <15>archive:name</15> zip, apk, jar ve benzeri arşivlerin içindeki girdilerin adlarına bakar.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "İletinizi yazın ve <1>Gönder</1>’e dokunun: e-posta uygulamanız, iletiyi geliştiriciye yönlendiren bir iletişim takma adına (<2/>) hazır olarak açılır. Konu <3>ADB App Manager</3>’dır. Geliştiricinin kendi adresi bu uygulamada yok ve ileti bu uygulama tarafından değil, e-posta uygulamanız tarafından gönderilir.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
+"Copy screen report": "Ekran raporunu kopyala",
+"Screen report copied": "Ekran raporu kopyalandı",
+"The automation gave up after several apps in a row failed.": "Art arda birkaç uygulama başarısız olduğu için otomasyon vazgeçti.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Ekran raporu; son denemenin durduğu Ayarlar ekranındaki denetimlerin adlarını ve konumlarını, nelerin denendiğini, uygulamanın adını ve telefon modeli ile Android sürümünü listeler. Telefonunuzdan başka hiçbir şey içermez: dosya, mesaj veya kişi yok. Önbelleğin kendiliğinden temizlenmesi telefonunuzda çalışmıyorsa geliştiriciye gönderin.",
+"The screen turned off or was locked, so the automation stopped.": "Ekran kapandığı veya kilitlendiği için otomasyon durdu.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Hizmet açık ama Android onu çalıştırmıyor; bu yüzden AppCleaner henüz ayarlarda dokunamıyor. Erişilebilirlik ayarlarında kapatıp yeniden açın ya da telefonu yeniden başlatın.",
+"There is no screen report yet": "Henüz ekran raporu yok",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5646,6 +5653,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ bu telefona uyuyor ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
-["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"]
+["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
+["Android refused to open the App info page of {0}.", "Android, {0} uygulamasının Uygulama bilgileri sayfasını açmayı reddetti."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} uygulamasının Uygulama bilgileri sayfasında takıldı: Depolama girişi bulundu ama denenen hiçbir yol (dokunma, hareket, tuşlar) onu açmadı."],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} uygulamasının Depolama sayfasında Önbelleği temizle düğmesi bulunamadı."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} için Ayarlar uygulaması öne gelmedi ve hiçbir pencere okunamadı."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} için Ayarlar uygulaması öne gelmedi. Öndeki pencere {1} idi."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Ayarlar uygulaması açık ama {0} adını göstermiyor; bu yüzden hiçbir şeye dokunulmadı."],
+["The Storage entry was not found on the App info page of {0}.", "{0} uygulamasının Uygulama bilgileri sayfasında Depolama girişi bulunamadı."],
+["The automation could not finish for {0}.", "Otomasyon {0} için tamamlanamadı."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} bu yolla temizlenemez: Android Önbelleği temizle düğmesini kilitliyor."],
+["{0} has no settings page to tap through.", "{0} uygulamasında dokunarak gezilebilecek bir ayarlar sayfası yok."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} uygulaması kapalı olduğundan dokunarak gezilebilecek bir Uygulama bilgileri sayfası yok."]
 ]
 };

@@ -4582,7 +4582,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Pemindaian VirusTotal<1>Memeriksa file lewat hash-nya setelah diunduh</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Kata dalam nama: <1>photo</1> (semua harus cocok; <2/> dan <3/> adalah wildcard; <4>-word</4> mengecualikan nama; \"two words\" dalam tanda kutip).<br> <5>ext:jpg,png</5> atau <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> mencari di dalam file teks (hingga 4 MB). <15>archive:name</15> memeriksa nama entri di dalam arsip zip, apk, jar, dan sejenisnya.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Tulis pesan Anda dan ketuk <1>Kirim</1>: aplikasi email Anda terbuka dengan pesan siap, ditujukan ke alias kontak (<2/>) yang meneruskannya ke pengembang. Subjeknya <3>ADB App Manager</3>. Alamat pengembang sendiri tidak ada di aplikasi ini, dan pesan dikirim dari aplikasi email Anda, bukan dari aplikasi ini.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>.",
+"Copy screen report": "Salin laporan layar",
+"Screen report copied": "Laporan layar disalin",
+"The automation gave up after several apps in a row failed.": "Otomatisasi berhenti setelah beberapa aplikasi gagal berturut-turut.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Laporan layar berisi nama dan posisi kontrol di layar Pengaturan tempat percobaan terakhir berhenti, apa saja yang dicoba, nama aplikasi, serta model ponsel dan versi Android. Tidak ada hal lain dari ponsel Anda di dalamnya: tanpa file, pesan, atau kontak. Kirimkan ke pengembang jika pembersihan cache otomatis tidak berfungsi di ponsel Anda.",
+"The screen turned off or was locked, so the automation stopped.": "Layar mati atau terkunci, sehingga otomatisasi dihentikan.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Layanan sudah aktif, tetapi Android tidak menjalankannya, sehingga AppCleaner belum bisa mengetuk di pengaturan. Matikan lalu aktifkan lagi di pengaturan aksesibilitas, atau mulai ulang ponsel.",
+"There is no screen report yet": "Belum ada laporan layar",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5646,6 +5653,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ cocok dengan ponsel ini ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
-["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"]
+["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
+["Android refused to open the App info page of {0}.", "Android menolak membuka halaman Info aplikasi untuk {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Tersangkut di halaman Info aplikasi {0}: entri Penyimpanan ditemukan, tetapi tidak ada yang dicoba (ketukan, gestur, tombol) yang berhasil membukanya."],
+["The Clear cache button was not found on the Storage page of {0}.", "Tombol Hapus cache tidak ditemukan di halaman Penyimpanan {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Aplikasi Pengaturan tidak muncul di depan untuk {0}, dan tidak ada jendela yang bisa dibaca."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Aplikasi Pengaturan tidak muncul di depan untuk {0}. Jendela di depan adalah {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Aplikasi Pengaturan terbuka, tetapi tidak menampilkan nama {0}, sehingga tidak ada yang diketuk."],
+["The Storage entry was not found on the App info page of {0}.", "Entri Penyimpanan tidak ditemukan di halaman Info aplikasi {0}."],
+["The automation could not finish for {0}.", "Otomatisasi tidak dapat menyelesaikan {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Cache {0} tidak bisa dibersihkan dengan cara ini: Android mengunci tombol Hapus cache miliknya."],
+["{0} has no settings page to tap through.", "{0} tidak punya halaman pengaturan untuk dijelajahi dengan ketukan."],
+["{0} is turned off, so it has no App info page to tap through.", "Aplikasi {0} nonaktif, sehingga tidak punya halaman Info aplikasi untuk dijelajahi dengan ketukan."]
 ]
 };

@@ -4582,7 +4582,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal 검사<1>다운로드 후 해시로 파일 확인</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "이름에 포함된 단어: <1>photo</1> (모두 일치해야 함, <2/>와 <3/>는 와일드카드, <4>-word</4>는 해당 이름 제외, 여러 단어는 \"큰따옴표\"로 묶기).<br> <5>ext:jpg,png</5> 또는 <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14>는 텍스트 파일 내부를 검색합니다(최대 4MB). <15>archive:name</15>은 zip, apk, jar 등의 압축 파일 안에 있는 항목 이름을 검색합니다.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "메시지를 입력하고 <1>보내기</1>를 탭하세요. 이메일 앱이 메시지가 준비된 상태로 열리며, 개발자에게 전달해 주는 연락처 별칭(<2/>)으로 보내집니다. 제목은 <3>ADB App Manager</3>입니다. 개발자 본인의 주소는 이 앱에 없으며, 메시지는 이 앱이 아니라 이메일 앱에서 전송됩니다.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다.",
+"Copy screen report": "화면 보고서 복사",
+"Screen report copied": "화면 보고서를 복사했습니다",
+"The automation gave up after several apps in a row failed.": "여러 앱이 연속으로 실패하여 자동화를 중단했습니다.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "화면 보고서에는 마지막 시도가 멈춘 설정 화면의 컨트롤 이름과 위치, 시도한 방법, 앱 이름, 휴대전화 모델과 Android 버전이 들어 있습니다. 그 외에 휴대전화의 다른 내용(파일, 메시지, 연락처)은 포함되지 않습니다. 캐시 자동 비우기가 휴대전화에서 작동하지 않으면 개발자에게 보내 주세요.",
+"The screen turned off or was locked, so the automation stopped.": "화면이 꺼지거나 잠겨서 자동화를 중단했습니다.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "서비스는 켜져 있지만 Android가 실행하지 않아서 AppCleaner가 아직 설정 화면을 탭할 수 없습니다. 접근성 설정에서 껐다가 다시 켜거나 휴대전화를 다시 시작하세요.",
+"There is no screen report yet": "아직 화면 보고서가 없습니다",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5646,6 +5653,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ 이 휴대전화에 맞음 ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}은(는) 이 앱의 키와 서명자가 같아 제자리에서 업데이트할 수 있습니다"],
 ["✓ {0}: done", "✓ {0}: 완료"],
-["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"]
+["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
+["Android refused to open the App info page of {0}.", "Android가 {0}의 앱 정보 페이지 열기를 거부했습니다."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0}의 앱 정보 페이지에서 멈췄습니다: ‘저장 공간’ 항목은 찾았지만 시도한 어떤 방법(탭, 제스처, 키)으로도 열리지 않았습니다."],
+["The Clear cache button was not found on the Storage page of {0}.", "{0}의 저장 공간 페이지에서 ‘캐시 삭제’ 버튼을 찾지 못했습니다."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0}에 대해 설정 앱이 앞으로 나오지 않았고 읽을 수 있는 창도 없었습니다."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0}에 대해 설정 앱이 앞으로 나오지 않았습니다. 앞에 있던 창은 {1}입니다."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "설정 앱은 열려 있지만 {0}의 이름이 보이지 않아 아무것도 탭하지 않았습니다."],
+["The Storage entry was not found on the App info page of {0}.", "{0}의 앱 정보 페이지에서 ‘저장 공간’ 항목을 찾지 못했습니다."],
+["The automation could not finish for {0}.", "{0}에 대한 자동화를 끝내지 못했습니다."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0}의 캐시는 이 방법으로 비울 수 없습니다: Android가 ‘캐시 삭제’ 버튼을 잠가 두었습니다."],
+["{0} has no settings page to tap through.", "{0}에는 탭으로 이동할 설정 페이지가 없습니다."],
+["{0} is turned off, so it has no App info page to tap through.", "{0}은(는) 꺼져 있어서 탭으로 이동할 앱 정보 페이지가 없습니다."]
 ]
 };
