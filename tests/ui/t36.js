@@ -42,7 +42,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 1) Store tab is the last tab button, and opening it loads the catalog.
   const tabLabels = await page.locator('.tab-btn').allInnerTexts();
-  console.log('1. App Stores comes right before Logcat Viewer, then Task Manager, then Connected Devices, then About:', tabLabels[tabLabels.length - 5].includes('Stores') && tabLabels[tabLabels.length - 4].includes('Logcat') && tabLabels[tabLabels.length - 3].includes('Task') && tabLabels[tabLabels.length - 2].includes('Connected') && tabLabels[tabLabels.length - 1].includes('About'));
+  { const i = tabLabels.findIndex(t => t.includes('Stores')); console.log('1. App Stores comes right before Task Manager (the Logcat Viewer tab moved into Console), then Connected Devices:', i >= 0 && tabLabels[i + 1].includes('Task') && tabLabels[i + 2].includes('Connected') && !tabLabels.some(t => t.includes('Logcat')) && tabLabels[tabLabels.length - 1].includes('About')); }
   await page.evaluate(() => switchView('store')); await page.waitForTimeout(80);
   console.log('   catalog requested:', (await page.evaluate(() => window.__calls)).includes('catalog'));
   const cards = await page.locator('#storeList > div').count();

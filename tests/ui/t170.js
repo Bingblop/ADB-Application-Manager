@@ -1,4 +1,4 @@
-// Settings, "Private DNS": a card that sets the phone's private_dns_mode / private_dns_specifier through the Hidden Settings tab's own path (AndroidBridge.settingsOp, nothing new).
+// Extra Settings tab, "Private DNS" (the card moved here from the gear Settings page in v7.12.12): a card that sets the phone's private_dns_mode / private_dns_specifier through the Hidden Settings tab's own path (AndroidBridge.settingsOp, nothing new).
 // Presets AdGuard DNS, Cloudflare, Quad9, Automatic, Off and a host name of your own. The host name check is pure and is run on hostile text (shell characters, IP addresses, look-alike
 // letters, over-long names). What the card reports comes from reading the settings back (the host is written before the mode; a refused write stops the change; a write that the phone
 // does not keep is reported as such); buttons are off while a change is out; an answer to an old question is dropped; no working mode and no bridge are explained, not hidden.
@@ -65,7 +65,7 @@ const BAD = [
   const now = () => txt('pdnsNow');
   const msg = () => ev(() => { const e = document.getElementById('pdnsMsg'); return e.style.display === 'none' ? '' : e.innerText.replace(/\s+/g, ' ').trim(); });
   const pressed = () => ev(() => [...document.querySelectorAll('#privateDnsCard .pdns-btn')].filter(x => x.getAttribute('aria-pressed') === 'true').map(x => x.id).join(','));
-  const ops = () => ev(() => window.__calls.op.map(o => o.op + ' ' + o.key + (o.op === 'put' ? '=' + o.value : '')));
+  const ops = () => ev(() => window.__calls.op.filter(o => /^private_dns_/.test(o.key)).map(o => o.op + ' ' + o.key + (o.op === 'put' ? '=' + o.value : '')));     // the Private DNS keys only: the other sections of the tab read their own keys when it opens
   const clear = () => ev(() => { window.__calls.op.length = 0; window.__deny = {}; window.__revert = {}; window.__unknown = {}; window.__delay = 20; });
   const phone = () => ev(() => ({ mode: window.__db.global.private_dns_mode, spec: window.__db.global.private_dns_specifier }));
   const setPhone = (mode, spec) => ev(a => { window.__db.global.private_dns_mode = a[0]; if (a[1] === null) delete window.__db.global.private_dns_specifier; else window.__db.global.private_dns_specifier = a[1]; }, [mode, spec]);
@@ -73,7 +73,8 @@ const BAD = [
   const press = async id => { await ev(i => document.getElementById(i).click(), id); await sleep(30); await idle(); await sleep(30); };
   const enabled = () => ev(() => [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null && !e.disabled).length);
   const total = () => ev(() => [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null).length);
-  const toSettings = async () => { await ev(() => switchView('prefs')); await sleep(250); await idle(); await sleep(60); };
+  const SPEED = ['pdnsTest', 'pdnsTestStop', 'pdnsSort'];                     // the speed test's own controls: they change no setting of the phone
+  const toSettings = async () => { await ev(() => switchView('extrasettings')); await sleep(250); await idle(); await sleep(60); };
 
   // ---- 1. the host name check, on its own ----
   const res = await ev(rows => rows.map(r => { const x = pdnsCheckHost(r[0]); return x.ok ? 'ok:' + x.host : 'no:' + x.why; }), GOOD.concat(BAD).map(r => [r[0]]));
@@ -93,13 +94,15 @@ const BAD = [
   // ---- 2. the card ----
   await toSettings();
   const card = await ev(() => {
+    document.getElementById('pdnsMore').open = true;                              // the notes are in the "What does this do?" note
     const c = document.getElementById('privateDnsCard'), prev = c.previousElementSibling;
     const q = s => c.querySelector(s);
     const live = el => [el.getAttribute('role'), el.getAttribute('aria-live')].join('/');
     return {
-      inPrefs: document.getElementById('view-prefs').contains(c), after: prev && prev.tagName === 'STYLE' ? prev.previousElementSibling.id : prev && prev.id,
+      inPrefs: document.getElementById('extraDnsSection').contains(c) && document.getElementById('view-extrasettings').contains(c), after: prev && prev.tagName === 'STYLE' ? 'style' : prev && prev.id, inSettings: !!document.querySelector('#view-prefs #privateDnsCard'), pointer: !!document.querySelector('#view-prefs #extraSettingsPointerCard #extraSettingsPointerBtn'),
       title: q('.color-card-title').innerText, sub: q('.color-card-subtitle').innerText,
-      presets: [...c.querySelectorAll('.pdns-btn[data-host]')].map(x => x.querySelector('b').innerText + '=' + x.dataset.host + '/' + x.querySelector('small').innerText + '/' + x.getAttribute('translate')).join(' | '),
+      presets: [...c.querySelectorAll('.pdns-btn[data-host]')].map(x => x.querySelector('b').innerText + '=' + x.dataset.host + '/' + x.querySelector('.pdns-hostline').innerText + '/' + x.querySelector('b').getAttribute('translate') + x.querySelector('.pdns-hostline').getAttribute('translate')).join(' | '),
+      expected: PDNS_PROVIDERS.map(s => s.name + '=' + s.host + '/' + s.host + '/nono').join(' | '), count: c.querySelectorAll('.pdns-btn[data-host]').length, hostsAll: [...c.querySelectorAll('.pdns-btn[data-host]')].every(x => x.querySelector('.pdns-desc') && x.querySelector('.pdns-mono')),
       modes: [...c.querySelectorAll('.pdns-btn[data-mode]')].map(x => x.dataset.mode + '=' + x.innerText.trim()).join(' | '),
       live: live(q('#pdnsStatus')) + ' ' + q('#pdnsStatus').getAttribute('aria-atomic') + ' problem:' + live(q('#pdnsProblem')),
       input: { id: q('#pdnsHost').id, ph: q('#pdnsHost').placeholder, tr: q('#pdnsHost').getAttribute('translate'), label: c.querySelector('label[for=pdnsHost]').innerText, type: q('#pdnsHost').type, desc: q('#pdnsHost').getAttribute('aria-describedby') },
@@ -107,8 +110,9 @@ const BAD = [
       pressedAttr: [...c.querySelectorAll('.pdns-btn')].every(x => x.hasAttribute('aria-pressed')),
     };
   });
-  check('2. Settings has the card "Private DNS", straight after "Reconnecting devices" (the connection settings), with a plain explanation', card.inPrefs && card.after === 'cdReconnectCard' && card.title === 'Private DNS' && /DNS-over-TLS/.test(card.sub) && /Android 9/.test(card.sub), JSON.stringify({ inPrefs: card.inPrefs, after: card.after, title: card.title }));
-  check('   the three presets, not translated: AdGuard DNS (the host name AdGuard uses now), Cloudflare, Quad9', card.presets === 'AdGuard DNS=dns.adguard-dns.com/dns.adguard-dns.com/no | Cloudflare=one.one.one.one/one.one.one.one/no | Quad9=dns.quad9.net/dns.quad9.net/no', card.presets);
+  check('2. the Extra Settings tab has the card "Private DNS" in its own section (extraDnsSection), no longer in the gear Settings page (a pointer card with a button is there), with a plain explanation', card.inPrefs && !card.inSettings && card.pointer && card.title === 'Private DNS' && /DNS-over-TLS/.test(card.sub) && /Android 9/.test(card.sub), JSON.stringify({ inPrefs: card.inPrefs, inSettings: card.inSettings, pointer: card.pointer, title: card.title }));
+  check('   the services come from ONE array (PDNS_PROVIDERS): one tile each, in the array order, with the host name of the array; names and host names are not translated, the line under the name is', card.presets === card.expected && card.count === 15 && card.hostsAll, card.presets.slice(0, 200) + ' vs ' + card.expected.slice(0, 200));
+  check('   the first three keep their ids (AdGuard DNS, Cloudflare, Quad9) and every host name of the list is one the check accepts', await ev(() => ['pdnsAdguard', 'pdnsCloudflare', 'pdnsQuad9', 'pdnsGoogle', 'pdnsDnssb'].every(i => document.getElementById(i)) && PDNS_PROVIDERS.every(s => pdnsCheckHost(s.host).ok && pdnsCheckHost(s.host).host === s.host) && new Set(PDNS_PROVIDERS.map(s => s.host)).size === PDNS_PROVIDERS.length && !PDNS_PROVIDERS.some(s => /mullvad/i.test(s.host + s.name))));
   check('   Automatic and Off, and a field for another host name (hint dns.nextdns.io, not translated) with its Apply button and a label', card.modes === 'auto=Automatic | off=Off' && card.input.ph === 'dns.nextdns.io' && card.input.tr === 'no' && card.input.label === 'Another host name' && card.input.type === 'text' && card.input.desc === 'pdnsProblem', JSON.stringify(card.input) + card.modes);
   check('   the notes say: a host name not an IP, some networks block it, a wrong host can cost the connection, and Automatic or Off is the way back', /host name, never an IP address/.test(card.notes) && /networks and hotspots block it/.test(card.notes) && /lose its internet/.test(card.notes) && /Automatic or Off/.test(card.notes), card.notes);
   check('   the status is a polite live region read as a whole; the problem line too; every button has a pressed state', card.live === 'status/polite true problem:status/polite' && card.pressedAttr, card.live);
@@ -144,7 +148,7 @@ const BAD = [
   check('   and again the next time', (await now()) === 'Private DNS is now: Automatic' && JSON.stringify(await ops()) === '["get private_dns_mode"]', (await now()) + JSON.stringify(await ops()));
   await clear(); await ev(() => { window.__delay = 250; });
   await ev(() => document.getElementById('pdnsCloudflare').click()); await sleep(60);
-  await ev(() => { switchView('apps'); switchView('prefs'); }); await sleep(30);
+  await ev(() => { switchView('apps'); switchView('extrasettings'); }); await sleep(30);
   await idle(); await sleep(60);
   check('   a change that is out is not disturbed by opening Settings again: no extra read, one change, read back once', JSON.stringify(await ops()) === '["put private_dns_specifier=one.one.one.one","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]' && (await now()) === 'Private DNS is now: hostname one.one.one.one' && (await msg()) === 'Changed, and read back from the phone.', JSON.stringify(await ops()) + await now());
   await clear(); await setPhone('opportunistic', ''); await press('pdnsRefresh'); await clear();
@@ -152,8 +156,8 @@ const BAD = [
   // ---- 4. a preset ----
   await clear(); await ev(() => { window.__delay = 250; sdbLoadedAt.global = Date.now(); });
   await ev(() => document.getElementById('pdnsAdguard').click()); await sleep(60);
-  const mid = await ev(() => ({ busy: document.getElementById('privateDnsCard').getAttribute('aria-busy'), dis: [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null).every(e => e.disabled), msg: document.getElementById('pdnsMsg').innerText }));
-  check('4. AdGuard DNS: while the change is out every control is off, the card is busy, and a line says "Changing Private DNS…"', mid.busy === 'true' && mid.dis && mid.msg === 'Changing Private DNS…', JSON.stringify(mid));
+  const mid = await ev(SPEED => ({ busy: document.getElementById('privateDnsCard').getAttribute('aria-busy'), dis: [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null && !SPEED.includes(e.id)).every(e => e.disabled), speedFree: SPEED.every(i => !document.getElementById(i).disabled), msg: document.getElementById('pdnsMsg').innerText }), SPEED);
+  check('4. AdGuard DNS: while the change is out every control that changes Private DNS is off (the speed test and its sort switch change nothing and stay on), the card is busy, and a line says "Changing Private DNS…"', mid.busy === 'true' && mid.dis && mid.speedFree && mid.msg === 'Changing Private DNS…', JSON.stringify(mid));
   await ev(() => { pdnsPick(document.getElementById('pdnsOff')); pdnsApplyCustom(); document.getElementById('pdnsCloudflare').click(); pdnsChange({ want: { kind: 'auto' }, steps: [['put', PDNS_MODE, 'opportunistic']] }); pdnsRefresh(true); }); await sleep(30);
   await idle(); await sleep(60);
   check('   presses while it runs do nothing', JSON.stringify(await ops()) === '["put private_dns_specifier=dns.adguard-dns.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]', JSON.stringify(await ops()));
@@ -173,7 +177,7 @@ const BAD = [
   check('5. a good name in the field shows no problem', (await txt('pdnsProblem')) === '');
   await ev(() => document.getElementById('pdnsApply').click()); await sleep(30); await idle(); await sleep(40);
   check('   Apply writes the cleaned-up name (lower case, no spaces, no final dot), reads back, and shows it', JSON.stringify(await ops()) === '["put private_dns_specifier=dns.nextdns.io","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]' && (await now()) === 'Private DNS is now: hostname dns.nextdns.io' && (await ev(() => document.getElementById('pdnsHost').value)) === 'dns.nextdns.io', JSON.stringify(await ops()) + await now());
-  check('   no preset is marked for a name of your own', (await pressed()) === '', await pressed());
+  check('   a typed name that is also in the list marks that tile (dns.nextdns.io is NextDNS), and nothing else', (await pressed()) === 'pdnsNextdns', await pressed());
   await clear();
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = 'dns.nextdns.io'; i.focus(); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }); await sleep(30); await idle(); await sleep(40);
   check('   Enter in the field applies too', (await ops()).length === 4, JSON.stringify(await ops()));
@@ -277,9 +281,9 @@ const BAD = [
   // ---- 9. no working mode, no bridge ----
   const p2 = await mkPage({ init: () => { window.__mode.priv = false; } });
   const e2 = (fn, a) => p2.evaluate(fn, a);
-  await e2(() => switchView('prefs')); await p2.waitForTimeout(300);
-  const np = await e2(() => ({ now: document.getElementById('pdnsNow').innerText, setup: getComputedStyle(document.getElementById('pdnsSetup')).display, locked: document.getElementById('pdnsAdguard').classList.contains('locked'), dis: document.getElementById('pdnsAdguard').disabled, ops: window.__calls.op.length }));
-  check('9. no working mode: the card says "Needs a working mode…", offers Set Up, and the buttons are marked locked (not hidden)', /^Needs a working mode/.test(np.now) && np.setup !== 'none' && np.locked && !np.dis && np.ops === 0, JSON.stringify(np));
+  await e2(() => switchView('extrasettings')); await p2.waitForTimeout(300);
+  const np = await e2(() => ({ now: document.getElementById('pdnsNow').innerText, setup: getComputedStyle(document.getElementById('pdnsSetup')).display, locked: document.getElementById('pdnsAuto').classList.contains('locked') && document.getElementById('pdnsAdguard').getAttribute('aria-disabled') === 'true' && document.getElementById('pdnsPillT').innerText === 'Viewing only', dis: document.getElementById('pdnsAdguard').disabled || document.getElementById('pdnsAuto').disabled, ops: window.__calls.op.length }));
+  check('9. no working mode: the card says "Needs a working mode…", offers Set Up, the pill says "Viewing only", and the buttons and tiles are marked locked or aria-disabled (not hidden, not disabled)', /^Needs a working mode/.test(np.now) && np.setup !== 'none' && np.locked && !np.dis && np.ops === 0, JSON.stringify(np));
   await e2(() => document.getElementById('pdnsAdguard').click()); await p2.waitForTimeout(150);
   const modal = await e2(() => ({ open: document.getElementById('privilegeModal').classList.contains('show'), ops: window.__calls.op.length, text: document.getElementById('privilegeModalActionText').innerText }));
   check('   pressing a preset opens the "requires working mode" sheet and sends nothing', modal.open && modal.ops === 0 && /Private DNS/.test(modal.text), JSON.stringify(modal));
@@ -288,8 +292,8 @@ const BAD = [
   await p2.close();
 
   const p3 = await mkPage({ bridge: false });
-  await p3.evaluate(() => switchView('prefs')); await p3.waitForTimeout(300);
-  const nb = await p3.evaluate(() => ({ now: document.getElementById('pdnsNow').innerText, allOff: [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null).every(e => e.disabled) }));
+  await p3.evaluate(() => switchView('extrasettings')); await p3.waitForTimeout(300);
+  const nb = await p3.evaluate(() => ({ now: document.getElementById('pdnsNow').innerText, allOff: [...document.querySelectorAll('#privateDnsCard button, #privateDnsCard input')].filter(e => e.offsetParent !== null && !['pdnsTest', 'pdnsTestStop', 'pdnsSort'].includes(e.id)).every(e => e.disabled) }));
   const nb2 = await p3.evaluate(() => { document.getElementById('pdnsHost').value = 'dns.nextdns.io'; pdnsApplyCustom(); pdnsPick(document.getElementById('pdnsOff')); return 'no error'; });
   check('   in a browser (no bridge): "This works in the app on a phone, not in a browser.", every control off, no error when forced', nb.now === 'This works in the app on a phone, not in a browser.' && nb.allOff && nb2 === 'no error', JSON.stringify(nb));
   await p3.close();
@@ -298,7 +302,7 @@ const BAD = [
   const p4 = await mkPage({ w: 320, h: 700, reduce: true });
   const e4 = (fn, a) => p4.evaluate(fn, a);
   await e4(() => { const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st); });         // colours are measured, not caught half way through a fade
-  await e4(() => switchView('prefs')); await p4.waitForTimeout(400);
+  await e4(() => switchView('extrasettings')); await p4.waitForTimeout(400);
   const fit = async label => {
     const r = await e4(() => {
       const c = document.getElementById('privateDnsCard'), cr = c.getBoundingClientRect(), de = document.documentElement;
@@ -310,6 +314,7 @@ const BAD = [
     const fits = r.page && r.out.length === 0 && r.small.length === 0;
     check('10. ' + label + ': nothing sticks out of the card or the page, buttons are at least 32px tall', fits, fits ? undefined : JSON.stringify(r));
   };
+  await e4(() => { document.getElementById('pdnsMore').open = true; });
   await fit('320px wide, dark');
   await e4(() => { document.getElementById('pdnsHost').value = 'a-very-long-name.' + 'b'.repeat(60) + '.example.com'; pdnsHostInput(); });
   await fit('   with a long name in the field');
@@ -346,10 +351,10 @@ const BAD = [
   await ev(() => pdnsRender());
   const de = await ev(() => ({
     title: document.querySelector('#privateDnsCard .color-card-title').innerText, now: document.getElementById('pdnsNow').innerText, host: document.querySelector('#pdnsNow .pdns-host').innerText,
-    btns: [...document.querySelectorAll('#privateDnsCard .pdns-btn')].map(x => x.innerText.replace(/\s+/g, ' ').trim()).join(' | '), label: document.querySelector('label[for=pdnsHost]').innerText, ph: document.getElementById('pdnsHost').placeholder,
-    group: [...document.querySelectorAll('#privateDnsCard [role=group]')].map(g => g.getAttribute('aria-label')).join(' | '), refresh: document.getElementById('pdnsRefresh').innerText, apply: document.getElementById('pdnsApply').innerText }));
+    btns: [...document.querySelectorAll('#pdnsAuto, #pdnsOff')].map(x => x.innerText.replace(/\s+/g, ' ').trim()).join(' | '), tile: document.querySelector('#pdnsGoogle').innerText.replace(/\s+/g, ' ').trim(), label: document.querySelector('label[for=pdnsHost]').innerText, ph: document.getElementById('pdnsHost').placeholder,
+    group: [...document.querySelectorAll('#privateDnsCard [role=group]')].map(g => g.getAttribute('aria-label')).filter(Boolean).join(' | '), refresh: document.getElementById('pdnsRefresh').innerText, apply: document.getElementById('pdnsApply').innerText }));
   check('11. in German: title, state line, buttons, label and group names are translated; the host names, the presets and the hint are left alone', de.title === 'Privates DNS' && de.now === 'Privates DNS ist jetzt: Hostname dns.adguard-dns.com' && de.host === 'dns.adguard-dns.com'
-    && de.btns === 'AdGuard DNS dns.adguard-dns.com | Cloudflare one.one.one.one | Quad9 dns.quad9.net | Automatisch | Aus' && de.label === 'Anderer Hostname' && de.ph === 'dns.nextdns.io' && de.group === 'Dienste für privates DNS | Automatisch oder Aus' && de.refresh === 'Erneut prüfen' && de.apply === 'Anwenden', JSON.stringify(de));
+    && de.btns === 'Automatisch | Aus' && de.tile === 'G Google Public DNS dns.google Ohne Filter' && de.label === 'Anderer Hostname' && de.ph === 'dns.nextdns.io' && de.group === 'Automatisch oder Aus' && de.refresh === 'Erneut prüfen' && de.apply === 'Anwenden', JSON.stringify(de));
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = '8.8.8.8'; pdnsApplyCustom(); });
   const deProb = await txt('pdnsProblem');
   await press('pdnsAuto');

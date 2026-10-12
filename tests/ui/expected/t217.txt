@@ -1,0 +1,80 @@
+ok   1. the tab bar has "Extra Settings" (two lines) right after "Hidden Settings": ["settings=Hidden|Settings","extrasettings=Extra|Settings","overlays=RRO/Monet|Customization"]
+ok      the view is a vertical stack inside #extraSettingsRoot: the header card (title "Extra Settings", sentence, "?" to the Help Guide topic) and then the section #extraDnsSection with the Private DNS card inside it: {"active":true,"cur":"extrasettings","rootIn":true,"secIn":true,"kids":"extraSettingsHeader,extraDnsSection,extraAnimSection,extraBrightnessSection,extraTelemetrySection,extraPowerSection,extraDozeSection,extraZramSection","header":"Extra Settings","sub":"Tweaks and controls that Android hides","helpQ":"tab-extrasettings","cardIn":true,"chip":"Private DNS Automatic","chipTarget":"extraDnsSection","fastChip":"none","guideTopic":"tab-extrasettings"}
+ok      the header has the chip "Private DNS Automatic" (what the phone has, read back) that points at the DNS section; the "Fastest" chip waits for a test: Private DNS Automatic
+ok      the section head: icon, title, and ONE status pill ("Automatic") on one line
+ok      the Help Guide has the topic of the tab and the section, and the Private DNS section starts with where it is: the Extra Settings tab, not Hidden Settings: topic found: true
+ok   2. the gear Settings page has a small pointer card "Private DNS" (after "Reconnecting devices") with the button "Open Extra Settings", and no DNS card of its own: {"has":true,"title":"Private DNS","btn":"Open Extra Settings","prev":"cdReconnectCard","noCard":true}
+ok      the button opens the Extra Settings tab (and lights its tab)
+ok      the Hidden Settings tab says "Looking for Private DNS? It is not in this tab." with a button that opens the Extra Settings tab, near the top of the page: {"t":"Looking for Private DNS? It is not in this tab. Open the Extra Settings tab","top":284.4375,"vis":true}
+ok      and that button opens it
+ok      with the tab switched off (Feature List) the pointer button does not open it and says where to turn it on
+ok   3. fifteen services in ONE array (id, name, host, one line, monogram, hue); the tiles are exactly the array, in its order; every host name passes the host check; none is Mullvad: {"n":15,"ids":["google","cloudflare","cloudflareSecurity","cloudflareFamily","quad9","quad9Unfiltered","adguard","adguardFamily","adguardUnfiltered","opendns","cleanbrowsingFamily","cleanbrowsingAdult","cleanbrowsingSecurity","nextdns","dnssb"],"tiles":["dns.google","one.one.one.one","security.cloud
+ok      the list: Google dns.google, Cloudflare (3), Quad9 (2), AdGuard (3), OpenDNS, CleanBrowsing (3), NextDNS, DNS.SB: dns.google,one.one.one.one,security.cloudflare-dns.com,family.cloudflare-dns.com,dns.quad9.net,dns10.quad9.net,dns.adguard-dns.com,family.adguard-dns.com,unfiltered.adguard-dns.com,dns.opendns.com,family-filter-dns.cleanbrowsing.org,adult-filter-dns.cleanbrowsing.org,security-filter-dns.cleanbrowsing.org,dns.nextdns.io,dot.sb
+ok      OpenDNS says to check it with the speed test; NextDNS says a filter needs your own id under Another host name
+ok      the tiles: Automatic and Off keep their own two buttons
+ok   4. before a test: "Test speed" button, no Stop, no progress, the sentence about example.com and ICMP is there
+ok      Start: one dnsProbeStart with { id, hosts (the 15, each once), samples 3, timeoutMs 3000 } and nothing else
+ok      while it runs: "Testing… 0 of 15", a Stop button, the button says Testing…, every tile waits
+ok   5. answers one by one, in any order: each tile shows the total in ms and connect / TLS / answer; "Testing… 4 of 15": [{"cls":"is-ok","ms":"60 ms","det":"connect 12 · TLS 30 · answer 18 ms","tag":"✓ Answers","warn":""},{"cls":"is-ok","ms":"39 ms","det":"connect 8 · TLS 20 · answer 11 ms","tag":"✓ Answers","warn":""},{"cls":"is-ok","ms":"500 ms","det":"connect 110 · TLS 240 · answer 150 ms","tag":"✓ Answers","warn":""}]
+ok      a failed one: "✕ Timed out" and the sentence "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": {"cls":"is-fail","ms":"","det":"","tag":"✕ Timed out","warn":"Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back."}
+ok      no "fastest" yet (not every answer is in)
+ok      broken JSON, a host that is not in the scan, another scan's id, null and a host that is not text: ignored (still 4 of 15, Google unchanged)
+ok      the same host answering twice counts once, the later answer wins
+ok   6. when every answer is in the test ends by itself (no "done" event needed): the Stop button goes, "Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms.": Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms.
+ok      exactly one "Fastest" pill, on the quickest working service (Cloudflare, 39 ms), with the full words as its title; the chip at the top of the tab says it too: [["pdnsCloudflare"],"» Fastest","Fastest Cloudflare · 39 ms"]
+ok      a failed row says why in a few words (✕ No answer on 853): ✕ No answer on 853
+ok      a row that answered in 2 of 3 tries says "Only 2 of 3 tries answered."
+ok   7. starting a new test while the old one is finished clears every old answer
+ok      a late answer and a late "done" of the old test are ignored (the new one is still running, Google is not filled in): ["Testing… 1 of 15",{"cls":"is-wait","ms":"…","det":"","tag":"","warn":""},true]
+ok      pressing "Test speed" while a test runs starts over: a third request, nothing of the second is left: [3,"Testing… 0 of 15",{"cls":"is-wait","ms":"…","det":"","tag":"","warn":""}]
+ok      the new request cancels the old running one natively too (dnsProbeCancel with the second id), after the new start went through
+ok      an answer of the second request is ignored now
+ok   8. Stop: dnsProbeCancel is called with the current id (after the one of the replaced scan), the line says "Stopped after 2 of 15.", the Stop button goes, the tiles that were not reached say "Not tested": [2,"Stopped after 2 of 15.","– Not tested"]
+ok      what arrives after Stop is ignored, and nothing is marked fastest after a stop
+ok   9. a host name typed in the field is tested too (cleaned up, last in the list, once): ["dot.sb","my-own.example.net"]
+ok      it shows as the last tile "Your host name" with the host under it: {"id":"pdnsCustom","name":"Your host name","host":"my-own.example.net","last":true}
+ok      and it answers like the others (18 ms here)
+ok      a second own name tested right after the first: the "Your host name" tile is for the new name (host, text, answer), still one tile: {"host":"second-own.example.net","line":"second-own.example.net","ms":"21 ms","n":1}
+ok      a name the check refuses (an IP address) is not sent to the test; a name that is in the list is not sent twice
+ok      (dns.google typed: tested once)
+ok   10. "Sort by speed" is off by default, and with it off the tiles keep the array order whatever the answers are
+ok      on: the ones that answered, quickest first (Cloudflare 39, AdGuard 40, Google 60, Quad9 90), then the ones not tested yet in array order, then the ones that failed (OpenDNS, DNS.SB): one.one.one.one,dns.adguard-dns.com,dns.google,dns.quad9.net,security.cloudflare-dns.com,family.cloudflare-dns.com,dns10.quad9.net,family.adguard-dns.com,unfiltered.adguard-dns.com,family-filter-dns.cleanbrowsing.org,adult-filter-dns.cleanbrowsing.org,security-filter-dns.cleanbrowsing.org,dns.nextdns.io,dns.opendns.com,dot.sb
+ok      an answer that comes in later moves into place at once (NextDNS, 3 ms, first)
+ok      off again: the array order
+ok      sorting moves the tiles, it does not rebuild them: a focused tile stays focused
+ok   11. tapping a tile that failed does NOT apply it: nothing is sent to the phone; the tile is marked and says "Tap again to apply it anyway."; the live status line says the same with the warning: {"ops":0,"cls":"mode-action-btn pdns-btn pdns-tile pdns-row is-fail is-armed","warn":"Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back. Tap again to apply it anyway.","msg":"Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back. Tap again to apply it anyway.","live":"polite"}
+ok      tapping another failed tile first arms that one instead (still nothing sent, the first is not armed any more)
+ok      the second tap on the same tile applies it (host first, then mode, read back), the arm is gone: ["put private_dns_specifier=dns.opendns.com","put private_dns_mode=hostname","get private_dns_mode","get private_dns_specifier"]
+ok      a tile that answered (or was never tested) is applied by ONE tap, and the tile that matches the phone is marked
+ok      a name lookup that timed out on the phone (status dns, error "name lookup timed out") reads the same way: "… Couldn’t test now", not "Name not found", no second tap
+ok      a name the app could not look up because its resolver was busy (status dns, error "resolver busy") is not a failure of the service: "… Couldn’t test now" and "Couldn’t test right now, try again.", not marked failed, no warning about losing the internet: {"cls":"","ms":"","det":"","tag":"… Couldn’t test now","warn":"Couldn’t test right now, try again."}
+ok      and tapping it applies at once (nothing was learned against it)
+ok      Automatic / Off are never asked twice, and they clear a waiting second tap
+ok      Apply with a typed name that failed the test: the first press only warns beside the field, the second applies it
+ok      (the second press: applied, the warning gone)
+ok      typing in the field takes the waiting second press back
+ok   12. leaving the tab during a test stops it (dnsProbeCancel is called): {"running":false,"stopped":true,"cancels":9}
+ok      coming back shows what was found, and the line says it was stopped
+ok   13. a test that hears nothing useful for a while is given up (events for an unknown host or a host that is not text do not keep it alive): dnsProbeCancel is called, "The speed test stopped answering. Try it again.", the Stop button goes: The speed test stopped answering. Try it again.
+ok   14. dnsProbeStart answering { ok: false, error } is said: "The speed test could not start: too many hosts", nothing runs
+ok      dnsProbeStart throwing is said too, no page error
+ok      an answer that is not JSON counts as a failure to start
+ok   15. an old build (no dnsProbeStart): "This version of the app cannot run the speed test. Update the app."
+ok   16. no working mode: the speed test runs and fills the tiles; the pill says "Viewing only" (lock), the tiles are aria-disabled, the card offers Set Up and says it needs a working mode: {"pill":"🔒 Viewing only","chip":"Private DNS Viewing only","ms":"40 ms","aria":"true","setup":"flex","now":"Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)"}
+ok      tapping a tile still opens the "requires working mode" sheet and sends nothing
+ok      in a browser (no bridge): the test button says "This works in the app on a phone, not in a browser." and nothing breaks
+ok   17. [360 px] the whole tab: no sideways scroll, nothing outside the column, no pill / chip / tag wraps, every control at least 44 px tall, no tile content cut, 2 tile column(s) (2 on a phone, more on a tablet): {"label":"360 px","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":2,"w":328,"tiles":15}
+ok   17. [412 px] the whole tab: no sideways scroll, nothing outside the column, no pill / chip / tag wraps, every control at least 44 px tall, no tile content cut, 2 tile column(s) (2 on a phone, more on a tablet): {"label":"412 px","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":2,"w":380,"tiles":15}
+ok   17. [320 px] the whole tab: no sideways scroll, nothing outside the column, no pill / chip / tag wraps, every control at least 44 px tall, no tile content cut, 2 tile column(s) (2 on a phone, more on a tablet): {"label":"320 px","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":2,"w":288,"tiles":15}
+ok   17. [768 px] the whole tab: no sideways scroll, nothing outside the column, no pill / chip / tag wraps, every control at least 44 px tall, no tile content cut, 3 tile column(s) (2 on a phone, more on a tablet): {"label":"768 px","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":3,"w":568,"tiles":15}
+ok   18. [360 px, German] long translations: no sideways scroll, nothing outside the column, no pill wraps, targets 44 px, no tile cut: {"label":"German","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":2,"w":328,"tiles":15}
+ok   18. [360 px, Russian] long translations: no sideways scroll, nothing outside the column, no pill wraps, targets 44 px, no tile cut: {"label":"Russian","page":true,"wrap":[],"tall":[],"out":[],"small":[],"clip":[],"cols":2,"w":328,"tiles":15}
+ok   19. dark / amoled: every text of the new tab (name, host, line, ms, tags, warning, pill, chips, header sentence, trust line, note, monogram) reads at contrast 4.5 or more:
+ok   19. light / amoled: every text of the new tab (name, host, line, ms, tags, warning, pill, chips, header sentence, trust line, note, monogram) reads at contrast 4.5 or more:
+ok   19. dark / sunset: every text of the new tab (name, host, line, ms, tags, warning, pill, chips, header sentence, trust line, note, monogram) reads at contrast 4.5 or more:
+ok   19. light / sunset: every text of the new tab (name, host, line, ms, tags, warning, pill, chips, header sentence, trust line, note, monogram) reads at contrast 4.5 or more:
+ok      (checked on a page without the forced rule) reduced motion: no animation anywhere in the tab and none of the own transitions of the tab (chips, buttons, progress bar, note arrow), also while a test runs: []
+ok      with motion allowed, a waiting tile pulses softly and the button's progress bar slides
+ok      the progress bar of the button follows the count (1 of 15 = 7%): 7%
+ok   no page errors:
+all ok

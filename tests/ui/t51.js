@@ -35,8 +35,8 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
-  const term = () => page.locator('#termOutput').innerText();
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.waitForTimeout(150);
+  const term = () => page.evaluate(() => termText());          // the history as text, oldest first
   const sleep = ms => page.waitForTimeout(ms);
   const type = async cmd => { await page.fill('#termCmd', cmd); await page.press('#termCmd', 'Enter'); };
   const st = () => page.evaluate(() => ({ active: rishActive, running: rishRunning, cur: rishCurrentRun, starting: rishStarting }));
@@ -95,16 +95,16 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('6. a revived shell is explained (exit code, folder, variables reset) and the session continues:', /the shell stopped itself on that \(exit 2\) and was started again in \/tmp/.test(t6) && /exported variables were reset/.test(t6) && (await st()).active && !(await st()).running, JSON.stringify(t6.slice(-160)));
   console.log('   the prompt follows the new folder:', (await page.locator('#termPromptLine').innerText()) === 'husky:/tmp $');
 
-  // 7) Trimming works on one big text node (a normalized terminal) without losing everything.
+  // 7) Trimming works on one big text node (the output of a card) without losing everything.
   await page.evaluate(() => {
-    const t = document.getElementById('termOutput');
-    t.textContent = '';
-    t.appendChild(document.createTextNode('A'.repeat(700000)));
-    rishTermChars = 700000;
-    onRishOutput('r1', 'B'.repeat(150000) + '\n');       // pushes it over the 800000 limit
+    cnClearAll();
+    const c = cnSink();
+    c.out.appendChild(document.createTextNode('A'.repeat(250000)));
+    c.chars = 250000;
+    onRishOutput('r1', 'B'.repeat(100000) + '\n');       // pushes it over the 300000 limit
   });
-  const sizes = await page.evaluate(() => ({ chars: rishTermChars, len: document.getElementById('termOutput').textContent.length, kept: document.getElementById('termOutput').textContent.endsWith('B\n') }));
-  console.log('7. a big single text node is cut at the front, not dropped whole:', sizes.chars < 600000 && sizes.chars > 400000 && sizes.len > 400000 && sizes.kept, JSON.stringify(sizes));
+  const sizes = await page.evaluate(() => { const c = cnList().firstChild.__cn; return { chars: c.chars, len: c.out.textContent.length, kept: c.out.textContent.endsWith('B\n'), marker: /older output trimmed/.test(c.out.firstChild.textContent) }; });
+  console.log('7. a big single text node is cut at the front, not dropped whole:', sizes.chars < 250000 && sizes.chars > 150000 && sizes.len > 150000 && sizes.len < 250100 && sizes.kept && sizes.marker, JSON.stringify(sizes));
 
   // 8) A stale permission wait does not open a shell later.
   await page.evaluate(() => { leaveRish(); rishAwaitingAuth = true; rishAwaitingAuthAt = Date.now() - 600000; window.__log.length = 0; });

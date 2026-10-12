@@ -1,0 +1,20 @@
+1. the bar was away while the page started, and is here now: true
+   while it is away nothing needs room: --bnav-h is 0: true
+2. a text field in use (the keyboard is up): the bar slides away: true
+   the field is left: it comes back: true
+   (another tab's field too: txInput): true
+   a focused button is no keyboard: the bar stays: true
+3. the window a lot shorter with a field in use: away: true
+   and back at the full height: true
+4. whatsNewModal open: the bar is away; closed: it is back: true
+4. modesModal open: the bar is away; closed: it is back: true
+4. permModal open: the bar is away; closed: it is back: true
+4. inspectorModal open: the bar is away; closed: it is back: true
+4. shotViewer open: the bar is away; closed: it is back: true
+4. cheatSheetModal open: the bar is away; closed: it is back: true
+   the More sheet does not send the bar away: true
+5. the full-screen Terminal: away; leaving it: back: true
+   the real terminal overlay: away; closed: back: true
+6. on Settings (the gear) the bar is here and no slot is lit: true
+7. Android Back closes the sheet and the bar returns: true
+errors: []

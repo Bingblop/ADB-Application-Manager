@@ -2197,110 +2197,249 @@ public class MainActivity extends Activity {
         notifyJs("window." + fn + " && window." + fn + "(" + JSONObject.quote(payload.toString()) + ")");
     }
 
-    private void runUpdateCheck() {
+    /** The check that is running now (Cancel and onDestroy reach it here); null when none is. */
+    private volatile UpdateChecker updateCheckRun;
+    private final UpdateChecker.Generation updateRunGeneration = new UpdateChecker.Generation();   // a callback of an older check is dropped once a newer one has started
+    /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
+    private volatile JSONObject updateLastSummary;
+    private volatile JSONObject updateProgressLast;
+    private volatile String updateLastError = "";      // why the last check broke; empty after a check that gave a result
+    private final Object updateStateLock = new Object();
+    private boolean updateStateLoaded;
+    private UpdateCache updateCacheInstance;
+
+    private synchronized UpdateCache updateCache() {
+        if (updateCacheInstance == null) updateCacheInstance = new UpdateCache(getFilesDir(), UpdateChecker.SYSTEM_CLOCK);
+        return updateCacheInstance;
+    }
+
+    /** Whether a kept update row is still true: the app has the version code it had when the row was made, and the update is newer than what is installed now. */
+    private boolean updateRowStillValid(JSONObject r) {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(r.optString("pkg"), 0);
+            long vc = versionCodeOf(info);
+            if (vc != r.optLong("installedCode", -1)) return false;
+            return UpdateChecker.stillNewer(r, vc, info.versionName != null ? info.versionName : String.valueOf(vc));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Reads the last result from disk once (after a restart), keeping only what is still true: an update whose app has the same version code as when it was found,
+     * and a list entry whose app is still installed. The updates go back into {@link #updateResults}, so the Update buttons work on them.
+     */
+    private void loadUpdateState() {
+        synchronized (updateStateLock) {
+            if (updateStateLoaded) return;
+            updateStateLoaded = true;
+            try {
+                JSONObject last = updateCache().loadLast();
+                if (last == null) return;
+                JSONArray ups = new JSONArray();
+                JSONArray old = last.optJSONArray("updates");
+                for (int i = 0; old != null && i < old.length(); i++) {
+                    JSONObject r = old.optJSONObject(i);
+                    if (r == null || "self".equals(r.optString("source")) || !updateRowStillValid(r)) continue;
+                    ups.put(r);
+                    updateResults.put(r.optString("pkg"), r);
+                }
+                last.put("updates", ups);
+                for (String key : new String[]{"untracked", "external", "failed"}) {
+                    JSONArray in = last.optJSONArray(key), out = new JSONArray();
+                    for (int i = 0; in != null && i < in.length(); i++) {
+                        JSONObject r = in.optJSONObject(i);
+                        try {
+                            if (r != null) {
+                                getPackageManager().getPackageInfo(r.optString("pkg"), 0);
+                                out.put(r);
+                            }
+                        } catch (Exception gone) {}
+                    }
+                    last.put(key, out);
+                }
+                updateLastSummary = last;
+                updateCheckedAt = last.optLong("checkedAt", 0);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    /** Puts back the update rows of an earlier result that are still true (the phone may have changed since) and returns them. */
+    private JSONArray restoreUpdateRows(Map<String, JSONObject> rows) {
+        updateResults.clear();
+        JSONArray still = new JSONArray();
+        for (JSONObject r : rows.values()) {
+            if (!updateRowStillValid(r)) continue;
+            updateResults.put(r.optString("pkg"), r);
+            still.put(r);
+        }
+        return still;
+    }
+
+    /** Stops the check that is running, if any: what it found stays, the rest is reported as not checked. */
+    private void cancelUpdateCheckRun() {
+        UpdateChecker c = updateCheckRun;
+        if (c != null) c.cancel();
+    }
+
+    private static Set<String> pkgsOfArray(JSONArray a) {
+        Set<String> out = new HashSet<String>();
+        for (int i = 0; a != null && i < a.length(); i++) {
+            JSONObject o = a.optJSONObject(i);
+            if (o != null) out.add(o.optString("pkg"));
+        }
+        return out;
+    }
+
+    /**
+     * The check of the Updates tab. The work is {@link UpdateChecker}'s (every source at once, short waits, a deadline, a breaker per host, saved
+     * answers); this method lists the installed apps, passes updates on to the page as they are found, and sends the summary at the end on every way out.
+     * {@code force}: ignore the saved answers. {@code retryFailed}: check only the apps the last check could not.
+     */
+    // ---------------------------------------------------------------------------------------------
+    // DNS speed test: DnsProbe (pure Java) does the work; this is the bridge. Needs no working mode: it only opens TCP/TLS connections of its own to
+    // port 853 of the hosts the page names (checked again in Java), and sends one DNS query on each. A pool of its own, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService dnsProbeExec = Executors.newFixedThreadPool(DnsProbe.MAX_PARALLEL);
+    private final DnsProbe.Runner dnsProbe = new DnsProbe.Runner(new DnsProbe.Env());
+
+    private final DnsProbe.Sink dnsProbeSink = new DnsProbe.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onDnsProbe && window.onDnsProbe(" + JSONObject.quote(json) + ")");
+        }
+    };
+
+
+    private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject summary = new JSONObject();
-                try {
-                    updateResults.clear();
-                    approvedUpdates.clear();            // a yes holds for the update it was given for, not for what a new check finds
-                    PackageManager pm = getPackageManager();
-
-                    // 1. This app, from GitHub Releases
+        try {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject summary = null;
+                    JSONObject before = null;
+                    Map<String, JSONObject> rowsBefore = new java.util.HashMap<String, JSONObject>();
+                    Set<String> retried = null;
                     try {
-                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
-                        String installed = currentVersionName();
-                        if (UpdateManager.compareVersions(rel.optString("version"), installed) > 0) {
-                            JSONObject o = new JSONObject();
-                            o.put("pkg", getPackageName());
-                            o.put("name", "ADB Application Manager Pro");
-                            o.put("installedVersion", installed);
-                            o.put("availableVersion", rel.optString("version"));
-                            o.put("source", "self");
-                            o.put("downloadUrl", rel.optString("url"));
-                            o.put("page", rel.optString("page"));
-                            o.put("notes", rel.optString("notes"));
-                            updateResults.put(getPackageName(), o);
+                        loadUpdateState();
+                        before = updateLastSummary;
+                        rowsBefore.putAll(updateResults);
+                        approvedUpdates.clear();            // a yes holds for the update it was given for, not for what a new check finds
+                        retried = retryFailed && before != null ? pkgsOfArray(before.optJSONArray("failed")) : null;
+                        if (retried != null) {
+                            for (String p : retried) updateResults.remove(p);
+                        } else {
+                            updateResults.clear();
                         }
-                        summary.put("selfStatus", "ok");
-                    } catch (Exception e) {
-                        summary.put("selfStatus", e.getMessage() != null && e.getMessage().contains("404") ? "no_releases" : "error: " + e.getMessage());
-                    }
-
-                    // 2. Sideloaded / open-source apps: your sources, Obtainium catalog, IzzyOnDroid, F-Droid
-                    checkOpenSourceApps(summary);
-
-                    // 3. Galaxy Store candidates
-                    final UpdateManager.Device device = updateDevice();
-                    List<ApplicationInfo> apps = pm.getInstalledApplications(0);
-                    final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
-                    for (ApplicationInfo ai : apps) {
-                        if (isGalaxyStoreCandidate(ai, installerOf(ai.packageName))) candidates.add(ai);
-                    }
-                    final int total = candidates.size();
-                    final java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger();
-                    final java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger();
-                    final java.util.concurrent.atomic.AtomicReference<String> lastError = new java.util.concurrent.atomic.AtomicReference<String>("");
-                    ExecutorService pool = Executors.newFixedThreadPool(6);
-                    for (final ApplicationInfo ai : candidates) {
-                        pool.submit(new Runnable() {
-                            @Override
-                            public void run() {
+                        if (retried != null && retried.isEmpty()) {
+                            summary = before;               // nothing failed: nothing to do
+                        } else {
+                            PackageManager pm = getPackageManager();
+                            JSONObject sources = updateSources();
+                            List<UpdateChecker.App> apps = new ArrayList<UpdateChecker.App>();
+                            for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
+                                String inst = installerOf(ai.packageName);
+                                boolean os = isOpenSourceCandidate(ai, inst, sources);
+                                boolean gx = isGalaxyStoreCandidate(ai, inst);
+                                if (!os && !gx) continue;
                                 try {
-                                    PackageInfo info = getPackageManager().getPackageInfo(ai.packageName, 0);
-                                    long vc = versionCodeOf(info);
-                                    JSONObject r = UpdateManager.galaxyCheck(ai.packageName, vc, device);
-                                    if (r.optBoolean("available")) {
-                                        JSONObject o = new JSONObject();
-                                        o.put("pkg", ai.packageName);
-                                        o.put("name", getPackageManager().getApplicationLabel(ai).toString());
-                                        o.put("installedVersion", info.versionName != null ? info.versionName : String.valueOf(vc));
-                                        o.put("installedCode", vc);
-                                        o.put("availableVersion", r.optString("versionName"));
-                                        o.put("availableCode", r.optLong("versionCode"));
-                                        o.put("isSystem", (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
-                                        o.put("source", "galaxy");
-                                        updateResults.put(ai.packageName, o);
-                                    }
-                                } catch (Exception e) {
-                                    errors.incrementAndGet();
-                                    lastError.set(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
-                                }
-                                int d = done.incrementAndGet();
-                                if (d % 8 == 0 || d == total) {
-                                    try {
-                                        JSONObject prog = new JSONObject();
-                                        prog.put("done", d);
-                                        prog.put("total", total);
-                                        prog.put("phase", "galaxy");
-                                        notifyUpdates("onUpdateCheckProgress", prog);
-                                    } catch (Exception ignored) {}
-                                }
+                                    PackageInfo info = pm.getPackageInfo(ai.packageName, 0);
+                                    apps.add(new UpdateChecker.App(ai.packageName, pm.getApplicationLabel(ai).toString(), info.versionName, versionCodeOf(info), inst,
+                                            (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0, os, gx));
+                                } catch (PackageManager.NameNotFoundException gone) {}
                             }
-                        });
+                            UpdateChecker.Options o = new UpdateChecker.Options();
+                            o.generation = updateRunGeneration;
+                            o.force = force;
+                            o.refreshCatalog = force && !retryFailed;
+                            o.only = retried;
+                            o.sources = sources;
+                            String token = secrets().get(SecretSettings.GITHUB_TOKEN);
+                            o.githubToken = token == null ? "" : token;
+                            o.abis = Build.SUPPORTED_ABIS;
+                            o.galaxyTag = Build.MODEL == null ? "" : Build.MODEL;
+                            o.device = new UpdateChecker.DeviceProvider() {
+                                @Override
+                                public UpdateManager.Device get() {
+                                    return updateDevice();
+                                }
+                            };
+                            if (retried == null) {
+                                PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB Application Manager Pro", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                            }
+                            UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
+                            updateCheckRun = checker;
+                            summary = checker.check(apps, o, new UpdateChecker.Listener() {
+                                @Override
+                                public void onUpdate(JSONObject row) {
+                                    updateResults.put(row.optString("pkg"), row);
+                                    notifyUpdates("onUpdateFound", row);
+                                }
+
+                                @Override
+                                public void onProgress(JSONObject p) {
+                                    updateProgressLast = p;
+                                    notifyUpdates("onUpdateCheckProgress", p);
+                                }
+                            }).summary;
+                            if (retried != null) summary = UpdateChecker.merge(before, summary, retried);
+                            if (summary.optBoolean("offline") && before != null) {
+                                // no internet: the answer from the last time that worked is still the best there is, and says so
+                                summary = new JSONObject(before.toString()).put("offline", true).put("updates", restoreUpdateRows(rowsBefore));
+                            }
+                        }
+                    } catch (Throwable e) {
+                        try {
+                            // a check that broke is a failure, not a result: what was known before stays (with its own time), and the failure is said next to it
+                            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                            summary = before != null ? new JSONObject(before.toString()) : new JSONObject().put("failed", new JSONArray()).put("hostsDown", new JSONArray());
+                            summary.put("updates", restoreUpdateRows(rowsBefore));
+                            summary.put("error", msg);
+                            updateLastError = msg;
+                        } catch (Exception ignored) {}
+                    } finally {
+                        updateCheckRun = null;
+                        updateProgressLast = null;
+                        updateCheckRunning = false;
+                        // the time of the last good check moves only when this one gave a result (not an error, not "no internet" with an older result to show)
+                        if (summary != null && !summary.has("error") && !(summary.optBoolean("offline") && before != null)) {
+                            updateCheckedAt = System.currentTimeMillis();
+                            updateLastError = "";
+                        }
                     }
-                    pool.shutdown();
-                    pool.awaitTermination(5, TimeUnit.MINUTES);
-                    summary.put("checked", total);
-                    summary.put("errors", errors.get());
-                    summary.put("lastError", lastError.get());
-                    summary.put("device", device.model + " / " + (device.csc.isEmpty() ? "?" : device.csc));
-                } catch (Exception e) {
-                    try { summary.put("error", e.getMessage()); } catch (Exception ignored) {}
-                } finally {
-                    updateCheckRunning = false;
-                    updateCheckedAt = System.currentTimeMillis();
+                    try {
+                        if (summary == null) summary = new JSONObject();
+                        for (JSONObject r : updateResults.values()) {          // the rows the page acts on are exactly the ones the app holds
+                            boolean have = false;
+                            JSONArray ups = summary.optJSONArray("updates");
+                            for (int i = 0; ups != null && i < ups.length() && !have; i++) have = r.optString("pkg").equals(ups.optJSONObject(i).optString("pkg"));
+                            if (!have) {
+                                if (ups == null) summary.put("updates", ups = new JSONArray());
+                                ups.put(r);
+                            }
+                        }
+                        if (!summary.has("updates")) summary.put("updates", new JSONArray());
+                        if (!(summary.optBoolean("offline") && before != null)) summary.put("checkedAt", updateCheckedAt);
+                        if (!summary.has("error")) {
+                            if (!(summary.optBoolean("offline") && before != null)) updateLastSummary = summary;        // offline: what was known before stays the last result
+                            JSONObject keep = new JSONObject(summary.toString());
+                            JSONArray all = keep.optJSONArray("updates"), noSelf = new JSONArray();
+                            for (int i = 0; all != null && i < all.length(); i++) if (!"self".equals(all.optJSONObject(i).optString("source"))) noSelf.put(all.optJSONObject(i));
+                            keep.put("updates", noSelf);
+                            if (!summary.optBoolean("offline")) updateCache().saveLast(keep);       // "no internet" is not a result worth keeping for the next start
+                        }
+                    } catch (Throwable ignored) {}
+                    try {
+                        notifyUpdates("onUpdatesChecked", summary == null ? new JSONObject() : summary);
+                    } catch (Throwable ignored) {}
                 }
-                try {
-                    summary.put("updates", updatesArray());
-                    summary.put("checkedAt", updateCheckedAt);
-                    notifyUpdates("onUpdatesChecked", summary);
-                } catch (Exception ignored) {}
-            }
-        });
+            });
+        } catch (RuntimeException e) {          // the executor is already shut down (the window is going away)
+            updateCheckRunning = false;
+        }
     }
 
     private JSONArray updatesArray() {
@@ -2342,6 +2481,8 @@ public class MainActivity extends Activity {
      */
     private void runApproveUpdateAll(final String pkgsJson) {
         if (!updateAllAsking.compareAndSet(false, true)) return;     // a question is already on screen: its answer is coming
+        // A new question replaces every earlier yes, whatever the answer turns out to be (No, a failed mode check, a lost answer): clear before the dialog opens
+        approvedUpdates.clear();
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -6559,9 +6700,6 @@ public class MainActivity extends Activity {
             "com.android.vending", UpdateManager.GALAXY_STORE_PKG, "com.aurora.store", "com.amazon.venezia",
             "com.huawei.appmarket", "com.xiaomi.market", "com.xiaomi.mipicks", "com.heytap.market", "com.oppo.market",
             "com.bbk.appstore", "com.google.android.feedback"));
-    private static final java.util.Set<String> FDROID_CLIENTS = new HashSet<String>(java.util.Arrays.asList(
-            "org.fdroid.fdroid", "org.fdroid.basic", "com.looker.droidify", "com.machiav3lli.fdroid",
-            "eu.bubu1.fdroidclassic", "in.sunilpaulmathew.izzyondroid"));
 
     private JSONObject updateSources() {
         try {
@@ -6581,185 +6719,6 @@ public class MainActivity extends Activity {
         if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0) return false;
         if (ai.packageName.equals(getPackageName())) return false;
         return installer == null || !STORE_INSTALLERS.contains(installer);
-    }
-
-    private JSONObject obtainiumLinkConfig(String pkg, String name, String url, String author) {
-        JSONObject c = new JSONObject();
-        try {
-            c.put("id", pkg);
-            c.put("url", url);
-            c.put("author", author == null ? "" : author);
-            c.put("name", name == null ? pkg : name);
-        } catch (Exception ignored) {}
-        return c;
-    }
-
-    /**
-     * Resolves one app against its sources in order. The first source that knows the app decides
-     * (so an up-to-date answer from the developer's repo isn't overridden by another repo's build).
-     * Returns an update JSON, or {"none":true,...} when up to date, or null when no source knows it.
-     */
-    private JSONObject checkOpenSourceApp(ApplicationInfo ai, PackageInfo info, String installer, JSONObject sources, String token) throws Exception {
-        String pkg = ai.packageName;
-        String name = getPackageManager().getApplicationLabel(ai).toString();
-        long vc = versionCodeOf(info);
-        String vn = info.versionName != null ? info.versionName : String.valueOf(vc);
-
-        java.util.List<JSONObject> candidates = new ArrayList<JSONObject>();
-        JSONObject mine = sources.optJSONObject(pkg);
-        if (mine != null && mine.optString("url").length() > 0) candidates.add(new JSONObject().put("url", mine.optString("url"))
-                .put("origin", mine.optString("origin", "yours")).put("settings", mine.optJSONObject("settings") != null ? mine.optJSONObject("settings") : new JSONObject()));
-        boolean fromFdroidClient = installer != null && FDROID_CLIENTS.contains(installer);
-        if (!fromFdroidClient) {
-            JSONObject cfg = UpdateManager.obtainiumCatalog(pkg);
-            if (cfg != null && cfg.optString("url").length() > 0) candidates.add(new JSONObject().put("url", cfg.optString("url"))
-                    .put("origin", "obtainium-catalog").put("settings", UpdateManager.obtainiumSettings(cfg)).put("author", cfg.optString("author")));
-        }
-        // F-Droid builds are signed by F-Droid, IzzyOnDroid mostly ships the developer's APKs
-        if (fromFdroidClient) {
-            candidates.add(new JSONObject().put("fdroid", "fdroid"));
-            candidates.add(new JSONObject().put("fdroid", "izzy"));
-        } else {
-            candidates.add(new JSONObject().put("fdroid", "izzy"));
-            candidates.add(new JSONObject().put("fdroid", "fdroid"));
-        }
-
-        for (JSONObject c : candidates) {
-            JSONObject o = new JSONObject();
-            o.put("pkg", pkg);
-            o.put("name", name);
-            o.put("installedVersion", vn);
-            o.put("installedCode", vc);
-            o.put("installer", installer == null ? "" : installer);
-
-            String fd = c.optString("fdroid");
-            if (!fd.isEmpty()) {
-                boolean izzy = "izzy".equals(fd);
-                JSONObject latest = UpdateManager.fdroidLatest(izzy ? UpdateManager.IZZY_API : UpdateManager.FDROID_API, pkg);
-                if (latest == null) continue;
-                long remote = latest.optLong("versionCode");
-                o.put("source", izzy ? "izzy" : "fdroid");
-                o.put("origin", izzy ? "izzy" : "fdroid");
-                o.put("availableVersion", latest.optString("versionName"));
-                o.put("availableCode", remote);
-                o.put("downloadUrl", (izzy ? UpdateManager.IZZY_REPO : UpdateManager.FDROID_REPO) + pkg + "_" + remote + ".apk");
-                o.put("page", izzy ? "https://apt.izzysoft.de/fdroid/index/apk/" + pkg : "https://f-droid.org/packages/" + pkg + "/");
-                if (remote <= vc) o.put("none", true);
-                return o;
-            }
-
-            String url = c.optString("url");
-            JSONObject settings = c.optJSONObject("settings") != null ? c.optJSONObject("settings") : new JSONObject();
-            o.put("origin", c.optString("origin"));
-            o.put("sourceUrl", url);
-            o.put("obtainium", "obtainium://app/" + java.net.URLEncoder.encode(obtainiumLinkConfig(pkg, name, url, c.optString("author")).toString(), "UTF-8").replace("+", "%20"));
-
-            String fdroidPkg = UpdateManager.parseFdroidUrl(url);
-            if (fdroidPkg != null) {
-                JSONObject latest = UpdateManager.fdroidLatest(url.contains("izzysoft") ? UpdateManager.IZZY_API : UpdateManager.FDROID_API, pkg);
-                if (latest == null) continue;
-                long remote = latest.optLong("versionCode");
-                boolean izzy = url.contains("izzysoft");
-                o.put("source", izzy ? "izzy" : "fdroid");
-                o.put("availableVersion", latest.optString("versionName"));
-                o.put("availableCode", remote);
-                o.put("downloadUrl", (izzy ? UpdateManager.IZZY_REPO : UpdateManager.FDROID_REPO) + pkg + "_" + remote + ".apk");
-                o.put("page", url);
-                if (remote <= vc) o.put("none", true);
-                return o;
-            }
-
-            JSONObject repo = UpdateManager.parseRepoUrl(url);
-            if (repo == null) {
-                // e.g. a vendor website: Obtainium can track it, this app can't check it directly
-                o.put("source", "external");
-                o.put("page", url);
-                o.put("unsupported", true);
-                return o;
-            }
-            UpdateManager.Release rel = "codeberg.org".equals(repo.optString("host"))
-                    ? UpdateManager.codebergRelease(repo.optString("owner"), repo.optString("repo"))
-                    : UpdateManager.githubRelease(repo.optString("owner"), repo.optString("repo"), token, settings.optBoolean("includePrereleases", false));
-            String version = UpdateManager.extractVersion(rel.tag, settings.optString("versionExtractionRegEx", ""), settings.optString("matchGroupToUse", ""));
-            String[] apk = UpdateManager.pickApk(rel.assets, settings.optString("apkFilterRegEx", ""), settings.optBoolean("invertAPKFilter", false), Build.SUPPORTED_ABIS);
-            o.put("source", "codeberg.org".equals(repo.optString("host")) ? "codeberg" : "github");
-            o.put("availableVersion", version.replaceFirst("^[vV](?=[0-9])", ""));
-            o.put("page", rel.page);
-            o.put("notes", rel.notes);
-            if (apk != null) {
-                o.put("downloadUrl", apk[1]);
-                o.put("assetName", apk[0]);
-            }
-            if (UpdateManager.compareVersions(version, vn) <= 0) o.put("none", true);
-            else if (apk == null) o.put("noApk", true);
-            return o;
-        }
-        return null;
-    }
-
-    private void checkOpenSourceApps(JSONObject summary) throws Exception {
-        final JSONObject sources = updateSources();
-        final String token = secrets().get(SecretSettings.GITHUB_TOKEN);
-        final PackageManager pm = getPackageManager();
-        final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
-        final java.util.Map<String, String> installers = new java.util.HashMap<String, String>();
-        for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
-            String inst = installerOf(ai.packageName);
-            if (isOpenSourceCandidate(ai, inst, sources)) {
-                candidates.add(ai);
-                installers.put(ai.packageName, inst);
-            }
-        }
-        final JSONArray untracked = new JSONArray();
-        final JSONArray upToDate = new JSONArray();
-        final JSONArray external = new JSONArray();
-        final java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger();
-        final java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger();
-        final int total = candidates.size();
-        ExecutorService pool = Executors.newFixedThreadPool(4);
-        for (final ApplicationInfo ai : candidates) {
-            pool.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        PackageInfo info = pm.getPackageInfo(ai.packageName, 0);
-                        JSONObject r = checkOpenSourceApp(ai, info, installers.get(ai.packageName), sources, token);
-                        if (r == null) {
-                            JSONObject u = new JSONObject();
-                            u.put("pkg", ai.packageName);
-                            u.put("name", pm.getApplicationLabel(ai).toString());
-                            u.put("installedVersion", info.versionName);
-                            u.put("installer", installers.get(ai.packageName) == null ? "" : installers.get(ai.packageName));
-                            synchronized (untracked) { untracked.put(u); }
-                        } else if (r.optBoolean("none")) {
-                            synchronized (upToDate) { upToDate.put(r); }
-                        } else if (r.optBoolean("unsupported")) {
-                            synchronized (external) { external.put(r); }
-                        } else {
-                            updateResults.put(ai.packageName, r);
-                        }
-                    } catch (Exception e) {
-                        errors.incrementAndGet();
-                        Log.w(TAG, "Open-source update check failed for " + ai.packageName + ": " + e.getMessage());
-                    }
-                    int d = done.incrementAndGet();
-                    try {
-                        JSONObject prog = new JSONObject();
-                        prog.put("done", d);
-                        prog.put("total", total);
-                        prog.put("phase", "open-source");
-                        notifyUpdates("onUpdateCheckProgress", prog);
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-        pool.shutdown();
-        pool.awaitTermination(5, TimeUnit.MINUTES);
-        summary.put("openSourceChecked", total);
-        summary.put("openSourceErrors", errors.get());
-        summary.put("untracked", untracked);
-        summary.put("external", external);
-        summary.put("upToDateOpenSource", upToDate.length());
     }
 
     /**
@@ -7075,6 +7034,15 @@ public class MainActivity extends Activity {
     private boolean hasWriteSecureSettingsAccess() {
         try {
             return checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** DUMP (signature|privileged|development): the phone's own answer to checkSelfPermission, never a command's output. */
+    private boolean hasDumpAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.DUMP) == PackageManager.PERMISSION_GRANTED;
         } catch (Exception e) {
             return false;
         }
@@ -7689,12 +7657,13 @@ public class MainActivity extends Activity {
             files.add(apk);
         }
         String out;
+        String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
             PackageInfo inside = getPackageManager().getPackageArchiveInfo(files.get(0).getAbsolutePath(), 0);
-            String insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
+            insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
             if (uninstallFirst && insidePkg == null) throw new IllegalStateException("can't tell which app to uninstall first: the package name can't be read from the APK");
             List<String> acts = new ArrayList<String>();
             if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
@@ -7719,7 +7688,8 @@ public class MainActivity extends Activity {
         r.put("output", notes + (out == null ? "" : out.trim()));
         if (!ok) {
             r.put("advice", InstallHints.advice(out));
-            if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
+            // eligibility is judged on the app the APK is (the one an uninstall-first retry would remove), not on the package name the page sent; unreadable: no retry
+            if (!uninstallFirst && insidePkg != null && InstallHints.updateIncompatible(out) && canUninstallFirst(insidePkg, mode)) r.put("retry", "uninstall");
         }
         return r;
     }
@@ -7867,6 +7837,27 @@ public class MainActivity extends Activity {
                         Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
+                    }
+                }
+            });
+        }
+
+        /** Android's own Display settings (where adaptive brightness is switched on or off). The app never switches adaptive brightness itself. */
+        @JavascriptInterface
+        public void openDisplaySettings() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        try {
+                            Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } catch (Exception ignored) {}
                     }
                 }
             });
@@ -9287,6 +9278,61 @@ public class MainActivity extends Activity {
          * characteristics, none of which need the camera permission (only opening one for capture does) - so this
          * works the same with or without a working mode connected, unlike everything shell-based in this file.
          */
+        /**
+         * One setting read with the app's own rights (the ContentResolver), with no working mode and no shell: the Global, Secure
+         * and System tables are readable by any app. For the Extra Settings tab, so that it can still SHOW what the phone holds
+         * in Read-Only mode (changing a value still goes through settingsOp and the working mode). Answers at once:
+         * {"ok":true,"value":"1.0"} ("null" when the key is not there) or {"ok":false,"error":"..."}.
+         */
+        @JavascriptInterface
+        public String settingsPeek(String ns, String key) {
+            JSONObject res = new JSONObject();
+            try {
+                String bad = SettingsDb.namespaceProblem(ns);
+                if (bad == null) bad = SettingsDb.keyProblem(key);
+                if (bad != null) { res.put("ok", false); res.put("error", bad); return res.toString(); }
+                android.content.ContentResolver cr = getContentResolver();
+                String v;
+                if ("global".equals(ns)) v = android.provider.Settings.Global.getString(cr, key);
+                else if ("secure".equals(ns)) v = android.provider.Settings.Secure.getString(cr, key);
+                else v = android.provider.Settings.System.getString(cr, key);
+                res.put("ok", true);
+                res.put("value", v == null ? "null" : v);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /**
+         * The Extra Settings tab's "Device telemetry" numbers, in one quick call that needs no working mode: RAM and swap from
+         * /proc/meminfo (MemStats), /data from StatFs, the battery as the Task Manager reads it, uptime, model, Android and One UI
+         * versions, the kernel. Cheap enough to be asked every few seconds (unlike getDeviceSpecs, which also lists cameras and
+         * sensors). Telemetry.build (pure, tested off the device) decides the shape.
+         */
+        @JavascriptInterface
+        public String getTelemetry() {
+            try {
+                long total = -1, free = -1;
+                try {
+                    android.os.StatFs sfs = new android.os.StatFs(android.os.Environment.getDataDirectory().getPath());
+                    total = sfs.getTotalBytes();
+                    free = sfs.getAvailableBytes();
+                } catch (Throwable ignored) {}
+                String oneUi;
+                synchronized (telemetryLock) {
+                    if (telemetryOneUi == null) telemetryOneUi = oneUiVersion();         // runs getprop once, not on every poll
+                    oneUi = telemetryOneUi;
+                }
+                return Telemetry.build(readWorldReadable("/proc/meminfo"), total, free, tmBatteryJson(), android.os.SystemClock.elapsedRealtime(),
+                        Build.MODEL, Build.MANUFACTURER, Build.VERSION.RELEASE, Build.VERSION.SDK_INT, oneUi, readWorldReadable("/proc/version")).toString();
+            } catch (Throwable t) {
+                return "{\"ok\":false}";
+            }
+        }
+        private final Object telemetryLock = new Object();
+        private String telemetryOneUi;
+
         @JavascriptInterface
         public String getDeviceSpecs() {
             JSONObject res = new JSONObject();
@@ -10411,18 +10457,48 @@ public class MainActivity extends Activity {
             return res.toString();
         }
 
+        /** The normal check: answers kept for 30 minutes (7 days for "nobody knows this app") are reused. */
         @JavascriptInterface
         public void checkForUpdates() {
-            runUpdateCheck();
+            runUpdateCheck(false, false);
+        }
+
+        /** "Check again, ignore saved results": every app is asked again. */
+        @JavascriptInterface
+        public void recheckUpdates() {
+            runUpdateCheck(true, false);
+        }
+
+        /** Checks again only the apps the last check could not check, ignoring saved answers for them. */
+        @JavascriptInterface
+        public void retryFailedUpdates() {
+            runUpdateCheck(true, true);
+        }
+
+        /** Stops the running check; what it found stays and the rest is reported as not checked. */
+        @JavascriptInterface
+        public void cancelUpdateCheck() {
+            cancelUpdateCheckRun();
         }
 
         @JavascriptInterface
         public String getUpdateState() {
             try {
+                loadUpdateState();
                 JSONObject o = new JSONObject();
+                JSONObject last = updateLastSummary;
+                if (last != null) {
+                    // everything the page lists besides the updates, from the last check (this session's or the one before the restart)
+                    for (String key : new String[]{"untracked", "external", "failed", "hostsDown", "cancelled", "offline", "timedOut", "fromCache", "notChecked", "total",
+                            "checked", "openSourceChecked", "errors", "openSourceErrors", "lastError"}) {
+                        if (last.has(key)) o.put(key, last.get(key));
+                    }
+                }
                 o.put("running", updateCheckRunning);
                 o.put("checkedAt", updateCheckedAt);
                 o.put("updates", updatesArray());
+                if (!updateLastError.isEmpty() && !updateCheckRunning) o.put("error", updateLastError);
+                if (updateCheckRunning && updateProgressLast != null) o.put("progress", updateProgressLast);
                 o.put("installing", new JSONArray(new ArrayList<String>(installingUpdates)));
                 o.put("currentVersion", currentVersionName());
                 return o.toString();
@@ -11638,6 +11714,21 @@ public class MainActivity extends Activity {
             if (itemJson != null && !itemJson.isEmpty()) runStoreSourceDetail(itemJson);
         }
 
+        /**
+         * DNS speed test: starts a scan of DNS-over-TLS hosts (see DnsProbe for the contract and limits). Returns {"ok":true,"id":..} or {"ok":false,"error":..};
+         * results arrive in window.onDnsProbe(json), one per host and then {"id":..,"done":true,"count":..}. A new scan cancels the running one.
+         */
+        @JavascriptInterface
+        public String dnsProbeStart(String requestJson) {
+            return dnsProbe.start(requestJson, dnsProbeExec, dnsProbeSink);
+        }
+
+        /** Cancels the running DNS speed test if it has this id (its sockets are closed; the rest is reported as cancelled). */
+        @JavascriptInterface
+        public void dnsProbeCancel(String id) {
+            dnsProbe.cancel(id);
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -12572,6 +12663,7 @@ public class MainActivity extends Activity {
                 o.put("install_unknown", hasInstallUnknownAccess());
                 o.put("storage_legacy", hasLegacyStorageAccess());
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
+                o.put("dump", hasDumpAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
@@ -12656,6 +12748,18 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
+        /** DUMP - like WRITE_SECURE_SETTINGS, a permission with no Settings screen, grantable only with pm grant through a privileged shell (ADB, Shizuku, or root).
+         *  It counts as granted only when the phone's own permission check says so, not because the command printed nothing. */
+        @JavascriptInterface
+        public String requestDumpAccess() {
+            if (hasDumpAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.DUMP");
+                if (hasDumpAccess()) return "granted";
+            }
+            return "settings"; // nothing to open - this one has no Settings screen at all without a shell
+        }
+
         /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
          *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
          *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
@@ -12709,9 +12813,45 @@ public class MainActivity extends Activity {
                     sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
                 }
                 if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
+                if (!hasDumpAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.DUMP; ");
                 if (sb.length() > 0) executeShell(sb.toString() + "true");
             }
             return getPermissionStatus();
+        }
+
+        /**
+         * The commands that would grant what is still missing, to run from a computer (USB debugging), one per line and with this app's package name filled in:
+         * the same commands "Allow all" runs through a working mode ({@link #grantAllPermissions}), but written as {@code adb shell ...}. What the phone already holds
+         * (read with the permission check, as everywhere) is left out, and so is Allow Restricted Settings (see below); the answer is empty when nothing is missing.
+         */
+        @JavascriptInterface
+        public String getGrantCommands() {
+            String pkg = getPackageName();
+            java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<String>();
+            String pm = "adb shell pm grant " + pkg + " android.permission.", op = "adb shell appops set " + pkg + " ";
+            // Allow Restricted Settings is left out on purpose: hasRestrictedSettingsAccess() may rely on the "restricted_granted" flag that only grantRestrictedSettings()
+            // writes (some phones do not report the op to the app), so a command run from a computer could never make the sheet see it and the line would stay in the list
+            // forever. That access is granted with its Allow button or "Allow all" (through the working mode), which also verify and remember it.
+            if (!hasStorageAccess()) {
+                out.add(op + "MANAGE_EXTERNAL_STORAGE allow");
+                out.add(pm + "READ_EXTERNAL_STORAGE");
+                out.add(pm + "WRITE_EXTERNAL_STORAGE");
+            }
+            if (!hasUsageAccess()) {
+                out.add(op + "GET_USAGE_STATS allow");
+                out.add(pm + "PACKAGE_USAGE_STATS");
+            }
+            if (!hasOverlayAccess()) out.add(op + "SYSTEM_ALERT_WINDOW allow");
+            if (!hasInstallUnknownAccess()) out.add(op + "REQUEST_INSTALL_PACKAGES allow");
+            if (!hasLegacyStorageAccess()) {
+                out.add(pm + "READ_EXTERNAL_STORAGE");
+                out.add(pm + "WRITE_EXTERNAL_STORAGE");
+            }
+            if (!hasWriteSecureSettingsAccess()) out.add(pm + "WRITE_SECURE_SETTINGS");
+            if (!hasDumpAccess()) out.add(pm + "DUMP");
+            StringBuilder sb = new StringBuilder();
+            for (String line : out) { if (sb.length() > 0) sb.append('\n'); sb.append(line); }
+            return sb.toString();
         }
 
         /** Usage access was just allowed by hand in Settings: with a working mode, also {@code pm grant ... PACKAGE_USAGE_STATS}, in the background. */
@@ -15729,6 +15869,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         activityDestroyed = true;
+        cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
@@ -15743,6 +15884,9 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
+        try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {

@@ -386,13 +386,13 @@
 
 <h4>What you need</h4>
 <ul>
-<li>A <a href="#modes-overview">working mode</a>. Without one, the <b>Logcat Viewer</b> tab says <b>Working Mode Required</b>.</li>
-<li>The <b>Logcat Viewer</b> tab switched on (the <b>Logs</b> button in an app's menu opens it).</li>
+<li>A <a href="#modes-overview">working mode</a>. Without one, <b>Live Logcat</b> says <b>Working Mode Required</b>.</li>
+<li>The <b>Console</b> tab switched on (the <b>Logs</b> button in an app's menu opens it on Live Logcat).</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. The <b>Logcat Viewer</b> opens showing only that app's lines. (Or open the tab, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
+<li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. <b>Live Logcat</b> (in the Console tab) opens showing only that app's lines. (Or open it yourself, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
 <li>Set the level drop-down to <b>Warn</b> or <b>Error</b> (the level is how serious a line must be to show), and the lines drop-down to <b>2000</b>, so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b>, so the log holds only what comes next. This empties the phone's log for every app, and it also pauses the live reading: the screen says "(cleared)" and the button says <b>Play</b> again.</li>
 <li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Pause</b>.</li>
@@ -403,7 +403,7 @@
 
 <div class="hg-warn"><b>Careful.</b> A log can hold personal details: account names, addresses, the names of your apps. Read it before you share it, and filter to one app first. <b>Clear</b> cannot be undone, but it only empties the log, not your apps. For a Wear OS watch use <a href="#recipe-device-log">Read a watch's log</a>.</div>
 
-<p><b>Read more:</b> <a href="#tab-logcat">Logcat Viewer</a>, <a href="#apps-menu">The app menu</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
+<p><b>Read more:</b> <a href="#console-logcat">Live Logcat</a>, <a href="#apps-menu">The app menu</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
 </section>
 
 <section id="recipe-copy-files" data-title="Copy, move or unzip files" data-group="How do I...?">
@@ -442,12 +442,12 @@
 <h4>What you need</h4>
 <ul>
 <li>A <a href="#modes-overview">working mode</a> for commands such as <code>pm</code> and <code>dumpsys</code>. Without one, the shell <b>This app (sandbox)</b> still runs file and text commands.</li>
-<li>The <b>Command-Line Interface</b> tab. Two big buttons at the top, <b>Terminal</b> and <b>ADB Console</b>, switch between its two panes. This recipe uses <b>Terminal</b>.</li>
+<li>The <b>Terminal</b> tab (the ADB shell and the log are in the separate <b>Console</b> tab).</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>Open <b>Command-Line Interface</b> and tap <b>Terminal</b>. A black screen prints a welcome.</li>
+<li>Open <b>Terminal</b>. A black screen prints a welcome.</li>
 <li>Next to <b>Shell</b>, choose <b>Working mode (ADB, Shizuku, Root)</b>. The screen prints a line such as "sh ready through ADB, running as the shell user (uid 2000)". (A uid is the account number Android runs the command under. 2000 is the shell user: it can do a lot, but it is not root.)</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b>. Your line is echoed, and under it comes the answer: your phone's model name.</li>
 <li>Try a command that lists the apps you installed: <code>pm list packages -3</code>. It prints one <code>package:</code> line for each.</li>
@@ -458,7 +458,7 @@
 
 <div class="hg-danger"><b>Risky.</b> A command does exactly what it says, with the rights of the shell you chose, and most have no undo. <code>rm</code> deletes at once, and <code>pm clear</code> erases an app's data. Start with commands that only read (<code>list</code>, <code>get</code>, <code>ls</code>, <code>df</code>). Never paste a command you do not understand. Some pairs undo each other: <code>pm disable-user --user 0 name</code> is undone by <code>pm enable name</code>.</div>
 
-<p><b>Read more:</b> <a href="#tab-terminal">Command-Line Interface</a>, <a href="#safety">Safety</a>, <a href="#glossary">Glossary</a>.</p>
+<p><b>Read more:</b> <a href="#tab-terminal">Terminal</a>, <a href="#safety">Safety</a>, <a href="#glossary">Glossary</a>.</p>
 </section>
 
 <section id="recipe-profile" data-title="Save your setup and apply it again later" data-group="How do I...?">
@@ -606,7 +606,7 @@
 <li>Look for a row with the tag <b>AndroidRuntime</b> whose message starts with <b>FATAL EXCEPTION</b>. The lines joined under it are the crash report: <b>Process:</b> and the package name, the name of the error, and a <b>Caused by</b> line that is usually the real reason. Type the app's package name in the <b>filter text / tag</b> box to cut the noise. A native crash shows "Fatal signal".</li>
 <li>Tap <b>Copy</b>, or <b>Share</b> to send it as the file <code>device_logcat.txt</code>.</li>
 </ol>
-<p>This sub-tab is simpler than the <b>Logcat Viewer</b> tab for this phone: it has no per-app picker, no colour key to hide a level, no <b>Save</b> button and no 2000-line choice, and it draws at most 700 rows. Live reading stops by itself when you leave the sub-tab.</p>
+<p>This sub-tab is simpler than <b>Live Logcat</b> for this phone: it has no per-app picker, no colour key to hide a level, no <b>Save</b> button and no 2000-line choice, and it draws at most 700 rows. Live reading stops by itself when you leave the sub-tab.</p>
 
 <div class="hg-warn"><b>Careful.</b> <b>Clear</b> empties the watch's log buffer, and the old lines cannot be brought back. A log can hold personal details: read it before you share it. If the area shows adb's complaint instead of rows, the watch dropped or went offline: fix the connection (<a href="#tab-devices">Connected Devices</a>) and tap <b>Refresh</b>.</div>
 
