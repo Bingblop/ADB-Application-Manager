@@ -73,7 +73,7 @@ final class SdmHost implements SdmBridge.Host {
         this.areas = new SdmAreas(shell, javaFs, cfg, new SdmAreas.Access() { @Override public boolean storage() { return hooks.storage(); } });
         this.fs = new SdmFs(areas, javaFs, new SdmFsShell(shell));
         this.pkgs = new SdmPackagesAndroid(ctx, shell);
-        this.automation = new SdmAutomation(ctx);
+        this.automation = new SdmAutomation(ctx, shell);
         this.bridge = new SdmBridge(this);
     }
 
@@ -85,7 +85,8 @@ final class SdmHost implements SdmBridge.Host {
     @Override public Sdm.Areas areas() { return areas; }
     @Override public Sdm.Packages pkgs() { return pkgs; }
     @Override public Sdm.Shell shell() { return shell; }
-    @Override public Sdm.Automation automation() { return automation.ready() ? automation : null; }
+    /** Always the automation, ready or not: the engine asks it {@code ready()} and, when it is not, why. */
+    @Override public Sdm.Automation automation() { return automation; }
     @Override public String modeName() { return hooks.mode(); }
     @Override public boolean hasStorageAccess() { return hooks.storage(); }
     @Override public boolean hasUsageAccess() { return hooks.usage(); }
@@ -138,6 +139,10 @@ final class SdmHost implements SdmBridge.Host {
                 ctx.startActivity(i);
             } else if ("enableViaShell".equals(op)) {
                 note = enableViaShell();
+            } else if ("report".equals(op)) {
+                JSONObject rep = new JSONObject();
+                try { rep.put("report", automation.lastReport()); } catch (JSONException ignored) {}
+                return rep;
             }
         } catch (RuntimeException e) {
             note = "That did not work: " + e.getMessage();
@@ -148,6 +153,10 @@ final class SdmHost implements SdmBridge.Host {
             o.put("connected", SdmAutomation.isConnected());
             o.put("consent", SdmAutomation.hasConsent(ctx));
             if (!note.isEmpty()) o.put("note", note);
+            JSONObject lf = automation.lastFailureJson();
+            if (lf != null) o.put("lastFailure", lf);
+            String why = automation.notReadyReason();
+            if (why != null) o.put("notReady", why);
         } catch (JSONException ignored) {}
         return o;
     }

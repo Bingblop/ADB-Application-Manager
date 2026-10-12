@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>وحدة التحكم ← ADB Shell ← وضع Rish</1> هي جلسة Shizuku shell دائمة: يبقى <2>cd</2> والمتغيرات كما هي بين الأوامر.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "يمكن لـ <1>وحدة التحكم ← Logcat مباشر</1> عرض تطبيق واحد فقط. اضغط على السجلات في قائمة ⋯ الخاصة بالتطبيق.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>وحدة التحكم</1> تبويب مستقل: جلسة ADB shell (وضع Rish، المرجع السريع، الأوامر المحفوظة) والسجل المباشر. هذا التبويب مخصص للطرفية ووكلاء البرمجة فقط.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>.",
+"Copy screen report": "نسخ تقرير الشاشة",
+"Screen report copied": "تم نسخ تقرير الشاشة",
+"The automation gave up after several apps in a row failed.": "توقفت الأتمتة بعد فشل عدة تطبيقات متتالية.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "يسرد تقرير الشاشة أسماء عناصر التحكم ومواضعها في شاشة الإعدادات التي توقفت عندها المحاولة الأخيرة، وما جُرّب، واسم التطبيق، وطراز الهاتف وإصدار Android. لا يوجد فيه أي شيء آخر من هاتفك: لا ملفات ولا رسائل ولا جهات اتصال. أرسله إلى المطوّر إذا لم يعمل مسح ذاكرة التخزين المؤقت تلقائيًا على هاتفك.",
+"The screen turned off or was locked, so the automation stopped.": "تم إطفاء الشاشة أو قفلها، لذلك توقفت الأتمتة.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "الخدمة قيد التشغيل لكن Android لا يشغّلها، لذلك لا يستطيع AppCleaner النقر داخل الإعدادات بعد. أوقفها ثم شغّلها مجددًا من إعدادات إمكانية الوصول، أو أعد تشغيل الهاتف.",
+"There is no screen report yet": "لا يوجد تقرير شاشة بعد",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ يناسب هذا الهاتف ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ الإصدار v{0} له الموقِّع نفسه لمفتاح هذا التطبيق، لذلك يمكن تحديثه في المكان نفسه"],
 ["✓ {0}: done", "✓ {0}: تم"],
-["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"]
+["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"],
+["Android refused to open the App info page of {0}.", "رفض Android فتح صفحة معلومات التطبيق الخاصة بـ {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "عالق في صفحة معلومات التطبيق الخاصة بـ {0}: عُثر على عنصر التخزين، لكن لم ينجح أي شيء مما جُرّب (نقرة أو إيماءة أو المفاتيح) في فتحه."],
+["The Clear cache button was not found on the Storage page of {0}.", "لم يُعثر على زر مسح ذاكرة التخزين المؤقت في صفحة التخزين الخاصة بـ {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "لم يظهر تطبيق الإعدادات في المقدمة من أجل {0}، ولم يمكن قراءة أي نافذة."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "لم يظهر تطبيق الإعدادات في المقدمة من أجل {0}. كانت النافذة في المقدمة هي {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "تطبيق الإعدادات مفتوح لكنه لا يعرض اسم {0}، لذلك لم يُنقر على أي شيء."],
+["The Storage entry was not found on the App info page of {0}.", "لم يُعثر على عنصر التخزين في صفحة معلومات التطبيق الخاصة بـ {0}."],
+["The automation could not finish for {0}.", "تعذّر إكمال الأتمتة لـ {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "لا يمكن مسح ذاكرة التخزين المؤقت لـ {0} بهذه الطريقة: يقفل Android زر مسح ذاكرة التخزين المؤقت الخاص به."],
+["{0} has no settings page to tap through.", "لا تحتوي {0} على صفحة إعدادات يمكن التنقل فيها بالنقر."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} معطّل، لذلك لا توجد له صفحة معلومات تطبيق يمكن التنقل فيها بالنقر."]
 ]
 };

@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>コンソール → ADBシェル → Rishモード</1>は永続的なShizukuシェルです。<2>cd</2>や変数はコマンド間で保持されます。",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>コンソール → ライブ Logcat</1>では1つのアプリだけを表示できます。アプリの⋯メニューで「ログ」をタップしてください。",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>コンソール</1>は独立したタブです。ADBシェル（Rishモード、早見表、保存したコマンド）とライブログがあります。このタブにはターミナルとコーディングエージェントだけがあります。",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。"
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。",
+"Copy screen report": "画面レポートをコピー",
+"Screen report copied": "画面レポートをコピーしました",
+"The automation gave up after several apps in a row failed.": "複数のアプリが続けて失敗したため、自動化を中止しました。",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "画面レポートには、最後の試行が止まった設定画面にあるコントロールの名前と位置、試した操作、アプリ名、端末のモデルと Android のバージョンが記録されます。それ以外のスマートフォンの内容（ファイル、メッセージ、連絡先）は含まれません。キャッシュの自動削除がお使いの端末で動かない場合は、開発者に送ってください。",
+"The screen turned off or was locked, so the automation stopped.": "画面がオフになったかロックされたため、自動化を停止しました。",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "サービスはオンですが、Android が実行していないため、AppCleaner はまだ設定画面をタップできません。ユーザー補助の設定でいったんオフにして、もう一度オンにするか、端末を再起動してください。",
+"There is no screen report yet": "画面レポートはまだありません",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ この端末に適合（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}はこのアプリのキーと署名者が同じため、その場で更新できます"],
 ["✓ {0}: done", "✓ {0}：完了"],
-["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"]
+["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
+["Android refused to open the App info page of {0}.", "Android が {0} のアプリ情報ページを開くことを拒否しました。"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} のアプリ情報ページで止まりました：「ストレージ」の項目は見つかりましたが、試したどの方法（タップ、ジェスチャー、キー操作）でも開けませんでした。"],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} のストレージページで「キャッシュを削除」ボタンが見つかりませんでした。"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} のために設定アプリが前面に出ず、読み取れるウィンドウもありませんでした。"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} のために設定アプリが前面に出ませんでした。前面にあったウィンドウは {1} です。"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "設定アプリは開いていますが、{0} の名前が表示されていないため、何もタップしませんでした。"],
+["The Storage entry was not found on the App info page of {0}.", "{0} のアプリ情報ページで「ストレージ」の項目が見つかりませんでした。"],
+["The automation could not finish for {0}.", "{0} の自動化を完了できませんでした。"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} のキャッシュはこの方法では削除できません：Android が「キャッシュを削除」ボタンをロックしています。"],
+["{0} has no settings page to tap through.", "{0} にはタップで進める設定ページがありません。"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} は無効になっているため、タップで進めるアプリ情報ページがありません。"]
 ]
 };

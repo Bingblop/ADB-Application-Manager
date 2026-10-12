@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>Консоль → Оболочка ADB → Режим Rish</1> — постоянная оболочка Shizuku: <2>cd</2> и переменные сохраняются между командами.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>Консоль → Logcat онлайн</1> может показывать только одно приложение. Нажмите «Журналы» в меню ⋯ приложения.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>Консоль</1> — отдельная вкладка: оболочка ADB (режим Rish, шпаргалка, сохранённые команды) и журнал в реальном времени. На этой вкладке только терминал и агенты для кода.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
+"Copy screen report": "Скопировать отчёт об экране",
+"Screen report copied": "Отчёт об экране скопирован",
+"The automation gave up after several apps in a row failed.": "Автоматизация прекратила работу после того, как подряд завершились ошибкой несколько приложений.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Отчёт об экране содержит названия и расположение элементов на экране настроек, где остановилась последняя попытка, список того, что пробовали, название приложения, а также модель телефона и версию Android. Ничего другого с вашего телефона в нём нет: ни файлов, ни сообщений, ни контактов. Отправьте его разработчику, если автоматическая очистка кэша не работает на вашем телефоне.",
+"The screen turned off or was locked, so the automation stopped.": "Экран выключился или заблокировался, поэтому автоматизация остановлена.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Служба включена, но Android её не запускает, поэтому AppCleaner пока не может нажимать в настройках. Выключите и снова включите её в настройках специальных возможностей или перезагрузите телефон.",
+"There is no screen report yet": "Отчёта об экране пока нет",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ подходит этому телефону ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} подписана тем же ключом, что и это приложение, поэтому обновление пройдёт поверх"],
 ["✓ {0}: done", "✓ {0}: готово"],
-["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"]
+["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
+["Android refused to open the App info page of {0}.", "Android отказал в открытии страницы «О приложении» для {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Застряли на странице «О приложении» для {0}: пункт «Хранилище» найден, но ничто из испробованного (касание, жест, клавиши) его не открыло."],
+["The Clear cache button was not found on the Storage page of {0}.", "Кнопка «Очистить кэш» не найдена на странице хранилища {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Настройки не вышли на передний план для {0}, и ни одно окно не удалось прочитать."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Настройки не вышли на передний план для {0}. На переднем плане было окно {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Настройки открыты, но не показывают название {0}, поэтому ничего не нажималось."],
+["The Storage entry was not found on the App info page of {0}.", "Пункт «Хранилище» не найден на странице «О приложении» для {0}."],
+["The automation could not finish for {0}.", "Автоматизация не смогла завершить работу для {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Кэш приложения {0} так не очистить: Android блокирует его кнопку «Очистить кэш»."],
+["{0} has no settings page to tap through.", "У приложения {0} нет страницы настроек, по которой можно пройти нажатиями."],
+["{0} is turned off, so it has no App info page to tap through.", "Приложение {0} отключено, поэтому у него нет страницы «О приложении», по которой можно пройти нажатиями."]
 ]
 };

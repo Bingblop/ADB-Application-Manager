@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>Konsol → ADB Shell → Rish modu</1> kalıcı bir Shizuku shell’idir: <2>cd</2> ve değişkenler komutlar arasında korunur.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>Konsol → Canlı Logcat</1> yalnızca tek bir uygulamayı gösterebilir. Bir uygulamanın ⋯ menüsünde Günlükler’e dokunun.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>Konsol</1> ayrı bir sekmedir: ADB shell (Rish modu, kopya kâğıdı, kayıtlı komutlar) ve canlı günlük. Bu sekmede yalnızca terminal ve kodlama ajanları bulunur.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
+"Copy screen report": "Ekran raporunu kopyala",
+"Screen report copied": "Ekran raporu kopyalandı",
+"The automation gave up after several apps in a row failed.": "Art arda birkaç uygulama başarısız olduğu için otomasyon vazgeçti.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Ekran raporu; son denemenin durduğu Ayarlar ekranındaki denetimlerin adlarını ve konumlarını, nelerin denendiğini, uygulamanın adını ve telefon modeli ile Android sürümünü listeler. Telefonunuzdan başka hiçbir şey içermez: dosya, mesaj veya kişi yok. Önbelleğin kendiliğinden temizlenmesi telefonunuzda çalışmıyorsa geliştiriciye gönderin.",
+"The screen turned off or was locked, so the automation stopped.": "Ekran kapandığı veya kilitlendiği için otomasyon durdu.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Hizmet açık ama Android onu çalıştırmıyor; bu yüzden AppCleaner henüz ayarlarda dokunamıyor. Erişilebilirlik ayarlarında kapatıp yeniden açın ya da telefonu yeniden başlatın.",
+"There is no screen report yet": "Henüz ekran raporu yok",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ bu telefona uyuyor ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
-["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"]
+["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
+["Android refused to open the App info page of {0}.", "Android, {0} uygulamasının Uygulama bilgileri sayfasını açmayı reddetti."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} uygulamasının Uygulama bilgileri sayfasında takıldı: Depolama girişi bulundu ama denenen hiçbir yol (dokunma, hareket, tuşlar) onu açmadı."],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} uygulamasının Depolama sayfasında Önbelleği temizle düğmesi bulunamadı."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} için Ayarlar uygulaması öne gelmedi ve hiçbir pencere okunamadı."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} için Ayarlar uygulaması öne gelmedi. Öndeki pencere {1} idi."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Ayarlar uygulaması açık ama {0} adını göstermiyor; bu yüzden hiçbir şeye dokunulmadı."],
+["The Storage entry was not found on the App info page of {0}.", "{0} uygulamasının Uygulama bilgileri sayfasında Depolama girişi bulunamadı."],
+["The automation could not finish for {0}.", "Otomasyon {0} için tamamlanamadı."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} bu yolla temizlenemez: Android Önbelleği temizle düğmesini kilitliyor."],
+["{0} has no settings page to tap through.", "{0} uygulamasında dokunarak gezilebilecek bir ayarlar sayfası yok."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} uygulaması kapalı olduğundan dokunarak gezilebilecek bir Uygulama bilgileri sayfası yok."]
 ]
 };

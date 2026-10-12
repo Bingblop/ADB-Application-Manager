@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>Konsol → Shell ADB → Mode Rish</1> adalah shell Shizuku persisten: <2>cd</2> dan variabel tetap berlaku di antara perintah.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>Konsol → Logcat Langsung</1> bisa menampilkan satu aplikasi saja. Ketuk Log di menu ⋯ aplikasi.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>Konsol</1> adalah tab tersendiri: shell ADB (mode Rish, contekan, perintah tersimpan) dan log langsung. Tab ini hanya berisi terminal dan agen koding.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>.",
+"Copy screen report": "Salin laporan layar",
+"Screen report copied": "Laporan layar disalin",
+"The automation gave up after several apps in a row failed.": "Otomatisasi berhenti setelah beberapa aplikasi gagal berturut-turut.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Laporan layar berisi nama dan posisi kontrol di layar Pengaturan tempat percobaan terakhir berhenti, apa saja yang dicoba, nama aplikasi, serta model ponsel dan versi Android. Tidak ada hal lain dari ponsel Anda di dalamnya: tanpa file, pesan, atau kontak. Kirimkan ke pengembang jika pembersihan cache otomatis tidak berfungsi di ponsel Anda.",
+"The screen turned off or was locked, so the automation stopped.": "Layar mati atau terkunci, sehingga otomatisasi dihentikan.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Layanan sudah aktif, tetapi Android tidak menjalankannya, sehingga AppCleaner belum bisa mengetuk di pengaturan. Matikan lalu aktifkan lagi di pengaturan aksesibilitas, atau mulai ulang ponsel.",
+"There is no screen report yet": "Belum ada laporan layar",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ cocok dengan ponsel ini ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
-["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"]
+["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
+["Android refused to open the App info page of {0}.", "Android menolak membuka halaman Info aplikasi untuk {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Tersangkut di halaman Info aplikasi {0}: entri Penyimpanan ditemukan, tetapi tidak ada yang dicoba (ketukan, gestur, tombol) yang berhasil membukanya."],
+["The Clear cache button was not found on the Storage page of {0}.", "Tombol Hapus cache tidak ditemukan di halaman Penyimpanan {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Aplikasi Pengaturan tidak muncul di depan untuk {0}, dan tidak ada jendela yang bisa dibaca."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Aplikasi Pengaturan tidak muncul di depan untuk {0}. Jendela di depan adalah {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Aplikasi Pengaturan terbuka, tetapi tidak menampilkan nama {0}, sehingga tidak ada yang diketuk."],
+["The Storage entry was not found on the App info page of {0}.", "Entri Penyimpanan tidak ditemukan di halaman Info aplikasi {0}."],
+["The automation could not finish for {0}.", "Otomatisasi tidak dapat menyelesaikan {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Cache {0} tidak bisa dibersihkan dengan cara ini: Android mengunci tombol Hapus cache miliknya."],
+["{0} has no settings page to tap through.", "{0} tidak punya halaman pengaturan untuk dijelajahi dengan ketukan."],
+["{0} is turned off, so it has no App info page to tap through.", "Aplikasi {0} nonaktif, sehingga tidak punya halaman Info aplikasi untuk dijelajahi dengan ketukan."]
 ]
 };

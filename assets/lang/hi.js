@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>कंसोल → ADB शेल → Rish मोड</1> एक स्थायी Shizuku शेल है: कमांड के बीच <2>cd</2> और वेरिएबल बने रहते हैं।",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>कंसोल → लाइव Logcat</1> एक समय में सिर्फ़ एक ऐप दिखा सकता है। किसी ऐप के ⋯ मेनू में लॉग पर टैप करें।",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>कंसोल</1> एक अलग टैब है: ADB शेल (Rish मोड, चीट शीट, सहेजी गई कमांड) और लाइव लॉग। यह टैब सिर्फ़ टर्मिनल और कोडिंग एजेंट के लिए है।",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।"
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
+"Copy screen report": "स्क्रीन रिपोर्ट कॉपी करें",
+"Screen report copied": "स्क्रीन रिपोर्ट कॉपी हो गई",
+"The automation gave up after several apps in a row failed.": "लगातार कई ऐप विफल होने के बाद ऑटोमेशन ने हार मान ली।",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "स्क्रीन रिपोर्ट में उस सेटिंग स्क्रीन के कंट्रोल के नाम और उनकी जगह दी जाती है जहाँ पिछला प्रयास रुका, क्या-क्या आज़माया गया, ऐप का नाम, और फ़ोन का मॉडल व Android वर्शन। आपके फ़ोन की और कोई चीज़ इसमें नहीं है: कोई फ़ाइल, संदेश या संपर्क नहीं। अगर कैश अपने आप साफ़ होना आपके फ़ोन पर काम नहीं करता, तो इसे डेवलपर को भेजें।",
+"The screen turned off or was locked, so the automation stopped.": "स्क्रीन बंद हो गई या लॉक हो गई, इसलिए ऑटोमेशन रुक गया।",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "सेवा चालू है, लेकिन Android उसे चला नहीं रहा, इसलिए AppCleaner अभी सेटिंग में टैप नहीं कर सकता। एक्सेसिबिलिटी सेटिंग में इसे बंद करके फिर चालू करें, या फ़ोन रीस्टार्ट करें।",
+"There is no screen report yet": "अभी तक कोई स्क्रीन रिपोर्ट नहीं है",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ इस फ़ोन पर फ़िट बैठता है ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
-["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"]
+["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
+["Android refused to open the App info page of {0}.", "Android ने {0} का ऐप की जानकारी पेज खोलने से मना कर दिया।"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} के ऐप की जानकारी पेज पर अटक गया: स्टोरेज वाली एंट्री मिल गई, लेकिन आज़माए गए किसी भी तरीके (टैप, जेस्चर, कुंजियाँ) से वह नहीं खुली।"],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} के स्टोरेज पेज पर कैश साफ़ करें बटन नहीं मिला।"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} के लिए सेटिंग ऐप सामने नहीं आया, और कोई विंडो पढ़ी नहीं जा सकी।"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} के लिए सेटिंग ऐप सामने नहीं आया। सामने की विंडो {1} थी।"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "सेटिंग ऐप खुला है, लेकिन उसमें {0} का नाम नहीं दिख रहा, इसलिए कुछ भी टैप नहीं किया गया।"],
+["The Storage entry was not found on the App info page of {0}.", "{0} के ऐप की जानकारी पेज पर स्टोरेज वाली एंट्री नहीं मिली।"],
+["The automation could not finish for {0}.", "ऑटोमेशन {0} के लिए पूरा नहीं हो सका।"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} का कैश इस तरह साफ़ नहीं हो सकता: Android ने उसका कैश साफ़ करें बटन लॉक कर रखा है।"],
+["{0} has no settings page to tap through.", "{0} में टैप करके चलने लायक कोई सेटिंग पेज नहीं है।"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} बंद है, इसलिए उसमें टैप करके चलने लायक ऐप की जानकारी पेज नहीं है।"]
 ]
 };

@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>콘솔 → ADB 셸 → Rish 모드</1>는 지속되는 Shizuku 셸입니다. <2>cd</2>와 변수가 명령 사이에서도 유지됩니다.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>콘솔 → 실시간 Logcat</1>은 앱 하나만 표시할 수 있습니다. 앱의 ⋯ 메뉴에서 로그를 누르세요.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>콘솔</1>은 별도의 탭입니다. ADB 셸(Rish 모드, 치트 시트, 저장된 명령어)과 실시간 로그가 있습니다. 이 탭에는 터미널과 코딩 에이전트만 있습니다.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다.",
+"Copy screen report": "화면 보고서 복사",
+"Screen report copied": "화면 보고서를 복사했습니다",
+"The automation gave up after several apps in a row failed.": "여러 앱이 연속으로 실패하여 자동화를 중단했습니다.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "화면 보고서에는 마지막 시도가 멈춘 설정 화면의 컨트롤 이름과 위치, 시도한 방법, 앱 이름, 휴대전화 모델과 Android 버전이 들어 있습니다. 그 외에 휴대전화의 다른 내용(파일, 메시지, 연락처)은 포함되지 않습니다. 캐시 자동 비우기가 휴대전화에서 작동하지 않으면 개발자에게 보내 주세요.",
+"The screen turned off or was locked, so the automation stopped.": "화면이 꺼지거나 잠겨서 자동화를 중단했습니다.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "서비스는 켜져 있지만 Android가 실행하지 않아서 AppCleaner가 아직 설정 화면을 탭할 수 없습니다. 접근성 설정에서 껐다가 다시 켜거나 휴대전화를 다시 시작하세요.",
+"There is no screen report yet": "아직 화면 보고서가 없습니다",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ 이 휴대전화에 맞음 ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}은(는) 이 앱의 키와 서명자가 같아 제자리에서 업데이트할 수 있습니다"],
 ["✓ {0}: done", "✓ {0}: 완료"],
-["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"]
+["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
+["Android refused to open the App info page of {0}.", "Android가 {0}의 앱 정보 페이지 열기를 거부했습니다."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0}의 앱 정보 페이지에서 멈췄습니다: ‘저장 공간’ 항목은 찾았지만 시도한 어떤 방법(탭, 제스처, 키)으로도 열리지 않았습니다."],
+["The Clear cache button was not found on the Storage page of {0}.", "{0}의 저장 공간 페이지에서 ‘캐시 삭제’ 버튼을 찾지 못했습니다."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0}에 대해 설정 앱이 앞으로 나오지 않았고 읽을 수 있는 창도 없었습니다."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0}에 대해 설정 앱이 앞으로 나오지 않았습니다. 앞에 있던 창은 {1}입니다."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "설정 앱은 열려 있지만 {0}의 이름이 보이지 않아 아무것도 탭하지 않았습니다."],
+["The Storage entry was not found on the App info page of {0}.", "{0}의 앱 정보 페이지에서 ‘저장 공간’ 항목을 찾지 못했습니다."],
+["The automation could not finish for {0}.", "{0}에 대한 자동화를 끝내지 못했습니다."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0}의 캐시는 이 방법으로 비울 수 없습니다: Android가 ‘캐시 삭제’ 버튼을 잠가 두었습니다."],
+["{0} has no settings page to tap through.", "{0}에는 탭으로 이동할 설정 페이지가 없습니다."],
+["{0} is turned off, so it has no App info page to tap through.", "{0}은(는) 꺼져 있어서 탭으로 이동할 앱 정보 페이지가 없습니다."]
 ]
 };

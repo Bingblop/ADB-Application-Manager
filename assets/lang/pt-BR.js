@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>Console → Shell ADB → Modo Rish</1> é um shell persistente do Shizuku: <2>cd</2> e as variáveis permanecem entre os comandos.",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "O <1>Console → Logcat ao vivo</1> pode mostrar somente um app. Toque em Logs no menu ⋯ de um app.",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "O <1>Console</1> é uma aba própria: o shell ADB (modo Rish, guia rápido, comandos salvos) e o log ao vivo. Esta aba tem só o terminal e os agentes de código.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "No momento, você está no <1>Modo somente leitura</1>. As operações em pacotes do sistema (como Congelar, Ativar, Forçar parada, Limpar dados ou Desinstalar) exigem permissões elevadas por <2>ADB TCP (5555)</2>, <3>Depuração sem fio</3>, <4>Shizuku</4> ou <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "No momento, você está no <1>Modo somente leitura</1>. As operações em pacotes do sistema (como Congelar, Ativar, Forçar parada, Limpar dados ou Desinstalar) exigem permissões elevadas por <2>ADB TCP (5555)</2>, <3>Depuração sem fio</3>, <4>Shizuku</4> ou <5>Root</5>.",
+"Copy screen report": "Copiar relatório de tela",
+"Screen report copied": "Relatório de tela copiado",
+"The automation gave up after several apps in a row failed.": "A automação desistiu depois que vários apps seguidos falharam.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "O relatório de tela lista os nomes e as posições dos controles da tela de Configurações em que a última tentativa parou, o que foi tentado, o nome do app, o modelo do celular e a versão do Android. Nada mais do seu celular está nele: nem arquivos, nem mensagens, nem contatos. Envie-o ao desenvolvedor se a limpeza automática do cache não funcionar no seu celular.",
+"The screen turned off or was locked, so the automation stopped.": "A tela foi desligada ou bloqueada, então a automação parou.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "O serviço está ligado, mas o Android não o está executando, então o AppCleaner ainda não consegue tocar nas configurações. Desligue e ligue de novo nas configurações de acessibilidade, ou reinicie o celular.",
+"There is no screen report yet": "Ainda não há relatório de tela",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatível com este telefone ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ a v{0} tem o mesmo signatário que a chave deste app, então pode ser atualizada por cima"],
 ["✓ {0}: done", "✓ {0}: concluído"],
-["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"]
+["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"],
+["Android refused to open the App info page of {0}.", "O Android recusou abrir a página Informações do app de {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Preso na página Informações do app de {0}: a entrada Armazenamento foi encontrada, mas nada do que foi tentado (um toque, um gesto, as teclas) a abriu."],
+["The Clear cache button was not found on the Storage page of {0}.", "O botão Limpar cache não foi encontrado na página Armazenamento de {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "O app Configurações não passou para o primeiro plano para {0}, e nenhuma janela pôde ser lida."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "O app Configurações não passou para o primeiro plano para {0}. A janela em primeiro plano era {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "O app Configurações está aberto, mas não mostra o nome de {0}, então nada foi tocado."],
+["The Storage entry was not found on the App info page of {0}.", "A entrada Armazenamento não foi encontrada na página Informações do app de {0}."],
+["The automation could not finish for {0}.", "A automação não conseguiu terminar para {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "O cache de {0} não pode ser limpo assim: o Android bloqueia o botão Limpar cache dele."],
+["{0} has no settings page to tap through.", "{0} não tem página de configurações para percorrer com toques."],
+["{0} is turned off, so it has no App info page to tap through.", "O app {0} está desativado, então não tem página Informações do app para percorrer com toques."]
 ]
 };

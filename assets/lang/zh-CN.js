@@ -4583,7 +4583,14 @@ x: {
 "<1>Console → ADB Shell → Rish mode</1> is a persistent Shizuku shell: <2>cd</2> and variables stay put between commands.": "<1>控制台 → ADB Shell → Rish 模式</1> 是持久的 Shizuku shell：<2>cd</2> 和变量会在命令之间保留。",
 "<1>Console → Live Logcat</1> can show one app only. Tap Logs in an app's ⋯ menu.": "<1>控制台 → 实时 Logcat</1> 可以只显示一个应用。点按应用“⋯”菜单中的“日志”。",
 "<1>Console</1> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.": "<1>控制台</1>是单独的标签页：ADB Shell（Rish 模式、速查表、已保存的命令）和实时日志。此标签页只有终端和编程智能体。",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "你当前处于<1>只读模式</1>。系统软件包操作（如冻结、启用、强行停止、清除数据或卸载）需要通过 <2>ADB TCP (5555)</2>、<3>无线调试</3>、<4>Shizuku</4> 或 <5>Root</5> 获得更高权限。"
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "你当前处于<1>只读模式</1>。系统软件包操作（如冻结、启用、强行停止、清除数据或卸载）需要通过 <2>ADB TCP (5555)</2>、<3>无线调试</3>、<4>Shizuku</4> 或 <5>Root</5> 获得更高权限。",
+"Copy screen report": "复制屏幕报告",
+"Screen report copied": "屏幕报告已复制",
+"The automation gave up after several apps in a row failed.": "多个应用连续失败，自动化已放弃。",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "屏幕报告列出了上次尝试停止时“设置”屏幕上各控件的名称和位置、已尝试的操作、应用名称，以及手机型号和 Android 版本。其中没有手机上的其他任何内容：没有文件、消息或联系人。如果自动清除缓存在你的手机上不起作用，请把它发给开发者。",
+"The screen turned off or was locked, so the automation stopped.": "屏幕已关闭或已锁定，因此自动化已停止。",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "服务已开启，但 Android 没有运行它，因此 AppCleaner 暂时无法在设置中点按。请在无障碍设置中关闭后再开启，或重启手机。",
+"There is no screen report yet": "还没有屏幕报告",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5647,6 +5654,17 @@ p: [
 ["✓ fits this phone ({0})", "✓ 适合此手机（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} 的签名者与本应用的密钥相同，因此可以就地更新"],
 ["✓ {0}: done", "✓ {0}：已完成"],
-["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"]
+["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
+["Android refused to open the App info page of {0}.", "Android 拒绝打开 {0} 的应用信息页面。"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "卡在 {0} 的应用信息页面：已找到“存储”条目，但所有尝试（点按、手势、按键）都没能打开它。"],
+["The Clear cache button was not found on the Storage page of {0}.", "在 {0} 的存储页面上未找到“清除缓存”按钮。"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "“设置”应用没有为 {0} 切换到前台，也无法读取任何窗口。"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "“设置”应用没有为 {0} 切换到前台。当前在前台的窗口是 {1}。"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "“设置”应用已打开，但没有显示 {0} 的名称，因此没有点按任何内容。"],
+["The Storage entry was not found on the App info page of {0}.", "在 {0} 的应用信息页面上未找到“存储”条目。"],
+["The automation could not finish for {0}.", "自动化无法为 {0} 完成操作。"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "无法这样清除 {0} 的缓存：Android 锁定了它的“清除缓存”按钮。"],
+["{0} has no settings page to tap through.", "{0} 没有可供逐页点按的设置页面。"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} 已停用，因此没有可供逐页点按的应用信息页面。"]
 ]
 };
