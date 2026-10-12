@@ -401,7 +401,7 @@ None of this has been run on a phone yet. Take your time; each item says exactly
 - [ ] **Help Guide.** Open About > **Help Guide**, search for "Private DNS": the section "Extra Settings: Private DNS" starts with where it is and says it is not in Hidden Settings.
 - [ ] **The speed test.** In Extra Settings tap **Test speed**: see the checklist section 21 (the speed test items).
 
-## 24. Connection Check card (Working Modes)
+## 28. Connection Check card (Working Modes)
 
 None of this has been run on a phone yet. Open the working-mode badge at the top of the app; the **Connection Check** card is the first card of the sheet.
 
