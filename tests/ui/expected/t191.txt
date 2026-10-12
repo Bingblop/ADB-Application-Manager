@@ -56,5 +56,10 @@ ok   the window of a GitHub app starts its install and says Starting…
 ok   progress of some other install does not enter that window
 ok   its own progress does
 ok   and its end switches the button back on
+ok   Install, then the row opened before the answer: storeLoadApp was asked once for the two
+ok   one answer serves both: the install starts once and the window shows the details, its button held, with the progress
+ok   an error answer is shown on the row and in the window, the row is usable again, and there was one request
+ok   the window first, then Install on the row: still one request
+ok   ... and the install starts once
 ok   no script errors
 all passed

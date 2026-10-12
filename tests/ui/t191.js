@@ -255,6 +255,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- 13. one request for the details at a time: the row and the window wait for the same answer ----
   await ev(() => closeStoreModal());
+  await ev(() => switchStoreTab('shizu')); await wait(60);        // back from the GitHub list of section 12
   await ev(() => { delete storeDetailCache.bravo; window.__hold.bravo = true; });
   const lb = (await loads()).filter(x => x === 'bravo').length, ib = (await installs()).length;
   await page.click(row('bravo') + ' .store-inst-btn'); await wait(40);
