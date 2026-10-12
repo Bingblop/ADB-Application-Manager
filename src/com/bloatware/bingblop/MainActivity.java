@@ -7888,6 +7888,27 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Android's own Display settings (where adaptive brightness is switched on or off). The app never switches adaptive brightness itself. */
+        @JavascriptInterface
+        public void openDisplaySettings() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        try {
+                            Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
         @JavascriptInterface
         public void openShizukuApp() {
             runOnUiThread(new Runnable() {
@@ -9303,6 +9324,61 @@ public class MainActivity extends Activity {
          * characteristics, none of which need the camera permission (only opening one for capture does) - so this
          * works the same with or without a working mode connected, unlike everything shell-based in this file.
          */
+        /**
+         * One setting read with the app's own rights (the ContentResolver), with no working mode and no shell: the Global, Secure
+         * and System tables are readable by any app. For the Extra Settings tab, so that it can still SHOW what the phone holds
+         * in Read-Only mode (changing a value still goes through settingsOp and the working mode). Answers at once:
+         * {"ok":true,"value":"1.0"} ("null" when the key is not there) or {"ok":false,"error":"..."}.
+         */
+        @JavascriptInterface
+        public String settingsPeek(String ns, String key) {
+            JSONObject res = new JSONObject();
+            try {
+                String bad = SettingsDb.namespaceProblem(ns);
+                if (bad == null) bad = SettingsDb.keyProblem(key);
+                if (bad != null) { res.put("ok", false); res.put("error", bad); return res.toString(); }
+                android.content.ContentResolver cr = getContentResolver();
+                String v;
+                if ("global".equals(ns)) v = android.provider.Settings.Global.getString(cr, key);
+                else if ("secure".equals(ns)) v = android.provider.Settings.Secure.getString(cr, key);
+                else v = android.provider.Settings.System.getString(cr, key);
+                res.put("ok", true);
+                res.put("value", v == null ? "null" : v);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /**
+         * The Extra Settings tab's "Device telemetry" numbers, in one quick call that needs no working mode: RAM and swap from
+         * /proc/meminfo (MemStats), /data from StatFs, the battery as the Task Manager reads it, uptime, model, Android and One UI
+         * versions, the kernel. Cheap enough to be asked every few seconds (unlike getDeviceSpecs, which also lists cameras and
+         * sensors). Telemetry.build (pure, tested off the device) decides the shape.
+         */
+        @JavascriptInterface
+        public String getTelemetry() {
+            try {
+                long total = -1, free = -1;
+                try {
+                    android.os.StatFs sfs = new android.os.StatFs(android.os.Environment.getDataDirectory().getPath());
+                    total = sfs.getTotalBytes();
+                    free = sfs.getAvailableBytes();
+                } catch (Throwable ignored) {}
+                String oneUi;
+                synchronized (telemetryLock) {
+                    if (telemetryOneUi == null) telemetryOneUi = oneUiVersion();         // runs getprop once, not on every poll
+                    oneUi = telemetryOneUi;
+                }
+                return Telemetry.build(readWorldReadable("/proc/meminfo"), total, free, tmBatteryJson(), android.os.SystemClock.elapsedRealtime(),
+                        Build.MODEL, Build.MANUFACTURER, Build.VERSION.RELEASE, Build.VERSION.SDK_INT, oneUi, readWorldReadable("/proc/version")).toString();
+            } catch (Throwable t) {
+                return "{\"ok\":false}";
+            }
+        }
+        private final Object telemetryLock = new Object();
+        private String telemetryOneUi;
+
         @JavascriptInterface
         public String getDeviceSpecs() {
             JSONObject res = new JSONObject();

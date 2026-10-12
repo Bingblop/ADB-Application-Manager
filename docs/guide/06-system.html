@@ -233,14 +233,18 @@
   </ul>
 </section>
 <section id="tab-extrasettings" data-title="Extra Settings" data-group="The tabs">
-  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other; today the first and only section is Private DNS, with its speed test.</p>
+  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other: Private DNS with its speed test, the animation speed, the adaptive brightness bias, and a live telemetry card with the phone's numbers.</p>
   <p><b>Where to find it:</b> the tab named <b>Extra Settings</b> (two lines on the tab bar: Extra and Settings), right after <a href="#tab-settings">Hidden Settings</a> in the default order. It is not the gear icon, and it is not Hidden Settings: Hidden Settings edits Android's own settings tables one by one, Extra Settings has ready-made controls. If the tab is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
   <h4>The top of the tab</h4>
-  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>. Tap a chip and the page scrolls to its section. After a speed test a second chip, <i>Fastest</i>, names the quickest service.</p>
+  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>, <i>Animations  1&times;</i> and <i>Battery  49%</i>. Tap a chip and the page scrolls to its section. After a speed test another chip, <i>Fastest</i>, names the quickest service. The chips follow what the sections read from the phone.</p>
   <h4>The sections</h4>
   <ul>
     <li><a href="#extra-dns">Private DNS</a>: choose a Private DNS service for the whole phone and test how fast each one answers on your network.</li>
+    <li><a href="#extra-anim">Animation speed</a>: the three animation scales of Developer options, with a live preview dot for each, one Apply and one Reset to 1&times;.</li>
+    <li><a href="#extra-brightness">Brightness bias</a>: make adaptive brightness a little darker or brighter than Android would choose, without switching it off.</li>
+    <li><a href="#extra-telemetry">Device telemetry</a>: RAM, storage and battery as rings, the model, Android and One UI versions, kernel, uptime, battery temperature and swap, refreshed every five seconds, with a Copy report button. Needs no working mode.</li>
   </ul>
+  <p>The sections that change the phone (Private DNS, Animation speed, Brightness bias) need a working mode. Without one they say <i>Viewing only</i>, still show what the phone holds, and keep their controls off with the reason in words; <b>Set Up</b> opens Working Modes. Every change is written through the same path as the Hidden Settings tab and then <b>read back</b>: what a section says is what the phone reports, never what was merely sent.</p>
   <p>Every section has a coloured icon, a title, a one-line status at the right and a <b>What does this do?</b> note that opens the details.</p>
 </section>
 
@@ -284,6 +288,58 @@
   <p><b>A service that did not answer.</b> Its tile says <i>Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.</i> Tapping it does not apply it: the first tap only repeats that warning and marks the tile, and a second tap on the same tile within ten seconds applies it anyway. (For the typed host name, press <b>Apply</b> twice.)</p>
   <p><b>What the section says is what the phone has.</b> The line near the top reads <i>Private DNS is now: Off</i>, <i>Automatic</i> or <i>hostname</i> with the host name, and the pill at the top right and the chip at the top of the tab repeat it in one word. It always comes from reading the settings back from the phone, never from the change alone. The tile or button that matches the phone's state is marked (a tick and a pressed state, not only a colour). While a change is out, the controls that change Private DNS are off (the speed test and the sort switch change nothing and stay on). When the phone refuses a change, or keeps something else, the section says so in words (for example that Android refused the write, or that the phone does not report the new setting) and shows what the phone really holds. A change is made host first, then mode, and stops at the first step the phone refuses. Nothing changes until you tap.</p>
   <div class="hg-note"><b>If the internet stops.</b> A host name that is wrong, or a service that is down, can leave the phone without internet, and some Wi-Fi networks and hotspots block Private DNS altogether. The way back is <b>Automatic</b> or <b>Off</b> here, or <b>Private DNS</b> in Android's network settings (in the Internet or Connections section, under More connection settings on some phones); both bring normal DNS back. This section has not been tried on a phone yet.</div>
+</section>
+
+<section id="extra-anim" data-title="Extra Settings: Animation speed" data-group="The tabs">
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the section <b>Animation speed</b>, right under Private DNS.</p>
+  <p>Android has three animation scales, the ones in Developer options: <b>Window animations</b> (windows, dialogs and menus opening and closing), <b>Transition animations</b> (moving from one screen to the next) and <b>Animator duration</b> (everything else that moves inside apps: lists, switches, ripples). Each multiplies how long its kind of animation takes: 1&times; is Android's normal speed, 0.5&times; makes the phone feel snappier, Off (0) skips the animations. They are the Global settings <code>window_animation_scale</code>, <code>transition_animation_scale</code> and <code>animator_duration_scale</code>, and the Hidden Settings tab lists them too.</p>
+  <h4>The rows</h4>
+  <p>Each scale has a row with the name and one line on what it changes, a slider from 0 to 10 (in steps of 0.05) tied to a number field, the quick chips <b>Off &middot; 0.5&times; &middot; 1&times; &middot; 1.5&times; &middot; 2&times;</b>, a <b>preview dot</b> that moves back and forth at the chosen speed so you see the effect before you apply anything, and a line <i>On the phone: 1&times;</i> that says what the phone holds now. Slider, field and chips stay in step. The field takes any number of 0 or more: a value above 10 (beyond the slider) is allowed and shown with the warning <i>Very slow: Reset to 1&times; brings it back</i>; a value that is not a number, a negative one, <code>Infinity</code> or an exponent is refused in words under the row and nothing is sent. At Off the dot jumps from end to end instead of gliding. When the OS asks for reduced motion the dots stay still in the middle.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Apply</b></td><td>Writes the three scales to the phone (window, transition, animator, in that order, as <code>1.0</code>, <code>0.5</code> and so on, the way Developer options writes them), then reads all three back and shows what the phone holds. One field that is not a number stops the whole Apply: nothing is sent.</td></tr>
+      <tr><td><b>Reset to 1&times;</b></td><td>Sets all three to 1&times; and applies at once: Android's normal speed, the way back from anything slow or odd.</td></tr>
+      <tr><td><b>Check again</b></td><td>Reads the three scales from the phone again. The section also reads them when the tab opens.</td></tr>
+    </tbody>
+  </table>
+  <p><b>What the section says is what the phone has.</b> The line <i>The phone holds: 1&times; &middot; 1&times; &middot; 1&times;</i>, the <i>On the phone</i> line of each row, the pill at the top right (one value when the three agree, <i>Mixed</i> when they differ) and the chip <i>Animations</i> at the top of the tab all come from reading the settings back, never from the write alone. When the phone keeps other values than the ones sent, the section says <i>Not applied as sent: the phone reports other values</i> and the rows show what it holds; a write the phone refuses is reported with Android's own words, and the later scales are not sent. A change is kept until you change it again, here or in Developer options; apps are not restarted.</p>
+  <p>Without a working mode the section says <i>Viewing only</i>, still reads and shows the three scales (with the app's own rights), and keeps its controls off; <b>Set Up</b> opens Working Modes. In a browser it says it works in the app on a phone. This section has not been tried on a phone yet.</p>
+</section>
+
+<section id="extra-brightness" data-title="Extra Settings: Brightness bias (adaptive brightness)" data-group="The tabs">
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the section <b>Brightness bias</b>, under Animation speed.</p>
+  <p>Adaptive brightness picks the screen brightness from the light sensor. Android keeps one number next to it, <code>screen_auto_brightness_adj</code> in the System table, from <b>&minus;1</b> to <b>1</b>: 0 is neutral (Android's own choice), above 0 shifts every choice brighter, below 0 darker; +0.5 and &minus;0.5 are clearly noticeable. It is the same thing the brightness slider changes while adaptive brightness is on. This section lets you set it exactly, without switching adaptive brightness off.</p>
+  <h4>The controls</h4>
+  <p>The current value is shown big, with a plain phrase next to it (<i>+0.30  Brighter than normal</i>, <i>&minus;0.50  Darker than normal</i>, <i>0.00  Neutral: Android's own choice</i>; <i>Much brighter</i> / <i>Much darker</i> from &plusmn;0.75) and the line <i>On the phone</i> under it. A slider from &minus;1 to +1 (steps of 0.05) whose track shades from dark through neutral to bright is tied to a number field, with the chips <b>Darker &minus;0.5 &middot; Neutral 0 &middot; Brighter +0.5</b>. The field only takes a number from &minus;1 to 1: anything else (<code>1.5</code>, text, an empty field) is refused in words and nothing is sent; the value is never quietly clamped. A comma as the decimal sign and the real minus sign are read.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Apply</b></td><td>Writes the value (<code>settings put system screen_auto_brightness_adj</code>, through the working mode), then reads it back together with the adaptive brightness switch and shows what the phone holds.</td></tr>
+      <tr><td><b>Reset to 0</b></td><td>Writes 0, the neutral value, and reads it back.</td></tr>
+      <tr><td><b>Check again</b></td><td>Reads the value and the switch from the phone again. The section also reads them when the tab opens.</td></tr>
+      <tr><td><b>Open display settings</b></td><td>Shown in the notice when adaptive brightness is off: opens Android's own Display settings, where you switch adaptive brightness on. The app never switches it on by itself.</td></tr>
+    </tbody>
+  </table>
+  <p><b>Adaptive brightness off.</b> The section also reads <code>screen_brightness_mode</code> (1 = adaptive on). When it is 0 the notice <i>Adaptive brightness is off, so this has no effect until you turn it on</i> appears with the <b>Open display settings</b> button, and the pill says <i>Adaptive off</i>; the controls stay usable, because the value is kept and takes effect once adaptive brightness is on.</p>
+  <p><b>What the section says is what the phone has.</b> After Apply the value is read back: <i>Applied, and read back from the phone</i> when it matches. Samsung One UI and some other phones keep their own brightness curve and may reset or ignore this value: then the section says so honestly, <i>Applied, but the phone reports 0.00 instead of +0.50. One UI and some other phones reset or ignore this value</i>, and shows the phone's value. A phone with no value set counts as 0.</p>
+  <p>There is no live preview, and the section says why: the phone sets its brightness from the light around it, so you see the effect after Apply, as the light changes. Without a working mode the section says <i>Viewing only</i>, still shows the phone's value and keeps its controls off. This section has not been tried on a phone yet.</p>
+</section>
+
+<section id="extra-telemetry" data-title="Extra Settings: Device telemetry" data-group="The tabs">
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab, the section <b>Device telemetry</b>, the last one. It only reads: nothing on the phone changes, and no working mode is needed.</p>
+  <h4>The rings</h4>
+  <p>Three rings in a row: <b>RAM used</b> (what Linux reports as not available: MemTotal minus MemAvailable, as in the Task Manager), <b>Storage used</b> (the data partition, where apps and your files live) and <b>Battery</b>. The percentage sits in the middle, the amounts under it (<i>8.5 of 15.8 GB</i>, <i>112 of 237 GB</i>) or the battery state (<i>On battery</i>, <i>Charging</i>, <i>Full</i>, <i>Plugged in, not charging</i>). The battery ring turns amber at 20% or less and red at 10% or less, and shows a bolt while the phone is plugged in. A ring whose value could not be read is grey and says <i>Not available</i>.</p>
+  <h4>The spec chips</h4>
+  <p>Under the rings, in two columns: <b>Model</b> (maker and model), <b>Android</b> (the version, the API level and, on a Samsung, the One UI version), <b>Kernel</b> (the short version, such as <code>5.15.94-android13-8</code>; the Copy report has the whole build string), <b>Uptime</b>, <b>Battery temp</b> (in the unit chosen in the Task Manager, with the health: Good, Overheat, Cold and so on) and <b>Swap used</b> (<i>No swap</i> when the phone has none). A value that cannot be read says <i>Not available</i>, never a blank or a wrong number.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Refresh</b> (the round arrow)</td><td>Reads the numbers again now; the icon spins for a moment.</td></tr>
+      <tr><td><b>Copy report</b></td><td>Puts the same numbers on the clipboard as plain text: one line each for the model, Android, kernel, uptime, RAM, storage, battery and swap, with the time at the top.</td></tr>
+    </tbody>
+  </table>
+  <p>The numbers refresh every five seconds while the tab is on screen (the pill says <i>Live</i>) and stop when you leave the tab or the screen goes off (<i>Paused</i>). While the first reading is on its way the card shows a soft placeholder. The chip <i>Battery</i> at the top of the tab follows the battery ring. The readings come from the same sources as the Task Manager and the About tab's Device Specs card (<code>/proc/meminfo</code>, the data partition, the battery broadcast), through one quick native call. In a browser everything says <i>Not available</i>. This section has not been tried on a phone yet.</p>
 </section>
 
 <section id="tab-overlays" data-title="RRO/Monet Customization" data-group="The tabs">
