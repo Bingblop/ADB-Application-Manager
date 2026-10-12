@@ -650,7 +650,7 @@ that expect it there, never into the file itself. Already-added servers are list
 |---|---|---|
 | **Automatic** (default) | — | Uses the first ready backend: ADB TCP → Wireless Debugging → Shizuku |
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
-| **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS |
+| **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS. Android picks a new port each time Wireless debugging is switched on; when the saved port no longer connects, the app looks up the current one over mDNS (on the saved address only), connects and saves it, so you do not pair or type again |
 | **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt |
 | **Root** | su (Magisk / KernelSU / APatch) | Requested on demand |
 | **Read-Only** | — | Inspect only |

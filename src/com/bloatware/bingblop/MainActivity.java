@@ -1090,16 +1090,43 @@ public class MainActivity extends Activity {
         Log.d(TAG, "adb connect " + target + " -> " + output);
 
         boolean ready = isAdbTargetConnected(target);
+        String moved = null;
+        if (!ready && selectMode == null && port == adbWirelessPort && host.equals(adbWirelessHost) && !target.equals(tcpTarget())) {
+            moved = reconnectWirelessViaMdns(host, port);   // the saved Wireless Debugging port went stale: find the current one
+            ready = moved != null;
+        }
         if (ready && selectMode != null) {
             setConfiguredMode(selectMode);
         }
         cachedAutoMode = null;
         invalidateModeCache();                      // connected (or not) now: a probe that overlapped the connect must not keep the old picture
         if (output == null) output = "";
+        if (moved != null) return moved;
         if (!ready && !output.toLowerCase().contains("fail") && !output.toLowerCase().contains("error")) {
             output = output + (output.isEmpty() ? "" : "\n") + "Target " + target + " is not ready (check the authorization prompt on the device).";
         }
         return output;
+    }
+
+    /**
+     * Wireless Debugging takes a new random port each time it is switched on, so the saved one goes stale. Asks adb's mDNS for the phone's
+     * current connect endpoint (same host only, see {@link WirelessReconnect}), connects to it and, once it is ready, saves it. Returns a
+     * sentence for the person, or null when no endpoint was found or none would connect (the saved port is then left as it was).
+     */
+    private String reconnectWirelessViaMdns(String host, int stalePort) {
+        String raw = runProcessWithTimeout(buildAdbProcess("mdns", "services"), 4000);
+        List<String> tries = WirelessReconnect.candidates(WirelessReconnect.connectEndpoints(raw), host, stalePort, deviceWifiIp());
+        for (int i = 0; i < tries.size() && i < 2; i++) {
+            String ep = tries.get(i);
+            String out = runProcessWithTimeout(buildAdbProcess("connect", ep), 6000);
+            Log.d(TAG, "adb connect " + ep + " (mDNS) -> " + out);
+            if (!isAdbTargetConnected(ep)) continue;
+            adbWirelessHost = WirelessReconnect.hostOf(ep);
+            adbWirelessPort = WirelessReconnect.splitPort(ep);
+            prefs.edit().putString("adb_wireless_host", adbWirelessHost).putInt("adb_wireless_port", adbWirelessPort).apply();
+            return "Wireless Debugging moved from port " + stalePort + " to " + adbWirelessPort + "; connected to " + ep + " and saved the new port.";
+        }
+        return null;
     }
 
     private String connectTcp(String host, int port, boolean select) {
