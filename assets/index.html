@@ -32647,7 +32647,7 @@ Type any command below (e.g. pm list packages -d)
                 const c = mp.catalogs[s.id];
                 const n = s.patchCount >= 0 ? s.patchCount : (c && c.ok ? (c.patches || []).length : -1);
                 const badges = [];
-                if (s.builtIn) badges.push('<span class="mp-chip blue">Pre-installed</span>');
+                badges.push(s.builtIn ? '<span class="mp-chip blue">Official</span>' : '<span class="mp-chip warn">Custom</span>');
                 if (s.kind === 'local') badges.push('<span class="mp-chip">Local file</span>');
                 if (s.enabled === false) badges.push('<span class="mp-chip warn">Off</span>');
                 if (s.needsNewerPatcher) badges.push('<span class="mp-chip bad">Needs a newer Morphe</span>');
@@ -32669,7 +32669,8 @@ Type any command below (e.g. pm list packages -d)
                     (s.repo ? '<button class="mp-act" onclick="mpLink(' + jsArg((s.host === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + s.repo) + ')">Open</button>' : '') +
                     (!s.builtIn ? '<button class="mp-act danger" onclick="mpSourceRemove(' + jsArg(s.id) + ')">Delete</button>' : '') + '</div></div>';
             });
-            mpSheetBody('<div class="mp-note">A source is a bundle of patches. Turn a source off to keep it without using it. More sources are in the Community tab.</div>' + rows.join(''));
+            mpSheetBody('<div class="mp-note">A source is a bundle of patches. Turn a source off to keep it without using it: a source that is off is not loaded. More sources are in the Community tab.</div>' +
+                '<div class="mp-note">Official is the pre-installed source from the Morphe project. Custom is a source you added: its patches are code from whoever publishes it, and the app asks before it first loads a new or changed bundle.</div>' + rows.join(''));
         }
         async function mpSourcesCheck() {
             showToast('Checking the sources...');
