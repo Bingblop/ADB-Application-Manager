@@ -6107,6 +6107,7 @@
                 <div class="color-card-subtitle">Only AppCleaner uses it: it opens the system's App info screen of each app and taps Clear cache, for the caches no file access can reach. It does nothing else, never reads what is on the screen apart from those screens, and stops when the screen turns off.</div>
                 <div class="sd-chips" id="sdAcsChips"></div>
                 <div class="sd-note" id="sdAcsNote"></div>
+                <div id="sdAcsFail"></div>
                 <div class="sd-btns" id="sdAcsBtns"></div>
             </div>
 
@@ -34552,6 +34553,7 @@ Type any command below (e.g. pm list packages -d)
             else if (d.status === 'cancelled') showToast(sdName(id) + ' was cancelled');
             else if (kind !== 'scan' && d.secondary) showToast(sdName(id) + ': ' + (d.primary ? d.primary + ' ' : '') + d.secondary);
             sdCall('state', {}).then(r => { if (r.ok) sdApplyState(r); });
+            if (id === 'appcleaner' && kind !== 'scan') sdAcsRefresh();         // what the service ran into shows in its card
         }
         function sdApplyState(r) {
             if (r.tools) Object.keys(r.tools).forEach(k => { SD.st[k] = r.tools[k]; });
@@ -34733,10 +34735,11 @@ Type any command below (e.g. pm list packages -d)
         function sdPaintAcs() {
             const a = SD.acs, chips = document.getElementById('sdAcsChips'), note = document.getElementById('sdAcsNote'), btns = document.getElementById('sdAcsBtns');
             if (!chips) return;
-            if (!a) { chips.innerHTML = ''; note.textContent = ''; btns.innerHTML = ''; return; }
+            if (!a) { chips.innerHTML = ''; note.textContent = ''; btns.innerHTML = ''; sdPaintAcsFail(null); return; }
             chips.innerHTML = '<span class="sd-chip ' + (a.enabled ? 'ok' : 'off') + '">Service ' + (a.enabled ? (a.connected ? 'on' : 'on, starting') : 'off') + '</span>' +
                 '<span class="sd-chip ' + (a.consent ? 'ok' : 'off') + '">Consent ' + (a.consent ? 'given' : 'not given') + '</span>';
-            note.textContent = a.note || (a.enabled && a.consent ? 'Ready: AppCleaner clears the caches that need it by itself after you confirm Delete.' : 'Without it AppCleaner still deletes every cache it can reach with file access and, with a working mode, trims the caches of all apps at once.');
+            note.textContent = a.note || (a.enabled && a.consent ? (a.connected ? 'Ready: AppCleaner clears the caches that need it by itself after you confirm Delete.' : 'The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.') : 'Without it AppCleaner still deletes every cache it can reach with file access and, with a working mode, trims the caches of all apps at once.');
+            sdPaintAcsFail(a.lastFailure);
             let b = '';
             if (!a.enabled) b += '<button class="mode-action-btn primary" onclick="sdAcsEnable()">Enable the service</button>';
             if (a.enabled && !a.consent) b += '<button class="mode-action-btn primary" onclick="sdAcsConsent()">Give consent</button>';
@@ -34744,6 +34747,39 @@ Type any command below (e.g. pm list packages -d)
             b += '<button class="mode-action-btn" onclick="sdAcsOp(\'openSettings\')">Accessibility settings</button>';
             if (a.consent) b += '<button class="mode-action-btn" onclick="sdAcsOp(\'revoke\')">Withdraw consent</button>';
             btns.innerHTML = b;
+        }
+        // What the last run of the service ran into: a sentence for the code (the phone sends the code and the names), and the button that copies the screen report.
+        function sdAcsFailText(f) {
+            const L = f.label || f.pkg || '', W = f.window || '';
+            switch (f.code) {
+                case 'NO_PROGRESS': return 'Stuck on the App info page of ' + L + ': the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.';
+                case 'STORAGE_NOT_FOUND': return 'The Storage entry was not found on the App info page of ' + L + '.';
+                case 'CLEAR_NOT_FOUND': return 'The Clear cache button was not found on the Storage page of ' + L + '.';
+                case 'SETTINGS_NOT_OPENED': return W ? 'The Settings app did not come to the front for ' + L + '. The window in front was ' + W + '.' : 'The Settings app did not come to the front for ' + L + ', and no window could be read.';
+                case 'APP_NOT_ON_SCREEN': return 'The Settings app is open, but it does not show the name of ' + L + ', so nothing was tapped.';
+                case 'LAUNCH_FAILED': return 'Android refused to open the App info page of ' + L + '.';
+                case 'LOCKED': return L + ' cannot be cleared this way: Android locks its Clear cache button.';
+                case 'NO_SETTINGS': return L + ' has no settings page to tap through.';
+                case 'DISABLED_APP': return L + ' is turned off, so it has no App info page to tap through.';
+                case 'SCREEN_UNAVAILABLE': return 'The screen turned off or was locked, so the automation stopped.';
+                case 'GAVE_UP': return 'The automation gave up after several apps in a row failed.';
+                default: return 'The automation could not finish for ' + L + '.';
+            }
+        }
+        function sdPaintAcsFail(f) {
+            const el = document.getElementById('sdAcsFail');
+            if (!el) return;
+            if (!f) { el.innerHTML = ''; return; }
+            el.innerHTML = '<div class="sd-note is-err" id="sdAcsFailMsg">' + escapeHtml(sdAcsFailText(f)) + '</div>' +
+                (f.hasReport ? '<div class="sd-note">The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.</div>' +
+                    '<div class="sd-btns"><button class="mode-action-btn" id="sdAcsCopyBtn" onclick="sdAcsCopyReport()">Copy screen report</button></div>' : '');
+        }
+        async function sdAcsCopyReport() {
+            haptic();
+            const r = await sdCall('acs', { op: 'report' });
+            if (!r.ok || !r.report) { showToast('There is no screen report yet'); return; }
+            copyText(r.report);
+            showToast('Screen report copied');
         }
         async function sdAcsOp(op) {
             haptic();

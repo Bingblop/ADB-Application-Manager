@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
 "This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
 "Check again": "重新检查",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。",
+"Copy screen report": "复制屏幕报告",
+"Screen report copied": "屏幕报告已复制",
+"The automation gave up after several apps in a row failed.": "多个应用连续失败，自动化已放弃。",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "屏幕报告列出了上次尝试停止时“设置”屏幕上各控件的名称和位置、已尝试的操作、应用名称，以及手机型号和 Android 版本。其中没有手机上的其他任何内容：没有文件、消息或联系人。如果自动清除缓存在你的手机上不起作用，请把它发给开发者。",
+"The screen turned off or was locked, so the automation stopped.": "屏幕已关闭或已锁定，因此自动化已停止。",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "服务已开启，但 Android 没有运行它，因此 AppCleaner 暂时无法在设置中点按。请在无障碍设置中关闭后再开启，或重启手机。",
+"There is no screen report yet": "还没有屏幕报告"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "无法确认更改：{0}"],
 ["Could not read Private DNS: {0}", "无法读取私人 DNS：{0}"],
 ["Private DNS is now: an unknown mode “{0}”", "私人 DNS 当前：未知模式“{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "手机已有此设置，但有一个步骤报告了问题：{0}"]
+["The phone has this setting, but one step reported a problem: {0}", "手机已有此设置，但有一个步骤报告了问题：{0}"],
+["Android refused to open the App info page of {0}.", "Android 拒绝打开 {0} 的应用信息页面。"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "卡在 {0} 的应用信息页面：已找到“存储”条目，但所有尝试（点按、手势、按键）都没能打开它。"],
+["The Clear cache button was not found on the Storage page of {0}.", "在 {0} 的存储页面上未找到“清除缓存”按钮。"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "“设置”应用没有为 {0} 切换到前台，也无法读取任何窗口。"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "“设置”应用没有为 {0} 切换到前台。当前在前台的窗口是 {1}。"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "“设置”应用已打开，但没有显示 {0} 的名称，因此没有点按任何内容。"],
+["The Storage entry was not found on the App info page of {0}.", "在 {0} 的应用信息页面上未找到“存储”条目。"],
+["The automation could not finish for {0}.", "自动化无法为 {0} 完成操作。"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "无法这样清除 {0} 的缓存：Android 锁定了它的“清除缓存”按钮。"],
+["{0} has no settings page to tap through.", "{0} 没有可供逐页点按的设置页面。"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} 已停用，因此没有可供逐页点按的应用信息页面。"]
 ]
 };

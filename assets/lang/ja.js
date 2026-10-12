@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "設定サービスから応答がありませんでした。しばらくしてからもう一度試すか、スマートフォンを再起動してください。",
 "This Android version did not understand the command.": "このAndroidのバージョンはコマンドを理解できませんでした。",
 "Check again": "もう一度確認",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "ファイルマネージャーからのインストールには、ADB、ワイヤレスデバッグ、Shizuku、Rootのいずれかが必要です。動作モードでどれかを設定してから、もう一度お試しください。"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "ファイルマネージャーからのインストールには、ADB、ワイヤレスデバッグ、Shizuku、Rootのいずれかが必要です。動作モードでどれかを設定してから、もう一度お試しください。",
+"Copy screen report": "画面レポートをコピー",
+"Screen report copied": "画面レポートをコピーしました",
+"The automation gave up after several apps in a row failed.": "複数のアプリが続けて失敗したため、自動化を中止しました。",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "画面レポートには、最後の試行が止まった設定画面にあるコントロールの名前と位置、試した操作、アプリ名、端末のモデルと Android のバージョンが記録されます。それ以外のスマートフォンの内容（ファイル、メッセージ、連絡先）は含まれません。キャッシュの自動削除がお使いの端末で動かない場合は、開発者に送ってください。",
+"The screen turned off or was locked, so the automation stopped.": "画面がオフになったかロックされたため、自動化を停止しました。",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "サービスはオンですが、Android が実行していないため、AppCleaner はまだ設定画面をタップできません。ユーザー補助の設定でいったんオフにして、もう一度オンにするか、端末を再起動してください。",
+"There is no screen report yet": "画面レポートはまだありません"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "変更を確認できませんでした：{0}"],
 ["Could not read Private DNS: {0}", "プライベートDNSを読み取れませんでした：{0}"],
 ["Private DNS is now: an unknown mode “{0}”", "プライベートDNSは現在：不明なモード「{0}」"],
-["The phone has this setting, but one step reported a problem: {0}", "スマートフォンにはこの設定がありますが、1つの手順で問題が報告されました：{0}"]
+["The phone has this setting, but one step reported a problem: {0}", "スマートフォンにはこの設定がありますが、1つの手順で問題が報告されました：{0}"],
+["Android refused to open the App info page of {0}.", "Android が {0} のアプリ情報ページを開くことを拒否しました。"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} のアプリ情報ページで止まりました：「ストレージ」の項目は見つかりましたが、試したどの方法（タップ、ジェスチャー、キー操作）でも開けませんでした。"],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} のストレージページで「キャッシュを削除」ボタンが見つかりませんでした。"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} のために設定アプリが前面に出ず、読み取れるウィンドウもありませんでした。"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} のために設定アプリが前面に出ませんでした。前面にあったウィンドウは {1} です。"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "設定アプリは開いていますが、{0} の名前が表示されていないため、何もタップしませんでした。"],
+["The Storage entry was not found on the App info page of {0}.", "{0} のアプリ情報ページで「ストレージ」の項目が見つかりませんでした。"],
+["The automation could not finish for {0}.", "{0} の自動化を完了できませんでした。"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} のキャッシュはこの方法では削除できません：Android が「キャッシュを削除」ボタンをロックしています。"],
+["{0} has no settings page to tap through.", "{0} にはタップで進める設定ページがありません。"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} は無効になっているため、タップで進めるアプリ情報ページがありません。"]
 ]
 };

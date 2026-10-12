@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Служба настроек не ответила. Повторите попытку через минуту или перезагрузите телефон.",
 "This Android version did not understand the command.": "Эта версия Android не поняла команду.",
 "Check again": "Проверить снова",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Для установки из Диспетчера файлов нужен ADB, Wireless Debugging, Shizuku или Root. Настройте один из них в разделе «Режимы работы» и повторите попытку."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Для установки из Диспетчера файлов нужен ADB, Wireless Debugging, Shizuku или Root. Настройте один из них в разделе «Режимы работы» и повторите попытку.",
+"Copy screen report": "Скопировать отчёт об экране",
+"Screen report copied": "Отчёт об экране скопирован",
+"The automation gave up after several apps in a row failed.": "Автоматизация прекратила работу после того, как подряд завершились ошибкой несколько приложений.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Отчёт об экране содержит названия и расположение элементов на экране настроек, где остановилась последняя попытка, список того, что пробовали, название приложения, а также модель телефона и версию Android. Ничего другого с вашего телефона в нём нет: ни файлов, ни сообщений, ни контактов. Отправьте его разработчику, если автоматическая очистка кэша не работает на вашем телефоне.",
+"The screen turned off or was locked, so the automation stopped.": "Экран выключился или заблокировался, поэтому автоматизация остановлена.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Служба включена, но Android её не запускает, поэтому AppCleaner пока не может нажимать в настройках. Выключите и снова включите её в настройках специальных возможностей или перезагрузите телефон.",
+"There is no screen report yet": "Отчёта об экране пока нет"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "Не удалось подтвердить изменение: {0}"],
 ["Could not read Private DNS: {0}", "Не удалось считать частный DNS: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Частный DNS сейчас: неизвестный режим «{0}»"],
-["The phone has this setting, but one step reported a problem: {0}", "У телефона такая настройка, но один из шагов сообщил о проблеме: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "У телефона такая настройка, но один из шагов сообщил о проблеме: {0}"],
+["Android refused to open the App info page of {0}.", "Android отказал в открытии страницы «О приложении» для {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Застряли на странице «О приложении» для {0}: пункт «Хранилище» найден, но ничто из испробованного (касание, жест, клавиши) его не открыло."],
+["The Clear cache button was not found on the Storage page of {0}.", "Кнопка «Очистить кэш» не найдена на странице хранилища {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Настройки не вышли на передний план для {0}, и ни одно окно не удалось прочитать."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Настройки не вышли на передний план для {0}. На переднем плане было окно {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Настройки открыты, но не показывают название {0}, поэтому ничего не нажималось."],
+["The Storage entry was not found on the App info page of {0}.", "Пункт «Хранилище» не найден на странице «О приложении» для {0}."],
+["The automation could not finish for {0}.", "Автоматизация не смогла завершить работу для {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Кэш приложения {0} так не очистить: Android блокирует его кнопку «Очистить кэш»."],
+["{0} has no settings page to tap through.", "У приложения {0} нет страницы настроек, по которой можно пройти нажатиями."],
+["{0} is turned off, so it has no App info page to tap through.", "Приложение {0} отключено, поэтому у него нет страницы «О приложении», по которой можно пройти нажатиями."]
 ]
 };

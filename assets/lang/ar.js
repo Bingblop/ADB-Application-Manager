@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
 "This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
 "Check again": "فحص مرة أخرى",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى.",
+"Copy screen report": "نسخ تقرير الشاشة",
+"Screen report copied": "تم نسخ تقرير الشاشة",
+"The automation gave up after several apps in a row failed.": "توقفت الأتمتة بعد فشل عدة تطبيقات متتالية.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "يسرد تقرير الشاشة أسماء عناصر التحكم ومواضعها في شاشة الإعدادات التي توقفت عندها المحاولة الأخيرة، وما جُرّب، واسم التطبيق، وطراز الهاتف وإصدار Android. لا يوجد فيه أي شيء آخر من هاتفك: لا ملفات ولا رسائل ولا جهات اتصال. أرسله إلى المطوّر إذا لم يعمل مسح ذاكرة التخزين المؤقت تلقائيًا على هاتفك.",
+"The screen turned off or was locked, so the automation stopped.": "تم إطفاء الشاشة أو قفلها، لذلك توقفت الأتمتة.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "الخدمة قيد التشغيل لكن Android لا يشغّلها، لذلك لا يستطيع AppCleaner النقر داخل الإعدادات بعد. أوقفها ثم شغّلها مجددًا من إعدادات إمكانية الوصول، أو أعد تشغيل الهاتف.",
+"There is no screen report yet": "لا يوجد تقرير شاشة بعد"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "تعذّر تأكيد التغيير: {0}"],
 ["Could not read Private DNS: {0}", "تعذّر قراءة DNS الخاص: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "DNS الخاص الآن: وضع غير معروف «{0}»"],
-["The phone has this setting, but one step reported a problem: {0}", "الإعداد موجود في الهاتف، لكن إحدى الخطوات أبلغت عن مشكلة: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "الإعداد موجود في الهاتف، لكن إحدى الخطوات أبلغت عن مشكلة: {0}"],
+["Android refused to open the App info page of {0}.", "رفض Android فتح صفحة معلومات التطبيق الخاصة بـ {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "عالق في صفحة معلومات التطبيق الخاصة بـ {0}: عُثر على عنصر التخزين، لكن لم ينجح أي شيء مما جُرّب (نقرة أو إيماءة أو المفاتيح) في فتحه."],
+["The Clear cache button was not found on the Storage page of {0}.", "لم يُعثر على زر مسح ذاكرة التخزين المؤقت في صفحة التخزين الخاصة بـ {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "لم يظهر تطبيق الإعدادات في المقدمة من أجل {0}، ولم يمكن قراءة أي نافذة."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "لم يظهر تطبيق الإعدادات في المقدمة من أجل {0}. كانت النافذة في المقدمة هي {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "تطبيق الإعدادات مفتوح لكنه لا يعرض اسم {0}، لذلك لم يُنقر على أي شيء."],
+["The Storage entry was not found on the App info page of {0}.", "لم يُعثر على عنصر التخزين في صفحة معلومات التطبيق الخاصة بـ {0}."],
+["The automation could not finish for {0}.", "تعذّر إكمال الأتمتة لـ {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "لا يمكن مسح ذاكرة التخزين المؤقت لـ {0} بهذه الطريقة: يقفل Android زر مسح ذاكرة التخزين المؤقت الخاص به."],
+["{0} has no settings page to tap through.", "لا تحتوي {0} على صفحة إعدادات يمكن التنقل فيها بالنقر."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} معطّل، لذلك لا توجد له صفحة معلومات تطبيق يمكن التنقل فيها بالنقر."]
 ]
 };

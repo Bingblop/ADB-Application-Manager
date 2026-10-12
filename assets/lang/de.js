@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Der Einstellungsdienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal oder starten Sie das Telefon neu.",
 "This Android version did not understand the command.": "Diese Android-Version hat den Befehl nicht verstanden.",
 "Check again": "Erneut prüfen",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Das Installieren aus dem Dateimanager braucht ADB, Wireless Debugging, Shizuku oder Root. Richte unter Betriebsmodi einen davon ein und versuche es erneut."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Das Installieren aus dem Dateimanager braucht ADB, Wireless Debugging, Shizuku oder Root. Richte unter Betriebsmodi einen davon ein und versuche es erneut.",
+"Copy screen report": "Bildschirmbericht kopieren",
+"Screen report copied": "Bildschirmbericht kopiert",
+"The automation gave up after several apps in a row failed.": "Die Automatisierung hat aufgegeben, nachdem mehrere Apps hintereinander gescheitert sind.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Der Bildschirmbericht listet die Namen und Positionen der Bedienelemente auf dem Einstellungsbildschirm auf, an dem der letzte Versuch stehen geblieben ist, außerdem was versucht wurde, den Namen der App sowie Gerätemodell und Android-Version. Sonst steht nichts von deinem Gerät darin: keine Dateien, Nachrichten oder Kontakte. Schick ihn an den Entwickler, wenn das automatische Leeren des Caches auf deinem Gerät nicht funktioniert.",
+"The screen turned off or was locked, so the automation stopped.": "Der Bildschirm wurde ausgeschaltet oder gesperrt, deshalb wurde die Automatisierung beendet.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Der Dienst ist eingeschaltet, aber Android führt ihn nicht aus, daher kann AppCleaner noch nicht durch die Einstellungen tippen. Schalte ihn in den Bedienungshilfen-Einstellungen aus und wieder ein oder starte das Gerät neu.",
+"There is no screen report yet": "Es gibt noch keinen Bildschirmbericht"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "Die Änderung konnte nicht bestätigt werden: {0}"],
 ["Could not read Private DNS: {0}", "Privates DNS konnte nicht gelesen werden: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Privates DNS ist jetzt: unbekannter Modus „{0}“"],
-["The phone has this setting, but one step reported a problem: {0}", "Das Telefon hat diese Einstellung, aber ein Schritt meldete ein Problem: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Das Telefon hat diese Einstellung, aber ein Schritt meldete ein Problem: {0}"],
+["Android refused to open the App info page of {0}.", "Android hat das Öffnen der App-Info-Seite von {0} verweigert."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Bei der App-Info-Seite von {0} hängengeblieben: Der Eintrag „Speicher“ wurde gefunden, aber nichts von dem, was versucht wurde (Tippen, Geste, Tasten), hat ihn geöffnet."],
+["The Clear cache button was not found on the Storage page of {0}.", "Die Schaltfläche „Cache leeren“ wurde auf der Speicherseite von {0} nicht gefunden."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Die Einstellungen-App wurde für {0} nicht in den Vordergrund gebracht, und es war kein Fenster lesbar."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Die Einstellungen-App wurde für {0} nicht in den Vordergrund gebracht. Im Vordergrund war das Fenster {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Die Einstellungen-App ist geöffnet, zeigt aber den Namen von {0} nicht an, daher wurde nichts angetippt."],
+["The Storage entry was not found on the App info page of {0}.", "Der Eintrag „Speicher“ wurde auf der App-Info-Seite von {0} nicht gefunden."],
+["The automation could not finish for {0}.", "Die Automatisierung konnte für {0} nicht abgeschlossen werden."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} lässt sich so nicht leeren: Android sperrt die Schaltfläche „Cache leeren“."],
+["{0} has no settings page to tap through.", "{0} hat keine Einstellungsseite, durch die getippt werden kann."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} ist ausgeschaltet und hat daher keine App-Info-Seite, durch die getippt werden kann."]
 ]
 };

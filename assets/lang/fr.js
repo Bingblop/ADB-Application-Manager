@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Le service des paramètres n’a pas répondu. Réessayez dans un instant ou redémarrez le téléphone.",
 "This Android version did not understand the command.": "Cette version d’Android n’a pas compris la commande.",
 "Check again": "Vérifier à nouveau",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Installer depuis le Gestionnaire de fichiers nécessite ADB, Wireless Debugging, Shizuku ou Root. Configurez-en un dans Modes de fonctionnement, puis réessayez."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Installer depuis le Gestionnaire de fichiers nécessite ADB, Wireless Debugging, Shizuku ou Root. Configurez-en un dans Modes de fonctionnement, puis réessayez.",
+"Copy screen report": "Copier le rapport d’écran",
+"Screen report copied": "Rapport d’écran copié",
+"The automation gave up after several apps in a row failed.": "L’automatisation a abandonné après l’échec de plusieurs applis d’affilée.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Le rapport d’écran liste les noms et les positions des commandes de l’écran Paramètres où la dernière tentative s’est arrêtée, ce qui a été essayé, le nom de l’appli, ainsi que le modèle du téléphone et la version d’Android. Rien d’autre de votre téléphone n’y figure : ni fichiers, ni messages, ni contacts. Envoyez-le au développeur si le vidage automatique du cache ne fonctionne pas sur votre téléphone.",
+"The screen turned off or was locked, so the automation stopped.": "L’écran s’est éteint ou verrouillé, l’automatisation s’est donc arrêtée.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Le service est activé, mais Android ne l’exécute pas ; AppCleaner ne peut donc pas encore appuyer dans les paramètres. Désactivez-le puis réactivez-le dans les paramètres d’accessibilité, ou redémarrez le téléphone.",
+"There is no screen report yet": "Il n’y a pas encore de rapport d’écran"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "Impossible de confirmer la modification : {0}"],
 ["Could not read Private DNS: {0}", "Impossible de lire le DNS privé : {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Le DNS privé est maintenant : un mode inconnu « {0} »"],
-["The phone has this setting, but one step reported a problem: {0}", "Le téléphone a ce réglage, mais une étape a signalé un problème : {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Le téléphone a ce réglage, mais une étape a signalé un problème : {0}"],
+["Android refused to open the App info page of {0}.", "Android a refusé d’ouvrir la page Infos appli de {0}."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "Bloqué sur la page Infos appli de {0} : l’entrée Stockage a été trouvée, mais rien de ce qui a été essayé (un appui, un geste, les touches) ne l’a ouverte."],
+["The Clear cache button was not found on the Storage page of {0}.", "Le bouton Vider le cache est introuvable sur la page Stockage de {0}."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "Les Paramètres ne sont pas passés au premier plan pour {0}, et aucune fenêtre n’a pu être lue."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "Les Paramètres ne sont pas passés au premier plan pour {0}. La fenêtre au premier plan était {1}."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Les Paramètres sont ouverts, mais n’affichent pas le nom de {0} ; rien n’a donc été touché."],
+["The Storage entry was not found on the App info page of {0}.", "L’entrée Stockage est introuvable sur la page Infos appli de {0}."],
+["The automation could not finish for {0}.", "L’automatisation n’a pas pu aller au bout pour {0}."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "Le cache de {0} ne peut pas être vidé ainsi : Android verrouille son bouton Vider le cache."],
+["{0} has no settings page to tap through.", "{0} n’a pas de page de paramètres dans laquelle naviguer par appuis."],
+["{0} is turned off, so it has no App info page to tap through.", "L’appli {0} est désactivée ; elle n’a donc pas de page Infos appli dans laquelle naviguer par appuis."]
 ]
 };

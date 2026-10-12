@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
 "This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
 "Check again": "Yeniden denetle",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin.",
+"Copy screen report": "Ekran raporunu kopyala",
+"Screen report copied": "Ekran raporu kopyalandı",
+"The automation gave up after several apps in a row failed.": "Art arda birkaç uygulama başarısız olduğu için otomasyon vazgeçti.",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "Ekran raporu; son denemenin durduğu Ayarlar ekranındaki denetimlerin adlarını ve konumlarını, nelerin denendiğini, uygulamanın adını ve telefon modeli ile Android sürümünü listeler. Telefonunuzdan başka hiçbir şey içermez: dosya, mesaj veya kişi yok. Önbelleğin kendiliğinden temizlenmesi telefonunuzda çalışmıyorsa geliştiriciye gönderin.",
+"The screen turned off or was locked, so the automation stopped.": "Ekran kapandığı veya kilitlendiği için otomasyon durdu.",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "Hizmet açık ama Android onu çalıştırmıyor; bu yüzden AppCleaner henüz ayarlarda dokunamıyor. Erişilebilirlik ayarlarında kapatıp yeniden açın ya da telefonu yeniden başlatın.",
+"There is no screen report yet": "Henüz ekran raporu yok"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "Değişiklik doğrulanamadı: {0}"],
 ["Could not read Private DNS: {0}", "Özel DNS okunamadı: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "Özel DNS şu anda: bilinmeyen bir mod “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "Telefonda bu ayar var, ancak bir adım sorun bildirdi: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "Telefonda bu ayar var, ancak bir adım sorun bildirdi: {0}"],
+["Android refused to open the App info page of {0}.", "Android, {0} uygulamasının Uygulama bilgileri sayfasını açmayı reddetti."],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} uygulamasının Uygulama bilgileri sayfasında takıldı: Depolama girişi bulundu ama denenen hiçbir yol (dokunma, hareket, tuşlar) onu açmadı."],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} uygulamasının Depolama sayfasında Önbelleği temizle düğmesi bulunamadı."],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} için Ayarlar uygulaması öne gelmedi ve hiçbir pencere okunamadı."],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} için Ayarlar uygulaması öne gelmedi. Öndeki pencere {1} idi."],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "Ayarlar uygulaması açık ama {0} adını göstermiyor; bu yüzden hiçbir şeye dokunulmadı."],
+["The Storage entry was not found on the App info page of {0}.", "{0} uygulamasının Uygulama bilgileri sayfasında Depolama girişi bulunamadı."],
+["The automation could not finish for {0}.", "Otomasyon {0} için tamamlanamadı."],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} bu yolla temizlenemez: Android Önbelleği temizle düğmesini kilitliyor."],
+["{0} has no settings page to tap through.", "{0} uygulamasında dokunarak gezilebilecek bir ayarlar sayfası yok."],
+["{0} is turned off, so it has no App info page to tap through.", "{0} uygulaması kapalı olduğundan dokunarak gezilebilecek bir Uygulama bilgileri sayfası yok."]
 ]
 };

@@ -4526,7 +4526,14 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "सेटिंग सेवा ने जवाब नहीं दिया। थोड़ी देर में फिर से कोशिश करें, या फ़ोन रीस्टार्ट करें।",
 "This Android version did not understand the command.": "इस Android संस्करण ने कमांड नहीं समझा।",
 "Check again": "फिर से जांचें",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "फ़ाइल मैनेजर से इंस्टॉल करने के लिए ADB, Wireless Debugging, Shizuku या Root चाहिए। वर्किंग मोड में कोई एक सेट करें, फिर दोबारा कोशिश करें।"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "फ़ाइल मैनेजर से इंस्टॉल करने के लिए ADB, Wireless Debugging, Shizuku या Root चाहिए। वर्किंग मोड में कोई एक सेट करें, फिर दोबारा कोशिश करें।",
+"Copy screen report": "स्क्रीन रिपोर्ट कॉपी करें",
+"Screen report copied": "स्क्रीन रिपोर्ट कॉपी हो गई",
+"The automation gave up after several apps in a row failed.": "लगातार कई ऐप विफल होने के बाद ऑटोमेशन ने हार मान ली।",
+"The screen report lists the names and places of the controls on the Settings screen where the last attempt stopped, what was tried, the name of the app, and the phone model and Android version. Nothing else from your phone is in it: no files, messages or contacts. Send it to the developer if clearing the cache by itself does not work on your phone.": "स्क्रीन रिपोर्ट में उस सेटिंग स्क्रीन के कंट्रोल के नाम और उनकी जगह दी जाती है जहाँ पिछला प्रयास रुका, क्या-क्या आज़माया गया, ऐप का नाम, और फ़ोन का मॉडल व Android वर्शन। आपके फ़ोन की और कोई चीज़ इसमें नहीं है: कोई फ़ाइल, संदेश या संपर्क नहीं। अगर कैश अपने आप साफ़ होना आपके फ़ोन पर काम नहीं करता, तो इसे डेवलपर को भेजें।",
+"The screen turned off or was locked, so the automation stopped.": "स्क्रीन बंद हो गई या लॉक हो गई, इसलिए ऑटोमेशन रुक गया।",
+"The service is switched on but Android is not running it, so AppCleaner cannot tap through the settings yet. Turn it off and on again in the accessibility settings, or restart the phone.": "सेवा चालू है, लेकिन Android उसे चला नहीं रहा, इसलिए AppCleaner अभी सेटिंग में टैप नहीं कर सकता। एक्सेसिबिलिटी सेटिंग में इसे बंद करके फिर चालू करें, या फ़ोन रीस्टार्ट करें।",
+"There is no screen report yet": "अभी तक कोई स्क्रीन रिपोर्ट नहीं है"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5582,6 +5589,17 @@ p: [
 ["Could not confirm the change: {0}", "बदलाव की पुष्टि नहीं हो सकी: {0}"],
 ["Could not read Private DNS: {0}", "निजी DNS पढ़ा नहीं जा सका: {0}"],
 ["Private DNS is now: an unknown mode “{0}”", "निजी DNS अभी: अज्ञात मोड “{0}”"],
-["The phone has this setting, but one step reported a problem: {0}", "फ़ोन में यह सेटिंग है, लेकिन एक चरण ने समस्या बताई: {0}"]
+["The phone has this setting, but one step reported a problem: {0}", "फ़ोन में यह सेटिंग है, लेकिन एक चरण ने समस्या बताई: {0}"],
+["Android refused to open the App info page of {0}.", "Android ने {0} का ऐप की जानकारी पेज खोलने से मना कर दिया।"],
+["Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.", "{0} के ऐप की जानकारी पेज पर अटक गया: स्टोरेज वाली एंट्री मिल गई, लेकिन आज़माए गए किसी भी तरीके (टैप, जेस्चर, कुंजियाँ) से वह नहीं खुली।"],
+["The Clear cache button was not found on the Storage page of {0}.", "{0} के स्टोरेज पेज पर कैश साफ़ करें बटन नहीं मिला।"],
+["The Settings app did not come to the front for {0}, and no window could be read.", "{0} के लिए सेटिंग ऐप सामने नहीं आया, और कोई विंडो पढ़ी नहीं जा सकी।"],
+["The Settings app did not come to the front for {0}. The window in front was {1}.", "{0} के लिए सेटिंग ऐप सामने नहीं आया। सामने की विंडो {1} थी।"],
+["The Settings app is open, but it does not show the name of {0}, so nothing was tapped.", "सेटिंग ऐप खुला है, लेकिन उसमें {0} का नाम नहीं दिख रहा, इसलिए कुछ भी टैप नहीं किया गया।"],
+["The Storage entry was not found on the App info page of {0}.", "{0} के ऐप की जानकारी पेज पर स्टोरेज वाली एंट्री नहीं मिली।"],
+["The automation could not finish for {0}.", "ऑटोमेशन {0} के लिए पूरा नहीं हो सका।"],
+["{0} cannot be cleared this way: Android locks its Clear cache button.", "{0} का कैश इस तरह साफ़ नहीं हो सकता: Android ने उसका कैश साफ़ करें बटन लॉक कर रखा है।"],
+["{0} has no settings page to tap through.", "{0} में टैप करके चलने लायक कोई सेटिंग पेज नहीं है।"],
+["{0} is turned off, so it has no App info page to tap through.", "{0} बंद है, इसलिए उसमें टैप करके चलने लायक ऐप की जानकारी पेज नहीं है।"]
 ]
 };
