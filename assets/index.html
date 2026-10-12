@@ -6080,6 +6080,7 @@
                         #telemetryCard .tel-spec-k { font-size: 10px; font-weight: 700; line-height: 1.2; color: var(--text-muted); overflow-wrap: anywhere; }
                         #telemetryCard .tel-spec-v { font-size: 12px; font-weight: 800; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
                         #telemetryCard .tel-spec-v.is-none, #telemetryCard .tel-sub.is-none { color: var(--text-muted); font-weight: 600; }
+                        #telemetryCard .tel-spec-sub { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); line-height: 1.3; }
                         #telemetryCard .tel-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
                         #telemetryCard .tel-actions .xs-btn { flex: 1 1 auto; }
                         #telemetryCard .tel-refresh { flex: 0 0 44px; width: 44px; padding: 0; }
@@ -14359,6 +14360,10 @@ Type any command below (e.g. pm list packages -d)
             telSpec('telModel', d ? telModelText(d) : null, true);
             telSpec('telAndroid', d && d.android ? d.android + (d.sdk ? ' (API ' + d.sdk + ')' : '') + (d.oneUi ? ' · One UI ' + d.oneUi : '') : null, true);
             telSpec('telKernel', d && d.kernel ? telKernelShort(d.kernel) : null, true);
+            if (d && d.kernel) {                                                   // "5.15.94" bold, "android13-8" as a muted line under it: a chip that is two lines by design, not by overflow
+                const el = document.getElementById('telKernel'), parts = /^([^-]+)-(.+)$/.exec(telKernelShort(d.kernel));
+                if (parts) { el.textContent = parts[1]; const sub = document.createElement('span'); sub.className = 'tel-spec-sub'; sub.textContent = parts[2]; el.appendChild(sub); }
+            }
             telSpec('telUptime', d && d.uptimeMs != null ? tmFormatUptime(d.uptimeMs) : null, false);
             const temp = b ? telTemp(b) : null, health = b && TEL_HEALTH[+b.health] ? txT(TEL_HEALTH[+b.health]) : null;
             telSpec('telBattTemp', temp || health ? [temp, health].filter(Boolean).join(' · ') : null, false);
