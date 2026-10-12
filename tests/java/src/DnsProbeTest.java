@@ -432,6 +432,7 @@ public class DnsProbeTest {
       names();
       medians();
       cap();
+      resolverCap();
       cancel();
       sourceScan();
     } finally {
@@ -566,6 +567,13 @@ public class DnsProbeTest {
     check("request: ids with a space, slash, dot, accent, line break, quote, NUL, empty or 41 characters are refused", idsOk);
     check("request: 1 and 40 characters from [A-Za-z0-9_-] are accepted", parseError("{\"id\":\"" + rep("a", 40) + "\",\"hosts\":" + h + "}") == null && parseError("{\"id\":\"A_z-9\",\"hosts\":" + h + "}") == null && parseError("{\"id\":\"s\",\"hosts\":" + h + "}") == null);
     check("request: a missing, null or numeric id is refused", parseError("{\"hosts\":" + h + "}") != null && parseError("{\"id\":null,\"hosts\":" + h + "}") != null && parseError("{\"id\":5,\"hosts\":" + h + "}") != null);
+    String okReq = "{\"id\":\"s\",\"hosts\":" + h + "}";
+    check("request: one object followed by garbage, by a second object, a comment, a NUL or a second value is refused",
+        parseError(okReq + "garbage") != null && parseError(okReq + " {}") != null && parseError(okReq + "{}") != null && parseError(okReq + " // c") != null && parseError(okReq + "/* c */") != null
+            && parseError(okReq + "\u0000") != null && parseError(okReq + " 1") != null && parseError(okReq + ",") != null && parseError(okReq + "}") != null && parseError(okReq + " x\n") != null);
+    check("request: white space around the object (space, tab, CR, LF) is fine", parseError(okReq + "\n") == null && parseError(okReq + " \t\r\n  ") == null && parseError("\n\t " + okReq) == null && parseError(" " + okReq + " ") == null);
+    check("request: braces and quotes inside a text do not end the object early or late", DnsProbe.objectEnd("{\"a\":\"}{\"}") == 10 && DnsProbe.objectEnd("{\"a\":\"\\\"}\"} ") == 11 && DnsProbe.objectEnd("{\"a\":\"}\"} x") == -1
+        && DnsProbe.objectEnd("{\"a\":{\"b\":[1,{}]}}") == 18 && DnsProbe.objectEnd("{\"a\":") == -1 && DnsProbe.objectEnd("[]") == -1 && DnsProbe.objectEnd("") == -1);
     check("request: not JSON, an array, a number, empty, null are refused", parseError("nope") != null && parseError("[1]") != null && parseError("5") != null && parseError("") != null && parseError(null) != null && parseError("null") != null);
     check("request: hosts missing, not a list, empty or holding a non-text are refused",
         parseError("{\"id\":\"s\"}") != null && parseError("{\"id\":\"s\",\"hosts\":\"dns.google\"}") != null && parseError("{\"id\":\"s\",\"hosts\":[]}") != null
@@ -620,7 +628,9 @@ public class DnsProbeTest {
     // samples really limit the connections
     Server count = new Server(serverGood, B.GOOD);
     try {
-      Run run = scanAndWait(env(count.port, clientTrust, new Names()), req("sm", 9, 3000, NAME), 15000);
+      Names once = new Names();
+      Run run = scanAndWait(env(count.port, clientTrust, once), req("sm", 9, 3000, NAME), 15000);
+      check("request: the name is looked up once for all samples", once.calls.get() == 1, once.calls + " lookups");
       check("request: samples 9 means 5 connections, and 5 is what the result says", count.accepted.get() == 5 && run.host(NAME) != null && run.host(NAME).optInt("samples") == 5 && run.host(NAME).optInt("okSamples") == 5, count.accepted.get() + " connections");
     } finally { count.close(); }
     // the reply of a good start
@@ -879,7 +889,7 @@ public class DnsProbeTest {
       e.clock = new Script(stages(new int[][] {{10, 5, 5}, {21, 6, 6}, {30, 7, 8}, {40, 100, 9}}));
       Run run = scanAndWait(e, req("m4", 4, 3000, NAME), 15000);
       JSONObject o = run.host(NAME);
-      check("median: 4 samples -> the mean of the middle two, half up (connect 26, tls 6 (5.5+.5), query 7 (6,8))", o != null && o.optInt("connectMs") == 26 && o.optInt("tlsMs") == 7 && o.optInt("queryMs") == 7, String.valueOf(o));
+      check("median: 4 samples -> the mean of the middle two, half up (connect 26 = 25.5 up, tls 7 = 6.5 up, query 7 = 7 exactly)", o != null && o.optInt("connectMs") == 26 && o.optInt("tlsMs") == 7 && o.optInt("queryMs") == 7, String.valueOf(o));
     } finally { s2.close(); }
     // the medians are over the samples that completed all stages
     Server s3 = new Server(serverGood, B.GOOD, B.WRONG_ID, B.GOOD);
@@ -913,6 +923,64 @@ public class DnsProbeTest {
     } finally { s.close(); }
     check("cap: the limits are what the brief says (40 hosts, 6 at once, 1..5 samples, 500..10000 ms)", DnsProbe.MAX_HOSTS == 40 && DnsProbe.MAX_PARALLEL == 6 && DnsProbe.MIN_SAMPLES == 1 && DnsProbe.MAX_SAMPLES == 5 && DnsProbe.DEFAULT_SAMPLES == 3
         && DnsProbe.MIN_TIMEOUT_MS == 500 && DnsProbe.MAX_TIMEOUT_MS == 10000 && DnsProbe.DEFAULT_TIMEOUT_MS == 3000 && DnsProbe.PORT == 853 && "example.com".equals(DnsProbe.QUERY_NAME));
+  }
+
+  // ---- name lookups that cannot be stopped ----
+
+  static int lookupThreads(String prefix) {
+    int k = 0;
+    for (Thread t : Thread.getAllStackTraces().keySet()) if (t.getName().startsWith(prefix) && t.isAlive()) k++;
+    return k;
+  }
+
+  static void resolverCap() throws Exception {
+    final CountDownLatch release = new CountDownLatch(1);
+    final AtomicInteger calls = new AtomicInteger();
+    DnsProbe.Resolver stubborn = new DnsProbe.Resolver() {
+      @Override public InetAddress[] resolve(String host) throws IOException {
+        calls.incrementAndGet();
+        boolean interrupted = false;
+        while (true) { try { release.await(); break; } catch (InterruptedException e) { interrupted = true; } }      // ignores interrupts, like getaddrinfo
+        if (interrupted) Thread.currentThread().interrupt();
+        return new InetAddress[] {InetAddress.getByName("127.0.0.1")};
+      }
+    };
+    Server good = new Server(serverWild, B.GOOD);
+    try {
+      DnsProbe.Env e = env(good.port, clientTrust, stubborn);
+      DnsProbe.Runner runner = new DnsProbe.Runner(e);
+      String[] hosts = new String[20];
+      for (int i = 0; i < hosts.length; i++) hosts[i] = "r" + i + "." + WILD;
+      Run first = scan(runner, req("rc1", 3, 500, hosts));
+      check("resolver cap: a scan whose lookups never return still ends", first.await(15000) && first.hosts.size() == 20, first.hosts.size() + " results");
+      int timedOut = 0, busy = 0, other = 0;
+      for (JSONObject o : first.hosts) {
+        if (!"dns".equals(o.optString("status"))) other++;
+        else if ("name lookup timed out".equals(o.optString("error"))) timedOut++;
+        else if ("resolver busy".equals(o.optString("error"))) busy++;
+        else other++;
+      }
+      check("resolver cap: 20 hosts -> at most 8 lookups were started (the cap for the whole app), the other hosts say `resolver busy`, none says anything else", calls.get() <= 8 && calls.get() >= 6 && timedOut == calls.get() && busy == 20 - calls.get() && other == 0,
+          calls + " lookups, " + timedOut + " timed out, " + busy + " busy, " + other + " other");
+      check("resolver cap: the abandoned lookups are counted as stuck", e.lookups.stuck() == calls.get(), e.lookups.stuck() + " stuck");
+      int startedSoFar = calls.get();
+      boolean fastAndBusy = true;
+      for (int k = 0; k < 5; k++) {
+        Run again = scan(runner, req("rc" + (k + 2), 3, 500, hosts));
+        fastAndBusy &= again.await(5000) && again.hosts.size() == 20 && again.elapsedMs() < 2500;
+        for (JSONObject o : again.hosts) fastAndBusy &= "dns".equals(o.optString("status")) && "resolver busy".equals(o.optString("error"));
+      }
+      check("resolver cap: five more scans while 8 are stuck: every host fails at once with `resolver busy`, no new lookup is started", fastAndBusy && calls.get() == startedSoFar, calls + " lookups (" + startedSoFar + " before)");
+      check("resolver cap: never more than 8 lookup threads exist, however many scans", lookupThreads(e.lookups.prefix) <= 8, lookupThreads(e.lookups.prefix) + " threads");
+      release.countDown();                                                                                          // the resolver finally returns
+      long t = System.nanoTime();
+      while (System.nanoTime() - t < 5000000000L && e.lookups.stuck() > 0) Thread.sleep(20);
+      check("resolver cap: when the blocked calls return, the stuck count drops to 0 (the slots are free)", e.lookups.stuck() == 0, e.lookups.stuck() + " stuck");
+      Run after = scan(runner, req("rc9", 1, 3000, hosts[0], hosts[1], hosts[2]));
+      boolean allOk = after.await(10000) && after.hosts.size() == 3;
+      for (JSONObject o : after.hosts) allOk &= "ok".equals(o.optString("status"));
+      check("resolver cap: a scan after that resolves and probes normally", allOk, after.hosts.toString());
+    } finally { release.countDown(); good.close(); }
   }
 
   // ---- cancel ----

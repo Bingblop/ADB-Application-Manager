@@ -24,13 +24,14 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,7 +63,12 @@ import org.json.JSONObject;
  * that completed that stage (null if none did), so "TCP works, TLS does not" still shows the connect time.
  *
  * LIMITS. At most 40 hosts per scan, at most 6 probed at once (MAX_PARALLEL), samples 1..5 (default 3), timeoutMs 500..10000
- * (default 3000). The request text is at most 32768 characters. The timeout is per stage: the name lookup, the TCP connect (shared
+ * (default 3000). The request text is at most 32768 characters, and after the one JSON object only white space may follow.
+ * The name is looked up ONCE per host, and the addresses are used for all its samples. Lookups run on a small pool of daemon threads
+ * shared by every scan of one Env (LOOKUP_THREADS = 8 for the whole app): InetAddress.getAllByName cannot be interrupted, so a lookup
+ * that outlives its timeout is "stuck", keeps its thread until the resolver returns, and is counted. While 8 are stuck (or all 8 threads
+ * are busy) a new lookup fails at once with status "dns", error "resolver busy", so no thread is ever added beyond the cap.
+ * The timeout is per stage: the name lookup, the TCP connect (shared
  * by all addresses tried, at most 4), the TLS handshake, and the query each get timeoutMs; sockets have SO_TIMEOUT and a watchdog
  * closes a socket that a slow server keeps dripping bytes into. A scan is cancelled by closing its sockets (prompt, no waiting for a
  * timeout). Nothing is logged, and nothing but the fields below is ever returned: no certificate, no answer data, no exception text.
@@ -82,7 +88,7 @@ import org.json.JSONObject;
  *     once per host, as soon as that host is done (in no particular order):
  *       {"id":"s1","host":"dns.google","status":"ok","ip":"8.8.8.8","connectMs":12,"tlsMs":30,"queryMs":18,"samples":3,"okSamples":3,"error":""}
  *       status: "ok" | "dns" | "connect" | "tls" | "query" | "timeout" | "cancelled"
- *         dns       the name did not resolve (or the lookup took longer than timeoutMs), or it is not a host name
+ *         dns       the name did not resolve, the lookup took longer than timeoutMs, the resolver is busy, or it is not a host name
  *         connect   TCP refused or unreachable
  *         timeout   a stage got no answer within timeoutMs (TCP connect, TLS handshake or the DNS answer)
  *         tls       the handshake failed: the server closed or spoke something else, the certificate is not trusted, or does not match the host name
@@ -104,9 +110,9 @@ public final class DnsProbe {
   public static final int MIN_TIMEOUT_MS = 500, MAX_TIMEOUT_MS = 10000, DEFAULT_TIMEOUT_MS = 3000;
   public static final int MAX_REQUEST_CHARS = 32768;
   public static final int MAX_ADDRESSES = 4;
+  public static final int LOOKUP_THREADS = 8;
   public static final int MAX_ID_CHARS = 40;
   public static final String QUERY_NAME = "example.com";
-  private static final String LOOKUP_TIMED_OUT = "name lookup timed out";
 
   public static final String OK = "ok", DNS = "dns", CONNECT = "connect", TLS = "tls", QUERY = "query", TIMEOUT = "timeout", CANCELLED = "cancelled";
 
@@ -120,8 +126,31 @@ public final class DnsProbe {
   public interface Clock { long nanoTime(); }
   public interface Sink { void emit(String json); }
 
+  /** The threads that run name lookups, for every scan of one Env: at most `cap` threads exist, however many lookups hang. */
+  public static final class Lookups {
+    final int cap;
+    final AtomicInteger stuck = new AtomicInteger();          // lookups abandoned after their timeout whose resolver call has not returned
+    final ThreadPoolExecutor pool;
+    private static final AtomicInteger POOLS = new AtomicInteger();
+    /** The start of the names of this pool's threads. */
+    public final String prefix = "dns-probe-lookup-" + POOLS.incrementAndGet() + "-";
+    public Lookups(int cap) {
+      this.cap = cap;
+      final AtomicInteger n = new AtomicInteger();
+      pool = new ThreadPoolExecutor(0, cap, 5, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+        @Override public Thread newThread(Runnable r) {
+          Thread t = new Thread(r, prefix + n.incrementAndGet());
+          t.setDaemon(true);
+          return t;
+        }
+      });
+    }
+    public int stuck() { return stuck.get(); }
+  }
+
   public static final class Env {
     public int port = PORT;
+    public Lookups lookups = new Lookups(LOOKUP_THREADS);
     /** null: the platform's default factory (its trust store). */
     public SSLSocketFactory sslFactory;
     public Resolver resolver = new Resolver() {
@@ -222,14 +251,49 @@ public final class DnsProbe {
     return (int) d;
   }
 
+  /**
+   * The index just after the first top-level object of the text, or -1 when the text is not exactly one object followed by white space
+   * (space, tab, CR, LF) only: anything after it, a second value, a comment, a NUL, makes it -1.
+   */
+  static int objectEnd(String t) {
+    int i = 0, n = t.length();
+    while (i < n && isWhite(t.charAt(i))) i++;
+    if (i >= n || t.charAt(i) != '{') return -1;
+    int depth = 0;
+    boolean inString = false;
+    for (; i < n; i++) {
+      char c = t.charAt(i);
+      if (c == 0) return -1;
+      if (inString) {
+        if (c == '\\') i++;
+        else if (c == '"') inString = false;
+      } else if (c == '"') {
+        inString = true;
+      } else if (c == '{' || c == '[') {
+        depth++;
+      } else if (c == '}' || c == ']') {
+        depth--;
+        if (depth == 0) {
+          int end = i + 1;
+          for (int k = end; k < n; k++) if (!isWhite(t.charAt(k))) return -1;
+          return end;
+        }
+        if (depth < 0) return -1;
+      }
+    }
+    return -1;
+  }
+
+  private static boolean isWhite(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+
   public static Request parseRequest(String json) throws BadRequest {
     if (json == null || json.isEmpty()) throw new BadRequest("empty request");
     if (json.length() > MAX_REQUEST_CHARS) throw new BadRequest("request too large");
+    int end = objectEnd(json);
+    if (end < 0) throw new BadRequest("request is not valid JSON");
     JSONObject o;
     try {
-      Object top = new org.json.JSONTokener(json).nextValue();
-      if (!(top instanceof JSONObject)) throw new BadRequest("request is not an object");
-      o = (JSONObject) top;
+      o = new JSONObject(json.substring(0, end));
     } catch (JSONException e) {
       throw new BadRequest("request is not valid JSON");
     }
@@ -407,7 +471,7 @@ public final class DnsProbe {
     private final AtomicBoolean doneSent = new AtomicBoolean();
     private final Object lock = new Object();
     private final Set<Socket> sockets = new HashSet<Socket>();
-    private final Set<FutureTask<?>> lookups = new HashSet<FutureTask<?>>();
+    private final Set<Lookup> lookups = new HashSet<Lookup>();
     private final Timer watchdog = new Timer("dns-probe-watchdog", true);
     private volatile boolean cancelled;
 
@@ -423,14 +487,14 @@ public final class DnsProbe {
     /** Closes the sockets in use and abandons the name lookups; the lanes then report what is left as cancelled and send "done". */
     public void cancel() {
       List<Socket> toClose;
-      List<FutureTask<?>> toStop;
+      List<Lookup> toStop;
       synchronized (lock) {
         cancelled = true;
         toClose = new ArrayList<Socket>(sockets);
-        toStop = new ArrayList<FutureTask<?>>(lookups);
+        toStop = new ArrayList<Lookup>(lookups);
       }
       for (Socket s : toClose) closeQuietly(s);
-      for (FutureTask<?> f : toStop) f.cancel(true);
+      for (Lookup l : toStop) l.latch.countDown();               // the waiting lane wakes up; the lookup itself is abandoned there
     }
 
     void start(Executor ex) {
@@ -500,13 +564,28 @@ public final class DnsProbe {
       String original = req.hosts.get(index);
       HostCheck hc = checkHost(original);
       if (!hc.ok) return failedResult(index, DNS, "not a host name");
+      // 1. the name, once for all samples (not counted in any time)
+      InetAddress[] addrs;
+      try {
+        addrs = lookup(hc.host, req.timeoutMs);
+      } catch (CancellationException | InterruptedException stopped) {
+        if (stopped instanceof InterruptedException) { Thread.currentThread().interrupt(); cancel(); }
+        return cancelledResult(index);
+      } catch (TimeoutException late) {
+        return failedResult(index, DNS, "name lookup timed out");
+      } catch (RejectedExecutionException busy) {
+        return failedResult(index, DNS, "resolver busy");
+      } catch (Exception failed) {
+        return failedResult(index, DNS, "name not found");
+      }
+      if (cancelled) return cancelledResult(index);
+      if (addrs == null || addrs.length == 0) return failedResult(index, DNS, "name not found");
       List<Sample> done = new ArrayList<Sample>();
       for (int n = 0; n < req.samples; n++) {
         if (cancelled) return cancelledResult(index);
-        Sample s = oneSample(hc.host);
+        Sample s = oneSample(hc.host, addrs);
         if (s.cancelled) return cancelledResult(index);
         done.add(s);
-        if (DNS.equals(s.status) && LOOKUP_TIMED_OUT.equals(s.error)) break;       // a stuck resolver: do not pile up lookups
       }
       return summarize(base(index), done);
     }
@@ -566,25 +645,9 @@ public final class DnsProbe {
       return s;
     }
 
-    private Sample oneSample(String host) {
+    private Sample oneSample(String host, InetAddress[] addrs) {
       Sample s = new Sample();
       final int timeout = req.timeoutMs;
-
-      // 1. name (not counted)
-      InetAddress[] addrs;
-      try {
-        addrs = lookup(host, timeout);
-      } catch (CancellationException | InterruptedException stopped) {
-        if (stopped instanceof InterruptedException) { Thread.currentThread().interrupt(); cancel(); }
-        s.cancelled = true;
-        return s;
-      } catch (TimeoutException late) {
-        return fail(s, DNS, LOOKUP_TIMED_OUT);
-      } catch (Exception failed) {
-        return fail(s, DNS, "name not found");
-      }
-      if (cancelled) { s.cancelled = true; return s; }
-      if (addrs == null || addrs.length == 0) return fail(s, DNS, "name not found");
 
       // 2. TCP
       Socket raw = null;
@@ -702,30 +765,49 @@ public final class DnsProbe {
       }
     }
 
+    /**
+     * Runs the lookup on the Env's lookup pool and waits at most timeoutMs. Throws TimeoutException (the lookup is then "stuck" until the
+     * resolver returns: counted, and it keeps its pool thread), CancellationException when the scan is cancelled, RejectedExecutionException
+     * when the resolver is busy (cap reached: no new thread is made), anything else when the lookup failed.
+     */
     private InetAddress[] lookup(final String host, int timeoutMs) throws Exception {
-      FutureTask<InetAddress[]> ft = new FutureTask<InetAddress[]>(new Callable<InetAddress[]>() {
-        @Override public InetAddress[] call() throws Exception { return env.resolver.resolve(host); }
-      });
+      final Lookups lk = env.lookups;
+      if (lk.stuck.get() >= lk.cap) throw new RejectedExecutionException("resolver busy");
+      final Lookup l = new Lookup();
       synchronized (lock) {
         if (cancelled) throw new CancellationException();
-        lookups.add(ft);
+        lookups.add(l);
       }
       try {
-        Thread t = new Thread(ft, "dns-probe-lookup");
-        t.setDaemon(true);
-        t.start();
-        try {
-          return ft.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException e) {
-          throw new java.net.UnknownHostException("lookup failed");
-        } catch (TimeoutException e) {
-          ft.cancel(true);
-          throw e;
+        lk.pool.execute(new Runnable() {
+          @Override public void run() {
+            try { l.result = env.resolver.resolve(host); } catch (Throwable t) { l.failed = true; }
+            finally {
+              if (!l.state.compareAndSet(0, 2)) lk.stuck.decrementAndGet();          // abandoned meanwhile: it has returned now, the slot is free
+              l.latch.countDown();
+            }
+          }
+        });
+        l.latch.await(timeoutMs, TimeUnit.MILLISECONDS);
+        lk.stuck.incrementAndGet();                                                   // counted first, so the count never dips below the truth
+        if (l.state.compareAndSet(0, 1)) {                                            // still running (or the scan was cancelled): abandon it
+          if (cancelled) throw new CancellationException();
+          throw new TimeoutException("lookup");
         }
+        lk.stuck.decrementAndGet();                                                   // it finished in time after all
+        if (l.failed || l.result == null) throw new java.net.UnknownHostException("lookup failed");
+        return l.result;
       } finally {
-        synchronized (lock) { lookups.remove(ft); }
+        synchronized (lock) { lookups.remove(l); }
       }
     }
+  }
+
+  private static final class Lookup {
+    final java.util.concurrent.atomic.AtomicInteger state = new java.util.concurrent.atomic.AtomicInteger();   // 0 running, 1 abandoned, 2 returned
+    final CountDownLatch latch = new CountDownLatch(1);
+    volatile InetAddress[] result;
+    volatile boolean failed;
   }
 
   // ---------------------------------------------------------------------------------------------------------------------------
