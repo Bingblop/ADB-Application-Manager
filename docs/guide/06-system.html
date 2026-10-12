@@ -1,6 +1,7 @@
 <section id="tab-settings" data-title="Hidden Settings" data-group="The tabs">
   <p class="hg-lead">Android keeps hundreds of small settings that its own Settings app never shows. This tab lists them, lets you read any one, change it, add your own or delete it, and puts the old value back when you change your mind.</p>
-  <p><b>Where to find it:</b> the tab named <b>Hidden Settings</b> (two lines on the tab bar: Hidden and Settings), between Command-Line Interface and RRO/Monet Customization in the default order. If it is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <p><b>Where to find it:</b> the tab named <b>Hidden Settings</b> (two lines on the tab bar: Hidden and Settings), right before the <a href="#tab-extrasettings">Extra Settings</a> tab, between Command-Line Interface and RRO/Monet Customization in the default order. If it is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <p><b>Looking for Private DNS?</b> It is not in this tab, which edits Android's own settings tables. It is in the <a href="#tab-extrasettings">Extra Settings</a> tab next to this one: a small note at the top of this tab has a button that opens it.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -231,6 +232,60 @@
     <li><b>The phone is unusable after a change and you cannot reach the app.</b> Use your phone's own Settings (Developer options, language and input, accessibility) to undo what you can, reconnect in <a href="#modes-overview">Working Modes</a>, then revert the entry. See also <a href="#safety">Safety</a>.</li>
   </ul>
 </section>
+<section id="tab-extrasettings" data-title="Extra Settings" data-group="The tabs">
+  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other; today the first and only section is Private DNS, with its speed test.</p>
+  <p><b>Where to find it:</b> the tab named <b>Extra Settings</b> (two lines on the tab bar: Extra and Settings), right after <a href="#tab-settings">Hidden Settings</a> in the default order. It is not the gear icon, and it is not Hidden Settings: Hidden Settings edits Android's own settings tables one by one, Extra Settings has ready-made controls. If the tab is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <h4>The top of the tab</h4>
+  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>. Tap a chip and the page scrolls to its section. After a speed test a second chip, <i>Fastest</i>, names the quickest service.</p>
+  <h4>The sections</h4>
+  <ul>
+    <li><a href="#extra-dns">Private DNS</a>: choose a Private DNS service for the whole phone and test how fast each one answers on your network.</li>
+  </ul>
+  <p>Every section has a coloured icon, a title, a one-line status at the right and a <b>What does this do?</b> note that opens the details.</p>
+</section>
+
+<section id="extra-dns" data-title="Extra Settings: Private DNS and the speed test" data-group="The tabs">
+  <p><b>Where it is:</b> the <b>Extra Settings</b> tab (right after Hidden Settings on the tab bar), first section, <b>Private DNS</b>. It is <b>not</b> in the <a href="#tab-settings">Hidden Settings</a> tab, the one that edits Android's own settings, and it is no longer a card in the gear Settings page (that page has a small pointer to it).</p>
+  <p>Android's own <b>Private DNS</b> for the whole phone (DNS-over-TLS, Android 9 or newer): the name lookups of every app go to one encrypted DNS service, which can block ads, trackers or bad sites without a VPN. This section changes the phone, so applying a service needs a working mode (ADB, Wireless Debugging, Shizuku or Root). Without one it says <i>Viewing only</i> and offers <b>Set Up</b>; the speed test needs no working mode. It changes two Android settings, <code>private_dns_mode</code> and <code>private_dns_specifier</code>, through the same path as the Hidden Settings tab (which lists them too).</p>
+  <h4>Choose a service</h4>
+  <p>The services are tiles, two to a row on a phone. Each shows a coloured tile with initials, the name, the host name, one line on what it filters, and, after a speed test, its speed. The one that is in use now is outlined and ticked. Tap a tile to use that service: the section sets the host name, then switches Private DNS to <i>hostname</i>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Service</th><th>Host name</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Google Public DNS</b></td><td><code>dns.google</code></td><td>No filtering.</td></tr>
+      <tr><td><b>Cloudflare</b></td><td><code>one.one.one.one</code></td><td>Fast, no filtering.</td></tr>
+      <tr><td><b>Cloudflare Security</b></td><td><code>security.cloudflare-dns.com</code></td><td>Blocks malware.</td></tr>
+      <tr><td><b>Cloudflare Family</b></td><td><code>family.cloudflare-dns.com</code></td><td>Blocks malware and adult content.</td></tr>
+      <tr><td><b>Quad9</b></td><td><code>dns.quad9.net</code></td><td>Blocks known malicious sites.</td></tr>
+      <tr><td><b>Quad9 (no filtering)</b></td><td><code>dns10.quad9.net</code></td><td>No filtering.</td></tr>
+      <tr><td><b>AdGuard DNS</b></td><td><code>dns.adguard-dns.com</code></td><td>Blocks ads and trackers.</td></tr>
+      <tr><td><b>AdGuard Family</b></td><td><code>family.adguard-dns.com</code></td><td>Blocks ads, trackers and adult content.</td></tr>
+      <tr><td><b>AdGuard (no filtering)</b></td><td><code>unfiltered.adguard-dns.com</code></td><td>No filtering.</td></tr>
+      <tr><td><b>OpenDNS</b></td><td><code>dns.opendns.com</code></td><td>Cisco says its resolvers speak DNS-over-TLS, but some networks and accounts get no answer: let the speed test decide.</td></tr>
+      <tr><td><b>CleanBrowsing Family, Adult, Security</b></td><td><code>family-filter-dns.cleanbrowsing.org</code>, <code>adult-filter-dns.cleanbrowsing.org</code>, <code>security-filter-dns.cleanbrowsing.org</code></td><td>Family filter, adult filter, and security filter (malware and phishing).</td></tr>
+      <tr><td><b>NextDNS</b></td><td><code>dns.nextdns.io</code></td><td>The default settings. To filter, you need your own NextDNS id as the host name: use <b>Another host name</b>.</td></tr>
+      <tr><td><b>DNS.SB</b></td><td><code>dot.sb</code></td><td>No filtering.</td></tr>
+    </tbody>
+  </table>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>When to use it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Automatic</b></td><td>Sets the mode to <i>opportunistic</i>: the phone uses Private DNS when the network offers it and plain DNS when it does not. A saved host name is kept.</td><td>The way back to Android's normal behaviour.</td></tr>
+      <tr><td><b>Off</b></td><td>Sets the mode to <i>off</i> and clears the saved host name.</td><td>When Private DNS gets in the way (a network that blocks it).</td></tr>
+      <tr><td><b>Another host name</b> and <b>Apply</b></td><td>Checks the name, then does what a tile does with it. Only a real host name is accepted: letters a-z, digits and hyphens in parts separated by dots, at least one dot, each part up to 63 characters and the whole name up to 253, no part starting or ending with a hyphen. Capitals are made small, spaces around the name and one dot at the end are dropped. An IP address (<code>1.1.1.1</code>, with or without a port), a name with spaces, quotes, <code>;</code>, <code>$</code>, accents or look-alike letters, a web address or an empty field is refused with a sentence beside the field, and nothing is sent to the phone.</td><td>For another service, or your own NextDNS id (<code>abc123.dns.nextdns.io</code>). A name with accents is written in its <code>xn--</code> form.</td></tr>
+      <tr><td><b>Check again</b></td><td>Reads the two settings from the phone again. The section also reads them when the tab opens.</td><td>After you changed Private DNS in Android's own settings.</td></tr>
+    </tbody>
+  </table>
+  <h4>Test speed</h4>
+  <p>Tap <b>Test speed</b>. The app tries every service in the list (and the host name typed under <b>Another host name</b>, if there is one) and fills in each tile as soon as its answer comes in, in any order. A bar fills the button and the line under it says <i>Testing&hellip; 5 of 15</i>; <b>Stop</b> ends the test (the answers that came in stay, the others say <i>Not tested</i>). Leaving the tab also stops it. Starting a new test replaces the old one.</p>
+  <p>Each tile shows the time in milliseconds in all, and under it the three parts: <b>connect</b> (the network connection to port 853, the closest thing to a ping), <b>TLS</b> (the secure handshake) and <b>answer</b> (one real DNS lookup over that connection). Each is the middle value of three tries; if fewer than three worked, the tile says so. A tile whose service did not work says why: <i>Name not found</i>, <i>No answer on 853</i>, <i>Certificate error</i>, <i>No DNS answer</i> or <i>Timed out</i>. A tile that says <i>Couldn&rsquo;t test now</i> only means the phone had too many name lookups waiting: that says nothing against the service, so test again.</p>
+  <p>When all answers are in, the quickest working service gets a <b>Fastest</b> pill and a bright outline, and the line under the button says which it is (<i>Fastest on this network</i>). The result is a measurement from <b>this phone's network only</b>, at this moment; a different Wi-Fi or mobile data can give another order. <b>Sort by speed</b> (off by default) puts the answers in speed order, quickest first, then the services not tested, then the ones that failed; off, the list keeps its usual order.</p>
+  <div class="hg-note"><b>Privacy.</b> Each service sees one lookup of <code>example.com</code> from your connection. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses. The test does not change any setting and needs no working mode.</div>
+  <p><b>A service that did not answer.</b> Its tile says <i>Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.</i> Tapping it does not apply it: the first tap only repeats that warning and marks the tile, and a second tap on the same tile within ten seconds applies it anyway. (For the typed host name, press <b>Apply</b> twice.)</p>
+  <p><b>What the section says is what the phone has.</b> The line near the top reads <i>Private DNS is now: Off</i>, <i>Automatic</i> or <i>hostname</i> with the host name, and the pill at the top right and the chip at the top of the tab repeat it in one word. It always comes from reading the settings back from the phone, never from the change alone. The tile or button that matches the phone's state is marked (a tick and a pressed state, not only a colour). While a change is out, the controls are off. When the phone refuses a change, or keeps something else, the section says so in words (for example that Android refused the write, or that the phone does not report the new setting) and shows what the phone really holds. A change is made host first, then mode, and stops at the first step the phone refuses. Nothing changes until you tap.</p>
+  <div class="hg-note"><b>If the internet stops.</b> A host name that is wrong, or a service that is down, can leave the phone without internet, and some Wi-Fi networks and hotspots block Private DNS altogether. The way back is <b>Automatic</b> or <b>Off</b> here, or <b>Private DNS</b> in Android's network settings (in the Internet or Connections section, under More connection settings on some phones); both bring normal DNS back. This section has not been tried on a phone yet.</div>
+</section>
+
 <section id="tab-overlays" data-title="RRO/Monet Customization" data-group="The tabs">
   <p class="hg-lead">Change the colours Android uses for its own screens and for apps that follow it (the "Material You" theme), and switch the system's look-changing add-ons, called overlays, on or off.</p>
   <p><b>Where to find it:</b> the tab named <b>RRO/Monet Customization</b> (two lines on the tab bar), right after Hidden Settings. If it is missing, it is switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
@@ -431,9 +486,9 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>No permission, no computer and no working mode are needed, with one exception: the <b>Private DNS</b> card changes a setting of the phone itself and needs a working mode (ADB, Wireless Debugging, Shizuku or Root). Every other control works at once; there is no Save button, and what you choose is kept on the phone.</li>
-    <li>These settings are about this app only, except <b>Private DNS</b>. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Private DNS</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>No permission, no computer and no working mode are needed, with no exception here: the <b>Private DNS</b> card in this list is only a pointer to the <a href="#tab-extrasettings">Extra Settings</a> tab, where Private DNS changes a setting of the phone itself and needs a working mode. Every control on this page works at once; there is no Save button, and what you choose is kept on the phone.</li>
+    <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Private DNS</b> (a pointer to the Extra Settings tab), <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -600,21 +655,7 @@
   <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
 
   <h4>Private DNS</h4>
-  <p>Android's own <b>Private DNS</b> for the whole phone (DNS-over-TLS, Android 9 or newer): the name lookups of every app go to one encrypted DNS service, which can block ads, trackers or bad sites without a VPN. Unlike the rest of Settings, this card changes the phone, so it needs a working mode (ADB, Wireless Debugging, Shizuku or Root). Without one it says so and offers <b>Set Up</b>. It changes two Android settings, <code>private_dns_mode</code> and <code>private_dns_specifier</code>, through the same path as the <a href="#tab-settings">Hidden Settings</a> tab (which lists them too).</p>
-  <table class="hg-table">
-    <thead><tr><th>Control</th><th>What it does</th><th>When to use it</th></tr></thead>
-    <tbody>
-      <tr><td><b>AdGuard DNS</b> (<code>dns.adguard-dns.com</code>)</td><td>Sets the host name, then switches Private DNS to <i>hostname</i>.</td><td>To block ads and trackers in every app.</td></tr>
-      <tr><td><b>Cloudflare</b> (<code>one.one.one.one</code>)</td><td>The same, with Cloudflare's host name. It blocks nothing.</td><td>For a fast, encrypted DNS with no filtering.</td></tr>
-      <tr><td><b>Quad9</b> (<code>dns.quad9.net</code>)</td><td>The same, with Quad9's host name. It blocks known malicious sites.</td><td>For protection from known bad sites.</td></tr>
-      <tr><td><b>Automatic</b></td><td>Sets the mode to <i>opportunistic</i>: the phone uses Private DNS when the network offers it and plain DNS when it does not. A saved host name is kept.</td><td>The way back to Android's normal behaviour.</td></tr>
-      <tr><td><b>Off</b></td><td>Sets the mode to <i>off</i> and clears the saved host name.</td><td>When Private DNS gets in the way (a network that blocks it).</td></tr>
-      <tr><td><b>Another host name</b> and <b>Apply</b></td><td>Checks the name, then does what a preset does with it. Only a real host name is accepted: letters a-z, digits and hyphens in parts separated by dots, at least one dot, each part up to 63 characters and the whole name up to 253, no part starting or ending with a hyphen. Capitals are made small, spaces around the name and one dot at the end are dropped. An IP address (<code>1.1.1.1</code>, with or without a port), a name with spaces, quotes, <code>;</code>, <code>$</code>, accents or look-alike letters, a web address or an empty field is refused with a sentence beside the field, and nothing is sent to the phone.</td><td>For another service, such as <code>dns.nextdns.io</code>. A name with accents is written in its <code>xn--</code> form.</td></tr>
-      <tr><td><b>Check again</b></td><td>Reads the two settings from the phone again. The card also reads them when Settings opens.</td><td>After you changed Private DNS in Android's own settings.</td></tr>
-    </tbody>
-  </table>
-  <p><b>What the card says is what the phone has.</b> The line at the top reads <i>Private DNS is now: Off</i>, <i>Automatic</i> or <i>hostname</i> with the host name. It always comes from reading the settings back from the phone, never from the change alone. The button that matches the phone's state is marked (a tick and a pressed state, not only a colour). While a change is out, the controls are off. When the phone refuses a change, or keeps something else, the card says so in words (for example that Android refused the write, or that the phone does not report the new setting) and shows what the phone really holds. A change is made host first, then mode, and stops at the first step the phone refuses.</p>
-  <div class="hg-note"><b>If the internet stops.</b> A host name that is wrong, or a service that is down, can leave the phone without internet, and some Wi-Fi networks and hotspots block Private DNS altogether. The way back is <b>Automatic</b> or <b>Off</b> here, or <b>Private DNS</b> in Android's network settings (in the Internet or Connections section, under More connection settings on some phones); both bring normal DNS back. This card has not been tried on a phone yet.</div>
+  <p>This card only says <i>Private DNS has its own tab now: Extra Settings</i> and has an <b>Open Extra Settings</b> button. The Private DNS services, the speed test and the buttons that change Private DNS are in the <a href="#extra-dns">Extra Settings tab</a>.</p>
 
   <h4>Font</h4>
   <p><b>The list of fonts found is for one visit.</b> What <b>Find fonts on this phone</b> finds is shown under the button, with a <b>Clear this list</b> link. The list is emptied when you leave Settings (and a search that finishes after you left is thrown away), so it does not sit in memory; search again when you need it. The font you chose stays.</p>
@@ -690,7 +731,7 @@
     <li><b>The colours look wrong.</b> Tap <b>Reset tweaks</b>, or tap a palette card to clear every tweak.</li>
     <li><b>An app icon is missing or wrong.</b> Tap <b>Clear icon cache</b>, or pick <b>Default icons</b>.</li>
     <li><b>The text is hard to read after a font change.</b> Tap <b>Use system font</b>.</li>
-    <li><b>Pages stopped loading after I chose a Private DNS host.</b> The host may be wrong or down, or the network may block Private DNS. Tap <b>Automatic</b> or <b>Off</b> in the Private DNS card.</li>
+    <li><b>Pages stopped loading after I chose a Private DNS host.</b> The host may be wrong or down, or the network may block Private DNS. Tap <b>Automatic</b> or <b>Off</b> in the Private DNS section of the <b>Extra Settings</b> tab.</li>
     <li><b>I cannot find Trim Caches any more.</b> It moved to the <a href="#tab-sdm">SD Maid</a> tab.</li>
   </ul>
 </section>
@@ -709,7 +750,7 @@
   <p><b>Application Manager</b> is always the first tab and <b>About</b> is always the last. They have no switch or arrows in the list because they cannot be turned off or moved. Everything between them can be switched off and moved.</p>
 
   <h4>The list and the default order</h4>
-  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the thirteen movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
+  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the fourteen movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
   <table class="hg-table">
     <thead><tr><th>#</th><th>Name in the list</th><th>What it is</th></tr></thead>
     <tbody>
@@ -720,13 +761,14 @@
       <tr><td>4</td><td><b>File Manager</b></td><td><a href="#tab-files">File Manager</a></td></tr>
       <tr><td>5</td><td><b>Command-Line Interface</b></td><td><a href="#tab-terminal">Command-Line Interface</a> (with the ADB Console)</td></tr>
       <tr><td>6</td><td><b>Hidden Settings</b></td><td><a href="#tab-settings">Hidden Settings</a></td></tr>
-      <tr><td>7</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
-      <tr><td>8</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
-      <tr><td>9</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
-      <tr><td>10</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
-      <tr><td>11</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
-      <tr><td>12</td><td><b>Morphe Patcher</b></td><td><a href="#tab-morphe">Morphe Patcher</a></td></tr>
-      <tr><td>13</td><td><b>SD Maid</b></td><td><a href="#tab-sdm">SD Maid</a></td></tr>
+      <tr><td>7</td><td><b>Extra Settings</b></td><td><a href="#tab-extrasettings">Extra Settings</a> (Private DNS and its speed test)</td></tr>
+      <tr><td>8</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
+      <tr><td>9</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
+      <tr><td>10</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
+      <tr><td>11</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
+      <tr><td>12</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+      <tr><td>13</td><td><b>Morphe Patcher</b></td><td><a href="#tab-morphe">Morphe Patcher</a></td></tr>
+      <tr><td>14</td><td><b>SD Maid</b></td><td><a href="#tab-sdm">SD Maid</a></td></tr>
       <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
     </tbody>
   </table>
@@ -743,7 +785,7 @@
     <li>It leaves the tab bar at once, and Back no longer goes to it.</li>
     <li>Anything inside the app that points at it does not open it. A message says, for example, <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (the Application Updater box of the APK Installer/Updater tab), the update button in an app's menu (the same box) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
     <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer/Updater</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
-    <li>You can switch off every one of the thirteen if you like. The bar then shows only Application Manager and About.</li>
+    <li>You can switch off every one of the fourteen if you like. The bar then shows only Application Manager and About.</li>
   </ul>
 
   <h4>Get a tab back</h4>
@@ -762,7 +804,7 @@
   <p>A tab that is switched off still keeps its place in the list. If you switch it on again later, it returns to that place. Moving a tab never changes the position of Application Manager or About.</p>
 
   <h4>Reset to Default</h4>
-  <p>The <b>Reset to Default</b> button under the list switches all thirteen tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
+  <p>The <b>Reset to Default</b> button under the list switches all fourteen tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
 
   <h4>When the app is updated</h4>
   <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working.</p>
