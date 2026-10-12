@@ -145,6 +145,36 @@ Ideas from Gemini's branch (#84, the Kotlin/Compose rewrite, which is a separate
 
 Reviewed after v7.12.9 was cut: `ApkSigner` (one bug, #100; plus item 6), `TermuxBridge` / `TermuxLink` (one bug, #103; item 9), `PtyShell` and `ptyexec` (three bugs, #105, #113 and #118; items 7 and 8), `RarReader` (two bugs, #106 and #107; item 10), `PrivatePaths` (adversarial pass over #111: C-016 and the race, fixed in #117), 7z/tar extraction and `ZipWriter` (item 11), `FontScan`, `MorpheService` and `MorpheBridge` (item 12). Not yet reviewed by anyone: most of `ApkScan`, the Kotlin engine, and the SD Maid delete flow.
 
+## v7.13.0 (the release branch `release/v7.12.12`; written 2026-10-12)
+
+The branch kept the name the work started under; the version it ships is **7.13.0, versionCode 854**. `main` is not the source of truth for this release: it carries the Kotlin-era console markup and the project thread's own merges, and its UI suite was red when this release was cut. After the release the branch is merged into `main` (the release checklist, step 8a). The owner decided there is no release candidate: this build is the release. **Device state:** the owner ran the three Private DNS read-back checks of checklist section 21 on v7.12.11 (AdGuard DNS, Off, Automatic: PASS by `settings get global private_dns_mode` / `private_dns_specifier`); nothing else in this release has been run on a phone.
+
+Pull requests, all squash-merged into `release/v7.12.12`, each green on CI, none run on a device:
+
+| PR | What | Merge | Tests | Checklist |
+|---|---|---|---|---|
+| #156 | Install follow-ups: abandoned Updater queue, Update All consent, Morphe retry package | 4cfd13b | t180 7c, `installconfirm` | 23 |
+| #157 | DnsProbe (DNS-over-TLS) and the bridge | c61c6e9 | `dnsprobe` (needs keytool) | 21 |
+| #158 | Extra Settings tab: Private DNS, 15 services, speed test | 560a8e7 | t217, t170, t76, t33, t68, t11, t13, t57, t60, t63, t150 | 21, 23 |
+| #160 | Permission sheet: DUMP row, Copy grant commands | 0cc14c3 | t75, `dumppermission` | 23 |
+| #163 | ShizuStore: Install button on every row | 2e81ab7 | t190, t191 | 23 |
+| #162 | SD Maid accessibility: App info ladder, watchdog, screen report | 1d21b1c | t230, `sdmacsladder`, `sdmacsplan`, `sdmappcleaner`, `sdmengine` | 23 (no section of its own: reasoned from the owner's screenshot) |
+| #161 | Console tab (ADB Shell, Live Logcat), Terminal as its own tab | 4be9c0e | t195, t196; goldens of 27 tab-list scripts | 24 |
+| #159 | Application Updater: rebuilt check engine and result screen | dc65e4c | `updatechecker` (134 checks), t200; goldens t13, t14 | 23 |
+| #172 | Extra Settings: power & reboot, Doze & governor, zram & memory | 05f020b | t251 (91), `powertweaks` (156) | 25 |
+| #164 | Bottom navigation bar, More sheet, long-press shortcuts | 3be3407 | t260 to t263; goldens t69, t76, t80, t81 | 27 |
+| #170 | Extra Settings: animation speed, brightness bias, device telemetry | (see git log) | t250, t170, `telemetry` (66) | 26 |
+| #173 | Port of #165 (Morphe sources: Official / Custom) | (see git log) | t119 | none (a label; section 20 covers the sources sheet) |
+| dedupe | 58 keys written twice removed from each dictionary; check.js refuses repeats | (see git log) | i18n strict, t81, t146 | none (no visible change) |
+
+Things the next person should know:
+
+- **Merging order mattered.** Every PR touched the tails of the 13 dictionaries, `tests/i18n/keys.json`, `assets/guide.js` and the checklist, so each one was base-merged, run through CI, and merged in turn. `keys.json` and `guide.js` are regenerated (`node tests/i18n/extract.js`, `node docs/guide/build.js`), never hand-merged; the checklist sections are never renumbered (23 fixes, 24 Console, 25 power, 26 animation, 27 bottom bar; 28 and 29 are reserved for the project thread's drafts #167 and #168).
+- **Found and fixed while merging #170:** the bottom bar's long-press registry pointed the Animations shortcut at `#extraAnimationsSection`; the section is `#extraAnimSection`, so the entry never showed. The Extra Settings menu now lists Private DNS, Animations, Brightness and Telemetry (a menu lists four at most; Power, Doze and Zram are there to pick in Settings > Navigation > Shortcuts).
+- **Known flaky CI scripts** (each passes alone, none caused by a PR of this release): t137, t53/t54, t157 (`__font.finishScan` hook), t31/t33/t155 and t142/t97/t126/t13/t111 under load; Java `archivecancel`, `extractspace`, `ziptool`, `morphehelper` under load. One re-run; a second failure is read.
+- **Open questions for the owner:** #164 made "Bottom bar only" the default, which hides the top tab bar on every phone that updates (the owner has not objected); the project thread's drafts #167/#168/#169 are not in this release and will base-merge after the bump.
+- **Not in this release:** the `.sig` check of Morphe bundles, M-13's fixed key credentials, the Z-6 rows, item 9 (Termux minor), the Hidden Settings backup/restore idea.
+
 ## Definition of done for implementation PRs
 
 - Link the relevant finding or user requirement and explain scope.

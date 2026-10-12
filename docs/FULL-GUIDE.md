@@ -16,7 +16,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.12.11-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.13.0-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -119,7 +119,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.12.11 is the latest build** (a Private DNS card in Settings, a result line in the ADB Console, the app's own question before an install from the Installer, the Updater (and Update All), a restore or the Morphe Patcher (not before updating the app itself), and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.13.0 is the latest build** (the Extra Settings tab: Private DNS with a speed test, animation speed, brightness bias, device telemetry, power & reboot, Doze & power governor, zram & memory; the bottom navigation bar with long-press shortcuts; the Console tab with the Terminal as its own tab; the rebuilt Updater check; an Install button on every ShizuStore row; the DUMP row; before it, v7.12.11 added a Private DNS card in Settings, a result line in the ADB Console, the app's own question before an install from the Installer, the Updater (and Update All), a restore or the Morphe Patcher (not before updating the app itself), and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
