@@ -70,7 +70,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   "Checking the device…" was shown', (await seen()).includes('Checking the device…'));
   check('   the app record follows the device', await ev(() => cdApp('com.a').uninstalled === true));
   r = await ev(async () => await cdDo('disable', 'com.c'));
-  check('   a disable the command called a success, though the app is not disabled, is a failure ("Not disabled")', r.ok === false && r.label === 'Not disabled' && /although the command reported success/.test(r.out), JSON.stringify(r));
+  check('   a freeze the command called a success, though the app is not frozen, is a failure ("Not frozen")', r.ok === false && r.label === 'Not frozen' && /although the command reported success/.test(r.out), JSON.stringify(r));
   check('   the record says it is not disabled', await ev(() => cdApp('com.c').disabled === false));
   r = await ev(async () => await cdDo('uninstall', 'com.c'));
   check('   an uninstall that really failed is "Still installed"', r.ok === false && r.label === 'Still installed', JSON.stringify(r));
@@ -82,7 +82,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   a batch looks at the device once for all the apps (twice when something is not as wanted)', lists >= 1 && lists <= 2, lists);
   check('   the batch says "Checking the device…"', (await seen()).includes('Checking the device…'));
   const sheet = await ev(() => ({ open: document.getElementById('cdSheet').classList.contains('show'), title: document.getElementById('cdSheetTitle').innerText, body: document.getElementById('cdSheetBody').innerText }));
-  check('   and names the one that is not disabled (com.c), not the one that is', sheet.open && /1 of 2 did not work/.test(sheet.title) && /com\.c: Not disabled/.test(sheet.body) && !/com\.b/.test(sheet.body), JSON.stringify(sheet));
+  check('   and names the one that is not frozen (com.c), not the one that is', sheet.open && /1 of 2 did not work/.test(sheet.title) && /com\.c: Not frozen/.test(sheet.body) && !/com\.b/.test(sheet.body), JSON.stringify(sheet));
   await ev(() => { document.getElementById('progressToastsToggle').click(); window.__toasts.length = 0; });
   await ev(async () => { await cdDo('enable', 'com.b'); });
   check('   with Progress messages off the device is checked without the message', !(await seen()).includes('Checking the device…'), JSON.stringify(await seen()));
