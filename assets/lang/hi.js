@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "इंस्टॉल हो रहा है…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Termux में Ollama इंस्टॉल करता है, उसे शुरू करता है और एक छोटा कोडिंग मॉडल डाउनलोड करता है (qwen2.5-coder 1.5B, लगभग 1 GB)। इसमें कुछ मिनट लगते हैं।",
 "Installs from": "यहाँ से इंस्टॉल होता है",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "फ़ाइल मैनेजर से इंस्टॉल के लिए ADB, वायरलेस डीबगिंग या Shizuku चाहिए",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "बैकअप किया गया APK इंस्टॉल किए गए APK के ऊपर इंस्टॉल करता है, फिर उसकी अनुमतियां और ऐप ऑप्स दोबारा लागू करता है।",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "पैच किया ऐप बनते ही वर्किंग मोड (ADB, Shizuku या Root) से इंस्टॉल करता है।",
 "Interface": "इंटरफ़ेस",

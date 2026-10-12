@@ -69,9 +69,12 @@ final class InstallGuards {
         return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
     }
 
-    /** Whether the mode the person was asked about is still the one the install would run through (both must be known). */
+    /**
+     * Whether the mode the person was asked about is still the one the install would run through. Only a privileged mode can be: "standard" or "none"
+     * equal to themselves are not a Yes to anything.
+     */
     static boolean sameMode(String asked, String now) {
-        return asked != null && asked.equals(now);
+        return isPrivilegedMode(asked) && asked.equals(now);
     }
 
     /**

@@ -62,6 +62,9 @@ final class InstallConfirm {
     static final String REINSTATES_SYSTEM = "The system copy of this app, removed for your user, is brought back; the APK in the backup is not installed.";
     static final String RESTORES_DATA = "The app's saved data from the backup is restored as well.";
 
+    /** What is said when the install turns out to have no privileged mode at all (the app went Read-Only) before the question could be asked. */
+    static final String NO_PRIVILEGED_MODE = "Installing needs ADB, Wireless Debugging, Shizuku or Root. Nothing was installed.";
+
     /** What is said when the working mode is not the one the question named by the time it is answered. */
     static final String MODE_CHANGED = "The working mode changed while the question was open. Nothing was installed.";
 

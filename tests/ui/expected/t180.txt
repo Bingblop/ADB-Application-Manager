@@ -37,6 +37,7 @@
    the working mode goes read-only: the page's queue is emptied and the app is told: true
 8. one Update asks nothing of the page: the app asks after the download, and the row says it is waiting: true Waiting for OK
    the waiting button cannot be pressed: true
+   an update check that ends while the question is open keeps the row waiting (Update stays off): true Waiting for OK
    Update All does not count the app that is waiting: true
    a No from the app ends as a failed row that can be tried again: true Charlie com.c GITHUBYOUR SOURCE 1.0 → 2.0 Retry Update cancelled. Nothing was installed. Page
 errors: true []

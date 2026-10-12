@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Wird installiert…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Installiert Ollama in Termux, startet es und lädt ein kleines Coding-Modell herunter (qwen2.5-coder 1.5B, ca. 1 GB). Das dauert einige Minuten.",
 "Installs from": "Installiert von",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Installationen aus dem Dateimanager erfordern ADB, Kabelloses Debugging oder Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Installiert das gesicherte APK über das installierte und wendet anschließend dessen Berechtigungen und App-Ops erneut an.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Installiert die gepatchte App über den Betriebsmodus (ADB, Shizuku oder Root), sobald sie gebaut ist.",
 "Interface": "Schnittstelle",

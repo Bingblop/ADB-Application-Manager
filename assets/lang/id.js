@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Menginstal…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Menginstal Ollama di Termux, menjalankannya, dan mengunduh model koding kecil (qwen2.5-coder 1.5B, sekitar 1 GB). Proses ini memakan waktu beberapa menit.",
 "Installs from": "Dipasang dari",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Penginstalan dari Manajer File memerlukan ADB, Debugging nirkabel, atau Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Menginstal APK cadangan di atas yang terinstal, lalu menerapkan kembali izin dan app ops-nya.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Memasang aplikasi hasil patch melalui mode kerja (ADB, Shizuku, atau Root) begitu selesai dibuat.",
 "Interface": "Antarmuka",

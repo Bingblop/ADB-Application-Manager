@@ -1682,7 +1682,6 @@
 {"k":"Installing…","ctx":"built by the code of: on self update progress"},
 {"k":"Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.","ctx":"built by the code of: tx render connect"},
 {"k":"Installs from","ctx":"built by the code of: store generic render"},
-{"k":"Installs from File Manager need ADB, Wireless Debugging or Shizuku","ctx":"built by the code of: run install"},
 {"k":"Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.","ctx":"built by the code of: preview restore"},
 {"k":"Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.","ctx":"built by the code of: mp settings open"},
 {"k":"Interface","ctx":"built by the code of: top level"},

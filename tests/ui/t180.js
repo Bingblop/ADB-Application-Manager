@@ -125,7 +125,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { installFromFiles = true; applyFilesInstallMode(); });
   await setMode('unprivileged');
   await ev(() => { window.__calls.install.length = 0; runInstall(); }); await sleep(80);
-  check('5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed', (await ev(() => window.__calls.install.length)) === 0 && /Installs from File Manager need/.test(await page.locator('#toastMsg').innerText()));
+  check('5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed', (await ev(() => window.__calls.install.length)) === 0 && /^Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root\. Set one up in Working Modes, then try again\.$/.test(await page.locator('#toastMsg').innerText()));
   const fstate = () => ev(() => ({ btn: document.getElementById('installRunBtn').disabled, value: document.getElementById('optAuthorizer').value, note: getComputedStyle(document.getElementById('installFilesNote')).display !== 'none' ? document.getElementById('installFilesNote').innerText : '' }));
   const fs0 = await fstate();
   check('   the stale backend is cleared, Install is off and a sentence names what is needed', fs0.btn === true && fs0.value === 'none' && /^Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root\./.test(fs0.note), JSON.stringify(fs0));
@@ -181,6 +181,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const row = await page.locator('.upd-row:has-text("Charlie") .upd-head button').innerText();
   check('8. one Update asks nothing of the page: the app asks after the download, and the row says it is waiting', row.trim() === 'Waiting for OK' && (await ev(() => window.__upd.approve.length)) === askedBefore && (await ev(() => window.__upd.installs.slice(-1)[0])) === 'com.c', row);
   check('   the waiting button cannot be pressed', await page.locator('.upd-row:has-text("Charlie") .upd-head button').isDisabled());
+  await ev(() => window.onUpdatesChecked(JSON.stringify({ updates: updList, untracked: [], external: [], checked: 4, errors: 0, selfStatus: 'no_releases', checkedAt: Date.now() }))); await sleep(60);
+  const rowAfter = await page.locator('.upd-row:has-text("Charlie") .upd-head button').innerText();
+  check('   an update check that ends while the question is open keeps the row waiting (Update stays off)', rowAfter.trim() === 'Waiting for OK' && await page.locator('.upd-row:has-text("Charlie") .upd-head button').isDisabled(), rowAfter);
   check('   Update All does not count the app that is waiting', await ev(() => !document.getElementById('updAllBtn') || document.getElementById('updAllBtn').style.display === 'none' || !/Charlie/.test(JSON.stringify(updList.filter(x => !(updProgress[x.pkg] && ['done', 'downloading', 'installing', 'confirming'].includes(updProgress[x.pkg].stage))).map(x => x.name)))));
   await ev(() => window.onUpdateProgress(JSON.stringify({ pkg: 'com.c', stage: 'error', percent: 0, message: 'Update cancelled. Nothing was installed.' }))); await sleep(40);
   const rowErr = await page.locator('.upd-row:has-text("Charlie")').innerText();

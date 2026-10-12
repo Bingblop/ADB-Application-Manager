@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "جارٍ التثبيت…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "يثبّت Ollama في Termux، ويشغّله، وينزّل نموذج برمجة صغيرًا (qwen2.5-coder 1.5B، حوالي 1 GB). يستغرق ذلك بضع دقائق.",
 "Installs from": "يُثبَّت من",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "يتطلب التثبيت من مدير الملفات ADB أو تصحيح الأخطاء اللاسلكي أو Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "يثبّت APK المحفوظ احتياطيًا فوق المثبّت، ثم يعيد تطبيق أذوناته وApp Ops الخاصة به.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "يثبّت التطبيق المصحَّح عبر وضع التشغيل (ADB أو Shizuku أو Root) فور بنائه.",
 "Interface": "الواجهة",

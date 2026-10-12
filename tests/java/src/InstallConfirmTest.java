@@ -271,6 +271,7 @@ public class InstallConfirmTest {
         // the mode the question names is the mode the install runs through: a Yes counts only if it is still the mode when the answer is in
         String cim = methodBody(src, "private boolean confirmInMode(");
         is("confirmInMode asks, then compares the mode named with the mode now, and a change cancels", cim.indexOf("confirmPrivilegedInstall(message)") > 0 && cim.indexOf("InstallGuards.sameMode(mode, now)") > cim.indexOf("confirmPrivilegedInstall(message)") && cim.contains("resolveExecMode()") && cim.contains("resolveAuthorizerMode(authorizer)") && cim.contains("throw new InstallCancelled(InstallConfirm.MODE_CHANGED)"));
+        is("confirmInMode refuses a mode that is not privileged before it opens the dialog", cim.indexOf("InstallGuards.isPrivilegedMode(mode)") > 0 && cim.indexOf("InstallGuards.isPrivilegedMode(mode)") < cim.indexOf("confirmPrivilegedInstall(message)") && cim.contains("InstallConfirm.NO_PRIVILEGED_MODE") && InstallConfirm.NO_PRIVILEGED_MODE.startsWith("Installing needs ADB, Wireless Debugging, Shizuku or Root."));
         java.util.List<String> callersOfAsk = new java.util.ArrayList<String>();
         for (int i = 0; i < lines.length; i++) {
           if (!lines[i].contains("confirmPrivilegedInstall(") || sig.matcher(lines[i]).find()) continue;

@@ -9691,7 +9691,7 @@ Type any command below (e.g. pm list packages -d)
         function backBusyReason() {
             if (typeof installRunning !== 'undefined' && installRunning) return 'an install is running';
             if (typeof selfUpdBusy !== 'undefined' && selfUpdBusy) return 'the app update is downloading';
-            if (typeof updProgress !== 'undefined' && Object.keys(updProgress || {}).some(k => updProgress[k] && ['downloading', 'installing'].includes(updProgress[k].stage))) return 'an update is downloading';
+            if (typeof updProgress !== 'undefined' && Object.keys(updProgress || {}).some(k => updProgress[k] && ['downloading', 'installing', 'confirming'].includes(updProgress[k].stage))) return 'an update is downloading';
             if (typeof fmBatchRunning !== 'undefined' && fmBatchRunning) return 'a file operation is running';
             if (typeof arcBusy !== 'undefined' && arcBusy) return 'an archive job is running';
             if (typeof backupRunning !== 'undefined' && backupRunning) return 'a backup or restore is running';
@@ -11700,7 +11700,7 @@ Type any command below (e.g. pm list packages -d)
             updList = (r.updates || []).filter(u => u.source !== 'self');  // self-update has its own card
             updUntracked = (r.untracked || []).sort((a, b) => a.name.localeCompare(b.name));
             updExternal = (r.external || []).sort((a, b) => a.name.localeCompare(b.name));
-            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued'].includes(updProgress[k].stage)) delete updProgress[k]; });
+            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued', 'confirming'].includes(updProgress[k].stage)) delete updProgress[k]; });
             document.getElementById('updCheckBtn').disabled = false;
             const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`,
                 `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
@@ -17367,7 +17367,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.installSelected) { showToast('Installer needs the app build'); return; }
             const name = installData.label || installData.pkg;
-            if (installFromFiles && (built.opts.authorizer === 'none' || !isPrivilegedActive)) { showToast('Installs from File Manager need ADB, Wireless Debugging or Shizuku'); return; }
+            if (installFromFiles && (built.opts.authorizer === 'none' || !isPrivilegedActive)) { showToast('Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.'); return; }
             // Known before trying: an installed copy signed with another key can't be updated, only replaced.
             if (installFromFiles && uninstallFirst !== true && installData.installed && installData.signed && installData.signerMatchesInstalled === false) {
                 if (!confirm(installUninstallAsk(name, installData.pkg))) return;

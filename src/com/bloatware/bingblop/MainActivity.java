@@ -2912,6 +2912,8 @@ public class MainActivity extends Activity {
      * False is a plain No.
      */
     private boolean confirmInMode(String mode, String authorizer, String message) {
+        // a mode that is not privileged (the app went Read-Only after the install began) has nothing to ask about: no question, no install
+        if (!InstallGuards.isPrivilegedMode(mode)) throw new InstallCancelled(InstallConfirm.NO_PRIVILEGED_MODE);
         if (!confirmPrivilegedInstall(message)) return false;
         String now = authorizer == null ? resolveExecMode() : resolveAuthorizerMode(authorizer);
         if (!InstallGuards.sameMode(mode, now)) throw new InstallCancelled(InstallConfirm.MODE_CHANGED);

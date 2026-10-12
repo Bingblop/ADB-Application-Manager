@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Yükleniyor…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Ollama’yı Termux’a yükler, başlatır ve küçük bir kodlama modeli indirir (qwen2.5-coder 1.5B, yaklaşık 1 GB). Bu birkaç dakika sürer.",
 "Installs from": "Şuradan yüklenir:",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Dosya Yöneticisi’nden yükleme için ADB, Kablosuz hata ayıklama veya Shizuku gerekir",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Yedeklenen APK’yı yüklü olanın üzerine yükler, ardından izinlerini ve App Ops ayarlarını yeniden uygular.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Yamalı uygulamayı oluşturulur oluşturulmaz çalışma moduyla (ADB, Shizuku veya Root) yükler.",
 "Interface": "Arayüz",
