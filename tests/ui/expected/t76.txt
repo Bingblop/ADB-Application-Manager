@@ -52,7 +52,7 @@
     and once the tab is on, the log shows everything (no app filter left behind): true
     with the tab on again "Update" goes to it and starts the update: true {"view":"installer","bg":["selfcheck","install:com.example.one"]}
     a package opened from outside is not turned away by a switch: APK Installer comes back, says so and loads it: true {"view":"installer","on":true,"bar":true,"pkg":"com.new.app","saved":[]}
-    Overlays off at launch: no "Theme changed / Undo" bar on another tab, and the record is left to expire: true {"view":"apps","snack":false,"kept":"{\"t\":1791000010386,\"n\":0,\"sub\":\"theme\",\"undo\":\"x\",\"kind\":\"apply\",\"done\":true}"}
+    Overlays off at launch: no "Theme changed / Undo" bar on another tab, and the record is left to expire: true {"view":"apps","snack":false,"kept":"{\"t\":<epoch ms>,\"n\":0,\"sub\":\"theme\",\"undo\":\"x\",\"kind\":\"apply\",\"done\":true}"}
 12. Space on a switch: it turns off and the focus stays on that switch: true {"row":"files","cls":"switch-input","on":false}
     pressed again it turns on, still focused: true
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
