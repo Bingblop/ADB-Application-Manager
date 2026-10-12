@@ -50,6 +50,11 @@ the bridge throws when the check starts: the buttons come back: true The check c
 running again: true
 a broken final message: the buttons come back: true 0 updates available • Apps checked: 0 • <clock>
 an error summary from the app: the buttons come back and it says so: true The check stopped: boom
+a first check that broke: said as a failure, and the list does not say "Everything is up to date.": true The check stopped: boom
+...and when the tab is opened again (the app has an error and no result yet): true The check stopped: boom
+broke after a good check, tab opened again: The check stopped: boom • Saved result from <old time> | Alpha
+a check that broke after a good one: the failure, the old result and the old result's own time (not the time of the failure): true The check stopped: boom • Saved result from <old time>
+...also when the message of the broken check carries the old result: true The check stopped: boom • Saved result from <old time>
 even if drawing the list throws, the buttons are already back: true true
 all from saved results: 1 update available • Apps checked: 20 • 20 from saved results • <clock>
 "Check again, ignore saved results" asks the app to ignore them: true Check again, ignore saved results

@@ -302,6 +302,8 @@ public class UpdateCheckerTest {
     catalogFallbackTests();
     retryTests();
     requestCountTests();
+    openedHostTests();
+    schedulingTests();
     commitBarrierTests();
     stillNewerTests();
     wiringTests();
@@ -712,7 +714,7 @@ public class UpdateCheckerTest {
     World wq = new World(5000);
     for (String h : new String[]{"vas.samsungapps.com", "apt.izzysoft.de", "f-droid.org", "api.github.com", "apps.obtainium.imranr.dev"}) wq.net.dead.add(h);
     JSONObject sq = run(wq, new UpdateCache(tempDir(), wq.clock), wq.options(), new Events());
-    is("offline: every host timing out with no answer at all is treated as no internet", sq.optBoolean("offline"));
+    is("offline: every host timing out with no answer at all is treated as no internet " + (sq.optBoolean("offline") ? "" : sq.optJSONArray("hostsDown") + " " + wq.net.log.size() + " failed=" + sq.optJSONArray("failed").length() + " total=" + sq.optInt("total")), sq.optBoolean("offline"));
   }
 
   static void githubLimitTests() throws Exception {
@@ -840,6 +842,71 @@ public class UpdateCheckerTest {
     List<UpdateChecker.App> l = new ArrayList<UpdateChecker.App>();
     for (UpdateChecker.App a : w.apps) if (a.pkg.equals(pkg)) l.add(a);
     return l;
+  }
+
+  /** A host that answered once and then fails 3 times in a row is given up on like any other. */
+  static void openedHostTests() throws Exception {
+    final World w = new World(5000);
+    final FakeNet inner = w.net;
+    final AtomicInteger izzy = new AtomicInteger();
+    UpdateManager.Http net = new UpdateManager.Http() {
+      public byte[] get(String url, String accept, String bearer, int max) throws Exception {
+        if (url.startsWith(IZZY)) {
+          if (izzy.incrementAndGet() > 1) throw new SocketTimeoutException("read timed out");     // the first answer opens the host, then it dies
+          throw new IllegalStateException("not found (HTTP 404)");
+        }
+        return inner.get(url, accept, bearer, max);
+      }
+      public String redirectLocation(String url) throws Exception { return inner.redirectLocation(url); }
+    };
+    UpdateChecker.Options o = w.options();
+    o.threads = 1;
+    o.self = null;
+    JSONObject s = new UpdateChecker(net, w.clock, new UpdateCache(tempDir(), w.clock)).check(w.apps, o, new Events()).summary;
+    is("opened host: it answered once, then failed 3 times: no 5th request, 4 in all (" + izzy.get() + ")", izzy.get() == 4);
+    JSONArray down = s.optJSONArray("hostsDown");
+    boolean unreachable = false;
+    JSONArray failed = s.optJSONArray("failed");
+    for (int i = 0; i < failed.length(); i++) if ("host".equals(failed.optJSONObject(i).optString("code")) && "apt.izzysoft.de".equals(failed.optJSONObject(i).optString("host"))) unreachable = true;
+    is("opened host: it is named in hostsDown and its apps are reported 'unreachable'", down.length() == 1 && down.optString(0).equals("apt.izzysoft.de") && unreachable);
+  }
+
+  /** The catalog and the open-source apps are not queued behind a long row of Galaxy Store requests. */
+  static void schedulingTests() throws Exception {
+    final World w = new World(5000);
+    final FakeNet inner = w.net;
+    final AtomicInteger gxStarted = new AtomicInteger(), gxDone = new AtomicInteger();
+    UpdateManager.Http slowGalaxy = new UpdateManager.Http() {
+      public byte[] get(String url, String accept, String bearer, int max) throws Exception {
+        if (url.contains("vas.samsungapps.com")) {
+          gxStarted.incrementAndGet();
+          Thread.sleep(150);
+          byte[] b = inner.get(url, accept, bearer, max);
+          gxDone.incrementAndGet();
+          return b;
+        }
+        return inner.get(url, accept, bearer, max);
+      }
+      public String redirectLocation(String url) throws Exception { return inner.redirectLocation(url); }
+    };
+    final int[] startedAtFirstOs = {-1}, doneAtFirstOs = {-1};
+    final long t0 = System.nanoTime();
+    final long[] lastOsRow = {0};
+    UpdateChecker.Listener l = new UpdateChecker.Listener() {
+      public void onUpdate(JSONObject row) {
+        if (!"galaxy".equals(row.optString("source")) && !"self".equals(row.optString("source"))) {
+          synchronized (startedAtFirstOs) { if (startedAtFirstOs[0] < 0) { startedAtFirstOs[0] = gxStarted.get(); doneAtFirstOs[0] = gxDone.get(); } }
+          lastOsRow[0] = System.nanoTime();
+        }
+      }
+      public void onProgress(JSONObject p) {}
+    };
+    UpdateChecker.Options o = w.options();
+    JSONObject s = new UpdateChecker(slowGalaxy, w.clock, new UpdateCache(tempDir(), w.clock)).check(w.apps, o, l).summary;
+    long total = (System.nanoTime() - t0) / 1_000_000;
+    is("scheduling: with slow Galaxy Store requests (20 apps, 150 ms each) the first open-source answer came while most Galaxy jobs were still to start (" + startedAtFirstOs[0] + " of 20 started, " + doneAtFirstOs[0] + " done)", startedAtFirstOs[0] >= 0 && startedAtFirstOs[0] < 12 && doneAtFirstOs[0] < 20);
+    is("scheduling: the open-source answers were all in before the last Galaxy request ended (the sources overlap, they do not run one after the other)", lastOsRow[0] > 0 && gxDone.get() == 20 && s.optJSONArray("failed").length() == 0);
+    is("scheduling: the whole check took about as long as the Galaxy Store alone needs on 8 workers (" + total + " ms; 20 x 150 ms / 8 = 375 ms)", total < 3000);
   }
 
   static void commitBarrierTests() throws Exception {
@@ -975,6 +1042,12 @@ public class UpdateCheckerTest {
     is("wiring: a new check drops every approval, as before", run.contains("approvedUpdates.clear()"));
     is("wiring: the running flag and the time are reset in a finally, on every way out", run.contains("finally") && run.indexOf("updateCheckRunning = false") > run.indexOf("finally"));
     is("wiring: the final summary is always sent (also after an exception)", run.contains("onUpdatesChecked"));
+    // the time of the last good check: not advanced by a check that broke (its summary carries "error"), nor by "no internet" with an older result to show
+    String stamp = run.substring(run.indexOf("finally"));
+    stamp = stamp.substring(0, stamp.indexOf("updateCheckedAt = System.currentTimeMillis()"));
+    is("wiring: the time of the last good check moves only for a summary without an error (and the error is reported to the page until a check succeeds)",
+        stamp.contains("!summary.has(\"error\")") && stamp.contains("summary.optBoolean(\"offline\") && before != null") && run.contains("updateLastError = msg") && run.contains("updateLastError = \"\"")
+        && methodBody(src, "public String getUpdateState(").contains("o.put(\"error\", updateLastError)"));
     is("wiring: the activity's onDestroy cancels a running check", methodBody(src, "protected void onDestroy(").contains("cancelUpdateCheckRun()"));
     is("wiring: a kept or restored row is checked against the installed version before it is shown (both places), and the runs are numbered", src.contains("private boolean updateRowStillValid(") && methodBody(src, "private boolean updateRowStillValid(").contains("UpdateChecker.stillNewer(")
         && count(src, "updateRowStillValid(") >= 3 && src.contains("o.generation = updateRunGeneration"));

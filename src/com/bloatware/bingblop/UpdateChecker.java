@@ -16,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -248,6 +245,7 @@ public final class UpdateChecker {
          */
         private boolean admit(String host, HostState st) throws IOException {
             stopIfOver();
+            if (st.down) throw new HostDown(host);       // a host that answered earlier and then failed 3 times in a row is given up on too
             if (st.opened) return false;
             synchronized (st) {
                 while (true) {
@@ -423,6 +421,86 @@ public final class UpdateChecker {
     }
 
     // ------------------------------------------------------------------------------------------------
+    // The workers
+    // ------------------------------------------------------------------------------------------------
+
+    /**
+     * The shared workers. They take what is waiting in this order: the first jobs (this app's own release, the catalog), then the open-source jobs, then the
+     * Galaxy Store jobs, so that a long row of Galaxy Store requests never keeps the catalog, and with it every open-source app, waiting in a queue.
+     */
+    private static final class Dispatcher {
+        static final int FIRST = 0, OPEN_SOURCE = 1, GALAXY = 2;
+        private final java.util.LinkedList<Runnable>[] queues;
+        private final List<Thread> threads = new ArrayList<Thread>();
+        private boolean feeding = true;           // jobs may still be added (the catalog loader has not finished); guarded by this
+        private boolean shut;
+
+        @SuppressWarnings("unchecked")
+        Dispatcher(int n) {
+            queues = new java.util.LinkedList[]{new java.util.LinkedList<Runnable>(), new java.util.LinkedList<Runnable>(), new java.util.LinkedList<Runnable>()};
+            for (int i = 1; i <= n; i++) {
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        work();
+                    }
+                }, "update-check-" + i);
+                t.setDaemon(true);
+                threads.add(t);
+                t.start();
+            }
+        }
+
+        synchronized void add(int queue, Runnable r) {
+            if (shut) return;
+            queues[queue].add(r);
+            notifyAll();
+        }
+
+        /** Nothing more will be added: a worker that finds the queues empty may leave. */
+        synchronized void feedDone() {
+            feeding = false;
+            notifyAll();
+        }
+
+        synchronized void dropQueued() {
+            shut = true;
+            for (java.util.LinkedList<Runnable> q : queues) q.clear();
+            notifyAll();
+        }
+
+        void interruptAll() {
+            dropQueued();
+            for (Thread t : threads) t.interrupt();
+        }
+
+        private void work() {
+            while (true) {
+                Runnable r = null;
+                synchronized (this) {
+                    while (r == null) {
+                        if (shut) return;
+                        for (java.util.LinkedList<Runnable> q : queues) {
+                            r = q.poll();
+                            if (r != null) break;
+                        }
+                        if (r != null) break;
+                        if (!feeding) return;
+                        try {
+                            wait(50);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
+                    }
+                }
+                try {
+                    r.run();
+                } catch (Throwable ignored) {}
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------
     // The run
     // ------------------------------------------------------------------------------------------------
 
@@ -470,20 +548,11 @@ public final class UpdateChecker {
         }
 
         // 2. The rest, on one pool
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(Math.max(1, options.threads), Math.max(1, options.threads), 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(), new java.util.concurrent.ThreadFactory() {
-            private final AtomicInteger n = new AtomicInteger();
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "update-check-" + n.incrementAndGet());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        final Dispatcher pool = new Dispatcher(Math.max(1, options.threads));
         try {
+            // Self and the catalog come first, the open-source jobs as soon as the catalog is there, the Galaxy Store jobs fill the workers meanwhile
             if (options.self != null) {
-                pool.execute(new Runnable() {
+                pool.add(Dispatcher.FIRST, new Runnable() {
                     @Override
                     public void run() {
                         runSelf();
@@ -491,26 +560,26 @@ public final class UpdateChecker {
                 });
             }
             final List<Job> osJobs = new ArrayList<Job>();
-            for (final Job j : todo) {
+            final List<Job> gxJobs = new ArrayList<Job>();
+            for (Job j : todo) {
                 if (j.osNeeded) osJobs.add(j);
-                else pool.execute(task(j));                              // Galaxy Store only: no catalog needed
+                else gxJobs.add(j);                                      // Galaxy Store only: no catalog needed
             }
             if (!osJobs.isEmpty()) {
-                final ThreadPoolExecutor p = pool;
-                pool.execute(new Runnable() {
+                pool.add(Dispatcher.FIRST, new Runnable() {
                     @Override
                     public void run() {
-                        loadCatalog();
-                        for (Job j : osJobs) {
-                            try {
-                                p.execute(task(j));
-                            } catch (java.util.concurrent.RejectedExecutionException e) {
-                                return;                                  // the run is over
-                            }
+                        try {
+                            loadCatalog();
+                            for (Job j : osJobs) pool.add(Dispatcher.OPEN_SOURCE, task(j));
+                        } finally {
+                            pool.feedDone();
                         }
                     }
                 });
             }
+            for (Job j : gxJobs) pool.add(Dispatcher.GALAXY, task(j));
+            if (osJobs.isEmpty()) pool.feedDone();
 
             // 3. Wait: until everything is finished, or cancel, or the deadline, or no internet
             while (true) {
@@ -531,8 +600,7 @@ public final class UpdateChecker {
             }
         } finally {
             closed = true;
-            pool.getQueue().clear();                // what has not started never will; a worker that is saving or telling the listener is left alone (no interrupt)
-            pool.shutdown();
+            pool.dropQueued();                      // what has not started never will; a worker that is saving or telling the listener is left alone (no interrupt)
         }
 
         // 3b. The barrier: a job that has put its result into the run is not over until its answer is saved and the listener has been told. The summary
@@ -554,7 +622,7 @@ public final class UpdateChecker {
             }
         }
 
-        pool.shutdownNow();                         // the commits are over: stop whatever is still in the air
+        pool.interruptAll();                        // the commits are over: stop whatever is still in the air
 
         // 4. Everything that was not finished is accounted for
         JSONObject summary;

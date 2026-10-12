@@ -11870,7 +11870,7 @@ Type any command below (e.g. pm list packages -d)
             updHostsDown = r.hostsDown || [];
             updInfo = {
                 cancelled: !!r.cancelled, offline: !!r.offline, timedOut: r.timedOut || 0, fromCache: r.fromCache || 0, total: r.total, notChecked: r.notChecked || 0,
-                checked: r.checked || 0, openSourceChecked: r.openSourceChecked || 0, lastError: r.lastError || '',
+                checked: r.checked || 0, openSourceChecked: r.openSourceChecked || 0, lastError: r.lastError || '', error: r.error || '',
                 failedCount: r.failed ? r.failed.length : (r.errors || 0) + (r.openSourceErrors || 0)
             };
         }
@@ -11882,6 +11882,8 @@ Type any command below (e.g. pm list packages -d)
 
         // One honest line for a finished check (or a saved one): what was found, how many apps were really checked, and what was not
         function updSummaryLine(r, saved) {
+            // a check that broke is a failure, not a result: it is said as one, next to the result from before (with that result's own time) if there is one
+            if (r.error) return txF('The check stopped: {0}', r.error) + (r.checkedAt ? ' • ' + txF('Saved result from {0}', updTimeText(r.checkedAt)) : '');
             const parts = [];
             const n = updList.length;
             const failedN = updInfo.failedCount;
@@ -11902,6 +11904,7 @@ Type any command below (e.g. pm list packages -d)
 
         function updEmptyText(st) {
             if (updRunning) return txT('No updates found yet.');
+            if (updInfo.error) return txF('The check stopped: {0}', updInfo.error);
             if (updInfo.cancelled) return txT('Cancelled before any update was found.');
             if (updInfo.offline) return txT('No internet connection. Nothing could be checked.');
             if (updInfo.failedCount) return txT('No updates found among the apps that could be checked.');
@@ -12009,7 +12012,7 @@ Type any command below (e.g. pm list packages -d)
             } finally {
                 updSetRunning(false);          // on every way out: a check never leaves the Check button off
             }
-            updSetStatus(r.error ? txF('The check stopped: {0}', r.error) : updSummaryLine(r, false));
+            updSetStatus(updSummaryLine(r, !!r.error));
             renderUpdates();
             updateUpdatesTabBadge();
             if (allApps.length) renderApps();
@@ -12031,7 +12034,7 @@ Type any command below (e.g. pm list packages -d)
             const pending = galaxy.filter(u => updCanStartAll(u));
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
-            if (st && st.checkedAt) {
+            if (st && (st.checkedAt || st.error)) {
                 updSetStatus(updSummaryLine(st, true));      // the result the app kept (from before a tab switch or a restart), marked with its time
             }
             updRenderRetry();

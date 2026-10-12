@@ -146,6 +146,20 @@ function bridgeInit(opts) {
   await page.click('#updCheckBtn');
   await page.evaluate(() => window.onUpdatesChecked(JSON.stringify({ error: 'boom', updates: [], failed: [], hostsDown: [] })));
   check('an error summary from the app: the buttons come back and it says so', !(await dis('#updCheckBtn')) && (await status()).includes('boom'), await status());
+  // a check that broke is a failure, never "up to date": the first one, and one after a good result (which keeps its own time)
+  await page.click('#updCheckBtn');
+  await send('onUpdatesChecked', { error: 'boom', updates: [], failed: [], hostsDown: [], checkedAt: 0 });
+  check('a first check that broke: said as a failure, and the list does not say "Everything is up to date."', (await status()) === 'The check stopped: boom' && !(await page.locator('body').innerText()).includes('Everything is up to date') && (await text('#updContainer')) === 'The check stopped: boom', await text('#updContainer'));
+  await page.evaluate(() => { window.__m.state = { running: false, checkedAt: 0, updates: [], error: 'boom' }; onUpdatesShown(); });
+  check('...and when the tab is opened again (the app has an error and no result yet)', (await status()) === 'The check stopped: boom' && (await text('#updContainer')) === 'The check stopped: boom', await status());
+  const oldAt = Date.now() - 5 * 3600 * 1000;
+  await page.evaluate(([row, at]) => { window.__m.state = { running: false, checkedAt: at, updates: [row], error: 'boom', untracked: [], external: [], failed: [], hostsDown: [], total: 20 }; onUpdatesShown(); }, [ROW('com.a.one', 'Alpha'), oldAt]);
+  const oldTime = await page.evaluate(at => updTimeText(at), oldAt), nowTime = await page.evaluate(() => updTimeText(Date.now()));
+  console.log('broke after a good check, tab opened again:', (await status()).replace(oldTime, '<old time>'), '|', (await rows()).join(','));
+  check('a check that broke after a good one: the failure, the old result and the old result\'s own time (not the time of the failure)', (await status()) === 'The check stopped: boom • Saved result from ' + oldTime && oldTime !== nowTime && (await rows()).join() === 'Alpha', (await status()).replace(oldTime, '<old time>'));
+  await page.click('#updCheckBtn');
+  await send('onUpdatesChecked', { error: 'boom', updates: [ROW('com.a.one', 'Alpha')], failed: [], hostsDown: [], total: 20, checkedAt: oldAt });
+  check('...also when the message of the broken check carries the old result', (await status()) === 'The check stopped: boom • Saved result from ' + oldTime && (await rows()).join() === 'Alpha', (await status()).replace(oldTime, '<old time>'));
   await page.click('#updCheckBtn');
   await page.evaluate(() => { window.renderUpdateExtras = () => { throw new Error('render broke'); }; });
   let threw = false;

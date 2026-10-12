@@ -2201,6 +2201,7 @@ public class MainActivity extends Activity {
     /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
     private volatile JSONObject updateLastSummary;
     private volatile JSONObject updateProgressLast;
+    private volatile String updateLastError = "";      // why the last check broke; empty after a check that gave a result
     private final Object updateStateLock = new Object();
     private boolean updateStateLoaded;
     private UpdateCache updateCacheInstance;
@@ -2259,6 +2260,18 @@ public class MainActivity extends Activity {
                 updateCheckedAt = last.optLong("checkedAt", 0);
             } catch (Throwable ignored) {}
         }
+    }
+
+    /** Puts back the update rows of an earlier result that are still true (the phone may have changed since) and returns them. */
+    private JSONArray restoreUpdateRows(Map<String, JSONObject> rows) {
+        updateResults.clear();
+        JSONArray still = new JSONArray();
+        for (JSONObject r : rows.values()) {
+            if (!updateRowStillValid(r)) continue;
+            updateResults.put(r.optString("pkg"), r);
+            still.put(r);
+        }
+        return still;
     }
 
     /** Stops the check that is running, if any: what it found stays, the rest is reported as not checked. */
@@ -2373,28 +2386,27 @@ public class MainActivity extends Activity {
                             if (retried != null) summary = UpdateChecker.merge(before, summary, retried);
                             if (summary.optBoolean("offline") && before != null) {
                                 // no internet: the answer from the last time that worked is still the best there is, and says so
-                                updateResults.clear();
-                                JSONArray still = new JSONArray();
-                                for (JSONObject r : rowsBefore.values()) {
-                                    if (!updateRowStillValid(r)) continue;       // the phone may have changed since: only rows that are still true come back
-                                    updateResults.put(r.optString("pkg"), r);
-                                    still.put(r);
-                                }
-                                summary = new JSONObject(before.toString()).put("offline", true).put("updates", still);
+                                summary = new JSONObject(before.toString()).put("offline", true).put("updates", restoreUpdateRows(rowsBefore));
                             }
                         }
                     } catch (Throwable e) {
                         try {
-                            summary = new JSONObject();
-                            summary.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
-                            summary.put("failed", new JSONArray());
-                            summary.put("hostsDown", new JSONArray());
+                            // a check that broke is a failure, not a result: what was known before stays (with its own time), and the failure is said next to it
+                            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                            summary = before != null ? new JSONObject(before.toString()) : new JSONObject().put("failed", new JSONArray()).put("hostsDown", new JSONArray());
+                            summary.put("updates", restoreUpdateRows(rowsBefore));
+                            summary.put("error", msg);
+                            updateLastError = msg;
                         } catch (Exception ignored) {}
                     } finally {
                         updateCheckRun = null;
                         updateProgressLast = null;
                         updateCheckRunning = false;
-                        if (summary == null || !summary.optBoolean("offline") || before == null) updateCheckedAt = System.currentTimeMillis();
+                        // the time of the last good check moves only when this one gave a result (not an error, not "no internet" with an older result to show)
+                        if (summary != null && !summary.has("error") && !(summary.optBoolean("offline") && before != null)) {
+                            updateCheckedAt = System.currentTimeMillis();
+                            updateLastError = "";
+                        }
                     }
                     try {
                         if (summary == null) summary = new JSONObject();
@@ -10398,6 +10410,7 @@ public class MainActivity extends Activity {
                 o.put("running", updateCheckRunning);
                 o.put("checkedAt", updateCheckedAt);
                 o.put("updates", updatesArray());
+                if (!updateLastError.isEmpty() && !updateCheckRunning) o.put("error", updateLastError);
                 if (updateCheckRunning && updateProgressLast != null) o.put("progress", updateProgressLast);
                 o.put("installing", new JSONArray(new ArrayList<String>(installingUpdates)));
                 o.put("currentVersion", currentVersionName());
