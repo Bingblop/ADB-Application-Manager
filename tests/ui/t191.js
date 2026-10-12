@@ -253,6 +253,38 @@ const { chromium, PAGE } = require('./lib/pw');
   await prog({ pkg: 'own/app', stage: 'error', percent: 0, message: 'nope' }); await wait(30);
   check('and its end switches the button back on', await ev(() => !document.getElementById('storeInstallBtn').disabled));
 
+  // ---- 13. one request for the details at a time: the row and the window wait for the same answer ----
+  await ev(() => closeStoreModal());
+  await ev(() => { delete storeDetailCache.bravo; window.__hold.bravo = true; });
+  const lb = (await loads()).filter(x => x === 'bravo').length, ib = (await installs()).length;
+  await page.click(row('bravo') + ' .store-inst-btn'); await wait(40);
+  await page.click(row('bravo') + ' > div:nth-child(2)'); await wait(60);
+  check('Install, then the row opened before the answer: storeLoadApp was asked once for the two', (await loads()).filter(x => x === 'bravo').length === lb + 1 && (await modalShown()));
+  await release('bravo'); await wait(100);
+  const bm = await ev(() => ({ body: document.getElementById('storeDetailBody').innerText, dis: document.getElementById('storeInstallBtn').disabled, txt: document.getElementById('storeInstallProgress').innerText }));
+  check('one answer serves both: the install starts once and the window shows the details, its button held, with the progress', (await installs()).length === ib + 1 && /Full bravo/.test(bm.body) && bm.dis && bm.txt === 'Starting…', JSON.stringify(bm));
+  await prog({ pkg: 'com.bravo', stage: 'error', percent: 0, message: 'stop' }); await wait(30);
+  await ev(() => closeStoreModal());
+  await ev(() => { window.__hold.echo = true; });
+  const le = (await loads()).filter(x => x === 'echo').length;
+  await page.click(row('echo') + ' .store-inst-btn'); await wait(40);
+  await page.click(row('echo') + ' > div:nth-child(2)'); await wait(60);
+  await release('echo'); await wait(100);
+  const em = await ev(() => document.getElementById('storeDetailBody').innerText);
+  r = await rowInfo('echo');
+  check('an error answer is shown on the row and in the window, the row is usable again, and there was one request', (await loads()).filter(x => x === 'echo').length === le + 1 && /Could not load this app: boom/.test(em) && r.err && !r.dis && r.status === 'Could not load this app: boom', JSON.stringify([em, r]));
+  await ev(() => closeStoreModal());
+  // the other way round: the window is opened first, Install is tapped on the row while it loads
+  await ev(() => { delete storeDetailCache.golf; window.__hold.golf = true; });
+  const lg = (await loads()).filter(x => x === 'golf').length, ig = (await installs()).length;
+  await page.click(row('golf') + ' > div:nth-child(2)'); await wait(60);
+  await ev(() => document.querySelector('#storeList > div[data-slug="golf"] .store-inst-btn').click()); await wait(40);
+  check('the window first, then Install on the row: still one request', (await loads()).filter(x => x === 'golf').length === lg + 1);
+  await release('golf'); await wait(100);
+  check('... and the install starts once', (await installs()).length === ig + 1);
+  await prog({ pkg: 'com.golf', stage: 'error', percent: 0, message: 'stop' }); await wait(30);
+  await ev(() => closeStoreModal());
+
   check('no script errors', errors.length === 0, errors.join('|'));
   await b.close();
   if (failed) { console.log(failed + ' FAILED'); process.exit(1); }

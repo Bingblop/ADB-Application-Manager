@@ -12496,6 +12496,7 @@ Type any command below (e.g. pm list packages -d)
         // What each ShizuStore row shows, by app: { busy, text, err, nodl }. It lives here, not in the row, so a new draw of the list (search, sort, "Show more") keeps it.
         const storeRowSt = {};
         const storeRowWait = {};            // slug -> true while a row's Install waits for the details of that app
+        const storeLoadPending = {};        // slug -> when its details were asked for: one request in flight per app, whoever wants the answer waits for that one
         const storeRun = {};                // progress key -> slug of a ShizuStore install in progress (started from a row or from the details window)
         let storeModalKey = '';             // progress key of the install the open details window of another store started
 
@@ -12639,7 +12640,7 @@ Type any command below (e.g. pm list packages -d)
             if (!window.AndroidBridge.storeLoadApp) { showToast('Install needs the app build'); return; }
             storeRowWait[slug] = true;
             storeRowSet(slug, { busy: true, text: 'Loading…' });
-            window.AndroidBridge.storeLoadApp(slug);
+            storeAskApp(slug);
         }
 
         // The details of an app a row is waiting for have arrived (or failed to)
@@ -12681,6 +12682,14 @@ Type any command below (e.g. pm list packages -d)
             else av.textContent = letter;
         }
 
+        // Asks the native side for the details of an app, unless that request is already on its way (a minute is long enough to call it lost)
+        function storeAskApp(slug) {
+            if (!window.AndroidBridge || !window.AndroidBridge.storeLoadApp) return;
+            if (Date.now() - (storeLoadPending[slug] || 0) < 60000) return;
+            storeLoadPending[slug] = Date.now();
+            window.AndroidBridge.storeLoadApp(slug);
+        }
+
         function openStoreApp(slug) {
             haptic();
             storeCurrent = { slug: slug, app: null, download: null };
@@ -12693,11 +12702,12 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeDetailSub').innerText = sum.packageName || '';
             setStoreAvatar(sum.iconHash, sum.name);
             if (storeDetailCache[slug]) { renderStoreDetail(storeDetailCache[slug]); return; }
-            if (window.AndroidBridge && window.AndroidBridge.storeLoadApp) window.AndroidBridge.storeLoadApp(slug);
+            storeAskApp(slug);
         }
 
         function onStoreApp(json) {
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            if (d.slug) delete storeLoadPending[d.slug]; else Object.keys(storeLoadPending).forEach(k => delete storeLoadPending[k]);
             if (d.slug && d.status === 'ok') storeDetailCache[d.slug] = d;
             if (d.slug) { if (storeRowWait[d.slug]) storeRowLoaded(d); }
             else Object.keys(storeRowWait).forEach(sl => storeRowLoaded({ slug: sl, status: 'error', error: d.error }));      // an answer that cannot say whose it is ends every wait
