@@ -51,10 +51,10 @@ const { chromium, PAGE } = require('./lib/pw');
   const badges = await page.locator('#logcatOutput .lc-badge').allInnerTexts();
   console.log('3. badges in order:', JSON.stringify(badges) === JSON.stringify(['I', 'D', 'V', 'W', 'E', 'F', 'I']), JSON.stringify(badges));
 
-  // 4) Colors per level (message color is mixed toward the theme text, so test dominant channel).
+  // 4) Colors per level (the level letter and the tag wear the level colour; the message is muted like the Kotlin console's).
   // color-mix() computes to "color(srgb r g b)" with 0..1 floats; plain colors compute to "rgb(r, g, b)" 0..255.
   const col = async lvl => page.evaluate(l => {
-    const el = document.querySelector('.lc-row.lvl-' + l + ' .lc-msg');
+    const el = document.querySelector('.lc-row.lvl-' + l + ' .lc-badge');          // the level letter carries the level colour in the Console (the message is the muted text colour)
     const s = getComputedStyle(el).color;
     const m = s.match(/[\d.]+/g).map(Number).slice(0, 3);
     return s.startsWith('color(') ? m.map(v => Math.round(v * 255)) : m;
