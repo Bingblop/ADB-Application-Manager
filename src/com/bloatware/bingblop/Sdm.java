@@ -171,6 +171,8 @@ public final class Sdm {
         public final long nowSec;
         /** Set by the engine when the accessibility service can click through the system settings (AppCleaner); null otherwise. */
         public Automation automation;
+        /** Set by the engine for a deletion when the automation exists but is not ready: why (see {@link Automation#notReadyReason}); null otherwise. */
+        public String automationNotReady;
         public Ctx(Fs fs, Areas areas, Packages pkgs, Exclusions ex, Shell shell, JSONObject settings, Progress progress, Cancel cancel, long nowSec) {
             this.fs = fs; this.areas = areas; this.pkgs = pkgs; this.exclusions = ex; this.shell = shell; this.settings = settings == null ? new JSONObject() : settings;
             this.progress = progress == null ? NO_PROGRESS : progress; this.cancel = cancel == null ? NEVER : cancel; this.nowSec = nowSec;
@@ -188,6 +190,8 @@ public final class Sdm {
     public interface Automation {
         /** True when the service is connected and the user gave consent. */
         boolean ready();
+        /** Why {@link #ready} is false: NO_CONSENT, NOT_ENABLED (the service is switched off) or NOT_CONNECTED (switched on but not running); null when ready or unknown. */
+        default String notReadyReason() { return null; }
         /** Clears the caches of the given packages one by one; returns the packages it cleared. Throws {@link AutomationError}. */
         Set<String> clearCaches(List<String> pkgs, Progress progress, Cancel cancel) throws AutomationError;
     }

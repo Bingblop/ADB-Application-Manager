@@ -110,6 +110,7 @@ public class SdmAppCleanerTest {
         final Set<String> willFail = new HashSet<String>();     // packages whose cache stays
         final Map<String, String> unreachable = new HashMap<String, String>();
         final Map<String, String> failure = new HashMap<String, String>();
+        final List<Map<String, String>> preflights = new ArrayList<Map<String, String>>();     // what each deletion said it left out before the run
         List<String> asked;
         FakeAuto(FakePkgs pkgs) { this.pkgs = pkgs; }
         @Override public boolean ready() { return ready; }
@@ -127,6 +128,7 @@ public class SdmAppCleanerTest {
         }
         @Override public String unreachableReason(String pkg, boolean enabled) { return unreachable.get(pkg); }
         @Override public String failureOf(String pkg) { return failure.get(pkg); }
+        @Override public void preflight(Map<String, String> unreachable) { preflights.add(new java.util.LinkedHashMap<String, String>(unreachable)); }
     }
 
     // ---------------------------------------------------------------------------------------------------------- the phone
@@ -140,6 +142,7 @@ public class SdmAppCleanerTest {
         final JSONObject settings = new JSONObject();
         FakeShell shell;
         FakeAuto auto;
+        String notReady;                // what the engine saw as the reason the automation was not ready (Ctx.automationNotReady)
         Sdm.Cancel cancel = Sdm.NEVER;
         final List<String> progress = new ArrayList<String>();
 
@@ -176,6 +179,7 @@ public class SdmAppCleanerTest {
             Sdm.Progress p = new Sdm.Progress() { @Override public void update(String a, String b, long d, long t, long by) { progress.add(a); } };
             Sdm.Ctx c = new Sdm.Ctx(new SdmFsJava(), areas, pkgs, excl, shell, settings, p, cancel, NOW);
             c.automation = auto;
+            c.automationNotReady = notReady;
             return c;
         }
 
@@ -912,6 +916,20 @@ public class SdmAppCleanerTest {
             eq("0 items deleted, 1 cache needs the service", note(rep, "primary"), "0 expendable items deleted, 1 cache still needs the accessibility service");
             eq("and the error of upstream", note(rep, "error"), "Accessibility service is not set up. Complete the setup and give consent.");
         } finally { p.cleanup(); }
+        // ... and when the engine knows why the service is not ready, the message says which of the three it is
+        String[][] whys = { { "NOT_ENABLED", "switched off" }, { "NOT_CONNECTED", "Android is not running it" }, { "NO_CONSENT", "no consent from you yet" } };
+        for (String[] why : whys) {
+            p = deletePhone();
+            try {
+                p.pkgs.setTotal("com.alpha", 10000L);
+                p.auto.ready = false;
+                p.notReady = why[0];
+                SdmAppCleaner.AppResult r = p.scan();
+                Sdm.DeleteReport rep = p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+                is(why[0] + ": the error says what is wrong", note(rep, "error") != null && note(rep, "error").contains(why[1]), true);
+                is(why[0] + ": and what to do", note(rep, "error").contains("SD Maid tab") || note(rep, "error").contains("accessibility settings"), true);
+            } finally { p.cleanup(); }
+        }
 
         // --- the screen went off after the first app
         p = deletePhone();
@@ -972,6 +990,31 @@ public class SdmAppCleanerTest {
             is("a mainline module has no settings page", ml != null && "NO_SETTINGS".equals(ml.acsError), true);
             JSONObject sm = r.summary();
             is("an unclearable app is not advertised as freeable", sm.getInt("actionableCount") < sm.getInt("itemCount"), true);
+            is("the automation was told what the pre-flight left out, before the run, in order", p.auto.preflights.size() == 1 && new ArrayList<String>(p.auto.preflights.get(0).keySet()).equals(Arrays.asList("com.beta", "com.google.mainline.x"))
+                    && "DISABLED_APP".equals(p.auto.preflights.get(0).get("com.beta")) && "NO_SETTINGS".equals(p.auto.preflights.get(0).get("com.google.mainline.x")), true);
+        } finally { p.cleanup(); }
+
+        // --- every target left out by the pre-flight: the automation is not run, but it is still told what was left out (the SD Maid tab's "last attempt" is that, not a stale one)
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.pkgs.setTotal("com.beta", 4000L);
+            p.auto.unreachable.put("com.alpha", "NO_SETTINGS");
+            p.auto.unreachable.put("com.beta", "DISABLED_APP");
+            SdmAppCleaner.AppResult r = p.scan();
+            p.delete(r, sel("{}"));
+            is("nothing left to run: the automation was not asked", p.auto.asked == null, true);
+            is("... but told about both apps the pre-flight left out", p.auto.preflights.size() == 1 && "NO_SETTINGS".equals(p.auto.preflights.get(0).get("com.alpha")) && "DISABLED_APP".equals(p.auto.preflights.get(0).get("com.beta")), true);
+            is("both are marked in the result", "NO_SETTINGS".equals(r.find("com.alpha").acsError) && "DISABLED_APP".equals(r.find("com.beta").acsError), true);
+        } finally { p.cleanup(); }
+
+        // --- nothing left out: the automation is told so (an empty pre-flight), so an earlier deletion's left-outs never carry over
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            SdmAppCleaner.AppResult r = p.scan();
+            p.delete(r, sel("{}"));
+            is("an empty pre-flight is handed over before the run", p.auto.preflights.size() == 1 && p.auto.preflights.get(0).isEmpty() && p.auto.asked.contains("com.alpha"), true);
         } finally { p.cleanup(); }
 
         // --- a cache that is already empty at delete time needs no automation

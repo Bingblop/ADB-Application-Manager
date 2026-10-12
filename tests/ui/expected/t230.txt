@@ -1,0 +1,25 @@
+ok   with nothing wrong there is no failure sentence and no report button
+ok   failure NO_PROGRESS is said in a sentence
+ok   failure STORAGE_NOT_FOUND is said in a sentence
+ok   failure CLEAR_NOT_FOUND is said in a sentence
+ok   failure SETTINGS_NOT_OPENED is said in a sentence
+ok   failure SETTINGS_NOT_OPENED (no window) is said in a sentence
+ok   failure APP_NOT_ON_SCREEN is said in a sentence
+ok   failure LAUNCH_FAILED is said in a sentence
+ok   failure LOCKED is said in a sentence
+ok   failure NO_SETTINGS is said in a sentence
+ok   failure DISABLED_APP is said in a sentence
+ok   failure SCREEN_UNAVAILABLE is said in a sentence
+ok   failure GAVE_UP is said in a sentence
+ok   failure OTHER is said in a sentence
+ok   the sentence is in the error colour (a note that is red)
+ok   the help text says what is in the report and what is not
+ok   a "Copy screen report" button is next to it
+ok   it asks the phone for the report
+ok   and copies it to the clipboard
+ok   with a toast
+ok   when the phone has no report there is a toast and nothing is copied
+ok   a failure without a report has its sentence but no button
+ok   service on but not running: the card says so and what to do
+ok   running: ready again, and the failure is gone
+errors: []
