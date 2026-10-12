@@ -110,7 +110,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | **App Stores** | The catalogs only: ShizuStore, GitHub, F-Droid and Orion, and a **+** tab for stores of your own |
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
-| **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
+| **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, freeze, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, an in-app browser for sites with a browser check, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
 | **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
@@ -1342,7 +1342,7 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 
 **One app, read back too** (v7.10.13): the app menu's Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend run natively, then the phone is asked (package lists; for Suspend the app's own flag in `dumpsys package`) and the message says what was found. A batch shows **Checking the phone…** on its progress sheet first. Clear data and Force stop are not read back (nothing to read). The **Connected Devices console** now suggests commands like the Terminal does, including adb's own commands in adb mode.
 
-**Read-back everywhere** (v7.10.14): the Connected Devices app list lists the device again after Enable, Disable, Uninstall and Reinstall and reports what it finds (*Checking the device…*); Clear data is read back in Root mode by counting the files and size of the app's `/data/user/0/<package>` folder before and after; **Settings > Progress messages** switches off the "Working on it… / Checking…" toasts (the result and every problem stay).
+**Read-back everywhere** (v7.10.14): the Connected Devices app list lists the device again after Enable, Freeze (Disable until v7.13.0), Uninstall and Reinstall and reports what it finds (*Checking the device…*); Clear data is read back in Root mode by counting the files and size of the app's `/data/user/0/<package>` folder before and after; **Settings > Progress messages** switches off the "Working on it… / Checking…" toasts (the result and every problem stay).
 
 **UAD-NG tag** (v7.10.15): tapping it opens the app's classification (level, group, the project's description, needed by / depends on). What the four levels mean is behind the **Removal Levels** button at the bottom of that sheet (the same lines as in the Debloater tab).
 
