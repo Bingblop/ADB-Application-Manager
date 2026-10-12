@@ -279,13 +279,45 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   // "Copy grant commands": the adb lines for what is still missing, copied for a computer; hidden when nothing is missing and in the file-access prompt
   const copyBtn = async page => { await page.waitForFunction(() => document.querySelector('#permModal .modal-sheet').getBoundingClientRect().bottom <= innerHeight + 0.5); return ev(page, () => { const b = document.getElementById('permCopyBtn'), r = b.getBoundingClientRect(), m = document.querySelector('#permModal .modal-sheet').getBoundingClientRect();
     return { shown: getComputedStyle(b).display !== 'none', text: b.innerText.trim(), h: Math.round(r.height), inside: r.left >= m.left && r.right <= m.right && r.bottom <= innerHeight + 0.5 }; }); };
+  // the exact lists, written out here (not computed) so that they are checked against what MainActivity.getGrantCommands builds
+  const PKGN = 'com.bloatware.bingblop', PM = 'adb shell pm grant ' + PKGN + ' android.permission.', APP = 'adb shell appops set ' + PKGN + ' ';
+  const L = (prefix, tail) => prefix + tail;
+  const ALLOK = { files: true, usage: true, overlay: true, install_unknown: true, storage_legacy: true, secure_settings: true, dump: true, restricted_settings: true };
+  const STATES = [
+    ['files missing: the appops line and both storage grants', { files: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['install_unknown missing: its appops line only', { install_unknown: false }, [L(APP, 'REQUEST_INSTALL_PACKAGES allow')]],
+    ['storage_legacy missing: both storage grants', { storage_legacy: false }, [L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['files and storage_legacy missing: the storage grants once, not twice', { files: false, storage_legacy: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE')]],
+    ['usage missing: the appops line and the grant', { usage: false }, [L(APP, 'GET_USAGE_STATS allow'), L(PM, 'PACKAGE_USAGE_STATS')]],
+    ['all missing: every line once, in order, and none for Allow Restricted Settings (the app could not see that it was done)', { files: false, usage: false, overlay: false, install_unknown: false, storage_legacy: false, secure_settings: false, dump: false, restricted_settings: false },
+      [L(APP, 'MANAGE_EXTERNAL_STORAGE allow'), L(PM, 'READ_EXTERNAL_STORAGE'), L(PM, 'WRITE_EXTERNAL_STORAGE'), L(APP, 'GET_USAGE_STATS allow'), L(PM, 'PACKAGE_USAGE_STATS'),
+        L(APP, 'SYSTEM_ALERT_WINDOW allow'), L(APP, 'REQUEST_INSTALL_PACKAGES allow'), L(PM, 'WRITE_SECURE_SETTINGS'), L(PM, 'DUMP')]],
+  ];
+  for (const [label, miss, lines] of STATES) {
+    await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: Object.assign({}, ALLOK, miss) }, async page => {
+      await ev(page, () => openPermSheet('manual'));
+      await page.click('#permCopyBtn');
+      const got = await ev(page, () => window.__calls.copied);
+      check('   copied list, ' + label, JSON.stringify(got) === JSON.stringify([lines.join('\n')]), JSON.stringify(got));
+    });
+  }
+  await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: Object.assign({}, ALLOK) }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   none missing: no button', !(await copyBtn(page)).shown);
+  });
+  await scenario({ kv: FLAG, mode: { priv: true }, grantCommands: true, perm: Object.assign({}, ALLOK, { restricted_settings: false }) }, async page => {
+    await ev(page, () => openPermSheet('manual'));
+    check('   only Allow Restricted Settings missing: its row asks for it, but there is nothing to copy for it, so no button', rowsOf(await sheet(page)).includes('—') && !(await copyBtn(page)).shown);
+  });
   await scenario({ kv: FLAG, mode: { priv: false }, grantCommands: true, perm: { files: false, usage: true, overlay: true, restricted_settings: true, secure_settings: false, dump: false } }, async page => {
     await ev(page, () => openPermSheet('manual'));
     const b = await copyBtn(page);
     check('15. Copy grant commands: shown while something is missing - also without a working mode, where the privileged rows are not in the sheet', b.shown && b.text === 'Copy grant commands' && b.h >= 44 && b.inside, JSON.stringify(b));
     await page.click('#permCopyBtn');
     const got = await ev(page, () => window.__calls.copied);
-    check('   it copies the exact adb lines, one per line, with this app\'s package filled in, for what is not held (and nothing else)', JSON.stringify(got) === JSON.stringify(['adb shell appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow\nadb shell pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS\nadb shell pm grant com.bloatware.bingblop android.permission.DUMP']), JSON.stringify(got));
+    check('   it copies the exact adb lines, one per line, with this app\'s package filled in, for what is not held (and nothing else)', JSON.stringify(got) === JSON.stringify([L(APP, 'MANAGE_EXTERNAL_STORAGE allow') + '\n' + L(PM, 'READ_EXTERNAL_STORAGE') + '\n' + L(PM, 'WRITE_EXTERNAL_STORAGE') + '\n' + L(PM, 'WRITE_SECURE_SETTINGS') + '\n' + L(PM, 'DUMP')]), JSON.stringify(got));
     check('   and the confirmation says where to run them', await wasToast(page, /^Copied\. Run these on a computer with USB debugging$/), JSON.stringify(await toasts(page)));
     await ev(page, () => { Object.assign(window.__perm, { files: true, secure_settings: true, dump: true }); window.onAppResume(); });
     check('   when the app comes back and everything is held the button is gone', !(await copyBtn(page)).shown);

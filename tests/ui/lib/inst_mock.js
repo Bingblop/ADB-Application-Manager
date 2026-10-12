@@ -70,14 +70,17 @@ exports.initScript = function (opts) {
     // the adb lines for what is not held yet (opt-in: opts.grantCommands, so a test that does not look at the button never has it on the sheet); the real list is MainActivity.getGrantCommands
     getGrantCommands() {
       if (!opts.grantCommands) return '';
-      const pkg = 'com.bloatware.bingblop', pm = 'adb shell pm grant ' + pkg + ' android.permission.', op = 'adb shell appops set ' + pkg + ' ', P = window.__perm, out = [];
-      if (P.restricted_settings === false) out.push(op + 'ACCESS_RESTRICTED_SETTINGS allow');
-      if (P.files === false) out.push(op + 'MANAGE_EXTERNAL_STORAGE allow');
-      if (P.usage === false) out.push(op + 'GET_USAGE_STATS allow', pm + 'PACKAGE_USAGE_STATS');
-      if (P.overlay === false) out.push(op + 'SYSTEM_ALERT_WINDOW allow');
-      if (P.secure_settings === false) out.push(pm + 'WRITE_SECURE_SETTINGS');
-      if (P.dump === false) out.push(pm + 'DUMP');
-      return out.join('\n');
+      // the same conditions, order and de-duplication as MainActivity.getGrantCommands (a Set keeps the first of equal lines); Allow Restricted Settings is never listed
+      const pkg = 'com.bloatware.bingblop', pm = 'adb shell pm grant ' + pkg + ' android.permission.', op = 'adb shell appops set ' + pkg + ' ', P = window.__perm, out = new Set();
+      const miss = k => P[k] === false;
+      if (miss('files')) { out.add(op + 'MANAGE_EXTERNAL_STORAGE allow'); out.add(pm + 'READ_EXTERNAL_STORAGE'); out.add(pm + 'WRITE_EXTERNAL_STORAGE'); }
+      if (miss('usage')) { out.add(op + 'GET_USAGE_STATS allow'); out.add(pm + 'PACKAGE_USAGE_STATS'); }
+      if (miss('overlay')) out.add(op + 'SYSTEM_ALERT_WINDOW allow');
+      if (miss('install_unknown')) out.add(op + 'REQUEST_INSTALL_PACKAGES allow');
+      if (miss('storage_legacy')) { out.add(pm + 'READ_EXTERNAL_STORAGE'); out.add(pm + 'WRITE_EXTERNAL_STORAGE'); }
+      if (miss('secure_settings')) out.add(pm + 'WRITE_SECURE_SETTINGS');
+      if (miss('dump')) out.add(pm + 'DUMP');
+      return Array.from(out).join('\n');
     },
     copyToClipboard(t) { (calls.copied = calls.copied || []).push(t); },
     syncUsageGrant() { calls.sync = (calls.sync || 0) + 1; },

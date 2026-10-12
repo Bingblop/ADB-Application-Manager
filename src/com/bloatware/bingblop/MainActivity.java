@@ -12742,14 +12742,16 @@ public class MainActivity extends Activity {
         /**
          * The commands that would grant what is still missing, to run from a computer (USB debugging), one per line and with this app's package name filled in:
          * the same commands "Allow all" runs through a working mode ({@link #grantAllPermissions}), but written as {@code adb shell ...}. What the phone already holds
-         * (read with the permission check, as everywhere) is left out; the answer is empty when nothing is missing.
+         * (read with the permission check, as everywhere) is left out, and so is Allow Restricted Settings (see below); the answer is empty when nothing is missing.
          */
         @JavascriptInterface
         public String getGrantCommands() {
             String pkg = getPackageName();
             java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<String>();
             String pm = "adb shell pm grant " + pkg + " android.permission.", op = "adb shell appops set " + pkg + " ";
-            if (!hasRestrictedSettingsAccess()) out.add(op + "ACCESS_RESTRICTED_SETTINGS allow");
+            // Allow Restricted Settings is left out on purpose: hasRestrictedSettingsAccess() may rely on the "restricted_granted" flag that only grantRestrictedSettings()
+            // writes (some phones do not report the op to the app), so a command run from a computer could never make the sheet see it and the line would stay in the list
+            // forever. That access is granted with its Allow button or "Allow all" (through the working mode), which also verify and remember it.
             if (!hasStorageAccess()) {
                 out.add(op + "MANAGE_EXTERNAL_STORAGE allow");
                 out.add(pm + "READ_EXTERNAL_STORAGE");

@@ -88,8 +88,11 @@ public class DumpPermissionTest {
         at = main.indexOf("public String getGrantCommands()");
         check("getGrantCommands() is a @JavascriptInterface and fills in this app's package name", at > 0 && main.substring(Math.max(0, at - 40), at).contains("@JavascriptInterface") && cmds.contains("String pkg = getPackageName();"), cmds);
         check("   every line is an 'adb shell pm grant' / 'adb shell appops set' line, one per line", has(cmds, "\"adb shell pm grant \" + pkg", "\"adb shell appops set \" + pkg", "sb.append('\\n')"), cmds);
-        check("   each is added only when the phone's own check says the access is not held (including DUMP, WRITE_SECURE_SETTINGS and restricted settings)",
-                has(cmds, "if (!hasDumpAccess()) out.add(pm + \"DUMP\");", "if (!hasWriteSecureSettingsAccess()) out.add(pm + \"WRITE_SECURE_SETTINGS\");", "if (!hasRestrictedSettingsAccess())", "if (!hasUsageAccess())", "if (!hasOverlayAccess())", "if (!hasInstallUnknownAccess())", "if (!hasStorageAccess())", "if (!hasLegacyStorageAccess())"), cmds);
+        check("   each is added only when the phone's own check says the access is not held (including DUMP and WRITE_SECURE_SETTINGS)",
+                has(cmds, "if (!hasDumpAccess()) out.add(pm + \"DUMP\");", "if (!hasWriteSecureSettingsAccess()) out.add(pm + \"WRITE_SECURE_SETTINGS\");", "if (!hasUsageAccess())", "if (!hasOverlayAccess())", "if (!hasInstallUnknownAccess())", "if (!hasStorageAccess())", "if (!hasLegacyStorageAccess())"), cmds);
+        check("   Allow Restricted Settings is not listed (a command run from a computer cannot set the app's own 'restricted_granted' flag), and the code says why",
+                !cmds.contains("ACCESS_RESTRICTED_SETTINGS allow") && !cmds.contains("if (!hasRestrictedSettingsAccess())") && cmds.contains("Allow Restricted Settings is left out on purpose") && cmds.contains("restricted_granted"), cmds);
+        check("   the 'restricted_granted' flag is written only by grantRestrictedSettings()", main.split("putBoolean\\(\"restricted_granted\"", -1).length - 1 == 1 && body(main, "private boolean grantRestrictedSettings()").contains("putBoolean(\"restricted_granted\", true)"));
         check("   it runs nothing (a list only)", !cmds.contains("executeShell"), cmds);
         String all2 = body(main, "public String grantAllPermissions()");
         for (String perm : new String[]{"PACKAGE_USAGE_STATS", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "WRITE_SECURE_SETTINGS", "DUMP", "SYSTEM_ALERT_WINDOW", "REQUEST_INSTALL_PACKAGES", "GET_USAGE_STATS", "MANAGE_EXTERNAL_STORAGE"})
