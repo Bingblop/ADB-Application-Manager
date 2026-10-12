@@ -27,17 +27,17 @@ const mock = require('./lib/console_mock');
 
   // ---- 1) migration of a saved tab choice ----
   let page = await open({});
-  check('no saved choice: the default bar has Console right before Terminal and no logcat', join(await bar(page)) === 'apps,saved-lists,debloater,installer,files,console,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about');
+  check('no saved choice: the default bar has Console right before Terminal and no logcat', join(await bar(page)) === 'apps,saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
   await page.close();
 
   page = await open(cfg(OLD_ORDER, []));
-  check('an old choice (everything on, the old order): Console takes the place of the Command-Line Interface, Terminal follows, Logcat Viewer is gone', join(await bar(page)) === 'apps,saved-lists,debloater,installer,files,console,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
+  check('an old choice (everything on, the old order): Console takes the place of the Command-Line Interface, Terminal follows, Logcat Viewer is gone', join(await bar(page)) === 'apps,saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
   await page.close();
 
   // moved around by the person: the Command-Line Interface at the very front, the Logcat Viewer second to last
   const moved = ['terminal', 'saved-lists', 'debloater', 'installer', 'files', 'settings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'logcat', 'sdm'];
   page = await open(cfg(moved, []));
-  check('a moved Command-Line Interface keeps its place for Console (first), Terminal right after it', join(await bar(page)) === 'apps,console,terminal,saved-lists,debloater,installer,files,settings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
+  check('a moved Command-Line Interface keeps its place for Console (first), Terminal right after it', join(await bar(page)) === 'apps,console,terminal,saved-lists,debloater,installer,files,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
   await page.close();
 
   // the Command-Line Interface off: Console is off too (and Terminal)
@@ -48,13 +48,13 @@ const mock = require('./lib/console_mock');
   const rows = await ev(page, () => Array.from(document.querySelectorAll('#featureList .fl-row')).map(x => x.dataset.tab + ':' + x.querySelector('.switch-input').checked));
   check('the Feature List shows both switched off and has no row for the Logcat Viewer', rows.includes('console:false') && rows.includes('terminal:false') && !rows.some(x => /logcat/.test(x)), join(rows));
   await ev(page, () => featureToggle('console', true));
-  check('switching Console on again brings it back before the (still off) Terminal', (await bar(page)).join() === 'apps,saved-lists,debloater,installer,files,console,settings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
+  check('switching Console on again brings it back before the (still off) Terminal', (await bar(page)).join() === 'apps,saved-lists,debloater,installer,files,console,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
   await page.close();
 
   // the old logcat state is ignored whatever it was
   page = await open(cfg(OLD_ORDER, ['logcat', 'files']));
   r = await ev(page, () => ({ bar: Array.from(document.querySelectorAll('.tab-btn')).map(b => b.dataset.tab).join(), off: tabConfig.off.join() }));
-  check('the Logcat Viewer was off (and File Manager): Console is still on, only File Manager stays off, the old logcat state is dropped', r.bar === 'apps,saved-lists,debloater,installer,console,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about' && r.off === 'files', JSON.stringify(r));
+  check('the Logcat Viewer was off (and File Manager): Console is still on, only File Manager stays off, the old logcat state is dropped', r.bar === 'apps,saved-lists,debloater,installer,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about' && r.off === 'files', JSON.stringify(r));
   await page.close();
   page = await open(cfg(OLD_ORDER.filter(k => k !== 'logcat'), ['terminal']));
   r = await ev(page, () => ({ bar: Array.from(document.querySelectorAll('.tab-btn')).map(b => b.dataset.tab).join(), off: tabConfig.off.join() }));
@@ -65,7 +65,7 @@ const mock = require('./lib/console_mock');
   const NEW_ORDER = ['saved-lists', 'debloater', 'installer', 'files', 'terminal', 'console', 'settings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm'];
   page = await open(cfg(NEW_ORDER, ['console']));
   r = await ev(page, () => ({ bar: Array.from(document.querySelectorAll('.tab-btn')).map(b => b.dataset.tab).join(), off: tabConfig.off.join(), order: tabConfig.order.join() }));
-  check('a choice that already knows Console is left alone (here Console after Terminal and off, Terminal on)', r.order === NEW_ORDER.join() && r.off === 'console' && r.bar === 'apps,saved-lists,debloater,installer,files,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about', JSON.stringify(r));
+  check('a choice that already knows Console is left alone (here Console after Terminal and off, Terminal on; the Extra Settings tab it does not know is slotted in after Hidden Settings)', r.order === NEW_ORDER.join().replace('settings,overlays', 'settings,extrasettings,overlays') && r.off === 'console' && r.bar === 'apps,saved-lists,debloater,installer,files,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about', JSON.stringify(r));
   await page.close();
   page = await open(cfg(NEW_ORDER, ['terminal']));
   r = await ev(page, () => ({ off: tabConfig.off.join(), console: tabIsOn('console'), terminal: tabIsOn('terminal') }));
@@ -77,7 +77,7 @@ const mock = require('./lib/console_mock');
   check('migrating writes nothing by itself', JSON.parse(await ev(page, () => window.__kv.tab_config)).order.includes('logcat'));
   await ev(page, () => { switchView('prefs'); featureToggle('files', false); });
   const sv = JSON.parse(await ev(page, () => window.__kv.tab_config));
-  check('the first change saves the migrated shape (Console in, logcat out)', sv.order.join() === 'saved-lists,debloater,installer,files,console,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm' && sv.off.join() === 'files', JSON.stringify(sv));
+  check('the first change saves the migrated shape (Console in, logcat out)', sv.order.join() === 'saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm' && sv.off.join() === 'files', JSON.stringify(sv));
   await page.close();
 
   // damaged choices
@@ -89,7 +89,7 @@ const mock = require('./lib/console_mock');
   }
   page = await open({ tab_config: '{"order":["logcat","terminal"],"off":["logcat"]}' });
   r = await ev(page, () => ({ order: tabConfig.order.join(), off: tabConfig.off.join() }));
-  check('a short old choice with logcat and terminal: Console right before Terminal, logcat gone, the rest in their default places', r.order.includes('console,terminal') && !r.order.includes('logcat') && r.off === '' && r.order.split(',').length === 13, JSON.stringify(r));
+  check('a short old choice with logcat and terminal: Console right before Terminal, logcat gone, the rest in their default places', r.order.includes('console,terminal') && !r.order.includes('logcat') && r.off === '' && r.order.split(',').length === 14, JSON.stringify(r));
   await page.close();
 
   // ---- 2) the old way into the log: switchView('logcat') and the other entry points ----
