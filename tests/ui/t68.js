@@ -19,7 +19,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
   check('1. the tab bar names it "Hidden Settings"', tabs.includes('Hidden Settings') && !tabs.some(t => /^Settings$/.test(t)), JSON.stringify(tabs));
   const i = tabs.indexOf('Hidden Settings');
-  check('   it sits between Command-Line Interface and RRO/Monet Customization', /Command-Line Interface/.test(tabs[i - 1]) && /RRO\/Monet/.test(tabs[i + 1]) && /App Stores/.test(tabs[i + 2]), JSON.stringify(tabs.slice(i - 1, i + 3)));
+  check('   it sits after Command-Line Interface, with the Extra Settings tab and then RRO/Monet Customization behind it', /Command-Line Interface/.test(tabs[i - 1]) && /Extra Settings/.test(tabs[i + 1]) && /RRO\/Monet/.test(tabs[i + 2]) && /App Stores/.test(tabs[i + 3]), JSON.stringify(tabs.slice(i - 1, i + 4)));
   await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); document.querySelectorAll('.tab-btn')[Array.from(document.querySelectorAll('.tab-btn')).findIndex(b => /Hidden\s+Settings/.test(b.innerText))].click(); }); await page.waitForTimeout(800);
   check('2. the button opens it and becomes the active one', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   check('3. its card says what it is', (await ev(() => document.querySelector('#sdbTop .color-card-title').innerText.trim())) === 'Android’s hidden settings');
@@ -29,7 +29,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('5. what an earlier version saved is still used (table, filter, sort)', await ev(() => sdbNs === 'secure' && sdbFilter === 'switch' && sdbSort === 'za'), await ev(() => [sdbNs, sdbFilter, sdbSort].join()));
   check('   and the log of changes (2 entries)', (await ev(() => sdbJournal.length)) === 2 && (await ev(() => sdbJournal[0].k)) === 'saved_key_1');
   // no label anywhere on the page still calls it plain "Settings"
-  const stray = await ev(() => Array.from(document.querySelectorAll('#view-settings, #sdbMenuModal, #sdbEditModal, #sdbNewModal, #sdbJournalModal')).map(n => n.innerText).join('\n').split('\n').filter(l => /(^|\s)Settings(\s|$)/.test(l) && !/Hidden/i.test(l)));
+  const stray = await ev(() => Array.from(document.querySelectorAll('#view-settings, #sdbMenuModal, #sdbEditModal, #sdbNewModal, #sdbJournalModal')).map(n => n.innerText).join('\n').split('\n').filter(l => /(^|\s)Settings(\s|$)/.test(l) && !/Hidden|Extra Settings/i.test(l)));
   check('6. no heading or label of the tab calls it just "Settings"', stray.length === 0, JSON.stringify(stray));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
