@@ -14199,6 +14199,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (f.sdk && f.sdk < 30) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'info', detail: 'Needs Android 11 or newer.' });
             else if (f.developerOptions === 0) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Developer options are off. Turn them on first: Settings, About phone, tap Build number seven times.' });
             else if (f.wirelessDebugging === 1) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'ok', detail: 'Switched on.' });
+            else if (f.wirelessDebugging === 0 && (f.secureSettings || d.isPrivileged)) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Switched off. The button turns it on; Android then picks a new port, and it switches off again when you leave this Wi-Fi.', fix: 'connCheckWdOn', fixLabel: 'Turn on Wireless Debugging' });
             else if (f.wirelessDebugging === 0) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Switched off. Turn on Wireless debugging in Developer options.', fix: 'openDevOptionsUI', fixLabel: 'Open Developer Options' });
             else rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'info', detail: 'This phone does not say whether it is on.' });
 
@@ -14266,6 +14267,21 @@ Type any command above (e.g. pm list packages -d)</div>
         function connCheckFix(idx) {
             const name = connCheckFixes[idx];
             if (name && typeof window[name] === 'function') window[name]();
+        }
+
+        // Only a button press gets here: the app never switches Wireless Debugging by itself. The phone reads the setting back; the answer is its word, not a command's text.
+        function connCheckWdOn() {
+            haptic();
+            let got = '';
+            try { got = String(window.AndroidBridge.setWirelessDebugging(true) || ''); } catch (e) {}
+            const say = {
+                on: 'Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.',
+                no_wifi: 'Connect to Wi-Fi first: Wireless Debugging switches itself off without it.',
+                no_access: 'Connect a working mode (ADB or Shizuku) or grant secure settings access first.',
+                unsupported: 'This phone does not allow turning Wireless Debugging on from here.'
+            };
+            showToast(say[got] || 'The phone did not switch it on. Open Developer Options and turn it on there.');
+            connCheckRun(false);
         }
 
         function connCheckGrantSecure() {
