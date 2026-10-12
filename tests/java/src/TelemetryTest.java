@@ -122,7 +122,8 @@ public class TelemetryTest {
     check("page: the brightness bias is exactly screen_auto_brightness_adj and the switch is screen_brightness_mode", h.contains("const BR_KEY = 'screen_auto_brightness_adj', BR_MODE_KEY = 'screen_brightness_mode';"));
     check("page: both brightness keys live in the system table", h.contains("await xsAsk('get', 'system', BR_KEY, '')") && h.contains("await xsAsk('get', 'system', BR_MODE_KEY, '')") && h.contains("await xsAsk('put', 'system', BR_KEY, xsFloatText(sent))") && h.contains("xsPeek('system', BR_KEY)") && h.contains("xsPeek('system', BR_MODE_KEY)"));
     check("page: no other table is ever named for these keys", !h.contains("'secure', BR_KEY") && !h.contains("'secure', sc.key") && !h.contains("'system', sc.key") && !h.contains("'global', BR_KEY"));
-    int xs0 = h.indexOf("// ---- Extra Settings: Animation speed, Adaptive brightness bias, Device telemetry"), xs1 = h.indexOf("function fmtCount(n)", xs0);
+    int xs0 = h.indexOf("// ---- Extra Settings: Animation speed, Adaptive brightness bias, Device telemetry"), xs1 = h.indexOf("// ---- Extra Settings: Power & reboot (xpw)", xs0);
+    if (xs1 < 0) xs1 = h.indexOf("function fmtCount(n)", xs0);
     String xs = xs0 >= 0 && xs1 > xs0 ? h.substring(xs0, xs1) : "";
     check("page: every write goes through the Hidden Settings tab's settingsOp (no command text is built for these keys in the sections' own code)", xs.contains("function xsAsk(op, ns, key, value) {\n            return new Promise(done => { sdbRequest(id => window.AndroidBridge.settingsOp(id, op, ns, key, value), done, 60000); });") && !xs.contains("'settings put") && !xs.contains("'settings get") && !xs.contains("\"settings ") && !xs.contains("executeShell") && !xs.contains("runShell"));
     String applyA = bodyOf(h, "async function animApply() {");
