@@ -1,0 +1,18 @@
+ok   1. the card has the button, named Start Shizuku (ADB)
+ok      one tap asks the phone side once, disables the button and says it is starting
+ok      started: the sentence, the button is back, no text box without text
+ok      already_running: the sentence, the button is back, no text box without text
+ok      not_installed: the sentence, the button is back, no text box without text
+ok      no_adb: the sentence, the button is back, no text box without text
+ok      no_script: the sentence, the button is back, no text box without text
+ok      failed: the sentence, the button is back, no text box without text
+ok      only "no script" opened the Shizuku app
+ok      a failed start shows the script text as plain text
+ok      a start that worked hides the text again
+ok      an answer with nothing in it is "Could not start Shizuku" and does not throw
+ok      no page errors
+ok   2. "busy" from the phone side: a sentence, the button stays usable
+ok      any other reply: "Could not start Shizuku", the button stays usable
+ok   3. a bridge without the method: says the app is too old, nothing thrown
+ok   4. at 320 px the text box stays inside its card and the page does not scroll sideways
+all checks passed

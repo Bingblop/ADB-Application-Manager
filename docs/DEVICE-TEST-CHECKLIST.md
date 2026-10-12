@@ -401,6 +401,17 @@ None of this has been run on a phone yet. Take your time; each item says exactly
 - [ ] **Help Guide.** Open About > **Help Guide**, search for "Private DNS": the section "Extra Settings: Private DNS" starts with where it is and says it is not in Hidden Settings.
 - [ ] **The speed test.** In Extra Settings tap **Test speed**: see the checklist section 21 (the speed test items).
 
+## 30. Start Shizuku from the app
+
+Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
+
+- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then within about ten seconds "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
+- [ ] **No start script.** After clearing the Shizuku app's data (so it has not written start.sh), tap **Start Shizuku (ADB)**: the toast says Shizuku has not written its start script yet, and the Shizuku app opens. Nothing is started and no error text appears.
+- [ ] **No ADB connection.** With ADB TCP and Wireless Debugging both disconnected, tap it: the toast says to connect one of them first.
+- [ ] **Already running.** With Shizuku running, tap it: "Shizuku is already running", nothing is run.
+- [ ] **A failed start.** If Shizuku does not start (for example a Shizuku version whose start script needs another way), the toast says so and the text the script printed appears under the buttons. Please copy that text into the report: it is what we need to adjust the command for that version.
+- [ ] **Double tap.** Tap twice quickly: one start runs; the second tap says it is already being started.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
