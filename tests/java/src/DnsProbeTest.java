@@ -1209,6 +1209,7 @@ public class DnsProbeTest {
     check("source: the probe's pool is a fixed pool of DnsProbe.MAX_PARALLEL threads owned by MainActivity", m.contains("private final ExecutorService dnsProbeExec = Executors.newFixedThreadPool(DnsProbe.MAX_PARALLEL);"));
     String destroy = bodyOf(m, "protected void onDestroy()");
     check("source: onDestroy cancels the scan and shuts the probe's executor down", destroy != null && destroy.contains("dnsProbe.shutdown()") && destroy.contains("dnsProbeExec.shutdownNow()"));
+    check("source: onDestroy shuts the executor down BEFORE the runner (a start after the runner's shutdown must not find a live executor)", destroy != null && destroy.indexOf("dnsProbeExec.shutdownNow()") >= 0 && destroy.indexOf("dnsProbeExec.shutdownNow()") < destroy.indexOf("dnsProbe.shutdown()"));
     check("source: the bridge methods need no working mode (no mode, root or shell call in them)", start != null && cancel != null && !start.contains("Mode") && !start.contains("runShell") && !cancel.contains("Mode"));
     check("source: DnsProbe imports nothing from Android", !p.contains("import android.") && !p.contains("android.util.Log"));
     check("source: DnsProbe never logs", !p.contains("System.out") && !p.contains("System.err") && !p.contains("printStackTrace") && !p.contains("Log."));

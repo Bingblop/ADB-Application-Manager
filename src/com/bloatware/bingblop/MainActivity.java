@@ -15774,9 +15774,9 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
-        // the DNS speed test: close its sockets, then stop its pool (a probe still waiting would keep this activity alive)
-        try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
+        // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {
