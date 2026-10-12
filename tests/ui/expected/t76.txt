@@ -9,7 +9,7 @@
 2. the header button is a gear called Settings (not the colours palette): true {"text":"⚙","label":"Settings","role":"button"}
    it opens Settings, no tab is lit and the gear shows that you are there: true {"view":"prefs","anyTab":false,"gearOn":true}
    the gear goes dark again on a tab: true
-3. Settings: the language at the very top, the Default Ask Agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10): true ["Language","Default Ask Agent","Appearance","Palette Style","My Themes","Curated Theme Palettes","Lists","Motion","Row tints","Haptic feedback","Progress messages","VirusTotal API key","Reconnecting devices","Private DNS","Font","Icon pack","Action Button","Feature List","Press and hold guide"]
+3. Settings: the language at the very top, the Default Ask Agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10): true ["Language","Default Ask Agent","Appearance","Palette Style","My Themes","Curated Theme Palettes","Lists","Motion","Row tints","Haptic feedback","Progress messages","VirusTotal API key","Reconnecting devices","Private DNS","Font","Icon pack","Action Button","Navigation","Feature List","Press and hold guide"]
    fourteen rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer/Updater","File Manager","Console","Terminal","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid"]
    the first row cannot move up and the last cannot move down: true
    the names are the full names: true
@@ -18,7 +18,7 @@
    nothing is saved before the person changes something: true
 4. turning File Manager off: it leaves the bar, the row stays (dimmed) so it can be turned on again: true
    Application Manager and About are still first and last: true
-   the choice is saved: true {"order":["saved-lists","debloater","installer","files","console","terminal","settings","extrasettings","overlays","store","taskmgr","devices","morphe","sdm"],"off":["files"]}
+   the choice is saved: true {"order":["saved-lists","debloater","installer","files","console","terminal","settings","extrasettings","overlays","store","taskmgr","devices","morphe","sdm"],"off":["files"],"pinned":["apps","installer","extrasettings","console"],"shortcuts":{}}
    two off at once: true
    File Manager back on: it returns to its place in the bar: true
 5. switchView on a tab that is off stays where it is and says why: true {"view":"prefs","toast":"Console is turned off. Turn it on in Settings, Feature List."}
@@ -29,7 +29,7 @@
    the arrow that was pressed keeps focus, so it can be pressed again: true {"key":"console","cls":"fl-move"}
    several steps in a row: true
    down works too, and the first row then can move up: true
-   the order is saved: true {"order":["debloater","saved-lists","installer","console","settings","files","terminal","extrasettings","overlays","store","taskmgr","devices","morphe","sdm"],"off":[]}
+   the order is saved: true {"order":["debloater","saved-lists","installer","console","settings","files","terminal","extrasettings","overlays","store","taskmgr","devices","morphe","sdm"],"off":[],"pinned":["apps","installer","extrasettings"],"shortcuts":{}}
 7. after a restart the same tabs show in the same order: true apps,debloater,saved-lists,console,settings,files,terminal,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about
    and the Feature List shows the same switches: true
    Reset to Default: every tab on and in the first order again: true apps,saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about
@@ -61,7 +61,7 @@
     pressed again it turns on, still focused: true
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
     and that one keeps working: true
-    after a tap on an arrow the row is where it was on the screen (636 px, now 636 px), so the next tap moves the same row: true
+    after a tap on an arrow the row is where it was on the screen (686 px, now 686 px), so the next tap moves the same row: true
 13. [320 px, scrolled] the tab bar sticks right under the header (header 74 px), and the top of its first line is not covered: true {"hdr":74,"tabs":57,"tabTop":74,"hdrBottom":74,"firstLineUncovered":true,"uadTop":"135px","pad":"139px"}
     the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":74,"tabs":57,"tabTop":74,"hdrBottom":74,"firstLineUncovered":true,"uadTop":"135px","pad":"139px"}
 13. [360 px, scrolled] the tab bar sticks right under the header (header 83 px), and the top of its first line is not covered: true {"hdr":83,"tabs":57,"tabTop":83,"hdrBottom":83,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
