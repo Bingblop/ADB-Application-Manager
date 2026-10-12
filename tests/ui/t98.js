@@ -48,8 +48,8 @@ const tx = require('./lib/tx_mock');
   await page.evaluate(() => closeCheatSheet());
 
   // ---------------------------------------------------------------- the ADB Console keeps its own cheat sheet
-  await page.evaluate(() => txShowPane('console')); await sleep(100);
-  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await sleep(100);
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await sleep(100);
+  await page.click('#cnSegShell button:has-text("Cheat Sheet")'); await sleep(100);
   console.log('4. the ADB Console\'s own Cheat Sheet button still shows the ADB set, unaffected by the Terminal\'s shell picker:', (await title()) === 'ADB Cheat Sheet' && (await gistVisible()));
   await page.locator('#cheatSheetBody .cheat-row').first().click(); await sleep(50);
   console.log('   and still fills the Console\'s own input:', (await page.locator('#termCmd').inputValue()).length > 0 && (await page.locator('#txInput').inputValue()) === 'ls -la');

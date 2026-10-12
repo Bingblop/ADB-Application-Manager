@@ -1,0 +1,34 @@
+  Settings:
+    inactive_to=+30m0s0ms
+    sensing_to=+4m0s0ms
+    locating_to=+30s0ms
+    idle_to=+1h0m0s0ms
+    max_idle_to=+6h0m0s0ms
+    idle_factor=2.0
+  Idle-whitelist user apps:
+    org.thoughtcrime.securesms
+  Temp whitelist schedule:
+  mLightEnabled=true  mDeepEnabled=true
+  mForceIdle=true
+  mUseMotionSensor=true mMotionSensor={Sensor name="BMI260 Accelerometer Wakeup", vendor="Bosch", version=1, type=1, maxRange=78.4532, resolution=0.0023956299, power=0.15, minDelay=5000}
+  mScreenOn=false
+  mScreenLocked=true
+  mNetworkConnected=true
+  mCharging=false
+  mMotionActive=false
+  mNotMoving=true
+  mMotionListener.active=true
+  mLocating=false
+  mHasGps=false
+  mHasNetwork=false
+  mLocated=false
+  mState=IDLE mLightState=OVERRIDE
+  mInactiveTimeout=+30m0s0ms
+  mNextAlarmTime=+58m12s302ms
+  mNextIdlePendingDelay=+5m0s0ms
+  mNextIdleDelay=+1h0m0s0ms
+  mNextLightIdleDelay=+5m0s0ms
+  mCurLightIdleBudget=+1m0s0ms
+  mMaintenanceStartTime=+3h2m1s0ms
+  mJobsActive=false
+  mAlarmsActive=false

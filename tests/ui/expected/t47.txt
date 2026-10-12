@@ -15,7 +15,7 @@
    editing renames it in place: true
    pinning adds a one-tap chip to the terminal card: true ["Battery (short)"]
    the chip runs the command: true
-   a saved script runs as one multi-line command, echoed with > continuation: true ["> ls | head -3","out[cd /sdcard]","Finished. No error text in the output.",""]
+   a saved script runs as one multi-line command, echoed with > continuation: true ["$ cd /sdcard","> ls | head -3","Finished","out[cd /sdcard]"]
    multi-line scripts are not added to the history: true
    Save on a history row opens the editor prefilled (input untouched): true {"name":"settings get global airplan…","cmd":"settings get global airplane_mode_on","input":""}
    delete asks first, then removes it (and its chip if pinned): true

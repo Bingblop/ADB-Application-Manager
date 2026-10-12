@@ -8,11 +8,11 @@ ok      turned on again
 ok   2. an uninstall whose command printed "Failure" but whose app is gone counts as done: {"ok":true,"out":"Checked afterwards: uninstalled. The command reported a failure, but the device says it worked.\n\nFailure [x]","label":"Uninstalled"}
 ok      "Checking the device…" was shown
 ok      the app record follows the device
-ok      a disable the command called a success, though the app is not disabled, is a failure ("Not disabled"): {"ok":false,"out":"Checked afterwards: not disabled, although the command reported success.\n\nPackage com.c new state: disabled-user","label":"Not disabled"}
+ok      a freeze the command called a success, though the app is not frozen, is a failure ("Not frozen"): {"ok":false,"out":"Checked afterwards: not frozen, although the command reported success.\n\nPackage com.c new state: disabled-user","label":"Not frozen"}
 ok      the record says it is not disabled
 ok      an uninstall that really failed is "Still installed": {"ok":false,"out":"Checked afterwards: still installed.\n\nFailure [DELETE_FAILED_INTERNAL_ERROR]","label":"Still installed"}
 ok      a batch looks at the device once for all the apps (twice when something is not as wanted): 2
 ok      the batch says "Checking the device…"
-ok      and names the one that is not disabled (com.c), not the one that is: {"open":true,"title":"1 of 2 did not work","body":"com.c: Not disabled (the command said it worked)"}
+ok      and names the one that is not frozen (com.c), not the one that is: {"open":true,"title":"1 of 2 did not work","body":"com.c: Not frozen (the command said it worked)"}
 ok      with Progress messages off the device is checked without the message: []
 ok   no page errors:
