@@ -808,7 +808,7 @@ public final class SdmAcsPlan {
                     return NONE;
                 }
                 case L_TAP: {
-                    int[] at = SdmAcsDiag.visibleCentre(anchor, SdmAcsDiag.obstacles(tree, anchor, win), win, minPx);
+                    int[] at = tapPoint(tree, found, anchor, win, minPx);
                     if (at == null) { r.note(name + ": no part of the row is visible"); return SKIP; }
                     return result(name + " at " + at[0] + "," + at[1], r.host.tap(at[0], at[1]), before, beforePkg);
                 }
@@ -817,7 +817,7 @@ public final class SdmAcsPlan {
                     return dpad(name, false, anchor, win, before, beforePkg);
                 case L_INJECT_TAP: {
                     if (!r.host.canInject()) { r.note(name + ": needs a working mode (ADB, Shizuku or Root)"); return SKIP; }
-                    int[] at = SdmAcsDiag.visibleCentre(anchor, SdmAcsDiag.obstacles(tree, anchor, win), win, minPx);
+                    int[] at = tapPoint(tree, found, anchor, win, minPx);
                     if (at == null) { r.note(name + ": no part of the row is visible"); return SKIP; }
                     return result(name + " at " + at[0] + "," + at[1], r.host.injectTap(at[0], at[1]), before, beforePkg);
                 }
@@ -825,6 +825,15 @@ public final class SdmAcsPlan {
                     if (!r.host.canInject()) { r.note(name + ": needs a working mode (ADB, Shizuku or Root)"); return SKIP; }
                     return dpad(name, true, anchor, win, before, beforePkg);
             }
+        }
+
+        /**
+         * Where to tap: the middle of the visible part of the label (the "Storage" text, the one thing of the row that is surely not under a bar), else of the row. A bar that is not in the
+         * window's node tree (a window of its own) is not known as an obstacle, so the label is the safer place than the middle of the row.
+         */
+        int[] tapPoint(List<Node> tree, Node found, Node anchor, int[] win, int minPx) {
+            int[] at = SdmAcsDiag.visibleCentre(found, SdmAcsDiag.obstacles(tree, found, win), win, minPx);
+            return at != null ? at : SdmAcsDiag.visibleCentre(anchor, SdmAcsDiag.obstacles(tree, anchor, win), win, minPx);
         }
 
         /** D-pad down until the focus is on the Storage row, then centre. Never presses centre on a focus that is not read as the row: a blind press could toggle another row. */

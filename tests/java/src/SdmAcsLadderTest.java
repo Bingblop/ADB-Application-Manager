@@ -59,7 +59,7 @@ public class SdmAcsLadderTest {
         long flickerUntil = -1;
         SdmAcsPlanTest.N root, storageRow, wrapper, bar;
         ScrollList list;
-        boolean emptyStorage, locked;
+        boolean emptyStorage, locked, barHidden;
         final List<SdmAcsPlanTest.N> focusables = new ArrayList<SdmAcsPlanTest.N>();
 
         Page() {
@@ -113,7 +113,7 @@ public class SdmAcsLadderTest {
             bar.bounds = BAR.clone();
             SdmAcsPlanTest.N un = SdmAcsPlanTest.button(bar, "Uninstall", null); un.bounds = new int[] { 440, 2800, 670, 2930 };
             SdmAcsPlanTest.N fs = SdmAcsPlanTest.button(bar, "Force stop", null); fs.bounds = new int[] { 720, 2800, 1000, 2930 };
-            root.add(bar);
+            if (!barHidden) root.add(bar);                // a bar in a window of its own is not in this tree, but it still takes the taps
             focus = -1;
             final SdmAcsPlanTest.N r0 = root;
             root.focusFn = new java.util.function.Supplier<SdmAcsPlan.Node>() { @Override public SdmAcsPlan.Node get() { return focusReadable && focus >= 0 && focus < focusables.size() ? focusables.get(focus) : null; } };
@@ -200,6 +200,21 @@ public class SdmAcsLadderTest {
         eq("one tap only: node click, tap, and the Clear cache click", a, Arrays.asList("node-click", a.get(1), "clear-cache"));
         is("no input injection in a mode without a shell", !a.toString().contains("inject"), true);
         is("no failure", r.failed.isEmpty() && r.failures.isEmpty() && r.stop == null, true);
+    }
+
+    static void testBarOutsideTheTree() throws Exception {
+        // the bar is a window of its own: the node tree does not know it, the tap goes to the label of the row, not to the middle of the row (which is under the bar)
+        Page p = new Page();
+        p.barHidden = true; p.tapWorks = true;
+        SdmAcsPlan.Result r = p.run(app("com.alpha"));
+        is("cleared", r.cleared.contains("com.alpha") && p.cleared == 1, true);
+        String tap = null; for (String a : p.actions()) if (a.startsWith("tap ")) tap = a;
+        is("a tap was made", tap != null, true);
+        String[] xy = tap.substring(4).split(",");
+        int x = Integer.parseInt(xy[0]), y = Integer.parseInt(xy[1]);
+        is("it is on the label of the Storage row (" + tap + ")", x >= 60 && x < 700 && y >= 2700 && y < 2790, true);
+        is("and not under the bar", !inside(BAR, x, y), true);
+        is("the middle of the row would have been under the bar", inside(BAR, (STORAGE_ROW[0] + STORAGE_ROW[2]) / 2, (STORAGE_ROW[1] + STORAGE_ROW[3]) / 2), true);
     }
 
     static void testScrolledClear() throws Exception {
@@ -466,6 +481,7 @@ public class SdmAcsLadderTest {
         try {
             testGeometry();
             testScreenshotTapAtVisiblePart();
+            testBarOutsideTheTree();
             testScrolledClear();
             testNodeClickWorksUntouched();
             testOrder();
