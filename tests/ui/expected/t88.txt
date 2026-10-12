@@ -1,11 +1,8 @@
-1. the tab reads Terminal over ADB Console: "Command-Line\nInterface"
-   the Feature List calls it Terminal / ADB Console: Command-Line Interface
-2. the Terminal page comes first, the ADB Console page is hidden: true
-   the switch is big (at least 48 px tall): true Terminal is the selected one: true
-3. ADB Console shows the classic console (Rish mode, cheat sheet, its own output box): true
-   the choice is kept: "console"
-   leaving and coming back keeps ADB Console: true
-   and back to Terminal: true "terminal"
+1. the tab reads Terminal: "Terminal"
+   the Feature List calls it Terminal: Terminal
+2. the Terminal page is the whole tab (no Terminal | ADB Console switch any more): true
+3. the ADB shell is in the Console tab instead: true true
+   and the Terminal is still there when coming back: true
 4. with a working mode connected the Terminal opens on it, and starts its shell by itself: priv ["priv"]
    welcome and the ready line: true
    the state line names the shell and its folder: Working mode <tmp>/priv

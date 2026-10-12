@@ -75,7 +75,7 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
   check('2. Uninstall and Delete (the danger buttons) are in the failed color, the others are not', bt.danger === bt.bloat && bt.plain !== bt.danger && bt.dangerBorder === bt.bloat, JSON.stringify(bt));
   check('   the main action (the accent buttons: Install, Restore, Reinstall) is tinted and in the accent color', bt.accentBg !== bt.plainBg && bt.accentColor !== bt.plain, JSON.stringify(bt));
   await ev(() => { termSaved = [{ name: 'Connect', cmd: 'adb connect 192.168.1.5', pinned: true }]; termRenderPins(); });
-  const pin = await ev(() => { const p = document.querySelector('#view-terminal .term-pin'), o = document.querySelector('#view-terminal .apps-tool-btn:not(.term-pin)'); return { pinned: p && getComputedStyle(p).borderColor, other: o && getComputedStyle(o).borderColor, accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), pinColor: p && getComputedStyle(p).color, text: p && p.textContent }; });
+  const pin = await ev(() => { const p = document.querySelector('#view-console .term-pin'), o = document.querySelector('#view-console .apps-tool-btn:not(.term-pin)'); return { pinned: p && getComputedStyle(p).borderColor, other: o && getComputedStyle(o).borderColor, accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), pinColor: p && getComputedStyle(p).color, text: p && p.textContent }; });
   check('   a pinned command next to the built-in buttons has the accent color (it is not "Connect 5555")', pin.text === 'Connect' && pin.pinned !== pin.other && pin.pinColor !== '', JSON.stringify(pin));
   await ev(() => { termHistory = ['pm list packages']; termOpenModal('history'); });
   const hist = await ev(() => { const x = document.querySelector('#termModal .term-mini[title="Remove"]') || document.querySelector('.term-mini[title="Remove"]'); return x ? x.getAttribute('aria-label') : null; });
@@ -88,7 +88,7 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
   // 3) the find box of the terminal at three widths, and the sizes of the sub-tabs and chips
   for (const w of [320, 360, 412]) {
     const p = await open({ width: w, height: 760 });
-    await p.evaluate(() => (switchView('terminal'), txShowPane('console')));
+    await p.evaluate(() => (cnApplySeg('shell'), switchView('console')));
     await sleep(100);
     const m = await p.evaluate(() => {
       const inp = document.getElementById('termSearch'), nav = Array.from(document.querySelectorAll('.find-bar .find-nav')), ib = inp.getBoundingClientRect();

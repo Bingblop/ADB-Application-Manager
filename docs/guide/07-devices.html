@@ -233,7 +233,7 @@
     <li>The <b>name</b>. When this phone has the same app installed, the name is the one this phone shows. Otherwise the app makes a name from the package name (the app's unique code name): it takes the last part, adds the part before it for very generic words such as app or wear, splits joined words and gives it a capital letter. So com.google.android.deskclock becomes <b>Deskclock</b>.</li>
     <li>The <b>package name</b> in small letters under it.</li>
     <li>Badges: <b>UNINSTALLED</b> or <b>DISABLED</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
-    <li>A round-edged button on the right (<b>Disable</b> in blue, <b>Enable</b> or <b>Reinstall</b> in green, like the app menu) and three dots for the menu.</li>
+    <li>A round-edged button on the right (<b>Freeze</b> in blue, <b>Enable</b> or <b>Reinstall</b> in green, like the app menu) and three dots for the menu.</li>
     <li>A tick box on the left. Tap the box, or the name, to select the row.</li>
   </ul>
   <p>The list is sorted by name. Under the search box a line tells you how many apps are shown (<b>12 apps of 87</b>). Only the first 600 rows are drawn; if there are more, a note says how many are hidden and suggests you search or filter. <b>Reload</b>, next to the search box, reads the device again.</p>
@@ -247,15 +247,15 @@
       <tr><td><b>3rd Party</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
       <tr><td><b>System</b></td><td>Apps that came with the device.</td></tr>
       <tr><td><b>Enabled</b></td><td>Apps that are installed and not disabled.</td></tr>
-      <tr><td><b>Disabled</b></td><td>Apps that are installed but switched off.</td></tr>
+      <tr><td><b>Frozen</b></td><td>Apps that are installed but switched off (what Android calls disabled).</td></tr>
       <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
     </tbody>
   </table>
   <p>The rules are simple:</p>
   <ul>
-    <li><b>3rd Party</b> and <b>System</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Disabled</b> are another one.</li>
+    <li><b>3rd Party</b> and <b>System</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one.</li>
     <li>You can combine one of each pair, for example <b>System</b> and <b>Enabled</b>. A line then says "Showing apps that are System + Enabled." with a <b>Clear filters</b> button.</li>
-    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the 3rd Party, System, Enabled or Disabled counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>3rd Party</b> or <b>System</b> narrow that list. <b>Enabled</b> or <b>Disabled</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
+    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the 3rd Party, System, Enabled or Frozen counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>3rd Party</b> or <b>System</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
     <li>Tap an active filter again to turn it off. <b>All</b> or <b>Clear filters</b> turns all of them off.</li>
   </ul>
 
@@ -263,8 +263,8 @@
   <table class="hg-table">
     <thead><tr><th>Button</th><th>Shown when</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><b>Disable</b></td><td>The app is enabled</td><td>Switches the app off. It stays on the device with its data, but cannot run and is hidden from the launcher. The row gets the <b>DISABLED</b> badge.</td></tr>
-      <tr><td><b>Enable</b></td><td>The app is disabled</td><td>Switches it back on.</td></tr>
+      <tr><td><b>Freeze</b></td><td>The app is enabled</td><td>Switches the app off (<code>pm disable-user</code>, the same thing the Application Manager calls freezing). It stays on the device with its data, but cannot run and is hidden from the launcher. The row gets the blue <b>FROZEN</b> badge.</td></tr>
+      <tr><td><b>Enable</b></td><td>The app is frozen</td><td>Switches it back on.</td></tr>
       <tr><td><b>Reinstall</b></td><td>The app is uninstalled</td><td>Brings back a removed system app from the copy still kept in the device's system. No download or file is needed.</td></tr>
     </tbody>
   </table>
@@ -278,7 +278,7 @@
       <tr><td><b>Open</b></td><td>Starts the app on the device.</td></tr>
       <tr><td><b>Force stop</b></td><td>Stops the app if it is running. Nothing is deleted.</td></tr>
       <tr><td><b>Clear data</b></td><td>Deletes the app's data (its settings, accounts and files) on the device. It asks first.</td></tr>
-      <tr><td><b>Enable</b> / <b>Disable</b></td><td>Same as the row button.</td></tr>
+      <tr><td><b>Enable</b> / <b>Freeze</b></td><td>Same as the row button (Freeze is blue there too).</td></tr>
       <tr><td><b>Uninstall</b></td><td>Removes the app for the device's user. It asks first. For a system app that the device first refuses, the app tries a second way by itself (see "Uninstalling a system app" below).</td></tr>
       <tr><td><b>Pull APK</b></td><td>Copies the app's file (and its split files) from the device to this phone. See below.</td></tr>
       <tr><td><b>Details</b></td><td>Shows what the device knows about the app: version, first install and last update times, the installer, the target and minimum Android versions, the user id, the app's folder and its flags. It is the device's own text, shortened to the first lines.</td></tr>
@@ -293,18 +293,18 @@
   <ol class="hg-steps">
     <li>Tap the box or the name of a row. The row gets a tick and a bar appears at the bottom of the list: <b>1 selected</b>.</li>
     <li>Tap more rows. The count goes up. A filter or a search can help you find them.</li>
-    <li>Tap <b>Enable</b> (green), <b>Disable</b> (blue), <b>Uninstall</b> (red) or <b>Reinstall</b> (green) in the bar. The cross at the right clears the selection.</li>
+    <li>Tap <b>Enable</b> (green), <b>Freeze</b> (blue), <b>Uninstall</b> (red) or <b>Reinstall</b> (green) in the bar. The cross at the right clears the selection.</li>
     <li>While it runs the bar shows <b>1 of 5...</b>, <b>2 of 5...</b>. The apps are done one after the other.</li>
-    <li>When it ends you see a message such as <b>Disabled 5 apps</b>. If some failed, a sheet titled for example <b>1 of 5 did not work</b> lists each failure with the device's reason, and the others went through.</li>
+    <li>When it ends you see a message such as <b>Frozen 5 apps</b>. If some failed, a sheet titled for example <b>1 of 5 did not work</b> lists each failure with the device's reason, and the others went through.</li>
   </ol>
-  <p><b>Uninstall</b> always asks first. <b>Disable</b> asks first when more than one app is selected. The bar does not check the state of each app: tapping <b>Enable</b> on an app that is already enabled is harmless, but it is pointless.</p>
+  <p><b>Uninstall</b> always asks first. <b>Freeze</b> asks first when more than one app is selected. The bar does not check the state of each app: tapping <b>Enable</b> on an app that is already enabled is harmless, but it is pointless.</p>
 
   <h4>What the commands really are</h4>
   <p>The names on the buttons stand for these commands, which the app sends to the device. You can run the ordinary ones yourself in the <a href="#devices-console">console</a> (the file transfer of the second try is done by the app, not by you).</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>Command on the device</th><th>Effect</th></tr></thead>
     <tbody>
-      <tr><td>Disable</td><td><code>pm disable-user --user 0 PACKAGE</code></td><td>Switches the app off for the main user. Reversible.</td></tr>
+      <tr><td>Freeze</td><td><code>pm disable-user --user 0 PACKAGE</code></td><td>Switches the app off for the main user (Android calls it disabling). Reversible.</td></tr>
       <tr><td>Enable</td><td><code>pm enable PACKAGE</code></td><td>Switches it back on.</td></tr>
       <tr><td>Uninstall</td><td><code>pm uninstall --user 0 PACKAGE</code></td><td>Removes the app for the main user. A system app's file stays in the device's system area.</td></tr>
       <tr><td>Uninstall, second try (only when the device answers that only root can delete a system app)</td><td>A helper file is sent with <code>adb push</code> to <code>/data/local/tmp</code>, run with <code>app_process</code>, then deleted with <code>rm -f</code></td><td>The helper calls Android's package manager directly, with the delete-system-app flag. The result is the same as the first way: the app is gone for the main user.</td></tr>
@@ -322,7 +322,7 @@
   </ol>
   <p>You see what you saw before: a message such as <b>Uninstalled: Fit</b> and an <b>UNINSTALLED</b> badge when it worked. If it still fails, the sheet <b>That did not work</b> shows the device's own words and a note. The note says either to <b>Disable</b> the app instead, or, when the device reports it, that a device policy or a user restriction blocks removing apps, which cannot be changed from here. The question before <b>Uninstall</b> is the same as before. In a batch, each system app of this kind gets the helper sent, run and removed in turn, so a long list takes longer. A removed system app can be brought back with <b>Reinstall</b>.</p>
   <div class="hg-note"><b>Reinstall is for system apps.</b> A system app is only hidden by <b>Uninstall</b>, because its file lives in the part of the device you cannot erase, so <b>Reinstall</b> works for it. An app that a person installed is normally removed completely: it disappears from the list after a <b>Reload</b>, and <b>Reinstall</b> cannot bring it back. Until you press <b>Reload</b>, its row may still show <b>UNINSTALLED</b> and a <b>Reinstall</b> button, and tapping it will most likely fail. To get it back, send its APK again with the <a href="#devices-send">Send</a> sub-tab.</div>
-  <div class="hg-note"><b>Tip.</b> <b>Disable</b> first. A disabled app does nothing and shows no icon, but all its data is kept. Live with it for a few days. If nothing breaks, you can <b>Uninstall</b>. If something does, <b>Enable</b> undoes it in one tap.</div>
+  <div class="hg-note"><b>Tip.</b> <b>Freeze</b> first. A frozen app does nothing and shows no icon, but all its data is kept. Live with it for a few days. If nothing breaks, you can <b>Uninstall</b>. If something does, <b>Enable</b> undoes it in one tap.</div>
 
   <h4>Pull APK: copy an app to this phone</h4>
   <ol class="hg-steps">
@@ -337,9 +337,9 @@
   <ul>
     <li>Leave that app alone. It is protected on purpose, often because the device needs it to run.</li>
     <li>Try <b>Force stop</b> instead, which is allowed for most apps.</li>
-    <li>If a system app will not uninstall, the app has already tried its second way (the helper, described above) before the sheet opened. <b>Disable</b> the app instead: it stops running and is hidden, and <b>Enable</b> brings it back.</li>
+    <li>If a system app will not uninstall, the app has already tried its second way (the helper, described above) before the sheet opened. <b>Freeze</b> the app instead: it stops running and is hidden, and <b>Enable</b> brings it back.</li>
     <li>For a batch, the others still went through. Select just the failed ones if you want to try again.</li>
-    <li>If an app you disabled makes the device behave oddly, tap <b>Enable</b> on it. Use the <b>Disabled</b> filter to find it.</li>
+    <li>If an app you froze makes the device behave oddly, tap <b>Enable</b> on it. Use the <b>Frozen</b> filter to find it.</li>
   </ul>
   <div class="hg-danger"><b>Risky.</b> Uninstalling or disabling a system app can leave a watch stuck on a boot screen or without its watch face. Before you remove anything, make sure you can undo it: <b>Disable</b> can be undone with <b>Enable</b>, and an uninstalled system app can come back with <b>Reinstall</b>. If a watch no longer starts properly, a factory reset (done on the device) is the last resort and wipes it.</div>
 </section>
@@ -454,7 +454,7 @@
 </section>
 <section id="devices-console" data-title="The device console" data-group="The tabs">
   <p class="hg-lead">The <b>Console</b> sub-tab is a small command line for the other device. You type a command, press <b>Run</b>, and the answer appears on a black screen. It also lets you give commands to adb itself, for example to copy a file between the device and this phone.</p>
-  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Console</b> (the third one). It is the device's counterpart of the <a href="#tab-terminal">Command-Line Interface</a> tab, which runs commands on this phone.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Console</b> (the third one). It is the device's counterpart of the ADB Shell in the <a href="#tab-console">Console</a> tab, which runs commands on this phone.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -545,7 +545,7 @@
 
 <section id="devices-logcat" data-title="The device's log" data-group="The tabs">
   <p class="hg-lead">The <b>Logcat</b> sub-tab reads the other device's own log: the running diary in which Android and every app write what they do, including why something failed. It is the quickest way to see why an app crashes on a watch.</p>
-  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like the <a href="#tab-logcat">Logcat Viewer</a> tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like <a href="#console-logcat">Live Logcat</a> in the Console tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -570,7 +570,7 @@
   <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Pause when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
 
   <h4>How the rows are drawn</h4>
-  <p>Exactly like in the Logcat Viewer tab. Each entry is one row:</p>
+  <p>Exactly like in Live Logcat. Each entry is one row:</p>
   <ul>
     <li>A small coloured badge at the left with the level letter: <b>V</b>, <b>D</b>, <b>I</b>, <b>W</b>, <b>E</b> or <b>F</b>. The row has a coloured stripe on its left in the same colour.</li>
     <li>The <b>tag</b> in bold: the part of the system or the app that wrote the line.</li>
@@ -578,7 +578,7 @@
     <li>The message below, in the colour of its level. Several lines that belong to one log call, such as the lines of a crash report, are joined into one row.</li>
     <li>Warnings have an amber background, errors a red one and fatal lines a purple one, and error text is bold.</li>
   </ul>
-  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike the Logcat Viewer tab, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
+  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
 
   <h4>Reading a crash on a watch</h4>
   <ol class="hg-steps">
@@ -848,7 +848,7 @@
   <ol class="hg-steps">
     <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>3rd Party</b> or <b>System</b> to narrow it, or type a word in the search box.</li>
     <li>Find the app. If its name means nothing to you, leave it: use <a href="#debloater-safety">Debloater safety</a> as a guide to what is safe.</li>
-    <li>Tap <b>Disable</b> on its row. The row gets the <b>DISABLED</b> badge and the app is hidden from the watch's own app list.</li>
+    <li>Tap <b>Freeze</b> on its row. The row gets the <b>FROZEN</b> badge and the app is hidden from the watch's own app list.</li>
     <li>Use the watch for a few days. If anything breaks, tap <b>Enable</b>.</li>
     <li>If nothing broke and you want the space, tap the three dots, then <b>Uninstall</b> and confirm. A system app now shows <b>UNINSTALLED</b>; <b>Reinstall</b> brings it back. If the watch first answers that only root can remove a system app, the app tries a second way by itself (<a href="#devices-apps">Managing the apps of the device</a> explains it).</li>
   </ol>

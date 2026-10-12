@@ -19,7 +19,7 @@ public class SdmAcsPlanTest {
 
     // ---------------------------------------------------------------------------------------------------------- the fake screen
 
-    static final class N implements SdmAcsPlan.Node {
+    static class N implements SdmAcsPlan.Node {
         String text, desc, cls = "android.view.View", pkg = "com.android.settings", id;
         boolean clickable, enabled = true, scrollable;
         N parent;
@@ -27,6 +27,7 @@ public class SdmAcsPlanTest {
         Runnable onClick, onScroll;
         int[] bounds = { 0, 0, 100, 100 };
         int clicks;
+        java.util.function.Supplier<SdmAcsPlan.Node> focusFn;
         N(String text) { this.text = text; }
         N add(N c) { c.parent = this; if (c.pkg == null) c.pkg = pkg; kids.add(c); return c; }
         @Override public String text() { return text; }
@@ -44,6 +45,7 @@ public class SdmAcsPlanTest {
         @Override public boolean scroll(boolean forward) { if (!forward || onScroll == null) return false; Runnable r = onScroll; onScroll = null; r.run(); return true; }
         @Override public boolean refresh() { return true; }
         @Override public int[] bounds() { return bounds; }
+        @Override public SdmAcsPlan.Node findFocus() { return focusFn == null ? null : focusFn.get(); }
     }
 
     static N tv(String text, String id) { N t = new N(text); t.cls = "android.widget.TextView"; t.id = id; return t; }
@@ -63,7 +65,7 @@ public class SdmAcsPlanTest {
         return b;
     }
 
-    static final class Host implements SdmAcsPlan.Host {
+    static class Host implements SdmAcsPlan.Host {
         long clock = 0;
         N root;
         boolean screen = true, cancel;

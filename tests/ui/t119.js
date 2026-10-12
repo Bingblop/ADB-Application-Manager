@@ -297,7 +297,9 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
 
   // ---- Sources ----
   await ev(() => { mpSub('apps'); mpSourcesOpen(); }); await wait(200);
-  check('the sources sheet lists the official one, Pre-installed and with its version', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /Morphe Patches/.test(t) && /Pre-installed/.test(t) && /1\.46\.0/.test(t) && /8 patches/.test(t); }));
+  check('the sources sheet lists the official one, labelled Official and with its version', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /Morphe Patches/.test(t) && /1\.46\.0/.test(t) && /8 patches/.test(t) && Array.from(document.querySelectorAll('#mpSheetBody .color-card')[0].querySelectorAll('.mp-chip')).map(c => c.innerText).join('/') === 'Official'; }));
+  check('the added one is labelled Custom (and not Official)', await ev(() => { const chips = Array.from(document.querySelectorAll('#mpSheetBody .color-card')[1].querySelectorAll('.mp-chip')).map(c => c.innerText); return chips.includes('Custom') && !chips.includes('Official'); }));
+  check('the sheet says what Official and Custom mean and that a source that is off is not loaded', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /Custom is a source you added: its patches are code/.test(t) && /a source that is off is not loaded/.test(t); }));
   check('the added one is listed and can be deleted', await ev(() => document.querySelectorAll('#mpSheetBody .color-card').length === 2 && /Delete/.test(document.querySelectorAll('#mpSheetBody .color-card')[1].innerText)));
   check('the pre-installed one cannot be deleted or renamed', await ev(() => !/Delete|Rename/.test(document.querySelectorAll('#mpSheetBody .color-card')[0].innerText)));
   await page.screenshot({ path: 'morphe_sources.png' });

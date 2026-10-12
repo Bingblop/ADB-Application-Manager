@@ -1,0 +1,15 @@
+Power manager (power) commands:
+  help
+    Print this help text.
+  set-adaptive-power-saver-enabled [true|false]
+    enables or disables adaptive power saver.
+  set-fixed-performance-mode-enabled [true|false]
+    enables or disables fixed performance mode.
+  set-mode MODE
+    sets the current mode. MODE is one of
+      0 - sustained performance
+      1 - fixed performance
+  suppress-ambient-display <true|false>
+    suppresses the current ambient display configuration and disables ambient display.
+  list-ambient-display-suppression-tokens
+    prints the tokens used to suppress ambient display.

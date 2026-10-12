@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(300);
 
   // ---- terminal input no auto-capitalize ----
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(100);
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.waitForTimeout(100);
   const caps = await page.getAttribute('#termCmd', 'autocapitalize');
   const corr = await page.getAttribute('#termCmd', 'autocorrect');
   console.log('1. termCmd autocapitalize:', caps, '| autocorrect:', corr, '| spellcheck:', await page.getAttribute('#termCmd', 'spellcheck'));
@@ -24,8 +24,8 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- cheat sheet button opens modal with commands ----
   // (the Terminal pane has its own, separate Cheat Sheet button now too - scoped to the Console pane here)
-  console.log('2. cheat sheet button present:', await page.isVisible('#txPaneConsole button:has-text("Cheat Sheet")'));
-  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(150);
+  console.log('2. cheat sheet button present:', await page.isVisible('#cnSegShell button:has-text("Cheat Sheet")'));
+  await page.click('#cnSegShell button:has-text("Cheat Sheet")'); await page.waitForTimeout(150);
   console.log('   modal shown:', await page.evaluate(() => document.getElementById('cheatSheetModal').classList.contains('show')));
   const cats = await page.locator('#cheatSheetBody .cheat-cat').allInnerTexts();
   console.log('   categories:', cats.length, JSON.stringify(cats.slice(0, 4)));
@@ -49,13 +49,13 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   inserted into termCmd:', JSON.stringify(val), '| no "adb shell" prefix:', !val.startsWith('adb '));
 
   // ---- a command with a placeholder gets inserted and is runnable ----
-  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
+  await page.click('#cnSegShell button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
   await page.fill('#cheatSearch', 'force-stop'); await page.waitForTimeout(80);
   await page.locator('#cheatSheetBody .cheat-row').first().click(); await page.waitForTimeout(80);
   console.log('5. placeholder command inserted:', JSON.stringify(await page.inputValue('#termCmd')));
 
   // ---- full reference: the gist is opened in the browser, never loaded into the page as a script or HTML ----
-  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
+  await page.click('#cnSegShell button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
   console.log('6. gist button present:', await page.isVisible('#cheatGistBtn'));
   await page.evaluate(() => { window.__opened = []; window.AndroidBridge.openUrl = u => window.__opened.push(u); loadCheatGist(); });
   await page.waitForTimeout(80);

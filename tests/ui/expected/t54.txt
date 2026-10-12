@@ -1,7 +1,7 @@
-1. the command is echoed with a "running…" line while it works: true
+1. the command is echoed on a card that says Running… while it works: true
    the page is not frozen meanwhile (a tab switch works): true
    a second command is refused while one runs: true
-   the output replaces the running line: true
+   the output replaces the running badge: true
    no result modal pops up - the output above already is the result: true
 2. the next command runs once the first has finished: true
    a start the app refuses shows an error line and frees the box: true
