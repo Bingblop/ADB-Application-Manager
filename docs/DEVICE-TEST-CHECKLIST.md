@@ -222,7 +222,7 @@ Select three or four apps you do not mind changing, open the round checkmark.
 ## 10. Earlier v7.9.x features (quick pass)
 
 - [ ] **Expressive Animations** (Settings, Motion): on by default, sheets and buttons spring a little; off makes them plain; the phone's "remove animations" setting always wins.
-- [ ] **Termux** (Command-Line Interface, Termux shell): "Match my Termux environment" makes your aliases work; **Sync with Termux** opens a Termux session and grants storage access.
+- [ ] **Termux** (Terminal, Termux shell): "Match my Termux environment" makes your aliases work; **Sync with Termux** opens a Termux session and grants storage access.
 - [ ] Batch actions (Freeze, Enable, Suspend, Force Stop...) show progress and Stop, and the page stays smooth.
 - [ ] The false "failed" fix: launch an app whose name contains "error" or "failed": no failure is reported.
 
@@ -282,7 +282,7 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] Logcat > **Record to file**: the button becomes **Stop recording** with a growing line count; leave the tab, use an app, come back; tap **Stop recording**: the file opens as a still picture. Search for a word (the match is marked), hide a level with the key, go to **End**, tap an entry (Copy / Ask agent / Web search), **Copy shown**, **Save** (the file is in Download/ADB App Manager), **Share**.
 - [ ] Logcat > **Recordings** lists it with its size; tap it to open it again; the cross deletes it (**Delete** in the picture does too).
 - [ ] Settings > **Default Ask Agent** (called Default agent before v7.12.8) sits under Language. With **No default** chosen, press **Ask agent** on a Hidden Setting row: the window opens with the free Web search and an Open Settings link (which outlines the card for a moment); nothing is sent. Choose an agent that has no key: the line under it says it is not connected; the button still leads to Settings.
-- [ ] Connect an agent (key in the Command-Line Interface tab), choose it as the default, press **Ask agent** on a hidden setting row, on a permission in an app's menu, on an overlay row and on a Task Manager process: a box shows what is sent and the answer streams in; **Ask again**, **Web search** and **Copy the answer** work.
+- [ ] Connect an agent (key in the Terminal tab), choose it as the default, press **Ask agent** on a hidden setting row, on a permission in an app's menu, on an overlay row and on a Task Manager process: a box shows what is sent and the answer streams in; **Ask again**, **Web search** and **Copy the answer** work.
 - [ ] App menu of an app the UAD-NG list rates: the chip reads only the level (no "UAD-NG" text). An unlisted app shows **Ask agent** in its place.
 - [ ] SD Maid: the four tools come first, then **Leftover data of uninstalled apps**, then **Trim Caches**.
 

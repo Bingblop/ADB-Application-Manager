@@ -29,5 +29,6 @@ ok   the guide has Console, Live Logcat and Terminal pages, and no Logcat Viewer
 ok   Console off: Logs in an app's sheet says Console is off, keeps the sheet, sets no filter, reads nothing and keeps the saved part
 ok   Console off: switchView('logcat') returns false and stays
 ok   the Terminal tab is the terminal and the coding agents only: its pane shows at once, with agents, shells, Full screen, Real terminal and the input; no console box, no switch
+ok   no text of the page names the Command-Line Interface tab; the Default Ask Agent texts say the Terminal tab
 errors: []
 all passed

@@ -1,3 +1,4 @@
+ok   the history as text (Copy, Share, Find) has one declaration: termText
 ok   the tab bar has Console and Terminal side by side and no Logcat Viewer
 ok   Console opens on ADB Shell: the shell part shows, the log part is hidden, the tab is marked selected
 ok   the log is not read while ADB Shell shows (no poll, no bridge call)
@@ -38,6 +39,11 @@ ok   Rish: a command with exit 0 given shows "exit 0" (the shell said so)
 ok   Rish: a failing command shows "exit 1" in the failure style
 ok   Rish: with no exit code given the card says only Finished (no number is made up)
 ok   Rish: while a command runs, Run turns into a red STOP with the stop symbol
+ok   Rish: the name of the button (for a screen reader, and its tool tip) says Stop with the symbol
+ok   Rish: while a command runs, output with another run id is dropped and the running command's own output is taken
+ok   Rish: after STOP the name of the button is Run again
+ok   Rish: between commands output is accepted whatever its run id (it goes to a card, none is lost)
+ok   the name of the button is translated (German Run label differs from the English one)
 ok   Rish: STOP ends it and the card says Stopped
 ok   Rish: the card has Copy and Run again, Run is back to RUN
 ok   Rish: Run again sends the command to the Rish shell again

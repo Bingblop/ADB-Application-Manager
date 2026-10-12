@@ -5,7 +5,8 @@
 //     the result line, Copy, Run again, fold of long output, the cap on the number of cards, Clear, the Run button states (idle, spinner, STOP),
 //   - Rish mode cards: the exit number only where the shell gave one, Stopped,
 //   - the look: theme tokens only, no sideways scroll and no wrapped outcome text at 360 and 412 px, dark and light, reduced motion.
-const { chromium, PAGE } = require('./lib/pw');
+const { chromium, PAGE, REPO } = require('./lib/pw');
+const fs = require('fs'), path = require('path');
 const mock = require('./lib/console_mock');
 (async () => {
   const b = await chromium.launch();
@@ -24,6 +25,8 @@ const mock = require('./lib/console_mock');
   const run = async (page, cmd) => { await page.fill('#termCmd', cmd); await page.press('#termCmd', 'Enter'); await sleep(40); };
   const cards = page => ev(page, () => [...document.querySelectorAll('#termOutput > .cn-card')].map(c => ({ cmd: c.querySelector('.cn-cmd').textContent, badge: c.querySelector('.cn-badge').textContent, cls: c.className, out: c.querySelector('.cn-out').textContent, line: (c.querySelector('.term-result') || {}).textContent || '', acts: [...c.querySelectorAll('.cn-acts button')].map(x => x.textContent.trim()) })));
 
+  const src = fs.readFileSync(path.join(REPO, 'assets', 'index.html'), 'utf8');
+  check('the history as text (Copy, Share, Find) has one declaration: termText', (src.match(/function termText\(/g) || []).length === 1 && (src.match(/function copyTerminal\(/g) || []).length === 1);
   // ---- 1) the tab and its two segments ----
   let page = await open();
   const bar = await ev(page, () => [...document.querySelectorAll('.tab-btn')].map(x => x.dataset.tab + ':' + x.innerText.replace('\n', ' ')));
@@ -159,8 +162,19 @@ const mock = require('./lib/console_mock');
   await run(page, 'forever'); await sleep(60);
   rb = await ev(page, () => { const r = document.getElementById('termRunBtn'); return { stop: r.classList.contains('stop'), text: r.innerText, href: r.querySelector('svg use').getAttribute('href'), busy: r.classList.contains('busy') }; });
   check('Rish: while a command runs, Run turns into a red STOP with the stop symbol', rb.stop && rb.text === 'STOP' && rb.href === '#cn-i-stop' && !rb.busy, JSON.stringify(rb));
+  const nm = await ev(page, () => { const r = document.getElementById('termRunBtn'); return [r.getAttribute('aria-label'), r.title]; });
+  check('Rish: the name of the button (for a screen reader, and its tool tip) says Stop with the symbol', nm.join() === 'Stop,Stop', JSON.stringify(nm));
+  // output of an earlier command arriving while this one runs is not this card's output; between commands anything is accepted
+  const ids = await ev(page, () => { const cur = rishCurrentRun; const c0 = document.querySelector('#termOutput > .cn-card'); const before = c0.querySelector('.cn-out').textContent; onRishOutput('rEARLIER', 'LATE-FROM-AN-EARLIER-COMMAND\n'); const mid = c0.querySelector('.cn-out').textContent; onRishOutput(cur, 'RIGHT-RUN\n'); return { cur, before, ignored: mid === before, taken: c0.querySelector('.cn-out').textContent === before + 'RIGHT-RUN\n', anywhere: document.body.innerText.includes('LATE-FROM') }; });
+  check('Rish: while a command runs, output with another run id is dropped and the running command\'s own output is taken', /^r\d+$/.test(ids.cur) && ids.ignored && ids.taken && !ids.anywhere, JSON.stringify(ids));
   await page.locator('#termRunBtn').click(); await sleep(150);
   c = await cards(page);
+  const nm2 = await ev(page, () => { const r = document.getElementById('termRunBtn'); return [r.getAttribute('aria-label'), r.title]; });
+  check('Rish: after STOP the name of the button is Run again', nm2.join() === 'Run,Run', JSON.stringify(nm2));
+  await ev(page, () => { onRishOutput('rBACKGROUND', 'background output between commands\n'); });
+  check('Rish: between commands output is accepted whatever its run id (it goes to a card, none is lost)', (await ev(page, () => termText())).includes('background output between commands'));
+  const de = await ev(page, async () => { await LANG_ENGINE.set('de'); termSyncRunBtn(); const r = document.getElementById('termRunBtn'); const out = [r.getAttribute('aria-label'), txT('Stop')]; await LANG_ENGINE.set('en'); termSyncRunBtn(); return out; });
+  check('the name of the button is translated (German Run label differs from the English one)', de[0] !== 'Run' && de[0].length > 0, JSON.stringify(de));
   check('Rish: STOP ends it and the card says Stopped', c[0].badge === 'Stopped' && /\bis-stop\b/.test(c[0].cls) && (await ev(page, () => window.__calls.rishStop)) === 1, JSON.stringify(c[0]));
   check('Rish: the card has Copy and Run again, Run is back to RUN', c[0].acts.join() === 'Copy,Run again' && (await ev(page, () => document.getElementById('termRunBtn').innerText)) === 'RUN');
   const nr = await ev(page, () => window.__calls.rish.length);

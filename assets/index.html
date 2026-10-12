@@ -5285,7 +5285,7 @@
 
             <div class="color-card" id="agentCard">
                 <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Command-Line Interface tab.</div>
+                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
@@ -11146,7 +11146,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // ---- The default agent, and the "Ask agent" buttons ----
         // One Coding Agent answers every "Ask agent" button (what a hidden setting, a permission, a process, a log line or an app is). It is chosen
-        // in Settings, under Language; the key or sign-in and the model are the ones set up in the Command-Line Interface tab. Without one, the
+        // in Settings, under Language; the key or sign-in and the model are the ones set up in the Terminal tab. Without one, the
         // button leads to Settings instead.
         // ---- Row tints (Settings): 0 Off, 1 Subtle (default), 2 Normal ----
         function rowTintApply() {
@@ -11193,7 +11193,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = askAgentDef();
             if (!ag) { el.textContent = 'No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you.'; return; }
             txRefreshVault();
-            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Terminal tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
             el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
         }
@@ -11220,7 +11220,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 out.style.display = 'none';
                 res.classList.add('is-err');
                 res.textContent = !ag ? txT('No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
-                    : txF('{0} is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.', ag.name);
+                    : txF('{0} is not connected yet. Add its key or sign-in in the Terminal tab first.', ag.name);
                 return;
             }
             if (txEngine(ag) === 'cli' || ag.api === 'cli') {
@@ -22610,7 +22610,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function aiOpenAgentSetup() { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); switchView('terminal'); }
-        // Asks the Coding Agent chosen in the Command-Line Interface tab to explain something, and streams the answer into box.
+        // Asks the Coding Agent chosen in the Terminal tab to explain something, and streams the answer into box.
         // Says what is missing when there is no agent. Returns the answer ('' when there is none). isCurrent(): false once the window moved on.
         // ---- No agent connected: a built-in web lookup (free, no key, no account) ----
         // It does what a crawler does, in a small way: searches the web for the item's name, reads the first page that has something about it into plain text and shows
@@ -23986,10 +23986,6 @@ Type any command above (e.g. pm list packages -d)</div>
             runFind('term', term, document.getElementById('termFindCount'), q, dir);
         }
 
-        function termText() {
-            return document.getElementById('termOutput').innerText;
-        }
-
         function copyTerminal() {
             haptic();
             if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(termText());
@@ -25276,6 +25272,8 @@ Type any command above (e.g. pm list packages -d)</div>
             b.setAttribute('aria-busy', busy ? 'true' : 'false');
             const u = b.querySelector('svg use'); if (u) u.setAttribute('href', stopping ? '#cn-i-stop' : '#cn-i-play');
             const t = b.querySelector('.cn-sr'); if (t) t.textContent = stopping ? 'STOP' : 'RUN';
+            const nm = txT(stopping ? 'Stop' : 'Run');          // the name for a screen reader and the tool tip follow the symbol
+            b.setAttribute('aria-label', nm); b.title = nm;
         }
 
         // Terminal Console
@@ -25930,7 +25928,7 @@ Type any command above (e.g. pm list packages -d)</div>
         if (document.readyState !== 'loading') termRenderPins();
 
         // ======================================================================================
-        // Terminal (v7.8): a Termux-style terminal with coding agents, the first page of the "Command-Line Interface" tab
+        // Terminal (v7.8): a Termux-style terminal with coding agents, the Terminal tab
         // (named Terminal / ADB Console through v7.8; the two panes inside it, Terminal and ADB Console, keep their own names).
         // Shells are persistent native sessions, one per backend (MainActivity termStart / termRun):
         //   app    - this app's own sandbox (always there)
@@ -29014,6 +29012,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // trimmed (cnTrim) so a very chatty command cannot make the page heavy.
         function onRishOutput(runId, text) {
             if (!text || !rishActive) return;                // output of a shell that was left in the meantime is dropped
+            if (rishRunning && rishCurrentRun !== null && runId !== rishCurrentRun) return;          // while a command runs, the late output of an earlier one is not its output (between commands anything is accepted)
             const card = cnRishRun && cnRishRun.el.isConnected ? cnRishRun : cnSink();          // between commands it goes to the last card or a note
             cnAppend(card, text);
             rishEndsNl = text.charAt(text.length - 1) === '\n';

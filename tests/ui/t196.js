@@ -148,6 +148,10 @@ const mock = require('./lib/console_mock');
   await ev(page, () => switchView('terminal')); await sleep(300);
   r = await ev(page, () => ({ pane: getComputedStyle(document.getElementById('txPaneTerminal')).display !== 'none', cmd: !!document.querySelector('#view-terminal #termCmd'), sw: !!document.getElementById('txSwitch'), agent: !!document.getElementById('txAgent'), shell: !!document.getElementById('txShell'), full: !!document.getElementById('txFullBtn'), real: !!document.getElementById('txRealBtn'), input: !!document.getElementById('txInput'), tabs: !!window.txShowPane, opened: txOpened }));
   check('the Terminal tab is the terminal and the coding agents only: its pane shows at once, with agents, shells, Full screen, Real terminal and the input; no console box, no switch', r.pane && !r.cmd && !r.sw && r.agent && r.shell && r.full && r.real && r.input && !r.tabs && r.opened, JSON.stringify(r));
+
+  // no text of the page sends a person to the Command-Line Interface tab (it is Terminal and Console now)
+  const stale = await ev(page, () => { const c = document.documentElement.cloneNode(true); c.querySelectorAll('script, style').forEach(e => e.remove()); askAgentNote(); return { markup: /Command-Line/.test(c.innerHTML), note: document.getElementById('askAgentNote').innerText, sub: [...document.querySelectorAll('.color-card-subtitle')].map(e => e.innerText).filter(t => /Command-Line|Terminal tab/.test(t)) }; });
+  check('no text of the page names the Command-Line Interface tab; the Default Ask Agent texts say the Terminal tab', !stale.markup && /Terminal tab/.test(stale.note + ' ' + stale.sub.join(' ')) && !/Command-Line/.test(stale.note), JSON.stringify(stale));
   await page.close();
 
   console.log('errors:', JSON.stringify(errors));
