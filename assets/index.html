@@ -5691,19 +5691,6 @@
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
                 </div>
             </div>
-            <div class="color-card" id="kotlinBuildCard" style="display:none;">
-                <div class="color-card-title">Try the Kotlin build (beta)</div>
-                <div class="color-card-subtitle">This is the way to move to the Kotlin version of the app. It is a separate app with its own app id and a smaller feature set: no Morphe, File Manager or archives, and no real ADB, Shizuku or root yet. It does not replace or update this app, so you keep both, and the Kotlin version has the same swap back to this one.</div>
-                <div class="uad-status" id="kbStatus" role="status" aria-live="polite">Checking…</div>
-                <div class="uad-status" id="kbLatest" role="status" aria-live="polite" style="display:none;"></div>
-                <div class="mode-btn-row" style="margin-top:6px;">
-                    <button class="mode-action-btn primary" id="kbOpenBtn" onclick="kbOpen()" style="display:none;">Open the Kotlin build</button>
-                    <button class="mode-action-btn primary" id="kbInstallBtn" onclick="kbInstall()" style="display:none;">Download and install</button>
-                    <button class="mode-action-btn" id="kbPageBtn" onclick="kbReleases()" style="display:none;">Open the releases page</button>
-                    <button class="mode-action-btn" id="kbCheckBtn" onclick="kbCheck(true)">Check again</button>
-                </div>
-                <div class="uad-status" id="kbProgress" role="status" aria-live="polite" style="display:none;"></div>
-            </div>
             <div class="color-card" id="holdGuideCard">
                 <div class="color-card-title">Press and hold guide</div>
                 <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
@@ -9361,7 +9348,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); kbShow(); }
+            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -12888,8 +12875,6 @@ Type any command below (e.g. pm list packages -d)
                 if (terminal) delete storeInline[d.pkg];
             }
 
-            kbOnInstallProgress(d);
-
             if (d.stage === 'done') {
                 showToast('Installed');
                 if (d.installedPkg) {
@@ -12925,120 +12910,6 @@ Type any command below (e.g. pm list packages -d)
             fdroid: Object.assign(newSrc('updated'), { repos: [], repoId: 'fdroid', showRepos: false, meteredOk: false, pendingMetered: false, cache: {}, meta: {}, current: '' }),
         };
         const storeInline = {};   // progress key -> { statusId, btnId } of the card that started an install
-
-        // ---- Settings: Try the Kotlin build (beta) ------------------------------------------------------------------------------------
-        // A separate app, found in a GitHub release of this repository. The page asks the app three things (is it installed and what is
-        // the newest test build, open it, download and install it) and sends no package, address or checksum: the app looks all of
-        // that up itself. The install goes through the same download-and-install path (and the same confirmation) as every Store app.
-        let kb = null, kbAt = 0, kbBusy = false, kbWaiting = false, kbPendingAt = 0, kbWant = 0, kbAfterDone = false, kbDoneTimer = 0;   // kbPendingAt: when the question in flight was asked (0 = none)
-        function kbBridge() { return (window.AndroidBridge && window.AndroidBridge.kotlinBuildCheck) ? window.AndroidBridge : null; }
-        function kbShow() {
-            const card = document.getElementById('kotlinBuildCard');
-            if (!card) return;
-            card.style.display = kbBridge() ? '' : 'none';
-            if (!kbBridge()) return;
-            if (!kb || Date.now() - kbAt > 5 * 60 * 1000) kbCheck(false); else kbRender();   // kbCheck does nothing while a question is in flight
-        }
-        function kbCheck(user, force) {
-            const b = kbBridge();
-            if (!b) return;
-            if (!force && kbPendingAt && Date.now() - kbPendingAt < 90 * 1000) return;       // one question at a time (an answer that never came is given up after 90 s)
-            if (user) haptic();
-            kbPendingAt = Date.now();
-            document.getElementById('kbCheckBtn').disabled = true;
-            if (!kb) { document.getElementById('kbStatus').innerText = 'Checking…'; }
-            const token = b.kotlinBuildCheck();                                   // the number of this question; its answer carries it
-            kbWant = typeof token === 'number' ? token : 0;
-        }
-        function onKotlinBuild(json) {
-            let d; try { d = JSON.parse(json || '{}'); } catch (e) { d = { release: 'error', error: 'bad response' }; }
-            if (kbWant && d.seq && d.seq !== kbWant) return;                     // the answer to an older question: it neither ends the wait nor changes the card
-            kb = d; kbAt = Date.now(); kbPendingAt = 0;
-            if (kbAfterDone) { kbAfterDone = false; kbBusy = false; }               // the install finished and this is the look after it: the card shows the new state, the button may work again
-            document.getElementById('kbCheckBtn').disabled = false;
-            kbRender();
-        }
-        window.onKotlinBuild = onKotlinBuild;
-        function kbRender() {
-            const d = kb;
-            const $ = id => document.getElementById(id);
-            const show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
-            if (!d) return;
-            const latest = $('kbLatest');
-            let note = '';
-            if (d.release === 'ok' && (!d.installed || d.update)) note = d.installed ? 'A newer test build is available: ' + d.version + '.' : 'A test build is available: ' + d.version + '.';
-            else if (d.release === 'none' && !d.installed) note = 'No Kotlin test build has been published yet.';
-            else if (d.release === 'error') note = 'Could not check for a test build (' + d.error + ').';
-            $('kbStatus').innerText = d.installed ? (d.installedVersion ? 'Installed, version ' + d.installedVersion + '.' : 'Installed.') : 'Not installed.';
-            latest.innerText = note;
-            show('kbLatest', !!note);
-            show('kbOpenBtn', !!d.installed);
-            show('kbInstallBtn', d.release === 'ok' && (!d.installed || !!d.update));
-            show('kbPageBtn', d.release !== 'ok');
-            $('kbInstallBtn').disabled = kbBusy;
-        }
-        function kbOpen() {
-            const b = kbBridge();
-            if (!b) return;
-            haptic();
-            if (!b.kotlinBuildOpen()) { showToast('The Kotlin build is not installed'); kbCheck(false); }
-        }
-        function kbReleases() {
-            const b = kbBridge();
-            if (!b) return;
-            haptic();
-            b.kotlinBuildReleases();
-        }
-        function kbInstall() {
-            const b = kbBridge();
-            if (!b || kbBusy || !kb || !kb.package) return;
-            haptic();
-            kbBusy = true;
-            storeInline[kb.package] = { statusId: 'kbProgress', btnId: 'kbInstallBtn' };
-            document.getElementById('kbInstallBtn').disabled = true;
-            const p = document.getElementById('kbProgress');
-            p.style.display = ''; p.innerText = 'Starting…';
-            b.kotlinBuildInstall();
-        }
-        // What the card says of each stage of the install: written here, with the page's own words, so it is translated (the app sends English).
-        function kbProgressText(d) {
-            switch (d.stage) {
-                case 'resolving': return 'Finding the latest Kotlin test build…';
-                case 'downloading': return d.percent >= 0 ? `Downloading the Kotlin build… ${d.percent}%` : 'Downloading the Kotlin build…';
-                case 'verifying': return 'Checking the download’s SHA-256…';
-                case 'confirming': return 'Waiting for your OK to install the Kotlin build…';
-                case 'installing': return 'Installing the Kotlin build…';
-                case 'opened': return 'Confirm the install of the Kotlin build.';
-                case 'done': return 'Installed the Kotlin build.';
-            }
-            return '';
-        }
-        // The generic Store progress handler has drawn the app's text; this puts the card's own (translated) words over it, ends the wait and shows the new state.
-        function kbOnInstallProgress(d) {
-            if (!kb || !kb.package || d.pkg !== kb.package) return;
-            const p = document.getElementById('kbProgress');
-            const text = kbProgressText(d);
-            if (p && text) { p.style.display = ''; p.innerText = text; }
-            else if (p && d.stage === 'error' && d.message === 'Install cancelled.') errNote(p, 'Install cancelled.');
-            else if (p && d.stage === 'error' && d.message === 'No Kotlin test build has been published yet.') errNote(p, 'No Kotlin test build has been published yet.');
-            if (d.stage === 'resolving' || d.stage === 'downloading' || d.stage === 'verifying' || d.stage === 'installing' || d.stage === 'confirming') return;
-            if (d.stage === 'done') {
-                // Download and install stays off until the look after the install has been drawn: the old answer still offers the build
-                kbAfterDone = true;
-                document.getElementById('kbInstallBtn').disabled = true;
-                kbCheck(false, true);
-                const wait = kbWant;                                                       // the number of the look this wait is for
-                clearTimeout(kbDoneTimer);                                                 // a timer of an earlier install has nothing to do with this one
-                kbDoneTimer = setTimeout(() => { if (kbAfterDone && kbWant === wait) { kbAfterDone = false; kbBusy = false; kbRender(); } }, 90 * 1000);   // no answer: give up waiting
-                return;
-            }
-            kbBusy = false;
-            if (d.stage === 'opened') kbWaiting = true;                // the system installer is open: look again when the person is back
-            else kbRender();                                           // an error or a cancel: the buttons come back
-        }
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && kbWaiting) { kbWaiting = false; kbCheck(false); }
-        });
 
         function fmtCount(n) {
             n = Number(n) || 0;

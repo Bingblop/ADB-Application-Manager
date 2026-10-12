@@ -433,7 +433,7 @@
   <ul>
     <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Try the Kotlin build (beta)</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -650,20 +650,6 @@
     </tbody>
   </table>
 
-  <h4>Try the Kotlin build (beta)</h4>
-  <p>This is the way to move to the Kotlin version of the app, which is still in beta. It is a <b>separate app</b> with its own app id (<code>com.bloatware.bingblop.kotlin</code>), so it installs next to this one, does not replace it and does not update it; you keep both. The Kotlin version is meant to have the same kind of entry in its own Settings (<b>Switch to the WebView version</b>) to come back to this app. It has fewer features: no Morphe, File Manager or archives, and no real ADB, Shizuku or root yet. This app stays the main one. The card needs internet to look for a test build and again to download it.</p>
-  <table class="hg-table">
-    <thead><tr><th>What the card says</th><th>Buttons</th><th>What they do</th></tr></thead>
-    <tbody>
-      <tr><td><b>Installed, version ...</b></td><td><b>Open the Kotlin build</b></td><td>Starts the Kotlin app. If it was removed meanwhile, a message says so.</td></tr>
-      <tr><td><b>Not installed.</b> <b>A test build is available: ...</b> (or, when you have it, <b>A newer test build is available: ...</b>)</td><td><b>Download and install</b></td><td>Finds the newest test build in the app's releases on GitHub, downloads it and installs it the way every other app is installed here: the download is checked against the checksum the release publishes (if it has one; a checksum file that is empty or has no valid SHA-256 for the file stops the install) and must be the Kotlin app. The app reads up to five pages of 100 releases to find it. With ADB, Shizuku or Root, this app asks you first, in a box it controls, naming the app, its version and where it came from; with no working mode, Android's own installer asks.</td></tr>
-      <tr><td><b>Not installed.</b> <b>No Kotlin test build has been published yet.</b></td><td><b>Open the releases page</b></td><td>Opens the releases page of the project in your browser, so you can look for one yourself.</td></tr>
-      <tr><td><b>Could not check for a test build (...)</b></td><td><b>Open the releases page</b>, <b>Check again</b></td><td>GitHub did not answer (no connection, or too many requests in an hour). Try again later.</td></tr>
-    </tbody>
-  </table>
-  <p><b>Check again</b> looks again. Opening Settings does not ask GitHub more than once in five minutes.</p>
-  <div class="hg-note"><b>Beta.</b> The Kotlin build has not been tried on many phones. Its data is its own: nothing from this app is moved over.</div>
-
   <h4>Press and hold guide</h4>
   <p>This card has no controls. It lists what responds to a press and hold of about half a second (you feel a short tap when it works):</p>
   <table class="hg-table">
@@ -687,7 +673,6 @@
     <li><b>The colours look wrong.</b> Tap <b>Reset tweaks</b>, or tap a palette card to clear every tweak.</li>
     <li><b>An app icon is missing or wrong.</b> Tap <b>Clear icon cache</b>, or pick <b>Default icons</b>.</li>
     <li><b>The text is hard to read after a font change.</b> Tap <b>Use system font</b>.</li>
-    <li><b>The Kotlin build card says no test build has been published.</b> None is in the project's releases yet. <b>Open the releases page</b> shows what is there.</li>
     <li><b>I cannot find Trim Caches any more.</b> It moved to the <a href="#tab-sdm">SD Maid</a> tab.</li>
   </ul>
 </section>
