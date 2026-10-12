@@ -411,7 +411,7 @@ public final class SdmEngine {
         try {
             Sdm.Automation a = env.automation();
             if (a != null && a.ready()) ctx.automation = a;
-            else if (a != null && "delete".equals(task.kind)) ctx.automationNotReady = a.notReadyReason();
+            else if (a != null && !"scan".equals(task.kind)) ctx.automationNotReady = a.notReadyReason();     // a deletion and a one-click (scan, then delete) both delete
         } catch (RuntimeException ignored) {}
         ps.update("Loading", "", 0, -1, 0);
         fireState(tool);

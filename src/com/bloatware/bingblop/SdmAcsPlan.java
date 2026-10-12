@@ -51,6 +51,11 @@ public final class SdmAcsPlan {
         String unreachableReason(String pkg, boolean enabled);
         /** Why the last attempt for the package failed: "NO_SETTINGS", "DISABLED_APP", "LOCKED" (the system disabled the button) or "OTHER"; null when unknown. */
         String failureOf(String pkg);
+        /**
+         * The apps a deletion left out before the run (package -> NO_SETTINGS | DISABLED_APP, in order; empty when none), so they count as the last attempt's outcome too: called before
+         * every {@link Sdm.Automation#clearCaches} of that deletion, and instead of it when nothing was left to run.
+         */
+        default void preflight(Map<String, String> unreachable) {}
     }
 
     // ---------------------------------------------------------------------------------------------------------- the screen
@@ -836,38 +841,64 @@ public final class SdmAcsPlan {
             return at != null ? at : SdmAcsDiag.visibleCentre(anchor, SdmAcsDiag.obstacles(tree, anchor, win), win, minPx);
         }
 
-        /** D-pad down until the focus is on the Storage row, then centre. Never presses centre on a focus that is not read as the row: a blind press could toggle another row. */
+        /**
+         * D-pad down until the focus is on the Storage row, then centre. The focus is read before the first key (a way tried before can have left it on the row already, and a first
+         * DOWN would move past it, where DOWN keys never find it again) and after each one. The row is looked up again in the window the focus was read from: a key can scroll
+         * the list, and the node from before keeps the place it had on the screen. Never presses centre on a focus that is not read as the row: a blind press could toggle another row.
+         */
         int dpad(String name, boolean inject, Node anchor, int[] win, Set<String> before, String beforePkg) {
             int blind = 0;
-            for (int i = 1; i <= MAX_KEYS; i++) {
+            for (int i = 0; i <= MAX_KEYS; i++) {
                 r.guard();
-                boolean sent = inject ? r.host.injectKey(KEY_DPAD_DOWN) : r.host.dpadGlobal(KEY_DPAD_DOWN);
-                if (!sent) { r.note(name + ": key down refused"); return NONE; }
-                r.host.sleep(r.timing.keyDelay);
+                if (i > 0) {
+                    boolean sent = inject ? r.host.injectKey(KEY_DPAD_DOWN) : r.host.dpadGlobal(KEY_DPAD_DOWN);
+                    if (!sent) { r.note(name + ": key down refused"); return NONE; }
+                    r.host.sleep(r.timing.keyDelay);
+                }
                 Node rt = r.host.root();
                 if (rt == null) continue;
                 Node focus = rt.findFocus();
                 if (focus == null) {
-                    if (++blind >= FOCUS_BLIND_LIMIT && i == blind) { r.note(name + ": the focused item cannot be read, no blind key press"); return NONE; }
+                    if (i > 0 && ++blind >= FOCUS_BLIND_LIMIT && i == blind) { r.note(name + ": the focused item cannot be read, no blind key press"); return NONE; }
                     continue;
                 }
                 String fp = focus.packageName();
                 if (fp != null && !fp.equals(beforePkg)) { r.note(name + ": the focus left the page (" + fp + ")"); return NONE; }
-                if (focusOnRow(focus, anchor, win)) {
+                Node cur = anchorIn(rt);
+                if (cur == null) continue;                         // the row is not on this window (scrolled away, or the page is on its way): no centre on a guess
+                if (focusOnRow(focus, cur, windowOf(rt))) {
                     boolean ok = inject ? r.host.injectKey(KEY_DPAD_CENTER) : r.host.dpadGlobal(KEY_DPAD_CENTER);
-                    return result(name + " centre after " + i + " key(s)", ok, before, beforePkg);
+                    return result(i == 0 ? name + " centre (the focus was on the row already)" : name + " centre after " + i + " key(s)", ok, before, beforePkg);
                 }
             }
             r.note(name + ": the focus did not reach the Storage row in " + MAX_KEYS + " keys");
             return NONE;
         }
 
+        /** The Storage row as it is in this window (the clickable row of the label, else the label): a fresh node with the place it has now. */
+        Node anchorIn(Node root) {
+            Node f = findStorageEntry(r, root, labels, anti);
+            if (f == null) return null;
+            Node row = clickableParent(f, nesting, true);
+            return row != null ? row : f;
+        }
+
+        /**
+         * Is the focus on the Storage row: it has to be the row itself, something inside it or something that holds it (a bar button or an overlay that only lies over the row is not
+         * the row, whatever its place), and its place has to meet the row's (the middle of one inside the other) without being most of the page (the list that holds the row is not
+         * the row either).
+         */
         boolean focusOnRow(Node focus, Node anchor, int[] win) {
+            if (!(focus.equals(anchor) || SdmAcsDiag.isAncestor(anchor, focus) || SdmAcsDiag.isAncestor(focus, anchor))) return false;
             int[] fb = focus.bounds(), ab = anchor.bounds();
             if (!SdmAcsDiag.usable(fb) || !SdmAcsDiag.usable(ab)) return false;
-            int cx = (ab[0] + ab[2]) / 2, cy = (ab[1] + ab[3]) / 2;
-            boolean inside = fb[0] <= cx && cx < fb[2] && fb[1] <= cy && cy < fb[3];
+            boolean inside = holdsMiddle(fb, ab) || holdsMiddle(ab, fb);
             return inside && (win == null || SdmAcsDiag.area(fb) <= SdmAcsDiag.area(win) * 4 / 10);
+        }
+
+        static boolean holdsMiddle(int[] outer, int[] of) {
+            int cx = (of[0] + of[2]) / 2, cy = (of[1] + of[3]) / 2;
+            return outer[0] <= cx && cx < outer[2] && outer[1] <= cy && cy < outer[3];
         }
     }
 
@@ -1344,6 +1375,7 @@ public final class SdmAcsPlan {
             } catch (RuntimeException e) {
                 res.failed.put(p.pkg, "OTHER");
                 record(res, run, e);
+                stuck = 0;                                                  // the watchdog counts stuck apps in a row: any other failure breaks the streak
                 if (unusable(e)) unusableCount++;
                 if (res.cleared.isEmpty() && unusableCount >= FAILURE_LIMIT) {
                     res.stop = "ERROR";

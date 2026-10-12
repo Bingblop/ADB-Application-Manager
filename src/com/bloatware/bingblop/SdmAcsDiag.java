@@ -62,7 +62,8 @@ public final class SdmAcsDiag {
 
     /**
      * The window as text: a header line (package, window bounds, node count), then one line per node in document order, at most {@link #MAX_NODES}; the rest is counted. Only the
-     * packages in {@code textPackages} get their nodes written; any other window is named and not read.
+     * packages in {@code textPackages} get their nodes written; any other window is named and not read. The check is made for every node, not only for the root: a node of another
+     * package inside the Settings window (an embedded view, an overlay) is listed by its class, place and flags only, its text, description and id are not recorded.
      */
     public static String dump(SdmAcsPlan.Node root, Collection<String> textPackages) {
         if (root == null) return "Screen: no window\n";
@@ -98,11 +99,18 @@ public final class SdmAcsDiag {
         for (int i = 0; i < nodes.size(); i++) {
             SdmAcsPlan.Node n = nodes.get(i);
             int[] bd = n.bounds();
-            b.append("d=").append(depths.get(i)).append(' ').append(shortClass(n.className()))
-                    .append(" id=").append(shortId(n.viewId()))
-                    .append(" text=").append(q(n.text()))
-                    .append(" desc=").append(q(n.contentDesc()))
-                    .append(" flags=").append(n.clickable() ? 'c' : '-').append(n.enabled() ? 'e' : '-').append(n.scrollable() ? 's' : '-')
+            String np;
+            try { np = n.packageName(); } catch (RuntimeException e) { np = null; }
+            boolean own = np != null && textPackages.contains(np);
+            b.append("d=").append(depths.get(i)).append(' ').append(shortClass(n.className()));
+            if (own) {
+                b.append(" id=").append(shortId(n.viewId()))
+                        .append(" text=").append(q(n.text()))
+                        .append(" desc=").append(q(n.contentDesc()));
+            } else {
+                b.append(" other-app=").append(np == null ? "?" : np).append(" (content not recorded)");
+            }
+            b.append(" flags=").append(n.clickable() ? 'c' : '-').append(n.enabled() ? 'e' : '-').append(n.scrollable() ? 's' : '-')
                     .append(bd == null || bd.length < 4 ? "" : " [" + bd[0] + "," + bd[1] + "][" + bd[2] + "," + bd[3] + "]").append('\n');
         }
         if (total > nodes.size()) b.append("... ").append(total - nodes.size()).append(total >= HARD_WALK ? "+" : "").append(" more nodes not listed\n");

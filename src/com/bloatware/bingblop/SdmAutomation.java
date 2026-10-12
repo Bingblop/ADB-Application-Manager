@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +70,8 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
     private final SdmShell shell;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Map<String, String> failures = new HashMap<String, String>();
+    /** What the pre-flight of the current deletion left out (package -> NO_SETTINGS | DISABLED_APP), folded into the record of the run that follows it. */
+    private final Map<String, String> leftOut = new LinkedHashMap<String, String>();
     private volatile boolean cancelFlag;
     private volatile SdmAcsDiag.Failure lastFailure;
     private volatile String lastReport = "";
@@ -137,6 +140,51 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
     @Override
     public synchronized String failureOf(String pkg) { return failures.get(pkg); }
 
+    /**
+     * The apps the pre-flight left out are recorded at once (when nothing is left to run, they are the whole outcome of the attempt and the SD Maid tab has to say so), and kept
+     * for the run that may follow, whose record then holds both.
+     */
+    @Override
+    public void preflight(Map<String, String> unreachable) {
+        synchronized (this) { leftOut.clear(); leftOut.putAll(unreachable); }
+        if (unreachable.isEmpty()) return;
+        PackageManager pm = ctx.getPackageManager();
+        SdmAcsPlan.Result r = new SdmAcsPlan.Result();
+        addLeftOut(r, new LinkedHashMap<String, String>(unreachable), pm);
+        SdmAcsPlan.Device dev = device(pm);
+        record(r, SdmAcsPlan.planFor(SdmAcsPlan.effectiveRom(dev), Build.VERSION.SDK_INT), dev);
+    }
+
+    /** Takes what the pre-flight left out, once. */
+    private synchronized Map<String, String> takeLeftOut() {
+        Map<String, String> m = new LinkedHashMap<String, String>(leftOut);
+        leftOut.clear();
+        return m;
+    }
+
+    /** The left-out apps as failures of the result (code, name, no screen: nothing was opened for them). */
+    private void addLeftOut(SdmAcsPlan.Result r, Map<String, String> left, PackageManager pm) {
+        for (Map.Entry<String, String> e : left.entrySet()) {
+            if (r.cleared.contains(e.getKey())) continue;
+            r.failed.put(e.getKey(), e.getValue());
+            SdmAcsDiag.Failure f = new SdmAcsDiag.Failure();
+            f.pkg = e.getKey();
+            f.label = labelOf(pm, e.getKey());
+            f.code = e.getValue();
+            f.step = "Before the run";
+            f.message = "DISABLED_APP".equals(e.getValue()) ? "the app is turned off, so it has no App info page" : "Android has no App info page for it";
+            f.when = System.currentTimeMillis();
+            r.failures.put(e.getKey(), f);
+        }
+    }
+
+    private static String labelOf(PackageManager pm, String pkg) {
+        try {
+            CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0));
+            return l == null ? "" : l.toString();
+        } catch (PackageManager.NameNotFoundException e) { return ""; } catch (RuntimeException e) { return ""; }
+    }
+
     // ---------------------------------------------------------------------------------------------------------- the run
 
     @Override
@@ -146,6 +194,7 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
         if (svc == null) throw new Sdm.AutomationError("NO_CONSENT", "Accessibility service is not running. Turn it on, or try rebooting the device.", null);
         cancelFlag = false;
         synchronized (this) { failures.clear(); }
+        final Map<String, String> left = takeLeftOut();                  // the pre-flight of this deletion; read once, so an earlier one never reaches a later run
         final Cover cover = new Cover(svc, new Runnable() { @Override public void run() { cancelFlag = true; } });
         cover.show();
         try {
@@ -159,6 +208,7 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
             PhoneHost host = new PhoneHost(svc, cover, cancel);
             SdmAcsPlan.Result r = SdmAcsPlan.clearAll(host, new SdmAcsPlan.Timing(), labels, new Source(pm), plan, infos, progress);
             synchronized (this) { failures.putAll(r.failed); }
+            addLeftOut(r, left, pm);                                     // after the run's own failures: a real problem stays the headline
             record(r, plan, dev);
             if (r.stop != null) {
                 String code = "SCREEN_UNAVAILABLE".equals(r.stop) ? "SCREEN_UNAVAILABLE" : "ERROR";

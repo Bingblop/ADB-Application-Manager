@@ -276,6 +276,11 @@ public class SdmEngineTest {
             e3.delete(Sdm.Tool.APPCLEANER, new Sdm.Selection());
             is(c[0] + ": the delete ran", waitFor(() -> t3.deleteCtx != null && !e3.busy(Sdm.Tool.APPCLEANER), 3000), "");
             is(c[0] + ": the deletion has no automation and knows why", t3.deleteCtx.automation == null && c[0].equals(t3.deleteCtx.automationNotReady), t3.deleteCtx.automationNotReady);
+            // a one-click task deletes too (scan, then delete in one task): its deletion is told the reason the same way
+            t3.deleteCtx = null;
+            e3.oneClick(Sdm.Tool.APPCLEANER);
+            is(c[0] + ": the one-click ran its deletion", waitFor(() -> t3.deleteCtx != null && !e3.busy(Sdm.Tool.APPCLEANER), 3000), "");
+            is(c[0] + ": the one-click deletion has no automation and knows why", t3.deleteCtx.automation == null && c[0].equals(t3.deleteCtx.automationNotReady), t3.deleteCtx.automationNotReady);
             e3.shutdown();
         }
         SdmEngine e4 = engine(dir, Collections.synchronizedList(new ArrayList<String>()), new FakeAuto(true, null));
@@ -287,6 +292,10 @@ public class SdmEngineTest {
         e4.delete(Sdm.Tool.APPCLEANER, new Sdm.Selection());
         is("ready: the delete ran", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");
         is("a ready automation is handed over, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null, "");
+        t4.deleteCtx = null;
+        e4.oneClick(Sdm.Tool.APPCLEANER);
+        is("ready: the one-click ran its deletion", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");
+        is("a ready automation is handed to a one-click deletion too, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null, "");
         e4.shutdown();
         System.out.println((fails == 0 ? "PASS" : "FAIL") + " SdmEngineTest: " + n + " checks, " + fails + " failed");
         if (fails > 0) System.exit(1);
