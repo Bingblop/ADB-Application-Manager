@@ -1354,11 +1354,13 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
                 ctx.progress.update("Preparing automation via accessibility service", "", 0, -1, report.bytes());
                 SdmAcsPlan.AutomationInfo info = ctx.automation instanceof SdmAcsPlan.AutomationInfo ? (SdmAcsPlan.AutomationInfo) ctx.automation : null;
                 List<Junk> candidates = new ArrayList<Junk>();
+                Map<String, String> leftOut = new LinkedHashMap<String, String>();
                 for (Junk j : remaining) {                                    // pre-flight: no settings page, no way to clear it this way
                     String reason = j.pkg.pkg.startsWith("com.google.mainline.") ? "NO_SETTINGS" : null;
                     if (reason == null && info != null) reason = info.unreachableReason(j.pkg.pkg, j.pkg.enabled);
-                    if (reason != null) r.failed.put(j.pkg.pkg, reason); else candidates.add(j);
+                    if (reason != null) { r.failed.put(j.pkg.pkg, reason); leftOut.put(j.pkg.pkg, reason); } else candidates.add(j);
                 }
+                if (info != null) info.preflight(leftOut);                   // what was left out is part of the attempt's outcome, also when nothing is left to run
                 if (!candidates.isEmpty()) {
                     if (ctx.bool("forcestop.before.clearing.enabled", false)) forceStop(candidates);
                     if (!stop()) runAutomation(candidates, r, info);
@@ -1529,6 +1531,14 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
 
         // ---- the lines of the result (spec 7.3)
 
+        /** Why the automation did not run, in words: the state of the service when the deletion started (the default is the general setup text). */
+        static String notReadyText(String why) {
+            if ("NOT_ENABLED".equals(why)) return "The accessibility service is switched off, so the caches that only it can clear stay. Turn it on in the SD Maid tab (Accessibility service) or in the accessibility settings.";
+            if ("NOT_CONNECTED".equals(why)) return "The accessibility service is switched on but Android is not running it, so the caches that only it can clear stay. Turn it off and on again in the accessibility settings, or restart the phone.";
+            if ("NO_CONSENT".equals(why)) return "The accessibility service has no consent from you yet, so the caches that only it can clear stay. Tap Give consent in the SD Maid tab (Accessibility service).";
+            return "Accessibility service is not set up. Complete the setup and give consent.";
+        }
+
         private void writeNotes(int affectedCount) {
             int skipped = inac == null ? 0 : inac.skippedNoConsent.size();
             String primary;
@@ -1546,7 +1556,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             if (stopped != null) report.notes.add("stopped: " + stopped);
             if (skipped > 0) report.notes.add("skipped: " + skipped);
             if (error != null) report.notes.add("error: " + error);
-            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: Accessibility service is not set up. Complete the setup and give consent.");
+            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: " + notReadyText(ctx.automationNotReady));
             if (cancelled) report.notes.add("cancelled");
         }
     }

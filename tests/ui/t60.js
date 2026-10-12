@@ -37,8 +37,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   // 1) placement
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
-  const iTerm = tabs.findIndex(t => /Command-Line Interface/.test(t)), iSet = tabs.findIndex(t => /Hidden Settings/.test(t));
-  check('1. the Hidden Settings tab sits right after Command-Line Interface (Extra Settings, added in v7.12.12, and then RRO/Monet Customization follow it)', iSet === iTerm + 1 && /Extra Settings/.test(tabs[iSet + 1]) && /RRO\/Monet/.test(tabs[iSet + 2]), JSON.stringify(tabs));
+  const iTerm = tabs.findIndex(t => t.trim() === 'Terminal'), iSet = tabs.findIndex(t => /Hidden Settings/.test(t));
+  check('1. the Hidden Settings tab sits right after Terminal (Extra Settings, added in v7.12.12, and then RRO/Monet Customization follow it)', iSet === iTerm + 1 && /Extra Settings/.test(tabs[iSet + 1]) && /RRO\/Monet/.test(tabs[iSet + 2]), JSON.stringify(tabs));
   await ev(() => switchView('settings')); await sleep(80);
   check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   await ev(() => switchView('store')); await sleep(60);

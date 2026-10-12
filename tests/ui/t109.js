@@ -155,12 +155,12 @@ const { chromium, PAGE } = require('./lib/pw');
   // Apps
   const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-chip')).map(c => c.innerText) }));
   check('the apps of the device are listed with phone names where the phone has the app', apps0.n === 5 && apps0.names.includes('Fit') && apps0.names.includes('Deskclock') && /5 apps/.test(apps0.count), JSON.stringify(apps0));
-  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|3rd Party 2|System 2|Enabled 3|Disabled 1|Uninstalled 1', apps0.chips.join('|'));
+  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|3rd Party 2|System 2|Enabled 3|Frozen 1|Uninstalled 1', apps0.chips.join('|'));
   const rowOf = pkg => `#cdcard_${pkg.replace(/\./g, '\\.')}`;
   const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.cd-row-act').innerText; return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
-  check('each row shows its state and the action that fits it', badges[0] === 'DISABLED,SYSTEM/Enable' && badges[1] === 'USER/Disable' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
+  check('each row shows its state and the action that fits it', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Freeze' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
   await ev(() => cdFilter('system')); await ev(() => cdFilter('disabled'));
-  check('3rd Party / System and Enabled / Disabled combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Disabled/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
+  check('3rd Party / System and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
   await ev(() => { cd.filters.clear(); cdFilter('uninstalled'); cdFilter('system'); });
   check('Uninstalled with System narrows to the removed system app', await ev(() => Array.from(document.querySelectorAll('#cdAppList .app-card')).map(c => c.dataset.pkg).join()) === 'com.google.android.apps.fitness');
   await ev(() => cdFilter('all'));
@@ -168,9 +168,9 @@ const { chromium, PAGE } = require('./lib/pw');
   check('search finds an app by name or package', await ev(() => document.querySelectorAll('#cdAppList .app-card').length) === 1);
   await ev(() => { document.getElementById('cdAppSearch').value = ''; cdAppsRender(); });
 
-  // one app: Disable then Enable, Reinstall, Uninstall (asks first)
+  // one app: Freeze then Enable, Reinstall, Uninstall (asks first)
   await ev(() => document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').click()); await wait(250);
-  check('Disable runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /DISABLED/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').innerText === 'Enable'));
+  check('Freeze runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /FROZEN/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').innerText === 'Enable'));
   await ev(() => document.querySelector('#cdcard_com\\.google\\.android\\.apps\\.fitness .cd-row-act').click()); await wait(250);
   check('Reinstall runs install-existing and the app is back', (await calls()).some(c => /cmd package install-existing 'com\.google\.android\.apps\.fitness'/.test(c)) && await ev(() => !/UNINSTALLED/.test(document.getElementById('cdcard_com.google.android.apps.fitness').innerText)));
   await ev(() => cdAppMenu('com.example.fit')); await wait(200);
@@ -199,7 +199,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => cdBatch('enable')); await wait(500);
   check('a batch with no failure toasts the count and clears the selection', /Enabled 2 apps/.test(await toast()) && await ev(() => !cd.sel.size && !document.getElementById('cdBatch').classList.contains('show')));
   await ev(() => { cdToggleSel('com.wear.weather'); cdToggleSel('com.example.fit'); cdBatch('disable'); }); await wait(250);
-  check('disabling several asks first', await ev(() => document.getElementById('cdAskModal').classList.contains('show') && /Disable 2 apps/.test(document.getElementById('cdAskTitle').innerText)));
+  check('freezing several asks first', await ev(() => document.getElementById('cdAskModal').classList.contains('show') && /Freeze 2 apps/.test(document.getElementById('cdAskTitle').innerText)));
   await page.click('#cdAskOk'); await wait(2200);          // (the commands, then the look at the device, which asks twice when an app is not as wanted)
   const fail = await ev(() => ({ open: document.getElementById('cdSheet').classList.contains('show'), title: document.getElementById('cdSheetTitle').innerText, body: document.getElementById('cdSheetBody').innerText }));
   check('the one the device refused is named with its reason, the other went through', fail.open && /1 of 2 did not work/.test(fail.title) && /Shell cannot change component state/.test(fail.body) && await ev(() => cdApp('com.wear.weather').disabled && !cdApp('com.example.fit').disabled), JSON.stringify(fail));

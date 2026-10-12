@@ -73,7 +73,7 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   const gears = () => ev(() => ({ header: document.getElementById('prefsHeaderBtn').innerText.replace(/️/g, ''), rows: document.querySelectorAll('.app-card .ab-btn[data-ab="settings"] svg').length, cards: document.querySelectorAll('.app-card').length }));
   let g = await gears();
   check('2. the header shows the gear and every app in the list has its Action Button icon (App Settings by default)', g.header === '⚙' && g.rows === g.cards && g.cards === 12, JSON.stringify(g));
-  const tabs = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'updates', 'store', 'logcat', 'about', 'prefs'];
+  const tabs = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'updates', 'store', 'console', 'about', 'prefs'];
   for (const t of tabs) {
     await ev(k => switchView(k), t);
     await page.waitForTimeout(120);

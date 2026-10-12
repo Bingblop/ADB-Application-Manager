@@ -64,7 +64,9 @@ ok   the bundle was added through the app
 ok   and now it shows Installed in a green glow
 ok   a bundle opens with its description, apps and patches
 ok   an app opens with the bundles that patch it
-ok   the sources sheet lists the official one, Pre-installed and with its version
+ok   the sources sheet lists the official one, labelled Official and with its version
+ok   the added one is labelled Custom (and not Official)
+ok   the sheet says what Official and Custom mean and that a source that is off is not loaded
 ok   the added one is listed and can be deleted
 ok   the pre-installed one cannot be deleted or renamed
 ok   an http address is refused with the Manager's wording
