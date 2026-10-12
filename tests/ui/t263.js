@@ -111,11 +111,11 @@ async function open(b, opts, vp) {
   await page.click('#bnavMenu .bn-sc[data-id="settings"]'); await page.waitForTimeout(500);
   check('    "Terminal settings" opens the Terminal and its settings sheet', await ev(() => currentViewName() === 'terminal' && document.getElementById('txSettingsModal').classList.contains('show')));
   await ev(() => { txCloseSettings(); tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'console']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(700);          // the default pins again
-  // The Extra Settings slot (third place by default) lists the sections that are on the page: Private DNS, from the real #extraDnsSection; the others are not there and not listed
+  // The Extra Settings slot (third place by default) lists the first four sections of the registry that are on the page: Private DNS, Animations, Brightness, Telemetry (Power, Doze and Zram are there too, but a menu lists four at most unless the user picks them)
   s = await hold('extrasettings'); await page.mouse.up(); await page.waitForTimeout(600);
   const xm = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="dns"]'); await page.waitForTimeout(700);
-  check('11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up', xm.items.join() === 'Private DNS' && await ev(() => currentViewName() === 'extrasettings' && document.getElementById('extraDnsSection').classList.contains('bn-flash')), xm.items.join());
+  check('11b. Extra Settings: the menu lists the first four sections (Private DNS, Animations, Brightness, Telemetry), and "Private DNS" opens the tab and lights that section up', xm.items.join() === 'Private DNS,Animations,Brightness,Telemetry' && await ev(() => currentViewName() === 'extrasettings' && document.getElementById('extraDnsSection').classList.contains('bn-flash')), xm.items.join());
   await ev(() => switchView('apps')); await page.waitForTimeout(400);
   // Hidden Settings (not on the bar by default: pinned here): its search box only works with a privileged mode, so without one the slot has no menu; with one, "Search settings" opens the tab and focuses the box
   await ev(() => { tabConfig.pinned = ['apps', 'installer', 'settings', 'console']; tabsApplyConfig(); });
