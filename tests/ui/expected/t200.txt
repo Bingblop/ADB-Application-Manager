@@ -1,0 +1,62 @@
+the first open starts the check: true
+while it starts: Cancel and the bar show, the Check buttons are off: true Starting the check...
+status at 0: 0 of 120 apps • 0 updates found so far
+status at 40: 40 of 120 apps • 2 updates found so far
+the bar follows done / total (33%): true 33%
+rows while it runs: Alpha, Beta | still running: true
+an update found twice is one row, and this app's own update does not join the list: true
+one found so far: 41 of 120 apps • 1 update found so far
+Cancel goes to the app: true Cancelling...
+...and the button is off while the app stops: true
+after Cancel: 2 updates available • Cancelled: 50 of 120 apps checked • 10 from saved results • <clock>
+after Cancel the Check button is back and Cancel is gone: true
+what was found stays, and it is not called up to date: true
+no failure list after Cancel (nothing failed), no Retry: true
+a cancelled check with nothing found:
+   0 updates available • Cancelled: 0 of 120 apps checked • <clock> | Cancelled before any update was found.
+finished with failures: 1 update available • Apps checked: 115 • 5 apps couldn’t be checked • 30 from saved results • <clock>
+empty-state text and list: Alpha | container: Alpha com.a.one GITHUBVIA OBTAINIUM CATALOG 1.0 → 2.0 Update
+failure section:
+   Couldn’t check (5)
+   These apps were not checked, so an update for them may be waiting.
+   apt.izzysoft.de unreachable
+   Skipped for the rest of this check. Apps affected: Yak, Zed
+   Couldn’t check: Odd App — HTTP 500
+   Couldn’t check: Samsung Thing — connection failed
+   Couldn’t check: Slow App — timed out
+   Not tracked (1)
+   Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.
+   Mystery
+   u.one • 1
+   ＋ Set source
+the host that is down is named once, not once per app: true
+each other app has its own line: "Couldn’t check: App — reason": true
+"Retry failed (5)" is there and on: true
+the page does not say everything is up to date: true
+Retry failed goes to the app (and only that): true check,cancel,check,check,retry
+while it retries: the list of updates stays, Cancel shows: true Starting the check...
+after the retry: 2 updates available • Apps checked: 119 • 1 app couldn’t be checked • <clock>
+one still failed: "Retry failed (1)", and still no "up to date": true
+second retry, nothing left to say: 0 updates available • Apps checked: 1 • <clock> | Everything is up to date.
+clean: 0 updates available • Apps checked: 120 • 118 from saved results • <clock> | Everything is up to date.
+a clean check: "Everything is up to date." and no Retry, no failure list: true
+no internet: No internet connection | No internet connection. Nothing could be checked.
+no internet, extras: Couldn’t check (1) | These apps were not checked, so an update for them may be waiting. | No internet connection | Check your Wi-Fi or mobile data, then try again. | Couldn’t check: X — no internet
+no internet is said in words and nothing is called up to date: true
+the bridge throws when the check starts: the buttons come back: true The check could not be started.
+running again: true
+a broken final message: the buttons come back: true 0 updates available • Apps checked: 0 • <clock>
+an error summary from the app: the buttons come back and it says so: true The check stopped: boom
+even if drawing the list throws, the buttons are already back: true true
+all from saved results: 1 update available • Apps checked: 20 • 20 from saved results • <clock>
+"Check again, ignore saved results" asks the app to ignore them: true Check again, ignore saved results
+...while it runs the three Check buttons are off: true
+the normal button is the normal check: true
+a saved result: no check starts by itself: true
+saved result: 2 updates available • Apps checked: 119 • 1 app couldn’t be checked • Saved result from <clock>
+saved rows: Alpha, Beta | not tracked: true | failures: true
+the saved view offers the Check button, Check again and Retry failed (1): true
+tab opened during a check: 60 of 120 apps • 1 update found so far | cancel: flex | rows: 1 | calls: []
+without the new methods, Check again is a check: ["check"]
+errors: []
+all ok

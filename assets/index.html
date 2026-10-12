@@ -4145,9 +4145,15 @@
                 <div class="color-card-title">Updates Available</div>
                 <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
                 <div class="uad-status" id="updStatus">Not checked yet.</div>
+                <div class="upd-bar" id="updCheckBar" style="display:none;margin:0 0 10px;"><div style="width:2%"></div></div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">Check for Updates</button>
+                    <button class="mode-action-btn" id="updCancelBtn" onclick="cancelUpdatesUI()" style="display:none;">Cancel</button>
                     <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">Update All</button>
+                </div>
+                <div class="mode-btn-row" style="margin-top:8px;">
+                    <button class="mode-action-btn" id="updRecheckBtn" onclick="recheckUpdatesUI()">Check again, ignore saved results</button>
+                    <button class="mode-action-btn" id="updRetryBtn" onclick="retryFailedUpdatesUI()" style="display:none;">Retry failed</button>
                 </div>
                 <div class="mode-btn-row" style="margin-top:8px;">
                     <button class="mode-action-btn" onclick="importObtainiumUI()">Import Obtainium List</button>
@@ -11648,7 +11654,14 @@ Type any command below (e.g. pm list packages -d)
         let updList = [];
         let updUntracked = [];
         let updExternal = [];
+        let updFailed = [];            // apps the last check could not check: [{pkg, name, reason, code, host}]
+        let updHostsDown = [];         // hosts the last check gave up on (named once)
+        let updInfo = {};              // flags of the last result: cancelled, offline, timedOut, fromCache, total, notChecked, failedCount
         let updChecked = false;
+        let updRunning = false;
+        let updLastEvent = 0;
+        let updRenderTimer = null;
+        let updWatch = null;
         const UPD_SOURCE_LABELS = { galaxy: 'Galaxy Store', github: 'GitHub', codeberg: 'Codeberg', fdroid: 'F-Droid', izzy: 'IzzyOnDroid', self: 'GitHub', external: 'Obtainium' };
         const UPD_ORIGIN_LABELS = { 'obtainium-catalog': 'via Obtainium catalog', 'obtainium-import': 'via your Obtainium list', yours: 'your source' };
         const updProgress = {};
@@ -11656,6 +11669,88 @@ Type any command below (e.g. pm list packages -d)
 
         function updBridge() {
             return window.AndroidBridge && window.AndroidBridge.checkForUpdates ? window.AndroidBridge : null;
+        }
+
+        // While a check runs: the Check buttons are off, Cancel and the progress bar are on. Every way out of a check ends in updSetRunning(false).
+        function updSetRunning(on) {
+            updRunning = on;
+            ['updCheckBtn', 'updRecheckBtn', 'updRetryBtn'].forEach(id => { const e = document.getElementById(id); if (e) e.disabled = on; });
+            const c = document.getElementById('updCancelBtn');
+            if (c) { c.style.display = on ? 'inline-flex' : 'none'; c.disabled = false; }
+            const bar = document.getElementById('updCheckBar');
+            if (bar) { bar.style.display = on ? 'block' : 'none'; if (!on && bar.firstElementChild) bar.firstElementChild.style.width = '2%'; }
+            if (on) {
+                updLastEvent = Date.now();
+                if (!updWatch) updWatch = setInterval(updWatchdog, 4000);
+            } else {
+                if (updWatch) { clearInterval(updWatch); updWatch = null; }
+                if (updRenderTimer) { clearTimeout(updRenderTimer); updRenderTimer = null; }
+            }
+        }
+
+        // The end of a check is announced by the app; if that message never arrives (the page was reloaded meanwhile), the page asks
+        function updWatchdog() {
+            if (!updRunning || Date.now() - updLastEvent < 25000) return;
+            const b = updBridge();
+            if (!b || !b.getUpdateState) { updSetRunning(false); return; }
+            try {
+                const st = JSON.parse(b.getUpdateState() || '{}');
+                if (st.running) { updLastEvent = Date.now(); return; }
+                updList = (st.updates || []).filter(u => u.source !== 'self');
+                updReadLists(st);
+                updSetRunning(false);
+                document.getElementById('updStatus').innerText = updSummaryLine(st, true);
+                renderUpdates();
+                updateUpdatesTabBadge();
+            } catch (e) { updSetRunning(false); }
+        }
+
+        function updByName(a, b) { return String(a.name || '').localeCompare(String(b.name || '')); }
+
+        // The lists the page shows besides the updates, and the flags of the result they came from
+        function updReadLists(r) {
+            updUntracked = (r.untracked || []).slice().sort(updByName);
+            updExternal = (r.external || []).slice().sort(updByName);
+            updFailed = (r.failed || []).slice().sort(updByName);
+            updHostsDown = r.hostsDown || [];
+            updInfo = {
+                cancelled: !!r.cancelled, offline: !!r.offline, timedOut: r.timedOut || 0, fromCache: r.fromCache || 0, total: r.total, notChecked: r.notChecked || 0,
+                checked: r.checked || 0, openSourceChecked: r.openSourceChecked || 0, lastError: r.lastError || '',
+                failedCount: r.failed ? r.failed.length : (r.errors || 0) + (r.openSourceErrors || 0)
+            };
+        }
+
+        function updTimeText(ms) {
+            const d = new Date(ms || Date.now());
+            return d.toDateString() === new Date().toDateString() ? d.toLocaleTimeString(langLocale()) : d.toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        // One honest line for a finished check (or a saved one): what was found, how many apps were really checked, and what was not
+        function updSummaryLine(r, saved) {
+            const parts = [];
+            const n = updList.length;
+            const failedN = updInfo.failedCount;
+            const checkedN = updInfo.total != null ? Math.max(0, updInfo.total - failedN - updInfo.notChecked) : updInfo.checked + updInfo.openSourceChecked;
+            if (updInfo.offline) {
+                parts.push(txT('No internet connection'));
+                if (!n && !checkedN) return parts.join(' • ');            // nothing was checked and there is nothing from before to show
+            }
+            parts.push(n === 1 ? txF('{0} update available', n) : txF('{0} updates available', n));
+            if (updInfo.cancelled) parts.push(txF('Cancelled: {0} of {1} apps checked', checkedN, updInfo.total != null ? updInfo.total : checkedN + updInfo.notChecked));
+            else if (checkedN || !failedN) parts.push(txF('Apps checked: {0}', checkedN));
+            if (failedN) parts.push((failedN === 1 ? txF('{0} app couldn’t be checked', failedN) : txF('{0} apps couldn’t be checked', failedN)) + (!r.failed && updInfo.lastError ? ' (' + updInfo.lastError + ')' : ''));
+            if (updInfo.fromCache && !saved) parts.push(txF('{0} from saved results', updInfo.fromCache));
+            const when = updTimeText(r.checkedAt);
+            parts.push(saved || updInfo.offline ? txF('Saved result from {0}', when) : when);
+            return parts.join(' • ');
+        }
+
+        function updEmptyText(st) {
+            if (updRunning) return txT('No updates found yet.');
+            if (updInfo.cancelled) return txT('Cancelled before any update was found.');
+            if (updInfo.offline) return txT('No internet connection. Nothing could be checked.');
+            if (updInfo.failedCount) return txT('No updates found among the apps that could be checked.');
+            return updChecked || (st && st.checkedAt) ? txT('Everything is up to date.') : txT('Tap Check for Updates.');
         }
 
         function onUpdatesShown() {
@@ -11668,45 +11763,100 @@ Type any command below (e.g. pm list packages -d)
             }
             const st = JSON.parse(b.getUpdateState() || '{}');
             updList = (st.updates || []).filter(u => u.source !== 'self');
+            updReadLists(st);
             if (st.running) {
-                document.getElementById('updStatus').innerText = 'Checking for updates...';
-            } else if (!st.checkedAt && !updChecked) {
+                updSetRunning(true);
+                updShowProgress(st.progress || { done: 0, total: 0, phase: 'start' });
+                renderUpdates();
+                return;
+            }
+            if (updRunning) updSetRunning(false);
+            if (!st.checkedAt && !updChecked) {
                 checkUpdatesUI(true);
                 return;
             }
             renderUpdates(st);
         }
 
-        function checkUpdatesUI(silent) {
+        // mode: undefined = the normal check (saved answers are used), 'again' = ignore saved results, 'retry' = only the apps that failed
+        function checkUpdatesUI(silent, mode) {
             checkSelfUpdateUI(true);  // refresh this app's own update card alongside the other-apps check
             const b = updBridge();
             if (!b) return;
             if (!silent) haptic();
             updChecked = true;
-            document.getElementById('updStatus').innerText = 'Checking for updates...';
-            document.getElementById('updCheckBtn').disabled = true;
-            b.checkForUpdates();
+            updSetRunning(true);
+            if (mode !== 'retry') { updList = []; updFailed = []; updHostsDown = []; updInfo = {}; updUntracked = []; updExternal = []; }
+            document.getElementById('updStatus').innerText = txT('Starting the check...');
+            const bar = document.querySelector('#updCheckBar > div');
+            if (bar) bar.style.width = '2%';
+            renderUpdates();
+            try {
+                if (mode === 'again' && b.recheckUpdates) b.recheckUpdates();
+                else if (mode === 'retry' && b.retryFailedUpdates) b.retryFailedUpdates();
+                else b.checkForUpdates();
+            } catch (e) {
+                updSetRunning(false);
+                document.getElementById('updStatus').innerText = txT('The check could not be started.');
+            }
+        }
+
+        function recheckUpdatesUI() { checkUpdatesUI(false, 'again'); }
+        function retryFailedUpdatesUI() { checkUpdatesUI(false, 'retry'); }
+
+        function cancelUpdatesUI() {
+            const b = updBridge();
+            if (!b || !b.cancelUpdateCheck) return;
+            haptic();
+            const c = document.getElementById('updCancelBtn');
+            if (c) c.disabled = true;
+            document.getElementById('updStatus').innerText = txT('Cancelling...');
+            b.cancelUpdateCheck();
+        }
+
+        // done and total count apps across all sources (they are checked side by side); the bar and the line follow them
+        function updShowProgress(p) {
+            if (!p) return;
+            updLastEvent = Date.now();
+            const total = p.total || 0, done = p.done || 0;
+            const bar = document.querySelector('#updCheckBar > div');
+            if (bar) bar.style.width = (total ? Math.max(2, Math.min(100, Math.round(done * 100 / total))) : 2) + '%';
+            const el = document.getElementById('updStatus');
+            if (!el) return;
+            if (!total) { el.innerText = txT('Starting the check...'); return; }
+            const n = p.updates || 0;
+            el.innerText = txF('{0} of {1} apps', done, total) + ' • ' + (n === 1 ? txF('{0} update found so far', n) : txF('{0} updates found so far', n));
         }
 
         function onUpdateCheckProgress(json) {
-            const p = JSON.parse(json || '{}');
-            document.getElementById('updStatus').innerText = p.phase === 'open-source'
-                ? `Checking sideloaded apps (GitHub, F-Droid, Obtainium)... ${p.done}/${p.total}`
-                : `Checking the Galaxy Store... ${p.done}/${p.total} apps`;
+            let p = {};
+            try { p = JSON.parse(json || '{}'); } catch (e) { return; }
+            if (updRunning) updShowProgress(p);
+        }
+
+        // One update, the moment it is found: the list grows while the check goes on
+        function onUpdateFound(json) {
+            let u = null;
+            try { u = JSON.parse(json || '{}'); } catch (e) { return; }
+            if (!u || !u.pkg || u.source === 'self') return;     // the self-update has its own card
+            const i = updList.findIndex(x => x.pkg === u.pkg);
+            if (i >= 0) updList[i] = u; else updList.push(u);
+            updLastEvent = Date.now();
+            if (updRenderTimer) return;
+            updRenderTimer = setTimeout(() => { updRenderTimer = null; renderUpdates(); updateUpdatesTabBadge(); }, 120);
         }
 
         function onUpdatesChecked(json) {
-            const r = JSON.parse(json || '{}');
-            updList = (r.updates || []).filter(u => u.source !== 'self');  // self-update has its own card
-            updUntracked = (r.untracked || []).sort((a, b) => a.name.localeCompare(b.name));
-            updExternal = (r.external || []).sort((a, b) => a.name.localeCompare(b.name));
-            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued', 'confirming'].includes(updProgress[k].stage)) delete updProgress[k]; });
-            document.getElementById('updCheckBtn').disabled = false;
-            const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`,
-                `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
-            const errs = (r.errors || 0) + (r.openSourceErrors || 0);
-            if (errs) parts.push(`${errs} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
-            document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString(langLocale());
+            let r = {};
+            try { r = JSON.parse(json || '{}'); } catch (e) { r = {}; }
+            try {
+                updList = (r.updates || []).filter(u => u.source !== 'self');  // self-update has its own card
+                updReadLists(r);
+                Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued', 'confirming'].includes(updProgress[k].stage)) delete updProgress[k]; });
+            } finally {
+                updSetRunning(false);          // on every way out: a check never leaves the Check button off
+            }
+            document.getElementById('updStatus').innerText = r.error ? txF('The check stopped: {0}', r.error) : updSummaryLine(r, false);
             renderUpdates();
             updateUpdatesTabBadge();
             if (allApps.length) renderApps();
@@ -11729,10 +11879,11 @@ Type any command below (e.g. pm list packages -d)
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
             if (st && st.checkedAt) {
-                document.getElementById('updStatus').innerText = `${updList.length} update${updList.length === 1 ? '' : 's'} available • last checked ${new Date(st.checkedAt).toLocaleTimeString(langLocale())}`;
+                document.getElementById('updStatus').innerText = updSummaryLine(st, true);      // the result the app kept (from before a tab switch or a restart), marked with its time
             }
+            updRenderRetry();
             if (!updList.length) {
-                container.innerHTML = updChecked || (st && st.checkedAt) ? '<div class="list-empty">Everything is up to date.</div>' : '<div class="list-empty">Tap Check for Updates.</div>';
+                container.innerHTML = `<div class="list-empty">${escapeHtml(updEmptyText(st))}</div>`;
                 return;
             }
             const sorted = updList.slice().sort((a, b) => (a.source === 'self' ? -1 : 0) - (b.source === 'self' ? -1 : 0) || a.name.localeCompare(b.name));
@@ -11791,10 +11942,50 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Sections under the updates: sources only Obtainium can track, and sideloaded apps with no known source
+        function updRenderRetry() {
+            const btn = document.getElementById('updRetryBtn');
+            if (!btn) return;
+            btn.style.display = updFailed.length && !updInfo.offline && !updRunning ? 'inline-flex' : 'none';
+            btn.innerText = txF('Retry failed ({0})', updFailed.length);
+            btn.disabled = updRunning;
+        }
+
+        // Why an app could not be checked, in the person's words
+        function updReasonText(f) {
+            if (f.code === 'timeout' || f.code === 'deadline') return txT('timed out');
+            if (f.code === 'offline') return txT('no internet');
+            if (f.code === 'io') return txT('connection failed');
+            if (f.code === 'host') return txF('{0} unreachable', f.host || '?');
+            return f.reason || '?';
+        }
+
+        // The apps the check could not look at, so "no update" is never claimed for them: a host that is down is named once, the others one by one
+        function updFailureHtml() {
+            if (updRunning || (!updFailed.length && !updInfo.offline)) return '';
+            let html = `<div class="color-card-title" style="margin:14px 0 8px;">${escapeHtml(txF('Couldn’t check ({0})', updFailed.length))}</div>
+                <div class="uad-credit" style="border:none; padding:0 0 8px;">${escapeHtml(txT('These apps were not checked, so an update for them may be waiting.'))}</div>`;
+            if (updInfo.offline) {
+                html += `<div class="upd-row"><div class="upd-msg error" style="margin:0;">${escapeHtml(txT('No internet connection'))}</div><div class="upd-msg">${escapeHtml(txT('Check your Wi-Fi or mobile data, then try again.'))}</div></div>`;
+            }
+            const byHost = {};
+            const single = [];
+            updFailed.forEach(f => { if (f.code === 'host' && f.host) (byHost[f.host] = byHost[f.host] || []).push(f); else single.push(f); });
+            Object.keys(byHost).forEach(h => {
+                const names = byHost[h].map(f => f.name);
+                const shown = names.slice(0, 12).join(', ') + (names.length > 12 ? ', …' : '');
+                html += `<div class="upd-row"><div class="upd-msg error" style="margin:0;">${escapeHtml(txF('{0} unreachable', h))}</div>
+                    <div class="upd-msg">${escapeHtml(txT('Skipped for the rest of this check.'))} ${escapeHtml(txF('Apps affected: {0}', shown))}</div></div>`;
+            });
+            const rows = single.map(f => `<div class="upd-row"><div class="upd-msg error" style="margin:0;">${escapeHtml(txF('Couldn’t check: {0} — {1}', f.name, updReasonText(f)))}</div></div>`).join('');
+            if (single.length > 12) html += `<details class="upd-fail"><summary class="upd-msg">${escapeHtml(txF('Show the list ({0})', single.length))}</summary>${rows}</details>`;
+            else html += rows;
+            return html;
+        }
+
         function renderUpdateExtras() {
             const box = document.getElementById('updExtraContainer');
             if (!box) return;
-            let html = '';
+            let html = updFailureHtml();
             if (updExternal.length) {
                 html += `<div class="color-card-title" style="margin:14px 0 8px;">Track in Obtainium (${updExternal.length})</div>
                     <div class="uad-credit" style="border:none; padding:0 0 8px;">These apps' releases live on sites this app can't check directly. Obtainium can track them.</div>`;
