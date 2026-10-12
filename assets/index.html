@@ -7636,6 +7636,7 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
             <div id="permRows"></div>
+            <button class="mode-action-btn" id="permCopyBtn" style="display:none; width:100%; justify-content:center; min-height:44px; margin-top:12px;" onclick="permCopyCommands()">Copy grant commands</button>
             <div style="display:flex; gap:10px; margin-top:14px;">
                 <button class="mode-action-btn primary" id="permAllBtn" style="flex:1; justify-content:center; min-height:44px;" onclick="permAllowAll()">Allow all</button>
                 <button class="mode-action-btn" id="permCloseBtn" style="padding:10px 16px; min-height:44px; justify-content:center;" onclick="closePermSheet()">Not now</button>
@@ -12626,6 +12627,12 @@ Type any command below (e.g. pm list packages -d)
         let storeCurrent = null;            // { slug, app, download } for the open detail
         const storeDetailCache = {};
         let storeShown = 60;                // how many ShizuStore rows are drawn (grows with "Show more")
+        // What each ShizuStore row shows, by app: { busy, text, err, nodl }. It lives here, not in the row, so a new draw of the list (search, sort, "Show more") keeps it.
+        const storeRowSt = {};
+        const storeRowWait = {};            // slug -> true while a row's Install waits for the details of that app
+        const storeLoadPending = {};        // slug -> when its details were asked for: one request in flight per app, whoever wants the answer waits for that one
+        const storeRun = {};                // progress key -> slug of a ShizuStore install in progress (started from a row or from the details window)
+        let storeModalKey = '';             // progress key of the install the open details window of another store started
 
         // "system-tools" -> "System Tools"; apps without a category -> "Other"
         function storeCatLabel(a) {
@@ -12716,16 +12723,84 @@ Type any command below (e.g. pm list packages -d)
                 if (a.categorySlug) chips.push(esc(a.categorySlug));
                 if (a.requiresRoot) chips.push('root');
                 const meta = chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:2px 7px;">${c}</span>`).join(' ');
+                const sid = cssId(a.slug), rs = storeRowSt[a.slug] || {};
                 return `<div data-slug="${esc(a.slug)}" onclick="openStoreApp(this.dataset.slug)" style="display:flex;gap:12px;align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:14px;padding:12px;cursor:pointer;">
                     ${img}${fb}
                     <div style="flex:1;min-width:0;">
                         <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.slug)}</div>
                         <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(htmlToReadable(a.description || '').replace(/\s*\n+\s*/g, ' '))}</div>
                         <div style="display:flex;gap:5px;flex-wrap:wrap;">${meta}</div>
+                        <div class="sr-status" id="ss-st-${sid}" style="display:none;"></div>
                     </div>
+                    <button class="store-inst-btn" id="ss-bt-${sid}" data-slug="${esc(a.slug)}" onclick="event.stopPropagation(); installStoreRowEl(this)" aria-label="Install ${esc(a.name || a.slug)}">Install</button>
                 </div>`;
             });
             document.getElementById('storeList').innerHTML = rows.join('') || '<div class="uad-status">No apps match your search.</div>';
+            apps.slice(0, storeShown).forEach(a => storeRowPaint(a.slug));            // a row drawn again keeps what it was showing (an install in progress, an error, "No APK")
+        }
+
+        // ---- Install from a ShizuStore row: the same Install button the other stores have, without opening the details window ----
+        // The download is chosen once, here, for the row and for the details window alike: the one the app's details carry, if it is a direct https APK.
+        function storeDownloadOf(d) {
+            const dl = d && d.download;
+            return dl && typeof dl.apkUrl === 'string' && /^https:\/\//.test(dl.apkUrl) ? dl : null;
+        }
+        // The key the native side reports this install under (its progress events and its one-at-a-time guard): the package name, or the address when there is none.
+        function storeInstallKey(dl) { return String(dl.packageName || dl.apkUrl || ''); }
+        function storeLoadFailText(d) { return 'Could not load this app' + (d && d.error ? ': ' + d.error : ''); }
+
+        function storeRowSet(slug, st) {
+            storeRowSt[slug] = Object.assign({ busy: false, text: '', err: false, nodl: false }, st);
+            storeRowPaint(slug);
+        }
+        function storeRowPaint(slug) {
+            const rs = storeRowSt[slug];
+            if (!rs) return;
+            const sid = cssId(slug);
+            const st = document.getElementById('ss-st-' + sid), bt = document.getElementById('ss-bt-' + sid);
+            if (st) { st.style.display = rs.text ? '' : 'none'; if (rs.err) errNote(st, rs.text); else st.innerText = rs.text; }
+            if (bt) { bt.disabled = !!(rs.busy || rs.nodl); bt.innerText = rs.nodl ? 'No APK' : 'Install'; }
+        }
+
+        function installStoreRowEl(btn) { installStoreRow(btn.dataset.slug); }
+
+        function installStoreRow(slug) {
+            const rs = storeRowSt[slug];
+            if (rs && (rs.busy || rs.nodl) || storeRowWait[slug]) return;          // one at a time per app: a second tap while it works does nothing
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.storeInstall) { showToast('Install needs the app build'); return; }
+            const d = storeDetailCache[slug];
+            if (d) { storeRowGo(slug, d); return; }
+            if (!window.AndroidBridge.storeLoadApp) { showToast('Install needs the app build'); return; }
+            storeRowWait[slug] = true;
+            storeRowSet(slug, { busy: true, text: 'Loading…' });
+            storeAskApp(slug);
+        }
+
+        // The details of an app a row is waiting for have arrived (or failed to)
+        function storeRowLoaded(d) {
+            delete storeRowWait[d.slug];
+            if (d.status !== 'ok') { storeRowSet(d.slug, { text: storeLoadFailText(d), err: true }); return; }
+            storeRowGo(d.slug, d);
+        }
+
+        function storeRowGo(slug, d) {
+            const dl = storeDownloadOf(d), a = d.app || {};
+            if (!dl) {
+                storeRowSet(slug, { nodl: true, text: a.storeUrl ? 'Distributed on the Play Store — use Source to open it there.' : 'No direct APK is available for this app.' });
+                return;
+            }
+            storeStartInstall(slug, dl, a.name || slug);
+        }
+
+        // The one place that starts a ShizuStore install, for a row and for the details window: what the native side gets is the same
+        function storeStartInstall(slug, dl, name) {
+            const key = storeInstallKey(dl);
+            if (storeRun[key]) return;                                              // already running (the other button of the same app)
+            storeRun[key] = slug;
+            storeRowSet(slug, { busy: true, text: 'Starting…' });
+            if (storeInline[key]) return;                                           // another store's card is installing this very package: its progress shows here too
+            window.AndroidBridge.storeInstall(dl.apkUrl, dl.packageName || '', name, dl.sha256 || '');
         }
 
         // The first character of a name, whole (an emoji is two UTF-16 units), upper-cased.
@@ -12741,6 +12816,14 @@ Type any command below (e.g. pm list packages -d)
             else av.textContent = letter;
         }
 
+        // Asks the native side for the details of an app, unless that request is already on its way (a minute is long enough to call it lost)
+        function storeAskApp(slug) {
+            if (!window.AndroidBridge || !window.AndroidBridge.storeLoadApp) return;
+            if (Date.now() - (storeLoadPending[slug] || 0) < 60000) return;
+            storeLoadPending[slug] = Date.now();
+            window.AndroidBridge.storeLoadApp(slug);
+        }
+
         function openStoreApp(slug) {
             haptic();
             storeCurrent = { slug: slug, app: null, download: null };
@@ -12753,15 +12836,18 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeDetailSub').innerText = sum.packageName || '';
             setStoreAvatar(sum.iconHash, sum.name);
             if (storeDetailCache[slug]) { renderStoreDetail(storeDetailCache[slug]); return; }
-            if (window.AndroidBridge && window.AndroidBridge.storeLoadApp) window.AndroidBridge.storeLoadApp(slug);
+            storeAskApp(slug);
         }
 
         function onStoreApp(json) {
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            if (d.slug) delete storeLoadPending[d.slug]; else Object.keys(storeLoadPending).forEach(k => delete storeLoadPending[k]);
             if (d.slug && d.status === 'ok') storeDetailCache[d.slug] = d;
+            if (d.slug) { if (storeRowWait[d.slug]) storeRowLoaded(d); }
+            else Object.keys(storeRowWait).forEach(sl => storeRowLoaded({ slug: sl, status: 'error', error: d.error }));      // an answer that cannot say whose it is ends every wait
             if (!storeCurrent || d.slug !== storeCurrent.slug) return;
             if (d.status !== 'ok') {
-                document.getElementById('storeDetailBody').innerHTML = '<div class="uad-status"><span class="is-err">' + escapeHtml('Could not load this app' + (d.error ? ': ' + d.error : '')) + '</span></div>';
+                document.getElementById('storeDetailBody').innerHTML = '<div class="uad-status"><span class="is-err">' + escapeHtml(storeLoadFailText(d)) + '</span></div>';
                 return;
             }
             renderStoreDetail(d);
@@ -12844,7 +12930,7 @@ Type any command below (e.g. pm list packages -d)
 
         function renderStoreDetail(d) {
             storeCurrent.app = d.app || {};
-            storeCurrent.download = d.download || null;
+            storeCurrent.download = storeDownloadOf(d);
             const a = d.app || {};
             const esc = escapeHtml;
             setStoreAvatar(a.iconHash, a.name);
@@ -12861,8 +12947,8 @@ Type any command below (e.g. pm list packages -d)
             if (a.categorySlug) chips.push(esc(a.categorySlug));
             if (a.requiresRoot) chips.push('needs root');
             if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:3px 8px;">${c}</span>`).join('')}</div>`);
-            if (d.download) {
-                const dl = d.download;
+            if (storeCurrent.download) {
+                const dl = storeCurrent.download;
                 parts.push(`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Install source: <b>${esc(dl.source || 'upstream')}</b>${dl.size ? ' · ' + (Math.round(dl.size / 1048576 * 10) / 10) + ' MB' : ''}${dl.versionName ? ' · v' + esc(dl.versionName) : ''}</div>`);
             } else if (a.storeUrl) {
                 parts.push(`<div class="uad-status" style="margin-bottom:10px;">Distributed on the Play Store — use Source to open it there.</div>`);
@@ -12879,8 +12965,15 @@ Type any command below (e.g. pm list packages -d)
             }
             document.getElementById('storeDetailBody').innerHTML = parts.join('');
             const btn = document.getElementById('storeInstallBtn');
-            btn.disabled = !d.download;
-            btn.innerText = d.download ? 'Install' : 'No APK';
+            const dlNow = storeCurrent.download, runKey = dlNow ? storeInstallKey(dlNow) : '';
+            const running = !!(runKey && storeRun[runKey]);                     // this app is already installing (started from its row): no second start from here
+            btn.disabled = !dlNow || running;
+            btn.innerText = dlNow ? 'Install' : 'No APK';
+            if (running) {
+                const p = document.getElementById('storeInstallProgress'), rs = storeRowSt[storeCurrent.slug] || {};
+                p.style.display = '';
+                if (rs.err) errNote(p, rs.text || ''); else p.innerText = rs.text || '';
+            }
         }
 
         // ---- The picture viewer: a screenshot of an app, full screen. Pinch or the + and - buttons to zoom, drag to move a zoomed picture, swipe or the arrows for the next one,
@@ -13013,6 +13106,7 @@ Type any command below (e.g. pm list packages -d)
                 const p = document.getElementById('storeInstallProgress');
                 p.style.display = ''; p.innerText = 'Starting…';
                 document.getElementById('storeInstallBtn').disabled = true;
+                storeModalKey = String(storeCurrent.slug);
                 installSourceItem(storeCurrent.src, storeCurrent.slug);
                 return;
             }
@@ -13024,7 +13118,7 @@ Type any command below (e.g. pm list packages -d)
             const p = document.getElementById('storeInstallProgress');
             p.style.display = ''; p.innerText = 'Starting…';
             document.getElementById('storeInstallBtn').disabled = true;
-            window.AndroidBridge.storeInstall(dl.apkUrl, dl.packageName || '', name, dl.sha256 || '');
+            storeStartInstall(storeCurrent.slug, dl, name);
         }
 
         function onStoreInstallProgress(json) {
@@ -13034,14 +13128,24 @@ Type any command below (e.g. pm list packages -d)
             const text = failed ? 'Install failed: ' + (d.message || 'unknown error') : (d.message || d.stage) + pct;
             const terminal = (d.stage === 'done' || d.stage === 'error' || d.stage === 'opened');
 
-            // ShizuStore detail modal (its own install path)
+            // A ShizuStore install (started from a row or from its details window): the row of that app shows it
+            const run = d.pkg ? storeRun[d.pkg] : null;
+            if (run) {
+                storeRowSet(run, { busy: !terminal, text: text, err: failed });
+                if (terminal) delete storeRun[d.pkg];
+            }
+
+            // The details window shows it only when the install is the window's own: the app it is open on (ShizuStore), or the item whose Install it pressed (the other stores).
+            // Progress of any other install never lands in a window that is open on another app.
             const modalOpen = document.getElementById('storeModal').classList.contains('show');
             const p = document.getElementById('storeInstallProgress');
-            if (p && modalOpen) {
+            const ownModal = modalOpen && storeCurrent && (storeCurrent.generic ? (!!storeModalKey && d.pkg === storeModalKey && d.pkg === storeCurrent.slug) : (!!run && run === storeCurrent.slug));
+            if (p && ownModal) {
                 p.style.display = '';
                 if (failed) errNote(p, text); else p.innerText = text;
-                if (terminal) document.getElementById('storeInstallBtn').disabled = false;
+                if (terminal) document.getElementById('storeInstallBtn').disabled = storeCurrent.generic ? false : !storeCurrent.download;
             }
+            if (terminal && d.pkg && d.pkg === storeModalKey) storeModalKey = '';
 
             // Inline install card (Komi / Orion / F-Droid sub-tabs)
             const ref = d.pkg ? storeInline[d.pkg] : null;
@@ -25198,11 +25302,12 @@ Type any command below (e.g. pm list packages -d)
             // The three below only have anything to grant while a working mode (ADB/Shizuku/root) is active - there is no
             // Settings switch for most of them, so they stay out of the sheet entirely until there is a privileged shell to grant them through.
             { key: 'storage_legacy', name: 'Read/Write External Storage', why: 'The older storage permission some apps still check for.', privOnly: true },
-            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true }
+            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true },
+            { key: 'dump', name: 'Dump system services (DUMP)', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", privOnly: true, known: true }
         ];
         // A privOnly entry is only ever offered once isPrivilegedActive is true.
         function visiblePermDefs() { return PERM_DEFS.filter(d => (!d.privOnly || isPrivilegedActive) && (!d.known || permStatus[d.key] !== undefined)); }
-        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, restricted_settings }: true when allowed
+        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings }: true when allowed
         let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
@@ -25259,12 +25364,24 @@ Type any command below (e.g. pm list packages -d)
                 return '<div class="pm-row"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div><div class="pm-why">' + escapeHtml(d.why) + '</div></div>'
                     + (on ? '<div class="pm-ok">✓ Allowed</div>' : '<button class="mode-action-btn primary" aria-label="Allow ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">Allow</button>') + '</div>';
             }).join('');
+            document.getElementById('permCopyBtn').style.display = !files && permGrantCommands() ? '' : 'none';          // nothing missing (or an app build without the list): no button
             const missing = defs.filter(d => !permStatus[d.key]).length;
             const showAll = !files && missing > 1;
             document.getElementById('permAllBtn').style.display = showAll ? '' : 'none';          // with one left its own Allow button is enough
             const closeBtn = document.getElementById('permCloseBtn');
             closeBtn.innerText = missing ? 'Not now' : 'Done';
             closeBtn.style.flex = showAll ? '' : '1';                                             // alone it takes the whole row
+        }
+
+        // The adb commands (one per line, this app's package filled in) for what is still missing: for a computer with USB debugging. '' when nothing is missing.
+        function permGrantCommands() {
+            try { return window.AndroidBridge && window.AndroidBridge.getGrantCommands ? String(window.AndroidBridge.getGrantCommands() || '') : ''; } catch (e) { return ''; }
+        }
+        function permCopyCommands() {
+            haptic();
+            const cmds = permGrantCommands();
+            if (!cmds) { permRender(); return; }
+            try { window.AndroidBridge.copyToClipboard(cmds); showToast('Copied. Run these on a computer with USB debugging'); } catch (e) {}
         }
 
         // Opens the Android screen for one access (or grants it at once when a working mode can). The sheet updates when the app is back.
@@ -25281,6 +25398,7 @@ Type any command below (e.g. pm list packages -d)
                 else if (key === 'install_unknown') { if (b.requestInstallUnknownAccess) answer = String(b.requestInstallUnknownAccess()); }
                 else if (key === 'storage_legacy') { if (b.requestLegacyStorageAccess) answer = String(b.requestLegacyStorageAccess()); }
                 else if (key === 'secure_settings') { if (b.requestWriteSecureSettings) answer = String(b.requestWriteSecureSettings()); }
+                else if (key === 'dump') { if (b.requestDumpAccess) answer = String(b.requestDumpAccess()); }
                 else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
             } catch (e) {}
             if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }
