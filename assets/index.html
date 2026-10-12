@@ -6319,9 +6319,14 @@
                 #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: 10px 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
                 #cnSegLog .lc-row { display: flex; gap: 4px; align-items: baseline; margin-bottom: 4px; padding: 6px 8px; background: var(--bg-card); border: 0; border-radius: 4px; }
                 #cnSegLog .lc-row.lvl-W, #cnSegLog .lc-row.lvl-E, #cnSegLog .lc-row.lvl-F { background: var(--bg-card); }
-                #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: var(--lc); font: 700 11px/1.45 ui-monospace, monospace; }
+                #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
                 #cnSegLog .lc-badge::after { content: '/'; }
-                #cnSegLog .lc-head .lc-tag { color: var(--lc); font-weight: 700; font-family: ui-monospace, monospace; font-size: 11px; }
+                #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: 700; font-family: ui-monospace, monospace; font-size: 11px; }
+                /* the colours the script sets on Play and Record are kept readable on a light page too */
+                #cnSegLog #logcatPlayBtn { color: color-mix(in srgb, #2EBD6B 72%, var(--text-main)) !important; }
+                #cnSegLog #logcatPlayBtn.is-playing { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
+                #cnSegLog #logcatRecBtn { color: color-mix(in srgb, #FF5252 80%, var(--text-main)) !important; }
+                #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
                 #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
                 #cnSegLog .lc-key { margin: 10px -16px 0; }
                 #cnSegLog #logcatScope { font-size: 10px; color: var(--text-muted); margin: 8px 2px 0; overflow-wrap: anywhere; }
@@ -22321,6 +22326,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (logcatTimer) { logcatStop(); return; }
             if (!guardPrivilege('Logcat')) return;
             btn.innerText = 'Pause';
+            btn.classList.add('is-playing');
             btn.style.color = '#FFA726';
             lcShowAll = false;
             lcLastText = null;
@@ -22331,7 +22337,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
             if (lcPending && lcPending.live) lcPending = null;
             const btn = document.getElementById('logcatPlayBtn');
-            if (btn) { btn.innerText = 'Play'; btn.style.color = '#4ADE80'; }
+            if (btn) { btn.innerText = 'Play'; btn.classList.remove('is-playing'); btn.style.color = '#4ADE80'; }
         }
         function logcatClear() {
             if (!guardPrivilege('Logcat')) return;
@@ -22449,6 +22455,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('logcatRecBtn');
             if (!btn) return;
             btn.innerText = st && st.running ? '■ Stop recording · ' + st.lines + ' lines' : '● Record to file';
+            btn.classList.toggle('is-recording', !!(st && st.running));
             btn.style.color = st && st.running ? '#FFA726' : '#FF5252';
         }
         // Asks the phone how the recording is doing; keeps asking while one runs. A recording that ended by itself (the size limit) is announced once.
@@ -25695,6 +25702,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return '';
         }
         function acUpdate(which) {
+            if (which === 'term' && typeof termSyncRunBtn === 'function') termSyncRunBtn();          // the Run button lights up when the box has text, however the text got there
             const inp = acInput(which), box = acBox(which);
             if (!inp || !box) return;
             const atEnd = inp.selectionStart === inp.value.length && inp.selectionEnd === inp.value.length;
@@ -25819,6 +25827,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (c == null) return;
             const input = document.getElementById('termCmd');
             input.value = c;
+            termSyncRunBtn();
             termCloseModal();
             input.focus();
         }

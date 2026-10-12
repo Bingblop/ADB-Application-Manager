@@ -17,8 +17,8 @@
    the F-Droid copy button says Copy (it was a symbol): true
    a sheet with no symbol to show has no empty tile (the archive sheet), and one with a symbol still has it: true {"empty":"none","filled":"flex"}
 3. [320 px] the terminal find box is wide enough for its hint (288 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":288,"hint":83,"navInside":true,"wrapped":true,"side":true}
-3. [360 px] the terminal find box is wide enough for its hint (127 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":127,"hint":83,"navInside":true,"wrapped":false,"side":true}
-3. [412 px] the terminal find box is wide enough for its hint (179 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":179,"hint":83,"navInside":true,"wrapped":false,"side":true}
+3. [360 px] the terminal find box is wide enough for its hint (112 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":112,"hint":83,"navInside":true,"wrapped":false,"side":true}
+3. [412 px] the terminal find box is wide enough for its hint (164 px for 83 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":164,"hint":83,"navInside":true,"wrapped":false,"side":true}
    the sub-tabs of Hidden Settings and App Stores are 14 px (they were 13), the log level chips 12 px (11): true {"sdbTab":"14px","store":"14px","lc":"16px"}
 4. [dark] the filled accent button ("Apply", "Watching") is readable (contrast 12.3:1, at least 4.5): true {"prof":["rgb(0, 0, 0)","rgb(208, 188, 255)"],"sub":["rgb(0, 0, 0)"]}
 4. [light] the filled accent button ("Apply", "Watching") is readable (contrast 6.4:1, at least 4.5): true {"prof":["rgb(255, 255, 255)","rgb(103, 80, 164)"],"sub":["rgb(255, 255, 255)"]}

@@ -14,7 +14,7 @@ ok   Root chosen but not granted: DENIED, and the app is not privileged
 ok   No su: NOT FOUND
 ok   every tab with a card has one; Apps and the Terminal have no card to hold it
 ok   each points at its own topic
-ok   they sit inside the first card, not inside its title
+ok   they sit inside the first card (Console: on its tab row), not inside its title
 ok   and nothing is doubled
 ok   tapping it opens the Help Guide at the Debloater topic
 ok   the Connected Devices one opens that topic
