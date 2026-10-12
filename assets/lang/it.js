@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Installazione in corso…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Installa Ollama in Termux, lo avvia e scarica un piccolo modello per la programmazione (qwen2.5-coder 1.5B, circa 1 GB). Ci vogliono alcuni minuti.",
 "Installs from": "Si installa da",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Per installare da Gestione file servono ADB, Debug wireless o Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Installa l’APK salvato nel backup sopra quello installato, poi riapplica le sue autorizzazioni e le App Ops.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Installa l’app modificata tramite la modalità operativa (ADB, Shizuku o Root) non appena è pronta.",
 "Interface": "Interfaccia",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Non ha una versione per Android, quindi va in un container Debian dentro Termux (diversi minuti, qualche centinaio di MB). I passaggi già completati vengono saltati rapidamente.",
 "It has no value right now.": "Al momento non ha alcun valore.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "È connesso ora e resta connesso. Viene salvato di nuovo la prossima volta che lo colleghi.",
-"It is installed silently through the working mode.": "Viene installata in modo silenzioso tramite la modalità operativa.",
+"It is installed through the working mode after you answer the app's question.": "Viene installata tramite la modalità operativa dopo che hai risposto alla domanda dell'app.",
 "It is not set any more": "Non è più impostata",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Viene rimossa per l’utente del dispositivo. Un’app di sistema può essere ripristinata con Reinstalla.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Prima si tenta l’installazione così com’è; se Android la rifiuta, viene installata una copia firmata con la chiave di questa app.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Parole in un nome: <1>foto</1> (devono esserci tutte; <2/> e <3/> sono caratteri jolly; <4>-parola</4> esclude un nome; \"due parole\" tra virgolette).<br> <5>ext:jpg,png</5> o <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:parola</14> cerca dentro i file di testo (fino a 4 MB). <15>archive:nome</15> cerca nei nomi delle voci contenute in archivi zip, apk, jar e simili.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Scrivi il tuo messaggio e tocca <1>Invia</1>: si apre la tua app email con il messaggio pronto, indirizzato a un alias di contatto (<2/>) che lo inoltra allo sviluppatore. L’oggetto è <3>ADB App Manager</3>. L’indirizzo personale dello sviluppatore non è in questa app, e il messaggio viene inviato dalla tua app email, non da questa.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Al momento l’app è in <1>Modalità di sola lettura</1>. Le operazioni sui pacchetti di sistema (come Congela, Attiva, Forza arresto, Cancella dati o Disinstalla) richiedono autorizzazioni elevate tramite <2>ADB TCP (5555)</2>, <3>Debug wireless</3>, <4>Shizuku</4> o <5>Root</5>.",
+
+"Waiting for OK": "In attesa del tuo OK",
+"Updates cancelled": "Aggiornamenti annullati",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "Modalità di sola lettura: il programma di installazione di sistema ti chiede conferma prima di installare qualsiasi cosa, quindi qui ADB, Shizuku e Root non vengono offerti.",
 "Finished. No error text in the output.": "Terminato. Nessun testo di errore nell’output.",
 "Looks like a failure: the command timed out.": "Sembra un errore: il comando è scaduto.",
 "Looks like a failure: permission denied.": "Sembra un errore: permesso negato.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "La connessione al dispositivo è stata persa. Riconnetti in Modalità operative, poi riprova.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Il servizio delle impostazioni non ha risposto. Riprova tra un momento o riavvia il telefono.",
 "This Android version did not understand the command.": "Questa versione di Android non ha capito il comando.",
-"Check again": "Controlla di nuovo"
+"Check again": "Controlla di nuovo",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Installare da Gestione file richiede ADB, Wireless Debugging, Shizuku o Root. Configurane uno in Modalità operative, poi riprova."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],

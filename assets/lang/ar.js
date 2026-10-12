@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "جارٍ التثبيت…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "يثبّت Ollama في Termux، ويشغّله، وينزّل نموذج برمجة صغيرًا (qwen2.5-coder 1.5B، حوالي 1 GB). يستغرق ذلك بضع دقائق.",
 "Installs from": "يُثبَّت من",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "يتطلب التثبيت من مدير الملفات ADB أو تصحيح الأخطاء اللاسلكي أو Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "يثبّت APK المحفوظ احتياطيًا فوق المثبّت، ثم يعيد تطبيق أذوناته وApp Ops الخاصة به.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "يثبّت التطبيق المصحَّح عبر وضع التشغيل (ADB أو Shizuku أو Root) فور بنائه.",
 "Interface": "الواجهة",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "ليس له إصدار لنظام Android، لذا يُثبَّت في حاوية Debian داخل Termux (عدة دقائق، وبضع مئات من MB). وتُتخطّى بسرعة الخطوات المثبّتة من قبل.",
 "It has no value right now.": "ليست لها قيمة حاليًا.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "هو متصل الآن ويبقى متصلًا. يُحفظ مجددًا في المرة القادمة التي توصله فيها.",
-"It is installed silently through the working mode.": "يُثبَّت بصمت عبر وضع التشغيل.",
+"It is installed through the working mode after you answer the app's question.": "يُثبَّت عبر وضع التشغيل بعد أن تجيب عن سؤال التطبيق.",
 "It is not set any more": "لم يعد مضبوطًا",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "تتم إزالته لمستخدم الجهاز. يمكن استرجاع تطبيق النظام بواسطة «إعادة التثبيت».",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "تتم المحاولة أولًا كما هو؛ وإذا رفضه Android، تُثبَّت نسخة موقّعة بمفتاح هذا التطبيق.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "كلمات في الاسم: <1>photo</1> (يجب أن تتطابق جميعها؛ <2/> و<3/> رمزان بديلان؛ <4>-word</4> يستبعد اسماً؛ \"كلمتان\" بين علامتي تنصيص).<br> <5>ext:jpg,png</5> أو <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> يبحث داخل الملفات النصية (حتى 4 ميغابايت). <15>archive:name</15> يبحث في أسماء العناصر داخل أرشيفات zip وapk وjar وما شابهها.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "اكتب رسالتك واضغط <1>إرسال</1>: يفتح تطبيق البريد لديك والرسالة جاهزة، موجّهة إلى اسم مستعار للتواصل (<2/>) يحوّلها إلى المطوّر. الموضوع هو <3>ADB App Manager</3>. عنوان المطوّر نفسه ليس في هذا التطبيق، وتُرسل الرسالة من تطبيق البريد لديك لا من هذا التطبيق.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>.",
+
+"Waiting for OK": "بانتظار موافقتك",
+"Updates cancelled": "أُلغيت التحديثات",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "وضع القراءة فقط: يسألك مثبّت النظام قبل تثبيت أي شيء، لذلك لا تُعرض هنا خيارات ADB وShizuku وRoot.",
 "Finished. No error text in the output.": "اكتمل. لا يوجد نص خطأ في المخرجات.",
 "Looks like a failure: the command timed out.": "يبدو أنه فشل: انتهت مهلة الأمر.",
 "Looks like a failure: permission denied.": "يبدو أنه فشل: تم رفض الإذن.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "فُقد الاتصال بالجهاز. أعد الاتصال في أوضاع التشغيل ثم حاول مرة أخرى.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
 "This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
-"Check again": "فحص مرة أخرى"
+"Check again": "فحص مرة أخرى",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],

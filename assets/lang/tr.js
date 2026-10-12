@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Yükleniyor…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Ollama’yı Termux’a yükler, başlatır ve küçük bir kodlama modeli indirir (qwen2.5-coder 1.5B, yaklaşık 1 GB). Bu birkaç dakika sürer.",
 "Installs from": "Şuradan yüklenir:",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Dosya Yöneticisi’nden yükleme için ADB, Kablosuz hata ayıklama veya Shizuku gerekir",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Yedeklenen APK’yı yüklü olanın üzerine yükler, ardından izinlerini ve App Ops ayarlarını yeniden uygular.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Yamalı uygulamayı oluşturulur oluşturulmaz çalışma moduyla (ADB, Shizuku veya Root) yükler.",
 "Interface": "Arayüz",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Android sürümü olmadığı için Termux içindeki bir Debian kapsayıcısına yüklenir (birkaç dakika, birkaç yüz MB). Zaten tamamlanmış adımlar hızla atlanır.",
 "It has no value right now.": "Şu anda bir değeri yok.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "Şimdi bağlı ve bağlı kalır. Bir dahaki bağlayışınızda yeniden kaydedilir.",
-"It is installed silently through the working mode.": "Çalışma moduyla sessizce yüklenir.",
+"It is installed through the working mode after you answer the app's question.": "Uygulamanın sorusunu yanıtladıktan sonra çalışma moduyla kurulur.",
 "It is not set any more": "Artık ayarlı değil",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Cihazın kullanıcısı için kaldırılır. Bir sistem uygulaması Yeniden yükle ile geri getirilebilir.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Önce olduğu gibi denenir; Android reddederse bu uygulamanın anahtarıyla imzalanmış bir kopya yüklenir.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Addaki sözcükler: <1>photo</1> (hepsi eşleşmeli; <2/> ve <3/> joker karakterdir; <4>-word</4> bir adı hariç tutar; \"iki sözcük\" tırnak içinde).<br> <5>ext:jpg,png</5> veya <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> metin dosyalarının içine bakar (4 MB'a kadar). <15>archive:name</15> zip, apk, jar ve benzeri arşivlerin içindeki girdilerin adlarına bakar.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "İletinizi yazın ve <1>Gönder</1>’e dokunun: e-posta uygulamanız, iletiyi geliştiriciye yönlendiren bir iletişim takma adına (<2/>) hazır olarak açılır. Konu <3>ADB App Manager</3>’dır. Geliştiricinin kendi adresi bu uygulamada yok ve ileti bu uygulama tarafından değil, e-posta uygulamanız tarafından gönderilir.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
+
+"Waiting for OK": "Onayınız bekleniyor",
+"Updates cancelled": "Güncellemeler iptal edildi",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "Salt okunur mod: hiçbir şey kurulmadan önce sistem yükleyicisi size sorar, bu yüzden ADB, Shizuku ve Root burada sunulmaz.",
 "Finished. No error text in the output.": "Bitti. Çıktıda hata metni yok.",
 "Looks like a failure: the command timed out.": "Başarısız gibi görünüyor: komut zaman aşımına uğradı.",
 "Looks like a failure: permission denied.": "Başarısız gibi görünüyor: izin reddedildi.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Cihazla bağlantı kesildi. Çalışma Modları’nda yeniden bağlanın, sonra tekrar deneyin.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
 "This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
-"Check again": "Yeniden denetle"
+"Check again": "Yeniden denetle",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],

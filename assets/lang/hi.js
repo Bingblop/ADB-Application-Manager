@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "इंस्टॉल हो रहा है…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Termux में Ollama इंस्टॉल करता है, उसे शुरू करता है और एक छोटा कोडिंग मॉडल डाउनलोड करता है (qwen2.5-coder 1.5B, लगभग 1 GB)। इसमें कुछ मिनट लगते हैं।",
 "Installs from": "यहाँ से इंस्टॉल होता है",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "फ़ाइल मैनेजर से इंस्टॉल के लिए ADB, वायरलेस डीबगिंग या Shizuku चाहिए",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "बैकअप किया गया APK इंस्टॉल किए गए APK के ऊपर इंस्टॉल करता है, फिर उसकी अनुमतियां और ऐप ऑप्स दोबारा लागू करता है।",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "पैच किया ऐप बनते ही वर्किंग मोड (ADB, Shizuku या Root) से इंस्टॉल करता है।",
 "Interface": "इंटरफ़ेस",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "इसका कोई Android बिल्ड नहीं है, इसलिए यह Termux के अंदर एक Debian कंटेनर में जाता है (कई मिनट, कुछ सौ MB)। पहले से पूरे हो चुके चरण जल्दी छोड़ दिए जाते हैं।",
 "It has no value right now.": "अभी इसका कोई मान नहीं है।",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "यह अभी जुड़ा है और जुड़ा रहता है। अगली बार जोड़ने पर यह फिर सहेजा जाएगा।",
-"It is installed silently through the working mode.": "यह वर्किंग मोड से चुपचाप इंस्टॉल होता है।",
+"It is installed through the working mode after you answer the app's question.": "आप ऐप के सवाल का जवाब दें, तो यह वर्किंग मोड से इंस्टॉल होता है।",
 "It is not set any more": "यह अब सेट नहीं है",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "यह डिवाइस के उपयोगकर्ता के लिए हटा दिया जाता है। सिस्टम ऐप को रीइंस्टॉल करें से वापस लाया जा सकता है।",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "पहले इसे जैसा है वैसा ही आज़माया जाता है; Android मना कर दे तो इस ऐप की कुंजी से साइन की गई कॉपी इंस्टॉल की जाती है।",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "नाम में शब्द: <1>photo</1> (सभी मेल खाने चाहिए; <2/> और <3/> वाइल्डकार्ड हैं; <4>-word</4> किसी नाम को बाहर रखता है; \"दो शब्द\" उद्धरण चिह्नों में)।<br> <5>ext:jpg,png</5> या <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> टेक्स्ट फ़ाइलों के अंदर खोजता है (4 MB तक)। <15>archive:name</15> zip, apk, jar जैसे आर्काइव के अंदर की प्रविष्टियों के नाम देखता है।",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "अपना संदेश लिखें और <1>भेजें</1> पर टैप करें: आपका ईमेल ऐप संदेश तैयार करके खुलता है, जो एक संपर्क उपनाम (<2/>) को संबोधित है जो उसे डेवलपर तक पहुँचाता है। विषय <3>ADB App Manager</3> है। डेवलपर का अपना पता इस ऐप में नहीं है, और संदेश आपके ईमेल ऐप से भेजा जाता है, इस ऐप से नहीं।",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
+
+"Waiting for OK": "आपकी मंज़ूरी का इंतज़ार",
+"Updates cancelled": "अपडेट रद्द किए गए",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "रीड-ओनली मोड: कुछ भी इंस्टॉल होने से पहले सिस्टम इंस्टॉलर आपसे पूछता है, इसलिए यहाँ ADB, Shizuku और Root के विकल्प नहीं दिए गए हैं।",
 "Finished. No error text in the output.": "पूरा हुआ। आउटपुट में कोई त्रुटि संदेश नहीं है।",
 "Looks like a failure: the command timed out.": "यह विफलता जैसा लगता है: कमांड का समय समाप्त हो गया।",
 "Looks like a failure: permission denied.": "यह विफलता जैसा लगता है: अनुमति अस्वीकृत।",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "डिवाइस से कनेक्शन टूट गया। वर्किंग मोड में फिर से कनेक्ट करें, फिर दोबारा कोशिश करें।",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "सेटिंग सेवा ने जवाब नहीं दिया। थोड़ी देर में फिर से कोशिश करें, या फ़ोन रीस्टार्ट करें।",
 "This Android version did not understand the command.": "इस Android संस्करण ने कमांड नहीं समझा।",
-"Check again": "फिर से जांचें"
+"Check again": "फिर से जांचें",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "फ़ाइल मैनेजर से इंस्टॉल करने के लिए ADB, Wireless Debugging, Shizuku या Root चाहिए। वर्किंग मोड में कोई एक सेट करें, फिर दोबारा कोशिश करें।"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],

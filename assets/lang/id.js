@@ -1667,7 +1667,6 @@ x: {
 "Installing…": "Menginstal…",
 "Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.": "Menginstal Ollama di Termux, menjalankannya, dan mengunduh model koding kecil (qwen2.5-coder 1.5B, sekitar 1 GB). Proses ini memakan waktu beberapa menit.",
 "Installs from": "Dipasang dari",
-"Installs from File Manager need ADB, Wireless Debugging or Shizuku": "Penginstalan dari Manajer File memerlukan ADB, Debugging nirkabel, atau Shizuku",
 "Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.": "Menginstal APK cadangan di atas yang terinstal, lalu menerapkan kembali izin dan app ops-nya.",
 "Installs the patched app through the working mode (ADB, Shizuku or Root) as soon as it is built.": "Memasang aplikasi hasil patch melalui mode kerja (ADB, Shizuku, atau Root) begitu selesai dibuat.",
 "Interface": "Antarmuka",
@@ -1687,7 +1686,7 @@ x: {
 "It has no Android build, so it goes into a Debian container inside Termux (several minutes, a few hundred MB). Already installed steps are skipped quickly.": "Alat ini tidak punya versi Android, jadi diinstal ke kontainer Debian di dalam Termux (beberapa menit, beberapa ratus MB). Langkah yang sudah selesai dilewati dengan cepat.",
 "It has no value right now.": "Saat ini tidak memiliki nilai.",
 "It is connected now and stays connected. It is saved again the next time you connect it.": "Sedang terhubung dan tetap terhubung. Akan disimpan lagi saat Anda menghubungkannya berikutnya.",
-"It is installed silently through the working mode.": "Dipasang secara senyap melalui mode kerja.",
+"It is installed through the working mode after you answer the app's question.": "Dipasang melalui mode kerja setelah Anda menjawab pertanyaan aplikasi.",
 "It is not set any more": "Tidak lagi diatur",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Aplikasi dihapus untuk pengguna perangkat. Aplikasi sistem dapat dikembalikan dengan Instal ulang.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "APK dicoba apa adanya lebih dulu; jika Android menolaknya, salinan yang ditandatangani dengan kunci aplikasi ini akan diinstal.",
@@ -4475,6 +4474,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Kata dalam nama: <1>photo</1> (semua harus cocok; <2/> dan <3/> adalah wildcard; <4>-word</4> mengecualikan nama; \"two words\" dalam tanda kutip).<br> <5>ext:jpg,png</5> atau <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> mencari di dalam file teks (hingga 4 MB). <15>archive:name</15> memeriksa nama entri di dalam arsip zip, apk, jar, dan sejenisnya.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Tulis pesan Anda dan ketuk <1>Kirim</1>: aplikasi email Anda terbuka dengan pesan siap, ditujukan ke alias kontak (<2/>) yang meneruskannya ke pengembang. Subjeknya <3>ADB App Manager</3>. Alamat pengembang sendiri tidak ada di aplikasi ini, dan pesan dikirim dari aplikasi email Anda, bukan dari aplikasi ini.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>.",
+
+"Waiting for OK": "Menunggu persetujuan",
+"Updates cancelled": "Pembaruan dibatalkan",
+"Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.": "Mode Hanya Baca: pemasang sistem menanyakannya kepada Anda sebelum apa pun dipasang, jadi ADB, Shizuku, dan Root tidak ditawarkan di sini.",
 "Finished. No error text in the output.": "Selesai. Tidak ada teks galat di keluaran.",
 "Looks like a failure: the command timed out.": "Tampaknya gagal: perintah kehabisan waktu.",
 "Looks like a failure: permission denied.": "Tampaknya gagal: izin ditolak.",
@@ -4522,7 +4525,8 @@ x: {
 "The connection to the device was lost. Reconnect in Working Modes, then try again.": "Koneksi ke perangkat terputus. Hubungkan ulang di Mode Kerja, lalu coba lagi.",
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Layanan pengaturan tidak menjawab. Coba lagi sebentar lagi, atau mulai ulang ponsel.",
 "This Android version did not understand the command.": "Versi Android ini tidak memahami perintah tersebut.",
-"Check again": "Periksa lagi"
+"Check again": "Periksa lagi",
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Memasang dari Manajer File memerlukan ADB, Wireless Debugging, Shizuku, atau Root. Siapkan salah satunya di Mode Kerja, lalu coba lagi."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
