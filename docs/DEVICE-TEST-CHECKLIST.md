@@ -418,7 +418,7 @@ None of this has been run on a phone yet. Take your time; each item says exactly
 - [ ] **Look.** Check Console at the narrowest phone you have, in dark and light, and with another palette: nothing wraps in the outcome text at the right of a card, nothing scrolls sideways, the text is readable.
 - [ ] **Terminal tab.** The tab named **Terminal** opens straight on the terminal (no Terminal | ADB Console switch): the three shells, Coding Agents, Termux setup, the extra keys, Full screen and Real terminal are as before.
 
-## 25. Extra Settings: animation speed, brightness bias, device telemetry
+## 26. Extra Settings: animation speed, brightness bias, device telemetry
 
 **Not run on a device.** None of this has been run on a phone yet; this section is the first run. The animation and brightness sections need a working mode (ADB, Wireless Debugging, Shizuku or Root); the telemetry section needs none. Know the way back: **Reset to 1×** in Animation speed and **Reset to 0** in Brightness bias.
 

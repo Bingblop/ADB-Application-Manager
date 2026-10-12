@@ -79,10 +79,20 @@ public final class UpdateManager {
     // ------------------------------------------------------------------------------------------
 
     public static byte[] httpGet(String url, String accept, int maxBytes) throws Exception {
+        return httpGet(url, accept, maxBytes, 15000, 30000);
+    }
+
+    /** A GET with the timeouts the caller chooses (the update check uses short ones: see {@link #netHttp}). */
+    public static byte[] httpGet(String url, String accept, int maxBytes, int connectMs, int readMs) throws Exception {
+        return httpGetAuth(url, accept, null, maxBytes, connectMs, readMs);
+    }
+
+    private static byte[] httpGetAuth(String url, String accept, String bearer, int maxBytes, int connectMs, int readMs) throws Exception {
         java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
         hdr.put("User-Agent", "ADB-Application-Manager");
         if (accept != null) hdr.put("Accept", accept);
-        HttpURLConnection conn = HttpSafe.open(url, 15000, 30000, hdr);
+        if (bearer != null && !bearer.isEmpty()) hdr.put("Authorization", "Bearer " + bearer);
+        HttpURLConnection conn = HttpSafe.open(url, connectMs, readMs, hdr);
         try {
             int code = conn.getResponseCode();
             if (code == 404) throw new IllegalStateException("not found (HTTP 404)");
@@ -100,6 +110,46 @@ public final class UpdateManager {
         } finally {
             conn.disconnect();
         }
+    }
+
+    /**
+     * What the update sources read through, so a check can be run against a fake network. A failed answer from the server (a status other than
+     * 200) is an {@link IllegalStateException} ("HTTP 500", "not found (HTTP 404)"); anything else that goes wrong (no route, a timeout, a reset)
+     * is an {@link java.io.IOException}, which the update check counts against the host.
+     */
+    public interface Http {
+        byte[] get(String url, String accept, String bearer, int maxBytes) throws Exception;
+
+        /** The address a page redirects to (its Location header), not followed; null when it does not redirect. */
+        String redirectLocation(String url) throws Exception;
+    }
+
+    /** The real network with the long timeouts the downloads and the single lookups have always used. */
+    public static final Http NET = netHttp(15000, 30000);
+
+    /** The real network with the timeouts given: update checks use short ones (5 s to connect, 8 s to read) so one slow host cannot stall a whole check. */
+    public static Http netHttp(final int connectMs, final int readMs) {
+        return new Http() {
+            @Override
+            public byte[] get(String url, String accept, String bearer, int maxBytes) throws Exception {
+                return httpGetAuth(url, accept, bearer, maxBytes, connectMs, readMs);
+            }
+
+            @Override
+            public String redirectLocation(String url) throws Exception {
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                try {
+                    conn.setInstanceFollowRedirects(false);
+                    conn.setConnectTimeout(connectMs);
+                    conn.setReadTimeout(readMs);
+                    conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+                    int code = conn.getResponseCode();
+                    return code / 100 == 3 ? conn.getHeaderField("Location") : null;
+                } finally {
+                    conn.disconnect();
+                }
+            }
+        };
     }
 
     // No real update APK comes anywhere near this; it exists so an open-ended or misbehaving response
@@ -166,8 +216,12 @@ public final class UpdateManager {
      * resultCode 2 = update available, 1 = up to date, 0 = not distributed through the Galaxy Store.
      */
     public static JSONObject galaxyCheck(String pkg, long installedVersionCode, Device d) throws Exception {
+        return galaxyCheck(NET, pkg, installedVersionCode, d);
+    }
+
+    public static JSONObject galaxyCheck(Http http, String pkg, long installedVersionCode, Device d) throws Exception {
         String url = STUB_BASE + "stubUpdateCheck.as?appId=" + enc(pkg) + "&versionCode=" + installedVersionCode + d.query();
-        String xml = new String(httpGet(url, null, 256 * 1024), "UTF-8");
+        String xml = new String(http.get(url, null, null, 256 * 1024), "UTF-8");
         return parseGalaxyCheck(xml, installedVersionCode);
     }
 
@@ -259,74 +313,61 @@ public final class UpdateManager {
      * falls back to the public release pages, which have no API limit.
      */
     public static Release githubRelease(String owner, String repo, String token, boolean includePrereleases) throws Exception {
+        return githubRelease(NET, owner, repo, token, includePrereleases, false);
+    }
+
+    /** {@code skipApi}: the API already said "rate limit" in this run, so go straight to the public pages. */
+    public static Release githubRelease(Http http, String owner, String repo, String token, boolean includePrereleases, boolean skipApi) throws Exception {
         String base = "https://api.github.com/repos/" + owner + "/" + repo;
         String page = "https://github.com/" + owner + "/" + repo + "/releases";
+        if (skipApi) return githubReleaseFromPages(http, owner, repo);
         try {
             if (includePrereleases) {
-                JSONArray list = new JSONArray(new String(httpGetAuth(base + "/releases?per_page=10", token), "UTF-8"));
+                JSONArray list = new JSONArray(new String(githubApiGet(http, base + "/releases?per_page=10", token), "UTF-8"));
                 for (int i = 0; i < list.length(); i++) {
                     JSONObject rel = list.getJSONObject(i);
                     if (!rel.optBoolean("draft")) return releaseFromApiJson(rel, page);
                 }
                 throw new IllegalStateException("no releases");
             }
-            return releaseFromApiJson(new JSONObject(new String(httpGetAuth(base + "/releases/latest", token), "UTF-8")), page);
+            return releaseFromApiJson(new JSONObject(new String(githubApiGet(http, base + "/releases/latest", token), "UTF-8")), page);
         } catch (IllegalStateException e) {
             String msg = String.valueOf(e.getMessage());
-            if (msg.contains("HTTP 403") || msg.contains("HTTP 429")) return githubReleaseFromPages(owner, repo);
+            if (isRateLimited(msg)) return githubReleaseFromPages(http, owner, repo);
             throw e;
         }
     }
 
-    private static byte[] httpGetAuth(String url, String token) throws Exception {
-        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
-        hdr.put("User-Agent", "ADB-Application-Manager");
-        hdr.put("Accept", "application/vnd.github+json");
-        if (token != null && !token.isEmpty()) hdr.put("Authorization", "Bearer " + token);
-        HttpURLConnection conn = HttpSafe.open(url, 15000, 30000, hdr);
+    /** Whether an error message from a GitHub API call means "too many requests" (the public release pages have no such limit). */
+    public static boolean isRateLimited(String message) {
+        String msg = String.valueOf(message);
+        return msg.contains("HTTP 403") || msg.contains("HTTP 429");
+    }
+
+    private static byte[] githubApiGet(Http http, String url, String token) throws Exception {
         try {
-            int code = conn.getResponseCode();
-            if (code == 404) throw new IllegalStateException("no releases (HTTP 404)");
-            if (code != 200) throw new IllegalStateException("HTTP " + code);
-            InputStream in = conn.getInputStream();
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[16384];
-            int n;
-            while ((n = in.read(buf)) > 0) {
-                out.write(buf, 0, n);
-                if (out.size() > 4 * 1024 * 1024) throw new IllegalStateException("response too large");
-            }
-            in.close();
-            return out.toByteArray();
-        } finally {
-            conn.disconnect();
+            return http.get(url, "application/vnd.github+json", token, 4 * 1024 * 1024);
+        } catch (IllegalStateException e) {
+            if (String.valueOf(e.getMessage()).contains("HTTP 404")) throw new IllegalStateException("no releases (HTTP 404)");
+            throw e;
         }
     }
 
     /** Rate-limit-free fallback: /releases/latest redirects to the tag, expanded_assets lists the files. */
     static Release githubReleaseFromPages(String owner, String repo) throws Exception {
+        return githubReleaseFromPages(NET, owner, repo);
+    }
+
+    static Release githubReleaseFromPages(Http http, String owner, String repo) throws Exception {
         String page = "https://github.com/" + owner + "/" + repo + "/releases/latest";
-        HttpURLConnection conn = (HttpURLConnection) new URL(page).openConnection();
-        String location;
-        try {
-            conn.setInstanceFollowRedirects(false);
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(30000);
-            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
-            int code = conn.getResponseCode();
-            location = conn.getHeaderField("Location");
-            if (code / 100 != 3 || location == null || !location.contains("/releases/tag/")) {
-                throw new IllegalStateException("no releases");
-            }
-        } finally {
-            conn.disconnect();
-        }
+        String location = http.redirectLocation(page);
+        if (location == null || !location.contains("/releases/tag/")) throw new IllegalStateException("no releases");
         Release r = new Release();
         r.tag = java.net.URLDecoder.decode(location.substring(location.indexOf("/releases/tag/") + 14), "UTF-8");
         r.version = r.tag;
         r.page = location;
-        String html = new String(httpGet("https://github.com/" + owner + "/" + repo + "/releases/expanded_assets/" + enc(r.tag).replace("+", "%20"),
-                "text/html", 4 * 1024 * 1024), "UTF-8");
+        String html = new String(http.get("https://github.com/" + owner + "/" + repo + "/releases/expanded_assets/" + enc(r.tag).replace("+", "%20"),
+                "text/html", null, 4 * 1024 * 1024), "UTF-8");
         r.assets.addAll(parseExpandedAssets(html, owner, repo));
         return r;
     }
@@ -346,16 +387,24 @@ public final class UpdateManager {
 
     /** Latest Codeberg (Forgejo) release */
     public static Release codebergRelease(String owner, String repo) throws Exception {
+        return codebergRelease(NET, owner, repo);
+    }
+
+    public static Release codebergRelease(Http http, String owner, String repo) throws Exception {
         String url = "https://codeberg.org/api/v1/repos/" + owner + "/" + repo + "/releases/latest";
-        JSONObject rel = new JSONObject(new String(httpGet(url, "application/json", 4 * 1024 * 1024), "UTF-8"));
+        JSONObject rel = new JSONObject(new String(http.get(url, "application/json", null, 4 * 1024 * 1024), "UTF-8"));
         return releaseFromApiJson(rel, "https://codeberg.org/" + owner + "/" + repo + "/releases");
     }
 
     /** {"versionCode":..,"versionName":..} of the suggested version in an F-Droid style repo, or null if unknown there */
     public static JSONObject fdroidLatest(String apiBase, String pkg) throws Exception {
+        return fdroidLatest(NET, apiBase, pkg);
+    }
+
+    public static JSONObject fdroidLatest(Http http, String apiBase, String pkg) throws Exception {
         String json;
         try {
-            json = new String(httpGet(apiBase + enc(pkg), "application/json", 1024 * 1024), "UTF-8");
+            json = new String(http.get(apiBase + enc(pkg), "application/json", null, 1024 * 1024), "UTF-8");
         } catch (IllegalStateException e) {
             if (String.valueOf(e.getMessage()).contains("404")) return null;
             throw e;
@@ -383,9 +432,13 @@ public final class UpdateManager {
 
     /** The Obtainium community catalog entry for a package (first config), or null when it isn't listed */
     public static JSONObject obtainiumCatalog(String pkg) throws Exception {
+        return obtainiumCatalog(NET, pkg);
+    }
+
+    public static JSONObject obtainiumCatalog(Http http, String pkg) throws Exception {
         for (String kind : new String[]{"simple", "complex"}) {
             try {
-                JSONObject doc = new JSONObject(new String(httpGet(OBTAINIUM_CATALOG + kind + "/" + enc(pkg) + ".json", "application/json", 512 * 1024), "UTF-8"));
+                JSONObject doc = new JSONObject(new String(http.get(OBTAINIUM_CATALOG + kind + "/" + enc(pkg) + ".json", "application/json", null, 512 * 1024), "UTF-8"));
                 JSONObject cfg = doc.optJSONObject("config");
                 if (cfg == null && doc.optJSONArray("configs") != null && doc.optJSONArray("configs").length() > 0) {
                     cfg = doc.optJSONArray("configs").optJSONObject(0);
@@ -396,6 +449,50 @@ public final class UpdateManager {
             }
         }
         return null;
+    }
+
+    /**
+     * The whole Obtainium community catalog in a few requests instead of two per app: the catalog site lists every app (about 550, under 1 MB in
+     * all) in pages of at most 200. Each app is kept as {url, author, additionalSettings} under its package name, the first config of the entry
+     * (the one the per-app files give too).
+     */
+    public static final String OBTAINIUM_INDEX = "https://apps.obtainium.imranr.dev/api/apps?limit=200&page=";
+    /** Fewer apps than this means the list is not the catalog any more (the site changed): the caller falls back to the per-app files. */
+    public static final int OBTAINIUM_INDEX_MIN_APPS = 50;
+
+    public static JSONObject obtainiumIndex(Http http) throws Exception {
+        JSONObject out = new JSONObject();
+        int pages = 1;
+        for (int page = 1; page <= pages && page <= 20; page++) {
+            JSONObject doc = new JSONObject(new String(http.get(OBTAINIUM_INDEX + page, "application/json", null, 4 * 1024 * 1024), "UTF-8"));
+            pages = parseObtainiumIndex(doc, out);
+        }
+        if (out.length() < OBTAINIUM_INDEX_MIN_APPS) throw new IllegalStateException("the catalog list has an unexpected format");
+        return out;
+    }
+
+    /** Adds the apps of one catalog page to {@code out}; returns how many pages there are. */
+    static int parseObtainiumIndex(JSONObject doc, JSONObject out) throws Exception {
+        JSONArray apps = doc.optJSONArray("apps");
+        if (apps == null) throw new IllegalStateException("the catalog list has an unexpected format");
+        for (int i = 0; i < apps.length(); i++) {
+            JSONObject a = apps.optJSONObject(i);
+            if (a == null) continue;
+            JSONObject cfg = a.optJSONObject("config");
+            if (cfg == null && a.optJSONArray("configs") != null && a.optJSONArray("configs").length() > 0) cfg = a.optJSONArray("configs").optJSONObject(0);
+            if (cfg == null) continue;
+            String id = cfg.optString("id", ""), url = cfg.optString("url", "");
+            if (id.isEmpty() || url.isEmpty() || out.has(id)) continue;
+            JSONObject slim = new JSONObject();
+            slim.put("id", id);
+            slim.put("url", url);
+            slim.put("author", cfg.optString("author", ""));
+            Object extra = cfg.opt("additionalSettings");
+            if (extra != null && extra != JSONObject.NULL) slim.put("additionalSettings", extra);
+            out.put(id, slim);
+        }
+        JSONObject pg = doc.optJSONObject("pagination");
+        return pg == null ? 1 : Math.max(1, pg.optInt("totalPages", 1));
     }
 
     /** Obtainium's additionalSettings is a JSON string inside the config */
@@ -473,8 +570,12 @@ public final class UpdateManager {
     }
 
     public static JSONObject githubLatest(String repo, String[] abis) throws Exception {
-        String json = new String(httpGet("https://api.github.com/repos/" + repo + "/releases/latest",
-                "application/vnd.github+json", 2 * 1024 * 1024), "UTF-8");
+        return githubLatest(NET, repo, abis);
+    }
+
+    public static JSONObject githubLatest(Http http, String repo, String[] abis) throws Exception {
+        String json = new String(http.get("https://api.github.com/repos/" + repo + "/releases/latest",
+                "application/vnd.github+json", null, 2 * 1024 * 1024), "UTF-8");
         JSONObject rel = new JSONObject(json);
         JSONObject o = new JSONObject();
         String tag = rel.optString("tag_name", "");
