@@ -1,5 +1,5 @@
 1. rishStart throwing: the button goes back to "Rish mode" and says why: true
-2. the Rish banner is not glued onto the last normal-mode output line: true "ADB Application Manager Shell Terminal Ready.\nType any command below (e.g. pm list packages -d)\n$ id\nnormal-output-witho"
+2. the Rish banner is not glued onto the last normal-mode output line: true "$ id\nnormal-output-without-newline\nFinished. No error text in the output.\nRish shell ready — running as shell (uid 2000)"
 3. a quick command finishes and the box is idle again: true
    a slow command is running under its own id: true {"active":true,"running":true,"cur":"r2","starting":false}
    a result for a different run id is ignored (the shell is not closed, the command still counts as running): true {"active":true,"running":true,"cur":"r2","starting":false}
@@ -12,7 +12,7 @@
    the result of that earlier run is accepted and ends the busy state: true
 6. a revived shell is explained (exit code, folder, variables reset) and the session continues: true " STOP to end it, then run this again]\nhusky:/ $ crash\n[the shell stopped itself on that (exit 2) and was started again in /tmp (exported variables were reset)]\n"
    the prompt follows the new folder: true
-7. a big single text node is cut at the front, not dropped whole: true {"chars":500000,"len":500023,"kept":true}
+7. a big single text node is cut at the front, not dropped whole: true {"chars":200000,"len":200023,"kept":true,"marker":true}
 8. a grant arriving 10 minutes after the prompt does not start a shell: true
    a grant right after the prompt does: true
 errors: []

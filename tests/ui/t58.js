@@ -58,12 +58,12 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   an ordinary entry of the open archive still can be edited:', btns.some(t => /Edit text/.test(t)));
   await closeAll();
 
-  // 2) The terminal row keeps its RUN button on narrow screens
-  await ev(() => (switchView('terminal'), txShowPane('console'))); await sleep(200);
+  // 2) The command row of the Console keeps its Run button on narrow screens
+  await ev(() => (cnApplySeg('shell'), switchView('console'))); await sleep(200);
   for (const w of [320, 360, 412]) {
     await page.setViewportSize({ width: w, height: 800 }); await sleep(150);
     const m = await ev(() => ({ run: document.getElementById('termRunBtn').getBoundingClientRect(), s: document.documentElement.scrollWidth, i: innerWidth, input: document.getElementById('termCmd').getBoundingClientRect().width }));
-    console.log('2. ' + w + ' px: RUN stays 70 px wide, inside the screen, no sideways scroll:', Math.round(m.run.width) === 70 && m.run.right <= m.i + 0.5 && m.s <= m.i, JSON.stringify({ run: Math.round(m.run.width), right: Math.round(m.run.right), input: Math.round(m.input) }));
+    console.log('2. ' + w + ' px: Run stays 58 px wide (the Kotlin console button), inside the screen, no sideways scroll:', Math.round(m.run.width) === 58 && m.run.right <= m.i + 0.5 && m.s <= m.i, JSON.stringify({ run: Math.round(m.run.width), right: Math.round(m.run.right), input: Math.round(m.input) }));
   }
   await page.setViewportSize({ width: 400, height: 860 }); await sleep(100);
 
@@ -107,15 +107,15 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 5) Terminal: a busy shell keeps what was typed; a finished command never pops a result sheet (the output is
   // already right there in the terminal pane) - only a toast if the answer arrives on another tab.
-  await ev(() => (switchView('terminal'), txShowPane('console'))); await sleep(100);
+  await ev(() => (cnApplySeg('shell'), switchView('console'))); await sleep(100);
   await ev(() => { termShellRun = { id: 'sx', cmd: 'sleep 9' }; document.getElementById('termCmd').value = 'echo keep me'; termHistory = ['older']; });
   await ev(() => runTerminalCmd());
   const t5 = await ev(() => ({ val: document.getElementById('termCmd').value, hist: termHistory.slice() }));
   console.log('5. pressing RUN while one runs keeps the typed text and the history:', t5.val === 'echo keep me' && JSON.stringify(t5.hist) === '["older"]' && /still running/.test(await toast()), JSON.stringify(t5));
   await ev(() => { termShellRun = { id: 's1', cmd: 'ls' }; switchView('apps'); });
   await ev(() => onShellDone('s1', 'out')); await sleep(60);
-  console.log('   the answer arriving on another tab is a toast, not a sheet over that tab:', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))) && /see the ADB Console/.test(await toast()));
-  await ev(() => { termShellRun = { id: 's2', cmd: 'ls' }; (switchView('terminal'), txShowPane('console')); });
+  console.log('   the answer arriving on another tab is a toast, not a sheet over that tab:', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))) && /see the Console/.test(await toast()));
+  await ev(() => { termShellRun = { id: 's2', cmd: 'ls' }; (cnApplySeg('shell'), switchView('console')); });
   await ev(() => onShellDone('s2', 'out2')); await sleep(60);
   console.log('   on the Console tab itself, still no result sheet (no modal-on-success for an arbitrary command):', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))));
   await closeAll();
@@ -219,7 +219,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => fmSelExit());
 
   // 12) The history filter box keeps its element (and an IME's composition) while typing
-  await ev(() => { termHistory = ['ls', 'pm list packages', 'dumpsys battery', 'getprop', 'id', 'ps -A', 'settings list global', 'cmd package list']; kvSet('term_hist', termHistory); (switchView('terminal'), txShowPane('console')); termOpenHistory(); }); await sleep(150);
+  await ev(() => { termHistory = ['ls', 'pm list packages', 'dumpsys battery', 'getprop', 'id', 'ps -A', 'settings list global', 'cmd package list']; kvSet('term_hist', termHistory); (cnApplySeg('shell'), switchView('console')); termOpenHistory(); }); await sleep(150);
   await ev(() => { window.__f1 = document.getElementById('termHistFilter'); });
   await page.locator('#termHistFilter').click();
   await page.keyboard.type('pm', { delay: 40 }); await sleep(100);

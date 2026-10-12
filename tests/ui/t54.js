@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
         window.__calls.shell.push([id, cmd]);
         if (window.__shellMode === 'refuse') return 'nope';
         window.__lastShellId = id;
-        if (window.__shellMode === 'ok') setTimeout(() => window.onShellDone(id, 'out-of-' + cmd + '\n'), 250);
+        if (window.__shellMode === 'ok') setTimeout(() => window.onShellDone(id, 'out-of-' + cmd + '\n'), 700);          // long enough for the steps below on a busy machine
         return 'started';
       },
       getLogcatAsync(id, level, filter, lines, pkg) {
@@ -31,22 +31,22 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(400);
   const sleep = ms => page.waitForTimeout(ms);
   const term = () => page.locator('#termOutput').innerText();
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await sleep(150);
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await sleep(150);
 
   // 1) The command runs without freezing the page.
   await page.fill('#termCmd', 'echo hi'); await page.press('#termCmd', 'Enter'); await sleep(40);
-  console.log('1. the command is echoed with a "running…" line while it works:', /\$ echo hi/.test(await term()) && /running…/.test(await term()));
-  const alive = await page.evaluate(() => { switchView('apps'); const v = currentViewName(); (switchView('terminal'), txShowPane('console')); return v; });
+  console.log('1. the command is echoed on a card that says Running… while it works:', /\$ echo hi/.test(await term()) && /Running…/.test(await term()));
+  const alive = await page.evaluate(() => { switchView('apps'); const v = currentViewName(); (cnApplySeg('shell'), switchView('console')); return v; });
   console.log('   the page is not frozen meanwhile (a tab switch works):', alive === 'apps');
   await page.fill('#termCmd', 'ls'); await page.press('#termCmd', 'Enter'); await sleep(30);
   console.log('   a second command is refused while one runs:', /still running/.test(await page.locator('#toastMsg').innerText()) && (await page.evaluate(() => window.__calls.shell.length)) === 1);
-  await sleep(350);
+  await sleep(1000);
   const t1 = await term();
-  console.log('   the output replaces the running line:', /out-of-echo hi/.test(t1) && !/running…/.test(t1));
+  console.log('   the output replaces the running badge:', /out-of-echo hi/.test(t1) && !/Running…/.test(t1));
   console.log('   no result modal pops up - the output above already is the result:', (await page.locator('#commandResultsModal.show').count()) === 0);
 
   // 2) The next command works; a refused start is reported.
-  await page.fill('#termCmd', 'id'); await page.press('#termCmd', 'Enter'); await sleep(400);
+  await page.fill('#termCmd', 'id'); await page.press('#termCmd', 'Enter'); await sleep(1000);
   console.log('2. the next command runs once the first has finished:', /out-of-id/.test(await term()));
   await page.evaluate(() => { window.__shellMode = 'refuse'; });
   await page.fill('#termCmd', 'x'); await page.press('#termCmd', 'Enter'); await sleep(100);

@@ -37,7 +37,7 @@ const { chromium, PAGE } = require('./lib/pw');
       window.AndroidBridge = base;
     }, mode);
     await page.goto(PAGE); await page.waitForTimeout(400);
-    await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
+    await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.waitForTimeout(150);
     return page;
   };
 
@@ -105,7 +105,7 @@ const { chromium, PAGE } = require('./lib/pw');
     await p.fill('#termCmd', cmd); await p.press('#termCmd', 'Enter'); await p.waitForTimeout(40);
     const id = await p.evaluate(() => window.__shell[window.__shell.length - 1].id);
     await p.evaluate(([i, o]) => window.onShellDone(i, o), [id, out]); await p.waitForTimeout(30);
-    return p.evaluate(() => { const t = document.getElementById('termOutput'); const l = [...t.querySelectorAll('.term-result')].pop(); return { text: t.textContent, line: l ? l.textContent : null, cls: l ? l.className : null, role: l ? l.getAttribute('role') : null, n: t.querySelectorAll('.term-result').length }; });
+    return p.evaluate(() => { const t = document.getElementById('termOutput'); const l = t.querySelectorAll('.term-result')[0]; return { text: termText(), line: l ? l.textContent : null, cls: l ? l.className : null, role: l ? l.getAttribute('role') : null, n: t.querySelectorAll('.term-result').length }; });
   };
   const OK_LINE = 'Finished. No error text in the output.';
   let r = await run('pm list packages', 'package:com.a\npackage:com.b');
@@ -138,7 +138,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // the refused start
   await page.evaluate(() => { window.AndroidBridge.executeShellAsync = (id, cmd) => { window.__shell.push({ id, cmd }); return 'nope'; }; });
   await page.fill('#termCmd', 'x'); await page.press('#termCmd', 'Enter'); await page.waitForTimeout(80);
-  r = await page.evaluate(() => { const l = [...document.querySelectorAll('#termOutput .term-result')].pop(); return l ? l.textContent : null; });
+  r = await page.evaluate(() => { const l = document.querySelector('#termOutput .term-result'); return l ? l.textContent : null; });
   check('a start the app refuses ends in the error line', r === 'Looks like a failure: the output reports an error.', r);
 
   // Copy holds the result line
@@ -164,7 +164,7 @@ const { chromium, PAGE } = require('./lib/pw');
     for (const preset of ['amoled', 'cyberpunk', 'emerald', 'amber', 'slate', 'crimson', 'material3']) for (const mode of ['dark', 'light']) {
       applyPalettePreset(preset); setAppearance(mode);
       const box = document.getElementById('termOutput');
-      const bg = getComputedStyle(box).backgroundColor;
+      const bg = getComputedStyle(box.querySelector('.cn-card')).backgroundColor;          // the card the line sits on
       const ok = box.querySelector('.term-result:not(.is-fail)'), bad = box.querySelector('.term-result.is-fail');
       const co = getComputedStyle(ok).color, cb = getComputedStyle(bad).color;
       out.push({ preset, mode, okCr: cr(co, bg), badCr: cr(cb, bg), differ: co !== cb, okOpaque: !/rgba\(.*, 0\)/.test(co), badWeight: getComputedStyle(bad).fontWeight, bar: parseFloat(getComputedStyle(bad).borderLeftWidth) >= 3 && getComputedStyle(bad).borderLeftColor !== 'rgba(0, 0, 0, 0)', appearance: document.documentElement.getAttribute('data-appearance') });
@@ -174,7 +174,7 @@ const { chromium, PAGE } = require('./lib/pw');
   check('themes: the appearance really switched in the checks (' + themeRows.length + ' combinations)', themeRows.length === 14 && themeRows.some(t => t.appearance === 'light') && themeRows.some(t => t.appearance === 'dark'));
   const lowOk = themeRows.filter(t => t.okCr < 4.5), lowBad = themeRows.filter(t => t.badCr < 4.5);
   check('themes: the neutral line reads at 4.5:1 on the console in every theme', lowOk.length === 0, JSON.stringify(lowOk.map(t => [t.preset, t.mode, +t.okCr.toFixed(2)])));
-  check('themes: the failure line reads at 4.5:1 on the console in every theme', lowBad.length === 0, JSON.stringify(lowBad.map(t => [t.preset, t.mode, +t.badCr.toFixed(2)])));
+  check('themes: the failure line reads at 4.5:1 on its card in every theme', lowBad.length === 0, JSON.stringify(lowBad.map(t => [t.preset, t.mode, +t.badCr.toFixed(2)])));
   check('themes: the failure line differs from the neutral one: bold with a bar in front, in every theme (the words carry the meaning, the style only helps)', themeRows.every(t => t.differ && +t.badWeight >= 700 && t.bar));
 
   // ---- 4) translated ----
@@ -184,7 +184,7 @@ const { chromium, PAGE } = require('./lib/pw');
     onShellDone(id, '[Process timed out after 8000ms]');
     const id2 = 's' + (++termShellSeq); termShellRun = { id: id2, cmd: 'x' };
     onShellDone(id2, 'ok');
-    const ls = [...document.querySelectorAll('#termOutput .term-result')].slice(-2).map(e => e.textContent);
+    const ls = [...document.querySelectorAll('#termOutput .term-result')].slice(0, 2).reverse().map(e => e.textContent);
     await LANG_ENGINE.set('en');
     return ls;
   });
@@ -194,7 +194,7 @@ const { chromium, PAGE } = require('./lib/pw');
     const side = () => {
       const id = 's' + (++termShellSeq); termShellRun = { id, cmd: 'x' };
       onShellDone(id, 'Error: x');
-      const e = [...document.querySelectorAll('#termOutput .term-result.is-fail')].pop(), cs = getComputedStyle(e);
+      const e = document.querySelector('#termOutput .term-result.is-fail'), cs = getComputedStyle(e);
       const r = e.getBoundingClientRect();
       return { dir: document.documentElement.dir, l: parseFloat(cs.borderLeftWidth), r: parseFloat(cs.borderRightWidth), pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), text: e.textContent, w: r.width };
     };
@@ -212,7 +212,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const sp = await bridge('sync');
   await sp.evaluate(() => { window.__syncOut = 'Error: no such file'; });
   await sp.fill('#termCmd', 'cat /nope'); await sp.press('#termCmd', 'Enter'); await sp.waitForTimeout(80);
-  const sl = await sp.evaluate(() => { const t = document.getElementById('termOutput'); const l = t.querySelector('.term-result'); return { line: l && l.textContent, cls: l && l.className, tail: t.textContent.slice(-80) }; });
+  const sl = await sp.evaluate(() => { const t = document.getElementById('termOutput'); const l = t.querySelector('.term-result'); return { line: l && l.textContent, cls: l && l.className, tail: termText().slice(-80) }; });
   check('without executeShellAsync the same line follows the output', sl.line === 'Looks like a failure: the output reports an error.' && /is-fail/.test(sl.cls) && sl.tail.endsWith('Error: no such file\n' + sl.line + '\n'), JSON.stringify(sl));
   await sp.close();
 
@@ -220,7 +220,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const rp = await bridge('rish');
   await rp.locator('#rishBtn').click(); await rp.waitForTimeout(250);
   const rishOn = await rp.evaluate(() => rishActive);
-  const rrun = async cmd => { await rp.fill('#termCmd', cmd); await rp.press('#termCmd', 'Enter'); await rp.waitForTimeout(150); return rp.evaluate(() => { const t = document.getElementById('termOutput'); return { text: t.textContent, n: t.querySelectorAll('.term-result').length }; }); };
+  const rrun = async cmd => { await rp.fill('#termCmd', cmd); await rp.press('#termCmd', 'Enter'); await rp.waitForTimeout(150); return rp.evaluate(() => { const t = document.getElementById('termOutput'); return { text: termText(), n: t.querySelectorAll('.term-result').length }; }); };
   let rr = await rrun('pwd');
   check('Rish mode is on and a command goes to the Rish shell, not to executeShellAsync', rishOn === true && (await rp.evaluate(() => window.__rish.join(','))) === 'pwd' && (await rp.evaluate(() => window.__shell.length)) === 0);
   check('Rish mode: the command output is shown and no result line is added (its persistent shell keeps its own notes)', /ran:pwd\n/.test(rr.text) && rr.n === 0 && !/Finished\. No error text/.test(rr.text), JSON.stringify(rr.text.slice(-60)));

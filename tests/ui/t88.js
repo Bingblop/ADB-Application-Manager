@@ -1,5 +1,5 @@
-// v7.8 Command-Line Interface tab, the Terminal itself: the two-line tab label, the big Terminal | ADB Console switch (Terminal first,
-// the choice remembered), one persistent shell per backend with its own screen (commands run in a real /bin/sh here), history,
+// v7.8 Terminal tab (named Command-Line Interface until v7.12.12): the one-line tab label, one page with no switch (the ADB console and the log are in the Console tab),
+// one persistent shell per backend with its own screen (commands run in a real /bin/sh here), history,
 // Termux's extra keys, TAB completion, colours / progress lines / split escape codes, full-screen programs offered in Termux, exit
 // and restart, CTRL-C, and what the screen says (with the button that fixes it) when a shell cannot start.
 const { chromium, PAGE } = require('./lib/pw');
@@ -16,19 +16,14 @@ const tx = require('./lib/tx_mock');
   const clean = s => s.split(env.base).join('<tmp>');
   const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 4000)) { if (await page.evaluate(fn)) return true; await sleep(25); } return false; };
 
-  // ---------------------------------------------------------------- the tab and the switch
-  console.log('1. the tab reads Terminal over ADB Console:', JSON.stringify(await page.locator('.tab-btn[data-tab="terminal"]').innerText()));
-  console.log('   the Feature List calls it Terminal / ADB Console:', await page.evaluate(() => tabDef('terminal').name));
+  // ---------------------------------------------------------------- the tab (the ADB console and the log moved to the Console tab)
+  console.log('1. the tab reads Terminal:', JSON.stringify(await page.locator('.tab-btn[data-tab="terminal"]').innerText()));
+  console.log('   the Feature List calls it Terminal:', await page.evaluate(() => tabDef('terminal').name));
   await page.evaluate(() => switchView('terminal')); await sleep(150);
-  console.log('2. the Terminal page comes first, the ADB Console page is hidden:', await page.locator('#txPaneTerminal').isVisible() && !(await page.locator('#txPaneConsole').isVisible()));
-  console.log('   the switch is big (at least 48 px tall):', (await page.locator('#txSwitchTerminal').boundingBox()).height >= 48, 'Terminal is the selected one:', await page.locator('#txSwitchTerminal').getAttribute('aria-selected'));
-  await page.click('#txSwitchConsole'); await sleep(50);
-  console.log('3. ADB Console shows the classic console (Rish mode, cheat sheet, its own output box):', await page.locator('#txPaneConsole').isVisible() && await page.locator('#rishBtn').isVisible() && await page.locator('#termOutput').isVisible() && !(await page.locator('#txPaneTerminal').isVisible()));
-  console.log('   the choice is kept:', await page.evaluate(() => window.__kv.term_subtab));
-  await page.evaluate(() => switchView('apps')); await page.evaluate(() => switchView('terminal')); await sleep(50);
-  console.log('   leaving and coming back keeps ADB Console:', await page.locator('#txPaneConsole').isVisible());
-  await page.click('#txSwitchTerminal'); await sleep(200);
-  console.log('   and back to Terminal:', await page.locator('#txPaneTerminal').isVisible(), await page.evaluate(() => window.__kv.term_subtab));
+  console.log('2. the Terminal page is the whole tab (no Terminal | ADB Console switch any more):', await page.locator('#txPaneTerminal').isVisible() && (await page.locator('#txSwitch').count()) === 0 && (await page.locator('#view-terminal #termCmd').count()) === 0);
+  console.log('3. the ADB shell is in the Console tab instead:', await page.evaluate(() => { cnApplySeg('shell'); switchView('console'); return !!document.querySelector('#view-console #cnSegShell #termCmd') && !!document.querySelector('#view-console #rishBtn'); }), await page.locator('#cnSegShell').isVisible());
+  await page.evaluate(() => switchView('terminal')); await sleep(50);
+  console.log('   and the Terminal is still there when coming back:', await page.locator('#txPaneTerminal').isVisible());
 
   // ---------------------------------------------------------------- the first shell
   await until(() => txSess.priv.st === 'ready');
