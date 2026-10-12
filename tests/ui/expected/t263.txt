@@ -20,7 +20,7 @@
     "Coding Agents" opens the tab with the agent picker lit up and focused: true
     "Termux setup" opens the Terminal and its Termux setup sheet: true
     "Terminal settings" opens the Terminal and its settings sheet: true
-11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up: true
+11b. Extra Settings: the menu lists the first four sections (Private DNS, Animations, Brightness, Telemetry), and "Private DNS" opens the tab and lights that section up: true
 12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box: true
 13. a hold on More has no menu (it is a tap: the More sheet opens): true
 14. an entry whose target is not on the page ("Find APKs") is simply not listed: true
