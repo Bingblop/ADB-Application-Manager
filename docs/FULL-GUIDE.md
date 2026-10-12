@@ -694,7 +694,7 @@ The first card of the box, **Find and download an app**, searches by app name or
 
 ## Hidden settings
 
-The **🛠️ Hidden Settings** tab (between Logcat and Overlays) is a front end for Android's own `settings` command: the three
+The **🛠️ Hidden Settings** tab (after the Command-Line Interface tab, before Extra Settings) is a front end for Android's own `settings` command: the three
 key-value tables behind things like USB debugging, animation speed, the screen timeout and the default keyboard.
 It needs ADB, Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes.
 
@@ -748,7 +748,7 @@ Sets Android's Private DNS (DNS-over-TLS, Android 9 or newer) for the whole phon
 
 ## Overlays and Material You
 
-The **🌈 Overlays** tab (right after Hidden Settings) has two halves, chosen by the sub-tabs at its top. Changing anything needs ADB,
+The **🌈 Overlays** tab (right after the Extra Settings tab, which follows Hidden Settings) has two halves, chosen by the sub-tabs at its top. Changing anything needs ADB,
 Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes. The colors Android
 is using *now* are read without any of them.
 
