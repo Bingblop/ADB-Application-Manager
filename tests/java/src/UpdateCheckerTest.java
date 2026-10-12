@@ -57,7 +57,11 @@ public class UpdateCheckerTest {
     final AtomicLong cost = new AtomicLong();
     final CountDownLatch release = new CountDownLatch(1);
     volatile boolean offline;
+    volatile boolean allDead;                       // every host times out at connect, also one reached only on a fallback (the per-app catalog files, the release pages)
     volatile long deadRealMs;                       // a dead host also takes this long in real time (the workers overlap)
+    final Map<String, Long> deadRealByHost = new ConcurrentHashMap<String, Long>();   // ...or this long for this host (so one dead host fails before another)
+    volatile int deadJitterMs;                      // plus up to this many random ms, so the timeouts of the workers land in a shuffled order
+    final java.util.Random rnd = new java.util.Random(7);
     static final long LATENCY_MS = 40;
 
     FakeNet(FakeClock clock, long deadCostMs) { this.clock = clock; this.deadCostMs = deadCostMs; }
@@ -66,6 +70,15 @@ public class UpdateCheckerTest {
     int requests() { return log.size(); }
     int count(String part) { int k = 0; synchronized (log) { for (String u : log) if (u.contains(part)) k++; } return k; }
     int hostRequests(String host) { AtomicInteger c = perHost.get(host); return c == null ? 0 : c.get(); }
+    boolean isDead(String host) { return allDead || dead.contains(host); }
+    /** A dead host's connect timeout: the real time it takes, then the fake time it costs. */
+    void connectTimeout(String host) throws Exception {
+      Long real = deadRealByHost.get(host);
+      long sleep = (real != null ? real : deadRealMs) + (deadJitterMs > 0 ? rnd.nextInt(deadJitterMs + 1) : 0);
+      if (sleep > 0) Thread.sleep(sleep);
+      spend(deadCostMs);
+      throw new SocketTimeoutException("connect timed out");
+    }
 
     private String lookup(String url) {
       String b = pages.get(url);
@@ -81,7 +94,7 @@ public class UpdateCheckerTest {
       if (c == null) { perHost.putIfAbsent(host, new AtomicInteger()); c = perHost.get(host); }
       int nth = c.incrementAndGet();
       if (offline) throw new UnknownHostException(host);
-      if (dead.contains(host)) { if (deadRealMs > 0) Thread.sleep(deadRealMs); spend(deadCostMs); throw new SocketTimeoutException("connect timed out"); }
+      if (isDead(host)) connectTimeout(host);
       if (flaky.contains(host) && nth % 2 == 0) { spend(deadCostMs); throw new SocketTimeoutException("read timed out"); }
       if (hang.contains(host)) {
         if (!release.await(20, TimeUnit.SECONDS)) throw new IOException("hung for good");
@@ -102,7 +115,7 @@ public class UpdateCheckerTest {
       if (c == null) { perHost.putIfAbsent(host, new AtomicInteger()); c = perHost.get(host); }
       c.incrementAndGet();
       if (offline) throw new UnknownHostException(host);
-      if (dead.contains(host)) { spend(deadCostMs); throw new SocketTimeoutException("connect timed out"); }
+      if (isDead(host)) connectTimeout(host);
       spend(LATENCY_MS);
       return redirects.get(url);
     }
@@ -711,10 +724,35 @@ public class UpdateCheckerTest {
     wd.net.dead.add("vas.samsungapps.com");
     JSONObject sd = run(wd, new UpdateCache(tempDir(), wd.clock), wd.options(), new Events());
     is("offline: one dead host while the others answer is that host's trouble, not 'no internet'", !sd.optBoolean("offline") && sd.optJSONArray("hostsDown").length() == 1 && sd.optJSONArray("hostsDown").optString(0).equals("vas.samsungapps.com"));
-    World wq = new World(5000);
-    for (String h : new String[]{"vas.samsungapps.com", "apt.izzysoft.de", "f-droid.org", "api.github.com", "apps.obtainium.imranr.dev"}) wq.net.dead.add(h);
-    JSONObject sq = run(wq, new UpdateCache(tempDir(), wq.clock), wq.options(), new Events());
-    is("offline: every host timing out with no answer at all is treated as no internet " + (sq.optBoolean("offline") ? "" : sq.optJSONArray("hostsDown") + " " + wq.net.log.size() + " failed=" + sq.optJSONArray("failed").length() + " total=" + sq.optInt("total")), sq.optBoolean("offline"));
+    // every host times out (also the ones reached only on a fallback: with the catalog list down, the per-app files on raw.githubusercontent.com are
+    // asked), in whatever order the workers' timeouts land: the verdict is drawn from the whole run, not from which failure happened to be the third
+    for (int round = 0; round < 3; round++) {
+      World wq = new World(5000);
+      wq.net.allDead = true;
+      wq.net.deadJitterMs = round * 3;                                 // round 0: as fast as the threads go; then each timeout lands a random few ms later
+      JSONObject sq = run(wq, new UpdateCache(tempDir(), wq.clock), wq.options(), new Events());
+      String seen = sq.optBoolean("offline") ? "" : " " + sq.optJSONArray("hostsDown") + " " + wq.net.log.size() + " requests, failed=" + sq.optJSONArray("failed").length() + " total=" + sq.optInt("total");
+      is("offline: every host timing out with no answer at all is treated as no internet (round " + round + ")" + seen, sq.optBoolean("offline"));
+      JSONArray fq = sq.optJSONArray("failed");
+      boolean allNoInternet = fq.length() == 120;
+      for (int i = 0; i < fq.length(); i++) if (!"offline".equals(fq.optJSONObject(i).optString("code")) || !"no internet".equals(fq.optJSONObject(i).optString("reason")) || fq.optJSONObject(i).has("host")) allNoInternet = false;
+      is("offline: every host dead (round " + round + "): all 120 apps say 'no internet', no host is named and nothing is 'timed out' (" + wq.net.log.size() + " requests)", allNoInternet && sq.optJSONArray("hostsDown").length() == 0 && sq.optInt("timedOut") == 0 && wq.net.log.size() < 40);
+    }
+    // the other side of the same rule: the hosts the check starts with are dead, but with the catalog list down (at once) the per-app files are asked and
+    // answer before the slow hosts have timed out. One answer means the phone is online: the dead hosts are named, 'no internet' is not said.
+    World wr = new World(2000);
+    for (String h : new String[]{"vas.samsungapps.com", "apt.izzysoft.de", "f-droid.org", "api.github.com"}) { wr.net.dead.add(h); wr.net.deadRealByHost.put(h, 500L); }
+    wr.net.dead.add("apps.obtainium.imranr.dev");
+    wr.net.deadRealByHost.put("apps.obtainium.imranr.dev", 0L);
+    JSONObject sr = run(wr, new UpdateCache(tempDir(), wr.clock), wr.options(), new Events());
+    List<String> downR = new ArrayList<String>();
+    for (int i = 0; i < sr.optJSONArray("hostsDown").length(); i++) downR.add(sr.optJSONArray("hostsDown").optString(i));
+    is("offline: an answer from any host (here the per-app catalog files) before the slow hosts time out means the phone is online: not 'no internet', the dead hosts named " + downR + " (" + wr.net.hostRequests("raw.githubusercontent.com") + " answers)",
+        !sr.optBoolean("offline") && wr.net.hostRequests("raw.githubusercontent.com") > 0 && downR.containsAll(java.util.Arrays.asList("vas.samsungapps.com", "apt.izzysoft.de", "f-droid.org", "api.github.com")) && !downR.contains("raw.githubusercontent.com"));
+    JSONArray fr = sr.optJSONArray("failed");
+    boolean allUnreachable = fr.length() == 120;
+    for (int i = 0; i < fr.length(); i++) if (!"host".equals(fr.optJSONObject(i).optString("code")) || fr.optJSONObject(i).optString("host").isEmpty()) allUnreachable = false;
+    is("offline: ...and every app that needed a dead host is 'unreachable' with the host named, none 'no internet' (" + fr.length() + " failed)", allUnreachable);
   }
 
   static void githubLimitTests() throws Exception {

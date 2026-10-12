@@ -305,10 +305,18 @@ public final class UpdateChecker {
                 }
                 st.notifyAll();
             }
-            // nothing was answered anywhere, and several hosts and requests have failed: the phone has no internet
-            int hostsFailed = failedHosts.size(), fails = netFailures.get();
-            if (answers.get() == 0 && (hostsFailed >= 3 || (hostsFailed >= 2 && fails >= 6))) offline = true;
+            if (noInternet()) offline = true;                   // the run stops early; the end of the run draws the same verdict from the whole tally
             return e instanceof NetFailure ? (NetFailure) e : new NetFailure(host, e);
+        }
+
+        /**
+         * Nothing was answered anywhere, and several hosts and requests have failed: the phone has no internet. One answer from any host (also an
+         * error status) means it is online and the hosts that failed are just down. Checked after every failure (to stop early) and again at the end
+         * of the run, so the verdict depends on what the whole run saw, not on whether the third host's failure landed before or after an answer.
+         */
+        boolean noInternet() {
+            int hostsFailed = failedHosts.size(), fails = netFailures.get();
+            return answers.get() == 0 && (hostsFailed >= 3 || (hostsFailed >= 2 && fails >= 6));
         }
 
         @Override
@@ -624,9 +632,11 @@ public final class UpdateChecker {
 
         pool.interruptAll();                        // the commits are over: stop whatever is still in the air
 
-        // 4. Everything that was not finished is accounted for
+        // 4. Everything that was not finished is accounted for. The "no internet" verdict is drawn here from the whole run's tally (no answer anywhere,
+        //    several hosts failed), whatever the order in which the workers' failures landed; mid-run the same rule only ends the run early.
         JSONObject summary;
         synchronized (lock) {
+            if (!cancelled && guard.noInternet()) offline = true;
             for (Job j : jobs) {
                 if (finished.contains(j.app.pkg)) continue;
                 if (cancelled) continue;                               // the person stopped it: counted as not checked below
