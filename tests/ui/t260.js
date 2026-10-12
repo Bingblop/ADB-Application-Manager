@@ -17,10 +17,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.waitForFunction(() => { const n = document.getElementById('bnav'); return !n.classList.contains('bnav-off') && n.getBoundingClientRect().bottom === innerHeight; }, null, { timeout: 5000 });          // the bar slides in at the start
   const slots = () => ev(() => [...document.querySelectorAll('#bnav .bn-item')].map(b => ({ tab: b.dataset.tab || 'more', label: b.querySelector('.bn-lbl').innerText.trim(), active: b.classList.contains('active'), cur: b.getAttribute('aria-current') })));
 
-  // ---- 1. the default: Application Manager, Installer, Terminal, Hidden Settings (Extra Settings takes the third place where the tab exists) and More ----
+  // ---- 1. the default: Application Manager, Installer, Terminal, Extra Settings and More ----
   const s0 = await slots();
-  check('1. five slots: the default pinned tabs and More', s0.map(s => s.tab).join() === 'apps,installer,terminal,settings,more', s0.map(s => s.tab).join());
-  check('   short one-line labels', s0.map(s => s.label).join() === 'Apps,Installer,Terminal,Hidden,More', s0.map(s => s.label).join());
+  check('1. five slots: the default pinned tabs and More', s0.map(s => s.tab).join() === 'apps,installer,terminal,extrasettings,more', s0.map(s => s.tab).join());
+  check('   short one-line labels', s0.map(s => s.label).join() === 'Apps,Installer,Terminal,Extra,More', s0.map(s => s.label).join());
   check('   Application Manager is lit and carries aria-current="page"', s0[0].active && s0[0].cur === 'page' && s0.filter(s => s.active).length === 1);
   check('   the top tab bar is not shown (Bottom bar only is the default)', await ev(() => getComputedStyle(document.getElementById('tabBar')).display === 'none' && document.documentElement.dataset.nav === 'bottom'));
   const g = await ev(() => {
@@ -49,7 +49,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // ---- 3. More: the tabs that are on and not pinned, in the saved order, three to a row ----
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(500);
   const more = await ev(() => ({ open: document.getElementById('bnavMoreModal').classList.contains('show'), tiles: [...document.querySelectorAll('#bnavMoreGrid .bn-tile')].map(t => t.dataset.tab), cols: getComputedStyle(document.getElementById('bnavMoreGrid')).gridTemplateColumns.split(' ').length, title: document.getElementById('bnavMoreTitle').innerText, expanded: document.querySelector('#bnav .bn-item[data-more]').getAttribute('aria-expanded'), link: [...document.querySelectorAll('#bnavMoreModal .bn-custom')].map(x => x.innerText) }));
-  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,overlays,store,logcat,taskmgr,devices,morphe,sdm,about', more.tiles.join());
+  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,settings,overlays,store,logcat,taskmgr,devices,morphe,sdm,about', more.tiles.join());
   check('   three columns, a title, the Customize tabs link, aria-expanded on the slot', more.cols === 3 && more.title === 'More tabs' && more.link.join() === 'Customize tabs' && more.expanded === 'true', JSON.stringify([more.cols, more.title, more.link, more.expanded]));
   await page.screenshot({ path: 'more_sheet.png' });
   await page.click('#bnavMoreGrid .bn-tile[data-tab="logcat"]'); await page.waitForTimeout(500);

@@ -5121,6 +5121,7 @@
                 <div class="color-card-title">Android’s hidden settings</div>
                 <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it. Under each name: what it does and which values it takes.</div>
                 <div style="margin:4px 0 0;"><button class="batch-tool-link" onclick="sdbOpenHelp()" style="padding:2px 0;">How to read this list</button></div>
+                <div class="sdb-note" id="sdbPrivateDnsPointer">Looking for Private DNS? It is not in this tab. <button class="batch-tool-link" onclick="switchView('extrasettings')" style="padding:2px 0;">Open the Extra Settings tab</button></div>
 
                 <div class="mode-alert-card" id="sdbGate" style="display:none; margin:12px 0 0;">
                     <div class="mode-alert-body">
@@ -5875,58 +5876,11 @@
                 <div class="appearance-note" id="cdRetryNote"></div>
             </div>
 
-            <style>
-                #privateDnsCard .pdns-status { font-size: 12px; line-height: 1.45; margin: 10px 0 12px; }
-                #privateDnsCard #pdnsNow { font-weight: 700; overflow-wrap: anywhere; }
-                #privateDnsCard .pdns-host { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: 800; }
-                #privateDnsCard #pdnsMsg { margin-top: 4px; color: var(--text-muted); overflow-wrap: anywhere; }
-                #privateDnsCard #pdnsMsg.is-err { color: var(--status-bloat); font-weight: 700; }
-                #privateDnsCard .pdns-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
-                #privateDnsCard .pdns-btn { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; padding: 7px 8px; text-align: center; min-width: 0; }
-                #privateDnsCard .pdns-btn b { font-weight: 800; overflow-wrap: anywhere; }
-                #privateDnsCard .pdns-btn small { font-size: 9.5px; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.25; }
-                #privateDnsCard .pdns-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
-                #privateDnsCard .pdns-btn[aria-pressed="true"] small { color: inherit; }
-                #privateDnsCard .pdns-btn[aria-pressed="true"] b::before { content: '\2713\00a0'; }
-                #privateDnsCard .pdns-btn:focus-visible, #privateDnsCard .list-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-                #privateDnsCard .pdns-label { display: block; font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin: 10px 0 4px; }
-                #privateDnsCard .pdns-custom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-                #privateDnsCard .pdns-custom .list-search { flex: 1 1 150px; min-width: 0; min-height: 38px; }
-                #privateDnsCard .pdns-custom .mode-action-btn, #privateDnsCard #pdnsRefresh, #privateDnsCard #pdnsSetup { min-height: 38px; justify-content: center; }
-                #privateDnsCard .pdns-problem { font-size: 11px; min-height: 14px; margin-top: 4px; overflow-wrap: anywhere; }
-                #privateDnsCard .pdns-notes p { font-size: 10.5px; line-height: 1.45; color: var(--text-muted); margin: 8px 0 0; }
-                #privateDnsCard .pdns-btn:disabled, #privateDnsCard .list-search:disabled { opacity: 0.6; cursor: default; }
-            </style>
-            <div class="color-card" id="privateDnsCard">
+            <div class="color-card" id="extraSettingsPointerCard">
                 <div class="color-card-title">Private DNS</div>
-                <div class="color-card-subtitle">Encrypted DNS for the whole phone (DNS-over-TLS, Android 9 or newer): one service can block ads, trackers or bad sites in every app, without a VPN.</div>
-                <div class="pdns-status" id="pdnsStatus" role="status" aria-live="polite" aria-atomic="true">
-                    <div id="pdnsNow">Reading…</div>
-                    <div id="pdnsMsg" style="display:none;"></div>
-                </div>
-                <div class="pdns-grid" role="group" aria-label="Private DNS services">
-                    <button class="mode-action-btn pdns-btn" id="pdnsAdguard" data-host="dns.adguard-dns.com" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>AdGuard DNS</b><small>dns.adguard-dns.com</small></button>
-                    <button class="mode-action-btn pdns-btn" id="pdnsCloudflare" data-host="one.one.one.one" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Cloudflare</b><small>one.one.one.one</small></button>
-                    <button class="mode-action-btn pdns-btn" id="pdnsQuad9" data-host="dns.quad9.net" aria-pressed="false" onclick="pdnsPick(this)" translate="no"><b>Quad9</b><small>dns.quad9.net</small></button>
-                </div>
-                <div class="pdns-grid" role="group" aria-label="Automatic or off">
-                    <button class="mode-action-btn pdns-btn" id="pdnsAuto" data-mode="auto" aria-pressed="false" onclick="pdnsPick(this)"><b>Automatic</b></button>
-                    <button class="mode-action-btn pdns-btn" id="pdnsOff" data-mode="off" aria-pressed="false" onclick="pdnsPick(this)"><b>Off</b></button>
-                </div>
-                <label class="pdns-label" for="pdnsHost">Another host name</label>
-                <div class="pdns-custom">
-                    <input type="text" class="list-search" id="pdnsHost" translate="no" placeholder="dns.nextdns.io" inputmode="url" maxlength="400" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pdnsProblem" oninput="pdnsHostInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();pdnsApplyCustom();}">
-                    <button class="mode-action-btn primary" id="pdnsApply" onclick="pdnsApplyCustom()">Apply</button>
-                </div>
-                <div class="pdns-problem is-err" id="pdnsProblem" role="status" aria-live="polite"></div>
-                <div class="mode-btn-row" style="margin-top:6px;">
-                    <button class="mode-action-btn" id="pdnsRefresh" onclick="pdnsRefresh(true)">Check again</button>
-                    <button class="mode-action-btn primary" id="pdnsSetup" onclick="openWorkingModesModal()" style="display:none;">Set Up</button>
-                </div>
-                <div class="pdns-notes">
-                    <p>Private DNS needs a host name, never an IP address. Some Wi-Fi networks and hotspots block it, and then pages may stop loading.</p>
-                    <p>AdGuard DNS blocks ads and trackers. Cloudflare is fast and blocks nothing. Quad9 blocks known malicious sites.</p>
-                    <p>If the host name is wrong or the service is down, this phone can lose its internet. The way back is Automatic or Off here, or Private DNS in Android’s network settings: both bring normal DNS back.</p>
+                <div class="color-card-subtitle">Private DNS has its own tab now: Extra Settings. It has the Private DNS services, the speed test and the buttons that change Private DNS.</div>
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="mode-action-btn primary" id="extraSettingsPointerBtn" onclick="switchView('extrasettings')">Open Extra Settings</button>
                 </div>
             </div>
 
@@ -6013,6 +5967,181 @@
         </section>
 
         <!-- VIEW: ABOUT -->
+        <!-- VIEW: EXTRA OPTIONS. A stack of independent sections inside #extraSettingsRoot. The header card (title, chips) comes first; then one <section class="xs-sec"> per feature,
+             Private DNS first. A new section is its own <section id="extra...Section" class="xs-sec"> with a .color-card.xs-card inside (head: .xs-sec-head with .xs-ico, title and one .xs-pill),
+             and its own <style> for what is only its own; the shared look (tokens --xs-*, .xs-card, .xs-pill, .xs-chip, .xs-btn, .xs-more) is in the style just below. -->
+        <section id="view-extrasettings" class="view-content">
+            <style>
+                #view-extrasettings { --xs-ok: #34D399; --xs-warn: #FBBF24; --xs-bad: #FDA4AF; --xs-mono-ink: #FFFFFF; }
+                html[data-appearance="light"] #view-extrasettings { --xs-ok: #065F46; --xs-warn: #78350F; --xs-bad: #9F1239; }
+                #extraSettingsRoot { display: flex; flex-direction: column; min-width: 0; }
+                #extraSettingsRoot .xs-sec { margin: 0; min-width: 0; scroll-margin-top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px) + 8px); }
+                #extraSettingsRoot .xs-card { padding: 16px 14px; overflow: hidden; min-width: 0; }
+                #extraSettingsRoot .xs-head { background: linear-gradient(135deg, rgba(var(--ov), 0.06), transparent 70%), var(--bg-card); }
+                #extraSettingsRoot .xs-head .color-card-title { font-size: 20px; letter-spacing: -0.2px; padding-right: 34px; }
+                #extraSettingsRoot .xs-head .color-card-subtitle { font-size: 12px; margin-bottom: 12px; }
+                #extraSettingsRoot .xs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+                #extraSettingsRoot .xs-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; max-width: 100%; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); font: inherit; font-size: 11.5px; cursor: pointer; text-align: left; }
+                #extraSettingsRoot .xs-chip:active { transform: scale(0.97); }
+                #extraSettingsRoot .xs-chip:focus-visible, #extraSettingsRoot .xs-btn:focus-visible, #extraSettingsRoot .xs-more summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                #extraSettingsRoot .xs-chip-k { color: var(--text-muted); font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
+                #extraSettingsRoot .xs-chip-v { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-variant-numeric: tabular-nums; }
+                #extraSettingsRoot .xs-sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; min-width: 0; }
+                #extraSettingsRoot .xs-ico { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 12px var(--accent-glow); }
+                #extraSettingsRoot .xs-ico svg { width: 22px; height: 22px; }
+                #extraSettingsRoot .xs-sec-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; flex: 1 1 auto; }
+                #extraSettingsRoot .xs-sec-line .color-card-title { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+                #extraSettingsRoot .xs-card > .color-card-subtitle, #extraSettingsRoot .xs-sec-text .color-card-subtitle { font-size: 12px; line-height: 1.45; margin: 0 0 10px; }
+                #extraSettingsRoot .xs-pill { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; max-width: 58%; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); color: var(--text-main); overflow: hidden; }
+                #extraSettingsRoot .xs-pill > span:last-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+                #extraSettingsRoot .xs-pill.is-ok { color: var(--xs-ok); border-color: color-mix(in srgb, var(--xs-ok) 45%, transparent); background: color-mix(in srgb, var(--xs-ok) 13%, var(--bg-card)); }
+                #extraSettingsRoot .xs-pill.is-warn { color: var(--xs-warn); border-color: color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
+                #extraSettingsRoot .xs-pill.is-bad { color: var(--xs-bad); border-color: color-mix(in srgb, var(--xs-bad) 45%, transparent); background: color-mix(in srgb, var(--xs-bad) 13%, var(--bg-card)); }
+                #extraSettingsRoot .xs-trust { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; line-height: 1.4; color: var(--text-muted); margin: 0 0 12px; }
+                #extraSettingsRoot .xs-trust svg { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; color: var(--xs-ok); }
+                #extraSettingsRoot .xs-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+                #extraSettingsRoot .xs-btn:active:not(:disabled) { transform: scale(0.97); }
+                #extraSettingsRoot .xs-btn:disabled { opacity: 0.6; cursor: default; }
+                #extraSettingsRoot .xs-btn.is-primary { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); border-color: transparent; }
+                #extraSettingsRoot .xs-more { margin-top: 12px; border-top: 1px solid var(--border-glass); }
+                #extraSettingsRoot .xs-more summary { display: flex; align-items: center; min-height: 44px; font-size: 12px; font-weight: 800; cursor: pointer; list-style: none; color: var(--accent); }
+                #extraSettingsRoot .xs-more summary::-webkit-details-marker { display: none; }
+                #extraSettingsRoot .xs-more summary::after { content: '\25BE'; margin-left: 6px; display: inline-block; }
+                #extraSettingsRoot .xs-more[open] summary::after { transform: rotate(180deg); }
+                @media (prefers-reduced-motion: no-preference) {
+                    #extraSettingsRoot .xs-chip, #extraSettingsRoot .xs-btn { transition: transform 0.12s; }
+                    #extraSettingsRoot .xs-more summary::after { transition: transform 0.2s; }
+                }
+            </style>
+            <div id="extraSettingsRoot">
+                <div class="color-card xs-card xs-head" id="extraSettingsHeader">
+                    <div class="color-card-title">Extra Settings</div>
+                    <div class="color-card-subtitle">Tweaks and controls that Android hides</div>
+                    <div class="xs-chips" id="extraSettingsChips">
+                        <button type="button" class="xs-chip" id="xsChipDns" data-target="extraDnsSection" onclick="xsGoto('extraDnsSection')"><span class="xs-chip-k">Private DNS</span><span class="xs-chip-v" id="xsChipDnsV">…</span></button>
+                        <button type="button" class="xs-chip" id="xsChipFast" data-target="extraDnsSection" onclick="xsGoto('extraDnsSection')" style="display:none;"><span class="xs-chip-k">Fastest</span><span class="xs-chip-v" id="xsChipFastV"></span></button>
+                    </div>
+                </div>
+                <section id="extraDnsSection" class="xs-sec" aria-label="Private DNS">
+                    <style>
+                        #privateDnsCard .pdns-status { font-size: 12px; line-height: 1.45; margin: 4px 0 12px; }
+                        #privateDnsCard #pdnsNow { font-weight: 700; overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-host { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-weight: 800; }
+                        #privateDnsCard #pdnsMsg { margin-top: 4px; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #privateDnsCard #pdnsMsg.is-err { color: var(--status-bloat); font-weight: 700; }
+                        #privateDnsCard .pdns-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
+                        #privateDnsCard .pdns-btn { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; padding: 7px 8px; text-align: center; min-width: 0; }
+                        #privateDnsCard .pdns-btn b { font-weight: 800; overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-btn small { font-size: 10.5px; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
+                        #privateDnsCard .pdns-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+                        #privateDnsCard .pdns-btn[aria-pressed="true"] small { color: inherit; }
+                        #privateDnsCard .pdns-btn[aria-pressed="true"] b::before { content: '\2713\00a0'; }
+                        #privateDnsCard .pdns-btn:focus-visible, #privateDnsCard .list-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                        #privateDnsCard .pdns-label { display: block; font-size: 11px; font-weight: 800; color: var(--text-muted); margin: 14px 0 6px; }
+                        #privateDnsCard .pdns-custom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+                        #privateDnsCard .pdns-custom .list-search { flex: 1 1 150px; min-width: 0; min-height: 44px; }
+                        #privateDnsCard .pdns-custom .mode-action-btn, #privateDnsCard #pdnsRefresh, #privateDnsCard #pdnsSetup { min-height: 44px; justify-content: center; }
+                        #privateDnsCard .pdns-problem { font-size: 11px; min-height: 14px; margin-top: 4px; overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-notes p { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin: 8px 0 0; }
+                        #privateDnsCard .pdns-btn:disabled, #privateDnsCard .list-search:disabled { opacity: 0.6; cursor: default; }
+                        #privateDnsCard .pdns-testrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+                        #privateDnsCard #pdnsTest { flex: 1 1 150px; }
+                        #privateDnsCard .pdns-sweep { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(var(--ov), 0.28); pointer-events: none; }
+                        #privateDnsCard .pdns-prog { font-size: 11.5px; font-weight: 700; margin-top: 8px; min-height: 16px; overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-testnote { font-size: 11px; line-height: 1.45; color: var(--text-muted); margin: 6px 0 0; }
+                        #privateDnsCard .pdns-sortrow { margin-top: 8px; padding-top: 6px; min-height: 44px; }
+                        #privateDnsCard .pdns-sortrow .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+                        #privateDnsCard .pdns-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 6px 0 4px; }
+                        @media (min-width: 640px) { #privateDnsCard .pdns-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+                        @media (min-width: 900px) { #privateDnsCard .pdns-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                        #privateDnsCard .pdns-tile { flex-direction: column; align-items: stretch; justify-content: flex-start; text-align: left; gap: 8px; min-height: 132px; padding: 10px; border-radius: 14px; box-sizing: border-box; background: var(--bg-surface); }
+                        #privateDnsCard .pdns-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+                        #privateDnsCard .pdns-mono { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; color: var(--xs-mono-ink); background: hsl(var(--h, 200) 62% 34%); }
+                        #privateDnsCard .pdns-ms { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+                        #privateDnsCard .pdns-ms:empty, #privateDnsCard .pdns-det:empty, #privateDnsCard .pdns-tag:empty, #privateDnsCard .pdns-warn:empty { display: none; }
+                        #privateDnsCard .pdns-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+                        #privateDnsCard .pdns-main b { font-size: 12.5px; line-height: 1.25; }
+                        #privateDnsCard .pdns-hostline { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: 10px; overflow-wrap: break-word; }
+                        #privateDnsCard .pdns-desc { line-height: 1.35; }
+                        #privateDnsCard .pdns-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: auto; min-width: 0; }
+                        #privateDnsCard .pdns-det { font-variant-numeric: tabular-nums; }
+                        #privateDnsCard .pdns-tag { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 22px; padding: 0 8px; border-radius: 999px; white-space: nowrap; font-size: 10.5px; font-weight: 800; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
+                        #privateDnsCard .pdns-tag > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+                        #privateDnsCard .pdns-tile.is-ok .pdns-tag { color: var(--xs-ok); border-color: color-mix(in srgb, var(--xs-ok) 45%, transparent); background: color-mix(in srgb, var(--xs-ok) 13%, var(--bg-surface)); }
+                        #privateDnsCard .pdns-tile.is-fail .pdns-tag { color: var(--xs-bad); border-color: color-mix(in srgb, var(--xs-bad) 45%, transparent); background: color-mix(in srgb, var(--xs-bad) 13%, var(--bg-surface)); }
+                        #privateDnsCard .pdns-tile.is-fastest { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 6px 16px var(--accent-glow); }
+                        #privateDnsCard .pdns-tile.is-fastest .pdns-tag { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+                        #privateDnsCard .pdns-tile.is-fail { border-style: dashed; }
+                        #privateDnsCard .pdns-tile.is-armed { border-color: var(--accent); border-width: 2px; padding: 9px; }
+                        #privateDnsCard .pdns-tile[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface)); color: var(--text-main); border: 2px solid var(--accent); padding: 9px; }
+                        #privateDnsCard .pdns-tile[aria-pressed="true"] small { color: var(--text-muted); }
+                        #privateDnsCard .pdns-tile[aria-pressed="true"] b::before { content: '\2713\00a0'; color: var(--accent); }
+                        #privateDnsCard .pdns-warn { font-size: 10px; line-height: 1.35; font-weight: 600; color: var(--text-muted); overflow-wrap: anywhere; }
+                        #privateDnsCard .pdns-warn b { color: var(--text-main); }
+                        #privateDnsCard .pdns-tile.is-wait .pdns-ms { color: var(--text-muted); }
+                        @media (prefers-reduced-motion: no-preference) {
+                            #privateDnsCard .pdns-sweep { transition: width 0.25s ease; }
+                            #privateDnsCard .pdns-tile.is-wait .pdns-mono { animation: pdnsPulse 1.2s ease-in-out infinite; }
+                            @keyframes pdnsPulse { 50% { opacity: 0.55; } }
+                        }
+                    </style>
+                    <div class="color-card xs-card" id="privateDnsCard">
+                        <div class="xs-sec-head">
+                            <span class="xs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.6 4 5.6 4 9s-1.4 6.4-4 9c-2.6-2.6-4-5.6-4-9s1.4-6.4 4-9z"/></svg></span>
+                            <div class="xs-sec-line">
+                                <div class="color-card-title">Private DNS</div>
+                                <span class="xs-pill" id="pdnsPill"><span id="pdnsPillIc" aria-hidden="true"></span><span id="pdnsPillT">…</span></span>
+                            </div>
+                        </div>
+                        <div class="color-card-subtitle">Encrypted DNS for the whole phone (DNS-over-TLS, Android 9 or newer): one service can block ads, trackers or bad sites in every app, without a VPN.</div>
+                        <div class="xs-trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>Nothing changes until you tap a service. The card reads the phone back and shows what it really holds.</span></div>
+                        <div class="pdns-status" id="pdnsStatus" role="status" aria-live="polite" aria-atomic="true">
+                            <div id="pdnsNow">Reading…</div>
+                            <div id="pdnsMsg" style="display:none;"></div>
+                        </div>
+                        <div class="pdns-grid" role="group" aria-label="Automatic or off">
+                            <button class="mode-action-btn pdns-btn" id="pdnsAuto" data-mode="auto" aria-pressed="false" onclick="pdnsPick(this)"><b>Automatic</b></button>
+                            <button class="mode-action-btn pdns-btn" id="pdnsOff" data-mode="off" aria-pressed="false" onclick="pdnsPick(this)"><b>Off</b></button>
+                        </div>
+                        <div class="pdns-label" id="pdnsServicesLabel">Services</div>
+                        <div class="pdns-testrow">
+                            <button class="xs-btn is-primary" id="pdnsTest" onclick="pdnsTestStart()"><span class="pdns-sweep" id="pdnsSweep" aria-hidden="true"></span><span id="pdnsTestLbl">Test speed</span></button>
+                            <button class="xs-btn" id="pdnsTestStop" onclick="pdnsTestStop()" style="display:none;">Stop</button>
+                        </div>
+                        <div class="pdns-prog" id="pdnsProg" role="status" aria-live="polite" aria-atomic="true"></div>
+                        <p class="pdns-testnote" id="pdnsTestNote">Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.</p>
+                        <label class="switch-row pdns-sortrow">
+                            <div>
+                                <div class="switch-title">Sort by speed</div>
+                                <div class="switch-sub">After a test, the fastest service comes first. Off keeps the list in its usual order.</div>
+                            </div>
+                            <input type="checkbox" class="switch-input" id="pdnsSort" onchange="pdnsSortChange(this.checked)">
+                            <span class="switch-track"></span>
+                        </label>
+                        <div class="pdns-list" id="pdnsList" role="group" aria-labelledby="pdnsServicesLabel"></div>
+                        <label class="pdns-label" for="pdnsHost">Another host name</label>
+                        <div class="pdns-custom">
+                            <input type="text" class="list-search" id="pdnsHost" translate="no" placeholder="dns.nextdns.io" inputmode="url" maxlength="400" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pdnsProblem" oninput="pdnsHostInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();pdnsApplyCustom();}">
+                            <button class="mode-action-btn primary" id="pdnsApply" onclick="pdnsApplyCustom()">Apply</button>
+                        </div>
+                        <div class="pdns-problem is-err" id="pdnsProblem" role="status" aria-live="polite"></div>
+                        <div class="mode-btn-row" style="margin-top:6px;">
+                            <button class="mode-action-btn" id="pdnsRefresh" onclick="pdnsRefresh(true)">Check again</button>
+                            <button class="mode-action-btn primary" id="pdnsSetup" onclick="openWorkingModesModal()" style="display:none;">Set Up</button>
+                        </div>
+                        <details class="xs-more" id="pdnsMore">
+                            <summary>What does this do?</summary>
+                            <div class="pdns-notes">
+                                <p>Private DNS needs a host name, never an IP address. Some Wi-Fi networks and hotspots block it, and then pages may stop loading.</p>
+                                <p>The short line under each name says what the service filters. A service that filters can also block a site you want.</p>
+                                <p>If the host name is wrong or the service is down, this phone can lose its internet. The way back is Automatic or Off here, or Private DNS in Android’s network settings: both bring normal DNS back.</p>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+            </div>
+        </section>
+
 <!-- MORPHE:VIEW:BEGIN -->
         <section id="view-morphe" class="view-content">
             <style>
@@ -9499,6 +9628,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
             { key: 'terminal', label: 'Command-Line\nInterface', name: 'Command-Line Interface' },
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
+            { key: 'extrasettings', label: 'Extra\nSettings', name: 'Extra Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
             { key: 'store', label: 'App\nStores', name: 'App Stores' },
             { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
@@ -9553,6 +9683,7 @@ Type any command below (e.g. pm list packages -d)
         // The bar follows the Feature List order, so moving a tab there moves it here. It goes away (slides down) while the on-screen keyboard is up, while something covers the screen
         // (a sheet, the full-screen Terminal) and until the page has started; it stays on Settings, with no slot lit.
         const BNAV_MAX = 4;                                                          // pinned tabs, Application Manager included; More is the fifth slot
+        // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'terminal', 'logcat', 'taskmgr' ...). When a tab is renamed or replaced (the Console pull request renames 'terminal' to Terminal and adds a 'console' tab in place of 'logcat'), update those lists with it; a key that TAB_DEFS does not have is skipped, so nothing breaks, but the default pinned tab and the shortcuts of that tab are lost until it is done.
         const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'terminal'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings)
         const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', terminal: 'Terminal', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', logcat: 'Logcat', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', about: 'About' };
         const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
@@ -9760,7 +9891,7 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- Long-press shortcuts: hold a slot of the bar (or the rail) for a small menu of quick destinations ----
         // SAFETY RULE for every entry of TAB_SHORTCUTS: a shortcut only NAVIGATES, or opens a screen or a section of one (it may also start a harmless read-only check, "Check for updates").
-        // A run() must never execute a command that changes the phone or its apps: no reboot or power off, kill, install, uninstall, DNS or setting change. tests/ui (t191) reads the
+        // A run() must never execute a command that changes the phone or its apps: no reboot or power off, kill, install, uninstall, DNS or setting change. tests/ui (t263) reads the
         // source of every run() and fails when it calls anything that is not on the list of navigation functions in that test.
         // The ONE exception, approved by the owner: "Update All (N)" on the Installer/Updater slot. Its run() only switches to the Updater and calls updateAllUI(), exactly what the Update All
         // button does, so the app's own question (the install question with the mode, approvals bound to version, source and mode) is asked and nothing installs without an answer.
@@ -9780,7 +9911,7 @@ Type any command below (e.g. pm list packages -d)
             net: '<path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>',
             tune: BNAV_ICONS.settings
         };
-        // what a run() may call (besides the arrow functions it is made of): see t191
+        // what a run() may call (besides the arrow functions it is made of): see t263
         function bnavGo(tab, then) { switchView(tab); if (then) setTimeout(then, 90); }
         function bnavFocus(id) { const e = document.getElementById(id); if (e) e.focus(); }
         function bnavReveal(sel) {                                    // scroll a section into view and light it up for a moment
@@ -10098,7 +10229,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); pdnsShow(); }
+            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -10118,6 +10249,8 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'logcat') onLogcatShown();
             if (viewName === 'taskmgr') onTaskMgrShown();
             if (viewName === 'devices') onDevicesShown();
+            if (viewName === 'extrasettings') pdnsShow();
+            if (viewName !== 'extrasettings' && typeof pdnsLeave === 'function') pdnsLeave();       // a speed test still running is stopped when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
@@ -13727,6 +13860,28 @@ Type any command below (e.g. pm list packages -d)
         // mode, with the shell quoting and the read-back of SettingsDb) and nothing else: no new bridge call, no command text built here.
         // What the card reports comes from reading the settings back, never from the write alone.
         const PDNS_MODE = 'private_dns_mode', PDNS_HOST = 'private_dns_specifier';
+        // The services of the list: ONE array feeds the buttons, the speed test and the tests. id: the button is pdns<Id>; name and host are not translated; desc is one plain line; mono and hue make the colour tile.
+        // All are Android Private DNS names (DNS-over-TLS, port 853). Mullvad is not in the list: its public encrypted DNS is announced to end on 2 November 2026.
+        const PDNS_PROVIDERS = [
+            { id: 'google', mono: 'G', hue: 215, name: 'Google Public DNS', host: 'dns.google', desc: 'No filtering' },
+            { id: 'cloudflare', mono: 'CF', hue: 26, name: 'Cloudflare', host: 'one.one.one.one', desc: 'Fast, no filtering' },
+            { id: 'cloudflareSecurity', mono: 'CS', hue: 16, name: 'Cloudflare Security', host: 'security.cloudflare-dns.com', desc: 'Blocks malware' },
+            { id: 'cloudflareFamily', mono: 'CF', hue: 40, name: 'Cloudflare Family', host: 'family.cloudflare-dns.com', desc: 'Blocks malware and adult content' },
+            { id: 'quad9', mono: '9', hue: 335, name: 'Quad9', host: 'dns.quad9.net', desc: 'Blocks known malicious sites' },
+            { id: 'quad9Unfiltered', mono: '9', hue: 315, name: 'Quad9 (no filtering)', host: 'dns10.quad9.net', desc: 'No filtering' },
+            { id: 'adguard', mono: 'AG', hue: 145, name: 'AdGuard DNS', host: 'dns.adguard-dns.com', desc: 'Blocks ads and trackers' },
+            { id: 'adguardFamily', mono: 'AF', hue: 165, name: 'AdGuard Family', host: 'family.adguard-dns.com', desc: 'Blocks ads, trackers and adult content' },
+            { id: 'adguardUnfiltered', mono: 'AU', hue: 125, name: 'AdGuard (no filtering)', host: 'unfiltered.adguard-dns.com', desc: 'No filtering' },
+            { id: 'opendns', mono: 'OD', hue: 32, name: 'OpenDNS', host: 'dns.opendns.com', desc: 'Check with the speed test: answers on some networks only' },
+            { id: 'cleanbrowsingFamily', mono: 'CB', hue: 262, name: 'CleanBrowsing Family', host: 'family-filter-dns.cleanbrowsing.org', desc: 'Family filter: adult content, proxies and VPNs' },
+            { id: 'cleanbrowsingAdult', mono: 'CB', hue: 280, name: 'CleanBrowsing Adult', host: 'adult-filter-dns.cleanbrowsing.org', desc: 'Adult filter: adult content' },
+            { id: 'cleanbrowsingSecurity', mono: 'CB', hue: 245, name: 'CleanBrowsing Security', host: 'security-filter-dns.cleanbrowsing.org', desc: 'Security filter: malware and phishing' },
+            { id: 'nextdns', mono: 'N', hue: 205, name: 'NextDNS', host: 'dns.nextdns.io', desc: 'Default settings. To filter, type your own NextDNS id under Another host name' },
+            { id: 'dnssb', mono: 'SB', hue: 185, name: 'DNS.SB', host: 'dot.sb', desc: 'No filtering' },
+        ];
+        const PDNS_SAMPLES = 3, PDNS_TIMEOUT_MS = 3000, PDNS_MAX_HOSTS = 40, PDNS_ARM_MS = 10000;
+        let PDNS_SILENCE_MS = 60000;                                               // a scan that says nothing for this long is given up (a native side that hangs)
+        let pdnsScan = null, pdnsScanN = 0, pdnsSortOn = false, pdnsArmed = null, pdnsArmTimer = 0, pdnsWatch = 0, pdnsTestMsgText = '';
         let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsBackend = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
 
         // The host name that may be written, or why not. Pure: no page, no bridge. { ok: true, host } (lower case, one trailing dot dropped) or { ok: false, why }.
@@ -13829,7 +13984,8 @@ Type any command below (e.g. pm list packages -d)
                 const want = b.dataset.host ? { kind: 'host', host: b.dataset.host } : { kind: b.dataset.mode };
                 b.setAttribute('aria-pressed', pdnsSame(want, got) ? 'true' : 'false');
                 b.disabled = pdnsBusy || !bridge;
-                b.classList.toggle('locked', bridge && !priv);
+                b.classList.toggle('locked', bridge && !priv && !b.classList.contains('pdns-row'));
+                if (bridge && !priv) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
             });
             ['pdnsHost', 'pdnsApply', 'pdnsRefresh'].forEach(id => { document.getElementById(id).disabled = pdnsBusy || !bridge; });
             document.getElementById('pdnsSetup').style.display = bridge && !priv ? '' : 'none';
@@ -13851,6 +14007,26 @@ Type any command below (e.g. pm list packages -d)
             else if (got.kind === 'nohost') now.textContent = txT('Private DNS is now: hostname mode, but no host name is set');
             else if (got.kind === 'default') now.textContent = txT('Private DNS is now: not set, so the phone’s own default applies');
             else now.textContent = txF('Private DNS is now: an unknown mode “{0}”', got.raw);
+            // the status pill of the section and the chip of the tab header: one short line each
+            let pill = ['…', 'muted', '●'];
+            if (!bridge) pill = [txT('Needs the app'), 'warn', '●'];
+            else if (!priv) pill = [txT('Viewing only'), 'warn', LOCK_ICON];
+            else if (pdnsState && pdnsState.err) pill = [txT('Not read'), 'warn', '●'];
+            else if (got) {
+                if (got.kind === 'host') pill = [pdnsName(String(got.host).toLowerCase()), 'ok', '●'];
+                else if (got.kind === 'auto') pill = [txT('Automatic'), 'ok', '●'];
+                else if (got.kind === 'off') pill = [txT('Off'), 'muted', '●'];
+                else if (got.kind === 'default') pill = [txT('Not set'), 'muted', '●'];
+                else pill = [txT('Check the card'), 'warn', '●'];
+            }
+            const pe = document.getElementById('pdnsPill');
+            if (pe) {
+                pe.className = pill[1] === 'ok' ? 'xs-pill is-ok' : pill[1] === 'warn' ? 'xs-pill is-warn' : 'xs-pill';
+                document.getElementById('pdnsPillIc').textContent = pill[2];
+                const pt = document.getElementById('pdnsPillT'); pt.textContent = pill[0];
+                pt.setAttribute('translate', got && got.kind === 'host' ? 'no' : 'yes');
+                const cv = document.getElementById('xsChipDnsV'); if (cv) cv.textContent = pill[0];
+            }
         }
 
         // Called every time Settings opens: read the phone again (it may have been changed in Android's own settings meanwhile). A change or a read already out is left alone.
@@ -13882,7 +14058,7 @@ Type any command below (e.g. pm list packages -d)
             pdnsBackend = key;
             pdnsSeq++; pdnsBusy = false; pdnsReading = false; pdnsState = null; pdnsAt = 0;
             pdnsMsg('');
-            if (currentViewName() === 'prefs') pdnsShow(); else pdnsRender();
+            if (currentViewName() === 'extrasettings') pdnsShow(); else pdnsRender();
         }
 
         // plan: { want, steps: [[op, key, value, optional]] }. A step marked optional may fail without failing the change.
@@ -13923,11 +14099,39 @@ Type any command below (e.g. pm list packages -d)
             if (pdnsBusy || !btn) return;
             if (btn.dataset.host) {
                 const v = pdnsCheckHost(btn.dataset.host);
-                if (v.ok) pdnsChange(pdnsHostPlan(v.host));
-            } else if (btn.dataset.mode === 'auto') pdnsChange({ want: { kind: 'auto' }, steps: [['put', PDNS_MODE, 'opportunistic']] });
-            else if (btn.dataset.mode === 'off') pdnsChange({ want: { kind: 'off' }, steps: [['put', PDNS_MODE, 'off'], ['delete', PDNS_HOST, '', true]] });
+                if (!v.ok) return;
+                if (pdnsNeedsSecondTap(v.host, 'row')) return;
+                pdnsChange(pdnsHostPlan(v.host));
+            } else if (btn.dataset.mode === 'auto') { pdnsDisarm(); pdnsChange({ want: { kind: 'auto' }, steps: [['put', PDNS_MODE, 'opportunistic']] }); }
+            else if (btn.dataset.mode === 'off') { pdnsDisarm(); pdnsChange({ want: { kind: 'off' }, steps: [['put', PDNS_MODE, 'off'], ['delete', PDNS_HOST, '', true]] }); }
+        }
+        // A service that did not answer in the speed test is not applied by one tap: the first tap says what may happen and arms it, the second tap (within
+        // 10 seconds, on the same service) applies it. Returns true when the tap was only the first one.
+        function pdnsFailed(host) {
+            const r = pdnsScan && pdnsScan.res[host];
+            return !!r && r.status !== 'ok' && r.status !== 'cancelled' && r.status !== 'none' && r.status !== 'busy';           // 'busy': the app could not look the name up right now; that says nothing about the service
+        }
+        function pdnsNeedsSecondTap(host, via) {
+            if (!pdnsFailed(host)) { pdnsDisarm(); return false; }
+            if (pdnsArmed && pdnsArmed.host === host && pdnsArmed.via === via) { pdnsDisarm(); return false; }
+            pdnsDisarm();
+            const text = txT('Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.') + ' ' + txT('Tap again to apply it anyway.');
+            pdnsArmed = { host, via, text };
+            clearTimeout(pdnsArmTimer);
+            pdnsArmTimer = setTimeout(pdnsDisarm, PDNS_ARM_MS);
+            if (via === 'apply') { const pr = document.getElementById('pdnsProblem'); if (pr) pr.textContent = text; } else pdnsMsg(text, true);
+            pdnsScanRender();
+            return true;
+        }
+        function pdnsDisarm() {
+            if (!pdnsArmed) return;
+            const was = pdnsArmed;
+            pdnsArmed = null; clearTimeout(pdnsArmTimer);
+            if (was.via === 'apply') pdnsHostInput(); else { const m = document.getElementById('pdnsMsg'); if (m && m.textContent === was.text) pdnsMsg(''); }
+            pdnsScanRender();
         }
         function pdnsHostInput() {
+            if (pdnsArmed && pdnsArmed.via === 'apply') { pdnsArmed = null; clearTimeout(pdnsArmTimer); pdnsScanRender(); }
             const v = document.getElementById('pdnsHost').value;
             const r = v.trim() === '' ? { ok: true } : pdnsCheckHost(v);
             document.getElementById('pdnsProblem').textContent = r.ok ? '' : pdnsProblemText(r.why);
@@ -13939,8 +14143,244 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('pdnsProblem').textContent = r.ok ? '' : pdnsProblemText(r.why);
             if (!r.ok) { input.focus(); return; }
             input.value = r.host;
+            if (pdnsNeedsSecondTap(r.host, 'apply')) return;
             pdnsChange(pdnsHostPlan(r.host));
         }
+
+        // ---- Private DNS: the services list and the speed test ---------------------------------------------------------------------
+        // The test is native (AndroidBridge.dnsProbeStart): for each host name a TCP connect to port 853, a TLS handshake and one real DNS-over-TLS lookup, three times, the
+        // median of each. It needs no working mode. Each host answers by itself through window.onDnsProbe as soon as it is done, in any order, then one { done: true }.
+        // A chip of the Extra Settings header scrolls to its section (the header and the tab bar stay on top: the section's scroll-margin keeps it clear of them).
+        function xsGoto(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            haptic();
+            let reduce = false; try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+            el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        }
+        function pdnsBtnId(id) { return 'pdns' + id.charAt(0).toUpperCase() + id.slice(1); }
+        function pdnsServices() {                                                   // what the list shows: the array, then the person's own host name if the last test included one
+            const l = PDNS_PROVIDERS.map(s => ({ id: s.id, mono: s.mono, hue: s.hue, name: s.name, host: s.host, desc: s.desc }));
+            if (pdnsScan && pdnsScan.extra) l.push({ id: 'custom', mono: '+', hue: 220, name: null, host: pdnsScan.extra, desc: '' });
+            return l;
+        }
+        function pdnsBuildList() {
+            const box = document.getElementById('pdnsList');
+            if (!box) return;
+            const have = {};
+            box.querySelectorAll('.pdns-row').forEach(r => { have[r.dataset.svc] = r; });
+            const want = pdnsServices();
+            Object.keys(have).forEach(k => { if (!want.some(s => s.id === k && s.host === have[k].dataset.host)) { have[k].remove(); delete have[k]; } });          // a row whose host name changed (your own name, tested again with another one) is built again
+            want.forEach(s => {
+                if (have[s.id]) return;
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'mode-action-btn pdns-btn pdns-tile pdns-row'; b.id = pdnsBtnId(s.id);
+                b.dataset.svc = s.id; b.dataset.host = s.host; b.setAttribute('aria-pressed', 'false');
+                b.setAttribute('onclick', 'pdnsPick(this)');
+                const top = document.createElement('span'); top.className = 'pdns-top';
+                const mono = document.createElement('span'); mono.className = 'pdns-mono'; mono.setAttribute('aria-hidden', 'true'); mono.setAttribute('translate', 'no'); mono.style.setProperty('--h', String(s.hue)); mono.textContent = s.mono;
+                const ms = document.createElement('span'); ms.className = 'pdns-ms';
+                top.appendChild(mono); top.appendChild(ms);
+                const main = document.createElement('span'); main.className = 'pdns-main';
+                const nm = document.createElement('b');
+                if (s.name) { nm.setAttribute('translate', 'no'); nm.textContent = s.name; } else nm.textContent = 'Your host name';
+                const hl = document.createElement('small'); hl.className = 'pdns-hostline'; hl.setAttribute('translate', 'no');
+                s.host.split(/(?<=[.-])/).forEach((part, i) => { if (i) hl.appendChild(document.createElement('wbr')); hl.appendChild(document.createTextNode(part)); });          // a long name breaks after a dot or a hyphen
+                main.appendChild(nm); main.appendChild(hl);
+                if (s.desc) { const d = document.createElement('small'); d.className = 'pdns-desc'; d.textContent = s.desc; main.appendChild(d); }
+                const foot = document.createElement('span'); foot.className = 'pdns-foot';
+                const det = document.createElement('small'); det.className = 'pdns-det';
+                const tag = document.createElement('small'); tag.className = 'pdns-tag';
+                const warn = document.createElement('small'); warn.className = 'pdns-warn';
+                foot.appendChild(det); foot.appendChild(tag); foot.appendChild(warn);
+                b.appendChild(top); b.appendChild(main); b.appendChild(foot);
+                box.appendChild(b);
+            });
+        }
+        function pdnsTotal(r) { return Math.round((+r.connectMs || 0) + (+r.tlsMs || 0) + (+r.queryMs || 0)); }
+        function pdnsStatusText(st) {
+            switch (st) {
+                case 'ok': return txT('Answers');
+                case 'dns': return txT('Name not found');
+                case 'connect': return txT('No answer on 853');
+                case 'tls': return txT('Certificate error');
+                case 'query': return txT('No DNS answer');
+                case 'timeout': return txT('Timed out');
+            }
+            return txT('Not tested');
+        }
+        function pdnsSetTag(tag, glyph, text) {
+            tag.textContent = '';
+            if (!text) return;
+            const g = document.createElement('span'); g.setAttribute('aria-hidden', 'true'); g.textContent = glyph + ' ';
+            const w = document.createElement('span'); w.textContent = text;
+            tag.appendChild(g); tag.appendChild(w);
+        }
+        function pdnsFillRow(row) {
+            const s = pdnsScan, host = row.dataset.host, r = s && s.res[host];
+            const ms = row.querySelector('.pdns-ms'), det = row.querySelector('.pdns-det'), tag = row.querySelector('.pdns-tag'), warn = row.querySelector('.pdns-warn');
+            row.classList.remove('is-ok', 'is-fail', 'is-fastest', 'is-armed', 'is-wait');
+            ms.textContent = ''; det.textContent = ''; warn.textContent = ''; tag.textContent = ''; tag.removeAttribute('title');
+            if (!s) return;
+            if (!r) { if (s.running) { row.classList.add('is-wait'); ms.textContent = '…'; } return; }
+            if (r.status === 'ok') {
+                row.classList.add('is-ok');
+                ms.textContent = txF('{0} ms', pdnsTotal(r));
+                det.textContent = txF('connect {0} · TLS {1} · answer {2} ms', Math.round(+r.connectMs || 0), Math.round(+r.tlsMs || 0), Math.round(+r.queryMs || 0));
+                const fast = s.fastest === host;
+                if (fast) { row.classList.add('is-fastest'); tag.title = txT('Fastest on this network'); }
+                pdnsSetTag(tag, fast ? '»' : '✓', fast ? txT('Fastest') : txT('Answers'));
+                if (r.okSamples > 0 && r.samples > 0 && r.okSamples < r.samples) warn.textContent = txF('Only {0} of {1} tries answered.', r.okSamples, r.samples);
+            } else if (r.status === 'busy') {
+                pdnsSetTag(tag, '…', txT('Couldn’t test now'));
+                warn.textContent = txT('Couldn’t test right now, try again.');
+            } else if (r.status === 'cancelled' || r.status === 'none') {
+                pdnsSetTag(tag, '–', txT('Not tested'));
+            } else {
+                row.classList.add('is-fail');
+                const armed = !!pdnsArmed && pdnsArmed.via === 'row' && pdnsArmed.host === host;
+                if (armed) row.classList.add('is-armed');
+                pdnsSetTag(tag, '✕', pdnsStatusText(r.status));
+                warn.appendChild(document.createTextNode(txT('Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.')));
+                if (armed) { warn.appendChild(document.createTextNode(' ')); const bb = document.createElement('b'); bb.textContent = txT('Tap again to apply it anyway.'); warn.appendChild(bb); }
+            }
+        }
+        // Sorted by speed (only when the switch is on and there are results): the ones that answered, fastest first; then the ones not tested (yet); then the ones that failed.
+        // Equal times keep the order of the array. Otherwise the order of the array. The rows are moved, not rebuilt, so a focused row stays focused.
+        function pdnsOrderRows() {
+            const box = document.getElementById('pdnsList');
+            if (!box) return;
+            const rows = [...box.querySelectorAll('.pdns-row')];
+            const idx = new Map(rows.map((r, i) => [r, i]));
+            const rank = r => {
+                if (!pdnsSortOn || !pdnsScan) return [0, 0, idx.get(r)];
+                const x = pdnsScan.res[r.dataset.host];
+                if (x && x.status === 'ok') return [0, pdnsTotal(x), idx.get(r)];
+                if (x && x.status !== 'cancelled' && x.status !== 'none' && x.status !== 'busy') return [2, 0, idx.get(r)];
+                return [1, 0, idx.get(r)];
+            };
+            const base = new Map(rows.map(r => [r, PDNS_PROVIDERS.findIndex(s => s.host === r.dataset.host)]));
+            const key = r => { const k = rank(r); return [k[0], k[1], base.get(r) < 0 ? 999 : base.get(r)]; };
+            const sorted = rows.slice().sort((a, b) => { const x = key(a), y = key(b); return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; });
+            if (sorted.some((r, i) => r !== rows[i])) sorted.forEach(r => box.appendChild(r));
+        }
+        function pdnsName(host) { const s = PDNS_PROVIDERS.find(x => x.host === host); return s ? s.name : host; }
+        function pdnsProgText() {
+            const s = pdnsScan;
+            if (pdnsTestMsgText) return pdnsTestMsgText;
+            if (!s) return '';
+            const N = s.hosts.length;
+            if (s.running) return txF('Testing… {0} of {1}', s.n, N);
+            if (s.stopped) return txF('Stopped after {0} of {1}.', s.n, N);
+            const ok = s.hosts.filter(h => s.res[h] && s.res[h].status === 'ok').length;
+            if (s.fastest) return txF('Done: {0} of {1} services answer. Fastest on this network: {2}, {3} ms.', ok, N, pdnsName(s.fastest), pdnsTotal(s.res[s.fastest]));
+            return txF('Done: {0} of {1} services answer.', ok, N);
+        }
+        function pdnsScanRender() {
+            const box = document.getElementById('pdnsList');
+            if (!box) return;
+            pdnsBuildList();
+            box.querySelectorAll('.pdns-row').forEach(pdnsFillRow);
+            pdnsOrderRows();
+            const running = !!pdnsScan && pdnsScan.running;
+            document.getElementById('pdnsTestStop').style.display = running ? '' : 'none';
+            document.getElementById('pdnsProg').textContent = pdnsProgText();
+            document.getElementById('pdnsTestLbl').textContent = running ? txT('Testing…') : txT('Test speed');
+            document.getElementById('pdnsSweep').style.width = running && pdnsScan.hosts.length ? Math.round(100 * pdnsScan.n / pdnsScan.hosts.length) + '%' : '0';
+            box.setAttribute('aria-busy', running ? 'true' : 'false');
+            const sw = document.getElementById('pdnsSort'); if (sw && sw.checked !== pdnsSortOn) sw.checked = pdnsSortOn;
+            const fc = document.getElementById('xsChipFast'), f = pdnsScan && pdnsScan.fastest;
+            if (fc) {
+                fc.style.display = f ? '' : 'none';
+                const fv = document.getElementById('xsChipFastV'); fv.textContent = '';
+                if (f) { const n = document.createElement('span'); n.setAttribute('translate', 'no'); n.textContent = pdnsName(f); fv.appendChild(n); fv.appendChild(document.createTextNode(' · ' + txF('{0} ms', pdnsTotal(pdnsScan.res[f])))); }
+            }
+        }
+        function pdnsSortChange(on) { pdnsSortOn = !!on; pdnsScanRender(); }
+
+        function pdnsTestHosts() {
+            const hosts = [];
+            PDNS_PROVIDERS.forEach(s => { if (!hosts.includes(s.host)) hosts.push(s.host); });
+            const typed = pdnsCheckHost((document.getElementById('pdnsHost') || {}).value || '');
+            const extra = typed.ok && !hosts.includes(typed.host) ? typed.host : null;
+            if (extra) hosts.push(extra);
+            return { hosts: hosts.slice(0, PDNS_MAX_HOSTS), extra };
+        }
+        // What a stopped scan did not reach reads "Not tested" (status none), never blank.
+        function pdnsMarkRest(s) { s.hosts.forEach(h => { if (!s.res[h]) s.res[h] = { status: 'none' }; }); }
+        function pdnsWatchReset() {
+            clearTimeout(pdnsWatch);
+            pdnsWatch = setTimeout(() => {
+                const s = pdnsScan;
+                if (!s || !s.running) return;
+                try { window.AndroidBridge.dnsProbeCancel(s.id); } catch (e) {}
+                s.running = false; s.stopped = true; pdnsMarkRest(s);
+                pdnsTestMsgText = txT('The speed test stopped answering. Try it again.');
+                pdnsScanRender();
+            }, PDNS_SILENCE_MS);
+        }
+        function pdnsTestStart() {
+            haptic();
+            pdnsDisarm();
+            pdnsTestMsgText = '';
+            if (!window.AndroidBridge) { pdnsTestMsgText = txT('This works in the app on a phone, not in a browser.'); pdnsScanRender(); return; }
+            if (typeof window.AndroidBridge.dnsProbeStart !== 'function') { pdnsTestMsgText = txT('This version of the app cannot run the speed test. Update the app.'); pdnsScanRender(); return; }
+            const { hosts, extra } = pdnsTestHosts();
+            const id = 'dns' + Date.now().toString(36) + (++pdnsScanN);
+            const prev = pdnsScan;
+            pdnsScan = { id, hosts, extra, res: {}, n: 0, running: true, stopped: false, fastest: null };
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.dnsProbeStart(JSON.stringify({ id, hosts, samples: PDNS_SAMPLES, timeoutMs: PDNS_TIMEOUT_MS }))); }
+            catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+            if (!r || !r.ok) {
+                pdnsScan = prev && prev.running ? null : prev;
+                if (prev && prev.running) { try { window.AndroidBridge.dnsProbeCancel(prev.id); } catch (e) {} }
+                pdnsTestMsgText = txF('The speed test could not start: {0}', (r && r.error) || txT('It did not work.'));
+                pdnsScanRender();
+                return;
+            }
+            if (r.id && typeof r.id === 'string') pdnsScan.id = r.id;
+            if (prev && prev.running && prev.id !== pdnsScan.id) { try { window.AndroidBridge.dnsProbeCancel(prev.id); } catch (e) {} }          // the old scan stops its network work too (its answers are ignored anyway)
+            pdnsWatchReset();
+            pdnsScanRender();
+        }
+        function pdnsTestStop() {
+            const s = pdnsScan;
+            if (!s || !s.running) return;
+            haptic();
+            try { window.AndroidBridge.dnsProbeCancel(s.id); } catch (e) {}
+            s.running = false; s.stopped = true; pdnsMarkRest(s);
+            clearTimeout(pdnsWatch);
+            pdnsScanRender();
+        }
+        function pdnsLeave() { if (pdnsScan && pdnsScan.running) pdnsTestStop(); pdnsDisarm(); }
+        function pdnsScanFinish() {
+            const s = pdnsScan;
+            if (!s) return;
+            clearTimeout(pdnsWatch);
+            s.running = false;
+            s.hosts.forEach(h => { if (!s.res[h]) s.res[h] = { status: 'none' }; });
+            let best = null;
+            s.hosts.forEach(h => { const r = s.res[h]; if (r.status === 'ok' && (!best || pdnsTotal(r) < pdnsTotal(s.res[best]))) best = h; });
+            s.fastest = best;
+            pdnsScanRender();
+        }
+        // Called by the app, once per host as soon as it is done, then once with done. An answer with another scan's id (an old scan, a replaced one) is ignored.
+        window.onDnsProbe = function (json) {
+            let e;
+            try { e = typeof json === 'string' ? JSON.parse(json) : json; } catch (x) { return; }
+            const s = pdnsScan;
+            if (!e || typeof e !== 'object' || !s || !s.running || e.id !== s.id) return;
+            if (e.done) { pdnsScanFinish(); return; }
+            if (typeof e.host !== 'string' || !s.hosts.includes(e.host)) return;
+            pdnsWatchReset();                                                       // only an answer that counts keeps the scan alive
+            if (!(e.host in s.res)) s.n++;
+            const st0 = String(e.status || '');
+            s.res[e.host] = { status: st0 === 'dns' && /resolver\s+busy|lookup timed out/i.test(String(e.error || '')) ? 'busy' : st0, ip: e.ip || '', connectMs: e.connectMs, tlsMs: e.tlsMs, queryMs: e.queryMs, samples: +e.samples || 0, okSamples: +e.okSamples || 0, error: e.error || '' };
+            if (s.n >= s.hosts.length) { pdnsScanFinish(); return; }
+            pdnsScanRender();
+        };
+        pdnsBuildList();
 
         function fmtCount(n) {
             n = Number(n) || 0;
@@ -20819,7 +21259,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {

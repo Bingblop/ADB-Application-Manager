@@ -21,9 +21,9 @@ const NEWPAGE = async (b, kv, vp) => {
 
   // ---- 1. a saved record from before the bar existed (no pinned list) gets the defaults; unknown keys go ----
   let page = await NEWPAGE(b, { tab_config: JSON.stringify({ order: ['files', 'terminal', 'nonsense', 'installer'], off: ['store', 'gone'] }) });
-  check('1. an old tab_config without "pinned" gets the default pinned tabs (in the saved order)', await bar(page) === 'apps,terminal,settings,installer', await bar(page));
+  check('1. an old tab_config without "pinned" gets the default pinned tabs (in the saved order)', await bar(page) === 'apps,terminal,extrasettings,installer', await bar(page));
   const cfg = await page.evaluate(() => tabConfig);
-  check('   unknown keys are dropped, the order is completed, the pinned list is made', !cfg.order.includes('nonsense') && !cfg.off.includes('gone') && cfg.order.length === 13 && cfg.pinned.join() === 'apps,installer,settings,terminal', JSON.stringify(cfg.pinned));
+  check('   unknown keys are dropped, the order is completed, the pinned list is made', !cfg.order.includes('nonsense') && !cfg.off.includes('gone') && cfg.order.length === 14 && cfg.pinned.join() === 'apps,installer,extrasettings,terminal', JSON.stringify(cfg.pinned));
   await page.close();
 
   // ---- 2. a saved pinned list: Application Manager is always there, at most four, off tabs and unknown keys leave ----
@@ -37,16 +37,16 @@ const NEWPAGE = async (b, kv, vp) => {
   page = await NEWPAGE(b);
   await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(300);
   const pins = () => page.evaluate(() => [...document.querySelectorAll('#featureList .fl-pin[aria-pressed="true"]')].map(b => b.closest('.fl-row').dataset.tab).join());
-  check('3. the Feature List marks the pinned tabs (the defaults)', await pins() === 'installer,terminal,settings', await pins());
+  check('3. the Feature List marks the pinned tabs (the defaults)', await pins() === 'installer,terminal,extrasettings', await pins());
   await page.click('#featureList .fl-row[data-tab="files"] .fl-pin'); await page.waitForTimeout(100);
-  check('   a fourth tab (Application Manager is the first of the four) is refused with a message', await pins() === 'installer,terminal,settings' && /holds 4 tabs/.test(await page.locator('#toastMsg').innerText()), await page.locator('#toastMsg').innerText());
-  await page.click('#featureList .fl-row[data-tab="settings"] .fl-pin'); await page.waitForTimeout(100);
+  check('   a fourth tab (Application Manager is the first of the four) is refused with a message', await pins() === 'installer,terminal,extrasettings' && /holds 4 tabs/.test(await page.locator('#toastMsg').innerText()), await page.locator('#toastMsg').innerText());
+  await page.click('#featureList .fl-row[data-tab="extrasettings"] .fl-pin'); await page.waitForTimeout(100);
   check('   unpinning one frees a place', await pins() === 'installer,terminal' && await bar(page) === 'apps,installer,terminal');
   await page.click('#featureList .fl-row[data-tab="files"] .fl-pin'); await page.waitForTimeout(100);
   check('   and the tab goes on the bar in its place in the list', await pins() === 'installer,files,terminal' && await bar(page) === 'apps,installer,files,terminal', await bar(page));
   const labels = await page.evaluate(() => [...document.querySelectorAll('#featureList .fl-row[data-tab="files"] .fl-pin')].map(b => b.getAttribute('aria-label') + '|' + b.getAttribute('aria-pressed')));
   check('   the pin button says what it does for a screen reader', labels.join() === 'Unpin File Manager from the bottom bar|true', labels.join());
-  check('   the choice is saved in tab_config (the same record as the order)', await page.evaluate(() => { const c = JSON.parse(window.__kv.tab_config); return c.pinned.slice().sort().join() + '/' + c.order.length; }) === 'apps,files,installer,terminal/13');
+  check('   the choice is saved in tab_config (the same record as the order)', await page.evaluate(() => { const c = JSON.parse(window.__kv.tab_config); return c.pinned.slice().sort().join() + '/' + c.order.length; }) === 'apps,files,installer,terminal/14');
   // switch a pinned tab off: it leaves the bar and the pins; back on, it is not pinned again
   await page.evaluate(() => featureToggle('files', false)); await page.waitForTimeout(100);
   check('4. a tab switched off leaves the bar and the pinned list', await bar(page) === 'apps,installer,terminal' && !(await page.evaluate(() => tabConfig.pinned.includes('files'))));
@@ -54,9 +54,9 @@ const NEWPAGE = async (b, kv, vp) => {
   await page.evaluate(() => featureToggle('files', true)); await page.waitForTimeout(100);
   check('   switched on again it waits under More', await bar(page) === 'apps,installer,terminal' && await page.evaluate(() => bnavMoreKeys().includes('files')));
   await page.evaluate(() => featureReset()); await page.waitForTimeout(100);
-  check('5. Reset to Default brings back the default pinned tabs', await bar(page) === 'apps,installer,terminal,settings', await bar(page));
+  check('5. Reset to Default brings back the default pinned tabs', await bar(page) === 'apps,installer,terminal,extrasettings', await bar(page));
   // the saved record survives a reload
-  await page.evaluate(() => featurePin('settings')); await page.evaluate(() => featurePin('files')); await page.waitForTimeout(100);
+  await page.evaluate(() => featurePin('extrasettings')); await page.evaluate(() => featurePin('files')); await page.waitForTimeout(100);
   await page.reload(); await page.waitForTimeout(600);
   check('   a reload keeps what was pinned', await bar(page) === 'apps,installer,files,terminal', await bar(page));
   await page.close();

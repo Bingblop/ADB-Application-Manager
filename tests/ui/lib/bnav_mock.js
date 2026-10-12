@@ -1,4 +1,4 @@
-// Mock bridge for the bottom navigation scripts (t230-t233): a real key-value store behind loadSetting / saveSetting (so a saved choice survives page.reload()),
+// Mock bridge for the bottom navigation scripts (t260-t263): a real key-value store behind loadSetting / saveSetting (so a saved choice survives page.reload()),
 // an optional list of updates, and the calls the page makes that matter here (the install question, installs).
 // initScript(opts): opts.kv = settings to start with (name -> JSON text), opts.updates = [...], opts.privileged (default true), opts.dark (default true).
 exports.initScript = function (opts) {

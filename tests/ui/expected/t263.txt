@@ -15,6 +15,7 @@
 9. "Check for updates" opens the updater and starts the check (nothing else): true
 10. Apps: "Search apps" focuses the search box: true
 11. Terminal: "Full-screen terminal" opens the full screen (and the bar goes away): true
+11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up: true
 12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box: true
 13. a hold on More has no menu (it is a tap: the More sheet opens): true
 14. an entry whose target is not on the page ("Find APKs") is simply not listed: true
@@ -41,9 +42,9 @@
     arrow keys move between entries: true
     Escape closes it and the focus returns to the slot: true
 26. the context-menu event (the accessibility long press, a right button) opens it too: true
-    slots with a menu say so (aria-haspopup="menu"; Hidden Settings has none here, its search needs a privileged mode), More opens a dialog: true
+    slots with a menu say so (aria-haspopup="menu"), More opens a dialog: true
 27. on the rail the menu opens beside the item, inside the screen: true
-28. at 320 px the menu of "settings" is inside the screen: true
+28. at 320 px the menu of "extrasettings" is inside the screen: true
 28. at 320 px the menu of "terminal" is inside the screen: true
 29. SAFETY: every shortcut's run() calls only navigation functions (20 entries); updateAllUI only from "Update All (N)": true
     and the scan sees every entry of every tab (no empty source): true

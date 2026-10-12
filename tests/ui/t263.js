@@ -87,7 +87,14 @@ async function open(b, opts, vp) {
   await page.click('#bnavMenu .bn-sc[data-id="full"]'); await page.waitForTimeout(500);
   check('11. Terminal: "Full-screen terminal" opens the full screen (and the bar goes away)', await ev(() => txFullOn === true && document.getElementById('bnav').classList.contains('bnav-off')));
   await ev(() => txFullToggle(false)); await page.waitForTimeout(500);
-  // Hidden Settings: its search box only works with a privileged mode, so without one the slot has no menu; with one, "Search settings" opens the tab and focuses the box
+  // The Extra Settings slot (third place by default) lists the sections that are on the page: Private DNS, from the real #extraDnsSection; the others are not there and not listed
+  s = await hold('extrasettings'); await page.mouse.up(); await page.waitForTimeout(600);
+  const xm = await menu();
+  await page.click('#bnavMenu .bn-sc[data-id="dns"]'); await page.waitForTimeout(700);
+  check('11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up', xm.items.join() === 'Private DNS' && await ev(() => currentViewName() === 'extrasettings' && document.getElementById('extraDnsSection').classList.contains('bn-flash')), xm.items.join());
+  await ev(() => switchView('apps')); await page.waitForTimeout(400);
+  // Hidden Settings (not on the bar by default: pinned here): its search box only works with a privileged mode, so without one the slot has no menu; with one, "Search settings" opens the tab and focuses the box
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'settings', 'terminal']; tabsApplyConfig(); });
   s = await slot('settings'); await page.mouse.move(s.x, s.y); await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(100);
   const gated = !(await menu());
   await ev(() => { window.sdbUsable = () => true; window.__focused = ''; window.bnavFocus = id => { window.__focused = id; }; });
@@ -96,7 +103,7 @@ async function open(b, opts, vp) {
   const hm = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="search"]'); await page.waitForTimeout(500);
   check('12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box', gated && hm.items.join() === 'Search settings' && await ev(() => currentViewName() === 'settings' && window.__focused === 'sdbSearch'), String(gated) + ' ' + hm.items.join());
-  await ev(() => { switchView('apps'); }); await page.waitForTimeout(600);
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'terminal']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(600);
 
   // ---- 4. a slot with no entry: nothing happens (More); an entry whose target is missing is not listed ----
   s = await slot('more');
@@ -154,7 +161,7 @@ async function open(b, opts, vp) {
   await page.evaluate(() => { document.querySelector('.nav-sc-details').open = true; });
   const rows = () => ev(() => [...document.querySelectorAll('#navScList .fl-row[data-sc^="installer:"]')].map(r => r.dataset.sc.split(':')[1] + (r.querySelector('.switch-input').checked ? '+' : '-')).join());
   check('19. Settings > Navigation > Shortcuts lists every entry of each pinned tab: the first four are on', await rows() === 'updateall+,updater+,check+,apks+', await rows());
-  check('    only pinned tabs with entries are listed', await ev(() => [...document.querySelectorAll('#navScList .nav-sc-group')].map(g => g.dataset.tab).join()) === 'apps,installer,terminal,settings');
+  check('    only pinned tabs with entries are listed', await ev(() => [...document.querySelectorAll('#navScList .nav-sc-group')].map(g => g.dataset.tab).join()) === 'apps,installer,terminal,extrasettings');
   await page.click('#navScList .fl-row[data-sc="installer:check"] .fl-move:nth-of-type(1)'); await page.waitForTimeout(100);
   await page.click('#navScList .fl-row[data-sc="installer:apks"] .switch-track'); await page.waitForTimeout(100);
   check('20. moving "Check for updates" up and switching "Find APKs" off is saved in tab_config', await ev(() => JSON.stringify(JSON.parse(window.__kv.tab_config).shortcuts)) === '{"installer":["updateall","check","updater"]}', await ev(() => window.__kv.tab_config));
@@ -207,7 +214,7 @@ async function open(b, opts, vp) {
   await page.waitForTimeout(150);
   check('26. the context-menu event (the accessibility long press, a right button) opens it too', !!(await menu()));
   await page.keyboard.press('Escape');
-  check('    slots with a menu say so (aria-haspopup="menu"; Hidden Settings has none here, its search needs a privileged mode), More opens a dialog', await ev(() => [...document.querySelectorAll('#bnav .bn-item')].map(i => i.getAttribute('aria-haspopup') || '-').join()) === 'menu,menu,menu,-,dialog');
+  check('    slots with a menu say so (aria-haspopup="menu"), More opens a dialog', await ev(() => [...document.querySelectorAll('#bnav .bn-item')].map(i => i.getAttribute('aria-haspopup') || '-').join()) === 'menu,menu,menu,menu,dialog');
   await page.close();
 
   // ---- 9. the rail: the menu stands beside the item ----
@@ -221,8 +228,7 @@ async function open(b, opts, vp) {
 
   // ---- 10. a narrow screen: the menu is not clipped at the edge for the last slots ----
   page = await open(b, { kv: { bnav_tip: 'true' } }, { width: 320, height: 640 });
-  await ev(() => { window.sdbUsable = () => true; });
-  for (const t of ['settings', 'terminal']) {
+  for (const t of ['extrasettings', 'terminal']) {
     await hold(t); m = await menu();
     check('28. at 320 px the menu of "' + t + '" is inside the screen', !!m && m.r.l >= 0 && m.r.r <= 320, JSON.stringify(m && m.r));
     await page.mouse.up(); await page.keyboard.press('Escape');
