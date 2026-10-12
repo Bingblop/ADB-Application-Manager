@@ -6,7 +6,7 @@
    every slot has an icon, a one-line label that fits and a target of at least 44 px: true
    --bnav-h is the bar height: true
 3. the gradient pill is behind the lit icon: true
-4. a tap on Terminal opens that tab and lights its slot: true
+4. a tap on Console opens that tab and lights its slot: true
    the pill followed to the new slot: true
    the tap gave a haptic tick: true
    a tap on the lit slot scrolls to the top (and does not reload the tab): true

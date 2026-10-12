@@ -7,7 +7,7 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'about'];
-const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'terminal'];          // the tabs on the bottom bar until the user pins others (saved with the order; Extra Settings takes the third place)
+const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];          // the tabs on the bottom bar until the user pins others (saved with the order; Extra Settings takes the third place, Console the fourth)
 
 (async () => {
   const b = await chromium.launch();

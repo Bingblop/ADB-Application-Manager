@@ -49,9 +49,9 @@ async function open(b, opts, vp) {
   check('   a scroll closes it', !(await menu()));
 
   // ---- 2. a short press, a move: nothing opens ----
-  s = await slot('terminal');
+  s = await slot('console');
   await page.mouse.move(s.x, s.y); await page.mouse.down(); await page.waitForTimeout(200); await page.mouse.up(); await page.waitForTimeout(500);
-  check('5. a short press is an ordinary tap: the tab opens, no menu', !(await menu()) && await ev(() => currentViewName()) === 'terminal');
+  check('5. a short press is an ordinary tap: the tab opens, no menu', !(await menu()) && await ev(() => currentViewName()) === 'console');
   await ev(() => switchView('apps')); await page.waitForTimeout(300);
   s = await slot('installer');
   await page.mouse.move(s.x, s.y); await page.mouse.down(); await page.mouse.move(s.x + 15, s.y); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(100);
@@ -77,16 +77,40 @@ async function open(b, opts, vp) {
   await page.click('#bnavMenu .bn-sc[data-id="check"]'); await page.waitForTimeout(600);
   check('9. "Check for updates" opens the updater and starts the check (nothing else)', await ev(() => window.__calls.includes('check') && instPane === 'updater') && !(await ev(() => window.__calls.some(c => /^install|^approve/.test(c)))));
   await ev(() => switchView('apps')); await page.waitForTimeout(300);
-  // Apps: Search apps focuses the search box; Terminal: full screen; Hidden Settings: search
+  // Apps: Search apps focuses the search box; Console: a segment; Terminal: full screen and its sheets; Hidden Settings: search
   s = await hold('apps'); await page.mouse.up(); await page.waitForTimeout(600);
   const am = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="search"]'); await page.waitForTimeout(400);
   check('10. Apps: "Search apps" focuses the search box', am.items.join() === 'Search apps' && await ev(() => document.activeElement.id) === 'searchInput', am.items.join());
   await ev(() => { document.activeElement.blur(); }); await page.waitForTimeout(600);
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
+  const cm = await menu();
+  await page.click('#bnavMenu .bn-sc[data-id="log"]'); await page.waitForTimeout(500);
+  const cl = await ev(() => ({ view: currentViewName(), seg: cnSeg, logShown: !document.getElementById('cnSegLog').hidden, shellShown: !document.getElementById('cnSegShell').hidden, kv: window.__kv.console_seg }));
+  check('11. Console: the menu lists its two segments, "Live Logcat" opens the tab on the log (and keeps that choice)', cm.items.join() === 'ADB Shell,Live Logcat' && cl.view === 'console' && cl.seg === 'log' && cl.logShown && !cl.shellShown && cl.kv === '"log"', cm.items.join() + ' ' + JSON.stringify(cl));
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
+  await page.click('#bnavMenu .bn-sc[data-id="shell"]'); await page.waitForTimeout(500);
+  check('    "ADB Shell" switches the open tab to the shell segment', await ev(() => currentViewName() === 'console' && cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && document.getElementById('cnSegLog').hidden));
+  await ev(() => switchView('apps')); await page.waitForTimeout(400);
+  // the Terminal (the real terminal and the Coding Agents) is not on the bar by default: pinned here for its menu
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'console', 'terminal']; tabsApplyConfig(); }); await page.waitForTimeout(300);
   await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  const tm = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="full"]'); await page.waitForTimeout(500);
-  check('11. Terminal: "Full-screen terminal" opens the full screen (and the bar goes away)', await ev(() => txFullOn === true && document.getElementById('bnav').classList.contains('bnav-off')));
+  check('11b. Terminal: four entries; "Full-screen terminal" opens the full screen (and the bar goes away)', tm.items.join() === 'Full-screen terminal,Coding Agents,Termux setup,Terminal settings' && await ev(() => txFullOn === true && document.getElementById('bnav').classList.contains('bnav-off')), tm.items.join());
   await ev(() => txFullToggle(false)); await page.waitForTimeout(500);
+  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  await page.click('#bnavMenu .bn-sc[data-id="agents"]'); await page.waitForTimeout(500);
+  check('    "Coding Agents" opens the tab with the agent picker lit up and focused', await ev(() => currentViewName() === 'terminal' && document.getElementById('txAgent').classList.contains('bn-flash') && document.activeElement.id === 'txAgent'), await ev(() => document.activeElement.id));
+  await ev(() => { document.activeElement.blur(); switchView('apps'); }); await page.waitForTimeout(700);
+  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  await page.click('#bnavMenu .bn-sc[data-id="termux"]'); await page.waitForTimeout(500);
+  check('    "Termux setup" opens the Terminal and its Termux setup sheet', await ev(() => currentViewName() === 'terminal' && document.getElementById('txTermuxModal').classList.contains('show')));
+  await ev(() => { txCloseTermux(); switchView('apps'); }); await page.waitForTimeout(700);
+  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  await page.click('#bnavMenu .bn-sc[data-id="settings"]'); await page.waitForTimeout(500);
+  check('    "Terminal settings" opens the Terminal and its settings sheet', await ev(() => currentViewName() === 'terminal' && document.getElementById('txSettingsModal').classList.contains('show')));
+  await ev(() => { txCloseSettings(); tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'console']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(700);          // the default pins again
   // The Extra Settings slot (third place by default) lists the sections that are on the page: Private DNS, from the real #extraDnsSection; the others are not there and not listed
   s = await hold('extrasettings'); await page.mouse.up(); await page.waitForTimeout(600);
   const xm = await menu();
@@ -94,7 +118,7 @@ async function open(b, opts, vp) {
   check('11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up', xm.items.join() === 'Private DNS' && await ev(() => currentViewName() === 'extrasettings' && document.getElementById('extraDnsSection').classList.contains('bn-flash')), xm.items.join());
   await ev(() => switchView('apps')); await page.waitForTimeout(400);
   // Hidden Settings (not on the bar by default: pinned here): its search box only works with a privileged mode, so without one the slot has no menu; with one, "Search settings" opens the tab and focuses the box
-  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'settings', 'terminal']; tabsApplyConfig(); });
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'settings', 'console']; tabsApplyConfig(); });
   s = await slot('settings'); await page.mouse.move(s.x, s.y); await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(100);
   const gated = !(await menu());
   await ev(() => { window.sdbUsable = () => true; window.__focused = ''; window.bnavFocus = id => { window.__focused = id; }; });
@@ -103,7 +127,7 @@ async function open(b, opts, vp) {
   const hm = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="search"]'); await page.waitForTimeout(500);
   check('12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box', gated && hm.items.join() === 'Search settings' && await ev(() => currentViewName() === 'settings' && window.__focused === 'sdbSearch'), String(gated) + ' ' + hm.items.join());
-  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'terminal']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(600);
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'console']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(600);
 
   // ---- 4. a slot with no entry: nothing happens (More); an entry whose target is missing is not listed ----
   s = await slot('more');
@@ -120,9 +144,9 @@ async function open(b, opts, vp) {
   check('    a slot left with no entry does nothing on a hold', !(await menu()));
   await ev(() => { document.getElementById('searchInputGone').id = 'searchInput'; });
   // a registry entry added by another tab shows up, with a section filter
-  await ev(() => { TAB_SHORTCUTS.terminal.push({ id: 'ghost', label: 'Ghost section', icon: 'tune', when: () => !!document.querySelector('#ghost'), run: () => switchView('apps') }); });
-  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
-  check('15. the registry takes more entries: one whose section is missing is not listed', (await menu()).items.join() === 'Full-screen terminal');
+  await ev(() => { TAB_SHORTCUTS.console.push({ id: 'ghost', label: 'Ghost section', icon: 'tune', when: () => !!document.querySelector('#ghost'), run: () => switchView('apps') }); });
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
+  check('15. the registry takes more entries: one whose section is missing is not listed', (await menu()).items.join() === 'ADB Shell,Live Logcat');
   await page.keyboard.press('Escape');
 
   // ---- 5. Update All (N): listed first when more than one update waits; it asks the install question and installs nothing ----
@@ -161,7 +185,7 @@ async function open(b, opts, vp) {
   await page.evaluate(() => { document.querySelector('.nav-sc-details').open = true; });
   const rows = () => ev(() => [...document.querySelectorAll('#navScList .fl-row[data-sc^="installer:"]')].map(r => r.dataset.sc.split(':')[1] + (r.querySelector('.switch-input').checked ? '+' : '-')).join());
   check('19. Settings > Navigation > Shortcuts lists every entry of each pinned tab: the first four are on', await rows() === 'updateall+,updater+,check+,apks+', await rows());
-  check('    only pinned tabs with entries are listed', await ev(() => [...document.querySelectorAll('#navScList .nav-sc-group')].map(g => g.dataset.tab).join()) === 'apps,installer,terminal,extrasettings');
+  check('    only pinned tabs with entries are listed', await ev(() => [...document.querySelectorAll('#navScList .nav-sc-group')].map(g => g.dataset.tab).join()) === 'apps,installer,console,extrasettings');
   await page.click('#navScList .fl-row[data-sc="installer:check"] .fl-move:nth-of-type(1)'); await page.waitForTimeout(100);
   await page.click('#navScList .fl-row[data-sc="installer:apks"] .switch-track'); await page.waitForTimeout(100);
   check('20. moving "Check for updates" up and switching "Find APKs" off is saved in tab_config', await ev(() => JSON.stringify(JSON.parse(window.__kv.tab_config).shortcuts)) === '{"installer":["updateall","check","updater"]}', await ev(() => window.__kv.tab_config));
@@ -228,7 +252,7 @@ async function open(b, opts, vp) {
 
   // ---- 10. a narrow screen: the menu is not clipped at the edge for the last slots ----
   page = await open(b, { kv: { bnav_tip: 'true' } }, { width: 320, height: 640 });
-  for (const t of ['extrasettings', 'terminal']) {
+  for (const t of ['extrasettings', 'console']) {
     await hold(t); m = await menu();
     check('28. at 320 px the menu of "' + t + '" is inside the screen', !!m && m.r.l >= 0 && m.r.r <= 320, JSON.stringify(m && m.r));
     await page.mouse.up(); await page.keyboard.press('Escape');
@@ -238,8 +262,8 @@ async function open(b, opts, vp) {
   // ---- 11. SAFETY: every run() only navigates ----
   page = await open(b, { kv: { bnav_tip: 'true' } });
   const src = await ev(() => { const o = {}; Object.keys(TAB_SHORTCUTS).forEach(k => TAB_SHORTCUTS[k].forEach(i => { o[k + ':' + i.id] = String(i.run); })); return o; });
-  // what a shortcut may call: moving between and opening screens and sections, focusing a field, scrolling and lighting up a section, a harmless read-only check, and the Update All button's own function
-  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'setTimeout']);
+  // what a shortcut may call: moving between and opening screens, sections, segments and sheets, focusing a field, scrolling and lighting up a section, a harmless read-only check, and the Update All button's own function
+  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'setTimeout']);
   const EXCEPTION = new Set(['updateAllUI']);            // the one state-changing path: it asks the install question first (checked above)
   const bad2 = [];
   Object.keys(src).forEach(k => {
@@ -249,7 +273,7 @@ async function open(b, opts, vp) {
     if (/updateAllUI/.test(src[k]) && k !== 'installer:updateall') bad2.push(k + ' calls updateAllUI');
   });
   check('29. SAFETY: every shortcut\'s run() calls only navigation functions (' + Object.keys(src).length + ' entries); updateAllUI only from "Update All (N)"', bad2.length === 0, JSON.stringify(bad2));
-  check('    and the scan sees every entry of every tab (no empty source)', Object.keys(src).length >= 15 && Object.values(src).every(x => x.length > 10));
+  check('    and the scan sees every entry of every tab (no empty source)', Object.keys(src).length >= 20 && Object.values(src).every(x => x.length > 10));
   errors.push(...page.errors);
   await page.close();
 

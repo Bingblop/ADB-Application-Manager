@@ -28,7 +28,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('2. a text field in use (the keyboard is up): the bar slides away', await away());
   await ev(() => document.activeElement.blur()); await page.waitForTimeout(700);
   check('   the field is left: it comes back', await here());
-  await page.click('#bnav .bn-item[data-tab="terminal"]'); await page.waitForTimeout(500);
+  await ev(() => switchView('terminal')); await page.waitForTimeout(500);          // (the Terminal is not on the bar by default: opened by its name)
   const fid = await ev(() => { const e = [...document.querySelectorAll('.view-content.active input[type="text"], .view-content.active textarea, .view-content.active input:not([type])')].find(x => x.offsetParent !== null && !x.disabled); if (!e) return ''; if (!e.id) e.id = 'bnProbe'; return e.id; });
   await page.focus('#' + fid); await settle();
   check('   (another tab\'s field too: ' + fid + ')', fid !== '' && await away());

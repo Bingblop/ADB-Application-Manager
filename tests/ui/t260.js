@@ -17,10 +17,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.waitForFunction(() => { const n = document.getElementById('bnav'); return !n.classList.contains('bnav-off') && n.getBoundingClientRect().bottom === innerHeight; }, null, { timeout: 5000 });          // the bar slides in at the start
   const slots = () => ev(() => [...document.querySelectorAll('#bnav .bn-item')].map(b => ({ tab: b.dataset.tab || 'more', label: b.querySelector('.bn-lbl').innerText.trim(), active: b.classList.contains('active'), cur: b.getAttribute('aria-current') })));
 
-  // ---- 1. the default: Application Manager, Installer, Terminal, Extra Settings and More ----
+  // ---- 1. the default: Application Manager, Installer, Console, Extra Settings and More ----
   const s0 = await slots();
-  check('1. five slots: the default pinned tabs and More', s0.map(s => s.tab).join() === 'apps,installer,terminal,extrasettings,more', s0.map(s => s.tab).join());
-  check('   short one-line labels', s0.map(s => s.label).join() === 'Apps,Installer,Terminal,Extra,More', s0.map(s => s.label).join());
+  check('1. five slots: the default pinned tabs and More', s0.map(s => s.tab).join() === 'apps,installer,console,extrasettings,more', s0.map(s => s.tab).join());
+  check('   short one-line labels', s0.map(s => s.label).join() === 'Apps,Installer,Console,Extra,More', s0.map(s => s.label).join());
   check('   Application Manager is lit and carries aria-current="page"', s0[0].active && s0[0].cur === 'page' && s0.filter(s => s.active).length === 1);
   check('   the top tab bar is not shown (Bottom bar only is the default)', await ev(() => getComputedStyle(document.getElementById('tabBar')).display === 'none' && document.documentElement.dataset.nav === 'bottom'));
   const g = await ev(() => {
@@ -35,33 +35,33 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('3. the gradient pill is behind the lit icon', pill.dx < 1.5 && pill.dy < 1.5 && pill.op === '1' && pill.bg, JSON.stringify(pill));
 
   // ---- 2. a tap on a slot: switches, lights the slot, the pill slides ----
-  await page.click('#bnav .bn-item[data-tab="terminal"]'); await page.waitForTimeout(500);
+  await page.click('#bnav .bn-item[data-tab="console"]'); await page.waitForTimeout(500);
   const s1 = await slots();
-  check('4. a tap on Terminal opens that tab and lights its slot', await ev(() => currentViewName()) === 'terminal' && s1.find(s => s.tab === 'terminal').active && s1.filter(s => s.active).length === 1);
+  check('4. a tap on Console opens that tab and lights its slot', await ev(() => currentViewName()) === 'console' && s1.find(s => s.tab === 'console').active && s1.filter(s => s.active).length === 1);
   const pill2 = await ev(() => { const i = document.querySelector('#bnav .bn-ind'), a = document.querySelector('#bnav .bn-item.active .bn-ico'); return Math.abs(i.getBoundingClientRect().left - a.getBoundingClientRect().left); });
   check('   the pill followed to the new slot', pill2 < 1.5, pill2);
   check('   the tap gave a haptic tick', await ev(() => window.__calls.includes('vibrate')));
   // the lit slot again goes to the top of the page
   await ev(() => window.scrollTo(0, 500)); await page.waitForTimeout(100);
-  await page.click('#bnav .bn-item[data-tab="terminal"]'); await page.waitForTimeout(700);
+  await page.click('#bnav .bn-item[data-tab="console"]'); await page.waitForTimeout(700);
   check('   a tap on the lit slot scrolls to the top (and does not reload the tab)', await ev(() => window.scrollY) < 5 || await ev(() => document.documentElement.scrollHeight <= innerHeight));
 
   // ---- 3. More: the tabs that are on and not pinned, in the saved order, three to a row ----
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(500);
   const more = await ev(() => ({ open: document.getElementById('bnavMoreModal').classList.contains('show'), tiles: [...document.querySelectorAll('#bnavMoreGrid .bn-tile')].map(t => t.dataset.tab), cols: getComputedStyle(document.getElementById('bnavMoreGrid')).gridTemplateColumns.split(' ').length, title: document.getElementById('bnavMoreTitle').innerText, expanded: document.querySelector('#bnav .bn-item[data-more]').getAttribute('aria-expanded'), link: [...document.querySelectorAll('#bnavMoreModal .bn-custom')].map(x => x.innerText) }));
-  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,settings,overlays,store,logcat,taskmgr,devices,morphe,sdm,about', more.tiles.join());
+  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about', more.tiles.join());
   check('   three columns, a title, the Customize tabs link, aria-expanded on the slot', more.cols === 3 && more.title === 'More tabs' && more.link.join() === 'Customize tabs' && more.expanded === 'true', JSON.stringify([more.cols, more.title, more.link, more.expanded]));
   await page.screenshot({ path: 'more_sheet.png' });
-  await page.click('#bnavMoreGrid .bn-tile[data-tab="logcat"]'); await page.waitForTimeout(500);
+  await page.click('#bnavMoreGrid .bn-tile[data-tab="terminal"]'); await page.waitForTimeout(500);
   const afterMore = await ev(() => ({ view: currentViewName(), open: document.getElementById('bnavMoreModal').classList.contains('show'), away: document.getElementById('bnav').classList.contains('bnav-off') }));
-  check('6. a tile switches to its tab and closes the sheet', afterMore.view === 'logcat' && !afterMore.open && !afterMore.away, JSON.stringify(afterMore));
+  check('6. a tile switches to its tab and closes the sheet', afterMore.view === 'terminal' && !afterMore.open && !afterMore.away, JSON.stringify(afterMore));
   const s2 = await slots(), mo = s2.find(s => s.tab === 'more');
-  check('7. on a tab that is not pinned, More is lit and shows that tab\'s label', mo.active && mo.label === 'Logcat' && mo.cur === 'page' && s2.filter(s => s.active).length === 1, JSON.stringify(mo));
-  check('   its icon is the tab\'s own (not the dots)', await ev(() => { const t = document.createElement('div'); t.innerHTML = bnavSvg(BNAV_ICONS.logcat); return t.querySelector('path').getAttribute('d') === document.querySelector('#bnav .bn-item[data-more] svg path').getAttribute('d'); }));
+  check('7. on a tab that is not pinned, More is lit and shows that tab\'s label', mo.active && mo.label === 'Terminal' && mo.cur === 'page' && s2.filter(s => s.active).length === 1, JSON.stringify(mo));
+  check('   its icon is the tab\'s own (not the dots)', await ev(() => { const t = document.createElement('div'); t.innerHTML = bnavSvg(BNAV_ICONS.terminal); return t.querySelector('path').getAttribute('d') === document.querySelector('#bnav .bn-item[data-more] svg path').getAttribute('d'); }));
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(400);
-  check('   the sheet marks the current tab', await ev(() => document.querySelector('#bnavMoreGrid .bn-tile.current').dataset.tab) === 'logcat');
+  check('   the sheet marks the current tab', await ev(() => document.querySelector('#bnavMoreGrid .bn-tile.current').dataset.tab) === 'terminal');
   await page.keyboard.press('Escape'); await ev(() => handleAndroidBack()); await page.waitForTimeout(400);
-  check('8. Android Back closes the More sheet first', !(await ev(() => document.getElementById('bnavMoreModal').classList.contains('show'))) && await ev(() => currentViewName()) === 'logcat');
+  check('8. Android Back closes the More sheet first', !(await ev(() => document.getElementById('bnavMoreModal').classList.contains('show'))) && await ev(() => currentViewName()) === 'terminal');
   // a tap on the backdrop closes it too
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(300);
   await page.mouse.click(180, 20); await page.waitForTimeout(400);
