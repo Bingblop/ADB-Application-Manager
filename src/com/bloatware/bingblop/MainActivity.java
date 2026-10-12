@@ -2195,6 +2195,20 @@ public class MainActivity extends Activity {
         notifyJs("window." + fn + " && window." + fn + "(" + JSONObject.quote(payload.toString()) + ")");
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // DNS speed test: DnsProbe (pure Java) does the work; this is the bridge. Needs no working mode: it only opens TCP/TLS connections of its own to
+    // port 853 of the hosts the page names (checked again in Java), and sends one DNS query on each. A pool of its own, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService dnsProbeExec = Executors.newFixedThreadPool(DnsProbe.MAX_PARALLEL);
+    private final DnsProbe.Runner dnsProbe = new DnsProbe.Runner(new DnsProbe.Env());
+
+    private final DnsProbe.Sink dnsProbeSink = new DnsProbe.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onDnsProbe && window.onDnsProbe(" + JSONObject.quote(json) + ")");
+        }
+    };
+
     private void runUpdateCheck() {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
@@ -11649,6 +11663,21 @@ public class MainActivity extends Activity {
             if (itemJson != null && !itemJson.isEmpty()) runStoreSourceDetail(itemJson);
         }
 
+        /**
+         * DNS speed test: starts a scan of DNS-over-TLS hosts (see DnsProbe for the contract and limits). Returns {"ok":true,"id":..} or {"ok":false,"error":..};
+         * results arrive in window.onDnsProbe(json), one per host and then {"id":..,"done":true,"count":..}. A new scan cancels the running one.
+         */
+        @JavascriptInterface
+        public String dnsProbeStart(String requestJson) {
+            return dnsProbe.start(requestJson, dnsProbeExec, dnsProbeSink);
+        }
+
+        /** Cancels the running DNS speed test if it has this id (its sockets are closed; the rest is reported as cancelled). */
+        @JavascriptInterface
+        public void dnsProbeCancel(String id) {
+            dnsProbe.cancel(id);
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -15803,6 +15832,9 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
+        try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {
