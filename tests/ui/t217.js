@@ -87,7 +87,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the tiles: Automatic and Off keep their own two buttons', await ev(() => !!document.getElementById('pdnsAuto') && !!document.getElementById('pdnsOff') && document.querySelectorAll('#pdnsList .pdns-row').length === 15));
 
   // ---- 3. the speed test ----
-  check('4. before a test: "Test speed" button, no Stop, no progress, the sentence about example.com and ICMP is there', (await txt('#pdnsTestLbl')) === 'Test speed' && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none' && (await prog()) === '' && /^Each service sees one lookup of example\.com from your connection\. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses\.$/.test(await txt('#pdnsTestNote')));
+  check('4. before a test: "Test speed" button, no Stop, no progress, the sentence about example.com and ICMP is there', (await txt('#pdnsTestLbl')) === 'Test speed' && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none' && (await prog()) === '' && /^Your phone first looks up each service’s name with the DNS it uses now \(once\)\. Then each service may receive up to three short encrypted connections, each asking for example\.com\. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses\.$/.test(await txt('#pdnsTestNote')));
   await start();
   const r1 = (await reqs())[0];
   const startOk = (await reqs()).length === 1 && typeof r1.id === 'string' && r1.id.length > 3 && JSON.stringify(r1.hosts) === JSON.stringify(HOSTS) && r1.samples === 3 && r1.timeoutMs === 3000 && Object.keys(r1).sort().join() === 'hosts,id,samples,timeoutMs';
@@ -118,7 +118,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('6. when every answer is in the test ends by itself (no "done" event needed): the Stop button goes, "Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms."', (await prog()) === 'Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms.' && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none' && (await txt('#pdnsTestLbl')) === 'Test speed', await prog());
   const fastest = await ev(() => [...document.querySelectorAll('#pdnsList .is-fastest')].map(r => r.id));
   const cf2 = await row('pdnsCloudflare');
-  check('   exactly one "Fastest" pill, on the quickest working service (Cloudflare, 39 ms), with the full words as its title; the chip at the top of the tab says it too', fastest.join() === 'pdnsCloudflare' && cf2.tag === '★ Fastest' && (await ev(() => document.querySelector('#pdnsCloudflare .pdns-tag').title)) === 'Fastest on this network' && (await txt('#xsChipFast')) === 'Fastest Cloudflare · 39 ms', JSON.stringify([fastest, cf2.tag, await txt('#xsChipFast')]));
+  check('   exactly one "Fastest" pill, on the quickest working service (Cloudflare, 39 ms), with the full words as its title; the chip at the top of the tab says it too', fastest.join() === 'pdnsCloudflare' && cf2.tag === '» Fastest' && (await ev(() => document.querySelector('#pdnsCloudflare .pdns-tag').title)) === 'Fastest on this network' && (await txt('#xsChipFast')) === 'Fastest Cloudflare · 39 ms', JSON.stringify([fastest, cf2.tag, await txt('#xsChipFast')]));
   const conn = await row(await ev(h => document.querySelector('#pdnsList .pdns-row[data-host="' + h + '"]').id, others[others.length - 1]));
   check('   a failed row says why in a few words (✕ No answer on 853)', conn.tag === '✕ No answer on 853', conn.tag);
   await ev(() => document.getElementById('pdnsTest').click()); await sleep(40);
@@ -132,13 +132,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // a second start while this one runs
   await start();
   check('   pressing "Test speed" while a test runs starts over: a third request, nothing of the second is left', (await reqs()).length === 3 && (await prog()) === 'Testing… 0 of 15' && (await row('pdnsDnssb')).ms === '…', JSON.stringify([(await reqs()).length, await prog(), await row('pdnsDnssb')]));
+  check('   the new request cancels the old running one natively too (dnsProbeCancel with the second id), after the new start went through', JSON.stringify(await ev(() => window.__dns.cancels)) === JSON.stringify([(await reqs())[1].id]));
   await ev(() => { const id = window.__dns.starts[1].id; __dnsEmit({ id, host: 'dns.google', status: 'ok', connectMs: 1, tlsMs: 1, queryMs: 1, samples: 3, okSamples: 3 }); });
   check('   an answer of the second request is ignored now', (await prog()) === 'Testing… 0 of 15');
   // stop
   await ok('dns.google', 12, 30, 18); await ok('one.one.one.one', 8, 20, 11);
   await ev(() => document.getElementById('pdnsTestStop').click()); await sleep(40);
   const cancels = await ev(() => window.__dns.cancels.slice());
-  check('8. Stop: dnsProbeCancel is called with the current id, the line says "Stopped after 2 of 15.", the Stop button goes, the tiles that were not reached say "Not tested"', cancels.length === 1 && cancels[0] === (await reqs())[2].id && (await prog()) === 'Stopped after 2 of 15.' && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none' && (await row('pdnsAdguard')).tag === '' , JSON.stringify([cancels.length, await prog(), (await row('pdnsAdguard')).tag]));
+  check('8. Stop: dnsProbeCancel is called with the current id (after the one of the replaced scan), the line says "Stopped after 2 of 15.", the Stop button goes, the tiles that were not reached say "Not tested"', cancels.length === 2 && cancels[1] === (await reqs())[2].id && (await prog()) === 'Stopped after 2 of 15.' && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none' && (await row('pdnsAdguard')).tag === '– Not tested' && (await row('pdnsAdguard')).ms === '', JSON.stringify([cancels.length, await prog(), (await row('pdnsAdguard')).tag]));
   await ok('dns.quad9.net', 1, 1, 1); await ev(() => { __dnsEmit({ id: window.__dns.starts[2].id, done: true, count: 15 }); });
   check('   what arrives after Stop is ignored, and nothing is marked fastest after a stop', (await prog()) === 'Stopped after 2 of 15.' && (await row('pdnsQuad9')).ms === '' && (await ev(() => document.querySelectorAll('#pdnsList .is-fastest').length)) === 0);
   // your own host name
@@ -150,12 +151,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   it shows as the last tile "Your host name" with the host under it', !!extraTile && extraTile.name === 'Your host name' && extraTile.host === 'my-own.example.net' && extraTile.last, JSON.stringify(extraTile));
   await ev(() => { __dnsOk('my-own.example.net', 5, 9, 4); });
   check('   and it answers like the others (18 ms here)', (await row('pdnsCustom')).ms === '18 ms');
+  await ev(() => { const i = document.getElementById('pdnsHost'); i.value = 'second-own.example.net'; i.dispatchEvent(new Event('input')); });
+  await start();
+  await ev(() => { __dnsOk('second-own.example.net', 7, 7, 7); });
+  const c2 = await ev(() => { const r = document.querySelector('#pdnsList .pdns-row[data-svc="custom"]'); return r && { host: r.dataset.host, line: r.querySelector('.pdns-hostline').innerText, ms: r.querySelector('.pdns-ms').innerText, n: document.querySelectorAll('#pdnsList .pdns-row[data-svc="custom"]').length }; });
+  check('   a second own name tested right after the first: the "Your host name" tile is for the new name (host, text, answer), still one tile', !!c2 && c2.host === 'second-own.example.net' && c2.line === 'second-own.example.net' && c2.ms === '21 ms' && c2.n === 1, JSON.stringify(c2));
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = '1.1.1.1'; i.dispatchEvent(new Event('input')); });
   await start();
-  check('   a name the check refuses (an IP address) is not sent to the test; a name that is in the list is not sent twice', JSON.stringify((await reqs())[4].hosts) === JSON.stringify(HOSTS) && (await ev(() => !document.querySelector('#pdnsList .pdns-row[data-svc="custom"]'))));
+  check('   a name the check refuses (an IP address) is not sent to the test; a name that is in the list is not sent twice', JSON.stringify((await reqs())[5].hosts) === JSON.stringify(HOSTS) && (await ev(() => !document.querySelector('#pdnsList .pdns-row[data-svc="custom"]'))));
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = 'dns.google'; i.dispatchEvent(new Event('input')); });
   await start();
-  check('   (dns.google typed: tested once)', JSON.stringify((await reqs())[5].hosts) === JSON.stringify(HOSTS));
+  check('   (dns.google typed: tested once)', JSON.stringify((await reqs())[6].hosts) === JSON.stringify(HOSTS));
   await ev(() => { const i = document.getElementById('pdnsHost'); i.value = ''; i.dispatchEvent(new Event('input')); });
 
   // ---- sort by speed ----
@@ -233,8 +239,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const cBefore = await ev(() => window.__dns.cancels.length);
   await start();
   await ok('dns.google', 1, 1, 1);
-  await sleep(600);
-  check('13. a test that hears nothing for a while is given up: dnsProbeCancel is called, "The speed test stopped answering. Try it again.", the Stop button goes', (await prog()) === 'The speed test stopped answering. Try it again.' && (await ev(() => window.__dns.cancels.length)) === cBefore + 1 && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none', await prog());
+  for (let k = 0; k < 6; k++) { await ev(() => { const id = window.__dns.starts[window.__dns.starts.length - 1].id; window.onDnsProbe(JSON.stringify({ id, host: 'unknown.example', status: 'ok', connectMs: 1, tlsMs: 1, queryMs: 1 })); window.onDnsProbe(JSON.stringify({ id, host: 7, status: 'ok' })); }); await sleep(100); }
+  await sleep(300);
+  check('13. a test that hears nothing useful for a while is given up (events for an unknown host or a host that is not text do not keep it alive): dnsProbeCancel is called, "The speed test stopped answering. Try it again.", the Stop button goes', (await prog()) === 'The speed test stopped answering. Try it again.' && (await ev(() => window.__dns.cancels.length)) === cBefore + 1 && (await ev(() => getComputedStyle(document.getElementById('pdnsTestStop')).display)) === 'none', await prog());
   await ev(() => { PDNS_SILENCE_MS = 60000; });
   // start fails
   await ev(() => { window.__dns.startReply = JSON.stringify({ ok: false, error: 'too many hosts' }); });

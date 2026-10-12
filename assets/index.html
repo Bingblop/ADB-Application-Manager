@@ -5865,7 +5865,7 @@
                             <button class="xs-btn" id="pdnsTestStop" onclick="pdnsTestStop()" style="display:none;">Stop</button>
                         </div>
                         <div class="pdns-prog" id="pdnsProg" role="status" aria-live="polite" aria-atomic="true"></div>
-                        <p class="pdns-testnote" id="pdnsTestNote">Each service sees one lookup of example.com from your connection. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.</p>
+                        <p class="pdns-testnote" id="pdnsTestNote">Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.</p>
                         <label class="switch-row pdns-sortrow">
                             <div>
                                 <div class="switch-title">Sort by speed</div>
@@ -13244,7 +13244,7 @@ Type any command below (e.g. pm list packages -d)
             // the status pill of the section and the chip of the tab header: one short line each
             let pill = ['…', 'muted', '●'];
             if (!bridge) pill = [txT('Needs the app'), 'warn', '●'];
-            else if (!priv) pill = [txT('Viewing only'), 'warn', '🔒'];
+            else if (!priv) pill = [txT('Viewing only'), 'warn', LOCK_ICON];
             else if (pdnsState && pdnsState.err) pill = [txT('Not read'), 'warn', '●'];
             else if (got) {
                 if (got.kind === 'host') pill = [pdnsName(String(got.host).toLowerCase()), 'ok', '●'];
@@ -13404,7 +13404,7 @@ Type any command below (e.g. pm list packages -d)
             const have = {};
             box.querySelectorAll('.pdns-row').forEach(r => { have[r.dataset.svc] = r; });
             const want = pdnsServices();
-            Object.keys(have).forEach(k => { if (!want.some(s => s.id === k)) have[k].remove(); });
+            Object.keys(have).forEach(k => { if (!want.some(s => s.id === k && s.host === have[k].dataset.host)) { have[k].remove(); delete have[k]; } });          // a row whose host name changed (your own name, tested again with another one) is built again
             want.forEach(s => {
                 if (have[s.id]) return;
                 const b = document.createElement('button');
@@ -13463,7 +13463,7 @@ Type any command below (e.g. pm list packages -d)
                 det.textContent = txF('connect {0} · TLS {1} · answer {2} ms', Math.round(+r.connectMs || 0), Math.round(+r.tlsMs || 0), Math.round(+r.queryMs || 0));
                 const fast = s.fastest === host;
                 if (fast) { row.classList.add('is-fastest'); tag.title = txT('Fastest on this network'); }
-                pdnsSetTag(tag, fast ? '★' : '✓', fast ? txT('Fastest') : txT('Answers'));
+                pdnsSetTag(tag, fast ? '»' : '✓', fast ? txT('Fastest') : txT('Answers'));
                 if (r.okSamples > 0 && r.samples > 0 && r.okSamples < r.samples) warn.textContent = txF('Only {0} of {1} tries answered.', r.okSamples, r.samples);
             } else if (r.status === 'busy') {
                 pdnsSetTag(tag, '…', txT('Couldn’t test now'));
@@ -13540,13 +13540,15 @@ Type any command below (e.g. pm list packages -d)
             if (extra) hosts.push(extra);
             return { hosts: hosts.slice(0, PDNS_MAX_HOSTS), extra };
         }
+        // What a stopped scan did not reach reads "Not tested" (status none), never blank.
+        function pdnsMarkRest(s) { s.hosts.forEach(h => { if (!s.res[h]) s.res[h] = { status: 'none' }; }); }
         function pdnsWatchReset() {
             clearTimeout(pdnsWatch);
             pdnsWatch = setTimeout(() => {
                 const s = pdnsScan;
                 if (!s || !s.running) return;
                 try { window.AndroidBridge.dnsProbeCancel(s.id); } catch (e) {}
-                s.running = false; s.stopped = true;
+                s.running = false; s.stopped = true; pdnsMarkRest(s);
                 pdnsTestMsgText = txT('The speed test stopped answering. Try it again.');
                 pdnsScanRender();
             }, PDNS_SILENCE_MS);
@@ -13572,6 +13574,7 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             if (r.id && typeof r.id === 'string') pdnsScan.id = r.id;
+            if (prev && prev.running && prev.id !== pdnsScan.id) { try { window.AndroidBridge.dnsProbeCancel(prev.id); } catch (e) {} }          // the old scan stops its network work too (its answers are ignored anyway)
             pdnsWatchReset();
             pdnsScanRender();
         }
@@ -13580,7 +13583,7 @@ Type any command below (e.g. pm list packages -d)
             if (!s || !s.running) return;
             haptic();
             try { window.AndroidBridge.dnsProbeCancel(s.id); } catch (e) {}
-            s.running = false; s.stopped = true;
+            s.running = false; s.stopped = true; pdnsMarkRest(s);
             clearTimeout(pdnsWatch);
             pdnsScanRender();
         }
@@ -13602,9 +13605,9 @@ Type any command below (e.g. pm list packages -d)
             try { e = typeof json === 'string' ? JSON.parse(json) : json; } catch (x) { return; }
             const s = pdnsScan;
             if (!e || typeof e !== 'object' || !s || !s.running || e.id !== s.id) return;
-            pdnsWatchReset();
             if (e.done) { pdnsScanFinish(); return; }
             if (typeof e.host !== 'string' || !s.hosts.includes(e.host)) return;
+            pdnsWatchReset();                                                       // only an answer that counts keeps the scan alive
             if (!(e.host in s.res)) s.n++;
             const st0 = String(e.status || '');
             s.res[e.host] = { status: st0 === 'dns' && /resolver busy/i.test(String(e.error || '')) ? 'busy' : st0, ip: e.ip || '', connectMs: e.connectMs, tlsMs: e.tlsMs, queryMs: e.queryMs, samples: +e.samples || 0, okSamples: +e.okSamples || 0, error: e.error || '' };

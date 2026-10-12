@@ -21,18 +21,20 @@ ok      no "fastest" yet (not every answer is in)
 ok      broken JSON, a host that is not in the scan, another scan's id, null and a host that is not text: ignored (still 4 of 15, Google unchanged)
 ok      the same host answering twice counts once, the later answer wins
 ok   6. when every answer is in the test ends by itself (no "done" event needed): the Stop button goes, "Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms.": Done: 13 of 15 services answer. Fastest on this network: Cloudflare, 39 ms.
-ok      exactly one "Fastest" pill, on the quickest working service (Cloudflare, 39 ms), with the full words as its title; the chip at the top of the tab says it too: [["pdnsCloudflare"],"★ Fastest","Fastest Cloudflare · 39 ms"]
+ok      exactly one "Fastest" pill, on the quickest working service (Cloudflare, 39 ms), with the full words as its title; the chip at the top of the tab says it too: [["pdnsCloudflare"],"» Fastest","Fastest Cloudflare · 39 ms"]
 ok      a failed row says why in a few words (✕ No answer on 853): ✕ No answer on 853
 ok      a row that answered in 2 of 3 tries says "Only 2 of 3 tries answered."
 ok   7. starting a new test while the old one is finished clears every old answer
 ok      a late answer and a late "done" of the old test are ignored (the new one is still running, Google is not filled in): ["Testing… 1 of 15",{"cls":"is-wait","ms":"…","det":"","tag":"","warn":""},true]
 ok      pressing "Test speed" while a test runs starts over: a third request, nothing of the second is left: [3,"Testing… 0 of 15",{"cls":"is-wait","ms":"…","det":"","tag":"","warn":""}]
+ok      the new request cancels the old running one natively too (dnsProbeCancel with the second id), after the new start went through
 ok      an answer of the second request is ignored now
-ok   8. Stop: dnsProbeCancel is called with the current id, the line says "Stopped after 2 of 15.", the Stop button goes, the tiles that were not reached say "Not tested": [1,"Stopped after 2 of 15.",""]
+ok   8. Stop: dnsProbeCancel is called with the current id (after the one of the replaced scan), the line says "Stopped after 2 of 15.", the Stop button goes, the tiles that were not reached say "Not tested": [2,"Stopped after 2 of 15.","– Not tested"]
 ok      what arrives after Stop is ignored, and nothing is marked fastest after a stop
 ok   9. a host name typed in the field is tested too (cleaned up, last in the list, once): ["dot.sb","my-own.example.net"]
 ok      it shows as the last tile "Your host name" with the host under it: {"id":"pdnsCustom","name":"Your host name","host":"my-own.example.net","last":true}
 ok      and it answers like the others (18 ms here)
+ok      a second own name tested right after the first: the "Your host name" tile is for the new name (host, text, answer), still one tile: {"host":"second-own.example.net","line":"second-own.example.net","ms":"21 ms","n":1}
 ok      a name the check refuses (an IP address) is not sent to the test; a name that is in the list is not sent twice
 ok      (dns.google typed: tested once)
 ok   10. "Sort by speed" is off by default, and with it off the tiles keep the array order whatever the answers are
@@ -50,9 +52,9 @@ ok      Automatic / Off are never asked twice, and they clear a waiting second t
 ok      Apply with a typed name that failed the test: the first press only warns beside the field, the second applies it
 ok      (the second press: applied, the warning gone)
 ok      typing in the field takes the waiting second press back
-ok   12. leaving the tab during a test stops it (dnsProbeCancel is called): {"running":false,"stopped":true,"cancels":3}
+ok   12. leaving the tab during a test stops it (dnsProbeCancel is called): {"running":false,"stopped":true,"cancels":9}
 ok      coming back shows what was found, and the line says it was stopped
-ok   13. a test that hears nothing for a while is given up: dnsProbeCancel is called, "The speed test stopped answering. Try it again.", the Stop button goes: The speed test stopped answering. Try it again.
+ok   13. a test that hears nothing useful for a while is given up (events for an unknown host or a host that is not text do not keep it alive): dnsProbeCancel is called, "The speed test stopped answering. Try it again.", the Stop button goes: The speed test stopped answering. Try it again.
 ok   14. dnsProbeStart answering { ok: false, error } is said: "The speed test could not start: too many hosts", nothing runs
 ok      dnsProbeStart throwing is said too, no page error
 ok      an answer that is not JSON counts as a failure to start
