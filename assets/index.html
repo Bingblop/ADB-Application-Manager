@@ -7506,6 +7506,7 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
             <div id="permRows"></div>
+            <button class="mode-action-btn" id="permCopyBtn" style="display:none; width:100%; justify-content:center; min-height:44px; margin-top:12px;" onclick="permCopyCommands()">Copy grant commands</button>
             <div style="display:flex; gap:10px; margin-top:14px;">
                 <button class="mode-action-btn primary" id="permAllBtn" style="flex:1; justify-content:center; min-height:44px;" onclick="permAllowAll()">Allow all</button>
                 <button class="mode-action-btn" id="permCloseBtn" style="padding:10px 16px; min-height:44px; justify-content:center;" onclick="closePermSheet()">Not now</button>
@@ -24758,11 +24759,12 @@ Type any command below (e.g. pm list packages -d)
             // The three below only have anything to grant while a working mode (ADB/Shizuku/root) is active - there is no
             // Settings switch for most of them, so they stay out of the sheet entirely until there is a privileged shell to grant them through.
             { key: 'storage_legacy', name: 'Read/Write External Storage', why: 'The older storage permission some apps still check for.', privOnly: true },
-            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true }
+            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true },
+            { key: 'dump', name: 'Dump system services (DUMP)', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", privOnly: true, known: true }
         ];
         // A privOnly entry is only ever offered once isPrivilegedActive is true.
         function visiblePermDefs() { return PERM_DEFS.filter(d => (!d.privOnly || isPrivilegedActive) && (!d.known || permStatus[d.key] !== undefined)); }
-        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, restricted_settings }: true when allowed
+        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings }: true when allowed
         let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
@@ -24819,12 +24821,24 @@ Type any command below (e.g. pm list packages -d)
                 return '<div class="pm-row"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div><div class="pm-why">' + escapeHtml(d.why) + '</div></div>'
                     + (on ? '<div class="pm-ok">✓ Allowed</div>' : '<button class="mode-action-btn primary" aria-label="Allow ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">Allow</button>') + '</div>';
             }).join('');
+            document.getElementById('permCopyBtn').style.display = !files && permGrantCommands() ? '' : 'none';          // nothing missing (or an app build without the list): no button
             const missing = defs.filter(d => !permStatus[d.key]).length;
             const showAll = !files && missing > 1;
             document.getElementById('permAllBtn').style.display = showAll ? '' : 'none';          // with one left its own Allow button is enough
             const closeBtn = document.getElementById('permCloseBtn');
             closeBtn.innerText = missing ? 'Not now' : 'Done';
             closeBtn.style.flex = showAll ? '' : '1';                                             // alone it takes the whole row
+        }
+
+        // The adb commands (one per line, this app's package filled in) for what is still missing: for a computer with USB debugging. '' when nothing is missing.
+        function permGrantCommands() {
+            try { return window.AndroidBridge && window.AndroidBridge.getGrantCommands ? String(window.AndroidBridge.getGrantCommands() || '') : ''; } catch (e) { return ''; }
+        }
+        function permCopyCommands() {
+            haptic();
+            const cmds = permGrantCommands();
+            if (!cmds) { permRender(); return; }
+            try { window.AndroidBridge.copyToClipboard(cmds); showToast('Copied. Run these on a computer with USB debugging'); } catch (e) {}
         }
 
         // Opens the Android screen for one access (or grants it at once when a working mode can). The sheet updates when the app is back.
@@ -24841,6 +24855,7 @@ Type any command below (e.g. pm list packages -d)
                 else if (key === 'install_unknown') { if (b.requestInstallUnknownAccess) answer = String(b.requestInstallUnknownAccess()); }
                 else if (key === 'storage_legacy') { if (b.requestLegacyStorageAccess) answer = String(b.requestLegacyStorageAccess()); }
                 else if (key === 'secure_settings') { if (b.requestWriteSecureSettings) answer = String(b.requestWriteSecureSettings()); }
+                else if (key === 'dump') { if (b.requestDumpAccess) answer = String(b.requestDumpAccess()); }
                 else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
             } catch (e) {}
             if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }

@@ -4526,7 +4526,11 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "لم تستجب خدمة الإعدادات. حاول مرة أخرى بعد قليل أو أعد تشغيل الهاتف.",
 "This Android version did not understand the command.": "لم يفهم هذا الإصدار من أندرويد الأمر.",
 "Check again": "فحص مرة أخرى",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "يتطلب التثبيت من مدير الملفات ADB أو Wireless Debugging أو Shizuku أو Root. أعدّ واحدًا منها في أوضاع التشغيل ثم حاول مرة أخرى.",
+"Dump system services (DUMP)": "تفريغ خدمات النظام (DUMP)",
+"Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "يتيح لهذا التطبيق قراءة تقارير الحالة الخاصة بالهاتف (dumpsys)، مثل تفاصيل البطارية والطاقة والذاكرة، دون سؤال الشل في كل مرة. يُمنح عبر وضع التشغيل.",
+"Copy grant commands": "نسخ أوامر المنح",
+"Copied. Run these on a computer with USB debugging": "تم النسخ. شغّلها على كمبيوتر مع تفعيل تصحيح USB",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],

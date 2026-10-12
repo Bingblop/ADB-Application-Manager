@@ -4526,7 +4526,11 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "設定サービスから応答がありませんでした。しばらくしてからもう一度試すか、スマートフォンを再起動してください。",
 "This Android version did not understand the command.": "このAndroidのバージョンはコマンドを理解できませんでした。",
 "Check again": "もう一度確認",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "ファイルマネージャーからのインストールには、ADB、ワイヤレスデバッグ、Shizuku、Rootのいずれかが必要です。動作モードでどれかを設定してから、もう一度お試しください。"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "ファイルマネージャーからのインストールには、ADB、ワイヤレスデバッグ、Shizuku、Rootのいずれかが必要です。動作モードでどれかを設定してから、もう一度お試しください。",
+"Dump system services (DUMP)": "システムサービスのダンプ (DUMP)",
+"Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "バッテリー、電源、メモリの詳細など、スマートフォン自身のステータスレポート (dumpsys) を、そのつどシェルに問い合わせずにこのアプリが読めるようにします。動作モードを通じて許可されます。",
+"Copy grant commands": "許可コマンドをコピー",
+"Copied. Run these on a computer with USB debugging": "コピーしました。USBデバッグを有効にしたパソコンで実行してください",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],

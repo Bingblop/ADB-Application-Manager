@@ -7080,6 +7080,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** DUMP (signature|privileged|development): the phone's own answer to checkSelfPermission, never a command's output. */
+    private boolean hasDumpAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.DUMP) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
     /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
@@ -12574,6 +12583,7 @@ public class MainActivity extends Activity {
                 o.put("install_unknown", hasInstallUnknownAccess());
                 o.put("storage_legacy", hasLegacyStorageAccess());
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
+                o.put("dump", hasDumpAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
@@ -12658,6 +12668,18 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
+        /** DUMP - like WRITE_SECURE_SETTINGS, a permission with no Settings screen, grantable only with pm grant through a privileged shell (ADB, Shizuku, or root).
+         *  It counts as granted only when the phone's own permission check says so, not because the command printed nothing. */
+        @JavascriptInterface
+        public String requestDumpAccess() {
+            if (hasDumpAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.DUMP");
+                if (hasDumpAccess()) return "granted";
+            }
+            return "settings"; // nothing to open - this one has no Settings screen at all without a shell
+        }
+
         /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
          *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
          *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
@@ -12711,9 +12733,43 @@ public class MainActivity extends Activity {
                     sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
                 }
                 if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
+                if (!hasDumpAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.DUMP; ");
                 if (sb.length() > 0) executeShell(sb.toString() + "true");
             }
             return getPermissionStatus();
+        }
+
+        /**
+         * The commands that would grant what is still missing, to run from a computer (USB debugging), one per line and with this app's package name filled in:
+         * the same commands "Allow all" runs through a working mode ({@link #grantAllPermissions}), but written as {@code adb shell ...}. What the phone already holds
+         * (read with the permission check, as everywhere) is left out; the answer is empty when nothing is missing.
+         */
+        @JavascriptInterface
+        public String getGrantCommands() {
+            String pkg = getPackageName();
+            java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<String>();
+            String pm = "adb shell pm grant " + pkg + " android.permission.", op = "adb shell appops set " + pkg + " ";
+            if (!hasRestrictedSettingsAccess()) out.add(op + "ACCESS_RESTRICTED_SETTINGS allow");
+            if (!hasStorageAccess()) {
+                out.add(op + "MANAGE_EXTERNAL_STORAGE allow");
+                out.add(pm + "READ_EXTERNAL_STORAGE");
+                out.add(pm + "WRITE_EXTERNAL_STORAGE");
+            }
+            if (!hasUsageAccess()) {
+                out.add(op + "GET_USAGE_STATS allow");
+                out.add(pm + "PACKAGE_USAGE_STATS");
+            }
+            if (!hasOverlayAccess()) out.add(op + "SYSTEM_ALERT_WINDOW allow");
+            if (!hasInstallUnknownAccess()) out.add(op + "REQUEST_INSTALL_PACKAGES allow");
+            if (!hasLegacyStorageAccess()) {
+                out.add(pm + "READ_EXTERNAL_STORAGE");
+                out.add(pm + "WRITE_EXTERNAL_STORAGE");
+            }
+            if (!hasWriteSecureSettingsAccess()) out.add(pm + "WRITE_SECURE_SETTINGS");
+            if (!hasDumpAccess()) out.add(pm + "DUMP");
+            StringBuilder sb = new StringBuilder();
+            for (String line : out) { if (sb.length() > 0) sb.append('\n'); sb.append(line); }
+            return sb.toString();
         }
 
         /** Usage access was just allowed by hand in Settings: with a working mode, also {@code pm grant ... PACKAGE_USAGE_STATS}, in the background. */

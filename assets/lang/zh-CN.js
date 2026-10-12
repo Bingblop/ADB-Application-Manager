@@ -4526,7 +4526,11 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "设置服务没有响应。请稍后重试，或重启手机。",
 "This Android version did not understand the command.": "此 Android 版本无法理解该命令。",
 "Check again": "重新检查",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。"
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "从文件管理器安装需要 ADB、无线调试、Shizuku 或 Root。请先在工作模式中设置其中一个，然后重试。",
+"Dump system services (DUMP)": "转储系统服务 (DUMP)",
+"Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "允许此应用读取手机自身的状态报告（dumpsys），例如电池、电源和内存详情，而无需每次都询问 shell。通过工作模式授予。",
+"Copy grant commands": "复制授权命令",
+"Copied. Run these on a computer with USB debugging": "已复制。请在已开启 USB 调试的电脑上运行",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],

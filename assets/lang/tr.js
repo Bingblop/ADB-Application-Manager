@@ -4526,7 +4526,11 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "Ayarlar hizmeti yanıt vermedi. Biraz sonra yeniden deneyin veya telefonu yeniden başlatın.",
 "This Android version did not understand the command.": "Bu Android sürümü komutu anlamadı.",
 "Check again": "Yeniden denetle",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "Dosya Yöneticisinden kurulum için ADB, Wireless Debugging, Shizuku veya Root gerekir. Çalışma Modları'ndan birini kurun, sonra yeniden deneyin.",
+"Dump system services (DUMP)": "Sistem hizmetlerinin dökümü (DUMP)",
+"Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "Bu uygulamanın telefonun kendi durum raporlarını (dumpsys), örneğin pil, güç ve bellek ayrıntılarını, her seferinde kabuğa sormadan okumasına izin verir. Çalışma modu üzerinden verilir.",
+"Copy grant commands": "Verme komutlarını kopyala",
+"Copied. Run these on a computer with USB debugging": "Kopyalandı. Bunları USB hata ayıklaması açık bir bilgisayarda çalıştırın",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],

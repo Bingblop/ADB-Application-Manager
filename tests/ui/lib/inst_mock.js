@@ -63,8 +63,23 @@ exports.initScript = function (opts) {
     requestOverlayAccess() { calls.perms.push('overlay'); if (window.__mode.priv && opts.grantOverlayByShell) { window.__perm.overlay = true; return 'granted'; } return 'settings'; },
     requestLegacyStorageAccess() { calls.perms.push('storage_legacy'); if (window.__mode.priv) { window.__perm.storage_legacy = true; return 'granted'; } return 'settings'; },
     requestWriteSecureSettings() { calls.perms.push('secure_settings'); if (window.__mode.priv) { window.__perm.secure_settings = true; return 'granted'; } return 'settings'; },
+    // 'dump' is not in the default window.__perm: like an older build of the app, the mock does not report it unless a test passes perm: { dump: false|true }
+    requestDumpAccess() { calls.perms.push('dump'); if (window.__mode.priv) { window.__perm.dump = true; return 'granted'; } return 'settings'; },
     // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one); the page then starts the app again (reloadApp)
     grantAllPermissions() { calls.grantAll = (calls.grantAll || 0) + 1; if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk') window.__perm[k] = true; }); } return JSON.stringify(Object.assign({ sdk: window.__device.sdk }, window.__perm)); },
+    // the adb lines for what is not held yet (opt-in: opts.grantCommands, so a test that does not look at the button never has it on the sheet); the real list is MainActivity.getGrantCommands
+    getGrantCommands() {
+      if (!opts.grantCommands) return '';
+      const pkg = 'com.bloatware.bingblop', pm = 'adb shell pm grant ' + pkg + ' android.permission.', op = 'adb shell appops set ' + pkg + ' ', P = window.__perm, out = [];
+      if (P.restricted_settings === false) out.push(op + 'ACCESS_RESTRICTED_SETTINGS allow');
+      if (P.files === false) out.push(op + 'MANAGE_EXTERNAL_STORAGE allow');
+      if (P.usage === false) out.push(op + 'GET_USAGE_STATS allow', pm + 'PACKAGE_USAGE_STATS');
+      if (P.overlay === false) out.push(op + 'SYSTEM_ALERT_WINDOW allow');
+      if (P.secure_settings === false) out.push(pm + 'WRITE_SECURE_SETTINGS');
+      if (P.dump === false) out.push(pm + 'DUMP');
+      return out.join('\n');
+    },
+    copyToClipboard(t) { (calls.copied = calls.copied || []).push(t); },
     syncUsageGrant() { calls.sync = (calls.sync || 0) + 1; },
     reloadApp() { calls.reload = (calls.reload || 0) + 1; },
     requestRestrictedSettingsAccess() { calls.perms.push('restricted_settings'); if (window.__mode.priv) { window.__perm.restricted_settings = true; return 'granted'; } return 'settings'; },
@@ -121,6 +136,6 @@ exports.initScript = function (opts) {
     },
     // ---- the app that was just installed ----
     executeAppAction(action, pkg) { calls.actions.push(action + ':' + pkg); return window.__actionAnswer ? window.__actionAnswer(action, pkg) : (action === 'launch' ? 'Launched' : 'Settings opened'); },
-    executeShell() { return ''; }, copyToClipboard() {}, openUrl() {},
+    executeShell() { return ''; }, openUrl() {},
   };
 };

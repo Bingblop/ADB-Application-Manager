@@ -4526,7 +4526,11 @@ x: {
 "The settings service did not answer. Try again in a moment, or restart the phone.": "설정 서비스가 응답하지 않았습니다. 잠시 후 다시 시도하거나 휴대전화를 다시 시작하세요.",
 "This Android version did not understand the command.": "이 Android 버전은 명령을 이해하지 못했습니다.",
 "Check again": "다시 확인",
-"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "파일 관리자에서 설치하려면 ADB, 무선 디버깅, Shizuku 또는 Root가 필요합니다. 작동 모드에서 하나를 설정한 뒤 다시 시도하세요."
+"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again.": "파일 관리자에서 설치하려면 ADB, 무선 디버깅, Shizuku 또는 Root가 필요합니다. 작동 모드에서 하나를 설정한 뒤 다시 시도하세요.",
+"Dump system services (DUMP)": "시스템 서비스 덤프 (DUMP)",
+"Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "배터리, 전원, 메모리 정보 같은 휴대전화 자체의 상태 보고서(dumpsys)를 매번 셸에 요청하지 않고 이 앱이 읽을 수 있게 합니다. 작동 모드를 통해 허용됩니다.",
+"Copy grant commands": "권한 부여 명령 복사",
+"Copied. Run these on a computer with USB debugging": "복사했습니다. USB 디버깅이 켜진 컴퓨터에서 실행하세요",
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
