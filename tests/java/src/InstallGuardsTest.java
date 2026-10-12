@@ -33,6 +33,23 @@ public class InstallGuardsTest {
     check("no shared signer is 'different'", "different".equals(InstallGuards.checkSigners(set("a"), set("b"))));
     check("an unreadable new signer (empty) is refused", "unreadable".equals(InstallGuards.checkSigners(set("a"), set())));
     check("a null new signer set is refused", "unreadable".equals(InstallGuards.checkSigners(set("a"), null)));
+
+    // The authorizer the page asks for is not trusted: in standard (Read-Only) mode no privileged one is honoured
+    String[] asks = { "adb", "shizuku", "root", "", null, "auto", "bogus", "ADB" };
+    for (String a : asks) {
+      check("standard mode: '" + a + "' becomes the system installer", "none".equals(InstallGuards.authorizerFor(a, "standard")));
+    }
+    check("standard mode: 'none' stays none", "none".equals(InstallGuards.authorizerFor("none", "standard")));
+    String[] priv = { "adb_tcp", "adb_wireless", "shizuku", "root" };
+    for (String m : priv) {
+      check(m + " is a privileged mode", InstallGuards.isPrivilegedMode(m));
+      check(m + ": adb, shizuku and root are passed on unchanged", "adb".equals(InstallGuards.authorizerFor("adb", m)) && "shizuku".equals(InstallGuards.authorizerFor("shizuku", m)) && "root".equals(InstallGuards.authorizerFor("root", m)));
+      check(m + ": 'none' (the person's own choice of the system installer) stays none", "none".equals(InstallGuards.authorizerFor("none", m)));
+      check(m + ": no authorizer means the working mode (empty)", "".equals(InstallGuards.authorizerFor(null, m)) && "".equals(InstallGuards.authorizerFor("", m)));
+    }
+    check("standard is not a privileged mode", !InstallGuards.isPrivilegedMode("standard") && !InstallGuards.isPrivilegedMode("unprivileged") && !InstallGuards.isPrivilegedMode("auto"));
+    check("an unknown or missing mode fails closed", "none".equals(InstallGuards.authorizerFor("root", null)) && "none".equals(InstallGuards.authorizerFor("adb", "")) && "none".equals(InstallGuards.authorizerFor("shizuku", "bogus")) && !InstallGuards.isPrivilegedMode(null));
+    check("the mode asked about is the mode now only when both are known and equal", InstallGuards.sameMode("adb_tcp", "adb_tcp") && !InstallGuards.sameMode("adb_tcp", "root") && !InstallGuards.sameMode("adb_tcp", "adb_wireless") && !InstallGuards.sameMode("root", "standard") && !InstallGuards.sameMode(null, null) && !InstallGuards.sameMode("standard", "standard") && !InstallGuards.sameMode("none", "none") && !InstallGuards.sameMode("", "") && InstallGuards.sameMode("shizuku", "shizuku") && !InstallGuards.sameMode("root", null) && !InstallGuards.sameMode(null, "root"));
     System.out.println(n + " checks, " + fails + " failing");
     if (fails > 0) System.exit(1);
   }

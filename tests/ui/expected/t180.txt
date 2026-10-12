@@ -1,0 +1,45 @@
+1. Read-Only mode: the Authorizer is the system installer (No privilege): true "none"
+   ADB, Shizuku and Root are not offered (hidden and disabled): true [[true,true,true],[true,true,true]]
+   a plain sentence says why: true Read-Only mode: the system installer asks you before anything is installed, so ADB, Shizuku and Root are not offered here.
+   the privileged power options are off: true
+   the preview says the system installer will ask: true No privilege: a system install dialog wi
+   Install sends "No privilege": true ["none"]
+2. ADB comes on: the Authorizer becomes ADB, all four are offered again, the sentence is gone: true ["adb",false,false]
+   the mode changes to Shizuku: the Authorizer follows (not picked by hand): true
+   to Root: it follows: true
+   to Wireless Debugging: ADB: true
+   Read-Only again: no stale ADB is left, the system installer is chosen and the sentence is back: true ["none",true]
+   and an install started now sends "No privilege", not ADB: true ["none"]
+3. picked Root by hand: a change of mode to Shizuku does not override it: true
+   Read-Only: Root is not honoured (the system installer instead): true
+   the mode is back: the person's Root pick comes back with it: true
+   picking the system installer by hand is kept in a privileged mode too: true
+4. leaving the Installer and coming back keeps the pick: true
+   in Read-Only mode the tab still offers only the system installer: true
+5. Read-Only mode with ADB and Shizuku still connected: the file manager has no backend to install with: true {"ready":false,"backend":null}
+   the person is told (and offered Working Modes) instead: true ["confirm:Installing from File Manager runs through ADB, Wireless Debu"]
+   with Shizuku as the working mode it does: true {"ready":true,"backend":"shizuku"}
+5b. Files install open, then Read-Only mode: Install sends nothing to the app and says a backend is needed: true
+   the stale backend is cleared, Install is off and a sentence names what is needed: true {"btn":true,"value":"none","note":"Installing from the File Manager needs ADB, Wireless Debugging, Shizuku or Root. Set one up in Working Modes, then try again."}
+   a working mode is back: Install is on again and the backend is Shizuku: true {"btn":false,"value":"shizuku","note":"From File Manager: installing through Shizuku, with this app's signature checks off. Android still verifies signatures itself: an APK whose signature it can't verify is signed with this app's key and installed, and an app signed by someone else can only be replaced after uninstalling it (you are asked first)."}
+   a normal install leaves Install on: true
+   apps that are already queued are not asked about again (no second question for a queue that is running): true
+   the Update All button counts only what Update All would start (not an app waiting for OK, nor a queued one): true Update All (2)
+   done and downloading apps are not counted either (nothing left to start: the button is hidden): true
+6. Update All asks the app, once, with the packages (no dialog of the page): true [[["com.a","com.b","com.c","com.d"]],[]]
+   nothing is downloaded or installed before the answer: true
+   the button waits for the answer (it cannot be pressed again): true
+   pressing it again (or calling it) asks nothing more: true
+   the answer starts only the apps the app approved, one after the other: true ["com.a","com.b"]
+   the button is usable again and the other two are untouched: true
+7. asked again for the two that are left: true
+   No: nothing is installed, a toast says so, the button is back: true
+   an error from the app is shown as it is: true
+7b. the app is told when the queue is over (every approval left is dropped): true
+   the working mode goes read-only: the page's queue is emptied and the app is told: true
+8. one Update asks nothing of the page: the app asks after the download, and the row says it is waiting: true Waiting for OK
+   the waiting button cannot be pressed: true
+   an update check that ends while the question is open keeps the row waiting (Update stays off): true Waiting for OK
+   Update All does not count the app that is waiting: true
+   a No from the app ends as a failed row that can be tried again: true Charlie com.c GITHUBYOUR SOURCE 1.0 → 2.0 Retry Update cancelled. Nothing was installed. Page
+errors: true []

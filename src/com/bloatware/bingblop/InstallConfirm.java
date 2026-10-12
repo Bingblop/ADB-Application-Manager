@@ -51,6 +51,149 @@ final class InstallConfirm {
         return sb.toString();
     }
 
+    /** The most apps the question for several updates lists by name; the rest are counted. */
+    static final int LIST_MAX = 8;
+
+    /** The line that closes every question: what a privileged install lacks. */
+    private static final String NO_SYSTEM_QUESTION = "It is installed without the system installer's own question, so only continue if you started this install.";
+
+    /** What an install may also do, said in the question: the installed copy goes first (with its data); the data saved in a backup is put back. */
+    static final String REMOVES_FIRST = "The installed app is uninstalled first, with its data.";
+    static final String REINSTATES_SYSTEM = "The system copy of this app, removed for your user, is brought back; the APK in the backup is not installed.";
+    static final String RESTORES_DATA = "The app's saved data from the backup is restored as well.";
+
+    /** What is said when the install turns out to have no privileged mode at all (the app went Read-Only) before the question could be asked. */
+    static final String NO_PRIVILEGED_MODE = "Installing needs ADB, Wireless Debugging, Shizuku or Root. Nothing was installed.";
+
+    /** What is said when the working mode is not the one the question named by the time it is answered. */
+    static final String MODE_CHANGED = "The working mode changed while the question was open. Nothing was installed.";
+
+    /** How the privileged working mode is named in the question ("ADB", "Wireless Debugging (ADB)", "Shizuku", "Root"); anything else is "a privileged mode". */
+    static String viaText(String mode) {
+        if ("adb_tcp".equals(mode)) return "ADB";
+        if ("adb_wireless".equals(mode)) return "Wireless Debugging (ADB)";
+        if ("shizuku".equals(mode)) return "Shizuku";
+        if ("root".equals(mode)) return "Root";
+        return "a privileged mode";
+    }
+
+    /** The title of the question for several apps in one go. */
+    static String titleUpdates(int count) {
+        return count == 1 ? "Update this app?" : "Update " + count + " apps?";
+    }
+
+    /** The package name as shown (quoted, not checked), or a plain note when the file did not give one. */
+    private static String packageText(String packageName) {
+        String q = quoted(packageName, 120);
+        return q.isEmpty() ? "(could not be read)" : q;
+    }
+
+    private static void viaLine(StringBuilder sb, String mode) {
+        sb.append("It is installed through: ").append(viaText(mode)).append(".\n");
+    }
+
+    private static void newOrReplaces(StringBuilder sb, String installedVersion) {
+        if (installedVersion == null) sb.append("This is a new app: it is not installed on this phone.\n");
+        else {
+            String iv = quoted(installedVersion, 40);
+            sb.append("It replaces the installed app").append(iv.isEmpty() ? "" : " (now " + iv + ")").append(".\n");
+        }
+    }
+
+    /**
+     * The question before an app from a file on this phone (the Installer tab, or a package handed over by the file manager) is installed with a
+     * privileged mode. The source is a file on this phone, not a host. Everything the app read itself comes first; the file's name, the package and
+     * version inside it and the install options come after it, quoted and labelled as not checked.
+     *
+     * @param fileName         the name of the file that was picked (may be empty)
+     * @param packageName      the package name read from the base APK
+     * @param versionName      the version name read from the base APK (may be empty)
+     * @param installedVersion the version installed now, or null when the app is not installed
+     * @param files            how many APK files go in (more than one: a bundle with splits, installed together)
+     * @param mode             the privileged mode the install runs through (adb_tcp, adb_wireless, shizuku, root)
+     * @param options          the install options that will be used, as the shell would get them (may be empty)
+     * @param actions          what else the action does to the phone, in the app's own words ({@link #REMOVES_FIRST}, {@link #RESTORES_DATA}); may be null
+     */
+    static String messageLocalFile(String fileName, String packageName, String versionName, String installedVersion, int files, String mode, String options, java.util.List<String> actions) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Source: a file on this phone\n");
+        viaLine(sb, mode);
+        // Bringing back a removed system app installs nothing from the file, so "new app" / "replaces" would only contradict the action line
+        boolean reinstates = actions != null && actions.contains(REINSTATES_SYSTEM);
+        if (!reinstates) newOrReplaces(sb, installedVersion);
+        if (files > 1 && !reinstates) sb.append("It is a bundle of ").append(files).append(" files, installed together as one app.\n");
+        if (actions != null) for (String a : actions) if (a != null && !a.isEmpty()) sb.append(a).append("\n");
+        if (!reinstates) sb.append("No checksum was compared with this file.\n");
+        sb.append("\nWritten in the file, its name or by the page (not checked):\n");
+        String fn = quoted(fileName, 80);
+        if (!fn.isEmpty()) sb.append("File: ").append(fn).append("\n");
+        sb.append("Package: ").append(packageText(packageName)).append("\n");
+        String v = quoted(versionName, 40);
+        if (!v.isEmpty()) sb.append("Version: ").append(v).append("\n");
+        String o = quoted(options, 160);
+        if (!o.isEmpty()) sb.append("Options: ").append(o).append("\n");
+        sb.append("\n").append(NO_SYSTEM_QUESTION);
+        return sb.toString();
+    }
+
+    /**
+     * The question before one update downloaded in the Updater is installed with a privileged mode. The app has checked that the file is the package it
+     * asked for, that its version is newer and that it is signed with the key of the installed app (it would not have got this far otherwise).
+     *
+     * @param label            the name of the installed app (may be empty)
+     * @param packageName      the package name read from the downloaded APK
+     * @param versionName      the version name read from the downloaded APK (may be empty)
+     * @param host             the host the bytes finally came from, after redirects (may be empty)
+     * @param requestedHost    the host of the address the update check found (may be empty); shown when it differs from {@code host}
+     * @param installedVersion the version installed now
+     * @param mode             the privileged mode the install runs through
+     */
+    static String messageUpdate(String label, String packageName, String versionName, String host, String requestedHost, String installedVersion, String mode) {
+        StringBuilder sb = new StringBuilder();
+        String h = hostText(host);
+        sb.append("Downloaded from: ").append(h.isEmpty() ? "unknown" : h).append("\n");
+        String rh = hostText(requestedHost);
+        if (!rh.isEmpty() && !rh.equalsIgnoreCase(h)) sb.append("(the address given was on ").append(rh).append(" and sent the download on)\n");
+        viaLine(sb, mode);
+        newOrReplaces(sb, installedVersion);
+        sb.append("The file is the package that was asked for, a newer version, and signed with the same key as the installed app.\n");
+        sb.append("No checksum was compared with this file.\n");
+        sb.append("\nWritten in the file or by the update source (not checked):\n");
+        sb.append("Package: ").append(packageText(packageName)).append("\n");
+        String v = quoted(versionName, 40);
+        if (!v.isEmpty()) sb.append("Version: ").append(v).append("\n");
+        String name = quoted(label, 40);
+        if (!name.isEmpty()) sb.append("Name: ").append(name).append("\n");
+        sb.append("\n").append(NO_SYSTEM_QUESTION);
+        return sb.toString();
+    }
+
+    /**
+     * The one question for "Update all": the apps the update check found, listed (at most {@link #LIST_MAX}, the rest counted), asked before anything is
+     * downloaded. Each row is {name, package, installed version, found version}; the names and versions are labelled as not checked and quoted.
+     */
+    static String messageUpdateAll(java.util.List<String[]> rows, String mode) {
+        StringBuilder sb = new StringBuilder();
+        int n = rows == null ? 0 : rows.size();
+        sb.append(n == 1 ? "One installed app will be updated.\n" : n + " installed apps will be updated, one after the other.\n");
+        if (n == 1) viaLine(sb, mode);
+        else sb.append("They are installed through: ").append(viaText(mode)).append(".\n");
+        sb.append("Each file is downloaded and checked before it is installed: it must be the package named below, a newer version, and signed with the same key as the installed app. One that fails is skipped.\n");
+        sb.append("\nFound by the update check, not downloaded yet (names and versions not checked):\n");
+        for (int i = 0; i < n && i < LIST_MAX; i++) {
+            String[] r = rows.get(i);
+            String nm = quoted(r.length > 0 ? r[0] : "", 40);
+            String pk = clean(r.length > 1 ? r[1] : "", 120);
+            sb.append(i + 1).append(". ").append(nm.isEmpty() ? "" : nm + " ").append(pk.isEmpty() && nm.isEmpty() ? "(unknown app)" : pk);
+            String from = quoted(r.length > 2 ? r[2] : "", 40), to = quoted(r.length > 3 ? r[3] : "", 40);
+            if (!from.isEmpty() || !to.isEmpty()) sb.append(": ").append(from.isEmpty() ? "?" : from).append(" to ").append(to.isEmpty() ? "?" : to);
+            sb.append("\n");
+        }
+        if (n > LIST_MAX) sb.append("and ").append(n - LIST_MAX).append(n - LIST_MAX == 1 ? " more app.\n" : " more apps.\n");
+        sb.append("\nThey are installed without the system installer's own question, so only continue if you started this.");
+        return sb.toString();
+    }
+
     /**
      * A host as shown. A host name is read from its END (the registered domain is the last labels), so it is never cut from the right: up to the longest
      * valid DNS name (253 characters) it is shown whole; a longer one is not a valid name and is shown by its last 253 characters, marked with a leading
