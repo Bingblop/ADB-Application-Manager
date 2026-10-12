@@ -3572,9 +3572,8 @@ public class MainActivity extends Activity {
         return readProcessWithTimeout(p, timeoutMs);
     }
 
-    /** Installs one APK, or a base APK with its splits, through the active mode. */
-    private String installApks(List<File> apks) throws Exception {
-        String mode = resolveExecMode();
+    /** Installs one APK, or a base APK with its splits, through a mode the caller already chose (and asked about): the working mode is not read again. */
+    private String installApksIn(List<File> apks, String mode) throws Exception {
         if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
             boolean tcp = "adb_tcp".equals(mode);
             String target = tcp ? tcpTarget() : wirelessTarget();
@@ -3628,7 +3627,7 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------------------------------------
     // All-in-one installer (APK / APKS / APKM) - the "Installer" tab.
-    // Reuses the same per-backend install shapes as installApks() above, but with a caller-chosen set
+    // Reuses the same per-backend install shapes as installApksIn() above, but with a caller-chosen set
     // of pm flags and a caller-chosen authorizer, plus a no-privilege PackageInstaller fallback. Picked
     // packages are staged into getCacheDir()/installer; nothing outside that directory is ever installed.
     // ---------------------------------------------------------------------------------------------
@@ -6480,7 +6479,7 @@ public class MainActivity extends Activity {
                             throw new InstallCancelled();
                         }
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
-                        String out = installApks(ordered);
+                        String out = installApksIn(ordered, restoreMode);
                         if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
                         res.put("install", "installed " + meta.optString("versionName"));
                     }
@@ -7674,7 +7673,7 @@ public class MainActivity extends Activity {
             });
             r.put("ok", true);
             r.put("system", true);
-            r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install silently.)");
+            r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install through ADB, Shizuku or Root.)");
             return r;
         }
         StringBuilder notes = new StringBuilder();
@@ -7709,7 +7708,7 @@ public class MainActivity extends Activity {
                 uninstallInstalledCopy(mode, insidePkg);
                 notes.append("The installed copy was uninstalled first.\n");
             }
-            out = installApks(files);
+            out = installApksIn(files, mode);          // the mode the question named and the removal above used
         } finally {
             if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
         }

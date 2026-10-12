@@ -11725,7 +11725,7 @@ Type any command below (e.g. pm list packages -d)
             renderUpdateExtras();
             const galaxy = updList.filter(u => updIsInstallable(u));
             const allBtn = document.getElementById('updAllBtn');
-            const pending = galaxy.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done'));
+            const pending = galaxy.filter(u => updCanStartAll(u));
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
             if (st && st.checkedAt) {
@@ -11771,6 +11771,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Installable here: Galaxy Store and open-source sources with an APK for this phone
+        // An app Update All would still start: not done, queued, downloading, waiting for the question, or installing. The button's count and updateAllUI share it.
+        function updCanStartAll(u) {
+            const pr = updProgress[u.pkg];
+            return !(pr && ['done', 'queued', 'downloading', 'installing', 'confirming'].includes(pr.stage));
+        }
+
         function updIsInstallable(u) {
             return ['galaxy', 'github', 'codeberg', 'fdroid', 'izzy'].includes(u.source) && !u.noApk;
         }
@@ -11989,7 +11995,7 @@ Type any command below (e.g. pm list packages -d)
         function updateAllUI() {
             if (!guardPrivilege('Install updates')) return;
             if (updAllAsking) return;
-            const pending = updList.filter(u => updIsInstallable(u) && !(updProgress[u.pkg] && ['done', 'queued', 'downloading', 'installing', 'confirming'].includes(updProgress[u.pkg].stage)));
+            const pending = updList.filter(u => updIsInstallable(u) && updCanStartAll(u));
             if (!pending.length) return;
             const B = updBridge();
             if (B && B.approveUpdateAll) {

@@ -210,7 +210,7 @@ public class InstallConfirmTest {
         // every place that hands an APK to a privileged install, by the method it is in: a new one must be added here with its question (or its reason for none)
         java.util.Map<String, Integer> callers = new java.util.TreeMap<String, Integer>();
         String[] lines = src.split("\n", -1);
-        java.util.regex.Pattern call = java.util.regex.Pattern.compile("\\binstallApk(s|sOptions)?\\(");
+        java.util.regex.Pattern call = java.util.regex.Pattern.compile("\\binstallApk(s|sOptions|sIn)?\\(");
         java.util.regex.Pattern sig = java.util.regex.Pattern.compile("^    (private|public|protected|static|final|synchronized)[^;=]*\\([^;=]*$");
         for (int i = 0; i < lines.length; i++) {
           if (!call.matcher(lines[i]).find() || sig.matcher(lines[i]).find()) continue;
@@ -256,12 +256,12 @@ public class InstallConfirmTest {
 
         String mor = methodBody(src, "private JSONObject morpheInstall(");
         int mAsk = mor.indexOf("if (!confirmInMode(mode, null, InstallConfirm.messageLocalFile(");
-        is("a patched or downloaded app installed from the Morphe Patcher asks first", mAsk > 0 && mAsk < mor.indexOf("uninstallInstalledCopy(") && mAsk < mor.indexOf("installApks(files)") && mAsk > mor.indexOf("isPrivilegedMode(mode)"));
-        is("...and a No installs nothing", mor.indexOf("\"cancelled\"") > mAsk && mor.indexOf("\"cancelled\"") < mor.indexOf("installApks(files)"));
+        is("a patched or downloaded app installed from the Morphe Patcher asks first", mAsk > 0 && mAsk < mor.indexOf("uninstallInstalledCopy(") && mAsk < mor.indexOf("installApksIn(files, mode)") && mAsk > mor.indexOf("isPrivilegedMode(mode)"));
+        is("...and a No installs nothing", mor.indexOf("\"cancelled\"") > mAsk && mor.indexOf("\"cancelled\"") < mor.indexOf("installApksIn(files, mode)"));
 
         String res = methodBody(src, "private void runRestore(");
         int rAsk = res.indexOf("if (!confirmInMode(restoreMode, null, InstallConfirm.messageLocalFile(");
-        is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApks(ordered)") && res.lastIndexOf("throw new InstallCancelled()") > rAsk && res.lastIndexOf("throw new InstallCancelled()") < res.indexOf("installApks(ordered)"));
+        is("restoring a backup asks before its APK is installed", rAsk > 0 && rAsk < res.indexOf("installApksIn(ordered, restoreMode)") && res.lastIndexOf("throw new InstallCancelled()") > rAsk && res.lastIndexOf("throw new InstallCancelled()") < res.indexOf("installApksIn(ordered, restoreMode)"));
         is("...and says when the data is restored as well", res.contains("InstallConfirm.RESTORES_DATA"));
         int existing = res.indexOf("pm install-existing ");
         int sysAsk = res.indexOf("if (!confirmInMode(sysMode, null, InstallConfirm.messageLocalFile(");
@@ -284,6 +284,7 @@ public class InstallConfirmTest {
         is("confirmPrivilegedInstall is called only by confirmInMode and by the store route (whose question names no mode): " + callersOfAsk, new java.util.TreeSet<String>(callersOfAsk).equals(new java.util.TreeSet<String>(java.util.Arrays.asList("confirmInMode", "downloadAndInstall"))) && callersOfAsk.size() == 2);
         is("every question that names a mode goes through confirmInMode", count(src, "confirmInMode(") == 6 && count(src, "InstallConfirm.messageLocalFile(") == 4 && count(src, "InstallConfirm.messageUpdate(") == 1);
         is("Update all asks for one mode, keeps that mode with the approval, and drops the approval when the mode is not the same when the answer is in", all.contains("final String mode = resolveExecMode()") && all.contains("approvedUpdates.replace(versions, mode,") && all.contains("InstallGuards.sameMode(mode, resolveExecMode())") && all.contains("InstallConfirm.MODE_CHANGED") && take.contains("resolveExecMode(), System.currentTimeMillis()"));
+        is("Morphe removes the installed copy and installs through the one mode the question named (the install does not read the working mode again), and so does restore", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && mor.contains("installApksIn(files, mode)") && !mor.contains("installApks(") && res.contains("installApksIn(ordered, restoreMode)") && !res.contains("installApks("));
         is("Morphe removes the installed copy and installs only after the mode check (the question is first)", mor.indexOf("confirmInMode(") < mor.indexOf("uninstallInstalledCopy(mode, insidePkg)"));
         String self = methodBody(src, "private void runInstallSelfUpdate(");
         is("the self update asks nothing of its own: it names no address, file or authorizer of the page, and is pinned to this package, a newer version and this install's key",

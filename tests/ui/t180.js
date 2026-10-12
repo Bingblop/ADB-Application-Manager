@@ -143,6 +143,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { updList.forEach(u => { updProgress[u.pkg] = { stage: 'queued', percent: 0, message: '' }; }); updateAllUI(); });
   check('   apps that are already queued are not asked about again (no second question for a queue that is running)', (await ev(() => window.__upd.approve.length)) === 0);
   await ev(() => { updList.forEach(u => { delete updProgress[u.pkg]; }); renderUpdates(); });
+  await ev(() => { updProgress['com.c'] = { stage: 'confirming', percent: 100, message: '' }; updProgress['com.d'] = { stage: 'queued', percent: 0, message: '' }; renderUpdates(); });
+  const countText = await ev(() => document.getElementById('updAllBtn').textContent.trim());
+  check('   the Update All button counts only what Update All would start (not an app waiting for OK, nor a queued one)', countText === 'Update All (2)', countText);
+  await ev(() => { updProgress['com.a'] = { stage: 'done', percent: 100, message: '' }; updProgress['com.b'] = { stage: 'downloading', percent: 5, message: '' }; renderUpdates(); });
+  check('   done and downloading apps are not counted either (nothing left to start: the button is hidden)', (await ev(() => document.getElementById('updAllBtn').textContent.trim())) === 'Update All (0)' && (await ev(() => getComputedStyle(document.getElementById('updAllBtn')).display)) === 'none');
+  await ev(() => { updList.forEach(u => { delete updProgress[u.pkg]; }); renderUpdates(); });
   const endedAtStart = await ev(() => window.__upd.ended);
   await page.click('#updAllBtn'); await sleep(60);
   let u = await ev(() => JSON.parse(JSON.stringify(window.__upd)));

@@ -24,6 +24,8 @@
    a working mode is back: Install is on again and the backend is Shizuku: true {"btn":false,"value":"shizuku","note":"From File Manager: installing through Shizuku, with this app's signature checks off. Android still verifies signatures itself: an APK whose signature it can't verify is signed with this app's key and installed, and an app signed by someone else can only be replaced after uninstalling it (you are asked first)."}
    a normal install leaves Install on: true
    apps that are already queued are not asked about again (no second question for a queue that is running): true
+   the Update All button counts only what Update All would start (not an app waiting for OK, nor a queued one): true Update All (2)
+   done and downloading apps are not counted either (nothing left to start: the button is hidden): true
 6. Update All asks the app, once, with the packages (no dialog of the page): true [[["com.a","com.b","com.c","com.d"]],[]]
    nothing is downloaded or installed before the answer: true
    the button waits for the answer (it cannot be pressed again): true
