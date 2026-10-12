@@ -932,6 +932,13 @@
             border: 1px solid color-mix(in srgb, var(--apps-frozen) 40%, transparent);
         }
 
+        /* Connected Devices: the FROZEN badge reads a little stronger (a fuller tint, the text pulled towards the page's text colour) */
+        .tag-frozen.cd-frozen {
+            background: color-mix(in srgb, var(--apps-frozen) 26%, transparent);
+            color: color-mix(in srgb, var(--apps-frozen) 72%, var(--text-main));
+            border-color: color-mix(in srgb, var(--apps-frozen) 60%, transparent);
+        }
+
         .tag-system {
             background: color-mix(in srgb, var(--apps-system) 14%, transparent);
             color: var(--apps-system);
@@ -2612,6 +2619,7 @@
         /* The trash can and the recycle symbol used to say which buttons delete and which are the main action */
         .batch-grid-btn.danger { color: var(--status-bloat); border-color: var(--status-bloat); }
         .batch-grid-btn.accent { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+        .batch-grid-btn.blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
 
         .arc-textarea {
             width: 100%;
@@ -4688,7 +4696,7 @@
                     <div class="cd-batch" id="cdBatch">
                         <b id="cdBatchCount">0 selected</b>
                         <button class="cd-row-act green" onclick="cdBatch('enable')">Enable</button>
-                        <button class="cd-row-act blue" onclick="cdBatch('disable')">Disable</button>
+                        <button class="cd-row-act blue" onclick="cdBatch('disable')">Freeze</button>
                         <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
                         <button class="cd-row-act green" onclick="cdBatch('reinstall')">Reinstall</button>
                         <button class="cd-x" onclick="cdSelClear()" aria-label="Clear selection">&#10005;</button>
@@ -23924,7 +23932,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // adb for ANOTHER device, through the adb this app carries: a Wear OS watch first, any Android device works. Every call goes out as
         // AndroidBridge.cdAdb(tag, serial, args, timeout) and comes back as window.onCdResult({tag, out, ms}). Output is plain text; a failure starts with "Error:".
         const CD_SUBS = [['apps', 'Apps'], ['send', 'Send'], ['console', 'Console'], ['logcat', 'Logcat'], ['files', 'Files'], ['settings', 'Hidden Settings'], ['display', 'Display']];
-        const CD_FILTERS = [['user', '3rd Party'], ['system', 'System'], ['enabled', 'Enabled'], ['disabled', 'Disabled'], ['uninstalled', 'Uninstalled']];
+        const CD_FILTERS = [['user', '3rd Party'], ['system', 'System'], ['enabled', 'Enabled'], ['disabled', 'Frozen'], ['uninstalled', 'Uninstalled']];
         const CD_FILTER_GROUPS = [['user', 'system'], ['enabled', 'disabled']];
         const CD_CHIPS = ['getprop ro.product.model', 'pm list packages -3', 'dumpsys battery', 'dumpsys activity activities | grep mResumedActivity', 'df -h /data', 'ps -A | head -25', 'wm size', 'wm density',
             'settings list global', 'ip addr show wlan0', 'cat /proc/meminfo | head -6', 'logcat -d -t 40', 'input keyevent 26', 'adb devices -l', 'adb pull /sdcard/Download/'];
@@ -24671,9 +24679,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const pk = escapeHtml(a.pkg), sel = cd.sel.has(a.pkg);
             let badges = '';
             if (a.uninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
-            else if (a.disabled) badges += '<span class="tag-badge tag-frozen">DISABLED</span>';
+            else if (a.disabled) badges += '<span class="tag-badge tag-frozen cd-frozen">FROZEN</span>';
             badges += a.system ? '<span class="tag-badge tag-system">SYSTEM</span>' : '<span class="tag-badge tag-user">USER</span>';
-            const act = a.uninstalled ? ['reinstall', 'Reinstall'] : a.disabled ? ['enable', 'Enable'] : ['disable', 'Disable'];
+            const act = a.uninstalled ? ['reinstall', 'Reinstall'] : a.disabled ? ['enable', 'Enable'] : ['disable', 'Freeze'];
             const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(a.name.charAt(0).toUpperCase());
             return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
@@ -24731,7 +24739,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (act === 'disable') return !!a && !a.uninstalled && a.disabled;
             return !!a && !a.uninstalled && !a.disabled;                       // enable
         }
-        const CD_STATE_WORDS = { uninstall: ['Uninstalled', 'Still installed'], reinstall: ['Installed', 'Not installed'], disable: ['Disabled', 'Not disabled'], enable: ['Enabled', 'Still disabled'] };
+        const CD_STATE_WORDS = { uninstall: ['Uninstalled', 'Still installed'], reinstall: ['Installed', 'Not installed'], disable: ['Frozen', 'Not frozen'], enable: ['Enabled', 'Still frozen'] };
         // reads the states (and once more after a moment when something is not yet as wanted), then sets the app records from them. Returns Map pkg -> { ok, label } or null.
         async function cdCheckStates(act, pkgs) {
             let m = await cdReadStates();
@@ -24788,7 +24796,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cdFail(t)) return false;
             return !/Failure|Exception|Unknown package|not found|Error|error:|No activities found|Permission Denial|Operation not allowed|not allowed/i.test(t);
         }
-        const CD_ACT_DONE = { enable: 'Enabled', disable: 'Disabled', uninstall: 'Uninstalled', reinstall: 'Reinstalled', stop: 'Stopped', clear: 'Data cleared', launch: 'Opened' };
+        const CD_ACT_DONE = { enable: 'Enabled', disable: 'Frozen', uninstall: 'Uninstalled', reinstall: 'Reinstalled', stop: 'Stopped', clear: 'Data cleared', launch: 'Opened' };
 
         async function cdAppAct(pkg, act) {
             const a = cdApp(pkg);
@@ -24807,8 +24815,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cd.batchBusy || !cd.sel.size) return;
             const pkgs = Array.from(cd.sel);
             if ((act === 'uninstall' || (act === 'disable' && pkgs.length > 1)) && !(await cdAsk({
-                title: (act === 'uninstall' ? 'Uninstall ' : 'Disable ') + pkgs.length + (pkgs.length === 1 ? ' app?' : ' apps?'), text: pkgs.map(p => cdApp(p).name).join(', '),
-                ok: act === 'uninstall' ? 'Uninstall' : 'Disable', danger: act === 'uninstall' }))) return;
+                title: (act === 'uninstall' ? 'Uninstall ' : 'Freeze ') + pkgs.length + (pkgs.length === 1 ? ' app?' : ' apps?'), text: pkgs.map(p => cdApp(p).name).join(', '),
+                ok: act === 'uninstall' ? 'Uninstall' : 'Freeze', danger: act === 'uninstall' }))) return;
             cd.batchBusy = true;
             const failed = [];
             let done = 0;
@@ -24849,7 +24857,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 b.push({ label: 'Open', fn: () => cdAppAct(pkg, 'launch') });
                 b.push({ label: 'Force stop', fn: () => cdAppAct(pkg, 'stop') });
                 b.push({ label: 'Clear data', cls: 'danger', fn: () => cdAppAct(pkg, 'clear') });
-                b.push(a.disabled ? { label: 'Enable', cls: 'accent', fn: () => cdAppAct(pkg, 'enable') } : { label: 'Disable', fn: () => cdAppAct(pkg, 'disable') });
+                b.push(a.disabled ? { label: 'Enable', cls: 'accent', fn: () => cdAppAct(pkg, 'enable') } : { label: 'Freeze', cls: 'blue', fn: () => cdAppAct(pkg, 'disable') });
                 b.push({ label: 'Uninstall', cls: 'danger', fn: () => cdAppAct(pkg, 'uninstall') });
                 b.push({ label: 'Pull APK', fn: () => cdPullApk(pkg) });
                 b.push({ label: 'Details', fn: () => cdAppInfo(pkg) });
