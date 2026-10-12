@@ -67,7 +67,9 @@ import org.json.JSONObject;
  * The name is looked up ONCE per host, and the addresses are used for all its samples. Lookups run on a small pool of daemon threads
  * shared by every scan of one Env (LOOKUP_THREADS = 8 for the whole app): InetAddress.getAllByName cannot be interrupted, so a lookup
  * that outlives its timeout is "stuck", keeps its thread until the resolver returns, and is counted. While 8 are stuck (or all 8 threads
- * are busy) a new lookup fails at once with status "dns", error "resolver busy", so no thread is ever added beyond the cap.
+ * are busy) a new lookup fails at once, so no thread is ever added beyond the cap. A lookup that gets no answer within timeoutMs, and a
+ * lookup refused for that reason, are both status "dns" with error "resolver busy": the resolver could not be asked, which says nothing
+ * about the name. Only a lookup that really returned (unknown host, no address) says "name not found".
  * The timeout is per stage: the name lookup, the TCP connect (shared
  * by all addresses tried, at most 4), the TLS handshake, and the query each get timeoutMs; sockets have SO_TIMEOUT and a watchdog
  * closes a socket that a slow server keeps dripping bytes into. A scan is cancelled by closing its sockets (prompt, no waiting for a
@@ -88,7 +90,8 @@ import org.json.JSONObject;
  *     once per host, as soon as that host is done (in no particular order):
  *       {"id":"s1","host":"dns.google","status":"ok","ip":"8.8.8.8","connectMs":12,"tlsMs":30,"queryMs":18,"samples":3,"okSamples":3,"error":""}
  *       status: "ok" | "dns" | "connect" | "tls" | "query" | "timeout" | "cancelled"
- *         dns       the name did not resolve, the lookup took longer than timeoutMs, the resolver is busy, or it is not a host name
+ *         dns       error "name not found" (the lookup returned: unknown host, no address), "resolver busy" (no answer from the resolver within
+ *                   timeoutMs, or no thread left for a lookup: not a verdict on the name), or "not a host name"
  *         connect   TCP refused or unreachable
  *         timeout   a stage got no answer within timeoutMs (TCP connect, TLS handshake or the DNS answer)
  *         tls       the handshake failed: the server closed or spoke something else, the certificate is not trusted, or does not match the host name
@@ -124,6 +127,8 @@ public final class DnsProbe {
 
   public interface Resolver { InetAddress[] resolve(String host) throws IOException; }
   public interface Clock { long nanoTime(); }
+  /** Makes the (unconnected) socket for the TCP stage; the tests hand out sockets whose connect hangs or fails. */
+  public interface SocketMaker { Socket create(); }
   public interface Sink { void emit(String json); }
 
   /** The threads that run name lookups, for every scan of one Env: at most `cap` threads exist, however many lookups hang. */
@@ -146,11 +151,16 @@ public final class DnsProbe {
       });
     }
     public int stuck() { return stuck.get(); }
+    /** Stops the pool: idle threads end, new lookups are refused ("resolver busy"); a call that cannot be interrupted ends when the resolver returns. */
+    public void shutdown() { pool.shutdownNow(); }
   }
 
   public static final class Env {
     public int port = PORT;
     public Lookups lookups = new Lookups(LOOKUP_THREADS);
+    public SocketMaker sockets = new SocketMaker() {
+      @Override public Socket create() { return new Socket(Proxy.NO_PROXY); }
+    };
     /** null: the platform's default factory (its trust store). */
     public SSLSocketFactory sslFactory;
     public Resolver resolver = new Resolver() {
@@ -252,36 +262,108 @@ public final class DnsProbe {
   }
 
   /**
-   * The index just after the first top-level object of the text, or -1 when the text is not exactly one object followed by white space
-   * (space, tab, CR, LF) only: anything after it, a second value, a comment, a NUL, makes it -1.
+   * The index just after the first top-level object of the text, or -1 when the text is not exactly one STRICT JSON object (RFC 8259: double
+   * quotes, quoted keys, no trailing commas, no comments, no single quotes, numbers without leading zeros) followed by white space
+   * (space, tab, CR, LF) only. org.json is lenient, so the text is checked here before it is handed to it.
    */
   static int objectEnd(String t) {
-    int i = 0, n = t.length();
+    int n = t.length(), i = 0;
     while (i < n && isWhite(t.charAt(i))) i++;
     if (i >= n || t.charAt(i) != '{') return -1;
-    int depth = 0;
-    boolean inString = false;
-    for (; i < n; i++) {
+    int end = jsonValue(t, i, 0);
+    if (end < 0) return -1;
+    for (int k = end; k < n; k++) if (!isWhite(t.charAt(k))) return -1;
+    return end;
+  }
+
+  private static int skipWhite(String t, int i) {
+    while (i < t.length() && isWhite(t.charAt(i))) i++;
+    return i;
+  }
+
+  /** The index after the JSON value that starts at i, or -1. */
+  private static int jsonValue(String t, int i, int depth) {
+    if (depth > 16 || i >= t.length()) return -1;
+    char c = t.charAt(i);
+    if (c == '{') {
+      i = skipWhite(t, i + 1);
+      if (i < t.length() && t.charAt(i) == '}') return i + 1;
+      while (true) {
+        if (i >= t.length() || t.charAt(i) != '"') return -1;
+        i = jsonString(t, i);
+        if (i < 0) return -1;
+        i = skipWhite(t, i);
+        if (i >= t.length() || t.charAt(i) != ':') return -1;
+        i = jsonValue(t, skipWhite(t, i + 1), depth + 1);
+        if (i < 0) return -1;
+        i = skipWhite(t, i);
+        if (i >= t.length()) return -1;
+        if (t.charAt(i) == '}') return i + 1;
+        if (t.charAt(i) != ',') return -1;
+        i = skipWhite(t, i + 1);
+      }
+    }
+    if (c == '[') {
+      i = skipWhite(t, i + 1);
+      if (i < t.length() && t.charAt(i) == ']') return i + 1;
+      while (true) {
+        i = jsonValue(t, i, depth + 1);
+        if (i < 0) return -1;
+        i = skipWhite(t, i);
+        if (i >= t.length()) return -1;
+        if (t.charAt(i) == ']') return i + 1;
+        if (t.charAt(i) != ',') return -1;
+        i = skipWhite(t, i + 1);
+      }
+    }
+    if (c == '"') return jsonString(t, i);
+    if (t.startsWith("true", i)) return i + 4;
+    if (t.startsWith("false", i)) return i + 5;
+    if (t.startsWith("null", i)) return i + 4;
+    return jsonNumber(t, i);
+  }
+
+  private static int jsonString(String t, int i) {
+    int n = t.length();
+    for (i++; i < n; i++) {
       char c = t.charAt(i);
-      if (c == 0) return -1;
-      if (inString) {
-        if (c == '\\') i++;
-        else if (c == '"') inString = false;
-      } else if (c == '"') {
-        inString = true;
-      } else if (c == '{' || c == '[') {
-        depth++;
-      } else if (c == '}' || c == ']') {
-        depth--;
-        if (depth == 0) {
-          int end = i + 1;
-          for (int k = end; k < n; k++) if (!isWhite(t.charAt(k))) return -1;
-          return end;
+      if (c == '"') return i + 1;
+      if (c < 0x20) return -1;                                   // a raw control character (tab, line break, NUL) is not allowed in a string
+      if (c == '\\') {
+        if (++i >= n) return -1;
+        char e = t.charAt(i);
+        if (e == 'u') {
+          if (i + 4 >= n) return -1;
+          for (int k = 1; k <= 4; k++) if (Character.digit(t.charAt(i + k), 16) < 0) return -1;
+          i += 4;
+        } else if ("\"\\/bfnrt".indexOf(e) < 0) {
+          return -1;
         }
-        if (depth < 0) return -1;
       }
     }
     return -1;
+  }
+
+  private static int jsonNumber(String t, int i) {
+    int n = t.length();
+    if (i < n && t.charAt(i) == '-') i++;
+    if (i >= n) return -1;
+    if (t.charAt(i) == '0') i++;
+    else if (t.charAt(i) >= '1' && t.charAt(i) <= '9') { while (i < n && Character.isDigit(t.charAt(i)) && t.charAt(i) < 128) i++; }
+    else return -1;
+    if (i < n && t.charAt(i) == '.') {
+      int k = ++i;
+      while (i < n && t.charAt(i) >= '0' && t.charAt(i) <= '9') i++;
+      if (i == k) return -1;
+    }
+    if (i < n && (t.charAt(i) == 'e' || t.charAt(i) == 'E')) {
+      i++;
+      if (i < n && (t.charAt(i) == '+' || t.charAt(i) == '-')) i++;
+      int k = i;
+      while (i < n && t.charAt(i) >= '0' && t.charAt(i) <= '9') i++;
+      if (i == k) return -1;
+    }
+    return i;
   }
 
   private static boolean isWhite(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
@@ -572,7 +654,7 @@ public final class DnsProbe {
         if (stopped instanceof InterruptedException) { Thread.currentThread().interrupt(); cancel(); }
         return cancelledResult(index);
       } catch (TimeoutException late) {
-        return failedResult(index, DNS, "name lookup timed out");
+        return failedResult(index, DNS, "resolver busy");        // the resolver did not answer in time: not a verdict on the name
       } catch (RejectedExecutionException busy) {
         return failedResult(index, DNS, "resolver busy");
       } catch (Exception failed) {
@@ -658,7 +740,7 @@ public final class DnsProbe {
         for (int a = 0; a < Math.min(addrs.length, MAX_ADDRESSES) && raw == null; a++) {
           long left = (budgetEnd - System.nanoTime()) / 1000000L;
           if (left <= 0) { lastStatus = TIMEOUT; lastError = "connect timed out"; break; }
-          Socket cand = new Socket(Proxy.NO_PROXY);
+          Socket cand = env.sockets.create();
           if (!register(cand)) { s.cancelled = true; return s; }
           long t0 = env.clock.nanoTime();
           try {
@@ -779,15 +861,7 @@ public final class DnsProbe {
         lookups.add(l);
       }
       try {
-        lk.pool.execute(new Runnable() {
-          @Override public void run() {
-            try { l.result = env.resolver.resolve(host); } catch (Throwable t) { l.failed = true; }
-            finally {
-              if (!l.state.compareAndSet(0, 2)) lk.stuck.decrementAndGet();          // abandoned meanwhile: it has returned now, the slot is free
-              l.latch.countDown();
-            }
-          }
-        });
+        lk.pool.execute(new LookupTask(env.resolver, host, l, lk.stuck));         // a static class: it holds no reference to this scan, its sink or the activity
         l.latch.await(timeoutMs, TimeUnit.MILLISECONDS);
         lk.stuck.incrementAndGet();                                                   // counted first, so the count never dips below the truth
         if (l.state.compareAndSet(0, 1)) {                                            // still running (or the scan was cancelled): abandon it
@@ -799,6 +873,22 @@ public final class DnsProbe {
         return l.result;
       } finally {
         synchronized (lock) { lookups.remove(l); }
+      }
+    }
+  }
+
+  /** The work of one name lookup. It knows only the resolver, the name and where to put the answer. */
+  private static final class LookupTask implements Runnable {
+    private final Resolver resolver;
+    private final String host;
+    private final Lookup lookup;
+    private final AtomicInteger stuck;
+    LookupTask(Resolver resolver, String host, Lookup lookup, AtomicInteger stuck) { this.resolver = resolver; this.host = host; this.lookup = lookup; this.stuck = stuck; }
+    @Override public void run() {
+      try { lookup.result = resolver.resolve(host); } catch (Throwable t) { lookup.failed = true; }
+      finally {
+        if (!lookup.state.compareAndSet(0, 2)) stuck.decrementAndGet();          // abandoned meanwhile: it has returned now, the slot is free
+        lookup.latch.countDown();
       }
     }
   }
@@ -817,6 +907,7 @@ public final class DnsProbe {
   public static final class Runner {
     private final Env env;
     private Scan current;
+    private boolean closed;
 
     public Runner(Env env) { this.env = env; }
 
@@ -827,6 +918,7 @@ public final class DnsProbe {
 
     /** Validates, cancels the running scan, starts this one on the executor. Returns {"ok":true,"id":..} or {"ok":false,"error":..}. */
     public synchronized String start(String requestJson, Executor ex, Sink sink) {
+      if (closed) return error("closed");
       Request req;
       try {
         req = parseRequest(requestJson);
@@ -851,8 +943,11 @@ public final class DnsProbe {
       if (id != null && current != null && current.id().equals(id)) current.cancel();
     }
 
+    /** The end of the Runner (the activity's onDestroy): the running scan is cancelled, later starts are refused ("closed"), the lookup pool is stopped. */
     public synchronized void shutdown() {
+      closed = true;
       if (current != null) current.cancel();
+      env.lookups.shutdown();
     }
   }
 }

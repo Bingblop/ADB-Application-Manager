@@ -7,7 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
+import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
+import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -433,6 +438,8 @@ public class DnsProbeTest {
       medians();
       cap();
       resolverCap();
+      shutdownRules();
+      connectStage();
       cancel();
       sourceScan();
     } finally {
@@ -572,6 +579,15 @@ public class DnsProbeTest {
         parseError(okReq + "garbage") != null && parseError(okReq + " {}") != null && parseError(okReq + "{}") != null && parseError(okReq + " // c") != null && parseError(okReq + "/* c */") != null
             && parseError(okReq + "\u0000") != null && parseError(okReq + " 1") != null && parseError(okReq + ",") != null && parseError(okReq + "}") != null && parseError(okReq + " x\n") != null);
     check("request: white space around the object (space, tab, CR, LF) is fine", parseError(okReq + "\n") == null && parseError(okReq + " \t\r\n  ") == null && parseError("\n\t " + okReq) == null && parseError(" " + okReq + " ") == null);
+    String pre = "{\"id\":\"s\",\"hosts\":[\"dns.google\"]";
+    String[] notStrict = {"{'id':'s','hosts':['dns.google']}", "{id:\"s\",hosts:[\"dns.google\"]}", pre + ",}", "{\"id\":\"s\",\"hosts\":[\"dns.google\",]}", pre + ",\"samples\":01}", pre + ",\"samples\":+1}", pre + ",\"samples\":.5}",
+        pre + ",\"samples\":0x3}", pre + ",\"samples\":NaN}", pre + ",\"samples\":1.}", pre + ",\"samples\":1e}", pre + ",\"samples\":-}", pre + ",\"x\":\"a\tb\"}", pre + ",\"x\":\"a\\xb\"}", pre + ",\"x\":\"a\\u12g4\"}",
+        pre + ",\"x\":\"a\nb\"}", pre + " /* c */}", pre + ",\"x\":tru}", pre + ";}", pre + ",\"samples\" 3}", pre + ",\"samples\":}", "{\"id\":\"s\" \"hosts\":[]}", "{,\"id\":\"s\"}", "{\"id\":\"s\",\"hosts\":[\"dns.google\"]"};
+    boolean strictOk = true;
+    for (String x : notStrict) if (parseError(x) == null) { strictOk = false; System.out.println("FAIL accepted non-JSON: " + x); }
+    check("request: text that org.json would accept but JSON does not (single quotes, unquoted keys, trailing commas, 01, +1, .5, 0x3, NaN, 1., raw tab or line break in a text, bad escapes, comments, a missing colon) is refused", strictOk);
+    check("request: strict JSON in all its shapes is accepted (numbers 0, -0, 1e0, 3E+0, 2.5, escapes \\u00e9 \\n \\/, nested lists and objects, true, false, null)",
+        parseError(pre + ",\"samples\":-0,\"x\":[1e0,3E+0,2.5,0,{\"a\":[true,false,null,\"\\u00e9\\n\\/\\\"\"]}]}") == null && parseError(pre + ",\"samples\":1e0}") == null);
     check("request: braces and quotes inside a text do not end the object early or late", DnsProbe.objectEnd("{\"a\":\"}{\"}") == 10 && DnsProbe.objectEnd("{\"a\":\"\\\"}\"} ") == 11 && DnsProbe.objectEnd("{\"a\":\"}\"} x") == -1
         && DnsProbe.objectEnd("{\"a\":{\"b\":[1,{}]}}") == 18 && DnsProbe.objectEnd("{\"a\":") == -1 && DnsProbe.objectEnd("[]") == -1 && DnsProbe.objectEnd("") == -1);
     check("request: not JSON, an array, a number, empty, null are refused", parseError("nope") != null && parseError("[1]") != null && parseError("5") != null && parseError("") != null && parseError(null) != null && parseError("null") != null);
@@ -827,7 +843,7 @@ public class DnsProbeTest {
   static void names() throws Exception {
     Run run = scanAndWait(env(1, clientTrust, new Names()), req("nx", 2, 1000, "nothing.example.invalid", "gone.test.example"), 10000);
     JSONObject a = run.host("nothing.example.invalid"), b = run.host("gone.test.example");
-    check("names: a name that does not resolve -> dns", a != null && "dns".equals(a.optString("status")) && b != null && !"ok".equals(b.optString("status")), st(a) + " " + st(b));
+    check("names: a name that does not resolve -> dns / `name not found`", a != null && "dns".equals(a.optString("status")) && "name not found".equals(a.optString("error")) && b != null && !"ok".equals(b.optString("status")), st(a) + " " + st(b));
     check("names: ... with no ip and no times", a != null && "".equals(a.optString("ip", "x")) && a.isNull("connectMs") && a.isNull("tlsMs") && a.isNull("queryMs") && a.optInt("okSamples", -1) == 0);
     // a lookup that never returns: dns after the timeout, and only one lookup (the others are not piled on)
     Names stuck = new Names();
@@ -836,7 +852,7 @@ public class DnsProbeTest {
     Run r2 = scanAndWait(env(1, clientTrust, stuck), req("st", 3, 500, "stuck.test.example"), 8000);
     long ms = (System.nanoTime() - t0) / 1000000L;
     JSONObject s = r2.host("stuck.test.example");
-    check("names: a lookup that never returns -> dns after about the timeout, and later samples are not started", s != null && "dns".equals(s.optString("status")) && ms < 3000 && stuck.calls.get() == 1, st(s) + " after " + ms + " ms, " + stuck.calls + " lookups");
+    check("names: a lookup that never returns -> dns / `resolver busy` after about the timeout (not `name not found`: nothing was learned about the name), one lookup for 3 samples", s != null && "dns".equals(s.optString("status")) && "resolver busy".equals(s.optString("error")) && ms >= 400 && ms < 3000 && stuck.calls.get() == 1, st(s) + " after " + ms + " ms, " + stuck.calls + " lookups");
     stuck.block.countDown();
     // a resolver that throws something odd
     DnsProbe.Resolver boom = new DnsProbe.Resolver() { @Override public InetAddress[] resolve(String h) { throw new IllegalStateException("boom"); } };
@@ -956,11 +972,10 @@ public class DnsProbeTest {
       int timedOut = 0, busy = 0, other = 0;
       for (JSONObject o : first.hosts) {
         if (!"dns".equals(o.optString("status"))) other++;
-        else if ("name lookup timed out".equals(o.optString("error"))) timedOut++;
         else if ("resolver busy".equals(o.optString("error"))) busy++;
         else other++;
       }
-      check("resolver cap: 20 hosts -> at most 8 lookups were started (the cap for the whole app), the other hosts say `resolver busy`, none says anything else", calls.get() <= 8 && calls.get() >= 6 && timedOut == calls.get() && busy == 20 - calls.get() && other == 0,
+      check("resolver cap: 20 hosts -> at most 8 lookups were started (the cap for the whole app), every host says `resolver busy` (the 8 whose lookup timed out and the 12 refused), none says anything else", calls.get() <= 8 && calls.get() >= 6 && busy == 20 && other == 0,
           calls + " lookups, " + timedOut + " timed out, " + busy + " busy, " + other + " other");
       check("resolver cap: the abandoned lookups are counted as stuck", e.lookups.stuck() == calls.get(), e.lookups.stuck() + " stuck");
       int startedSoFar = calls.get();
@@ -981,6 +996,114 @@ public class DnsProbeTest {
       for (JSONObject o : after.hosts) allOk &= "ok".equals(o.optString("status"));
       check("resolver cap: a scan after that resolves and probes normally", allOk, after.hosts.toString());
     } finally { release.countDown(); good.close(); }
+  }
+
+  // ---- shutdown ----
+
+  static WeakReference<Run> startAndForget(DnsProbe.Env e) throws Exception {
+    DnsProbe.Runner r = new DnsProbe.Runner(e);
+    Run run = scan(r, req("wr", 1, 500, "w.test.example"));
+    run.await(8000);
+    r.shutdown();
+    return new WeakReference<Run>(run);
+  }
+
+  static void shutdownRules() throws Exception {
+    DnsProbe.Env e = env(1, clientTrust, new Names());
+    DnsProbe.Runner r = new DnsProbe.Runner(e);
+    r.shutdown();
+    String resp = r.start(req("late", 1, 500, "x.test.example"), POOL, new Run());
+    JSONObject o = new JSONObject(resp);
+    check("shutdown: a start after shutdown is refused (ok:false, \"closed\") and starts nothing", !o.getBoolean("ok") && "closed".equals(o.optString("error")), resp);
+    check("shutdown: shutdown stops the lookup pool", e.lookups.pool.isShutdown());
+    // a lookup that is blocked for good must not keep the scan (and so the sink, and in the app the activity) alive
+    Class<?> task = null;
+    for (Class<?> c : DnsProbe.class.getDeclaredClasses()) if (c.getSimpleName().equals("LookupTask")) task = c;
+    boolean noOuter = task != null && java.lang.reflect.Modifier.isStatic(task.getModifiers());
+    if (task != null) for (java.lang.reflect.Field f : task.getDeclaredFields()) {
+      Class<?> t = f.getType();
+      noOuter &= !f.isSynthetic() && !f.getName().startsWith("this$") && !DnsProbe.Scan.class.isAssignableFrom(t) && !DnsProbe.Sink.class.isAssignableFrom(t) && !DnsProbe.Runner.class.isAssignableFrom(t) && !DnsProbe.Env.class.isAssignableFrom(t);
+    }
+    check("shutdown: the lookup task is a static class whose fields hold no scan, sink, runner or env", noOuter);
+    final CountDownLatch release = new CountDownLatch(1);
+    final AtomicInteger calls = new AtomicInteger();
+    DnsProbe.Resolver stubborn = new DnsProbe.Resolver() {
+      @Override public InetAddress[] resolve(String host) throws IOException {
+        calls.incrementAndGet();
+        while (true) { try { release.await(); break; } catch (InterruptedException ignored) {} }
+        throw new UnknownHostException(host);
+      }
+    };
+    DnsProbe.Env e2 = env(1, clientTrust, stubborn);
+    WeakReference<Run> ref = startAndForget(e2);
+    for (int i = 0; i < 60 && ref.get() != null; i++) { System.gc(); Thread.sleep(100); }
+    check("shutdown: while a lookup is still blocked, the finished scan's sink can be garbage collected (the blocked thread keeps nothing of the app)", ref.get() == null && calls.get() == 1 && e2.lookups.stuck() == 1, "sink " + (ref.get() == null ? "freed" : "still referenced") + ", " + calls + " lookups, " + e2.lookups.stuck() + " stuck");
+    release.countDown();
+    long t = System.nanoTime();
+    while (System.nanoTime() - t < 5000000000L && e2.lookups.stuck() > 0) Thread.sleep(20);
+    check("shutdown: ... and the blocked call returning frees its slot", e2.lookups.stuck() == 0);
+  }
+
+  // ---- the TCP stage: timeouts and fallbacks, with sockets whose connect is scripted ----
+
+  static final InetAddress BAD_ADDR;
+  static { InetAddress a = null; try { a = InetAddress.getByName("127.0.0.2"); } catch (Exception ignored) {} BAD_ADDR = a; }
+
+  /** connect: 0 hangs for the whole timeout and then times out; 1 says "no route"; 2 refuses 127.0.0.2 and connects to anything else for real. */
+  static final class FakeSocket extends Socket {
+    final int mode;
+    final AtomicInteger attempts;
+    FakeSocket(int mode, AtomicInteger attempts) { this.mode = mode; this.attempts = attempts; }
+    @Override public void connect(SocketAddress a, int timeout) throws IOException {
+      attempts.incrementAndGet();
+      if (mode == 0) { try { Thread.sleep(timeout); } catch (InterruptedException e) { throw new IOException("interrupted"); } throw new SocketTimeoutException("connect timed out"); }
+      if (mode == 1) throw new NoRouteToHostException("No route to host");
+      if (((InetSocketAddress) a).getAddress().equals(BAD_ADDR)) throw new ConnectException("Connection refused");
+      super.connect(a, timeout);
+    }
+  }
+
+  static DnsProbe.Env fakeEnv(final int mode, final AtomicInteger attempts, int port, InetAddress... addrs) {
+    DnsProbe.Env e = env(port, clientTrust, new Fixed(addrs));
+    e.sockets = new DnsProbe.SocketMaker() { @Override public Socket create() { return new FakeSocket(mode, attempts); } };
+    return e;
+  }
+
+  static final class Fixed implements DnsProbe.Resolver {
+    final InetAddress[] a;
+    Fixed(InetAddress... a) { this.a = a; }
+    @Override public InetAddress[] resolve(String h) { return a; }
+  }
+
+  static void connectStage() throws Exception {
+    InetAddress lo = InetAddress.getByName("127.0.0.1");
+    AtomicInteger at = new AtomicInteger();
+    long t0 = System.nanoTime();
+    Run hang = scanAndWait(fakeEnv(0, at, 853, lo), req("ct", 2, 500, NAME), 10000);
+    long ms = (System.nanoTime() - t0) / 1000000L;
+    JSONObject o = hang.host(NAME);
+    check("connect stage: a TCP connect that runs out of time -> timeout (not connect), \"connect timed out\", no stage times, 2 samples tried",
+        o != null && "timeout".equals(o.optString("status")) && "connect timed out".equals(o.optString("error")) && o.isNull("connectMs") && o.isNull("tlsMs") && o.isNull("queryMs") && o.optInt("okSamples", -1) == 0 && at.get() == 2 && ms >= 900 && ms < 4000,
+        st(o) + ", " + at + " attempts, " + ms + " ms");
+    at.set(0);
+    Run noRoute = scanAndWait(fakeEnv(1, at, 853, lo), req("nr", 1, 500, NAME), 10000);
+    o = noRoute.host(NAME);
+    check("connect stage: 'no route to host' -> connect, \"connection refused or unreachable\"", o != null && "connect".equals(o.optString("status")) && "connection refused or unreachable".equals(o.optString("error")) && o.isNull("connectMs"), st(o));
+    // the time budget of the TCP stage is shared by all addresses: two that hang cost one timeout, not two
+    at.set(0);
+    t0 = System.nanoTime();
+    Run two = scanAndWait(fakeEnv(0, at, 853, lo, BAD_ADDR), req("tw", 1, 500, NAME), 10000);
+    ms = (System.nanoTime() - t0) / 1000000L;
+    o = two.host(NAME);
+    check("connect stage: two addresses that both hang share one timeout (about 500 ms, not 1000) -> timeout", o != null && "timeout".equals(o.optString("status")) && ms < 900 && at.get() == 1, st(o) + ", " + at + " attempts, " + ms + " ms");
+    // the first address refuses, the second works: the probe goes on to it and reports it
+    Server s = new Server(serverGood, B.GOOD);
+    try {
+      at.set(0);
+      Run fallback = scanAndWait(fakeEnv(2, at, s.port, BAD_ADDR, lo), req("fb", 1, 3000, NAME), 10000);
+      o = fallback.host(NAME);
+      check("connect stage: the first address refuses, the second is used: ok, ip is the second", o != null && "ok".equals(o.optString("status")) && "127.0.0.1".equals(o.optString("ip")) && at.get() == 2, st(o) + " " + (o == null ? "" : o.optString("ip")));
+    } finally { s.close(); }
   }
 
   // ---- cancel ----
