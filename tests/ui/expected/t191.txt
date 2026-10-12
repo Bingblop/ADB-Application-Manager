@@ -1,0 +1,60 @@
+ok   8 rows, each with exactly one Install button of the class the other stores use
+ok   the button is on the right of the row: inside its padding (about 12 px from the edge), right of the text column, centred vertically
+ok   the aria-label of each button is "Install <name>"
+ok   before any tap the buttons are enabled and no row shows a status line
+ok   the root app keeps its "root" chip
+ok   tapping Install does not open the details window
+ok   while the details load: the row says Loading…, the button is off, nothing is installed yet
+ok   storeLoadApp was asked once, for that app
+ok   then storeInstall is called once with the apk address, package, name and checksum of the download
+ok   the row says Starting…, the button stays off, the window stays closed
+ok   progress is told on the row: "2 MB 50%", button still off
+ok   the (closed) window's own progress line is not used
+ok   while the phone asks "Install this app?" the row says so and the button stays off
+ok   done: the row says Installed…, the button is back on
+ok   done also opens the result sheet with Launch Application
+ok   a second Install on the same app uses the kept details: storeLoadApp is not asked again
+ok   ... and storeInstall gets the same arguments again
+ok   an error is told on the row, in the error style, with the button back on
+ok   an error does not open the window
+ok   a tap on the row itself still opens the details
+ok   opening the details of an app does not load them again (kept)
+ok   the details window installs with exactly the arguments the row used
+ok   an install started in the window shows on the row as well
+ok   and in the window, since the window started it
+ok   the row's Install is ignored while the window's install of the same app runs
+ok   the window's button is back on after the error
+ok   a root app: Install loads its details once and installs it
+ok   its failure is told on its own row, not on the first one
+ok   an app without an APK: the row says so, the button is off and says No APK
+ok   ... and nothing is installed or asked again
+ok   an app that is on the Play Store only says that, with the button off
+ok   a download that is not https counts as no APK on the row
+ok   and the details window agrees: No APK, button off, no "Install source" line
+ok   details that fail to load: the error is on the row (error style), the button is back on
+ok   ... and the window is not opened
+ok   a failed load is not kept: the next tap asks again
+ok   taps while the details load are ignored: storeLoadApp once
+ok   taps while the install runs are ignored: storeInstall once
+ok   a download with no package name is installed with an empty package and no checksum
+ok   its progress comes under the address and reaches its row
+ok   search draws the list again: the running row keeps its status and its button stays off
+ok   sorting too; a tap after the drawing does not start a second install
+ok   progress that arrived while the row was not drawn is there when it is drawn again
+ok   "opened" (the phone's installer took over) ends it: the button is back on
+ok   rows of other apps kept what they showed (No APK stays)
+ok   the details of another app are open
+ok   progress of another app's install does not appear in the open window, and does not change its button
+ok   ... it is on the row of that app
+ok   a finished install of another app does not switch the window's button either
+ok   the window of the app that is installing has its button off and shows the progress so far (no second start from there)
+ok   ... and a start from the window is ignored
+ok   its further progress shows in the window and on the row
+ok   when it ends the window's button is back
+ok   progress for an install no row started changes no row
+ok   the window of a GitHub app starts its install and says Starting…
+ok   progress of some other install does not enter that window
+ok   its own progress does
+ok   and its end switches the button back on
+ok   no script errors
+all passed
