@@ -51,6 +51,7 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
   `SharedPreferences`, logs, exports or pull request text. Release builds must not log command output. Known exceptions that are being moved:
   the GitHub token and the VirusTotal key (C-008 in the handoff, until its pull request is merged) - do not copy that pattern.
 - **Executors and threads (a requirement for new code):** anything a `MainActivity` field or a bridge call starts is stopped in `onDestroy`. Check this when you add one; the Task Manager poll (`tmExec`) was an exception that is being fixed (C-010 in the handoff).
+- **Styling (checked by UI script t171):** the `<style>` blocks of `assets/index.html` take colours, radii, font sizes, weights and padding/margin/gap from the token sheet at the top (the first `:root`: `--space-*`, `--radius-*`, `--fs-*`, `--fw-*`, `--fill-*`, `--tint-*`/`--line-*`, status and theme colours). Do not write a raw `rgba()` of a status colour, a radius of 5-24px, a font size under 18px or a gap of 3-17px into a rule; use the token, or add one to the sheet. Colours that `applyTheme()` sets (accent, status, surfaces) are the only source of colour, so a rule needs no light-mode twin. Fixed palettes (terminal, logcat, syntax highlighting) keep their own literals.
 - **File modes:** `build.sh`, `tests/**/*.sh` and similar scripts keep their executable bit; check `git diff --summary` for mode changes.
 
 ## What needs a human
