@@ -250,6 +250,8 @@ public class InstallConfirmTest {
         is("...a new update check drops every approval, and so does the page when its queue ends", methodBody(src, "private void runUpdateCheck(").contains("approvedUpdates.clear()") && src.contains("public void endUpdateAll() {\n            approvedUpdates.clear();"));
         is("a REINSTATES_SYSTEM question says nothing of a new app, a replaced app, a bundle or a checksum", noContradiction());
         is("...and only one such question is open at a time", all.contains("updateAllAsking.compareAndSet(false, true)"));
+        int aGuard = all.indexOf("updateAllAsking.compareAndSet(false, true)"), aClear = all.indexOf("approvedUpdates.clear()");
+        is("a new 'Update all' question drops every earlier yes as soon as it is accepted: after the one-at-a-time guard, before the work starts and the dialog opens", aGuard >= 0 && aClear > aGuard && aClear < all.indexOf("executor.submit(") && aClear < all.indexOf("confirmNative(") && aClear < all.indexOf("approvedUpdates.replace("));
 
         String store = methodBody(src, "private void downloadAndInstall(");
         is("the store install still asks (v7.12.10)", store.indexOf("if (!confirmPrivilegedInstall(InstallConfirm.message(") > 0 && store.indexOf("if (!confirmPrivilegedInstall(") < store.indexOf("installApk(apk)"));
@@ -267,6 +269,12 @@ public class InstallConfirmTest {
         int sysAsk = res.indexOf("if (!confirmInMode(sysMode, null, InstallConfirm.messageLocalFile(");
         is("bringing back a removed system app (pm install-existing) asks first too, and a No stops the restore", existing > 0 && sysAsk > 0 && sysAsk < existing && res.indexOf("throw new InstallCancelled()") > sysAsk && res.indexOf("throw new InstallCancelled()") < existing && res.contains("InstallConfirm.REINSTATES_SYSTEM"));
         is("the Morphe uninstall-first removes the package read from the APK, never the one the page sent", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && !mor.contains("uninstallInstalledCopy(mode, pkg)") && mor.contains("uninstallFirst && insidePkg == null"));
+
+        int mTry = mor.indexOf("        try {\n            if (files.isEmpty())"), mDecl = mor.indexOf("String insidePkg = null;");
+        int mRetry = mor.indexOf("\"retry\", \"uninstall\"");
+        String retryLine = mRetry < 0 ? "" : mor.substring(mor.lastIndexOf("\n", mRetry) + 1, mor.indexOf("\n", mRetry));
+        is("the Morphe package read from the APK is kept outside the try block, so the retry decision can use it", mDecl > 0 && mTry > mDecl && mor.contains("            insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;") && count(mor, "String insidePkg") == 1);
+        is("...the uninstall-first retry is judged on that package (never the one the page sent) and is not offered when it could not be read", mRetry > 0 && retryLine.contains("canUninstallFirst(insidePkg, mode)") && retryLine.contains("insidePkg != null") && !mor.contains("canUninstallFirst(pkg") && retryLine.indexOf("insidePkg != null") < retryLine.indexOf("canUninstallFirst(insidePkg"));
 
         // the mode the question names is the mode the install runs through: a Yes counts only if it is still the mode when the answer is in
         String cim = methodBody(src, "private boolean confirmInMode(");

@@ -2340,6 +2340,8 @@ public class MainActivity extends Activity {
      */
     private void runApproveUpdateAll(final String pkgsJson) {
         if (!updateAllAsking.compareAndSet(false, true)) return;     // a question is already on screen: its answer is coming
+        // A new question replaces every earlier yes, whatever the answer turns out to be (No, a failed mode check, a lost answer): clear before the dialog opens
+        approvedUpdates.clear();
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -7687,12 +7689,13 @@ public class MainActivity extends Activity {
             files.add(apk);
         }
         String out;
+        String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
             PackageInfo inside = getPackageManager().getPackageArchiveInfo(files.get(0).getAbsolutePath(), 0);
-            String insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
+            insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;
             if (uninstallFirst && insidePkg == null) throw new IllegalStateException("can't tell which app to uninstall first: the package name can't be read from the APK");
             List<String> acts = new ArrayList<String>();
             if (uninstallFirst) acts.add(InstallConfirm.REMOVES_FIRST);
@@ -7717,7 +7720,8 @@ public class MainActivity extends Activity {
         r.put("output", notes + (out == null ? "" : out.trim()));
         if (!ok) {
             r.put("advice", InstallHints.advice(out));
-            if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
+            // eligibility is judged on the app the APK is (the one an uninstall-first retry would remove), not on the package name the page sent; unreadable: no retry
+            if (!uninstallFirst && insidePkg != null && InstallHints.updateIncompatible(out) && canUninstallFirst(insidePkg, mode)) r.put("retry", "uninstall");
         }
         return r;
     }
