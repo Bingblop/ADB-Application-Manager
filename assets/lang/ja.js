@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "これらのアプリは確認されていないため、更新が待っている可能性があります。",
 "connection failed": "接続に失敗しました",
 "no internet": "インターネットなし",
-"timed out": "タイムアウトしました"
+"timed out": "タイムアウトしました",
+"Animations": "アニメーション",
+"Bottom bar + top bar": "下のバー＋上のバー",
+"Bottom bar only": "下のバーのみ",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "固定した各タブのメニューに何をどの順で並べるかを選びます。メニューに並ぶのは最大4件で、先頭が親指の位置に来ます。",
+"Customize tabs": "タブをカスタマイズ",
+"Debloat": "デブロート",
+"Doze": "Doze",
+"Find APKs on storage": "ストレージ内のAPKを探す",
+"Full-screen terminal": "全画面ターミナル",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "下のバーのタブを長押しすると、すばやく移動できる小さなメニューが開きます。開くのは画面かセクションだけで、端末は変更されません。",
+"Long-press a tab for shortcuts": "タブを長押しでショートカット",
+"Long-press shortcuts": "長押しショートカット",
+"Main navigation": "メインナビゲーション",
+"Monet": "Monet",
+"More tabs": "その他のタブ",
+"Reset shortcuts": "ショートカットをリセット",
+"Shortcuts": "ショートカット",
+"Shortcuts are back to the default": "ショートカットを初期設定に戻しました",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "ピンをタップすると、そのタブを下のバーに固定します。固定できるのは4つまでで、先頭はアプリ管理です。ほかは「もっと見る」にまとまります。",
+"Tasks": "タスク",
+"Telemetry": "テレメトリ",
+"Top bar only": "上のバーのみ",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "タブの置き場所です。下のバーには固定したタブと残りのための「もっと見る」ボタン、上のバーにはすべてのタブが並びます。",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "保存された結果から{0}件"],
 ["{0} unreachable", "{0}に接続できません"],
 ["{0} update found so far", "これまでに{0}件の更新が見つかりました"],
-["{0} updates found so far", "これまでに{0}件の更新が見つかりました"]
+["{0} updates found so far", "これまでに{0}件の更新が見つかりました"],
+["A menu lists at most {0} shortcuts.", "1つのメニューに並べられるショートカットは最大{0}件です。"],
+["The bottom bar holds {0} tabs. Unpin one first.", "下のバーに置けるタブは{0}つまでです。先にどれか1つの固定を外してください。"]
 ]
 };

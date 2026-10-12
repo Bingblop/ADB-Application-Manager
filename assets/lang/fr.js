@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Ces applications n’ont pas été vérifiées : une mise à jour est peut-être disponible.",
 "connection failed": "échec de la connexion",
 "no internet": "pas d’Internet",
-"timed out": "délai dépassé"
+"timed out": "délai dépassé",
+"Animations": "Animations",
+"Bottom bar + top bar": "Barre du bas + barre du haut",
+"Bottom bar only": "Barre du bas seulement",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Choisissez ce que le menu de chaque onglet épinglé propose et dans quel ordre. Un menu en liste quatre au plus ; le premier est celui qui se trouve sous votre pouce.",
+"Customize tabs": "Personnaliser les onglets",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Chercher des APK dans le stockage",
+"Full-screen terminal": "Terminal en plein écran",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Maintenez un onglet de la barre du bas pour ouvrir un petit menu de destinations rapides. Elles ouvrent seulement un écran ou une section ; aucune ne modifie votre téléphone.",
+"Long-press a tab for shortcuts": "Appui long sur un onglet pour les raccourcis",
+"Long-press shortcuts": "Raccourcis par appui long",
+"Main navigation": "Navigation principale",
+"Monet": "Monet",
+"More tabs": "Autres onglets",
+"Reset shortcuts": "Réinitialiser les raccourcis",
+"Shortcuts": "Raccourcis",
+"Shortcuts are back to the default": "Les raccourcis sont revenus par défaut",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Touchez l’épingle pour garder un onglet dans la barre du bas. Elle en contient quatre, le Gestionnaire d’applis étant le premier ; les autres attendent sous « Plus ».",
+"Tasks": "Tâches",
+"Telemetry": "Télémétrie",
+"Top bar only": "Barre du haut seulement",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Où sont les onglets. La barre du bas contient les onglets que vous épinglez et un bouton « Plus » pour les autres ; la barre du haut les contient tous.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "{0} issues des résultats enregistrés"],
 ["{0} unreachable", "{0} injoignable"],
 ["{0} update found so far", "{0} mise à jour trouvée jusqu’ici"],
-["{0} updates found so far", "{0} mises à jour trouvées jusqu’ici"]
+["{0} updates found so far", "{0} mises à jour trouvées jusqu’ici"],
+["A menu lists at most {0} shortcuts.", "Un menu liste au plus {0} raccourcis."],
+["The bottom bar holds {0} tabs. Unpin one first.", "La barre du bas contient {0} onglets. Désépinglez-en un d’abord."]
 ]
 };

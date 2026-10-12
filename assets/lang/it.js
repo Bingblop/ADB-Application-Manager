@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Queste app non sono state controllate, quindi potrebbe esserci un aggiornamento in attesa.",
 "connection failed": "connessione non riuscita",
 "no internet": "nessuna connessione",
-"timed out": "tempo scaduto"
+"timed out": "tempo scaduto",
+"Animations": "Animazioni",
+"Bottom bar + top bar": "Barra in basso + barra in alto",
+"Bottom bar only": "Solo barra in basso",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Scegli cosa elenca il menu di ogni scheda fissata e in quale ordine. Un menu ne elenca al massimo quattro; la prima è quella sotto il pollice.",
+"Customize tabs": "Personalizza le schede",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Cerca APK nell’archiviazione",
+"Full-screen terminal": "Terminale a schermo intero",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Tieni premuta una scheda della barra in basso per un piccolo menu di destinazioni rapide. Aprono solo una schermata o una sezione; nessuna modifica il telefono.",
+"Long-press a tab for shortcuts": "Tieni premuta una scheda per le scorciatoie",
+"Long-press shortcuts": "Scorciatoie con pressione lunga",
+"Main navigation": "Navigazione principale",
+"Monet": "Monet",
+"More tabs": "Altre schede",
+"Reset shortcuts": "Ripristina le scorciatoie",
+"Shortcuts": "Scorciatoie",
+"Shortcuts are back to the default": "Le scorciatoie sono tornate predefinite",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Tocca la puntina per tenere una scheda nella barra in basso. Ne contiene quattro, con Gestione app come prima; le altre aspettano sotto Altro.",
+"Tasks": "Attività",
+"Telemetry": "Telemetria",
+"Top bar only": "Solo barra in alto",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Dove stanno le schede. La barra in basso contiene le schede che fissi e un pulsante Altro per le restanti; la barra in alto le contiene tutte.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "{0} dai risultati salvati"],
 ["{0} unreachable", "{0} non raggiungibile"],
 ["{0} update found so far", "{0} aggiornamento trovato finora"],
-["{0} updates found so far", "{0} aggiornamenti trovati finora"]
+["{0} updates found so far", "{0} aggiornamenti trovati finora"],
+["A menu lists at most {0} shortcuts.", "Un menu elenca al massimo {0} scorciatoie."],
+["The bottom bar holds {0} tabs. Unpin one first.", "La barra in basso contiene {0} schede. Rimuovine prima una."]
 ]
 };

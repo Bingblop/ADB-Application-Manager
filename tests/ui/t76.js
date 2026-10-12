@@ -7,6 +7,7 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'about'];
+const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];          // the tabs on the bottom bar until the user pins others (saved with the order; Extra Settings takes the third place, Console the fourth)
 
 (async () => {
   const b = await chromium.launch();
@@ -68,7 +69,7 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   r = await rows(page);
   check('4. turning File Manager off: it leaves the bar, the row stays (dimmed) so it can be turned on again', !(await keys(page)).includes('files') && r.find(x => x.key === 'files').on === false && (await keys(page)).length === 15);
   check('   Application Manager and About are still first and last', (await keys(page))[0] === 'apps' && (await keys(page)).slice(-1)[0] === 'about');
-  check('   the choice is saved', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 15), off: ['files'] }), JSON.stringify(await saved(page)));
+  check('   the choice is saved', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 15), off: ['files'], pinned: DEFAULT_PINNED, shortcuts: {} }), JSON.stringify(await saved(page)));
   await page.locator('#featureList .fl-row[data-tab="debloater"] .fl-switch').click();
   check('   two off at once', (await keys(page)).join() === 'apps,saved-lists,installer,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
   await page.locator('#featureList .fl-row[data-tab="files"] .fl-switch').click();
@@ -118,7 +119,7 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   r = await rows(page);
   check('   Reset to Default: every tab on and in the first order again', r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 15).join() && r.every(x => x.on) && (await keys(page)).join() === DEFAULT_ORDER.join(), (await keys(page)).join());
   check('   and says so', /default order/.test(await ev(page, () => document.getElementById('toastMsg').innerText)));
-  check('   the saved choice is the default one', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 15), off: [] }));
+  check('   the saved choice is the default one', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 15), off: [], pinned: DEFAULT_PINNED, shortcuts: {} }));
   await page.close();
 
   // 8) a saved choice from an older version is made to fit this version's tabs

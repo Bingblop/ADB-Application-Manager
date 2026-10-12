@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "इन ऐप्स की जांच नहीं हुई, इसलिए इनके लिए अपडेट इंतज़ार कर रहा हो सकता है।",
 "connection failed": "कनेक्शन विफल",
 "no internet": "इंटरनेट नहीं",
-"timed out": "समय समाप्त"
+"timed out": "समय समाप्त",
+"Animations": "एनिमेशन",
+"Bottom bar + top bar": "नीचे की बार + ऊपर की बार",
+"Bottom bar only": "सिर्फ़ नीचे की बार",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "चुनें कि हर पिन किए टैब का मेन्यू क्या दिखाए और किस क्रम में। मेन्यू में अधिकतम चार आइटम होते हैं; पहला आपके अँगूठे के नीचे रहता है।",
+"Customize tabs": "टैब अनुकूलित करें",
+"Debloat": "डीब्लोट",
+"Doze": "Doze",
+"Find APKs on storage": "स्टोरेज में APK खोजें",
+"Full-screen terminal": "फ़ुल-स्क्रीन टर्मिनल",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "नीचे की बार के किसी टैब को देर तक दबाएँ, तेज़ ठिकानों का छोटा मेन्यू खुलेगा। ये सिर्फ़ कोई स्क्रीन या सेक्शन खोलते हैं; इनमें से कोई भी आपका फ़ोन नहीं बदलता।",
+"Long-press a tab for shortcuts": "शॉर्टकट के लिए टैब को देर तक दबाएँ",
+"Long-press shortcuts": "देर तक दबाने के शॉर्टकट",
+"Main navigation": "मुख्य नेविगेशन",
+"Monet": "Monet",
+"More tabs": "और टैब",
+"Reset shortcuts": "शॉर्टकट रीसेट करें",
+"Shortcuts": "शॉर्टकट",
+"Shortcuts are back to the default": "शॉर्टकट डिफ़ॉल्ट पर लौट आए",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "किसी टैब को नीचे की बार पर रखने के लिए पिन पर टैप करें। इसमें चार आ सकते हैं, पहला ऐप मैनेजर रहता है; बाकी “और” के नीचे रहते हैं।",
+"Tasks": "कार्य",
+"Telemetry": "टेलीमेट्री",
+"Top bar only": "सिर्फ़ ऊपर की बार",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "टैब कहाँ दिखें। नीचे की बार में आपके पिन किए टैब और बाकी के लिए “और” बटन रहता है; ऊपर की बार में सभी टैब रहते हैं।",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "सहेजे गए नतीजों से {0}"],
 ["{0} unreachable", "{0} तक पहुंच नहीं हो पा रही"],
 ["{0} update found so far", "अब तक {0} अपडेट मिला"],
-["{0} updates found so far", "अब तक {0} अपडेट मिले"]
+["{0} updates found so far", "अब तक {0} अपडेट मिले"],
+["A menu lists at most {0} shortcuts.", "एक मेन्यू में अधिकतम {0} शॉर्टकट दिखते हैं।"],
+["The bottom bar holds {0} tabs. Unpin one first.", "नीचे की बार में {0} टैब आते हैं। पहले किसी एक का पिन हटाएँ।"]
 ]
 };

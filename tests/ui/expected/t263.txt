@@ -1,0 +1,56 @@
+1. a hold on the Installer slot opens a menu above it with the entries that apply (no Update All yet: no updates found): true
+   it is a menu of real buttons (role menuitem), labelled with the tab, the first entry highlighted and nearest the thumb: true
+   it stands above the slot, inside the screen, not clipped: true
+   the hold gave a haptic tick: true
+2. no click follows the long press (the tab did not change), the menu stays: true
+3. a tap outside closes it and does nothing else: true
+4. Android Back closes it first: true
+   Escape closes it: true
+   a scroll closes it: true
+5. a short press is an ordinary tap: the tab opens, no menu: true
+6. a finger that moves more than 10 px cancels the hold: true
+   a small wobble does not: true
+7. a tap on "Updater" opens the Installer/Updater tab on the updater side and closes the menu: true
+8. press, slide onto "Find APKs on storage", let go: it runs (the install side, the button lit up) and the menu closes: true
+9. "Check for updates" opens the updater and starts the check (nothing else): true
+10. Apps: "Search apps" focuses the search box: true
+11. Console: the menu lists its two segments, "Live Logcat" opens the tab on the log (and keeps that choice): true
+    "ADB Shell" switches the open tab to the shell segment: true
+11b. Terminal: four entries; "Full-screen terminal" opens the full screen (and the bar goes away): true
+    "Coding Agents" opens the tab with the agent picker lit up and focused: true
+    "Termux setup" opens the Terminal and its Termux setup sheet: true
+    "Terminal settings" opens the Terminal and its settings sheet: true
+11b. Extra Settings: the menu lists "Private DNS" only (the sections that exist), and it opens the tab and lights that section up: true
+12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box: true
+13. a hold on More has no menu (it is a tap: the More sheet opens): true
+14. an entry whose target is not on the page ("Find APKs") is simply not listed: true
+    a slot left with no entry does nothing on a hold: true
+15. the registry takes more entries: one whose section is missing is not listed: true
+16. with 3 updates waiting, "Update All (3)" is listed first (the one under the thumb), then the others up to four: true
+17. it opens the updater and asks the install question (the app's own approval) once; nothing is installed: true
+    still nothing installs while the question is open: true
+    and a "no" starts nothing: true
+18. in Read-Only mode "Update All" shows the same privilege message as the button and starts nothing: true
+19. Settings > Navigation > Shortcuts lists every entry of each pinned tab: the first four are on: true
+    only pinned tabs with entries are listed: true
+20. moving "Check for updates" up and switching "Find APKs" off is saved in tab_config: true
+    the menu follows: the favourite first, the switched-off entry gone: true
+21. a menu lists at most four: the fifth is refused: true
+22. unknown tabs and entries in the saved choice are dropped when it is read: true
+    Reset shortcuts returns to the default: true
+23. with "Long-press shortcuts" switched off a hold opens nothing (and the choice is saved): true
+24. the first time the bar is shown, a hint says "Long-press a tab for shortcuts" above the bar: true
+    a tap dismisses it: true
+    after a reload (the choice is kept) it is never shown again: true
+25. Shift+Enter on a slot opens its menu with the focus in it: true
+    Tab stays inside the menu (it wraps): true
+    arrow keys move between entries: true
+    Escape closes it and the focus returns to the slot: true
+26. the context-menu event (the accessibility long press, a right button) opens it too: true
+    slots with a menu say so (aria-haspopup="menu"), More opens a dialog: true
+27. on the rail the menu opens beside the item, inside the screen: true
+28. at 320 px the menu of "extrasettings" is inside the screen: true
+28. at 320 px the menu of "console" is inside the screen: true
+29. SAFETY: every shortcut's run() calls only navigation functions (25 entries); updateAllUI only from "Update All (N)": true
+    and the scan sees every entry of every tab (no empty source): true
+errors: []

@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Aplikasi ini tidak diperiksa, jadi mungkin ada pembaruan yang menunggu.",
 "connection failed": "koneksi gagal",
 "no internet": "tidak ada internet",
-"timed out": "waktu habis"
+"timed out": "waktu habis",
+"Animations": "Animasi",
+"Bottom bar + top bar": "Bilah bawah + bilah atas",
+"Bottom bar only": "Bilah bawah saja",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Pilih apa yang dicantumkan menu tiap tab yang disematkan dan urutannya. Satu menu memuat paling banyak empat; yang pertama ada di bawah jempol Anda.",
+"Customize tabs": "Sesuaikan tab",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Cari APK di penyimpanan",
+"Full-screen terminal": "Terminal layar penuh",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Tahan sebuah tab di bilah bawah untuk menu kecil berisi tujuan cepat. Semuanya hanya membuka layar atau bagian; tidak ada yang mengubah ponsel Anda.",
+"Long-press a tab for shortcuts": "Tekan lama tab untuk pintasan",
+"Long-press shortcuts": "Pintasan tekan lama",
+"Main navigation": "Navigasi utama",
+"Monet": "Monet",
+"More tabs": "Tab lainnya",
+"Reset shortcuts": "Setel ulang pintasan",
+"Shortcuts": "Pintasan",
+"Shortcuts are back to the default": "Pintasan kembali ke default",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Ketuk pin untuk menyimpan tab di bilah bawah. Muat empat, dengan Manajer Aplikasi sebagai yang pertama; sisanya menunggu di bawah Lainnya.",
+"Tasks": "Tugas",
+"Telemetry": "Telemetri",
+"Top bar only": "Bilah atas saja",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Letak tab. Bilah bawah memuat tab yang Anda sematkan dan tombol Lainnya untuk sisanya; bilah atas memuat semuanya.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "{0} dari hasil tersimpan"],
 ["{0} unreachable", "{0} tidak dapat dijangkau"],
 ["{0} update found so far", "{0} pembaruan ditemukan sejauh ini"],
-["{0} updates found so far", "{0} pembaruan ditemukan sejauh ini"]
+["{0} updates found so far", "{0} pembaruan ditemukan sejauh ini"],
+["A menu lists at most {0} shortcuts.", "Satu menu memuat paling banyak {0} pintasan."],
+["The bottom bar holds {0} tabs. Unpin one first.", "Bilah bawah memuat {0} tab. Lepas sematan satu tab dulu."]
 ]
 };

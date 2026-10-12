@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Estes apps não foram verificados, então pode haver uma atualização aguardando.",
 "connection failed": "falha na conexão",
 "no internet": "sem internet",
-"timed out": "tempo esgotado"
+"timed out": "tempo esgotado",
+"Animations": "Animações",
+"Bottom bar + top bar": "Barra inferior + barra superior",
+"Bottom bar only": "Somente barra inferior",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Escolha o que o menu de cada aba fixada lista e em que ordem. Um menu lista no máximo quatro; a primeira fica sob o seu polegar.",
+"Customize tabs": "Personalizar abas",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Procurar APKs no armazenamento",
+"Full-screen terminal": "Terminal em tela cheia",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Mantenha pressionada uma aba da barra inferior para abrir um pequeno menu de destinos rápidos. Eles só abrem uma tela ou uma seção; nenhum altera o seu telefone.",
+"Long-press a tab for shortcuts": "Pressione e segure uma aba para atalhos",
+"Long-press shortcuts": "Atalhos de pressão longa",
+"Main navigation": "Navegação principal",
+"Monet": "Monet",
+"More tabs": "Mais abas",
+"Reset shortcuts": "Redefinir atalhos",
+"Shortcuts": "Atalhos",
+"Shortcuts are back to the default": "Os atalhos voltaram ao padrão",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Toque no alfinete para manter uma aba na barra inferior. Cabem quatro, com o Gerenciador de apps como a primeira; as outras ficam em Mais.",
+"Tasks": "Tarefas",
+"Telemetry": "Telemetria",
+"Top bar only": "Somente barra superior",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Onde ficam as abas. A barra inferior mostra as abas que você fixa e um botão Mais para o restante; a barra superior mostra todas.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "{0} de resultados salvos"],
 ["{0} unreachable", "{0} inacessível"],
 ["{0} update found so far", "{0} atualização encontrada até agora"],
-["{0} updates found so far", "{0} atualizações encontradas até agora"]
+["{0} updates found so far", "{0} atualizações encontradas até agora"],
+["A menu lists at most {0} shortcuts.", "Um menu lista no máximo {0} atalhos."],
+["The bottom bar holds {0} tabs. Unpin one first.", "A barra inferior comporta {0} abas. Desafixe uma primeiro."]
 ]
 };

@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "이 앱들은 확인되지 않았으므로 업데이트가 있을 수 있습니다.",
 "connection failed": "연결 실패",
 "no internet": "인터넷 없음",
-"timed out": "시간 초과"
+"timed out": "시간 초과",
+"Animations": "애니메이션",
+"Bottom bar + top bar": "하단 바 + 상단 바",
+"Bottom bar only": "하단 바만",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "고정한 각 탭의 메뉴에 무엇을 어떤 순서로 보일지 고르세요. 메뉴에는 최대 네 개가 나오며, 첫 번째 항목이 엄지 아래에 옵니다.",
+"Customize tabs": "탭 사용자 지정",
+"Debloat": "디블로트",
+"Doze": "Doze",
+"Find APKs on storage": "저장소에서 APK 찾기",
+"Full-screen terminal": "전체 화면 터미널",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "하단 바의 탭을 길게 누르면 빠른 이동 메뉴가 열립니다. 화면이나 섹션만 열 뿐, 휴대전화를 바꾸지는 않습니다.",
+"Long-press a tab for shortcuts": "탭을 길게 눌러 바로가기 사용",
+"Long-press shortcuts": "길게 눌러 바로가기",
+"Main navigation": "기본 탐색",
+"Monet": "Monet",
+"More tabs": "더 많은 탭",
+"Reset shortcuts": "바로가기 초기화",
+"Shortcuts": "바로가기",
+"Shortcuts are back to the default": "바로가기를 기본값으로 되돌렸습니다",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "핀을 눌러 탭을 하단 바에 고정하세요. 네 개까지 들어가며 첫 번째는 앱 관리자이고, 나머지는 ‘더보기’에 있습니다.",
+"Tasks": "작업",
+"Telemetry": "원격 분석",
+"Top bar only": "상단 바만",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "탭이 놓이는 곳입니다. 하단 바에는 고정한 탭과 나머지를 위한 ‘더보기’ 버튼이, 상단 바에는 모든 탭이 있습니다.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "저장된 결과에서 {0}개"],
 ["{0} unreachable", "{0}에 연결할 수 없음"],
 ["{0} update found so far", "지금까지 업데이트 {0}개 발견"],
-["{0} updates found so far", "지금까지 업데이트 {0}개 발견"]
+["{0} updates found so far", "지금까지 업데이트 {0}개 발견"],
+["A menu lists at most {0} shortcuts.", "메뉴에는 바로가기가 최대 {0}개 나옵니다."],
+["The bottom bar holds {0} tabs. Unpin one first.", "하단 바에는 탭이 {0}개 들어갑니다. 먼저 하나의 고정을 해제하세요."]
 ]
 };

@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Estas apps no se comprobaron, así que puede haber una actualización pendiente.",
 "connection failed": "falló la conexión",
 "no internet": "sin internet",
-"timed out": "tiempo de espera agotado"
+"timed out": "tiempo de espera agotado",
+"Animations": "Animaciones",
+"Bottom bar + top bar": "Barra inferior + barra superior",
+"Bottom bar only": "Solo barra inferior",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Elige qué lista el menú de cada pestaña fijada y en qué orden. Un menú muestra cuatro como máximo; la primera queda bajo tu pulgar.",
+"Customize tabs": "Personalizar pestañas",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Buscar APK en el almacenamiento",
+"Full-screen terminal": "Terminal a pantalla completa",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Mantén pulsada una pestaña de la barra inferior para ver un menú pequeño de destinos rápidos. Solo abren una pantalla o una sección; ninguno cambia tu teléfono.",
+"Long-press a tab for shortcuts": "Mantén pulsada una pestaña para ver atajos",
+"Long-press shortcuts": "Atajos con pulsación larga",
+"Main navigation": "Navegación principal",
+"Monet": "Monet",
+"More tabs": "Más pestañas",
+"Reset shortcuts": "Restablecer atajos",
+"Shortcuts": "Atajos",
+"Shortcuts are back to the default": "Los atajos vuelven a los predeterminados",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Toca la chincheta para mantener una pestaña en la barra inferior. Caben cuatro, con el Gestor de aplicaciones como primera; las demás esperan en «Más».",
+"Tasks": "Tareas",
+"Telemetry": "Telemetría",
+"Top bar only": "Solo barra superior",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Dónde están las pestañas. La barra inferior muestra las pestañas que fijas y un botón «Más» para el resto; la barra superior las muestra todas.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "{0} de resultados guardados"],
 ["{0} unreachable", "{0} no accesible"],
 ["{0} update found so far", "{0} actualización encontrada hasta ahora"],
-["{0} updates found so far", "{0} actualizaciones encontradas hasta ahora"]
+["{0} updates found so far", "{0} actualizaciones encontradas hasta ahora"],
+["A menu lists at most {0} shortcuts.", "Un menú muestra como máximo {0} atajos."],
+["The bottom bar holds {0} tabs. Unpin one first.", "La barra inferior admite {0} pestañas. Desfija una primero."]
 ]
 };

@@ -4804,7 +4804,31 @@ x: {
 "These apps were not checked, so an update for them may be waiting.": "Эти приложения не проверены, поэтому для них может быть доступно обновление.",
 "connection failed": "сбой соединения",
 "no internet": "нет интернета",
-"timed out": "время ожидания истекло"
+"timed out": "время ожидания истекло",
+"Animations": "Анимации",
+"Bottom bar + top bar": "Нижняя панель + верхняя панель",
+"Bottom bar only": "Только нижняя панель",
+"Choose what the menu of each pinned tab lists and in what order. A menu lists four at most; the first one is the one under your thumb.": "Выберите, что показывает меню каждой закреплённой вкладки и в каком порядке. В меню не больше четырёх пунктов; первый оказывается под большим пальцем.",
+"Customize tabs": "Настроить вкладки",
+"Debloat": "Debloat",
+"Doze": "Doze",
+"Find APKs on storage": "Найти APK в памяти",
+"Full-screen terminal": "Терминал на весь экран",
+"Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.": "Нажмите и удерживайте вкладку на нижней панели, чтобы открыть небольшое меню быстрых переходов. Они только открывают экран или раздел; ничто из этого не меняет телефон.",
+"Long-press a tab for shortcuts": "Удерживайте вкладку для быстрых действий",
+"Long-press shortcuts": "Быстрые действия по долгому нажатию",
+"Main navigation": "Основная навигация",
+"Monet": "Monet",
+"More tabs": "Другие вкладки",
+"Reset shortcuts": "Сбросить быстрые действия",
+"Shortcuts": "Быстрые действия",
+"Shortcuts are back to the default": "Быстрые действия возвращены по умолчанию",
+"Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.": "Нажмите на кнопку закрепления, чтобы оставить вкладку на нижней панели. Их помещается четыре, первая — «Менеджер приложений»; остальные ждут в разделе «Ещё».",
+"Tasks": "Задачи",
+"Telemetry": "Телеметрия",
+"Top bar only": "Только верхняя панель",
+"Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.": "Где находятся вкладки. На нижней панели — закреплённые вами вкладки и кнопка «Ещё» для остальных; на верхней — все вкладки.",
+"Zram": "Zram"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5915,6 +5939,8 @@ p: [
 ["{0} from saved results", "Из сохранённых результатов: {0}"],
 ["{0} unreachable", "{0} недоступен"],
 ["{0} update found so far", "Найдено обновлений пока: {0}"],
-["{0} updates found so far", "Найдено обновлений пока: {0}"]
+["{0} updates found so far", "Найдено обновлений пока: {0}"],
+["A menu lists at most {0} shortcuts.", "В меню не больше {0} быстрых действий."],
+["The bottom bar holds {0} tabs. Unpin one first.", "На нижней панели помещается {0} вкладки. Сначала открепите одну."]
 ]
 };
