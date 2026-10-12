@@ -63,4 +63,30 @@ final class InstallGuards {
         common.retainAll(incoming);
         return common.isEmpty() ? "different" : null;
     }
+
+    /** ADB (TCP or Wireless Debugging), Shizuku or Root: a backend that runs `pm` with shell or root rights. */
+    static boolean isPrivilegedMode(String mode) {
+        return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
+    }
+
+    /**
+     * Whether the mode the person was asked about is still the one the install would run through. Only a privileged mode can be: "standard" or "none"
+     * equal to themselves are not a Yes to anything.
+     */
+    static boolean sameMode(String asked, String now) {
+        return isPrivilegedMode(asked) && asked.equals(now);
+    }
+
+    /**
+     * The authorizer an install may use. {@code requested} is what the page asked for ("adb", "shizuku", "root", "none", or anything else, which means
+     * the working mode); {@code execMode} is the mode the app itself is in right now (adb_tcp, adb_wireless, shizuku, root or standard). Standard mode
+     * is the Read-Only mode: there a privileged authorizer is never honoured, whatever the page asks for or whatever happens to be connected, and
+     * the install goes through the system installer ("none"), which asks the person itself. A mode that is not one of the four privileged ones is
+     * treated the same way (fail closed). In a privileged mode the request is passed on unchanged.
+     */
+    static String authorizerFor(String requested, String execMode) {
+        if ("none".equals(requested)) return "none";
+        if (!isPrivilegedMode(execMode)) return "none";
+        return requested == null ? "" : requested;
+    }
 }
