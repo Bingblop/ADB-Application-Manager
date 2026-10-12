@@ -57,6 +57,7 @@ public class UpdateCheckerTest {
     final AtomicLong cost = new AtomicLong();
     final CountDownLatch release = new CountDownLatch(1);
     volatile boolean offline;
+    volatile long deadRealMs;                       // a dead host also takes this long in real time (the workers overlap)
     static final long LATENCY_MS = 40;
 
     FakeNet(FakeClock clock, long deadCostMs) { this.clock = clock; this.deadCostMs = deadCostMs; }
@@ -80,7 +81,7 @@ public class UpdateCheckerTest {
       if (c == null) { perHost.putIfAbsent(host, new AtomicInteger()); c = perHost.get(host); }
       int nth = c.incrementAndGet();
       if (offline) throw new UnknownHostException(host);
-      if (dead.contains(host)) { spend(deadCostMs); throw new SocketTimeoutException("connect timed out"); }
+      if (dead.contains(host)) { if (deadRealMs > 0) Thread.sleep(deadRealMs); spend(deadCostMs); throw new SocketTimeoutException("connect timed out"); }
       if (flaky.contains(host) && nth % 2 == 0) { spend(deadCostMs); throw new SocketTimeoutException("read timed out"); }
       if (hang.contains(host)) {
         if (!release.await(20, TimeUnit.SECONDS)) throw new IOException("hung for good");
@@ -301,6 +302,8 @@ public class UpdateCheckerTest {
     catalogFallbackTests();
     retryTests();
     requestCountTests();
+    commitBarrierTests();
+    stillNewerTests();
     wiringTests();
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
@@ -583,9 +586,10 @@ public class UpdateCheckerTest {
     // eight threads: at most a burst of eight gets through before the third failure is seen
     World w8 = new World(5000);
     w8.net.dead.add("apt.izzysoft.de");
+    w8.net.deadRealMs = 80;
     JSONObject s8 = run(w8, new UpdateCache(tempDir(), w8.clock), w8.options(), new Events());
     int reached = w8.net.hostRequests("apt.izzysoft.de");
-    is("breaker: with 8 threads at most " + (3 + 8 - 1) + " requests reach the dead host (" + reached + ")", reached >= 3 && reached <= 3 + 7);
+    is("breaker: even with 8 workers exactly 3 requests reach the dead host, the others wait for the verdict (" + reached + ")", reached == 3);
     is("breaker: ...and it is still named once", s8.optJSONArray("hostsDown").length() == 1);
 
     // a success in between resets the count: fail, fail, answer, fail, fail never trips
@@ -802,6 +806,7 @@ public class UpdateCheckerTest {
     Legacy oldDead = legacy(wod, wod.net);
     World wnd = new World(5_000);
     wnd.net.dead.add("apt.izzysoft.de");
+    wnd.net.deadRealMs = 80;
     long fakeStart = wnd.clock.now();
     JSONObject dead = run(wnd, new UpdateCache(tempDir(), wnd.clock), wnd.options(), new Events());
     long newCost = wnd.net.cost.get();
@@ -809,9 +814,128 @@ public class UpdateCheckerTest {
     int deadReached = wnd.net.hostRequests("apt.izzysoft.de");
     is("dead host, 120 apps: the old check made " + oldDead.requests + " requests, " + oldDead.dead + " of them to the dead host, about " + oldDead.seconds + " s even with every thread busy (and gave up after 5 minutes without saying)", oldDead.seconds > 90 && oldDead.dead > 80);
     is("dead host: the new check reached the dead host " + deadReached + " times, " + wnd.net.requests() + " requests in all, and finished inside the deadline (" + newCost / 1000 + " s of waiting in all, run ended " + fakeElapsed / 1000 + " s in)",
-        deadReached <= 3 + 7 && newCost / 1000 < 90 && !dead.optBoolean("cancelled") && dead.optInt("timedOut") == 0);
+        deadReached <= 3 && newCost / 1000 < 90 && !dead.optBoolean("cancelled") && dead.optInt("timedOut") == 0);
     is("dead host: it says so once (hostsDown) and reports the apps it could not check (" + dead.optJSONArray("failed").length() + "), none missing", dead.optJSONArray("hostsDown").length() == 1 && dead.optJSONArray("failed").length() == 78 && dead.optInt("total") == 120);
     System.out.println("INFO dead IzzyOnDroid, 120 apps: old " + oldDead.requests + " requests, " + oldDead.dead + " to the dead host, about " + oldDead.seconds + " s at best; new " + wnd.net.requests() + " requests, " + deadReached + " to the dead host, " + newCost / 1000 + " s of waiting in all");
+  }
+
+  // ---------------------------------------------------------------------------------------------- the end of a run waits for the last commit
+
+  /** A cache whose first saved answer waits for the test (the job is registered but not over). */
+  static final class SlowCache extends UpdateCache {
+    final CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+    final List<String> order = Collections.synchronizedList(new ArrayList<String>());
+    SlowCache(File d, UpdateChecker.Clock c) { super(d, c); }
+    @Override public void put(String pkg, long vc, String lane, String tag, String kind, JSONObject row) {
+      order.add("put");
+      entered.countDown();
+      try { release.await(20, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
+      super.put(pkg, vc, lane, tag, kind, row);
+      order.add("put done");
+    }
+    @Override public boolean save() { order.add("save"); return super.save(); }
+  }
+
+  static List<UpdateChecker.App> only(World w, String pkg) {
+    List<UpdateChecker.App> l = new ArrayList<UpdateChecker.App>();
+    for (UpdateChecker.App a : w.apps) if (a.pkg.equals(pkg)) l.add(a);
+    return l;
+  }
+
+  static void commitBarrierTests() throws Exception {
+    // the last job is still saving its answer: the summary and the save of the answers wait for it
+    final World w = new World(5000);
+    final SlowCache cache = new SlowCache(tempDir(), w.clock);
+    final Events ev = new Events();
+    final UpdateChecker.Options o = w.options();
+    o.self = null;
+    final JSONObject[] got = new JSONObject[1];
+    Thread t = new Thread(new Runnable() { public void run() { try { got[0] = new UpdateChecker(w.net, w.clock, cache).check(only(w, "izzy.app0"), o, ev).summary; } catch (Throwable e) { e.printStackTrace(System.out); } } });
+    t.start();
+    boolean entered = cache.entered.await(10, TimeUnit.SECONDS);
+    Thread.sleep(400);
+    boolean doneProgress = false;
+    synchronized (ev.progress) { for (JSONObject p : ev.progress) if ("done".equals(p.optString("phase"))) doneProgress = true; }
+    is("barrier: the job has its result and is saving its answer (the test holds it)", entered && t.isAlive());
+    is("barrier: ...the check has not returned, produced no summary, saved nothing yet and said nothing is done", got[0] == null && !cache.order.contains("save") && !doneProgress);
+    cache.release.countDown();
+    t.join(10000);
+    is("barrier: after the answer is saved the summary comes, with the update", got[0] != null && got[0].optJSONArray("updates").length() == 1);
+    is("barrier: the answer was written before the cache was saved, and the listener was told before the check returned", cache.order.toString().equals("[put, put done, save]") && ev.rows.size() == 1);
+    World w2 = new World(5000);
+    UpdateCache again = new UpdateCache(dirOf(cache), w.clock);
+    is("barrier: the answer of the last job is on disk", again.lookup("izzy.app0", 10, "os", "|") != null);
+
+    // the listener is still being told of the last update: the check waits for that too
+    final World wl = new World(5000);
+    final CountDownLatch inListener = new CountDownLatch(1), letGo = new CountDownLatch(1);
+    final List<String> order = Collections.synchronizedList(new ArrayList<String>());
+    UpdateChecker.Listener slow = new UpdateChecker.Listener() {
+      public void onUpdate(JSONObject row) { order.add("update"); inListener.countDown(); try { letGo.await(20, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} order.add("update done"); }
+      public void onProgress(JSONObject p) { if ("done".equals(p.optString("phase"))) order.add("progress done"); }
+    };
+    final UpdateChecker.Options ol = wl.options();
+    ol.self = null;
+    final JSONObject[] got2 = new JSONObject[1];
+    final UpdateCache lc = new UpdateCache(tempDir(), wl.clock);
+    final UpdateChecker.Listener fslow = slow;
+    Thread t2 = new Thread(new Runnable() { public void run() { got2[0] = new UpdateChecker(wl.net, wl.clock, lc).check(only(wl, "izzy.app0"), ol, fslow).summary; } });
+    t2.start();
+    inListener.await(10, TimeUnit.SECONDS);
+    Thread.sleep(300);
+    is("barrier: while the listener is told of the last update the check does not return", t2.isAlive() && got2[0] == null && !order.contains("progress done"));
+    letGo.countDown();
+    t2.join(10000);
+    is("barrier: no update arrives after the end (" + order + ")", got2[0] != null && order.indexOf("update done") >= 0 && order.indexOf("update done") < order.indexOf("progress done"));
+
+    // a listener that never returns does not hold the check for ever (the barrier gives up after 5 s and delivers nothing more)
+    final World wh = new World(5000);
+    final CountDownLatch never = new CountDownLatch(1);
+    UpdateChecker.Listener stuck = new UpdateChecker.Listener() {
+      public void onUpdate(JSONObject row) { try { never.await(30, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} }
+      public void onProgress(JSONObject p) {}
+    };
+    final UpdateChecker.Options oh = wh.options();
+    oh.self = null;
+    long t0 = System.nanoTime();
+    JSONObject sh = new UpdateChecker(wh.net, wh.clock, new UpdateCache(tempDir(), wh.clock)).check(only(wh, "izzy.app0"), oh, stuck).summary;
+    long ms = (System.nanoTime() - t0) / 1_000_000;
+    never.countDown();
+    is("barrier: a listener that never returns holds the check for about 5 s, not for ever (" + ms + " ms)", sh != null && ms >= 4000 && ms < 15000);
+
+    // generation: a callback of an older check is dropped once a newer one has started
+    final UpdateChecker.Generation gen = new UpdateChecker.Generation();
+    final World wa = new World(5000);
+    final SlowCache ca = new SlowCache(tempDir(), wa.clock);
+    final Events eva = new Events();
+    final UpdateChecker.Options oa = wa.options();
+    oa.self = null;
+    oa.generation = gen;
+    final JSONObject[] ga = new JSONObject[1];
+    Thread ta = new Thread(new Runnable() { public void run() { ga[0] = new UpdateChecker(wa.net, wa.clock, ca).check(only(wa, "izzy.app0"), oa, eva).summary; } });
+    ta.start();
+    ca.entered.await(10, TimeUnit.SECONDS);
+    World wb = new World(5000);
+    Events evb = new Events();
+    UpdateChecker.Options ob = wb.options();
+    ob.self = null;
+    ob.generation = gen;
+    JSONObject sb = new UpdateChecker(wb.net, wb.clock, new UpdateCache(tempDir(), wb.clock)).check(only(wb, "izzy.app4"), ob, evb).summary;
+    ca.release.countDown();
+    ta.join(10000);
+    is("generation: the newer check delivered its update", evb.rows.size() == 1 && sb.optJSONArray("updates").length() == 1);
+    is("generation: the older check, still saving when the newer one began, delivers nothing to the listener afterwards", eva.rows.isEmpty() && ga[0] != null);
+    boolean lateProgress = false;
+    synchronized (eva.progress) { for (JSONObject p : eva.progress) if ("checking".equals(p.optString("phase")) || "done".equals(p.optString("phase"))) lateProgress = true; }
+    is("generation: ...nor any progress report", !lateProgress);
+  }
+
+  static void stillNewerTests() throws Exception {
+    JSONObject gh = new JSONObject().put("pkg", "a.b").put("source", "github").put("availableVersion", "2.0").put("installedCode", 10);
+    is("still newer: a version name that is newer than the installed one holds", UpdateChecker.stillNewer(gh, 10, "1.0"));
+    is("still newer: the same version code but a version name that is now the same (or newer) than the update: dropped", !UpdateChecker.stillNewer(gh, 10, "2.0") && !UpdateChecker.stillNewer(gh, 10, "2.1"));
+    JSONObject gx = new JSONObject().put("pkg", "c.d").put("source", "galaxy").put("availableVersion", "9.9").put("availableCode", 200).put("installedCode", 100);
+    is("still newer: with a version code from the source the codes decide", UpdateChecker.stillNewer(gx, 100, "5.0") && !UpdateChecker.stillNewer(gx, 200, "1.0") && !UpdateChecker.stillNewer(gx, 300, "1.0"));
   }
 
   // ---------------------------------------------------------------------------------------------- the activity and the page
@@ -824,6 +948,8 @@ public class UpdateCheckerTest {
     }
     throw new IOException("not found: " + rel);
   }
+
+  static int count(String s, String what) { int c = 0, i = 0; while ((i = s.indexOf(what, i)) >= 0) { c++; i += what.length(); } return c; }
 
   static String methodBody(String src, String signature) {
     int at = src.indexOf("    " + signature);
@@ -850,6 +976,8 @@ public class UpdateCheckerTest {
     is("wiring: the running flag and the time are reset in a finally, on every way out", run.contains("finally") && run.indexOf("updateCheckRunning = false") > run.indexOf("finally"));
     is("wiring: the final summary is always sent (also after an exception)", run.contains("onUpdatesChecked"));
     is("wiring: the activity's onDestroy cancels a running check", methodBody(src, "protected void onDestroy(").contains("cancelUpdateCheckRun()"));
+    is("wiring: a kept or restored row is checked against the installed version before it is shown (both places), and the runs are numbered", src.contains("private boolean updateRowStillValid(") && methodBody(src, "private boolean updateRowStillValid(").contains("UpdateChecker.stillNewer(")
+        && count(src, "updateRowStillValid(") >= 3 && src.contains("o.generation = updateRunGeneration"));
     is("wiring: the old per-app loops are gone from the activity (no thread pool of its own for the check)", !src.contains("private void checkOpenSourceApps(") && !src.contains("private JSONObject checkOpenSourceApp("));
     is("wiring: every update is sent to the page as it is found", src.contains("onUpdateFound"));
     is("wiring: the checks run with 5 s to connect and 8 s to read", src.contains("UpdateManager.netHttp(5000, 8000)"));

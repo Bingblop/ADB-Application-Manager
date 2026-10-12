@@ -2197,6 +2197,7 @@ public class MainActivity extends Activity {
 
     /** The check that is running now (Cancel and onDestroy reach it here); null when none is. */
     private volatile UpdateChecker updateCheckRun;
+    private final UpdateChecker.Generation updateRunGeneration = new UpdateChecker.Generation();   // a callback of an older check is dropped once a newer one has started
     /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
     private volatile JSONObject updateLastSummary;
     private volatile JSONObject updateProgressLast;
@@ -2209,9 +2210,13 @@ public class MainActivity extends Activity {
         return updateCacheInstance;
     }
 
-    private boolean stillInstalledAs(String pkg, long versionCode) {
+    /** Whether a kept update row is still true: the app has the version code it had when the row was made, and the update is newer than what is installed now. */
+    private boolean updateRowStillValid(JSONObject r) {
         try {
-            return versionCodeOf(getPackageManager().getPackageInfo(pkg, 0)) == versionCode;
+            PackageInfo info = getPackageManager().getPackageInfo(r.optString("pkg"), 0);
+            long vc = versionCodeOf(info);
+            if (vc != r.optLong("installedCode", -1)) return false;
+            return UpdateChecker.stillNewer(r, vc, info.versionName != null ? info.versionName : String.valueOf(vc));
         } catch (Exception e) {
             return false;
         }
@@ -2232,7 +2237,7 @@ public class MainActivity extends Activity {
                 JSONArray old = last.optJSONArray("updates");
                 for (int i = 0; old != null && i < old.length(); i++) {
                     JSONObject r = old.optJSONObject(i);
-                    if (r == null || "self".equals(r.optString("source")) || !stillInstalledAs(r.optString("pkg"), r.optLong("installedCode", -1))) continue;
+                    if (r == null || "self".equals(r.optString("source")) || !updateRowStillValid(r)) continue;
                     ups.put(r);
                     updateResults.put(r.optString("pkg"), r);
                 }
@@ -2316,6 +2321,7 @@ public class MainActivity extends Activity {
                                 } catch (PackageManager.NameNotFoundException gone) {}
                             }
                             UpdateChecker.Options o = new UpdateChecker.Options();
+                            o.generation = updateRunGeneration;
                             o.force = force;
                             o.refreshCatalog = force && !retryFailed;
                             o.only = retried;
@@ -2353,8 +2359,13 @@ public class MainActivity extends Activity {
                             if (summary.optBoolean("offline") && before != null) {
                                 // no internet: the answer from the last time that worked is still the best there is, and says so
                                 updateResults.clear();
-                                updateResults.putAll(rowsBefore);
-                                summary = new JSONObject(before.toString()).put("offline", true);
+                                JSONArray still = new JSONArray();
+                                for (JSONObject r : rowsBefore.values()) {
+                                    if (!updateRowStillValid(r)) continue;       // the phone may have changed since: only rows that are still true come back
+                                    updateResults.put(r.optString("pkg"), r);
+                                    still.put(r);
+                                }
+                                summary = new JSONObject(before.toString()).put("offline", true).put("updates", still);
                             }
                         }
                     } catch (Throwable e) {

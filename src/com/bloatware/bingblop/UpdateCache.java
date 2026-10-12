@@ -21,7 +21,7 @@ import java.util.List;
  * </ul>
  * No Android classes; a file that cannot be read or parsed is the same as no file.
  */
-public final class UpdateCache {
+public class UpdateCache {
     public static final long POSITIVE_TTL_MS = 30L * 60 * 1000;
     public static final long NEGATIVE_TTL_MS = 7L * 24 * 60 * 60 * 1000;
     public static final long CATALOG_TTL_MS = 24L * 60 * 60 * 1000;

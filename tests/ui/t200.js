@@ -39,17 +39,33 @@ function bridgeInit(opts) {
   const text = sel => page.locator(sel).innerText();
   const status = () => text('#updStatus');
   const send = (fn, obj) => page.evaluate(([f, o]) => window[f](JSON.stringify(o)), [fn, obj]);
+  const statusMatches = re => page.waitForFunction(r => new RegExp(r).test(document.getElementById('updStatus').innerText), re, { timeout: 8000 });
   const rows = () => page.locator('#updContainer .upd-row').evaluateAll(r => r.map(x => x.querySelector('.uad-name').innerText));
 
   // ---- 1. A check is running: progress bar, "N of M apps", updates found so far, Cancel
   check('the first open starts the check', (await page.evaluate(() => window.__m.calls)).join() === 'check');
   check('while it starts: Cancel and the bar show, the Check buttons are off', await vis('#updCancelBtn') && await vis('#updCheckBar') && await dis('#updCheckBtn') && await dis('#updRecheckBtn'), await status());
+  const attrs = await page.evaluate(() => { const s = document.getElementById('updStatus'), b = document.getElementById('updCheckBar'); return [s.getAttribute('role'), s.getAttribute('aria-live'), s.getAttribute('aria-atomic'), b.getAttribute('aria-hidden')]; });
+  check('the status line is a polite, atomic live region and the bar is decorative (aria-hidden)', attrs.join() === 'status,polite,true,true', attrs.join());
   await send('onUpdateCheckProgress', { done: 0, total: 120, phase: 'start', updates: 0, fromCache: 0 });
+  await statusMatches('^0 of 120 apps');
   console.log('status at 0:', await status());
   await send('onUpdateCheckProgress', { done: 40, total: 120, phase: 'checking', updates: 2, fromCache: 10 });
+  const w40 = await page.evaluate(() => document.querySelector('#updCheckBar > div').style.width);
+  check('the bar moves at once (33%) though the announced text may wait', w40 === '33%', w40);
+  await statusMatches('^40 of 120 apps');
   console.log('status at 40:', await status());
+  // many reports in a row: the text changes at most every 2 seconds, the newest one wins
+  const changes = await page.evaluate(() => new Promise(res => {
+    const el = document.getElementById('updStatus'), seen = [];
+    const mo = new MutationObserver(() => seen.push(el.innerText));
+    mo.observe(el, { childList: true, characterData: true, subtree: true });
+    let n = 40;
+    const t = setInterval(() => { n++; window.onUpdateCheckProgress(JSON.stringify({ done: n, total: 120, phase: 'checking', updates: 2 })); if (n >= 70) { clearInterval(t); setTimeout(() => { mo.disconnect(); res(seen); }, 2300); } }, 50);
+  }));
+  check('30 progress reports in 1.5 s change the status text at most 2 times, and the last report is the one shown', changes.length <= 2 && /^70 of 120 apps/.test(changes[changes.length - 1] || ''), JSON.stringify(changes));
   const w = await page.evaluate(() => document.querySelector('#updCheckBar > div').style.width);
-  check('the bar follows done / total (33%)', w === '33%', w);
+  check('the bar follows done / total (70 of 120 is 58%)', w === '58%', w);
   await send('onUpdateFound', ROW('com.a.one', 'Alpha'));
   await send('onUpdateFound', ROW('com.b.two', 'Beta', { source: 'galaxy', isSystem: true }));
   await page.waitForFunction(() => document.querySelectorAll('#updContainer .upd-row').length === 2);
@@ -58,7 +74,8 @@ function bridgeInit(opts) {
   await send('onUpdateFound', ROW('com.me', 'Me', { source: 'self' }));
   await page.waitForTimeout(250);
   check('an update found twice is one row, and this app\'s own update does not join the list', (await rows()).length === 2 && (await page.locator('#updContainer').innerText()).includes('2.1'));
-  await send('onUpdateCheckProgress', { done: 41, total: 120, phase: 'checking', updates: 1, fromCache: 10 });
+  await send('onUpdateCheckProgress', { done: 71, total: 120, phase: 'checking', updates: 1, fromCache: 10 });
+  await statusMatches('^71 of 120 apps');
   console.log('one found so far:', await status());
   await page.screenshot({ path: 'running.png' });
 

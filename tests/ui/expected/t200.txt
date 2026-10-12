@@ -1,11 +1,14 @@
 the first open starts the check: true
 while it starts: Cancel and the bar show, the Check buttons are off: true Starting the check...
+the status line is a polite, atomic live region and the bar is decorative (aria-hidden): true status,polite,true,true
 status at 0: 0 of 120 apps • 0 updates found so far
+the bar moves at once (33%) though the announced text may wait: true 33%
 status at 40: 40 of 120 apps • 2 updates found so far
-the bar follows done / total (33%): true 33%
+30 progress reports in 1.5 s change the status text at most 2 times, and the last report is the one shown: true ["70 of 120 apps • 2 updates found so far"]
+the bar follows done / total (70 of 120 is 58%): true 58%
 rows while it runs: Alpha, Beta | still running: true
 an update found twice is one row, and this app's own update does not join the list: true
-one found so far: 41 of 120 apps • 1 update found so far
+one found so far: 71 of 120 apps • 1 update found so far
 Cancel goes to the app: true Cancelling...
 ...and the button is off while the app stops: true
 after Cancel: 2 updates available • Cancelled: 50 of 120 apps checked • 10 from saved results • <clock>

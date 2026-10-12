@@ -4144,8 +4144,8 @@
             <div class="color-card">
                 <div class="color-card-title">Updates Available</div>
                 <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
-                <div class="uad-status" id="updStatus">Not checked yet.</div>
-                <div class="upd-bar" id="updCheckBar" style="display:none;margin:0 0 10px;"><div style="width:2%"></div></div>
+                <div class="uad-status" id="updStatus" role="status" aria-live="polite" aria-atomic="true">Not checked yet.</div>
+                <div class="upd-bar" id="updCheckBar" aria-hidden="true" style="display:none;margin:0 0 10px;"><div style="width:2%"></div></div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">Check for Updates</button>
                     <button class="mode-action-btn" id="updCancelBtn" onclick="cancelUpdatesUI()" style="display:none;">Cancel</button>
@@ -11671,6 +11671,28 @@ Type any command below (e.g. pm list packages -d)
             return window.AndroidBridge && window.AndroidBridge.checkForUpdates ? window.AndroidBridge : null;
         }
 
+        // The status line is a polite live region: a screen reader says each new text. Progress changes at most every 2 seconds (the newest text waits its turn);
+        // anything else (starting, Cancel, the end of a check, a failure) is said at once. Rows that are found are not announced one by one.
+        let updStatusAt = 0, updStatusTimer = null, updStatusPending = '';
+        function updSetStatus(text) {
+            if (updStatusTimer) { clearTimeout(updStatusTimer); updStatusTimer = null; }
+            const el = document.getElementById('updStatus');
+            if (el) el.innerText = text;
+            updStatusAt = 0;                       // the next progress text may follow at once
+        }
+        function updSetProgressStatus(text) {
+            const apply = t => {
+                const el = document.getElementById('updStatus');
+                if (el) el.innerText = t;
+                updStatusAt = Date.now();
+            };
+            const wait = updStatusAt + 2000 - Date.now();
+            if (wait <= 0) { if (updStatusTimer) { clearTimeout(updStatusTimer); updStatusTimer = null; } apply(text); return; }
+            updStatusPending = text;
+            if (updStatusTimer) return;
+            updStatusTimer = setTimeout(() => { updStatusTimer = null; apply(updStatusPending); }, wait);
+        }
+
         // While a check runs: the Check buttons are off, Cancel and the progress bar are on. Every way out of a check ends in updSetRunning(false).
         function updSetRunning(on) {
             updRunning = on;
@@ -11685,6 +11707,7 @@ Type any command below (e.g. pm list packages -d)
             } else {
                 if (updWatch) { clearInterval(updWatch); updWatch = null; }
                 if (updRenderTimer) { clearTimeout(updRenderTimer); updRenderTimer = null; }
+                if (updStatusTimer) { clearTimeout(updStatusTimer); updStatusTimer = null; }
             }
         }
 
@@ -11699,7 +11722,7 @@ Type any command below (e.g. pm list packages -d)
                 updList = (st.updates || []).filter(u => u.source !== 'self');
                 updReadLists(st);
                 updSetRunning(false);
-                document.getElementById('updStatus').innerText = updSummaryLine(st, true);
+                updSetStatus(updSummaryLine(st, true));
                 renderUpdates();
                 updateUpdatesTabBadge();
             } catch (e) { updSetRunning(false); }
@@ -11787,7 +11810,7 @@ Type any command below (e.g. pm list packages -d)
             updChecked = true;
             updSetRunning(true);
             if (mode !== 'retry') { updList = []; updFailed = []; updHostsDown = []; updInfo = {}; updUntracked = []; updExternal = []; }
-            document.getElementById('updStatus').innerText = txT('Starting the check...');
+            updSetStatus(txT('Starting the check...'));
             const bar = document.querySelector('#updCheckBar > div');
             if (bar) bar.style.width = '2%';
             renderUpdates();
@@ -11797,7 +11820,7 @@ Type any command below (e.g. pm list packages -d)
                 else b.checkForUpdates();
             } catch (e) {
                 updSetRunning(false);
-                document.getElementById('updStatus').innerText = txT('The check could not be started.');
+                updSetStatus(txT('The check could not be started.'));
             }
         }
 
@@ -11810,7 +11833,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             const c = document.getElementById('updCancelBtn');
             if (c) c.disabled = true;
-            document.getElementById('updStatus').innerText = txT('Cancelling...');
+            updSetStatus(txT('Cancelling...'));
             b.cancelUpdateCheck();
         }
 
@@ -11821,11 +11844,9 @@ Type any command below (e.g. pm list packages -d)
             const total = p.total || 0, done = p.done || 0;
             const bar = document.querySelector('#updCheckBar > div');
             if (bar) bar.style.width = (total ? Math.max(2, Math.min(100, Math.round(done * 100 / total))) : 2) + '%';
-            const el = document.getElementById('updStatus');
-            if (!el) return;
-            if (!total) { el.innerText = txT('Starting the check...'); return; }
+            if (!total) { updSetProgressStatus(txT('Starting the check...')); return; }
             const n = p.updates || 0;
-            el.innerText = txF('{0} of {1} apps', done, total) + ' • ' + (n === 1 ? txF('{0} update found so far', n) : txF('{0} updates found so far', n));
+            updSetProgressStatus(txF('{0} of {1} apps', done, total) + ' • ' + (n === 1 ? txF('{0} update found so far', n) : txF('{0} updates found so far', n)));
         }
 
         function onUpdateCheckProgress(json) {
@@ -11856,7 +11877,7 @@ Type any command below (e.g. pm list packages -d)
             } finally {
                 updSetRunning(false);          // on every way out: a check never leaves the Check button off
             }
-            document.getElementById('updStatus').innerText = r.error ? txF('The check stopped: {0}', r.error) : updSummaryLine(r, false);
+            updSetStatus(r.error ? txF('The check stopped: {0}', r.error) : updSummaryLine(r, false));
             renderUpdates();
             updateUpdatesTabBadge();
             if (allApps.length) renderApps();
@@ -11879,7 +11900,7 @@ Type any command below (e.g. pm list packages -d)
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
             if (st && st.checkedAt) {
-                document.getElementById('updStatus').innerText = updSummaryLine(st, true);      // the result the app kept (from before a tab switch or a restart), marked with its time
+                updSetStatus(updSummaryLine(st, true));      // the result the app kept (from before a tab switch or a restart), marked with its time
             }
             updRenderRetry();
             if (!updList.length) {

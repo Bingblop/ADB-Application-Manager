@@ -93,7 +93,25 @@ public final class UpdateChecker {
         }
     }
 
+    /**
+     * Numbers the runs of one owner (the activity): a run takes the next number when it starts, and a callback of a run that is no longer the latest
+     * is dropped, so a straggler of an old check can never put a row into what a newer check has just cleared.
+     */
+    public static final class Generation {
+        private final AtomicInteger n = new AtomicInteger();
+
+        int begin() {
+            return n.incrementAndGet();
+        }
+
+        boolean current(int mine) {
+            return n.get() == mine;
+        }
+    }
+
     public static final class Options {
+        /** Shared by the runs of one owner; null: this run is the only one. */
+        public Generation generation;
         /** After this long the run ends and what is not finished is reported as timed out. */
         public long deadlineMs = 90000;
         public int threads = 8;
@@ -126,6 +144,8 @@ public final class UpdateChecker {
 
     public static final int BREAKER_FAILURES = 3;
     private static final String LANE_OS = "os", LANE_GX = "gx", LANE_SELF = "self";
+    /** How long the end of a run waits for commits that are still saving or calling the listener. */
+    private static final long BARRIER_MAX_NANOS = 5_000_000_000L;
 
     private final UpdateManager.Http net;
     private final Clock clock;
@@ -147,6 +167,10 @@ public final class UpdateChecker {
     private final Map<String, JSONObject> failed = new LinkedHashMap<String, JSONObject>();
     private final Set<String> finished = new HashSet<String>();
     private int total, osTotal, gxTotal, upToDate, fromCache;
+    private int completed;                                   // jobs whose result is in AND whose side effects (saved answer, listener) are done; guarded by lock
+    private int inFlight;                                    // commits that have registered a result and are still saving / telling the listener; guarded by lock
+    private int myGeneration;
+    private volatile boolean abandoned;                      // the barrier gave up waiting for a stuck listener: nothing more is delivered
     private String lastError = "";
     private String selfStatus = "";
     private long lastProgressAt;
@@ -197,6 +221,8 @@ public final class UpdateChecker {
     private static final class HostState {
         final AtomicInteger consecutive = new AtomicInteger();
         volatile boolean down;
+        volatile boolean opened;                  // the host has answered once: no limit on parallel requests any more
+        int probing;                              // requests in the air to a host that has not answered yet; guarded by this
     }
 
     private final class Guard implements UpdateManager.Http {
@@ -210,10 +236,44 @@ public final class UpdateChecker {
             this.inner = inner;
         }
 
-        private void check(String host) throws IOException {
+        private void stopIfOver() {
             if (cancelled || expired || offline || closed || Thread.currentThread().isInterrupted()) throw new Stop();
-            HostState st = hosts.get(host);
-            if (st != null && st.down) throw new HostDown(host);
+        }
+
+        /**
+         * Lets a request go. A host that has not answered yet gets at most BREAKER_FAILURES requests in all: one that is in the air or has already failed uses up
+         * one of them, so eight workers cannot all go to a dead host before the first failure is seen. The others wait; an answer opens the host for everyone,
+         * the third failure marks it down and sends the waiting ones away without a request. Returns whether a probe slot was taken; the caller must call
+         * {@link #release} for it.
+         */
+        private boolean admit(String host, HostState st) throws IOException {
+            stopIfOver();
+            if (st.opened) return false;
+            synchronized (st) {
+                while (true) {
+                    stopIfOver();
+                    if (st.down) throw new HostDown(host);
+                    if (st.opened) return false;
+                    if (st.probing + st.consecutive.get() < BREAKER_FAILURES) {
+                        st.probing++;
+                        return true;
+                    }
+                    try {
+                        st.wait(20);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new Stop();
+                    }
+                }
+            }
+        }
+
+        private void release(HostState st, boolean probe) {
+            if (!probe) return;
+            synchronized (st) {
+                st.probing--;
+                st.notifyAll();
+            }
         }
 
         private HostState stateOf(String host) {
@@ -227,7 +287,12 @@ public final class UpdateChecker {
         }
 
         private void answered(String host) {
-            stateOf(host).consecutive.set(0);
+            HostState st = stateOf(host);
+            synchronized (st) {
+                st.consecutive.set(0);
+                st.opened = true;
+                st.notifyAll();
+            }
             answers.incrementAndGet();
         }
 
@@ -235,9 +300,12 @@ public final class UpdateChecker {
             netFailures.incrementAndGet();
             failedHosts.add(host);
             HostState st = stateOf(host);
-            if (st.consecutive.incrementAndGet() >= BREAKER_FAILURES && !st.down) {
-                st.down = true;
-                hostsDown.add(host);
+            synchronized (st) {
+                if (st.consecutive.incrementAndGet() >= BREAKER_FAILURES && !st.down) {
+                    st.down = true;
+                    hostsDown.add(host);
+                }
+                st.notifyAll();
             }
             // nothing was answered anywhere, and several hosts and requests have failed: the phone has no internet
             int hostsFailed = failedHosts.size(), fails = netFailures.get();
@@ -248,7 +316,8 @@ public final class UpdateChecker {
         @Override
         public byte[] get(String url, String accept, String bearer, int maxBytes) throws Exception {
             String host = hostOf(url);
-            check(host);
+            HostState st = stateOf(host);
+            boolean probe = admit(host, st);
             requests.incrementAndGet();
             try {
                 byte[] b = inner.get(url, accept, bearer, maxBytes);
@@ -261,13 +330,16 @@ public final class UpdateChecker {
                 throw e;
             } catch (IOException e) {
                 throw failedWith(host, e);
+            } finally {
+                release(st, probe);
             }
         }
 
         @Override
         public String redirectLocation(String url) throws Exception {
             String host = hostOf(url);
-            check(host);
+            HostState st = stateOf(host);
+            boolean probe = admit(host, st);
             requests.incrementAndGet();
             try {
                 String r = inner.redirectLocation(url);
@@ -278,6 +350,8 @@ public final class UpdateChecker {
                 throw e;
             } catch (IOException e) {
                 throw failedWith(host, e);
+            } finally {
+                release(st, probe);
             }
         }
     }
@@ -356,6 +430,7 @@ public final class UpdateChecker {
         this.opts = options;
         this.listener = l;
         this.guard = new Guard(net);
+        this.myGeneration = options.generation == null ? 0 : options.generation.begin();
         long t0 = clock.now();
         long deadlineAt = t0 + options.deadlineMs;
 
@@ -440,7 +515,7 @@ public final class UpdateChecker {
             // 3. Wait: until everything is finished, or cancel, or the deadline, or no internet
             while (true) {
                 synchronized (lock) {
-                    if (finished.size() >= total && selfDone()) break;
+                    if (finished.size() >= total && selfDone()) break;      // all results are in; the barrier below waits for their side effects
                 }
                 if (cancelled || offline) break;
                 if (clock.now() >= deadlineAt) {
@@ -456,8 +531,30 @@ public final class UpdateChecker {
             }
         } finally {
             closed = true;
-            pool.shutdownNow();
+            pool.getQueue().clear();                // what has not started never will; a worker that is saving or telling the listener is left alone (no interrupt)
+            pool.shutdown();
         }
+
+        // 3b. The barrier: a job that has put its result into the run is not over until its answer is saved and the listener has been told. The summary
+        // (and the save of the answers) wait for that, so the last job's answer is never missing and no update is delivered after the summary.
+        long barrierUntil = System.nanoTime() + BARRIER_MAX_NANOS;
+        synchronized (lock) {
+            while (inFlight > 0) {
+                long left = barrierUntil - System.nanoTime();
+                if (left <= 0) {
+                    abandoned = true;                                  // a listener that never returns must not hold the check for ever
+                    break;
+                }
+                try {
+                    lock.wait(Math.max(1, Math.min(50, left / 1_000_000)));
+                } catch (InterruptedException e) {
+                    abandoned = true;
+                    break;
+                }
+            }
+        }
+
+        pool.shutdownNow();                         // the commits are over: stop whatever is still in the air
 
         // 4. Everything that was not finished is accounted for
         JSONObject summary;
@@ -515,6 +612,7 @@ public final class UpdateChecker {
                             if (!closed && !finished.contains(j.app.pkg)) {
                                 addFailure(j.app, classify(t, ""));
                                 finished.add(j.app.pkg);
+                                completed++;
                             }
                         }
                         progress("checking");
@@ -568,16 +666,33 @@ public final class UpdateChecker {
             }
             if (!j.osFresh && !j.gxFresh && f == null) fromCache++;
             finished.add(a.pkg);
+            inFlight++;                       // the result is in; the job is not over until the side effects below are done
         }
-        // saved for next time (an error is never stored)
-        if (j.osFresh && j.os != null) cache.put(j.app.pkg, j.app.versionCode, LANE_OS, osTag(j.app), j.os.kind, j.os.row);
-        if (j.gxFresh && j.gx != null) cache.put(j.app.pkg, j.app.versionCode, LANE_GX, gxTag(), j.gx.kind, j.gx.row);
-        if (toSend != null && listener != null) {
-            try {
-                listener.onUpdate(toSend);
-            } catch (Throwable ignored) {}
+        try {
+            // saved for next time (an error is never stored)
+            if (j.osFresh && j.os != null) cache.put(j.app.pkg, j.app.versionCode, LANE_OS, osTag(j.app), j.os.kind, j.os.row);
+            if (j.gxFresh && j.gx != null) cache.put(j.app.pkg, j.app.versionCode, LANE_GX, gxTag(), j.gx.kind, j.gx.row);
+            emitUpdate(toSend);
+        } finally {
+            synchronized (lock) {
+                inFlight--;
+                completed++;
+                lock.notifyAll();
+            }
         }
         progress("checking");
+    }
+
+    /** Tells the listener of an update, unless this run is not the latest any more (or the end of the run gave up waiting). */
+    private void emitUpdate(JSONObject row) {
+        if (row == null || listener == null || abandoned || !isCurrentRun()) return;
+        try {
+            listener.onUpdate(row);
+        } catch (Throwable ignored) {}
+    }
+
+    private boolean isCurrentRun() {
+        return opts.generation == null || opts.generation.current(myGeneration);
     }
 
     private static JSONObject untrackedRow(App a) {
@@ -592,16 +707,16 @@ public final class UpdateChecker {
     }
 
     private void progress(String phase) {
-        if (listener == null) return;
+        if (listener == null || abandoned || !isCurrentRun()) return;
         JSONObject p = new JSONObject();
         boolean last;
         synchronized (lock) {
             long now = clock.now();
-            last = "start".equals(phase) || "done".equals(phase) || finished.size() >= total;
-            if (!last && now - lastProgressAt < 150 && (finished.size() % 10) != 0) return;
+            last = "start".equals(phase) || "done".equals(phase) || completed >= total;
+            if (!last && now - lastProgressAt < 150 && (completed % 10) != 0) return;
             lastProgressAt = now;
             try {
-                p.put("done", finished.size());
+                p.put("done", completed);
                 p.put("total", total);
                 p.put("phase", phase);
                 p.put("updates", updates.size() - (opts.self != null && updates.containsKey(opts.self.pkg) ? 1 : 0));
@@ -649,9 +764,17 @@ public final class UpdateChecker {
 
     /** The same checks as when the answer was fresh: a saved "update" is shown only if it is newer than what is installed now. */
     private static boolean stillNewer(JSONObject row, App a) {
+        return stillNewer(row, a.versionCode, a.versionName);
+    }
+
+    /**
+     * Whether the update a row holds is newer than what is installed now: its version code when the source gave one (F-Droid, IzzyOnDroid, the Galaxy
+     * Store), else its version name against the installed one. A row that was saved or kept from an earlier check is shown only if this holds.
+     */
+    public static boolean stillNewer(JSONObject row, long installedCode, String installedVersionName) {
         long availableCode = row.optLong("availableCode", 0);
-        if (availableCode > 0) return availableCode > a.versionCode;
-        return UpdateManager.compareVersions(row.optString("availableVersion"), a.versionName) > 0;
+        if (availableCode > 0) return availableCode > installedCode;
+        return UpdateManager.compareVersions(row.optString("availableVersion"), installedVersionName) > 0;
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -659,6 +782,7 @@ public final class UpdateChecker {
     // ------------------------------------------------------------------------------------------------
 
     private void runSelf() {
+        boolean selfEmitting = false;
         try {
             App me = opts.self;
             JSONObject saved = null;
@@ -700,12 +824,22 @@ public final class UpdateChecker {
             synchronized (lock) {
                 if (closed) return;
                 selfStatus = "ok";
-                if (row != null) updates.put(me.pkg, row);
+                if (row != null) {
+                    updates.put(me.pkg, row);
+                    inFlight++;
+                    selfEmitting = true;
+                }
             }
-            if (row != null && listener != null) {
+            selfFinished = true;                  // its result is in; the barrier waits for the listener
+            if (selfEmitting) {
                 try {
-                    listener.onUpdate(row);
-                } catch (Throwable ignored) {}
+                    emitUpdate(row);
+                } finally {
+                    synchronized (lock) {
+                        inFlight--;
+                        lock.notifyAll();
+                    }
+                }
             }
         } finally {
             selfFinished = true;
