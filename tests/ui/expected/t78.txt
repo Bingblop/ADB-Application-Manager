@@ -17,7 +17,7 @@
    overlays: no emoji in what is shown or hidden on the page: true []
    updates: no emoji in what is shown or hidden on the page: true []
    store: no emoji in what is shown or hidden on the page: true []
-   logcat: no emoji in what is shown or hidden on the page: true []
+   console: no emoji in what is shown or hidden on the page: true []
    about: no emoji in what is shown or hidden on the page: true []
    prefs: no emoji in what is shown or hidden on the page: true []
    the single-app sheet: no emoji: true []

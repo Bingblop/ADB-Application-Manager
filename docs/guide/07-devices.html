@@ -454,7 +454,7 @@
 </section>
 <section id="devices-console" data-title="The device console" data-group="The tabs">
   <p class="hg-lead">The <b>Console</b> sub-tab is a small command line for the other device. You type a command, press <b>Run</b>, and the answer appears on a black screen. It also lets you give commands to adb itself, for example to copy a file between the device and this phone.</p>
-  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Console</b> (the third one). It is the device's counterpart of the <a href="#tab-terminal">Command-Line Interface</a> tab, which runs commands on this phone.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Console</b> (the third one). It is the device's counterpart of the ADB Shell in the <a href="#tab-console">Console</a> tab, which runs commands on this phone.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -545,7 +545,7 @@
 
 <section id="devices-logcat" data-title="The device's log" data-group="The tabs">
   <p class="hg-lead">The <b>Logcat</b> sub-tab reads the other device's own log: the running diary in which Android and every app write what they do, including why something failed. It is the quickest way to see why an app crashes on a watch.</p>
-  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like the <a href="#tab-logcat">Logcat Viewer</a> tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like <a href="#console-logcat">Live Logcat</a> in the Console tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -570,7 +570,7 @@
   <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Pause when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
 
   <h4>How the rows are drawn</h4>
-  <p>Exactly like in the Logcat Viewer tab. Each entry is one row:</p>
+  <p>Exactly like in Live Logcat. Each entry is one row:</p>
   <ul>
     <li>A small coloured badge at the left with the level letter: <b>V</b>, <b>D</b>, <b>I</b>, <b>W</b>, <b>E</b> or <b>F</b>. The row has a coloured stripe on its left in the same colour.</li>
     <li>The <b>tag</b> in bold: the part of the system or the app that wrote the line.</li>
@@ -578,7 +578,7 @@
     <li>The message below, in the colour of its level. Several lines that belong to one log call, such as the lines of a crash report, are joined into one row.</li>
     <li>Warnings have an amber background, errors a red one and fatal lines a purple one, and error text is bold.</li>
   </ul>
-  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike the Logcat Viewer tab, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
+  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
 
   <h4>Reading a crash on a watch</h4>
   <ol class="hg-steps">

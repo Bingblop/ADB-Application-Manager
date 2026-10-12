@@ -31,7 +31,7 @@ const { chromium, PAGE } = require('./lib/pw');
   };
   await boot();
   await page.goto(PAGE); await page.waitForTimeout(350);
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await page.waitForTimeout(150);
   const sleep = ms => page.waitForTimeout(ms);
   const type = async c => { await page.fill('#termCmd', c); await page.press('#termCmd', 'Enter'); await sleep(60); await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} }); await sleep(40); };
   const calls = () => page.evaluate(() => window.__calls.slice());
@@ -50,19 +50,19 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('2. ArrowUp/ArrowDown walk the history and back to empty:', [a1, a2, a3, a4].join('|') === 'id|getprop ro.product.model|id|', [a1, a2, a3, a4].join('|'));
 
   // 3) The history sheet: pick, run, delete, filter, clear.
-  await page.click('.term-icon-btn[title="Command history"]'); await sleep(150);
+  await page.click('#cnSegShell [title="Command history"]'); await sleep(150);
   const rows = await page.locator('#termModalBody .term-row').allInnerTexts();
   console.log('3. history sheet lists the commands:', rows.length === 3 && /^id/.test(rows[0]), JSON.stringify(rows.map(r => r.split('\n')[0])));
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-row-main').click(); await sleep(100);
   console.log('   tapping a row puts it in the input and closes the sheet:', (await page.inputValue('#termCmd')) === 'getprop ro.product.model' && !(await page.evaluate(() => document.getElementById('termModal').classList.contains('show'))));
   await page.fill('#termCmd', '');
-  await page.click('.term-icon-btn[title="Command history"]'); await sleep(120);
+  await page.click('#cnSegShell [title="Command history"]'); await sleep(120);
   const before = (await calls()).length;
   await page.locator('#termModalBody .term-row').nth(2).locator('.term-mini.run').click(); await sleep(150);
   await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} });
   const c3 = await calls();
   console.log('   Run runs it right away (and moves it to the top):', c3.length === before + 1 && c3[c3.length - 1] === 'exec:pm list packages -d' && (await page.evaluate(() => termHistory[0])) === 'pm list packages -d', c3[c3.length - 1]);
-  await page.click('.term-icon-btn[title="Command history"]'); await sleep(120);
+  await page.click('#cnSegShell [title="Command history"]'); await sleep(120);
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-mini[title="Remove"]').click(); await sleep(60);
   console.log('   ✕ removes one entry:', (await page.evaluate(() => termHistory.length)) === 2 && JSON.parse(store.term_hist).length === 2);
   await page.evaluate(() => { for (let i = 0; i < 10; i++) termRemember('cmd number ' + i); termRenderModal(); });
@@ -84,7 +84,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { termHistory = []; kvSet('term_hist', []); });
 
   // 4) Saved commands: create from scratch, from history, edit, pin, run, delete.
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(120);
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(120);
   console.log('4. saved sheet starts empty with a hint:', /Nothing saved yet/.test(await page.locator('#termModalBody').innerText()));
   await page.locator('#termModalBody button', { hasText: 'New saved command' }).click(); await sleep(80);
   await page.fill('#termEditName', 'Battery'); await page.fill('#termEditCmd', 'dumpsys battery | head -5');
@@ -109,30 +109,30 @@ const { chromium, PAGE } = require('./lib/pw');
   // pin -> chip in the terminal card
   await page.locator('#termModalBody .term-row').nth(0).locator('.term-mini[title="Pin as a chip"]').click(); await sleep(60);
   await page.evaluate(() => termCloseModal());
-  const chip = await page.locator('#view-terminal .term-pin').allInnerTexts();
+  const chip = await page.locator('#view-console .term-pin').allInnerTexts();
   console.log('   pinning adds a one-tap chip to the terminal card:', JSON.stringify(chip) === JSON.stringify(['Battery (short)']), JSON.stringify(chip));
   const n0 = (await calls()).length;
-  await page.locator('#view-terminal .term-pin').click(); await sleep(150);
+  await page.locator('#view-console .term-pin').click(); await sleep(150);
   await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} });
   const c4 = await calls();
   console.log('   the chip runs the command:', c4.length === n0 + 1 && c4[c4.length - 1] === 'exec:dumpsys battery | head -5');
   // run a saved multi-line script
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(100);
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(100);
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-mini.run').click(); await sleep(150);
   await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} });
   const c5 = await calls();
   const echo = await page.locator('#termOutput').innerText();
-  console.log('   a saved script runs as one multi-line command, echoed with > continuation:', c5[c5.length - 1] === 'exec:cd /sdcard\nls | head -3' && /\$ cd \/sdcard\n> ls \| head -3/.test(echo), JSON.stringify(echo.split('\n').slice(-4)));
+  console.log('   a saved script runs as one multi-line command, echoed with > continuation:', c5[c5.length - 1] === 'exec:cd /sdcard\nls | head -3' && /\$ cd \/sdcard\n> ls \| head -3/.test(echo), JSON.stringify(echo.split('\n').slice(0, 4)));          // the newest card is the first
   console.log('   multi-line scripts are not added to the history:', !(await page.evaluate(() => termHistory.some(c => c.includes('\n')))));
   // saving from the history
   await type('settings get global airplane_mode_on');
-  await page.click('.term-icon-btn[title="Command history"]'); await sleep(100);
+  await page.click('#cnSegShell [title="Command history"]'); await sleep(100);
   await page.locator('#termModalBody .term-row').first().locator('.term-mini[title="Save"]').click(); await sleep(80);
   const prefill = await page.evaluate(() => ({ name: document.getElementById('termEditName').value, cmd: document.getElementById('termEditCmd').value, input: document.getElementById('termCmd').value }));
   console.log('   Save on a history row opens the editor prefilled (input untouched):', prefill.cmd === 'settings get global airplane_mode_on' && prefill.name.startsWith('settings get') && prefill.input === '', JSON.stringify(prefill));
   await page.evaluate(() => termCloseModal());
   // delete
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(80);
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(80);
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-mini[title="Edit"]').click(); await sleep(60);
   await page.locator('#termModalBody button', { hasText: 'Delete' }).click(); await sleep(80);
   console.log('   delete asks first, then removes it (and its chip if pinned):', (await page.evaluate(() => termSaved.length)) === 1 && dialogs.slice(-1)[0].includes('Delete'));
@@ -140,33 +140,33 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 5) Pin limit
   await page.evaluate(() => { termSaved = []; for (let i = 0; i < 7; i++) termSaved.push({ name: 's' + i, cmd: 'echo ' + i, pinned: false }); kvSet('term_saved', termSaved); });
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(80);
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(80);
   for (let i = 0; i < 7; i++) { await page.locator('#termModalBody .term-row').nth(i).locator('.term-mini[title="Pin as a chip"]').click(); await sleep(30); }
-  console.log('5. at most 6 pinned chips:', (await page.locator('#view-terminal .term-pin').count()) === 6 && /Up to 6 pinned/.test(await page.locator('#toastMsg').innerText()));
+  console.log('5. at most 6 pinned chips:', (await page.locator('#view-console .term-pin').count()) === 6 && /Up to 6 pinned/.test(await page.locator('#toastMsg').innerText()));
   await page.evaluate(() => termCloseModal());
 
   // 6) Everything survives a reload.
   await page.evaluate(() => { termSaved = [{ name: 'Keep me', cmd: 'echo kept', pinned: true }]; kvSet('term_saved', termSaved); termRemember('echo from history'); });
   await boot();
   await page.reload(); await sleep(400);
-  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await sleep(150);
-  const back = await page.evaluate(() => ({ hist: termHistory.slice(0, 2), saved: termSaved.map(x => x.name), chips: [...document.querySelectorAll('#view-terminal .term-pin')].map(c => c.textContent) }));
+  await page.evaluate(() => (cnApplySeg('shell'), switchView('console'))); await sleep(150);
+  const back = await page.evaluate(() => ({ hist: termHistory.slice(0, 2), saved: termSaved.map(x => x.name), chips: [...document.querySelectorAll('#view-console .term-pin')].map(c => c.textContent) }));
   console.log('6. history, saved commands and chips come back after a restart:', back.hist[0] === 'echo from history' && back.saved.join() === 'Keep me' && back.chips.join() === 'Keep me', JSON.stringify(back));
 
   // 7) HTML in names / commands is text.
   await page.evaluate(() => { termSaved = [{ name: '<img src=x onerror="window.__p=1">', cmd: '<b>echo</b> "q"', pinned: true }]; kvSet('term_saved', termSaved); termRenderPins(); });
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(100);
-  const inj = await page.evaluate(() => ({ imgs: document.querySelectorAll('#termModalBody img, #view-terminal .term-pin img').length, p: window.__p || 0, text: document.getElementById('termModalBody').innerText }));
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(100);
+  const inj = await page.evaluate(() => ({ imgs: document.querySelectorAll('#termModalBody img, #view-console .term-pin img').length, p: window.__p || 0, text: document.getElementById('termModalBody').innerText }));
   console.log('7. markup in saved names/commands stays text:', inj.imgs === 0 && inj.p === 0 && /<img src=x/.test(inj.text) && /<b>echo<\/b>/.test(inj.text));
   await page.evaluate(() => termCloseModal());
 
   // 8) In Rish mode, history/saved commands go through the Rish shell.
   await page.locator('#rishBtn').click(); await sleep(400);
   await page.evaluate(() => { termSaved = [{ name: 'Who', cmd: 'id -u', pinned: true }]; termRenderPins(); });
-  await page.locator('#view-terminal .term-pin').click(); await sleep(200);
+  await page.locator('#view-console .term-pin').click(); await sleep(200);
   const rc = await calls();
   console.log('8. in Rish mode a pinned chip runs in the Rish shell:', rc[rc.length - 1] === 'rish:id -u');
-  await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(100);
+  await page.click('#cnSegShell [title="Saved commands"]'); await sleep(100);
   console.log('   the saved sheet says where commands run:', /Rish shell/.test(await page.locator('#termModalSub').innerText()));
   // 9) Back closes the sheet
   const handled = await page.evaluate(() => handleAndroidBack()); await sleep(100);

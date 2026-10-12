@@ -61,7 +61,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const calls3 = await page.evaluate(() => window.__calls.logcatFor.slice());
   console.log('   the log was fetched for that package with the chosen level and lines:', calls3.length >= 1 && calls3[calls3.length - 1][3] === 'com.example.alpha' && calls3[calls3.length - 1][0] === 'I' && calls3[calls3.length - 1][2] === 500, JSON.stringify(calls3));
   console.log('   only that app’s lines are drawn (+ the shared-UID note):', /hello from alpha/.test(await page.locator('#logcatOutput').innerText()) && !/Start proc for all/.test(await page.locator('#logcatOutput').innerText()) && /shares its user ID/.test(await page.locator('#logcatOutput').innerText()));
-  console.log('   the card subtitle names the package:', /com\.example\.alpha/.test(await page.locator('#view-logcat .color-card-subtitle').innerText()));
+  console.log('   the line under the controls names the package:', /com\.example\.alpha/.test(await page.locator('#logcatScope').innerText()));
 
   // 4) Not-running / not-installed messages are notices, not log rows.
   await page.evaluate(() => logcatSetApp({ pkg: 'com.example.gamma', name: 'Gamma' })); await sleep(200);
@@ -72,7 +72,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // 5) Save the (filtered) log.
   await page.evaluate(() => logcatSetApp({ pkg: 'com.example.alpha', name: 'Alpha' })); await sleep(200);
   await page.evaluate(() => { logcatToggleLevel('W'); });           // hide Warn
-  await page.locator('#view-logcat button', { hasText: 'Save' }).click(); await sleep(100);
+  await page.locator('#cnSegLog button', { hasText: 'Save' }).click(); await sleep(100);
   const saved = await page.evaluate(() => window.__calls.save.slice());
   console.log('5. Save writes one text file named after the app:', saved.length === 1 && /^logcat_com\.example\.alpha_\d{14}\.txt$/.test(saved[0][0]), JSON.stringify(saved.map(x => x[0])));
   const txt = saved[0] ? saved[0][1] : '';
@@ -81,7 +81,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => logcatToggleLevel('W'));
 
   // 6) Share the same text.
-  await page.locator('#view-logcat button', { hasText: 'Share' }).click(); await sleep(100);
+  await page.locator('#cnSegLog button', { hasText: 'Share' }).click(); await sleep(100);
   const shared = await page.evaluate(() => window.__calls.share.slice());
   console.log('6. Share hands the same kind of text file to the share sheet:', shared.length === 1 && /^logcat_com\.example\.alpha_/.test(shared[0][0]) && shared[0][2] === 'text/plain' && /careful/.test(shared[0][1]));
 
@@ -95,7 +95,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 8) Nothing to save before a fetch.
   await page.evaluate(() => { logcatNotice('(cleared)'); window.__calls.save.length = 0; });
-  await page.locator('#view-logcat button', { hasText: 'Save' }).click(); await sleep(60);
+  await page.locator('#cnSegLog button', { hasText: 'Save' }).click(); await sleep(60);
   console.log('8. saving an empty log says so and writes nothing:', /Nothing to save/.test(await toast()) && (await page.evaluate(() => window.__calls.save.length)) === 0);
 
   // 9) From the app sheet: Logs.
@@ -104,7 +104,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('9. the app sheet has a Logs button:', (await page.locator('#sheetBtnLogs').count()) === 1);
   await page.evaluate(() => { window.__calls.logcatFor.length = 0; });
   await page.locator('#sheetBtnLogs').click(); await sleep(400);
-  console.log('   it opens Logcat limited to that app:', (await page.evaluate(() => currentViewName())) === 'logcat' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
+  console.log('   it opens Console on Live Logcat limited to that app:', (await page.evaluate(() => currentViewName())) === 'console' && (await page.evaluate(() => cnSeg)) === 'log' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
 
   // 10) Back closes the picker.
   await page.locator('#logcatAppBtn').click(); await sleep(100);

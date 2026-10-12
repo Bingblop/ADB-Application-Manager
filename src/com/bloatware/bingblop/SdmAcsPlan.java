@@ -26,7 +26,11 @@ import java.util.Set;
  * Changed for this port: the step engine is plain Java behind a tiny node and host abstraction ({@link Node}, {@link Host}) so that it runs on a JDK against a fake
  * screen; coroutines and the accessibility event flow are replaced by polling the window root every 100 ms; all the timeouts live in {@link Timing} so a test can turn
  * them down; the label tables are read from assets/sdm/acs_labels.json (machine-extracted from the Kotlin files and compared with an independent extraction for
- * AOSP / One UI / the data-driven ROMs); the Android 16/17 DPAD fallback, the input injector and the app-locker interference detector are not ported.
+ * AOSP / One UI / the data-driven ROMs); the app-locker interference detector is not ported (a foreign window in front is named in the failure report instead).
+ * Added for this port: when a click on the Storage entry changes nothing, the engine does not wait for the Clear cache button on App info forever: it checks that the window changed and
+ * climbs a ladder ({@link Escalation}: node click, click on a parent, gesture tap at the visible part of the row, D-pad through the accessibility global actions, then, with a working
+ * mode, {@code input tap} and {@code input keyevent}); a per-run no-progress watchdog ends the app with NO_PROGRESS and a screen report ({@link SdmAcsDiag}). Upstream's DPAD fallback
+ * (Android 16/17, for the Clear cache button of Pixel, Motorola and Sony) and its input injector are the model for the key ladder.
  *
  * Plans: {@link #AOSP} (the default, also Lineage), {@link #ONEUI} (Samsung) and {@link #MIUI} / {@link #HYPEROS} (Xiaomi, the security-center plan) are written out; ColorOS,
  * Realme UI, OxygenOS, Huawei, Honor, LG, Nubia, Funtouch OS, OriginOS, Alcatel, Doogee and Oukitel are the AOSP flow with the label tables of their ROM (data driven,
@@ -47,6 +51,11 @@ public final class SdmAcsPlan {
         String unreachableReason(String pkg, boolean enabled);
         /** Why the last attempt for the package failed: "NO_SETTINGS", "DISABLED_APP", "LOCKED" (the system disabled the button) or "OTHER"; null when unknown. */
         String failureOf(String pkg);
+        /**
+         * The apps a deletion left out before the run (package -> NO_SETTINGS | DISABLED_APP, in order; empty when none), so they count as the last attempt's outcome too: called before
+         * every {@link Sdm.Automation#clearCaches} of that deletion, and instead of it when nothing was left to run.
+         */
+        default void preflight(Map<String, String> unreachable) {}
     }
 
     // ---------------------------------------------------------------------------------------------------------- the screen
@@ -71,6 +80,8 @@ public final class SdmAcsPlan {
         boolean refresh();
         /** left, top, right, bottom on the screen. */
         int[] bounds();
+        /** The node of this window that has input focus (else accessibility focus), or null when none or when it cannot be read. */
+        default Node findFocus() { return null; }
     }
 
     /** What the engine needs from the phone. */
@@ -94,6 +105,16 @@ public final class SdmAcsPlan {
         float density();
         /** The text of the current step for the overlay ("Searching for "Storage" entry (keywords: ...)"). */
         void status(String text);
+        /** Why the last {@link #launchAppInfo} failed (the exception text), or null when it did not. Read once. */
+        default String launchError() { return null; }
+        /** A D-pad key (KEYCODE_DPAD_DOWN 20, KEYCODE_DPAD_CENTER 23 ...) through the accessibility global actions (Android 13+, no privilege); false when it cannot be sent. */
+        default boolean dpadGlobal(int keyCode) { return false; }
+        /** True when a working mode with a shell (ADB, Wireless debugging, Shizuku, Root) can run {@code input}. */
+        default boolean canInject() { return false; }
+        /** {@code input keyevent <keyCode>} in the working mode; false when it was not run. */
+        default boolean injectKey(int keyCode) { return false; }
+        /** {@code input tap x y} in the working mode; false when it was not run. */
+        default boolean injectTap(int x, int y) { return false; }
     }
 
     /** The user's languages and the strings of other apps' resources (the Settings APK) in each of them. */
@@ -145,6 +166,8 @@ public final class SdmAcsPlan {
     public static final class Timing {
         public long planTimeout = 30000, stepTimeout = 40000, attemptTimeout = 15000, windowCheckTimeout = 4000, retryDelay = 300, launchDelay = 50;
         public long recoveryDelay = 200, plainDelay = 100, busyDelay = 1000, pollDelay = 50, planReplays = 3, scrollSettle = 1000, dialogWait = 3000, sizeWait = 250;
+        /** How long a click is given to change the window before the next way is tried; how long after a D-pad key; how long App info may stay unchanged in the second step; rounds of the whole ladder; stuck apps in a row. */
+        public long clickEffectWait = 2000, keyDelay = 150, appInfoStall = 6000, ladderRounds = 2, stuckLimit = 3;
         public static Timing scaled(double f) {
             Timing t = new Timing();
             t.planTimeout = (long) (t.planTimeout * f); t.stepTimeout = (long) (t.stepTimeout * f); t.attemptTimeout = (long) (t.attemptTimeout * f);
@@ -152,6 +175,7 @@ public final class SdmAcsPlan {
             t.recoveryDelay = Math.max(1, (long) (t.recoveryDelay * f)); t.plainDelay = Math.max(1, (long) (t.plainDelay * f)); t.busyDelay = Math.max(1, (long) (t.busyDelay * f));
             t.pollDelay = Math.max(1, (long) (t.pollDelay * f)); t.scrollSettle = Math.max(1, (long) (t.scrollSettle * f)); t.dialogWait = Math.max(1, (long) (t.dialogWait * f));
             t.sizeWait = Math.max(1, (long) (t.sizeWait * f));
+            t.clickEffectWait = Math.max(1, (long) (t.clickEffectWait * f)); t.keyDelay = Math.max(1, (long) (t.keyDelay * f)); t.appInfoStall = Math.max(1, (long) (t.appInfoStall * f));
             return t;
         }
     }
@@ -383,6 +407,8 @@ public final class SdmAcsPlan {
     /** One step of a plan (upstream AutomationStep). */
     public static final class Step {
         public String label = "";
+        /** A short name for reports ("Storage entry", "Clear cache button"); the label when empty. */
+        public String name = "";
         public boolean launch;
         /** Decides whether the window is the one we wait for; null: any root. */
         public Check windowCheck;
@@ -400,7 +426,31 @@ public final class SdmAcsPlan {
         public final Labels labels;
         public final LabelSource src;
         public final PkgInfo pkg;
-        public Run(Host host, Timing timing, Labels labels, LabelSource src, PkgInfo pkg) { this.host = host; this.timing = timing; this.labels = labels; this.src = src; this.pkg = pkg; }
+        /** What went wrong, for the report: filled while the run goes, read when it fails. */
+        public final SdmAcsDiag.Failure diag = new SdmAcsDiag.Failure();
+        /** Where the ways of opening the Storage entry stand for this app (kept over the replays of the plan). */
+        public final Escalation esc = new Escalation();
+        boolean stepWindowOk;
+        /** Time the ladder spent, which does not count against the step and plan timeouts (it has its own watchdog). */
+        long deadlineBonus;
+        public Run(Host host, Timing timing, Labels labels, LabelSource src, PkgInfo pkg) {
+            this.host = host; this.timing = timing; this.labels = labels; this.src = src; this.pkg = pkg;
+            diag.pkg = pkg.pkg; diag.label = pkg.label;
+        }
+
+        /** The packages whose screen content may be written into a report: the Settings app and the Xiaomi security center, nothing else. */
+        static final Set<String> REPORT_PKGS = new HashSet<String>(Arrays.asList("com.android.settings", "com.miui.securitycenter"));
+
+        /** One more thing that was tried or seen, for the report (the newest {@link SdmAcsDiag#MAX_TRIED} are kept). */
+        void note(String s) {
+            diag.tried.add(SdmAcsDiag.clip(s, 240));
+            while (diag.tried.size() > SdmAcsDiag.MAX_TRIED) diag.tried.remove(0);
+        }
+
+        /** Writes the window in front into the report (called when an attempt ends in failure). */
+        void captureScreen() {
+            try { diag.screen = SdmAcsDiag.dump(host.root(), REPORT_PKGS); } catch (RuntimeException e) { diag.screen = "Screen: could not be read (" + e + ")\n"; }
+        }
 
         void guard() {
             if (host.cancelled()) throw new UserCancelled();
@@ -413,7 +463,8 @@ public final class SdmAcsPlan {
             while (true) {
                 guard();
                 Node r = host.root();
-                if (r != null && (check == null || check.ok(r, attempt))) return r;
+                if (r != null) diag.windowPkg = r.packageName() == null ? "" : r.packageName();
+                if (r != null && (check == null || check.ok(r, attempt))) { stepWindowOk = true; return r; }
                 if (host.now() >= end) throw new Timeout("window check timed out");
                 host.sleep(timing.pollDelay);
             }
@@ -422,6 +473,8 @@ public final class SdmAcsPlan {
         /** One step: launch, window check, node action loop; failed attempts are repeated until the step timeout (upstream Stepper.process). */
         public void step(Step s) {
             host.status(s.label);
+            diag.step = s.name.isEmpty() ? s.label : s.name;
+            stepWindowOk = false;
             long stepEnd = host.now() + timing.stepTimeout;
             int attempts = 0;
             while (true) {
@@ -431,9 +484,10 @@ public final class SdmAcsPlan {
                     attempt(s, attempt);
                     return;
                 } catch (PlanAbort e) {
+                    if (!e.treatAsSuccess) captureScreen();
                     throw e;
                 } catch (StepAbort e) {
-                    if (!e.treatAsSuccess) throw e;
+                    if (!e.treatAsSuccess) { captureScreen(); throw e; }
                     return;
                 } catch (ScreenUnavailable e) {
                     throw e;
@@ -441,17 +495,21 @@ public final class SdmAcsPlan {
                     throw e;
                 } catch (RuntimeException e) {
                     // a failed attempt: wait and run the step again
-                    if (host.now() >= stepEnd) throw new Timeout("step timed out: " + s.label);
+                    if (host.now() >= stepEnd + deadlineBonus) { captureScreen(); throw new Timeout("step timed out: " + s.label); }
                     host.sleep(timing.retryDelay);
                 }
-                if (host.now() >= stepEnd) throw new Timeout("step timed out: " + s.label);
+                if (host.now() >= stepEnd + deadlineBonus) { captureScreen(); throw new Timeout("step timed out: " + s.label); }
             }
         }
 
         private void attempt(Step s, int attempt) {
             long end = host.now() + timing.attemptTimeout;
             if (attempt > 1) host.dismissDialogs();
-            if (s.launch) host.launchAppInfo(pkg.pkg);
+            if (s.launch) {
+                host.launchAppInfo(pkg.pkg);
+                String le = host.launchError();
+                if (le != null) { diag.launchError = le; note("opening App info failed: " + le); }
+            }
             host.sleep(timing.launchDelay);
             Node root = awaitRoot(s.windowCheck, attempt, timing.windowCheckTimeout);
             if (s.action == null) return;
@@ -459,7 +517,7 @@ public final class SdmAcsPlan {
                 guard();
                 root = host.root() != null ? host.root() : root;
                 if (s.action.act(root, attempt)) return;
-                if (host.now() >= end) throw new Timeout("nodeAction failed");
+                if (host.now() >= end + deadlineBonus) throw new Timeout("nodeAction failed");
                 if (s.recovery != null) { s.recovery.recover(root, attempt); host.sleep(timing.recoveryDelay); } else host.sleep(timing.plainDelay);
             }
         }
@@ -602,6 +660,248 @@ public final class SdmAcsPlan {
         return sorted.isEmpty() ? null : sorted.get(0);
     }
 
+    // ---------------------------------------------------------------------------------------------------------- opening the Storage entry: the ladder
+
+    /** The ways of opening the Storage entry, in the order they are tried. */
+    static final String[] LEVELS = { "node click", "click on a parent", "gesture tap", "D-pad (accessibility)", "input tap (working mode)", "input keys (working mode)" };
+    static final int L_NODE = 0, L_PARENT = 1, L_TAP = 2, L_DPAD = 3, L_INJECT_TAP = 4, L_INJECT_KEYS = 5;
+    static final int KEY_DPAD_DOWN = 20, KEY_DPAD_CENTER = 23, MAX_KEYS = 16, FOCUS_BLIND_LIMIT = 4;
+
+    /** Where the ladder stands for one app; it lives in the {@link Run}, so the replays of the plan go on from the next way instead of starting again. */
+    public static final class Escalation {
+        /** The way to start with, the rounds of the whole ladder that changed nothing, the times step 2 saw App info unchanged after a click that reported an effect, the way that last reported one. */
+        public int startLevel, rounds, stalls, lastLevel = -1;
+        /** The words of the App info page just before the last click. */
+        public Set<String> preClickSig;
+    }
+
+    /** What a way did: it was not possible here (nothing was sent), it changed nothing, or the window changed. */
+    static final int SKIP = 0, NONE = 1, EFFECT = 2;
+
+    static int[] windowOf(Node root) { int[] b = root.bounds(); return SdmAcsDiag.usable(b) ? b : null; }
+
+    static String describe(Node n, Node found) {
+        String c = n.className() == null ? "node" : n.className().substring(n.className().lastIndexOf('.') + 1);
+        String t = n.text() != null && !n.text().isEmpty() ? n.text() : found != null && found.text() != null ? found.text() : "";
+        return c + (t.isEmpty() ? "" : " \"" + SdmAcsDiag.clip(t, 30) + "\"");
+    }
+
+    /** Did the window change after a click: another package, or the words of the page are not the ones from before (a page that only redrew keeps nearly all of them). */
+    static boolean windowChanged(Run r, Set<String> before, String beforePkg, long waitMs) {
+        long end = r.host.now() + waitMs;
+        while (true) {
+            r.guard();
+            Node rt = r.host.root();
+            if (rt != null) {
+                if (beforePkg != null && !beforePkg.equals(rt.packageName())) return true;
+                if (SdmAcsDiag.similarity(SdmAcsDiag.signature(rt), before) < 0.6) return true;
+            }
+            if (r.host.now() >= end) return rt == null;       // still no window at all: the page is on its way
+            r.host.sleep(r.timing.pollDelay);
+        }
+    }
+
+    /**
+     * Step 1 of the AOSP flow: find the Storage entry and open it, and do not take "the click returned true" for "the page opened". Upstream clicks the clickable parent once and goes on;
+     * when that click does nothing (a Samsung One UI 9 App info page with its floating Uninstall / Force stop bar over the Storage row) the next step then looks for Clear cache on
+     * App info until the plan times out. Here: the row is scrolled clear of a bar that covers it; then each way of {@link #LEVELS} is tried and followed by a look at the window; the
+     * first that changes it wins. A whole ladder that changes nothing is a round; {@link Timing#ladderRounds} rounds end the app with NO_PROGRESS.
+     */
+    static final class StorageEnter {
+        final Run r;
+        final List<String> labels, anti;
+        final int nesting;
+        StorageEnter(Run r, List<String> labels, List<String> anti, int nesting) { this.r = r; this.labels = labels; this.anti = anti; this.nesting = nesting; }
+
+        boolean act(Node root, int attempt) {
+            long t0 = r.host.now();
+            try { return run(root); } finally { r.deadlineBonus += Math.max(0, r.host.now() - t0); }
+        }
+
+        private boolean run(Node root) {
+            List<Node> tree = crawl(root);
+            Node found = findStorageEntry(r, root, labels, anti);
+            if (found == null) return false;
+            Node row = clickableParent(found, nesting, true);
+            Node anchor = row != null ? row : found;
+            int[] win = windowOf(root);
+
+            // 1. a floating bar over the row, or a row half off the screen: scroll it clear first
+            for (int i = 0; i < 3 && covered(tree, anchor, win); i++) {
+                if (!scrollForward(tree, anchor)) { r.note("the Storage row is partly covered and the list cannot scroll further"); break; }
+                r.note("scrolled forward: the Storage row was partly covered");
+                r.host.sleep(Math.min(r.timing.scrollSettle, 400));
+                Node nr = r.host.root();
+                if (nr == null) return false;
+                root = nr; tree = crawl(root); win = windowOf(root);
+                found = findStorageEntry(r, root, labels, anti);
+                if (found == null) return false;
+                row = clickableParent(found, nesting, true);
+                anchor = row != null ? row : found;
+            }
+
+            // 2. the ladder
+            Set<String> before = SdmAcsDiag.signature(root);
+            String beforePkg = root.packageName();
+            r.esc.preClickSig = before;
+            for (int level = r.esc.startLevel; level < LEVELS.length; level++) {
+                r.guard();
+                int res = tryLevel(level, tree, found, row, anchor, win, before, beforePkg);
+                if (res == EFFECT) { r.esc.lastLevel = level; r.esc.startLevel = level; return true; }
+                r.esc.startLevel = level + 1;                       // a call that is cut short goes on from the next way, not from the first again
+                Node nr = r.host.root();
+                if (nr == null) return false;
+                root = nr; tree = crawl(root); win = windowOf(root);
+                found = findStorageEntry(r, root, labels, anti);
+                if (found == null) return false;                       // the page moved on under us; look again from the top
+                row = clickableParent(found, nesting, true);
+                anchor = row != null ? row : found;
+            }
+            r.esc.rounds++;
+            r.esc.startLevel = 0;
+            if (r.esc.rounds >= r.timing.ladderRounds) {
+                r.captureScreen();
+                throw new PlanAbort("NO_PROGRESS", "Nothing opened the Storage entry of " + r.pkg.pkg + " (" + r.esc.rounds + " rounds of every way)", false);
+            }
+            return false;
+        }
+
+        boolean covered(List<Node> tree, Node anchor, int[] win) {
+            if (!SdmAcsDiag.obstacles(tree, anchor, win).isEmpty()) return true;
+            return win != null && SdmAcsDiag.usable(anchor.bounds()) && !SdmAcsDiag.contains(win, anchor.bounds());
+        }
+
+        /** Scrolls the nearest scrollable parent of the node forward, else any scrollable node; true when one took it. */
+        boolean scrollForward(List<Node> tree, Node anchor) {
+            Node p = anchor.parent();
+            for (int i = 0; i < 12 && p != null; i++, p = p.parent()) if (p.scrollable() && p.scroll(true)) return true;
+            for (Node n : tree) if (n.scrollable() && n.scroll(true)) return true;
+            return false;
+        }
+
+        int result(String what, boolean sent, Set<String> before, String beforePkg) {
+            if (!sent) { r.note(what + ": refused"); return NONE; }
+            boolean changed = windowChanged(r, before, beforePkg, r.timing.clickEffectWait);
+            r.note(what + ": " + (changed ? "the window changed" : "no change in " + r.timing.clickEffectWait + " ms"));
+            return changed ? EFFECT : NONE;
+        }
+
+        int tryLevel(int level, List<Node> tree, Node found, Node row, Node anchor, int[] win, Set<String> before, String beforePkg) {
+            String name = LEVELS[level];
+            int minPx = Math.max(8, Math.round(6 * Math.max(1f, r.host.density())));
+            switch (level) {
+                case L_NODE: {
+                    if (row == null) { r.note(name + ": no clickable parent of \"" + SdmAcsDiag.clip(found.text(), 30) + "\" within " + nesting + " levels"); return SKIP; }
+                    boolean sent;
+                    try { sent = r.clickNormal(row); } catch (DisabledTarget e) { r.note(name + ": the row is disabled"); return SKIP; } catch (Unclickable e) { r.note(name + ": the row is not clickable"); return SKIP; }
+                    return result(name + " on " + describe(row, found), sent, before, beforePkg);
+                }
+                case L_PARENT: {
+                    if (row == null) { r.note(name + ": there is no row to start from"); return SKIP; }
+                    int[] rb = row.bounds();
+                    long rowH = SdmAcsDiag.usable(rb) ? rb[3] - rb[1] : 0;
+                    int tried = 0;
+                    Node p = row.parent();
+                    for (int up = 0; up < 3 && p != null; up++, p = p.parent()) {
+                        int[] pb = p.bounds();
+                        // a parent that is much taller than the row holds other rows: clicking it would open one of them
+                        if (!p.clickable() || !p.enabled() || rowH <= 0 || !SdmAcsDiag.usable(pb) || pb[3] - pb[1] > 2 * rowH) continue;
+                        tried++;
+                        if (result(name + " (" + (up + 1) + " up) " + describe(p, found), p.click(), before, beforePkg) == EFFECT) return EFFECT;
+                    }
+                    if (tried == 0) { r.note(name + ": no clickable parent of the right size"); return SKIP; }
+                    return NONE;
+                }
+                case L_TAP: {
+                    int[] at = tapPoint(tree, found, anchor, win, minPx);
+                    if (at == null) { r.note(name + ": no part of the row is visible"); return SKIP; }
+                    return result(name + " at " + at[0] + "," + at[1], r.host.tap(at[0], at[1]), before, beforePkg);
+                }
+                case L_DPAD:
+                    if (r.host.sdk() < 33) { r.note(name + ": needs Android 13 or newer"); return SKIP; }
+                    return dpad(name, false, anchor, win, before, beforePkg);
+                case L_INJECT_TAP: {
+                    if (!r.host.canInject()) { r.note(name + ": needs a working mode (ADB, Shizuku or Root)"); return SKIP; }
+                    int[] at = tapPoint(tree, found, anchor, win, minPx);
+                    if (at == null) { r.note(name + ": no part of the row is visible"); return SKIP; }
+                    return result(name + " at " + at[0] + "," + at[1], r.host.injectTap(at[0], at[1]), before, beforePkg);
+                }
+                default:
+                    if (!r.host.canInject()) { r.note(name + ": needs a working mode (ADB, Shizuku or Root)"); return SKIP; }
+                    return dpad(name, true, anchor, win, before, beforePkg);
+            }
+        }
+
+        /**
+         * Where to tap: the middle of the visible part of the label (the "Storage" text, the one thing of the row that is surely not under a bar), else of the row. A bar that is not in the
+         * window's node tree (a window of its own) is not known as an obstacle, so the label is the safer place than the middle of the row.
+         */
+        int[] tapPoint(List<Node> tree, Node found, Node anchor, int[] win, int minPx) {
+            int[] at = SdmAcsDiag.visibleCentre(found, SdmAcsDiag.obstacles(tree, found, win), win, minPx);
+            return at != null ? at : SdmAcsDiag.visibleCentre(anchor, SdmAcsDiag.obstacles(tree, anchor, win), win, minPx);
+        }
+
+        /**
+         * D-pad down until the focus is on the Storage row, then centre. The focus is read before the first key (a way tried before can have left it on the row already, and a first
+         * DOWN would move past it, where DOWN keys never find it again) and after each one. The row is looked up again in the window the focus was read from: a key can scroll
+         * the list, and the node from before keeps the place it had on the screen. Never presses centre on a focus that is not read as the row: a blind press could toggle another row.
+         */
+        int dpad(String name, boolean inject, Node anchor, int[] win, Set<String> before, String beforePkg) {
+            int blind = 0;
+            for (int i = 0; i <= MAX_KEYS; i++) {
+                r.guard();
+                if (i > 0) {
+                    boolean sent = inject ? r.host.injectKey(KEY_DPAD_DOWN) : r.host.dpadGlobal(KEY_DPAD_DOWN);
+                    if (!sent) { r.note(name + ": key down refused"); return NONE; }
+                    r.host.sleep(r.timing.keyDelay);
+                }
+                Node rt = r.host.root();
+                if (rt == null) continue;
+                Node focus = rt.findFocus();
+                if (focus == null) {
+                    if (i > 0 && ++blind >= FOCUS_BLIND_LIMIT && i == blind) { r.note(name + ": the focused item cannot be read, no blind key press"); return NONE; }
+                    continue;
+                }
+                String fp = focus.packageName();
+                if (fp != null && !fp.equals(beforePkg)) { r.note(name + ": the focus left the page (" + fp + ")"); return NONE; }
+                Node cur = anchorIn(rt);
+                if (cur == null) continue;                         // the row is not on this window (scrolled away, or the page is on its way): no centre on a guess
+                if (focusOnRow(focus, cur, windowOf(rt))) {
+                    boolean ok = inject ? r.host.injectKey(KEY_DPAD_CENTER) : r.host.dpadGlobal(KEY_DPAD_CENTER);
+                    return result(i == 0 ? name + " centre (the focus was on the row already)" : name + " centre after " + i + " key(s)", ok, before, beforePkg);
+                }
+            }
+            r.note(name + ": the focus did not reach the Storage row in " + MAX_KEYS + " keys");
+            return NONE;
+        }
+
+        /** The Storage row as it is in this window (the clickable row of the label, else the label): a fresh node with the place it has now. */
+        Node anchorIn(Node root) {
+            Node f = findStorageEntry(r, root, labels, anti);
+            if (f == null) return null;
+            Node row = clickableParent(f, nesting, true);
+            return row != null ? row : f;
+        }
+
+        /**
+         * Is the focus on the Storage row: it has to be the row itself, something inside it or something that holds it (a bar button or an overlay that only lies over the row is not
+         * the row, whatever its place), and its place has to meet the row's (the middle of one inside the other) without being most of the page (the list that holds the row is not
+         * the row either).
+         */
+        boolean focusOnRow(Node focus, Node anchor, int[] win) {
+            if (!(focus.equals(anchor) || SdmAcsDiag.isAncestor(anchor, focus) || SdmAcsDiag.isAncestor(focus, anchor))) return false;
+            int[] fb = focus.bounds(), ab = anchor.bounds();
+            if (!SdmAcsDiag.usable(fb) || !SdmAcsDiag.usable(ab)) return false;
+            boolean inside = holdsMiddle(fb, ab) || holdsMiddle(ab, fb);
+            return inside && (win == null || SdmAcsDiag.area(fb) <= SdmAcsDiag.area(win) * 4 / 10);
+        }
+
+        static boolean holdsMiddle(int[] outer, int[] of) {
+            int cx = (of[0] + of[2]) / 2, cy = (of[1] + of[3]) / 2;
+            return outer[0] <= cx && cx < outer[2] && outer[1] <= cy && cy < outer[3];
+        }
+    }
+
     /** "1.23 MB" -> 0 only when the number is zero; any other number is "something". null when there is no number. */
     static Long cacheSizeOf(String text) {
         if (text == null) return null;
@@ -670,29 +970,29 @@ public final class SdmAcsPlan {
             final List<String> cacheRow = plus(r.labels.collect(r.src, "aosp", r.host.sdk(), false, "getCacheSizeLabel", SETTINGS_PKG), Arrays.asList("Cache"));
             final List<String> anti = oneUiLabels ? r.labels.collect(r.src, "oneui", r.host.sdk(), false, "getMobileDataAnti", SETTINGS_PKG) : new ArrayList<String>();
 
+            final StorageEnter enter = new StorageEnter(r, storage, anti, parentNesting);
             Step s1 = new Step();
+            s1.name = "Storage entry";
             s1.label = "Searching for \"Storage\" entry (keywords: " + join(storage) + ")";
             s1.launch = launch;
             s1.windowCheck = settingsWindow(r);
             s1.recovery = r.nodeRecovery(computing);
             s1.action = new Action() {
-                @Override public boolean act(Node root, int attempt) {
-                    Node found = findStorageEntry(r, root, storage, anti);
-                    if (found == null) return false;
-                    Node t = clickableParent(found, parentNesting, true);
-                    return t != null && r.clickNormal(t);
-                }
+                @Override public boolean act(Node root, int attempt) { return enter.act(root, attempt); }
             };
             r.step(s1);
 
             final int[] attempts = { 0 }, zeroStreak = { 0 };
             final int[] lastVerdict = { 0 };
+            final long[] s2Start = { -1 };
             Step s2 = new Step();
+            s2.name = "Clear cache button";
             s2.label = "Looking for \"Clear cache\" button (keywords: " + join(clear) + ")";
             s2.windowCheck = new Check() { @Override public boolean ok(Node root, int attempt) { return SETTINGS_PKG.equals(root.packageName()); } };
             s2.action = new Action() {
                 @Override public boolean act(Node root, int attempt) {
                     int a = attempts[0]++;
+                    if (s2Start[0] < 0) s2Start[0] = r.host.now();
                     List<Node> tree = crawl(root);
                     Node cand = findByLabel(tree, clear, null);
                     if (cand == null && r.host.sdk() >= 36) cand = findByContentDesc(tree, clear, new NodePredicate() { @Override public boolean ok(Node n) { return n.clickable(); } });
@@ -700,6 +1000,7 @@ public final class SdmAcsPlan {
                         Node t = resolveTarget(r, cand);
                         if (t != null) return clickClearCache(r, t, attempt);
                     }
+                    stalledOnAppInfo(r, root, s2Start[0]);
                     // nothing to click: Settings shows the cache size on this page; an empty cache is a success, a system app without a button is locked
                     boolean due = a >= 2 && (a - 2) % 10 == 0;
                     if (due) {
@@ -716,6 +1017,25 @@ public final class SdmAcsPlan {
                 }
             };
             r.step(s2);
+        }
+
+        /**
+         * The click on Storage reported an effect, yet {@link Timing#appInfoStall} later the window still holds the words of the App info page from before the click and there is no
+         * Clear cache button: the "effect" was a redraw. The way that said so is skipped, App info is opened again and the ladder goes on from the next way (a StepAbort: the plan is
+         * replayed); a second time, or with no way left, ends the app with NO_PROGRESS.
+         */
+        static void stalledOnAppInfo(Run r, Node root, long since) {
+            if (since < 0 || r.esc.preClickSig == null || r.host.now() - since < r.timing.appInfoStall) return;
+            if (SdmAcsDiag.similarity(SdmAcsDiag.signature(root), r.esc.preClickSig) < 0.9) return;
+            int bad = r.esc.lastLevel;
+            r.esc.stalls++;
+            r.esc.startLevel = bad + 1;
+            r.note("still on the App info page " + r.timing.appInfoStall + " ms after \"" + (bad >= 0 ? LEVELS[bad] : "a click") + "\" reported an effect");
+            if (r.esc.startLevel >= LEVELS.length || r.esc.stalls >= r.timing.ladderRounds) {
+                r.captureScreen();
+                throw new PlanAbort("NO_PROGRESS", "Still on the App info page of " + r.pkg.pkg + " after every way of opening Storage", false);
+            }
+            throw new StepAbort("Still on the App info page after the click", false);
         }
 
         Node resolveTarget(Run r, Node cand) {
@@ -773,6 +1093,7 @@ public final class SdmAcsPlan {
 
             final String[] windowPkg = { null };
             Step open = new Step();
+            open.name = "Storage entry";
             open.label = "Searching for \"Storage\" entry (keywords: )";
             open.launch = true;
             open.windowCheck = new Check() {
@@ -796,6 +1117,7 @@ public final class SdmAcsPlan {
         void securityCenter(final Run r, final List<String> clearData, final List<String> clearCache, final List<String> dialogTitles, final List<String> clearAll, final List<String> manage) {
             final boolean[] useAlternative = { false };
             Step data = new Step();
+            data.name = "Clear data button";
             data.label = "Looking for \"Clear data\" button (keywords: " + join(clearData) + ")";
             data.windowCheck = new Check() { @Override public boolean ok(Node root, int attempt) { return SECURITY_CENTER.equals(root.packageName()); } };
             data.recovery = r.nodeRecovery(null);
@@ -821,6 +1143,7 @@ public final class SdmAcsPlan {
             r.step(data);
 
             Step second = new Step();
+            second.name = "Clear cache button";
             if (useAlternative[0]) {
                 second.label = "Looking for \"Clear cache\" button (keywords: " + join(clearCache) + ")";
                 second.windowCheck = data.windowCheck;
@@ -865,6 +1188,7 @@ public final class SdmAcsPlan {
             // the confirmation dialog; some versions clear without asking
             final long[] seenSince = { -1 };
             Step confirm = new Step();
+            confirm.name = "Confirm";
             confirm.label = "Trying to confirm previous action (keywords: )";
             confirm.windowCheck = new Check() {
                 @Override public boolean ok(Node root, int attempt) {
@@ -941,19 +1265,38 @@ public final class SdmAcsPlan {
     /** What a run over several apps came to. */
     public static final class Result {
         public final Set<String> cleared = new LinkedHashSet<String>();
-        public final Map<String, String> failed = new LinkedHashMap<String, String>();     // package -> NO_SETTINGS | DISABLED_APP | LOCKED | OTHER
+        public final Map<String, String> failed = new LinkedHashMap<String, String>();     // package -> NO_SETTINGS | DISABLED_APP | LOCKED | NO_PROGRESS | OTHER
+        /** Why and where the failed apps failed (the first {@link #MAX_FAILURES} problems and one app that Android does not allow), for the report and the message of the SD Maid tab. */
+        public final Map<String, SdmAcsDiag.Failure> failures = new LinkedHashMap<String, SdmAcsDiag.Failure>();
         public String stop;                       // null | SCREEN_UNAVAILABLE | ERROR
         public String stopMessage;
         public boolean userCancelled;
+        int realFailures;
+        boolean expectedKept;
+
+        /**
+         * The failure the SD Maid tab tells about: the first one that is a problem of the automation. NO_SETTINGS, DISABLED_APP and LOCKED are what Android allows for that app, not a
+         * problem: one of them is told about only when nothing was cleared at all (else a run over many system apps would end with a red message every time). null: nothing to tell.
+         */
+        public SdmAcsDiag.Failure headline() {
+            SdmAcsDiag.Failure expected = null;
+            for (SdmAcsDiag.Failure f : failures.values()) { if (!expectedLimit(f.code)) return f; if (expected == null) expected = f; }
+            return cleared.isEmpty() ? expected : null;
+        }
     }
+
+    /** The codes of an app that cannot be cleared this way by Android's own rules. */
+    public static boolean expectedLimit(String code) { return "NO_SETTINGS".equals(code) || "DISABLED_APP".equals(code) || "LOCKED".equals(code); }
+
+    public static final int MAX_FAILURES = 3;
 
     /** One app: the plan with a 30 s deadline, retried every 300 ms; a step that aborts for good may be replayed three times. */
     public static void explore(Plan plan, Run r) {
-        long end = r.host.now() + r.timing.planTimeout;
+        long start = r.host.now();
         int replays = 0;
         while (true) {
             r.guard();
-            if (r.host.now() >= end) throw new Timeout("plan timed out");
+            if (r.host.now() >= start + r.timing.planTimeout + r.deadlineBonus) { r.captureScreen(); throw new Timeout("plan timed out"); }
             try {
                 plan.run(r);
                 return;
@@ -962,7 +1305,7 @@ public final class SdmAcsPlan {
                 throw e;
             } catch (StepAbort e) {
                 if (e.treatAsSuccess) return;
-                if (replays >= r.timing.planReplays) throw e;
+                if (replays >= r.timing.planReplays) { r.captureScreen(); throw e; }
                 replays++;
                 r.host.sleep(r.timing.retryDelay);
             } catch (ScreenUnavailable e) {
@@ -970,7 +1313,7 @@ public final class SdmAcsPlan {
             } catch (UserCancelled e) {
                 throw e;
             } catch (Timeout e) {
-                if (r.host.now() >= end) throw e;
+                if (r.host.now() >= start + r.timing.planTimeout + r.deadlineBonus) { r.captureScreen(); throw e; }
                 r.host.sleep(r.timing.retryDelay);
             } catch (RuntimeException e) {
                 r.host.sleep(r.timing.retryDelay);
@@ -982,22 +1325,47 @@ public final class SdmAcsPlan {
     static boolean unusable(RuntimeException e) { return e instanceof Timeout || (e instanceof StepAbort && !((StepAbort) e).treatAsSuccess); }
 
     /**
-     * Clears the caches of the apps one by one. Stops when the screen goes off (stop = SCREEN_UNAVAILABLE), on Cancel (userCancelled, the results so far are kept) and when
-     * eight apps failed with an unusable automation without a single success (stop = ERROR, the compatibility text).
+     * What a failure of this app comes to, in words the SD Maid tab maps to a sentence: the code of a plan abort as it is, else by where the run got to. SETTINGS_NOT_OPENED: the Settings
+     * window never came to the front (windowPkg says what did); APP_NOT_ON_SCREEN: Settings is in front but does not show the app's name; LAUNCH_FAILED: Android refused to open App info;
+     * NO_PROGRESS: stuck on App info; STORAGE_NOT_FOUND / CLEAR_NOT_FOUND: the page is there but not the entry or the button.
+     */
+    static String classify(Run r, RuntimeException e) {
+        if (e instanceof PlanAbort) return ((PlanAbort) e).code;
+        if (!r.diag.launchError.isEmpty() && !r.stepWindowOk && r.diag.step.startsWith("Storage")) return "LAUNCH_FAILED";
+        boolean storageStep = r.diag.step.startsWith("Storage");
+        if (storageStep && !r.stepWindowOk) return SETTINGS_PKG.equals(r.diag.windowPkg) || SECURITY_CENTER.equals(r.diag.windowPkg) ? "APP_NOT_ON_SCREEN" : "SETTINGS_NOT_OPENED";
+        if (storageStep && r.esc.rounds > 0) return "NO_PROGRESS";
+        if (storageStep) return "STORAGE_NOT_FOUND";
+        if (r.diag.step.startsWith("Clear cache")) return r.esc.stalls > 0 ? "NO_PROGRESS" : "CLEAR_NOT_FOUND";
+        return "OTHER";
+    }
+
+    /**
+     * Clears the caches of the apps one by one. Stops when the screen goes off (stop = SCREEN_UNAVAILABLE), on Cancel (userCancelled, the results so far are kept), when
+     * eight apps failed with an unusable automation without a single success (stop = ERROR, the compatibility text) and when {@link Timing#stuckLimit} apps in a row, with no
+     * success so far, ended stuck on App info (stop = ERROR, saying so).
      */
     public static Result clearAll(Host host, Timing timing, Labels labels, LabelSource src, Plan plan, List<PkgInfo> pkgs, Sdm.Progress progress) {
         Result res = new Result();
-        int unusableCount = 0, done = 0;
+        int unusableCount = 0, stuck = 0, done = 0;
         for (PkgInfo p : pkgs) {
             if (host.cancelled()) { res.userCancelled = true; break; }
             if (!host.screenAvailable()) { res.stop = "SCREEN_UNAVAILABLE"; res.stopMessage = "Screen is unavailable!"; break; }
             if (progress != null) progress.update(p.label.isEmpty() ? p.pkg : p.label, "", done, pkgs.size(), 0);
             Run run = new Run(host, timing, labels, src, p);
+            run.diag.plan = plan.name();
             try {
                 explore(plan, run);
                 res.cleared.add(p.pkg);
+                stuck = 0;
             } catch (PlanAbort e) {
-                if (e.treatAsSuccess) res.cleared.add(p.pkg); else res.failed.put(p.pkg, e.code);
+                if (e.treatAsSuccess) { res.cleared.add(p.pkg); stuck = 0; }
+                else {
+                    res.failed.put(p.pkg, e.code);
+                    record(res, run, e);
+                    if ("NO_PROGRESS".equals(e.code)) stuck++; else stuck = 0;
+                    if (res.cleared.isEmpty() && stuck >= timing.stuckLimit) { res.stop = "ERROR"; res.stopMessage = STUCK_MESSAGE; break; }
+                }
             } catch (UserCancelled e) {
                 res.userCancelled = true;
                 break;
@@ -1006,6 +1374,8 @@ public final class SdmAcsPlan {
                 break;
             } catch (RuntimeException e) {
                 res.failed.put(p.pkg, "OTHER");
+                record(res, run, e);
+                stuck = 0;                                                  // the watchdog counts stuck apps in a row: any other failure breaks the streak
                 if (unusable(e)) unusableCount++;
                 if (res.cleared.isEmpty() && unusableCount >= FAILURE_LIMIT) {
                     res.stop = "ERROR";
@@ -1017,5 +1387,19 @@ public final class SdmAcsPlan {
             done++;
         }
         return res;
+    }
+
+    static final String STUCK_MESSAGE = "The automation stopped: App info of several apps opened but nothing that was tried (tap, gesture, keys) got past it to Storage. Use \"Copy screen report\" in the SD Maid tab and send it to the developer.";
+
+    private static void record(Result res, Run run, RuntimeException e) {
+        SdmAcsDiag.Failure f = run.diag;
+        f.code = classify(run, e);
+        if (expectedLimit(f.code)) { if (res.expectedKept) return; res.expectedKept = true; }       // one of those is enough
+        else if (res.realFailures >= MAX_FAILURES) return;
+        else res.realFailures++;
+        f.message = e.getMessage() == null ? e.toString() : e.getMessage();
+        f.when = System.currentTimeMillis();
+        if (f.screen.isEmpty()) run.captureScreen();
+        res.failures.put(run.pkg.pkg, f);
     }
 }
