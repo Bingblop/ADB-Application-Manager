@@ -3,10 +3,10 @@
 // initScript(opts): opts.kv = settings to start with (name -> JSON text), opts.updates = [...], opts.privileged (default true), opts.dark (default true).
 exports.initScript = function (opts) {
   opts = opts || {};
-  const KEY = '__bnav_kv';
+  // the store lives in window.name, which a reload of the same tab keeps (sessionStorage did not always survive it)
   let stored = {};
-  try { stored = JSON.parse(sessionStorage.getItem(KEY) || 'null') || Object.assign({}, opts.kv || {}); } catch (e) { stored = Object.assign({}, opts.kv || {}); }
-  const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(stored)); } catch (e) {} };
+  try { stored = window.name && window.name.indexOf('{"__bnav":1') === 0 ? JSON.parse(window.name).kv : Object.assign({}, opts.kv || {}); } catch (e) { stored = Object.assign({}, opts.kv || {}); }
+  const save = () => { try { window.name = JSON.stringify({ __bnav: 1, kv: stored }); } catch (e) {} };
   save();
   window.__kv = stored;
   window.__calls = [];

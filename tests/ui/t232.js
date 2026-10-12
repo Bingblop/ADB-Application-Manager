@@ -3,7 +3,7 @@
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/bnav_mock.js');
 let bad = 0;
-function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
+function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, ok || extra === undefined ? '' : extra); }          // (the numbers behind a passing check stay out of the output: they depend on the fonts)
 (async () => {
   const b = await chromium.launch();
   const errors = [];

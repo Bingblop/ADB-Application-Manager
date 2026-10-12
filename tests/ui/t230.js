@@ -3,7 +3,7 @@
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/bnav_mock.js');
 let bad = 0;
-function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
+function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, ok || extra === undefined ? '' : extra); }          // (the numbers behind a passing check stay out of the output: they depend on the fonts)
 (async () => {
   const b = await chromium.launch();
   const errors = [];
@@ -14,6 +14,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.addInitScript(mock.initScript, { updates });
   await page.goto(PAGE); await page.waitForTimeout(700);
   const ev = (fn, arg) => page.evaluate(fn, arg);
+  await page.waitForFunction(() => { const n = document.getElementById('bnav'); return !n.classList.contains('bnav-off') && n.getBoundingClientRect().bottom === innerHeight; }, null, { timeout: 5000 });          // the bar slides in at the start
   const slots = () => ev(() => [...document.querySelectorAll('#bnav .bn-item')].map(b => ({ tab: b.dataset.tab || 'more', label: b.querySelector('.bn-lbl').innerText.trim(), active: b.classList.contains('active'), cur: b.getAttribute('aria-current') })));
 
   // ---- 1. the default: Application Manager, Installer, Terminal, Hidden Settings (Extra Settings takes the third place where the tab exists) and More ----

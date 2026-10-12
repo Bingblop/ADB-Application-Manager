@@ -4,7 +4,7 @@
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/bnav_mock.js');
 let bad = 0;
-function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
+function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, ok || extra === undefined ? '' : extra); }          // (the numbers behind a passing check stay out of the output: they depend on the fonts)
 const updates = [1, 2, 3].map(i => ({ pkg: 'org.example.app' + i, name: 'App ' + i, installedVersion: '1.0', availableVersion: '1.1', source: 'github', downloadUrl: 'https://github.com/x/y/a' + i + '.apk' }));
 async function open(b, opts, vp) {
   const page = await b.newPage({ viewport: vp || { width: 360, height: 740 } });

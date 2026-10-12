@@ -1,0 +1,32 @@
+1. an old tab_config without "pinned" gets the default pinned tabs (in the saved order): true
+   unknown keys are dropped, the order is completed, the pinned list is made: true
+2. pinned: Application Manager first, the tab that is off and unknown keys dropped, no repeats, at most four: true
+   the bar shows them in the Feature List order: true
+3. the Feature List marks the pinned tabs (the defaults): true
+   a fourth tab (Application Manager is the first of the four) is refused with a message: true
+   unpinning one frees a place: true
+   and the tab goes on the bar in its place in the list: true
+   the pin button says what it does for a screen reader: true
+   the choice is saved in tab_config (the same record as the order): true
+4. a tab switched off leaves the bar and the pinned list: true
+   its pin button cannot be pressed while it is off: true
+   switched on again it waits under More: true
+5. Reset to Default brings back the default pinned tabs: true
+   a reload keeps what was pinned: true
+6. Navigation: three choices, "Bottom bar only" is the default: true
+   with the bar only, the top tab bar takes no room (--tabs-h is 0): true
+7. Bottom bar + top bar: both are there, the page has room for the bar: true
+   the top tab bar and the bottom bar agree on the lit tab (a tab that is not pinned lights More): true
+8. Top bar only: the bar is gone, the page is as it was (no extra room, --bnav-h is 0): true
+   the choice is saved as nav_mode: true
+   and kept after a reload: true
+   an unknown saved value gives the default: true
+9. the toast, the batch button, the batch sheet, the Undo bars sit above the bar: true
+   a hidden batch sheet or toast does not show over the bar: true
+10. at 800 px wide the bar is a rail at the left edge, full height: true
+    the page and the header start after the rail, nothing overflows: true
+    the icons have their labels under them, the targets are 44 px or more, the pill is on the lit icon: true
+    a tap on a rail item switches tabs: true
+    More opens the same sheet on the rail: true
+    an open text field does not hide the rail: true
+errors: []

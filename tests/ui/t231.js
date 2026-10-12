@@ -4,7 +4,7 @@
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/bnav_mock.js');
 let bad = 0;
-function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
+function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, ok || extra === undefined ? '' : extra); }          // (the numbers behind a passing check stay out of the output: they depend on the fonts)
 const NEWPAGE = async (b, kv, vp) => {
   const page = await b.newPage({ viewport: vp || { width: 360, height: 740 } });
   page.bottomNav = true;
@@ -109,6 +109,7 @@ const NEWPAGE = async (b, kv, vp) => {
 
   // ---- 6. a wide screen: a rail at the left, the page offset by its width ----
   page = await NEWPAGE(b, {}, { width: 800, height: 600 });
+  await page.waitForFunction(() => document.getElementById('bnav').getBoundingClientRect().left === 0 && !document.getElementById('bnav').classList.contains('bnav-off'), null, { timeout: 5000 });          // the rail slides in at the start
   const rail = await page.evaluate(() => { const n = document.getElementById('bnav'), r = n.getBoundingClientRect(), c = document.querySelector('.container').getBoundingClientRect(), hdr = document.querySelector('.app-header').getBoundingClientRect(); const items = [...n.querySelectorAll('.bn-item')].map(i => { const q = i.getBoundingClientRect(); return { w: q.width, h: q.height, lbl: i.querySelector('.bn-lbl').getBoundingClientRect().top > i.querySelector('.bn-ico').getBoundingClientRect().bottom - 1 }; }); const ind = document.querySelector('.bn-ind').getBoundingClientRect(), act = document.querySelector('.bn-item.active .bn-ico').getBoundingClientRect(); return { left: r.left, w: r.width, h: r.height, vh: innerHeight, contentLeft: c.left, hdrLeft: hdr.left, items, bw: getComputedStyle(document.documentElement).getPropertyValue('--bnav-w').trim(), bh: getComputedStyle(document.documentElement).getPropertyValue('--bnav-h').trim(), scrollW: document.documentElement.scrollWidth - innerWidth, pill: Math.abs(ind.top - act.top) + Math.abs(ind.left - act.left) }; });
   check('10. at 800 px wide the bar is a rail at the left edge, full height', rail.left === 0 && rail.w === 76 && rail.h === rail.vh && rail.bw === '76px' && rail.bh === '0px', JSON.stringify([rail.left, rail.w, rail.h, rail.bw, rail.bh]));
   check('    the page and the header start after the rail, nothing overflows', rail.contentLeft >= 76 && rail.hdrLeft >= 76 && rail.scrollW <= 0, JSON.stringify([rail.contentLeft, rail.hdrLeft, rail.scrollW]));
