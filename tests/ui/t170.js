@@ -65,7 +65,7 @@ const BAD = [
   const now = () => txt('pdnsNow');
   const msg = () => ev(() => { const e = document.getElementById('pdnsMsg'); return e.style.display === 'none' ? '' : e.innerText.replace(/\s+/g, ' ').trim(); });
   const pressed = () => ev(() => [...document.querySelectorAll('#privateDnsCard .pdns-btn')].filter(x => x.getAttribute('aria-pressed') === 'true').map(x => x.id).join(','));
-  const ops = () => ev(() => window.__calls.op.map(o => o.op + ' ' + o.key + (o.op === 'put' ? '=' + o.value : '')));
+  const ops = () => ev(() => window.__calls.op.filter(o => /^private_dns_/.test(o.key)).map(o => o.op + ' ' + o.key + (o.op === 'put' ? '=' + o.value : '')));     // the Private DNS keys only: the other sections of the tab read their own keys when it opens
   const clear = () => ev(() => { window.__calls.op.length = 0; window.__deny = {}; window.__revert = {}; window.__unknown = {}; window.__delay = 20; });
   const phone = () => ev(() => ({ mode: window.__db.global.private_dns_mode, spec: window.__db.global.private_dns_specifier }));
   const setPhone = (mode, spec) => ev(a => { window.__db.global.private_dns_mode = a[0]; if (a[1] === null) delete window.__db.global.private_dns_specifier; else window.__db.global.private_dns_specifier = a[1]; }, [mode, spec]);
