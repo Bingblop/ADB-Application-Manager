@@ -17,9 +17,9 @@
 <li>Back up an app, and save "profiles" that remember which apps you turned off (<a href="#apps-backup">backups</a>, <a href="#apps-profiles">profiles</a>).</li>
 <li>Look inside an app: its permissions, its app ops, its components and its decoded manifest.</li>
 <li>Browse and manage files, and open zip, 7z, rar and tar archives without unpacking them (<a href="#tab-files">File Manager</a>).</li>
-<li>Run a terminal, with optional AI coding helpers that ask your permission before they run anything (<a href="#tab-terminal">Command-Line Interface</a>).</li>
+<li>Run a terminal, with optional AI coding helpers that ask your permission before they run anything (<a href="#tab-terminal">Terminal</a>). Run single shell commands, with a history of cards, in the <a href="#tab-console">Console</a>.</li>
 <li>Change Android's hidden settings and recolour the system (<a href="#tab-settings">Hidden Settings</a>, <a href="#tab-overlays">RRO/Monet Customization</a>).</li>
-<li>Find and download an app by name, check for app updates, browse app catalogs, read the device log, watch running processes, and talk to a Wear OS watch (<a href="#tab-updates">Application Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#tab-logcat">Logcat Viewer</a>, <a href="#tab-taskmgr">Task Manager</a>, <a href="#tab-devices">Connected Devices</a>).</li>
+<li>Find and download an app by name, check for app updates, browse app catalogs, read the device log, watch running processes, and talk to a Wear OS watch (<a href="#tab-updates">Application Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#console-logcat">Live Logcat</a> (in the <a href="#tab-console">Console</a> tab), <a href="#tab-taskmgr">Task Manager</a>, <a href="#tab-devices">Connected Devices</a>).</li>
 </ul>
 
 <h4>What it cannot do</h4>
@@ -282,18 +282,18 @@ If you are still in Read-Only mode, tapping <b>Freeze</b> opens a sheet called <
 <ul>
 <li><b>Application Manager</b> (always first; <a href="#tab-apps">details</a>) and <b>Saved Applications</b> (<a href="#tab-saved-lists">details</a>).</li>
 <li><b>UAD-NG Debloater</b> (<a href="#tab-debloater">details</a>), <b>APK Installer/Updater</b> (tab label "Installer/ Updater"; <a href="#tab-installer">details</a>) and <b>File Manager</b> (<a href="#tab-files">details</a>).</li>
-<li><b>Command-Line Interface</b> (<a href="#tab-terminal">details</a>).</li>
+<li><b>Console</b> (<a href="#tab-console">details</a>): the ADB Shell and Live Logcat. <b>Terminal</b> (<a href="#tab-terminal">details</a>).</li>
 <li><b>Hidden Settings</b> (<a href="#tab-settings">details</a>) and <b>RRO/Monet Customization</b> (<a href="#tab-overlays">details</a>).</li>
 <li><b>App Stores</b> (<a href="#tab-store">details</a>): the catalogs of apps (ShizuStore, GitHub, F-Droid, Orion and stores you add).</li>
-<li><b>Logcat Viewer</b> (<a href="#tab-logcat">details</a>), <b>Task Manager</b> (<a href="#tab-taskmgr">details</a>) and <b>Connected Devices</b> (<a href="#tab-devices">details</a>).</li>
+<li><b>Task Manager</b> (<a href="#tab-taskmgr">details</a>) and <b>Connected Devices</b> (<a href="#tab-devices">details</a>).</li>
 <li><b>Morphe Patcher</b> (<a href="#tab-morphe">details</a>) and <b>SD Maid</b> (<a href="#tab-sdm">details</a>).</li>
 <li><b>About</b> (always last; <a href="#tab-about">details</a>).</li>
 </ul>
-<p>The <b>APK Installer/Updater</b> tab has two boxes at its top, like the Terminal and the ADB Console: <b>Application Installer</b> on the left (the one it opens on every time you tap the tab) and <b>Application Updater</b> on the right. When updates are waiting, the tab label and the Application Updater box show their number in brackets, for example "Installer/ Updater (3)".</p>
+<p>The <b>APK Installer/Updater</b> tab has two boxes at its top, like the two tabs of the Console: <b>Application Installer</b> on the left (the one it opens on every time you tap the tab) and <b>Application Updater</b> on the right. When updates are waiting, the tab label and the Application Updater box show their number in brackets, for example "Installer/ Updater (3)".</p>
 <p>You can turn tabs off and move them. Open Settings with the gear, find the <b>Feature List</b> card, and use its switches and up and down arrows; <b>Reset to Default</b> puts everything back. Application Manager and About cannot be moved or turned off. See <a href="#feature-list">Feature List</a>. If a link in the app points to a tab you turned off, you get a message saying "... is turned off. Turn it on in Settings, Feature List."</p>
 
 <h4>The ? button on a tab</h4>
-<p>Most tabs, and the Settings screen (the gear), have a small round <b>?</b> button in the top right corner of their first card: tap it and this guide opens straight at that tab's topic. <b>Application Manager</b> and <b>Command-Line Interface</b> have no such card, so no <b>?</b>; reach this guide for them through <b>About</b>, <b>Help Guide</b>.</p>
+<p>Most tabs, and the Settings screen (the gear), have a small round <b>?</b> button in the top right corner of their first card: tap it and this guide opens straight at that tab's topic. <b>Application Manager</b> and <b>Terminal</b> have no such card, so no <b>?</b>; reach this guide for them through <b>About</b>, <b>Help Guide</b>.</p>
 
 <h4>The Application Manager tab</h4>
 <p>From the top: the orange Read-Only banner when no mode is on (it has a <b>Set Up</b> button, and an X in its top right corner that puts it away until the app is started again or Read-Only mode returns), the count boxes (tap one to filter the list by it), a <b>Sort</b> box with <b>Share CSV</b>, <b>Profiles</b> and <b>Backups</b> buttons and an <b>Action Button</b> menu, the filter pills, the search box (the three dots at its right end open options for what is searched), and the list of apps.</p>

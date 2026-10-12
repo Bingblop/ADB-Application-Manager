@@ -6328,6 +6328,12 @@
                 #cnSegLog #logcatScope:empty { display: none; }
             </style>
 
+            <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+                <symbol id="cn-i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
+                <symbol id="cn-i-stop" viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h12v12H6z"/></symbol>
+                <symbol id="cn-i-copy" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></symbol>
+                <symbol id="cn-i-rerun" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></symbol>
+            </defs></svg>
             <div class="cn-tabs" id="cnTabs" data-seg="shell" role="tablist" aria-label="Console">
                 <button class="cn-tab" id="cnTabShell" role="tab" aria-selected="true" aria-controls="cnSegShell" onclick="cnShowSeg('shell')">ADB Shell</button>
                 <button class="cn-tab" id="cnTabLog" role="tab" aria-selected="false" aria-controls="cnSegLog" onclick="cnShowSeg('log')">Live Logcat</button>
@@ -6340,7 +6346,7 @@
                     <div class="cn-row">
                         <button class="cn-mode" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
                         <input type="text" class="cn-field" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term'); termSyncRunBtn()" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
-                        <button class="cn-run is-idle" id="termRunBtn" onclick="termRunClick()" aria-label="Run"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5v14l11-7z"/></svg><span class="cn-spin" aria-hidden="true"></span><span class="cn-sr">RUN</span></button>
+                        <button class="cn-run is-idle" id="termRunBtn" onclick="termRunClick()" aria-label="Run"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cn-i-play"/></svg><span class="cn-spin" aria-hidden="true"></span><span class="cn-sr">RUN</span></button>
                     </div>
                     <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
                     <div class="cn-promptline" id="termPromptLine" style="display:none;"></div>
@@ -6367,9 +6373,9 @@
                 <div class="find-bar cn-find">
                     <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
                     <span class="manifest-meta" id="termFindCount"></span>
-                    <button class="find-nav" onclick="termFind(-1)" aria-label="Previous match">▲</button>
-                    <button class="find-nav" onclick="termFind(1)" aria-label="Next match">▼</button>
-                    <button class="find-nav" onclick="copyTerminal()" title="Copy" aria-label="Copy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg></button>
+                    <button class="find-nav" onclick="termFind(-1)" aria-label="Previous">▲</button>
+                    <button class="find-nav" onclick="termFind(1)" aria-label="Next">▼</button>
+                    <button class="find-nav" onclick="copyTerminal()" title="Copy" aria-label="Copy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cn-i-copy"/></svg></button>
                     <button class="find-nav" onclick="shareTerminal()" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>
                     <button class="find-nav danger" onclick="cnClearAll()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 </div>
@@ -6961,7 +6967,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="tx-help" id="txHelpBody" style="max-height:70vh; overflow-y:auto;">
                 <h4>Overview</h4>
                 <p>The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <b>Coding Agents</b> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <b>None</b> to use the Terminal on your own.</p>
-                <p>The <b>Console</b> tab holds the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.</p>
+                <p><b>Console</b> is a tab of its own: the ADB shell (Rish mode, cheat sheet, saved commands) and the live log. This tab is the terminal and the coding agents only.</p>
 
                 <h4>The three shells</h4>
                 <ul>
@@ -25101,8 +25107,6 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function onConsoleShown() {
             cnApplySeg(cnSeg);
-            const e = document.getElementById('termEmpty');
-            if (e) e.textContent = txT('ADB Application Manager Shell Terminal Ready.') + '\n' + txT('Type any command above (e.g. pm list packages -d)');
             termSyncRunBtn();
             if (cnSeg === 'log') onLogcatShown(); else window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -25113,9 +25117,7 @@ Type any command above (e.g. pm list packages -d)</div>
         let cnCur = null;                 // the card output goes to (a command still running, or the last note)
         let cnRishRun = null;             // the card of the Rish command that is running
         function cnList() { return document.getElementById('termOutput'); }
-        const CN_ICON_COPY = 'M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z';
-        const CN_ICON_RERUN = 'M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z';
-        const CN_ICON_PLAY = 'M8 5v14l11-7z', CN_ICON_STOP = 'M6 6h12v12H6z';
+        const CN_KIND_CLASS = { sh: 'k-sh', rish: 'k-rish', ai: 'k-ai', note: 'k-note' };          // what a card is: a typed command, a Rish command, a question to the agent, a note
         function cnHeadSh(cmd) { return '$ ' + String(cmd).replace(/\n/g, '\n> '); }
 
         // A new card at the top of the history. kind: 'sh' (a typed command), 'rish' (a command in the Rish shell), 'ai' (a question to the coding agent), 'note' (no command: a message).
@@ -25123,7 +25125,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const list = cnList();
             if (!list) return null;
             const el = document.createElement('div');
-            el.className = 'cn-card k-' + kind + (kind === 'note' ? ' is-note' : ' is-run');
+            el.classList.add('cn-card', CN_KIND_CLASS[kind], kind === 'note' ? 'is-note' : 'is-run');
             const h = document.createElement('div'); h.className = 'cn-head';
             const c = document.createElement('span'); c.className = 'cn-cmd'; c.textContent = head || '';
             const b = document.createElement('span'); b.className = 'cn-badge';
@@ -25150,7 +25152,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function cnMini(label, d, fn) {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'cn-mini';
-            if (d) b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="' + d + '"/></svg>';
+            if (d) b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#' + d + '"/></svg>';
             b.appendChild(document.createTextNode(label));
             b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
             return b;
@@ -25172,9 +25174,9 @@ Type any command above (e.g. pm list packages -d)</div>
                     b.textContent = txT(open ? 'Show less' : 'Show all');
                 }));
             }
-            card.acts.appendChild(cnMini(txT('Copy'), CN_ICON_COPY, () => copyText(cnCardText(card, false))));
-            if (card.kind === 'sh') card.acts.appendChild(cnMini(txT('Re-run'), CN_ICON_RERUN, () => { cnRevealTop(); runTerminalCmd(card.cmd); }));
-            if (card.kind === 'rish') card.acts.appendChild(cnMini(txT('Re-run'), CN_ICON_RERUN, () => { if (!rishActive) { showToast('The Rish shell is no longer running.'); return; } cnRevealTop(); rishSubmit(card.cmd); }));
+            card.acts.appendChild(cnMini(txT('Copy'), 'cn-i-copy', () => copyText(cnCardText(card, false))));
+            if (card.kind === 'sh') card.acts.appendChild(cnMini(txT('Run again'), 'cn-i-rerun', () => { cnRevealTop(); runTerminalCmd(card.cmd); }));
+            if (card.kind === 'rish') card.acts.appendChild(cnMini(txT('Run again'), 'cn-i-rerun', () => { if (!rishActive) { showToast('The Rish shell is no longer running.'); return; } cnRevealTop(); rishSubmit(card.cmd); }));
         }
         // The card as plain text: its head, the output, and (withResult) the result line.
         function cnCardText(card, withResult) {
@@ -25265,7 +25267,7 @@ Type any command above (e.g. pm list packages -d)</div>
             b.classList.toggle('busy', busy);
             b.classList.toggle('is-idle', !stopping && !busy && !(input && input.value.trim()));
             b.setAttribute('aria-busy', busy ? 'true' : 'false');
-            const p = b.querySelector('svg path'); if (p) p.setAttribute('d', stopping ? CN_ICON_STOP : CN_ICON_PLAY);
+            const u = b.querySelector('svg use'); if (u) u.setAttribute('href', stopping ? '#cn-i-stop' : '#cn-i-play');
             const t = b.querySelector('.cn-sr'); if (t) t.textContent = stopping ? 'STOP' : 'RUN';
         }
 
