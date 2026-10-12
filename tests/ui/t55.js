@@ -84,11 +84,16 @@ const { chromium, PAGE } = require('./lib/pw');
     await closeResults();
   }
 
-  // 3) A privileged backend that is ready but not the active mode is still used (Shizuku running while the mode is read-only)
-  await ev(() => { window.__mode = 'none'; window.__shizukuReady = true; checkAllWorkingModes(false); });
-  await fromFm();
-  console.log('3. no active mode, but Shizuku is running: it is used:', (await ev(() => document.getElementById('optAuthorizer').value)) === 'shizuku');
+  // 3) A privileged backend that is ready but is not the working mode is NOT used (Shizuku running while the mode is read-only): the app does not honour a
+  //    privileged authorizer in standard mode, so the page does not offer one (v7.12.11; before, the page picked Shizuku here and the app installed through it)
+  await ev(() => { window.__mode = 'none'; window.__shizukuReady = true; window.__rootReady = true; checkAllWorkingModes(false); window.__calls.stage.length = 0; window.__calls.inspect.length = 0; });
   await closeResults();
+  dialogs.length = 0; answer = false;
+  await ev(() => { switchView('files'); fmActions('/sd/app.apk', false, 'app.apk'); }); await sleep(80);
+  await page.locator('#fmActionBtns button', { hasText: 'Install' }).click(); await sleep(200);
+  const s3 = await ev(() => ({ staged: window.__calls.stage.length, inspected: window.__calls.inspect.length, tab: currentViewName(), backend: privilegedInstallBackend() }));
+  console.log('3. read-only mode with Shizuku and Root still available: no backend is chosen for the install, nothing is staged:', s3.backend === null && s3.staged === 0 && s3.inspected === 0 && s3.tab === 'files' && dialogs.length === 1, JSON.stringify(s3));
+  await closeResults(); dialogs.length = 0; answer = true;
 
   // 4) Nothing privileged at all: nothing is copied, the user is told and offered Working Modes; no fallback to the system installer
   await ev(() => { window.__mode = 'none'; window.__shizukuReady = false; window.__rootReady = false; checkAllWorkingModes(false); window.__calls.stage.length = 0; window.__calls.inspect.length = 0; });

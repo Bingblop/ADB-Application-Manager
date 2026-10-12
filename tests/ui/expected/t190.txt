@@ -1,0 +1,19 @@
+ok   onGradientColor(#FFFF00, #FFEB3B) = #000000 (worst contrast black 17.2, white 1.07)
+ok   onGradientColor(#00008B, #4B0082) = #FFFFFF (worst contrast black 1.37, white 12.95)
+ok   onGradientColor(#00E5FF, #7C4DFF) = #000000 (worst contrast black 4.36, white 1.54)
+ok   onGradientColor(#FFD600, #0000AA) = #000000 (worst contrast black 1.58, white 1.41)
+ok   onGradientColor(#FFFFFF, #000000) = #000000 (worst contrast black 1, white 1)
+ok   onGradientColor(#FF5722, #FFC107) = #000000 (worst contrast black 6.64, white 1.63)
+ok   onGradientColor(#A0A0A0, #000040) = #FFFFFF (worst contrast black 1.07, white 2.61)
+ok   onGradientColor(#FF0000, #008080) = #FFFFFF (worst contrast black 2.7, white 4)
+ok   onGradientColor(#FF0000, #00A80A) = #FFFFFF (worst contrast black 3.14, white 3.18)
+ok   two light colors get black, two dark colors get white
+ok   complementary ends (red to teal): the middle of the gradient is darker than both ends, and the rule reads it: white, not the black the two ends alone would pick
+ok   red to green (#00A80A): the darkest point is between nine evenly spaced samples (t about 0.44), where black falls just below white: white
+ok   a mid-light accent over a very dark secondary gets WHITE (black reads on the accent alone, but not over the whole gradient)
+ok   the Theme menu lists palettes to try (8)
+ok   in 16 palette and appearance combinations the Install button, the letter tile, the selected store tab, the primary button and the avatar tiles of the sheets (including the one in the details window of the store) all use the rule
+ok   both black and white are used somewhere (the rule is not a constant)
+ok   a bright accent over a dark secondary gets the color that is better at the worse end
+ok   no script errors
+all passed
