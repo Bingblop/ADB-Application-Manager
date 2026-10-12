@@ -401,6 +401,19 @@ None of this has been run on a phone yet. Take your time; each item says exactly
 - [ ] **Help Guide.** Open About > **Help Guide**, search for "Private DNS": the section "Extra Settings: Private DNS" starts with where it is and says it is not in Hidden Settings.
 - [ ] **The speed test.** In Extra Settings tap **Test speed**: see the checklist section 21 (the speed test items).
 
+## 24. Connection Check card (Working Modes)
+
+None of this has been run on a phone yet. Open the working-mode badge at the top of the app; the **Connection Check** card is the first card of the sheet.
+
+- [ ] **Everything connected.** With Wireless Debugging connected, Shizuku authorized and the secure-settings permission granted: five rows (Wi-Fi, Wireless Debugging switch, ADB connection, Shizuku, Secure settings access), each OK, and the tag at the top reads ALL GOOD. The Wi-Fi row shows the phone's address; the ADB row shows the address and port you are connected to.
+- [ ] **Wireless Debugging off.** In Developer options switch Wireless debugging off, then tap **Check again**: the switch row says CHECK, "Switched off", with **Open Developer Options**; it opens Android's Developer options. Switch it on again and tap **Check again**: OK.
+- [ ] **A stale port (the reason for this card).** Connect through Wireless Debugging, then switch Wireless debugging off and on in Developer options (Android picks a new port). Tap **Check again**: the ADB connection row says CHECK, "The saved port is not answering", names the old port and offers **Auto-Detect Ports**. Tap it and then **Connect**: the connection returns and the row turns OK. Write down whether Android showed a new port.
+- [ ] **No Wi-Fi.** Turn Wi-Fi off (mobile data on): the Wi-Fi row says CHECK, "Not on Wi-Fi". With ADB over TCP connected through 127.0.0.1 the rest keeps working; this row is only a warning for Wireless Debugging.
+- [ ] **Shizuku in each state.** Not installed: INFO. Installed, stopped: CHECK with **Open Shizuku**. Running but this app not yet allowed: CHECK with **Authorize & Use Shizuku**; tap it and approve the prompt, then **Check again**: OK. Note the Shizuku version.
+- [ ] **Secure settings access.** With a working mode connected and the permission not granted (revoke it first with `pm revoke`, or on a fresh install): CHECK with **Grant now**. Tap it: the toast reads "Secure settings access granted." and the row turns OK. In Read-Only mode the row is INFO and says to connect a mode first.
+- [ ] **Android below 11, or a phone that hides the switch.** If you have such a phone: the Wireless Debugging switch row is INFO, not a false CHECK.
+- [ ] **Another language** (Settings > Language): the card, its rows and its buttons are translated, the addresses and ports are not, no text is cut off, in light and in dark.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

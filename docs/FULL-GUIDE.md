@@ -655,6 +655,11 @@ that expect it there, never into the file itself. Already-added servers are list
 | **Root** | su (Magisk / KernelSU / APatch) | Requested on demand |
 | **Read-Only** | — | Inspect only |
 
+**Connection Check:** the first card of the Working Modes sheet lists Wi-Fi, the Wireless debugging switch, the ADB connection (including a saved
+Wireless Debugging port that no longer answers), Shizuku (not installed, not running, not yet allowed, too old, authorized) and the
+`WRITE_SECURE_SETTINGS` permission, each as OK, CHECK or INFO, with a button that fixes it or opens the place to fix it (Open Developer Options,
+Auto-Detect Ports, Open Shizuku, Authorize & Use Shizuku, Grant now). It only reads, except for the Grant now button you press yourself.
+
 Every mode card has a **Use This Mode** button, so you can switch at any time, including while ADB TCP 5555
 is enabled. Status checks never change the selected mode.
 
