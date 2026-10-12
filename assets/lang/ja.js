@@ -4582,7 +4582,6 @@ x: {
 "Moves Doze one phase forward so you can watch what an app does in each.": "Doze を1段階進めます。各段階でアプリが何をするか観察できます。",
 "Needs Root mode": "Root が必要",
 "Needs the app.": "アプリが必要です。",
-"Not available": "利用不可",
 "Not on this Android version": "この Android バージョンでは利用不可",
 "Not read yet.": "まだ読み込んでいません。",
 "Nothing happened within 10 seconds, although the command reported no error: the mode could not do it.": "コマンドはエラーを報告しませんでしたが、10秒以内に何も起きませんでした。このモードでは実行できませんでした。",

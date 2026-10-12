@@ -4582,7 +4582,6 @@ x: {
 "Moves Doze one phase forward so you can watch what an app does in each.": "Doze'u bir aşama ileri alır; böylece bir uygulamanın her birinde ne yaptığını izleyebilirsiniz.",
 "Needs Root mode": "Root gerekir",
 "Needs the app.": "Uygulama gerekir.",
-"Not available": "Kullanılamıyor",
 "Not on this Android version": "Bu Android sürümünde yok",
 "Not read yet.": "Henüz okunmadı.",
 "Nothing happened within 10 seconds, although the command reported no error: the mode could not do it.": "Komut hata bildirmediği halde 10 saniye içinde hiçbir şey olmadı: mod bunu yapamadı.",

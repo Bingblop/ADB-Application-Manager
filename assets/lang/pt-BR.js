@@ -4582,7 +4582,6 @@ x: {
 "Moves Doze one phase forward so you can watch what an app does in each.": "Avança o Doze uma fase para você ver o que um app faz em cada uma.",
 "Needs Root mode": "Requer Root",
 "Needs the app.": "Precisa do app.",
-"Not available": "Não disponível",
 "Not on this Android version": "Não nesta versão do Android",
 "Not read yet.": "Ainda não lido.",
 "Nothing happened within 10 seconds, although the command reported no error: the mode could not do it.": "Nada aconteceu em 10 segundos, embora o comando não tenha informado erro: o modo não conseguiu fazer isso.",

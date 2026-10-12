@@ -4582,7 +4582,6 @@ x: {
 "Moves Doze one phase forward so you can watch what an app does in each.": "Memajukan Doze satu fase agar Anda bisa melihat apa yang dilakukan aplikasi di tiap fase.",
 "Needs Root mode": "Perlu Root",
 "Needs the app.": "Perlu aplikasinya.",
-"Not available": "Tidak tersedia",
 "Not on this Android version": "Tidak ada di versi Android ini",
 "Not read yet.": "Belum dibaca.",
 "Nothing happened within 10 seconds, although the command reported no error: the mode could not do it.": "Tidak terjadi apa-apa dalam 10 detik, meskipun perintah tidak melaporkan kesalahan: mode ini tidak bisa melakukannya.",

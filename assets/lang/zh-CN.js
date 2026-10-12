@@ -4582,7 +4582,6 @@ x: {
 "Moves Doze one phase forward so you can watch what an app does in each.": "将 Doze 向前推进一个阶段，以便观察应用在每个阶段的表现。",
 "Needs Root mode": "需要 Root",
 "Needs the app.": "需要本应用。",
-"Not available": "不可用",
 "Not on this Android version": "此 Android 版本不支持",
 "Not read yet.": "尚未读取。",
 "Nothing happened within 10 seconds, although the command reported no error: the mode could not do it.": "命令未报错，但 10 秒内没有任何反应：该模式无法完成此操作。",
