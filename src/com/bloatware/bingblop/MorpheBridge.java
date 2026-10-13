@@ -76,12 +76,11 @@ public final class MorpheBridge {
     private final MorpheLibrary library;
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final Object catalogLock = new Object();                                // one catalog read at a time (they share jobs/list)
-    private final MorpheRunner runner = new MorpheRunner(new MorpheRunner.Launcher() {
-        @Override public boolean start(String cmd, File job, File events, String title) { return MorpheService.start(host.context(), cmd, job, events, title); }
-        @Override public void cancel(File events) { MorpheService.cancel(host.context(), events); }
-        @Override public boolean alive() { return serviceAlive(); }
-    });
-    private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
+    private final MorpheShared shared;                                                   // what every window of the app shares: the runner, the slot, the events of the patch that is going
+    private final MorpheRunner runner;                                                  // the one engine lock of the process (see MorpheShared)
+    private final MorpheRunner.EventSink sink;                                          // this window's side of the patch's events
+    private final MorpheSlot slot;                                                      // the one patch run at a time (an atomic take, see MorpheSlot)
+    private static volatile MorpheBridge latest;                                        // the bridge of the newest window: the one a patch that is going must ask for the installer
     private final BundleApprovals approvals;                                            // which custom bundles the person has allowed to run (see BundleApprovals)
     private final BundleApprovals.Asker asker = new BundleApprovals.Asker() {
         @Override public BundleApprovals.Answer ask(String title, String text) { return host.confirmBundle(title, text); }
@@ -96,6 +95,32 @@ public final class MorpheBridge {
         this.store = new MorpheStore(new File(base, "sources"));
         this.library = new MorpheLibrary(new File(base, "patched"));
         this.approvals = new BundleApprovals(new File(base, "bundle_approvals.json"));
+        // A patch outlives the window that started it: the runner, the slot and the patch's events are the process's, and this (newest) window takes over the events
+        final Context app = host.context().getApplicationContext();
+        this.shared = MorpheShared.get(new ServiceLauncher(app));
+        this.runner = shared.runner;
+        this.slot = shared.slot;
+        this.sink = new MorpheRunner.EventSink() { @Override public void accept(JSONObject e) { event(e); } };
+        this.shared.bind(sink);
+        latest = this;
+    }
+
+    /**
+     * The window of this bridge is going away. The process-wide holder stops pointing at it (it would keep the destroyed window alive); a patch that is
+     * going goes on, and the next window's bridge takes over its events.
+     */
+    public void release() {
+        shared.unbind(sink);
+        if (latest == this) latest = null;
+    }
+
+    /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */
+    private static final class ServiceLauncher implements MorpheRunner.Launcher {
+        private final Context app;
+        ServiceLauncher(Context app) { this.app = app; }
+        @Override public boolean start(String cmd, File job, File events, String title) { return MorpheService.start(app, cmd, job, events, title); }
+        @Override public void cancel(File events) { MorpheService.cancel(app, events); }
+        @Override public boolean alive() { return serviceAlive(app); }
     }
 
     /** The first call of all: bundles already on disk when this check first runs count as approved, once (before a call can add another). */
@@ -192,6 +217,15 @@ public final class MorpheBridge {
                 String job = a.optString("job");
                 if (MorpheJobs.validJobId(job) && job.equals(slot.current())) runner.cancel(job);   // only the run that is going; a stale or foreign id changes nothing
                 return null;
+            }
+            case "jobStatus": {
+                // Whether a patch is going that this window did not start (the window was closed and opened again): built and posted under the holder's lock, so every event is either in it or comes after it
+                shared.atomically(new Runnable() {
+                    @Override public void run() {
+                        try { reply(tag, true, shared.status(), null); } catch (JSONException ignored) {}
+                    }
+                });
+                return NO_REPLY;
             }
             case "patchedList": adoptOrphans(); return new JSONObject().put("items", library.list());
             case "patchedDelete": library.delete(a.optString("id")); return null;
@@ -315,12 +349,12 @@ public final class MorpheBridge {
 
     // ------------------------------------------------------------------------------------------------------------------------ the engine
 
-    private boolean serviceAlive() {
+    private static boolean serviceAlive(Context c) {
         try {
-            ActivityManager am = (ActivityManager) host.context().getSystemService(Context.ACTIVITY_SERVICE);
+            ActivityManager am = (ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
             List<ActivityManager.RunningAppProcessInfo> ps = am.getRunningAppProcesses();
             if (ps == null) return true;
-            String want = host.context().getPackageName() + ":morphe";
+            String want = c.getPackageName() + ":morphe";
             for (ActivityManager.RunningAppProcessInfo p : ps) if (want.equals(p.processName)) return true;
             return false;
         } catch (Exception e) {
@@ -498,6 +532,7 @@ public final class MorpheBridge {
         if (!MorpheJobs.validJobId(jobId)) throw new IOException("bad job id");           // it names a folder that the run empties first
         if (!slot.tryStart(jobId)) throw new IOException("A patch is already running.");
         runner.clearCancelled(jobId);
+        shared.begin(jobId, a);
         try {
             pool.submit(new Runnable() {
                 @Override public void run() {
@@ -513,7 +548,7 @@ public final class MorpheBridge {
 
     private void ev(String jobId, JSONObject e) {
         try { e.put("job", jobId); e.put("ts", System.currentTimeMillis()); } catch (JSONException ignored) {}
-        event(e);
+        shared.emit(e);
     }
 
     private void step(String jobId, String name, String state) throws JSONException {
@@ -570,7 +605,7 @@ public final class MorpheBridge {
                 if (a.optBoolean("installAfter")) {
                     step(jobId, "Installing", "RUNNING");
                     JSONObject ir;
-                    try { ir = host.install(new File(saved.optString("file")), a.optString("pkg"), false); }
+                    try { ir = (latest != null ? latest : this).host.install(new File(saved.optString("file")), a.optString("pkg"), false); }   // the newest window asks for the installer
                     catch (Exception e) { ir = new JSONObject().put("ok", false).put("output", "Error: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage())); }
                     ir.put("t", "install");
                     ev(jobId, ir);

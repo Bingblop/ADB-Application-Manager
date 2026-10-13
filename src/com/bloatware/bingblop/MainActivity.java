@@ -15964,6 +15964,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         activityDestroyed = true;
+        try { MorpheBridge mb = morpheBridge; if (mb != null) mb.release(); } catch (Throwable ignored) {}      // a patch that is going goes on; the next window takes over its events
         cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)

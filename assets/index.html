@@ -36268,6 +36268,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await mpCall('info', {});
             mp.info = r.ok ? r.data : { engine: false, error: r.error };
             mpEngineNote();
+            mpAdopt();
             await mpSourcesLoad();
             mpPatchedLoad();
             mpAppsRender();
@@ -37158,15 +37159,35 @@ Type any command above (e.g. pm list packages -d)</div>
             const jobId = 'j' + Date.now().toString(36);
             const job = { job: jobId, pkg: t.pkg, name: t.name, version: t.ver, versionCode: t.code, from: t.from, path: t.path || '', bundles: bundles, installAfter: !!mp.cfg.installAfter, deleteAfter: !!(mp.cfg.installAfter && mp.cfg.deleteAfter),
                 keepIn: mp.cfg.keepIn, stripLibs: !!mp.cfg.stripLibs, failOnError: !!mp.cfg.failOnError, force: force, signer: mp.cfg.signer || 'Morphe', mode: mp.cfg.mode };
-            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: bundles.reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job };
+            mpRunEnter(jobId, job);
+            const r = await mpCall('patch', job);
+            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // The run view for a patch (the one this page starts, or one the app is already running: see mpAdopt)
+        function mpRunEnter(jobId, job) {
+            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: (job.bundles || []).reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job, seq: 0 };
             document.getElementById('mpPrep').style.display = 'none';
             document.getElementById('mpRun').style.display = '';
             document.getElementById('mpResult').innerHTML = '';
             document.getElementById('mpStop').style.display = '';
-            document.getElementById('mpRunTitle').textContent = 'Patching ' + t.name;
+            document.getElementById('mpRunTitle').textContent = 'Patching ' + mp.t.name;
             mpStepsRender(); mpLogRender(); mpRunStatus('Starting...');
-            const r = await mpCall('patch', job);
-            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // A patch keeps going when the window that started it is closed or restarted. When this page opens, ask the app whether one is going and, if so, show it
+        // and play back what has happened so far (the events carry numbers, so the ones that arrive meanwhile are not counted twice).
+        async function mpAdopt() {
+            if (mp.run && mp.run.active) return;
+            const r = await mpCall('jobStatus', {});
+            const d = r.ok && r.data;
+            if (!d || !d.running || !d.request || (mp.run && mp.run.active)) return;
+            const q = d.request;
+            mp.t = { pkg: q.pkg, name: q.name || mpAppName(q.pkg), from: q.from, path: q.path || '', ver: q.version || '', code: q.versionCode || '', info: null };
+            mp.sel = {}; mp.opts = {}; mp.srcTab = '';
+            mpRunEnter(d.job, q);
+            mp.run.adopted = true;
+            document.getElementById('mpPageTitle').textContent = mp.t.name;
+            mpShowPage(true);
+            (d.events || []).forEach(mpOnEvent);
         }
         function mpRunStatus(t) { const el = document.getElementById('mpRunStatus'); if (el) el.textContent = t; }
         function mpRunLog(level, text, ts) { if (!mp.run) return; mp.run.log.push({ ts: ts || Date.now(), level: level, text: text }); if (mp.run.log.length > 6000) mp.run.log.splice(0, 1000); mpLogSoon(); }
@@ -37205,6 +37226,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); usOnProgress(e); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
+            if (e.seq) { if (e.seq <= r.seq) return; r.seq = e.seq; }          // numbered by the app: one already seen (it was in the playback) is not counted again
             switch (e.t) {
                 case 'log': mpRunLog(e.level, e.text, e.ts); break;
                 case 'step': r.steps[e.name] = e.state; if (e.state === 'RUNNING') mpRunStatus(e.name + '...'); mpStepsRender(); mpRunLog('INFO', e.name + ' ' + e.state.toLowerCase(), e.ts); break;
@@ -37287,7 +37309,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (/Patch bundle|corrupt|\bdex\b/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
             return 'A patch could not be applied. This usually means the patch does not fit this version of the app. Check the details below and the log.';
         }
-        function mpBackToPatches() { mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
+        function mpBackToPatches() { if (mp.run && mp.run.adopted) { mpSelDefaults(); mpTargetRender(); } mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
         async function mpRetryContinue() { mp.cfg.failOnError = false; mpCfgSave(); mpBackToPatches(); showToast('Failed patches are skipped now. Patch again.'); }
         async function mpRunInstall() {
             const it = mp.run && mp.run.saved;
