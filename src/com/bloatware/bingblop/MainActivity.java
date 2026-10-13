@@ -5942,7 +5942,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_BACKUP_DIR = 4291; // a folder the page keeps its backups in (saved lists)
     private volatile String pickBackupDirTag = "";
     // ---- Connected Devices: another device (a watch, a phone, a TV) driven through the app's own adb server ----
-    private static final int REQ_PICK_CD = 4291;         // package files to send to a connected device
+    private static final int REQ_PICK_CD = 4293;         // package files to send to a connected device
     private static final int REQ_BT_CONNECT = 9203;
     private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
     private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
