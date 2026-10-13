@@ -6614,7 +6614,9 @@ public class MainActivity extends Activity {
                         try {
                             sysInfo = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags);
                         } catch (PackageManager.NameNotFoundException ignored) {}
-                        if (sysInfo != null) {
+                        // Only a system app has a copy on the system image to bring back. A user app removed with pm uninstall -k (data kept) is returned
+                        // by MATCH_UNINSTALLED_PACKAGES too, but without signing info: it is installed from the backup below.
+                        if (RestorePlan.bringBackSystemApp(sysInfo != null, sysInfo == null || sysInfo.applicationInfo == null ? 0 : sysInfo.applicationInfo.flags)) {
                             requireCompatibleSigner(signerDigests(sysInfo, true), archiveSigners,
                                     "the system app on this phone is signed with a different key than this backup's APK - it does not match this device");
                             // This too is a privileged install, of a copy that is on the phone already: asked before it, like the install below.
