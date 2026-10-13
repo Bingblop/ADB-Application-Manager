@@ -518,6 +518,41 @@ Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183
 - [ ] Two file jobs at once (a big copy and an extract): each "done" notification carries its own title.
 - [ ] Updater check with the phone's clock stepped forward by a minute mid-run (toggle automatic time): the run does not end with every app "timed out".
 
+## 29. Fixes of the second review pass and the SD Maid accessibility cleaner (v7.13.2)
+
+Eleven fixes; the steps below exercise them. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+
+**Connected Devices** (needs two devices, for example a phone and a watch, both listed in the tab)
+
+- [ ] Files tab on device A: tap Delete on a file and leave the question open. Make A drop out of the list (switch its wireless debugging off) so the tab moves to device B. Answer Delete. Nothing is deleted on B and nothing says Deleted. The same for Rename and New folder.
+- [ ] Files tab on device A: choose three files with **Send a file here** and make A drop out after the first has gone. The rest are not sent to B, and the toast says the push did not finish instead of "3 files sent". Same for pulling an app's APK from the Apps menu.
+- [ ] Files tab: pull a folder that holds a file the shell cannot read (for example a folder with a file under Android/data on a phone that blocks it). The toast shows adb's error or the skipped count, not "Saved to ...".
+- [ ] Send tab, **Choose package files**: pick an APK. It appears in the queue (before this release the queue stayed empty). Files tab, **Send a file here**: the picked file is sent. Then look at the folder you chose earlier for the Saved lists backup (and for the Updater's **A folder I choose** downloads): it is unchanged.
+
+**Backups**
+
+- [ ] Uninstall a user app but keep its data (Console tab: `pm uninstall -k --user 0 <package>`), then restore its backup. The app is installed from the backup; it does not say the system app is signed with a different key, and you are asked once, not twice.
+
+**Terminal** (Terminal tab > Real terminal)
+
+- [ ] Open the real terminal in Termux or a working-mode shell and type `ls` and Enter at once, before the prompt shows: the text arrives after the shell is up. With the soft keyboard open, run `stty size` and open `vim`: the size matches the visible area and the status line is visible.
+- [ ] Open the real terminal (app shell), close it with X, then use the Termux setup's **Open the real terminal** button: the terminal restarts in Termux, and the dropdown and the prompt (`echo $PREFIX`) agree. Reopening with the plain button afterwards leaves it as it is.
+
+**Morphe Patcher**
+
+- [ ] With no working mode, patch an app with **Install when finished** and **Delete the APK after installing** on. The system installer opens; cancel it. The result says the installer was opened (not "Installed"), and the patched APK is still in Patched APKs.
+- [ ] Start a patch, press Back to leave the app, open it again: the Morphe tab shows the patch still going (steps and Stop), and when it ends its result appears. Starting a second patch while the first runs says the patcher is busy at once; it does not wait and does not cancel the first.
+
+**Updater**
+
+- [ ] Installer > Application Updater > Check for Updates on a phone with many apps: the "N of M" count and the progress bar only go forward, and nothing reverts to "checking" after the summary is shown.
+
+**SD Maid accessibility cleaner**
+
+- [ ] Give consent in the SD Maid tab, then switch the accessibility service OFF in Android's accessibility settings. In ADB, Wireless Debugging, Shizuku or Root mode, run AppCleaner Delete on apps that only the automation can clear: the progress line says **Starting the accessibility service**, the service comes on by itself (look in Android's accessibility settings afterwards), and the cleaning runs without you opening those settings. Force-stop the app from Android's settings, open it again and repeat: it starts itself again.
+- [ ] Without consent, or in Read-Only mode: AppCleaner does not switch anything on by itself and shows the old "turn it on" message.
+- [ ] SD Maid tab > Exclusions (AppCleaner): this app (`com.bloatware.bingblop`) and the WebView packages (`com.google.android.webview`, its `.beta`, `.dev` and `.canary` variants, and `com.android.webview`) are listed as stock exclusions and come back with Restore default exclusions. Turn **Force-stop before clearing** on and clean all apps: this app and Android System WebView are not force-stopped and the cleaning is not cut short; they stay in the result as excluded, not failed.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
