@@ -339,6 +339,32 @@ public class ZipToolTest {
       check("replace: no stray part file is left", rpDest.list().length == 1);
     }
 
+    // Progress moves inside one large entry (every MB or so), not only at its end, and Cancel is heard inside it
+    {
+      File bz = out("bigentry.zip");
+      byte[] chunk = new byte[1 << 20];
+      try (java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(bz))) {
+        zo.setLevel(0);
+        zo.putNextEntry(new java.util.zip.ZipEntry("big.bin"));
+        for (int i = 0; i < 5; i++) zo.write(chunk);
+        zo.closeEntry();
+      }
+      final List<Long> bzSeen = new ArrayList<>();
+      File bzDest = out("bigentry_dest");
+      long[] bzR = ZipTool.extractTree(ZipTool.open(bz), "", bzDest, (doneBytes, doneFiles, current) -> { bzSeen.add(doneBytes); return true; }, null, null, com.bloatware.bingblop.FileOps.REPLACE);
+      int inside = 0;
+      for (long bzB : bzSeen) if (bzB > 0 && bzB < 5L << 20) inside++;
+      check("one 5 MB entry reports progress from inside it (" + inside + " reports between 0 and the end)", bzR[0] == 1 && bzR[1] == 5L << 20 && inside >= 3);
+      File bzDest2 = out("bigentry_dest2");
+      final int[] calls = {0};
+      Exception bzCancelled = null;
+      try {
+        ZipTool.extractTree(ZipTool.open(bz), "", bzDest2, (doneBytes, doneFiles, current) -> ++calls[0] < 3, null, null, com.bloatware.bingblop.FileOps.REPLACE);
+      } catch (Exception e) { bzCancelled = e; }
+      check("Cancel from inside the entry ends the extraction with Cancelled (" + bzCancelled + ")", bzCancelled != null && String.valueOf(bzCancelled.getMessage()).startsWith("Cancelled"));
+      check("and leaves neither the file nor its part file behind", !new File(bzDest2, "big.bin").exists() && !new File(bzDest2, ".big.bin.part").exists());
+    }
+
     // Stale detection
     File stale = out("stale.zip"); Files.copy(new File(FIX + "basic.zip").toPath(), stale.toPath());
     Archive sa = ZipTool.open(stale);

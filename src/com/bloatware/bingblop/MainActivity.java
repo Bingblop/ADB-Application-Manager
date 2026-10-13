@@ -188,6 +188,12 @@ public class MainActivity extends Activity {
     // Working modes: "auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged".
     // The configured mode is only ever changed by an explicit user action (selecting a mode,
     // connecting, authorizing Shizuku). Status checks never change it.
+    private static final java.util.List<String> WORKING_MODES = java.util.Arrays.asList("auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged");
+    /** The mode as one of the known names; anything else (a made-up or stale value) is "auto", so no unknown string ever passes a privileged check. */
+    private static String knownWorkingMode(String mode) {
+        String m = mode == null ? "" : mode.trim();
+        return WORKING_MODES.contains(m) ? m : "auto";
+    }
     private volatile String activeWorkingMode = "auto";
     private volatile String adbTcpHost = "127.0.0.1";
     private volatile int adbTcpPort = 5555;
@@ -233,7 +239,7 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences("adb_app_manager_prefs", Context.MODE_PRIVATE);
 
         // Load saved working mode settings
-        activeWorkingMode = prefs.getString("working_mode", "auto");
+        activeWorkingMode = knownWorkingMode(prefs.getString("working_mode", "auto"));
         adbTcpHost = prefs.getString("adb_tcp_host", "127.0.0.1");
         adbTcpPort = prefs.getInt("adb_tcp_port", 5555);
         adbWirelessHost = prefs.getString("adb_wireless_host", "127.0.0.1");
@@ -671,7 +677,7 @@ public class MainActivity extends Activity {
 
     private void setConfiguredMode(String mode) {
         invalidateModeCache();
-        activeWorkingMode = (mode == null || mode.trim().isEmpty()) ? "auto" : mode.trim();
+        activeWorkingMode = knownWorkingMode(mode);
         cachedAutoMode = null;
         prefs.edit().putString("working_mode", activeWorkingMode).apply();
     }
@@ -723,11 +729,8 @@ public class MainActivity extends Activity {
             if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
             int v = 0;
             try {
-                Process p = Runtime.getRuntime().exec(new String[]{"getprop", "ro.build.version.oneui"});
-                BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line = r.readLine();
-                r.close();
-                if (line != null && line.trim().matches("\\d{4,7}")) v = Integer.parseInt(line.trim());
+                String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (line.matches("\\d{4,7}")) v = Integer.parseInt(line);
             } catch (Throwable ignored) {}
             if (v <= 0) {
                 try {
@@ -1022,6 +1025,7 @@ public class MainActivity extends Activity {
         } catch (Exception timeoutEx) {
             future.cancel(true);
             try { p.destroy(); } catch (Exception ignored) {}
+            try { p.getInputStream().close(); } catch (Exception ignored) {}     // ends the reader even when a child keeps the pipe open
             synchronized (sb) {
                 sb.append("\n[Process timed out after ").append(timeoutMs).append("ms]");
             }
@@ -1342,7 +1346,7 @@ public class MainActivity extends Activity {
         rishHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (webView == null) return;
+                if (activityDestroyed || webView == null) return;     // onDestroy may have run since this was queued
                 int i = 0;
                 while (i < text.length()) {
                     int end = Math.min(text.length(), i + 32000);
@@ -1433,7 +1437,7 @@ public class MainActivity extends Activity {
             rishHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (webView == null) return;
+                    if (activityDestroyed || webView == null) return;     // onDestroy may have run since this was queued
                     int i = 0;
                     while (i < text.length()) {
                         int end = Math.min(text.length(), i + 32000);
@@ -3707,17 +3711,35 @@ public class MainActivity extends Activity {
             m.setAccessible(true);
             shizukuNewProcessMethod = m;
         }
-        Process p = (Process) shizukuNewProcessMethod.invoke(null,
+        final Process p = (Process) shizukuNewProcessMethod.invoke(null,
                 new String[]{"sh", "-c", "exec 2>&1; " + cmd}, null, null);
-        OutputStream os = p.getOutputStream();
-        if (stdin != null) {
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = stdin.read(buf)) > 0) os.write(buf, 0, n);
+        try {
+            // stdin is fed on a thread of its own while the output is read: a command that stops reading early (an install-write that
+            // refuses the file) would otherwise end this write with EPIPE before its own error line was ever read
+            final OutputStream os = p.getOutputStream();
+            final InputStream src = stdin;
+            Thread pump = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (src != null) {
+                            byte[] buf = new byte[65536];
+                            int n;
+                            while ((n = src.read(buf)) > 0) os.write(buf, 0, n);
+                        }
+                        os.flush();
+                    } catch (IOException ignored) {       // the command ended first: what it printed says why
+                    } finally {
+                        try { os.close(); } catch (IOException ignored) {}
+                    }
+                }
+            }, "shizuku-stdin");
+            pump.setDaemon(true);
+            pump.start();
+            return readProcessWithTimeout(p, timeoutMs);
+        } finally {
+            try { p.destroy(); } catch (Exception ignored) {}
         }
-        os.flush();
-        os.close();
-        return readProcessWithTimeout(p, timeoutMs);
     }
 
     /** Installs one APK, or a base APK with its splits, through a mode the caller already chose (and asked about): the working mode is not read again. */
@@ -10068,9 +10090,10 @@ public class MainActivity extends Activity {
                 JSONArray pkgs = new JSONArray(pkgsJson);
                 for (int i = 0; i < pkgs.length(); i++) {
                     String pkg = pkgs.getString(i);
-                    String output = executeAppAction(action, pkg);
-                    if (output == null) output = "";
-                    boolean ok = !launchOutputFailed(output) && !output.toLowerCase().contains("exception occurred");
+                    String raw = executeAppAction(action, pkg);
+                    boolean hasFlag = raw != null && raw.length() >= 2 && raw.charAt(0) == RC_FLAG;
+                    String output = flagText(raw);      // never the flag itself in what the page shows
+                    boolean ok = hasFlag ? flagOk(raw) : (!launchOutputFailed(output) && !output.toLowerCase().contains("exception occurred"));
                     if (ok) success++; else failed++;
                     JSONObject row = new JSONObject();
                     row.put("pkg", pkg);
@@ -11667,7 +11690,11 @@ public class MainActivity extends Activity {
                     JSONObject res;
                     try {
                         synchronized (installInspectLock) {       // two overlapping runs would share (and clear) the same work folder
-                            res = inspectInstallSourceImpl(ref);
+                            try {
+                                res = inspectInstallSourceImpl(ref);
+                            } finally {
+                                fmInstallStagedDone(ref);          // the Installer works from its own copy from here on
+                            }
                         }
                     } catch (Exception e) {
                         res = new JSONObject();
@@ -14137,6 +14164,15 @@ public class MainActivity extends Activity {
         /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}.
          *  When the app itself can read the file (storage with All-files access), the Installer reads it in
          *  place with no shell at all; only truly privileged paths fall back to staging in /data/local/tmp. */
+        /** Where {@link #fmInstall} stages a package the app cannot read itself (see {@link #fmInstallStagedDone}). */
+        private static final String FM_INSTALL_STAGE_PREFIX = "/data/local/tmp/fm_install_";
+
+        /** Removes a staged copy made by {@link #fmInstall} once the Installer has read it into its own work folder (nothing else is ever removed). */
+        private void fmInstallStagedDone(String ref) {
+            if (ref == null || !ref.startsWith(FM_INSTALL_STAGE_PREFIX) || !ref.matches("[A-Za-z0-9_./]+")) return;
+            try { executeShell("rm -f " + ref); } catch (Throwable ignored) {}
+        }
+
         @JavascriptInterface
         public String fmInstall(String path) {
             JSONObject res = new JSONObject();
@@ -14148,7 +14184,7 @@ public class MainActivity extends Activity {
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
                 } catch (Exception ignored) {}
                 if ("standard".equals(resolveExecMode())) { needFileAccess("To read this package from storage", path); res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
-                String staged = "/data/local/tmp/fm_install.apk";
+                String staged = FM_INSTALL_STAGE_PREFIX + android.os.Process.myPid() + "_" + Long.toHexString(System.nanoTime()) + ".apk";    // one per call: two installs never share (or overwrite) a file
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
                 if (!FileRules.okLine(out, "OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
                 res.put("ok", true);
@@ -15597,27 +15633,19 @@ public class MainActivity extends Activity {
         public String saveTextToDownloads(String fileName, String text) {
             String safeName = (fileName == null ? "export.txt" : fileName).replaceAll("[^A-Za-z0-9._-]", "_");
             byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            Object[] target = null;
             try {
-                if (Build.VERSION.SDK_INT >= 29) {
-                    android.content.ContentValues values = new android.content.ContentValues();
-                    values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName);
-                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain");
-                    values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/ADB App Manager");
-                    Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                    if (uri == null) return "Error: could not create file";
-                    OutputStream out = getContentResolver().openOutputStream(uri);
+                String mime = safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain";
+                target = openDownloadOutput(safeName, mime, null);
+                OutputStream out = (OutputStream) target[0];
+                try {
                     out.write(bytes);
+                } finally {
                     out.close();
-                    return "Download/ADB App Manager/" + safeName;
                 }
-                File dir = new File(getExternalFilesDir(null), "exports");
-                if (!dir.exists()) dir.mkdirs();
-                File file = new File(dir, safeName);
-                OutputStream out = new FileOutputStream(file);
-                out.write(bytes);
-                out.close();
-                return file.getAbsolutePath();
+                return (String) target[1];
             } catch (Exception e) {
+                deleteDownloadTarget(target);       // no empty, half-written entry left looking like the export
                 return "Error: " + e.getMessage();
             }
         }
@@ -15840,7 +15868,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (isHeadless()) return;
-        String saved = prefs.getString("working_mode", activeWorkingMode);
+        String saved = knownWorkingMode(prefs.getString("working_mode", activeWorkingMode));
         if (!saved.equals(activeWorkingMode)) {
             // A tile or the widget switched the mode while the app was in the background
             activeWorkingMode = saved;
