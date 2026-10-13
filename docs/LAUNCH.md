@@ -53,6 +53,12 @@ For the directory pull request (after 2027-01-30), the file `public/data/apps/co
 }
 ```
 
+## Landing page, bug reports, GIFs
+
+- **Landing page**: `docs/index.html` is a GitHub Pages site (one file, no build; `docs/.nojekyll` beside it). Switch it on under **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch `main`, folder `/docs`**. It is then served at `https://bingblop.github.io/ADB-Application-Manager/`; put that address in the repository's Website field. The three download buttons read the latest release from the GitHub API when the page loads and fall back to the Releases page.
+- **Phone bug reports**: `.github/ISSUE_TEMPLATE/phone-bug-report.yml` is a form that asks for the working mode, the app version, the phone with its Android and One UI version, and the checklist section and step before anything else. `config.yml` beside it points questions to Discussions and lists the checklist.
+- **GIFs for the posts**: `docs/screenshots/v7.13.0/bottom-bar.gif` (tapping through the tabs, holding Installer for the shortcut menu, the More sheet) and `docs/screenshots/v7.13.0/dns-speed-test.gif` (Test speed filling the tiles, then Sort by speed). Both are recorded from the UI test harness with mock data; `tools/record-gifs.js` re-records them (run from the repository root with `LIB=tests/ui/lib FRAMES=<dir> node tools/record-gifs.js`, then assemble the `<name>.list` files with ImageMagick's `convert`). Reddit shows a GIF inline when it is the post's image; for a text post, link the raw file on `main`.
+
 ## Post drafts
 
 Honesty line used in every post: the app is tested on a computer by its UI and Java suites on every change; on a phone, testing is thin, the checklist is in the repository, and reports are wanted. Do not claim more.
