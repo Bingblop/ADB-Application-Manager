@@ -7654,7 +7654,13 @@ public class MainActivity extends Activity {
             tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
             files.addAll(MorpheLibrary.unzipApks(apk, tmp));
         } else {
-            files.add(apk);
+            // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
+            // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
+            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
+            tmp.mkdirs();
+            File copy = new File(tmp, apk.getName());
+            copyFile(apk, copy);
+            files.add(copy);
         }
         String out;
         String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
@@ -8343,9 +8349,14 @@ public class MainActivity extends Activity {
             } else if ("shizuku".equals(mode)) {
                 output = runShizukuShell(cmd);
             } else if ("root".equals(mode)) {
-                ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
-                pb.redirectErrorStream(true);
-                output = runProcessWithTimeout(pb, 10000);
+                // a refused su prints nothing (or "Permission denied") and runs nothing: that is a failure, not an empty success
+                if (!isRootGranted()) {
+                    output = "Error: root access is not granted to this app (su refused). Allow it in the root manager and check Working Modes again.";
+                } else {
+                    ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
+                    pb.redirectErrorStream(true);
+                    output = runProcessWithTimeout(pb, 10000);
+                }
             } else {
                 ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", "-c", cmd);
                 pb.redirectErrorStream(true);
@@ -9910,6 +9921,12 @@ public class MainActivity extends Activity {
             String marker = "__RC" + System.nanoTime() + "__";
             String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
             ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
+            // Every backend here runs a shell, so the marker is missing only when the command never ran (su refused or not granted, a
+            // backend that did not start, a timeout): that is a failure whatever else was printed, never an "ok" from an empty answer.
+            if (raw == null || raw.lastIndexOf(marker + ":") < 0) {
+                String text = o.text == null ? "" : o.text.trim();
+                return flagged(false, text.isEmpty() ? "Error: the command did not run (no exit status came back from the shell)" : text);
+            }
             return flagged(o.ok, o.text);
         }
 
@@ -13626,6 +13643,11 @@ public class MainActivity extends Activity {
 
         /** Copies a SAF document as a new child of a plain filesystem folder, keeping its own name (recursive for a folder). */
         private String safCopyIntoPosix(Uri srcUri, File destDir) {
+            return safCopyIntoPosix(srcUri, destDir, null);
+        }
+
+        /** As above; {@code asName}, when not null, is the name the copy gets instead of the document's own (a "keep both" copy next to a clash). */
+        private String safCopyIntoPosix(Uri srcUri, File destDir, String asName) {
             try {
                 android.content.ContentResolver cr = getContentResolver();
                 String name = null, mime = null;
@@ -13635,8 +13657,13 @@ public class MainActivity extends Activity {
                 }, null, null, null);
                 if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
                 if (name == null) return "Could not read the source";
+                // the display name comes from the provider and is a name, never a path: a third-party provider answering "../x" or "a/b" must not write outside destDir
+                if (FileOps.badName(name) != null) return "Could not copy: the source has an unsafe name";
+                if (asName != null) name = asName;
                 boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
                 File dest = new File(destDir, name);
+                String canonRoot = destDir.getCanonicalPath();
+                if (!dest.getCanonicalPath().startsWith(canonRoot.endsWith(File.separator) ? canonRoot : canonRoot + File.separator)) return "Could not copy " + name;
                 if (isDir) {
                     if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
                     Uri srcTree = safTreeUri(srcUri);
@@ -13681,6 +13708,11 @@ public class MainActivity extends Activity {
          *  a same-folder rename has no such path string to build and uses fmRenameSaf instead. Returns "" on success,
          *  else an error message (never null). */
         private String fmOpSaf(String op, String a, String b) {
+            return fmOpSaf(op, a, b, null);
+        }
+
+        /** As above; {@code asName} is the name a copy into a plain folder gets (a "keep both" next to a clash), or null for the document's own. */
+        private String fmOpSaf(String op, String a, String b, String asName) {
             try {
                 if ("rm".equals(op)) {
                     boolean ok = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
@@ -13692,7 +13724,7 @@ public class MainActivity extends Activity {
                     boolean dstSaf = b.startsWith("content://");
                     String err = dstSaf
                             ? (srcSaf ? safCopyInto(Uri.parse(a), Uri.parse(b)) : safCopyPosixIntoSaf(new File(a), Uri.parse(b)))
-                            : safCopyIntoPosix(Uri.parse(a), new File(b));
+                            : safCopyIntoPosix(Uri.parse(a), new File(b), asName);
                     if (err != null) return err;
                     if ("mv".equals(op)) {
                         if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
@@ -13751,6 +13783,7 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < paths.size(); i++) {
                     if (fmBatchCancel) { cancelled = true; break; }
                     String q = paths.get(i);
+                    String asName = null;
                     String text = fmBatchLabel(op) + " " + (i + 1) + " of " + paths.size() + "…";
                     notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(text) + ")");
                     JobService.progress(MainActivity.this, text, paths.size() > 0 ? (i * 100) / paths.size() : 0);
@@ -13773,9 +13806,15 @@ public class MainActivity extends Activity {
                                     if ("skip".equals(policyName)) { skipped++; continue; }
                                     if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
                                 }
+                            } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
+                                // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
+                                if (FileOps.exists(new File(dest, name))) {
+                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if ("keep".equals(policyName)) asName = FileOps.uniqueName(new File(dest), name);
+                                }
                             }
                         }
-                        String err = fmOpSaf(op, q, dest);
+                        String err = fmOpSaf(op, q, dest, asName);
                         if (err.isEmpty()) done++;
                         else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
                     } catch (Throwable t) {
@@ -13822,7 +13861,7 @@ public class MainActivity extends Activity {
                 if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo FMOK";
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo FMOK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo FMOK";
-                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK";
+                else if ("cp".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);

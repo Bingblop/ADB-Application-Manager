@@ -320,6 +320,25 @@ public class ZipToolTest {
       check("diff: 70000-entry archives compare quickly and match", mm.same == 70000 && mm.changed.isEmpty());
     }
 
+    // Keep both / replace against a folder that already has the entry's name: a folder is never deleted to make room for a file
+    {
+      File kb = out("keepboth.zip");
+      try (java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(kb))) {
+        zo.putNextEntry(new java.util.zip.ZipEntry("docs")); zo.write("hello".getBytes("UTF-8")); zo.closeEntry();
+      }
+      File kbDest = out("keepboth_dest"); File kbDir = new File(kbDest, "docs"); kbDir.mkdirs();
+      List<String> kbProblems = new ArrayList<>();
+      long[] kbR = ZipTool.extractTree(ZipTool.open(kb), "", kbDest, null, kbProblems, null, com.bloatware.bingblop.FileOps.KEEP_BOTH);
+      File kbCopy = new File(kbDest, "docs (1)");
+      check("keep both: an empty folder of the entry's name stays a folder (" + kbProblems + ")", kbDir.isDirectory() && kbProblems.isEmpty());
+      check("keep both: the file is written next to it as 'docs (1)'", kbCopy.isFile() && new String(Files.readAllBytes(kbCopy.toPath()), "UTF-8").equals("hello") && kbR[0] == 1 && kbR[2] == 0);
+      File rpDest = out("replace_dest"); File rpDir = new File(rpDest, "docs"); rpDir.mkdirs();
+      List<String> rpProblems = new ArrayList<>();
+      long[] rpR = ZipTool.extractTree(ZipTool.open(kb), "", rpDest, null, rpProblems, null, com.bloatware.bingblop.FileOps.REPLACE);
+      check("replace: an empty folder in the way is kept and the entry is skipped in words (" + rpProblems + ")", rpDir.isDirectory() && rpR[0] == 0 && rpR[2] == 1 && rpProblems.size() == 1 && rpProblems.get(0).contains("folder"));
+      check("replace: no stray part file is left", rpDest.list().length == 1);
+    }
+
     // Stale detection
     File stale = out("stale.zip"); Files.copy(new File(FIX + "basic.zip").toPath(), stale.toPath());
     Archive sa = ZipTool.open(stale);

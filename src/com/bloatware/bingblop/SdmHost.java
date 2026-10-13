@@ -68,6 +68,7 @@ final class SdmHost implements SdmBridge.Host {
         SdmAreas.Config cfg = new SdmAreas.Config();
         cfg.sdkInt = Build.VERSION.SDK_INT;
         cfg.ownPackage = ctx.getPackageName();
+        cfg.userId = android.os.Process.myUid() / 100000;        // the user this app runs as: its app data areas are that user's, not user 0's
         List<String> roots = SdmAreas.discoverPublicRoots(javaFs, "/storage/emulated/0");
         if (roots != null && !roots.isEmpty()) cfg.publicRoots = roots;
         this.areas = new SdmAreas(shell, javaFs, cfg, new SdmAreas.Access() { @Override public boolean storage() { return hooks.storage(); } });

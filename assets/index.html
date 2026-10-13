@@ -21839,9 +21839,11 @@ Type any command above (e.g. pm list packages -d)</div>
                     return;
                 }
                 op = 'mv'; b = fmParent(src) + '/' + val;
+                if (fmTakenHere(b, src)) { showToast('That name is already used here'); return; }        // onto a folder it would move inside and replace what is there
             } else if (op === 'cp' || op === 'mv') {
                 if (!val) { showToast('Enter a destination'); return; }
                 b = val;
+                if (fmTakenHere(b, src)) { showToast('That name is already used here'); return; }
             } else if (op === 'rm') {
                 b = null;
             }
@@ -21851,6 +21853,14 @@ Type any command above (e.g. pm list packages -d)</div>
             closeFmAction();
             fmRefresh();
             if (!r.ok) showCommandResults('File op', op, [{ name: fmActionTarget ? fmActionTarget.name : '', pkg: a, output: r.output, success: false }]);
+        }
+        // whether a destination names something listed in the folder shown other than the source itself (a change of case only is not a clash): a file would be
+        // overwritten, a folder would be moved or copied into with what is there replaced. Only the folder shown is known here; elsewhere the native side answers.
+        function fmTakenHere(dest, src) {
+            const d = String(dest || '').replace(/\/+$/, '');
+            if (!d || fmParent(d) !== fmPath) return false;
+            const name = fmBase(d).toLowerCase();
+            return fmListedNames().some(n => n.toLowerCase() === name && (fmParent(src) !== fmPath || n !== fmBase(src)));
         }
         function fmViewFile() {
             if (!fmActionTarget) return;
@@ -24124,7 +24134,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.devices = all.filter(d => !cd.self.includes(d.serial));
             if (text) text.innerText = 'Pair and connect a Wear OS watch or any Android device over Wi-Fi or Bluetooth. Then you can manage its apps, send apps to it, read its log, browse its files and change its settings from here.';
             let moved = false;
-            if (!cd.devices.some(d => d.serial === cd.serial)) {
+            if (!cd.batchBusy && !cd.devices.some(d => d.serial === cd.serial)) {              // not while a batch runs: it stays on the device it started on
                 const last = kvGet('cd_ui', {}).serial;
                 const pick = cd.devices.find(d => d.serial === last && d.state === 'device') || cd.devices.find(d => d.state === 'device') || cd.devices[0];
                 cd.serial = pick ? pick.serial : '';
@@ -24148,7 +24158,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sel = document.getElementById('cdDeviceSel');
             if (!sel) return;
             sel.innerHTML = cd.devices.length ? cd.devices.map(d => '<option value="' + escapeHtml(d.serial) + '"' + (d.serial === cd.serial ? ' selected' : '') + '>' + escapeHtml(cdDevLabel(d)) + '</option>').join('') : '<option value="">No device</option>';
-            sel.disabled = !cd.devices.length;
+            sel.disabled = !cd.devices.length || cd.batchBusy;
             const d = cdCur();
             document.getElementById('cdEmpty').style.display = d ? 'none' : '';
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
@@ -24158,6 +24168,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function cdSelect(serial) {
             if (!serial || serial === cd.serial) return;
+            if (cd.batchBusy) { cdRenderDevices(); return; }           // locked while a batch runs on the device chosen
             cdStopWork();
             cd.serial = serial;
             cd.lastKey = '';
@@ -24787,20 +24798,20 @@ Type any command above (e.g. pm list packages -d)</div>
         // Runs one change on the device. Resolves { ok, out }; on success the list is updated in place
         // Removing an app goes through the same steps as on this phone: pm uninstall --user 0 and, when a system app is refused (only root may remove it), the direct Binder
         // helper sent to that device and run there (AndroidBridge.cdUninstall). Resolves { ok, out } like cdSh does, with the answer's own words.
-        function cdUninstallRun(pkg) {
+        function cdUninstallRun(pkg, serial) {
             return new Promise(res => {
                 const b = window.AndroidBridge;
                 const tag = 'cd' + (++cdSeq);
                 cdWait[tag] = r => res({ ok: !!r.ok && !cdFail(r.out), out: String(r.out == null ? '' : r.out) });
-                try { b.cdUninstall(tag, cd.serial, pkg); }
+                try { b.cdUninstall(tag, serial === undefined ? cd.serial : serial, pkg); }
                 catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
             });
         }
         // Read back from the device (like the app does for this phone): after enable / disable / uninstall / reinstall the apps are listed again and the answer is what the
         // device says now, not what the command printed. { uninstalled, disabled } of a package, or null when the device did not give a real list.
         const CD_CHECKED = new Set(['enable', 'disable', 'uninstall', 'reinstall']);
-        async function cdReadStates() {
-            const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
+        async function cdReadStates(serial) {
+            const out = await cdSh(CD_APPS_CMD, { timeout: 90000, serial: serial });
             if (cdFail(out)) return null;
             const apps = cdParseApps(out);
             if (!apps.length) return null;
@@ -24817,13 +24828,14 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         const CD_STATE_WORDS = { uninstall: ['Uninstalled', 'Still installed'], reinstall: ['Installed', 'Not installed'], disable: ['Frozen', 'Not frozen'], enable: ['Enabled', 'Still frozen'] };
         // reads the states (and once more after a moment when something is not yet as wanted), then sets the app records from them. Returns Map pkg -> { ok, label } or null.
-        async function cdCheckStates(act, pkgs) {
-            let m = await cdReadStates();
+        async function cdCheckStates(act, pkgs, serial) {
+            let m = await cdReadStates(serial);
             if (!m) return null;
-            if (pkgs.some(p => !cdStateOk(act, p, m))) { await new Promise(r => setTimeout(r, 900)); m = (await cdReadStates()) || m; }
+            if (pkgs.some(p => !cdStateOk(act, p, m))) { await new Promise(r => setTimeout(r, 900)); m = (await cdReadStates(serial)) || m; }
             const res = new Map();
+            const mine = serial === undefined || serial === cd.serial;          // the records on screen are only touched while that device is still the one shown
             pkgs.forEach(p => {
-                const ok = cdStateOk(act, p, m), a = (cd.apps || []).find(x => x.pkg === p), real = m.get(p);
+                const ok = cdStateOk(act, p, m), a = mine ? (cd.apps || []).find(x => x.pkg === p) : null, real = m.get(p);
                 if (a && real) { a.uninstalled = real.uninstalled; a.disabled = real.disabled; }
                 else if (a && !real && act === 'uninstall') { a.uninstalled = true; a.disabled = false; }
                 res.set(p, { ok, label: (!ok && (act === 'enable' || act === 'disable') && (!real || real.uninstalled)) ? 'Not installed' : CD_STATE_WORDS[act][ok ? 0 : 1] });
@@ -24835,17 +24847,19 @@ Type any command above (e.g. pm list packages -d)</div>
             return c.ok && !cmdOk ? 'Checked afterwards: ' + w + '. The command reported a failure, but the device says it worked.\n\n'
                 : !c.ok && cmdOk ? 'Checked afterwards: ' + w + ', although the command reported success.\n\n' : 'Checked afterwards: ' + w + '.\n\n';
         }
+        // opt.serial: the device the action is for (the one chosen when it started), so a change of device half-way does not send it elsewhere
         async function cdDo(act, pkg, opt) {
             let out, ok;
-            if (act === 'uninstall' && cd.serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
-                const u = await cdUninstallRun(pkg);
+            const serial = (opt && opt.serial) || cd.serial;
+            if (act === 'uninstall' && serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
+                const u = await cdUninstallRun(pkg, serial);
                 out = u.out; ok = u.ok;
             } else {
-                out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000 });
+                out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000, serial: serial });
                 ok = cdActOk(out);
             }
-            if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000 }); ok = cdActOk(out); }
-            if (ok) {
+            if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000, serial: serial }); ok = cdActOk(out); }
+            if (ok && serial === cd.serial) {
                 const a = (cd.apps || []).find(x => x.pkg === pkg);
                 if (a) {
                     if (act === 'enable') a.disabled = false;
@@ -24857,7 +24871,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (CD_CHECKED.has(act) && !(opt && opt.check === false)) {
                 progressToast('Checking the device…');
                 rowBusySet(pkg, 'Checking…', 'd');
-                const c = await cdCheckStates(act, [pkg]);
+                const c = await cdCheckStates(act, [pkg], serial);
                 rowBusySet(pkg, '', 'd');
                 if (c) {
                     const r = c.get(pkg);
@@ -24875,12 +24889,14 @@ Type any command above (e.g. pm list packages -d)</div>
         const CD_ACT_DONE = { enable: 'Enabled', disable: 'Frozen', uninstall: 'Uninstalled', reinstall: 'Reinstalled', stop: 'Stopped', clear: 'Data cleared', launch: 'Opened' };
 
         async function cdAppAct(pkg, act) {
+            const serial = cd.serial;
             const a = cdApp(pkg);
             if (act === 'uninstall' && !(await cdAsk({ title: 'Uninstall ' + a.name + '?', text: pkg + '\n\nIt is removed for the device\'s user. A system app can be put back with Reinstall.', ok: 'Uninstall', danger: true }))) return;
             if (act === 'clear' && !(await cdAsk({ title: 'Clear the data of ' + a.name + '?', text: 'Its settings, accounts and files on the device are deleted.', ok: 'Clear data', danger: true }))) return;
+            if (cd.serial !== serial) return;                    // another device was chosen while the question was open
             progressToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
             rowBusySet(pkg, 'Working…', 'd');
-            const r = await cdDo(act, pkg);
+            const r = await cdDo(act, pkg, { serial: serial });
             rowBusySet(pkg, '', 'd');
             cdAppsRender();
             if (r.ok) showToast(CD_ACT_DONE[act] + ': ' + a.name);
@@ -24889,18 +24905,21 @@ Type any command above (e.g. pm list packages -d)</div>
 
         async function cdBatch(act) {
             if (cd.batchBusy || !cd.sel.size) return;
+            const serial = cd.serial;                                   // the whole batch goes to this device, whatever is chosen meanwhile
             const pkgs = Array.from(cd.sel);
             if ((act === 'uninstall' || (act === 'disable' && pkgs.length > 1)) && !(await cdAsk({
                 title: (act === 'uninstall' ? 'Uninstall ' : 'Freeze ') + pkgs.length + (pkgs.length === 1 ? ' app?' : ' apps?'), text: pkgs.map(p => cdApp(p).name).join(', '),
                 ok: act === 'uninstall' ? 'Uninstall' : 'Freeze', danger: act === 'uninstall' }))) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             cd.batchBusy = true;
+            cdRenderDevices();                                          // the device select is locked for the run
             const failed = [];
             let done = 0;
             const results = [];
             rowBusySet(pkgs, 'Working…', 'd');
             for (const p of pkgs) {
                 document.getElementById('cdBatchCount').innerText = (done + 1) + ' of ' + pkgs.length + '...';
-                const r = await cdDo(act, p, { check: false });
+                const r = await cdDo(act, p, { check: false, serial: serial });
                 results.push([p, r]);
                 done++;
             }
@@ -24910,7 +24929,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 document.getElementById('cdBatchCount').innerText = 'Checking the device…';
                 progressToast('Checking the device…');
                 rowBusySet(pkgs, 'Checking…', 'd');
-                checked = await cdCheckStates(act, pkgs);
+                checked = await cdCheckStates(act, pkgs, serial);
                 rowBusySet(pkgs, '', 'd');
             }
             rowBusySet(pkgs, '', 'd');
@@ -24921,6 +24940,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             cd.batchBusy = false;
             cd.sel.clear();
+            cdRenderDevices();
             cdAppsRender();
             if (!failed.length) showToast(CD_ACT_DONE[act] + ' ' + done + (done === 1 ? ' app' : ' apps'));
             else cdSheetOpen({ title: failed.length + ' of ' + done + ' did not work', body: '<div class="cd-log" translate="no">' + escapeHtml(failed.join('\n')) + '</div>' });
@@ -34200,11 +34220,21 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             return out;
         }
-        function sdbRestoreFrom(text) {
-            const all = sdbRestoreParse(text);
-            if (all === null) { showToast('That is not a Hidden Settings backup from this app'); return; }
-            if (!all.length) { showToast('Nothing usable in that file'); return; }
-            const cur = (ns, k) => sdbData[ns] ? (sdbData[ns].has(k) ? sdbData[ns].get(k) : null) : undefined;       // undefined: that table is not read yet
+        function sdbRestoreFrom(text, tried) {
+            const parsed = sdbRestoreParse(text);
+            if (parsed === null) { showToast('That is not a Hidden Settings backup from this app'); return; }
+            if (!parsed.length) { showToast('Nothing usable in that file'); return; }
+            // a table not read yet is read first: a value put into it without its "before" known would be journaled as new, and Revert would delete it
+            const unread = SDB_TABLES.filter(ns => !sdbData[ns] && parsed.some(x => x.ns === ns));
+            if (unread.length && !tried) {
+                unread.forEach(ns => sdbReadTable(ns));
+                const wait = () => { if (unread.some(ns => sdbLoading[ns])) setTimeout(wait, 100); else sdbRestoreFrom(text, true); };
+                setTimeout(wait, 100);
+                return;
+            }
+            const all = parsed.filter(x => !!sdbData[x.ns]);
+            if (!all.length) { showToast('Could not read the settings'); return; }
+            const cur = (ns, k) => sdbData[ns].has(k) ? sdbData[ns].get(k) : null;
             const todo = all.filter(x => cur(x.ns, x.key) !== x.value);
             const same = all.length - todo.length;
             if (!todo.length) { showToast('All ' + all.length + ' settings are already as in the backup'); return; }
