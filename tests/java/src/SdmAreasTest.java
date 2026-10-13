@@ -179,6 +179,9 @@ public class SdmAreasTest {
         Runner ar = new Runner();
         ar.mode = "standard";
         SdmAreas areas = new SdmAreas(new SdmShell(ar), jfs, cfg, new SdmAreas.Access() { @Override public boolean storage() { return storage[0]; } });
+        eq("the user id is the host's (0 unless it says otherwise)", areas.userId(), 0);
+        SdmAreas.Config cu = new SdmAreas.Config(); cu.userId = 10;
+        eq("a secondary user is reported as such", new SdmAreas(new SdmShell(new Runner() {{ mode = "standard"; }}), jfs, cu, null).userId(), 10);
 
         // no privilege, All-files access
         List<Sdm.AreaInfo> l = areas.all();

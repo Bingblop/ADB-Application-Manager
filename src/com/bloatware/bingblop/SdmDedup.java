@@ -584,7 +584,7 @@ public final class SdmDedup implements Sdm.ToolImpl {
             if (selection.dropGroups.contains(c.id)) continue;
             Set<String> prot = new HashSet<String>();
             for (Dup d : c.files) if (selection.dropItems.contains(d.path)) prot.add(d.path);
-            if (!deleteAll && prot.isEmpty()) prot.add(c.keeper().path);       // at least one copy stays
+            if (!deleteAll) prot.add(c.keeper().path);       // the kept copy always stays (the page shows it as "Kept" with no checkbox, so nobody can protect it by hand); only Delete all may take it
             List<Dup> go = new ArrayList<Dup>(), stay = new ArrayList<Dup>();
             for (Dup d : c.files) (prot.contains(d.path) ? stay : go).add(d);
             if (go.isEmpty()) continue;

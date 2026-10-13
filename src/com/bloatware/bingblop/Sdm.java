@@ -118,6 +118,8 @@ public final class Sdm {
         AreaInfo get(Area a);
         /** The area a path is in (the deepest root that is an ancestor, never SDCARD for Android/data|media|obb), or null. */
         AreaInfo areaOf(String path);
+        /** The Android user this app runs as (0 on the system user): the per-user areas (app data, the user's system folders) are that user's. */
+        default int userId() { return 0; }
     }
 
     public static final class Pkg {
