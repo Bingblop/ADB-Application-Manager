@@ -139,6 +139,11 @@ public final class Sdm {
         Set<String> running();
         /** Cache size of one app through StorageStatsManager (needs Usage access), or -1. */
         long cacheBytes(String pkg);
+        /**
+         * Packages the cleaner must never force-stop or drive through their App info screen, whatever the exclusions say: the ones the phone itself runs
+         * its screens on right now (the current WebView provider). Read at run time, empty when it cannot be told.
+         */
+        default Set<String> neverDrive() { return java.util.Collections.<String>emptySet(); }
     }
 
     public interface Exclusions {

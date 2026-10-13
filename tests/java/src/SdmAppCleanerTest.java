@@ -57,6 +57,7 @@ public class SdmAppCleanerTest {
         final Map<String, Sdm.Pkg> pkgs = new java.util.LinkedHashMap<String, Sdm.Pkg>();
         final Map<String, Long> priv = new HashMap<String, Long>();
         final Set<String> running = new HashSet<String>();
+        final Set<String> never = new HashSet<String>();          // what the Android layer reports as the packages the phone's own screens run on
         final AtomicInteger cacheCalls = new AtomicInteger();
         String pubData;
         Sdm.Pkg add(String pkg, String label, boolean system) {
@@ -79,6 +80,7 @@ public class SdmAppCleanerTest {
         @Override public List<Sdm.Pkg> installed() { return new ArrayList<Sdm.Pkg>(pkgs.values()); }
         @Override public Sdm.Pkg get(String pkg) { return pkgs.get(pkg); }
         @Override public Set<String> running() { return running; }
+        @Override public Set<String> neverDrive() { return never; }
         @Override public long cacheBytes(String pkg) { cacheCalls.incrementAndGet(); Long v = priv.get(pkg); return v == null ? -1 : v + pub(pkg); }
     }
 
@@ -835,6 +837,39 @@ public class SdmAppCleanerTest {
         } catch (AssertionError e) { throw e; } finally { p.cleanup(); }
     }
 
+    /** This app, the WebView providers and a package the Android layer reports are neither force-stopped nor driven nor called failed, with the default exclusions removed. */
+    static void testNeverDrive() throws Exception {
+        SdmAppCleaner.trimWaitMs = 0; SdmAppCleaner.pollIntervalMs = 5; SdmAppCleaner.trimPollTimeoutMs = 100; SdmAppCleaner.recheckTimeoutMs = 100; SdmAppCleaner.settleTimeoutMs = 200;
+        final String own = "com.bloatware.bingblop", web = "com.google.android.webview", web2 = "com.android.webview", provider = "com.vendor.webviewprovider";
+        String[] guarded = { own, web, web2, provider };
+        for (int mode = 0; mode < 2; mode++) {                     // 0: no shell (the automation alone), 1: ADB shell, a trim that clears nothing, force stop before clearing
+            String saved = SdmAppCleaner.ownPkg;
+            Phone p = deletePhone();
+            try {
+                for (String g : guarded) p.pkgs.add(g, g, false);
+                p.pkgs.never.add(provider);
+                for (String k : new String[] { "com.alpha", "com.beta", own, web, web2, provider }) p.pkgs.setTotal(k, 10000L + k.length());
+                for (String g : guarded) { p.auto.failure.put(g, "OTHER"); p.auto.willFail.add(g); }
+                if (mode == 1) { p.shell = new FakeShell(2000); p.set("forcestop.before.clearing.enabled", true); }
+                SdmAppCleaner.ownPkg = "x.nobody";                  // so that the scan lists this app's package like any other
+                SdmAppCleaner.AppResult r = p.scan();
+                SdmAppCleaner.ownPkg = saved;
+                for (String g : guarded) is("mode " + mode + ": " + g + " is in the result, so the guard is what keeps it out", r.find(g) != null && r.find(g).inacc != null, true);
+                p.delete(r, sel("{}"));
+                is("mode " + mode + ": the automation ran for the ordinary apps", p.auto.asked != null && p.auto.asked.contains("com.alpha") && p.auto.asked.contains("com.beta"), true);
+                for (String g : guarded) {
+                    is("mode " + mode + ": " + g + " is not handed to the automation", p.auto.asked != null && !p.auto.asked.contains(g), true);
+                    is("mode " + mode + ": " + g + " is not called a failure", r.find(g) != null && r.find(g).acsError == null, true);
+                    if (p.shell != null) is("mode " + mode + ": " + g + " is not force-stopped", !p.shell.ran("force-stop --user 0 " + g) && !p.shell.ran(" " + g + "\n"), true);
+                }
+                if (p.shell != null) {
+                    is("mode " + mode + ": the ordinary apps are force-stopped", p.shell.ran("am force-stop --user 0 com.alpha") || p.shell.ran("force-stop --user 0 com.alpha"), true);
+                    is("mode " + mode + ": the global trim still ran", p.shell.ran("pm trim-caches 128G"), true);
+                }
+            } finally { SdmAppCleaner.ownPkg = saved; p.cleanup(); }
+        }
+    }
+
     static void testAutomation() throws Exception {
         // --- no shell at all: the automation clears what is left; the freed space is measured
         Phone p = deletePhone();
@@ -1082,6 +1117,7 @@ public class SdmAppCleanerTest {
             testSafety();
             testTrimAndAutomation();
             testAutomation();
+            testNeverDrive();
             testResultText();
             testExclusionsAfterScan();
         } catch (Throwable t) {

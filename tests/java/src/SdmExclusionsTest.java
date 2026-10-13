@@ -29,7 +29,7 @@ public class SdmExclusionsTest {
     public static void main(String[] args) throws Exception {
         // ---------- the defaults
         SdmExclusions ex = new SdmExclusions(tmp());
-        eq("three defaults", ex.list().size(), 3);
+        eq("nine defaults: three stock ones, this app and the five WebView providers", ex.list().size(), 9);
         is("default pkg for AppCleaner", ex.excludesPackage(AC, "com.starfinanz.mobile.android.pushtan"), true);
         is("default pkg 2", ex.excludesPackage(AC, "de.zollsoft.impfapp"), true);
         is("default pkg is not for SystemCleaner", ex.excludesPackage(SC, "de.zollsoft.impfapp"), false);
@@ -40,6 +40,17 @@ public class SdmExclusionsTest {
         for (SdmExclusions.Exclusion e : ex.list()) is("default flag " + e.id(), e.isDefault, true);
         eq("default id", ex.get("PathExclusion-/data/rootfs").id(), "PathExclusion-/data/rootfs");
         is("default has a reason", ex.get("PkgExclusion-de.zollsoft.impfapp").reason.contains("sdmaid-se/issues/618"), true);
+
+        // ---------- this app and Android System WebView are excluded from AppCleaner by default
+        String[] never = { "com.bloatware.bingblop", "com.google.android.webview", "com.google.android.webview.beta", "com.google.android.webview.dev", "com.google.android.webview.canary", "com.android.webview" };
+        for (String pk : never) {
+            SdmExclusions.Exclusion d = ex.get("PkgExclusion-" + pk);
+            is(pk + " is a default", d != null && d.isDefault, true);
+            is(pk + " is excluded for AppCleaner", ex.excludesPackage(AC, pk), true);
+            is(pk + " is not excluded for SystemCleaner", ex.excludesPackage(SC, pk), false);
+            is(pk + " is tagged appcleaner only", d != null && d.tags.size() == 1 && d.tags.contains("appcleaner"), true);
+            is(pk + " has a plain sentence as its reason, no link", d != null && d.reason.length() > 20 && !d.reason.contains("http"), true);
+        }
 
         // ---------- path exclusions
         ex.save(SdmExclusions.Exclusion.path("/storage/emulated/0/Keep/", Arrays.asList("systemcleaner")));
@@ -140,7 +151,7 @@ public class SdmExclusionsTest {
         SdmExclusions rx = new SdmExclusions(tmp());
         rx.remove(Arrays.asList("PathExclusion-/data/rootfs"));
         is("a removed default is gone", rx.excludesPath(SC, "/data/rootfs/a"), false);
-        eq("two defaults left", rx.list().size(), 2);
+        eq("eight defaults left", rx.list().size(), 8);
         eq("defaultsRemoved", rx.defaultsRemoved(), 1);
         rx.restoreDefaults();
         is("restored", rx.excludesPath(SC, "/data/rootfs/a"), true);
@@ -149,11 +160,19 @@ public class SdmExclusionsTest {
         eq("a user exclusion with the same id shadows the default", rx.get("PkgExclusion-de.zollsoft.impfapp").isDefault, false);
         is("the shadow's tags count, not the default's", rx.excludesPackage(AC, "de.zollsoft.impfapp"), false);
         is("shadow", rx.excludesPackage(SC, "de.zollsoft.impfapp"), true);
-        eq("shadowed default is not listed twice", rx.list().size(), 3);
+        eq("shadowed default is not listed twice", rx.list().size(), 9);
         rx.remove(Arrays.asList("PkgExclusion-de.zollsoft.impfapp"));
         is("removing the shadow takes the user exclusion", rx.excludesPackage(SC, "de.zollsoft.impfapp"), false);
         rx.remove(Arrays.asList("PathExclusion-/nothing"));
-        eq("removing an unknown id is harmless", rx.list().size() >= 2, true);
+        eq("removing an unknown id is harmless", rx.list().size() >= 8, true);
+        // a stock WebView default is removable and comes back with Restore defaults, like the others
+        rx.remove(Arrays.asList("PkgExclusion-com.google.android.webview", "PkgExclusion-com.bloatware.bingblop"));
+        is("a removed WebView default is gone", rx.excludesPackage(AC, "com.google.android.webview"), false);
+        is("a removed own-app default is gone", rx.excludesPackage(AC, "com.bloatware.bingblop"), false);
+        is("the others stay", rx.excludesPackage(AC, "com.google.android.webview.beta"), true);
+        rx.restoreDefaults();
+        is("restoring brings the WebView default back", rx.excludesPackage(AC, "com.google.android.webview"), true);
+        is("... and this app's", rx.excludesPackage(AC, "com.bloatware.bingblop"), true);
 
         // ---------- the file
         File dir = tmp();
@@ -173,7 +192,7 @@ public class SdmExclusionsTest {
         is("the file holds the upstream shapes", stored.contains("\"pkgId\"") && stored.contains("\"file\"") && stored.contains("\"allowPartial\""), true);
         Files.write(new File(dir, "exclusions.json").toPath(), "{ damaged".getBytes("UTF-8"));
         SdmExclusions p3 = new SdmExclusions(dir);
-        eq("a damaged file gives the defaults", p3.list().size(), 3);
+        eq("a damaged file gives the defaults", p3.list().size(), 9);
 
         // ---------- export / import
         SdmExclusions xe = new SdmExclusions(tmp());
@@ -190,7 +209,7 @@ public class SdmExclusionsTest {
         is("imported pkg", xi.excludesPackage(SC, "test.pkg"), true);
         is("imported path", xi.excludesPath(AC, "/test/path/a"), true);
         eq("importing again merges (same count, no duplicates)", xi.importJson(json), 3);
-        eq("no duplicates", xi.list().size(), 3 + 3);
+        eq("no duplicates", xi.list().size(), 9 + 3);
         String upstream = "{\"exclusionRaw\": \"[{\\\"pkgId\\\":{\\\"name\\\":\\\"a.b\\\"},\\\"tags\\\":[\\\"SWIPER\\\"]},{\\\"path\\\":{\\\"file\\\":\\\"/u\\\"},\\\"tags\\\":[\\\"SWIPER\\\",\\\"CORPSEFINDER\\\"]}]\", \"version\": 1}";
         SdmExclusions xu = new SdmExclusions(tmp());
         eq("tags of dropped tools: a swiper-only entry is skipped, a mixed one keeps its known tags", xu.importJson(upstream), 1);
