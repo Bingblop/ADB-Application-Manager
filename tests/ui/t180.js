@@ -208,9 +208,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const rowAfter = await page.locator('.upd-row:has-text("Charlie") .upd-head button').innerText();
   check('   an update check that ends while the question is open keeps the row waiting (Update stays off)', rowAfter.trim() === 'Waiting for OK' && await page.locator('.upd-row:has-text("Charlie") .upd-head button').isDisabled(), rowAfter);
   check('   Update All does not count the app that is waiting', await ev(() => !document.getElementById('updAllBtn') || document.getElementById('updAllBtn').style.display === 'none' || !/Charlie/.test(JSON.stringify(updList.filter(x => !(updProgress[x.pkg] && ['done', 'downloading', 'installing', 'confirming'].includes(updProgress[x.pkg].stage))).map(x => x.name)))));
-  await ev(() => window.onUpdateProgress(JSON.stringify({ pkg: 'com.c', stage: 'error', percent: 0, message: 'Update cancelled. Nothing was installed.' }))); await sleep(40);
+  const histBefore = await ev(() => getHistory().length);
+  await ev(() => window.onUpdateProgress(JSON.stringify({ pkg: 'com.c', stage: 'cancelled', percent: 0, message: 'Update cancelled. Nothing was installed.' }))); await sleep(40);
   const rowErr = await page.locator('.upd-row:has-text("Charlie")').innerText();
-  check('   a No from the app ends as a failed row that can be tried again', /Update cancelled\. Nothing was installed\./.test(rowErr) && /Retry/.test(rowErr), rowErr.replace(/\s+/g, ' ').slice(0, 120));
+  check('   a No from the app (stage cancelled) ends as a row that says so and can be tried again, not as a failure', /Update cancelled\. Nothing was installed\./.test(rowErr) && /Update/.test(rowErr) && !/Retry/.test(rowErr), rowErr.replace(/\s+/g, ' ').slice(0, 120));
+  check('   nothing is written to the history for it', await ev(() => getHistory().length) === histBefore && !(await ev(() => /Update failed/.test(document.body.innerText))));
 
   check('errors', errors.length === 0, JSON.stringify(errors));
   await b.close();

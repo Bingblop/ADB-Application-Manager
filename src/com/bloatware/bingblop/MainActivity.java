@@ -2536,7 +2536,11 @@ public class MainActivity extends Activity {
     /** Downloads the official APK, verifies it, and installs it through the active privileged mode. */
     private void runInstallUpdate(final String pkg) {
         final JSONObject u = updateResults.get(pkg);
-        if (u == null || !installingUpdates.add(pkg)) return;
+        if (u == null) {                    // a new check replaced the list meanwhile: the page is told, or its row would wait forever
+            progress(pkg, "cancelled", 0, "Update cancelled: this update is no longer in the list. Check for updates again.");
+            return;
+        }
+        if (!installingUpdates.add(pkg)) return;    // already running: that run reports
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -2545,7 +2549,7 @@ public class MainActivity extends Activity {
                     String source = u.optString("source");
                     if ("self".equals(source) || "external".equals(source)) throw new IllegalStateException("this update opens in the browser or Obtainium");
                     if ("standard".equals(resolveExecMode())) {
-                        throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                        throw new InstallCancelled("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                     }
                     apk.getParentFile().mkdirs();
                     progress(pkg, "downloading", 0, "Getting download link...");
@@ -2587,12 +2591,12 @@ public class MainActivity extends Activity {
                     // what was read from the downloaded file itself. A yes given for the whole "Update all" list already covers this app.
                     if (!takeUpdateApproval(pkg)) {
                         String mode = resolveExecMode();
-                        if (!isPrivilegedMode(mode)) throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                        if (!isPrivilegedMode(mode)) throw new InstallCancelled("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                         String label = u.optString("name");
                         progress(pkg, "confirming", 100, "Waiting for your OK to update " + (label.isEmpty() ? pkg : label) + "...");
                         if (!confirmInMode(mode, null, InstallConfirm.messageUpdate(label, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl),
                                 InstallConfirm.hostOf(url), installedVersionOrNull(pkg), mode))) {
-                            throw new IllegalStateException("Update cancelled. Nothing was installed.");
+                            throw new InstallCancelled("Update cancelled. Nothing was installed.");
                         }
                     }
                     progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
@@ -2604,7 +2608,8 @@ public class MainActivity extends Activity {
                         throw new IllegalStateException(out.trim().isEmpty() ? "install failed" : out.trim());
                     }
                 } catch (Exception e) {
-                    progress(pkg, "error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                    // "cancelled": a No to the question, or no privileged mode - nothing was tried, and the page does not count it as a failure
+                    progress(pkg, e instanceof InstallCancelled ? "cancelled" : "error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 } finally {
                     apk.delete();
                     installingUpdates.remove(pkg);

@@ -10857,8 +10857,10 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavLP = { slot, x: e.clientX, y: e.clientY, fired: false };
             bnavLP.timer = setTimeout(() => {
                 if (!bnavLP) return;
+                const key = slot.dataset.tab, nav = bnavEl();
+                const cur = slot.isConnected ? slot : (nav && nav.querySelector('.bn-item[data-tab="' + key + '"]')) || slot;     // a badge update redraws the bar during the hold: the slot is found again by its tab
                 bnavLP.fired = true;
-                if (!bnavMenuOpen(slot.dataset.tab, slot)) bnavLP.fired = false;
+                if (!bnavMenuOpen(key, cur)) bnavLP.fired = false;
             }, BNAV_HOLD_MS);
             document.addEventListener('pointermove', bnavHoldMove);
             document.addEventListener('pointerup', bnavHoldEnd);
@@ -11062,13 +11064,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'extrasettings') { animShow(); brShow(); telShow(); }
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'terminal' && typeof onTerminalShown === 'function') onTerminalShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
@@ -13905,6 +13901,7 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[pkg] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(pkg);
+            updStartWatch(pkg);
         }
 
         // One at a time, so downloads don't compete and installs don't overlap.
@@ -13950,8 +13947,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function updStartQueue(pkgs) {
-            updQueue = pkgs.slice();
-            updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
+            pkgs.forEach(p => { if (!updQueue.includes(p)) updQueue.push(p); });          // a second Update All (after failures) joins the apps still waiting; it does not replace them
+            pkgs.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
             renderUpdates();
             startNextQueuedUpdate();
         }
@@ -13967,6 +13964,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onUpdateAllAnswer = onUpdateAllAnswer;
 
+        let UPD_START_WAIT_MS = 15000;          // let: the UI script shortens the wait
+        // The app answers installUpdate with a progress event within moments. If none comes (it did not take the request), the row must not stay "Downloading" forever.
+        function updStartWatch(pkg) {
+            const row = updProgress[pkg];
+            setTimeout(() => { if (row && updProgress[pkg] === row) onUpdateProgress(JSON.stringify({ pkg, stage: 'error', percent: 0, message: 'Could not start the update' })); }, UPD_START_WAIT_MS);
+        }
         function startNextQueuedUpdate() {
             const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing' || p.stage === 'confirming');
             if (busy) return;
@@ -13975,12 +13978,18 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(next);
+            updStartWatch(next);
         }
 
         // Called by MainActivity while an update downloads and installs
         function onUpdateProgress(json) {
             const p = JSON.parse(json || '{}');
             updProgress[p.pkg] = p;
+            if (p.stage === 'cancelled') {                           // a No to the app's question, or no privileged mode: nothing was tried, so not a failure in the history
+                showToast(p.message || 'Updates cancelled');
+                updateUpdatesTabBadge();
+                setTimeout(startNextQueuedUpdate, 300);
+            }
             if (p.stage === 'done' || p.stage === 'error') {
                 const u = updList.find(x => x.pkg === p.pkg);
                 recordHistory('updates', (p.stage === 'done' ? 'Updated ' : 'Update failed: ') + (u ? u.name : p.pkg),
@@ -16620,7 +16629,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!lp.ok) return { profErr: lp.error || txT('The phone did not answer.'), lowPower: null, fixed: null };
             const lowPower = lp.value == null ? null : String(lp.value).trim();
             let help = xdz.help;
-            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output) || { fixed: false, adaptive: false, unknown: true }; }
+            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output); }       // no answer (a timeout, an empty output) is not kept: the next read asks again
             const fx = await xqRun("dumpsys power | grep -iE 'fixed.?performance' | head -n 3", 8000);
             return { profErr: null, lowPower, help, fixed: xdzParseFixed(fx.output) };
         }
@@ -32415,8 +32424,8 @@ Type any command above (e.g. pm list packages -d)</div>
             txCloseTermux();
             const sel = document.getElementById('txShell');
             if (sel) sel.value = 'termux';
+            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // when it is up: what it took over (set first: a start that fails at once clears it)
             txPickShell('termux');                                   // starts it again, with the Termux environment on
-            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // and when it is up: what it took over
             showToast('Syncing with Termux...');
         }
         function txTermuxStorage() { haptic(); txCloseSettings(); txCloseTermux(); txOpenTermux(TX_STORAGE_CMD); }
@@ -37077,7 +37086,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return new Promise(resolve => {
                 let done = false;
                 mpSheetOpen({ title: o.title, sub: o.sub || '', body: '<div class="mp-note" style="white-space:pre-line;">' + escapeHtml(o.text || '') + '</div>',
-                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', fn: () => { done = true; resolve(i); } })), onClose: () => { if (!done) resolve(-1); } });
+                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', keep: true, fn: () => { done = true; resolve(i); mpSheetClose(); } })), onClose: () => { if (!done) resolve(-1); } });
             });
         }
         async function mpStart() {
@@ -37259,7 +37268,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         async function mpHelperOpen(pkg, version) {
             await mpHelperLoad();
-            mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
+            if (mp.h && mp.h.busy) mp.h.tab = 'get';           // a download is running: its state (and its result, when it comes) stays
+            else mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
             mpSheetOpen({ title: 'Morphe Helper', sub: 'Get the original app the patches need (APK, APKM, APKS or XAPK)', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
             mp.helperOpen = true;
             mpHelperRender();
