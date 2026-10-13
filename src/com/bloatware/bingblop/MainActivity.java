@@ -7654,7 +7654,13 @@ public class MainActivity extends Activity {
             tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
             files.addAll(MorpheLibrary.unzipApks(apk, tmp));
         } else {
-            files.add(apk);
+            // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
+            // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
+            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
+            tmp.mkdirs();
+            File copy = new File(tmp, apk.getName());
+            copyFile(apk, copy);
+            files.add(copy);
         }
         String out;
         String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
