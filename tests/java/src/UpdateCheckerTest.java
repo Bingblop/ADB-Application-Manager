@@ -37,7 +37,9 @@ public class UpdateCheckerTest {
 
   static final class FakeClock implements UpdateChecker.Clock {
     final AtomicLong t = new AtomicLong(1_800_000_000_000L);
-    public long now() { return t.get(); }
+    final AtomicLong wallStep = new AtomicLong();              // a jump of the wall clock alone (the phone synced its time): now() moves, monotonicMs() does not
+    public long now() { return t.get() + wallStep.get(); }
+    @Override public long monotonicMs() { return t.get(); }
     void advance(long ms) { t.addAndGet(ms); }
   }
 
@@ -56,6 +58,7 @@ public class UpdateCheckerTest {
     final List<String> log = Collections.synchronizedList(new ArrayList<String>());
     final AtomicLong cost = new AtomicLong();
     final CountDownLatch release = new CountDownLatch(1);
+    volatile Runnable onRequest;                    // run on every GET, after it is logged (a test can step the clock mid-run)
     volatile boolean offline;
     volatile boolean allDead;                       // every host times out at connect, also one reached only on a fallback (the per-app catalog files, the release pages)
     volatile long deadRealMs;                       // a dead host also takes this long in real time (the workers overlap)
@@ -90,6 +93,8 @@ public class UpdateCheckerTest {
     public byte[] get(String url, String accept, String bearer, int maxBytes) throws Exception {
       String host = UpdateChecker.hostOf(url);
       log.add(url);
+      Runnable hook = onRequest;
+      if (hook != null) hook.run();
       AtomicInteger c = perHost.get(host);
       if (c == null) { perHost.putIfAbsent(host, new AtomicInteger()); c = perHost.get(host); }
       int nth = c.incrementAndGet();
@@ -311,6 +316,8 @@ public class UpdateCheckerTest {
     persistTests();
     breakerTests();
     deadlineCancelOfflineTests();
+    clockStepTests();
+    compareVersionsTests();
     githubLimitTests();
     catalogFallbackTests();
     retryTests();
@@ -634,6 +641,36 @@ public class UpdateCheckerTest {
     w5.net.statuses.put("apt.izzysoft.de", 500);
     JSONObject s5 = run(w5, new UpdateCache(tempDir(), w5.clock), w5.options(), new Events());
     is("breaker: a host that answers with HTTP 500 is not 'unreachable' (it answered): its apps fail with the status, the host is not given up on", s5.optJSONArray("hostsDown").length() == 0 && s5.optJSONArray("failed").length() > 0 && s5.optJSONArray("failed").optJSONObject(0).optString("code").equals("http"));
+  }
+
+  /** The phone syncs its time an hour forward in the middle of a run: the deadline runs on the monotonic time, so nothing is 'timed out'. */
+  static void clockStepTests() throws Exception {
+    final World w = new World(5000);
+    w.net.onRequest = new Runnable() { public void run() {
+      if (w.net.log.size() == 5) w.clock.wallStep.set(3_600_000L);
+      try { Thread.sleep(10); } catch (InterruptedException ignored) {}      // a little real time per request, so the run is still going once the clock has stepped
+    } };
+    long wall0 = w.clock.now();
+    JSONObject s = run(w, new UpdateCache(tempDir(), w.clock), w.options(), new Events());
+    is("clock step: the wall clock did jump an hour during the run (" + w.net.log.size() + " requests)", w.clock.now() - wall0 >= 3_600_000L && w.net.log.size() > 5);
+    is("clock step: the run was not expired by it: nothing timed out, nothing failed, every update found (" + s.optInt("timedOut") + " timed out, " + s.optJSONArray("failed").length() + " failed)",
+        s.optInt("timedOut") == 0 && s.optJSONArray("failed").length() == 0 && updatesWithoutSelf(s) == w.expectedUpdates() && !s.optBoolean("cancelled"));
+    long m1 = UpdateChecker.SYSTEM_CLOCK.monotonicMs(), m2 = UpdateChecker.SYSTEM_CLOCK.monotonicMs();
+    is("clock step: the system clock's monotonic time only moves forward and is not the wall clock", m2 >= m1 && Math.abs(UpdateChecker.SYSTEM_CLOCK.now() - m1) > 86_400_000L);
+  }
+
+  /** The order of versions the check decides 'up to date' by: numbers first; on a tie a pre-release is older than the release, a trailing number is a newer build. */
+  static void compareVersionsTests() {
+    is("compareVersions: a pre-release is older than the release (2.0-beta1 < 2.0)", UpdateManager.compareVersions("2.0-beta1", "2.0") < 0 && UpdateManager.compareVersions("2.0", "2.0-beta1") > 0);
+    is("compareVersions: a trailing number is a newer build (v1.2.3-4 > 1.2.3)", UpdateManager.compareVersions("v1.2.3-4", "1.2.3") > 0 && UpdateManager.compareVersions("1.2.3", "v1.2.3-4") < 0);
+    is("compareVersions: trailing numbers compare as numbers (1.2.3-1 < 1.2.3-2, -9 < -10)", UpdateManager.compareVersions("1.2.3-1", "1.2.3-2") < 0 && UpdateManager.compareVersions("1.2.3-9", "1.2.3-10") < 0 && UpdateManager.compareVersions("1.2.3-2", "1.2.3-2") == 0);
+    is("compareVersions: the pre-release words, any case, in order (2.0-Alpha < 2.0-beta < 2.0-RC1 < 2.0-rc2 < 2.0), and a pre-release is older than a build number",
+        UpdateManager.compareVersions("2.0-Alpha", "2.0-beta") < 0 && UpdateManager.compareVersions("2.0-beta", "2.0-RC1") < 0 && UpdateManager.compareVersions("2.0-RC1", "2.0-rc2") < 0
+        && UpdateManager.compareVersions("2.0-rc2", "2.0") < 0 && UpdateManager.compareVersions("2.0-PRE", "2.0") < 0 && UpdateManager.compareVersions("2.0-beta1", "2.0-1") < 0);
+    is("compareVersions: the numbers still decide first and any other suffix is ignored (3.10-Pro > 3.9, 2.0-beta1 > 1.9, 3.10-Pro == 3.10, v1.0.0 == 1.0.0, release-1.2.3 == 1.2.3)",
+        UpdateManager.compareVersions("3.10-Pro", "3.9") > 0 && UpdateManager.compareVersions("2.0-beta1", "1.9") > 0 && UpdateManager.compareVersions("2.0.1", "2.0-1") > 0
+        && UpdateManager.compareVersions("3.10-Pro", "3.10") == 0 && UpdateManager.compareVersions("v1.0.0", "1.0.0") == 0 && UpdateManager.compareVersions("release-1.2.3", "1.2.3") == 0
+        && UpdateManager.compareVersions("", "1.0") < 0 && UpdateManager.compareVersions(null, "") == 0);
   }
 
   static void deadlineCancelOfflineTests() throws Exception {
