@@ -484,7 +484,7 @@ Not run on a device. The bar was checked in headless Chromium at 360, 412 and 80
 
 ## 28. Bug fixes from the code review of 2026-10-13 (v7.13.1)
 
-Fifty-four fixes; the steps below exercise the ones a phone can show. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183 and #184); the steps below exercise the ones a phone can show. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
 
 **The eleven serious ones**
 
