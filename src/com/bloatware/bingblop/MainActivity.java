@@ -13643,6 +13643,11 @@ public class MainActivity extends Activity {
 
         /** Copies a SAF document as a new child of a plain filesystem folder, keeping its own name (recursive for a folder). */
         private String safCopyIntoPosix(Uri srcUri, File destDir) {
+            return safCopyIntoPosix(srcUri, destDir, null);
+        }
+
+        /** As above; {@code asName}, when not null, is the name the copy gets instead of the document's own (a "keep both" copy next to a clash). */
+        private String safCopyIntoPosix(Uri srcUri, File destDir, String asName) {
             try {
                 android.content.ContentResolver cr = getContentResolver();
                 String name = null, mime = null;
@@ -13652,8 +13657,13 @@ public class MainActivity extends Activity {
                 }, null, null, null);
                 if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
                 if (name == null) return "Could not read the source";
+                // the display name comes from the provider and is a name, never a path: a third-party provider answering "../x" or "a/b" must not write outside destDir
+                if (FileOps.badName(name) != null) return "Could not copy: the source has an unsafe name";
+                if (asName != null) name = asName;
                 boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
                 File dest = new File(destDir, name);
+                String canonRoot = destDir.getCanonicalPath();
+                if (!dest.getCanonicalPath().startsWith(canonRoot.endsWith(File.separator) ? canonRoot : canonRoot + File.separator)) return "Could not copy " + name;
                 if (isDir) {
                     if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
                     Uri srcTree = safTreeUri(srcUri);
@@ -13698,6 +13708,11 @@ public class MainActivity extends Activity {
          *  a same-folder rename has no such path string to build and uses fmRenameSaf instead. Returns "" on success,
          *  else an error message (never null). */
         private String fmOpSaf(String op, String a, String b) {
+            return fmOpSaf(op, a, b, null);
+        }
+
+        /** As above; {@code asName} is the name a copy into a plain folder gets (a "keep both" next to a clash), or null for the document's own. */
+        private String fmOpSaf(String op, String a, String b, String asName) {
             try {
                 if ("rm".equals(op)) {
                     boolean ok = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
@@ -13709,7 +13724,7 @@ public class MainActivity extends Activity {
                     boolean dstSaf = b.startsWith("content://");
                     String err = dstSaf
                             ? (srcSaf ? safCopyInto(Uri.parse(a), Uri.parse(b)) : safCopyPosixIntoSaf(new File(a), Uri.parse(b)))
-                            : safCopyIntoPosix(Uri.parse(a), new File(b));
+                            : safCopyIntoPosix(Uri.parse(a), new File(b), asName);
                     if (err != null) return err;
                     if ("mv".equals(op)) {
                         if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
@@ -13768,6 +13783,7 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < paths.size(); i++) {
                     if (fmBatchCancel) { cancelled = true; break; }
                     String q = paths.get(i);
+                    String asName = null;
                     String text = fmBatchLabel(op) + " " + (i + 1) + " of " + paths.size() + "…";
                     notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(text) + ")");
                     JobService.progress(MainActivity.this, text, paths.size() > 0 ? (i * 100) / paths.size() : 0);
@@ -13790,9 +13806,15 @@ public class MainActivity extends Activity {
                                     if ("skip".equals(policyName)) { skipped++; continue; }
                                     if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
                                 }
+                            } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
+                                // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
+                                if (FileOps.exists(new File(dest, name))) {
+                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if ("keep".equals(policyName)) asName = FileOps.uniqueName(new File(dest), name);
+                                }
                             }
                         }
-                        String err = fmOpSaf(op, q, dest);
+                        String err = fmOpSaf(op, q, dest, asName);
                         if (err.isEmpty()) done++;
                         else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
                     } catch (Throwable t) {

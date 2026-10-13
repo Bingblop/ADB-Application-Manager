@@ -719,6 +719,8 @@ public final class ZipTool {
             }
             if (e.size >= 0 && total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
             if (!e.foreign && !isAe2(e) && crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
+            // a folder in the way is never removed to make room for a file (an empty one would otherwise go with delete())
+            if (dest.isDirectory()) throw new IOException("\"" + e.name + "\": a folder named " + dest.getName() + " is in the way");
             if (!part.renameTo(dest)) {
                 dest.delete();
                 if (!part.renameTo(dest)) throw new IOException("Couldn't write " + dest);
@@ -796,7 +798,7 @@ public final class ZipTool {
             if (cb != null && !cb.onProgress(bytes, files, e.name)) throw new IOException("Cancelled");
             if (FileOps.exists(out)) {
                 if (policy == FileOps.SKIP) { kept++; continue; }
-                if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+                if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
             }
             try {
                 bytes += extractTo(a, e, out, protect);
@@ -837,7 +839,7 @@ public final class ZipTool {
                 if (e.linkTarget != null) { st[2]++; note(problems, e.name + ": symbolic link (not extracted)"); return true; }
                 if (FileOps.exists(out)) {
                     if (policy == FileOps.SKIP) { st[3]++; return true; }
-                    if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+                    if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
                 }
                 try {
                     checkTarget(a, out, protect);
