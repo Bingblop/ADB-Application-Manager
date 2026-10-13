@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADB Application Manager Pro</title>
+<meta name="description" content="Debloat, freeze, update and inspect every app from the phone itself, over ADB, Wireless Debugging, Shizuku or root. No ads, no account, no tracking.">
+<meta property="og:title" content="ADB Application Manager Pro">
+<meta property="og:description" content="Take full control of your Android phone, from the phone itself. ADB, Wireless Debugging, Shizuku or root. No ads, no account, no tracking.">
+<meta property="og:image" content="https://bingblop.github.io/ADB-Application-Manager/screenshots/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--bg2:#121a30;--card:#161f38;--line:rgba(140,165,230,.18);--fg:#eef2ff;--muted:#a9b4d6;--accent:#7aa2ff;--accent2:#4fd6c4;--ok:#5fd38a;--radius:16px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+a{color:var(--accent)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header.hero{background:radial-gradient(1100px 600px at 80% 0%,#1e2a4a 0%,var(--bg) 60%);padding:56px 0 40px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
+h1{font-size:clamp(34px,5vw,54px);line-height:1.04;margin:0 0 16px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--muted);margin:0 0 22px;max-width:52ch}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+.pill{font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid rgba(122,162,255,.45);background:rgba(122,162,255,.12)}
+.dl{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 20px;border-radius:12px;font-weight:700;text-decoration:none;color:#0b1020;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 10px 30px rgba(79,214,196,.18)}
+.btn small{display:block;font-weight:500;font-size:12px;opacity:.8}
+.btn.alt{background:var(--card);color:var(--fg);border:1px solid var(--line);box-shadow:none}
+.obt{display:inline-block;line-height:0}
+.obt img{height:52px;width:auto}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+.hero-art img{width:100%;height:auto;border-radius:var(--radius);box-shadow:0 30px 70px rgba(0,0,0,.5);border:1px solid var(--line)}
+section{padding:44px 0}
+h2{font-size:26px;margin:0 0 18px;letter-spacing:-.01em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.card h3{margin:0 0 6px;font-size:16px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.shots figure{margin:0}
+.shots img{width:100%;height:auto;aspect-ratio:360/740;object-fit:cover;object-position:top;border-radius:14px;border:1px solid var(--line);background:var(--bg2)}
+.shots figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);white-space:nowrap}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:var(--bg2);padding:2px 6px;border-radius:6px;word-break:break-all}
+footer{padding:30px 0 50px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--muted)}
+.ver{color:var(--ok);font-weight:600}
+@media (max-width:760px){.hero-grid{grid-template-columns:1fr}header.hero{padding:36px 0 28px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>ADB Application Manager <span>Pro</span></h1>
+      <p class="lead">Debloat, freeze, uninstall, update, install, back up and inspect every app. Edit Android's hidden settings. Run a real terminal. From the phone itself, no computer needed.</p>
+      <div class="pills"><span class="pill">ADB over TCP</span><span class="pill">Wireless Debugging</span><span class="pill">Shizuku</span><span class="pill">Root</span><span class="pill">No ads · no account · no tracking</span></div>
+      <div class="dl">
+        <a class="btn" id="dl-arm64" href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">Download APK <small>arm64-v8a · most phones since 2016</small></a>
+        <a class="btn alt" id="dl-universal" href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">Universal <small>both CPU types</small></a>
+        <a class="btn alt" id="dl-arm32" href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">32-bit <small>armeabi-v7a</small></a>
+        <a class="obt" href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.bloatware.bingblop%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FBingblop%2FADB-Application-Manager%22%2C%22author%22%3A%22Bingblop%22%2C%22name%22%3A%22ADB%20Application%20Manager%20Pro%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22arm64-v8a%5C%22%7D%22%7D" title="Get it on Obtainium"><img src="screenshots/badge_obtainium.png" alt="Get it on Obtainium"></a>
+      </div>
+      <p class="note">Latest release: <span class="ver" id="ver">see the Releases page</span>. Android 8.0 or newer. Installs over any earlier version; the signing certificate never changes. <a href="https://github.com/Bingblop/ADB-Application-Manager/releases">All releases and checksums</a>.</p>
+    </div>
+    <div class="hero-art"><img src="screenshots/social-preview.png" alt="Three screens of the app: the application list with the bottom bar, the Extra Settings tab with Private DNS, and the Console tab"></div>
+  </div>
+</header>
+
+<section class="wrap">
+  <h2>What it does</h2>
+  <div class="grid">
+    <div class="card"><h3>Debloat in minutes</h3><p>The 5,000-package UAD-NG list, a review step before anything runs, and one-tap Undo for every change. Freeze, uninstall or suspend system apps.</p></div>
+    <div class="card"><h3>Install and update</h3><p><code>.apk</code>, <code>.apks</code>, <code>.apkm</code> and <code>.xapk</code> with every <code>pm install</code> flag. Updates from GitHub, F-Droid, IzzyOnDroid, APKMirror, Galaxy Store and your own stores.</p></div>
+    <div class="card"><h3>Extra Settings</h3><p>Private DNS with fifteen services and a built-in speed test, animation speed, brightness bias, device telemetry, power and reboot, Doze, zram. Every change reads the phone back.</p></div>
+    <div class="card"><h3>Hidden settings and overlays</h3><p>Android's Global, Secure and System tables with plain-English descriptions, read-back proof and Undo. Material You colours and system overlays.</p></div>
+    <div class="card"><h3>Console and Terminal</h3><p>ADB Shell with a history of cards and Live Logcat. A real pty terminal with vim and htop, your own Termux, and optional AI coding agents that run commands only with your OK.</p></div>
+    <div class="card"><h3>Inspector, files, cleaner, patcher</h3><p>Ten tabs per app (permissions, components, manifest, signatures). A privileged file manager. SD Maid's four cleaning tools. Morphe patching on the phone.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Screens</h2>
+  <div class="shots">
+    <figure><img src="screenshots/v7.13.0/01-apps-bottom-bar.png" alt="Application list with the bottom bar"><figcaption>Every app, with the bottom bar</figcaption></figure>
+    <figure><img src="screenshots/v7.13.0/08-shortcut-menu.png" alt="Long-press shortcuts"><figcaption>Hold a tab for shortcuts</figcaption></figure>
+    <figure><img src="screenshots/v7.13.0/03-extra-settings-dns.png" alt="Private DNS tiles"><figcaption>Private DNS with a speed test</figcaption></figure>
+    <figure><img src="screenshots/v7.13.0/05-extra-settings-telemetry.png" alt="Device telemetry"><figcaption>Device telemetry</figcaption></figure>
+    <figure><img src="screenshots/v7.13.0/06-console.png" alt="Console tab"><figcaption>Console: ADB Shell</figcaption></figure>
+    <figure><img src="screenshots/v7.13.0/07-connected-devices-frozen.png" alt="Connected Devices"><figcaption>A watch or a second phone</figcaption></figure>
+  </div>
+  <p class="note">Screenshots come from the app's UI test harness (mock data, dark theme). More, including the light theme, in the <a href="https://github.com/Bingblop/ADB-Application-Manager/blob/main/docs/FULL-GUIDE.md#screenshots">full guide</a>.</p>
+</section>
+
+<section class="wrap">
+  <h2>Install in 30 seconds</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li>Download the APK above and open it; allow installs from your browser or file manager.</li>
+      <li>Pick a working mode: <b>ADB over TCP</b> (run <code>adb tcpip 5555</code> once from a computer), <b>Wireless Debugging</b> on Android 11+ (pairing from inside the app, no computer), <b>Shizuku</b>, or <b>root</b>. Without one, the app opens read-only and still shows everything.</li>
+      <li>Updating later: install the new APK over the old one, let the app tell you, or use Obtainium.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Verify what you downloaded</h2>
+  <div class="card">
+    <table>
+      <tr><td>Package</td><td><code>com.bloatware.bingblop</code></td></tr>
+      <tr><td>Signing certificate SHA-256</td><td><code>94:61:87:0F:7C:D2:40:64:06:A1:19:F4:D3:75:33:C2:3B:B7:D1:ED:85:05:06:BA:D7:EA:3E:6B:4B:D2:6D:17</code></td></tr>
+      <tr><td>File checksums</td><td><code>SHA256SUMS.txt</code> next to the APKs on every release</td></tr>
+      <tr><td>Read it from an APK</td><td><code>apksigner verify --print-certs file.apk</code></td></tr>
+    </table>
+    <p class="note" style="margin-bottom:0">A copy signed with another key will not install over the app, and the release workflow refuses to publish an APK that is not signed with this certificate.</p>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Honest notes</h2>
+  <div class="grid">
+    <div class="card"><h3>Testing</h3><p>Every change runs a UI suite and Java suites on a computer. Testing on phones is thin and community-driven; the <a href="https://github.com/Bingblop/ADB-Application-Manager/blob/main/docs/DEVICE-TEST-CHECKLIST.md">device checklist</a> lists the steps, and a <a href="https://github.com/Bingblop/ADB-Application-Manager/issues/new/choose">bug report</a> that names a step is the most useful thing you can send.</p></div>
+    <div class="card"><h3>Not on Play, F-Droid or IzzyOnDroid</h3><p>The working modes are outside Google Play's rules. F-Droid and IzzyOnDroid exclude apps that integrate with AI services, which the optional coding agents do. GitHub Releases and Obtainium are the channels.</p></div>
+    <div class="card"><h3>Privacy</h3><p>No ads, no account, no analytics, no server of ours. Your ADB key is generated on the phone. The only network calls are the ones you start: update checks, downloads, and the agents you configure with your own keys.</p></div>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <a href="https://github.com/Bingblop/ADB-Application-Manager">Source on GitHub</a> ·
+  <a href="https://github.com/Bingblop/ADB-Application-Manager/blob/main/CHANGELOG.md">Changelog</a> ·
+  <a href="https://github.com/Bingblop/ADB-Application-Manager/blob/main/docs/FULL-GUIDE.md">Full guide</a> ·
+  <a href="https://github.com/Bingblop/ADB-Application-Manager/discussions">Discussions</a> ·
+  <a href="https://github.com/Bingblop/ADB-Application-Manager/issues">Issues</a><br>
+  Built on UAD-NG, Exodus Privacy, Shizuku, Morphe, SD Maid SE and xterm.js; the full list is in <a href="https://github.com/Bingblop/ADB-Application-Manager/blob/main/NOTICE">NOTICE</a>.
+</div></footer>
+
+<script>
+// Point the three buttons at the latest release's files. If the API is unreachable the buttons keep the Releases page.
+(function () {
+  var map = { 'dl-arm64': /-arm64-v8a\.apk$/, 'dl-universal': /-universal\.apk$/, 'dl-arm32': /-armeabi-v7a\.apk$/ };
+  fetch('https://api.github.com/repos/Bingblop/ADB-Application-Manager/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (rel) {
+      if (!rel || !rel.assets) return;
+      Object.keys(map).forEach(function (id) {
+        var a = rel.assets.filter(function (x) { return map[id].test(x.name); })[0];
+        if (a) { var el = document.getElementById(id); el.href = a.browser_download_url; var s = el.querySelector('small'); if (s && a.size) s.textContent = s.textContent + ' · ' + (a.size / 1048576).toFixed(1) + ' MB'; }
+      });
+      if (rel.tag_name) document.getElementById('ver').textContent = rel.tag_name;
+    }).catch(function () {});
+})();
+</script>
+</body>
+</html>

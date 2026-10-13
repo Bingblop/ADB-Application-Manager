@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions, ideas and release announcements
+    url: https://github.com/Bingblop/ADB-Application-Manager/discussions
+    about: Discussions is the place for "how do I", feature ideas and the results of a phone test that passed.
+  - name: Device test checklist
+    url: https://github.com/Bingblop/ADB-Application-Manager/blob/main/docs/DEVICE-TEST-CHECKLIST.md
+    about: The phone checks for each release, numbered by section, to name in a bug report.
