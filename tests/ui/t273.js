@@ -1,6 +1,7 @@
-// The real terminal: keys and a resize sent while the session is still starting. The phone stores a session only after the process has been spawned, so keys and a resize sent
-// before the start notice are dropped there: the page now holds the keys while the session is starting and, when the start succeeds, sends the terminal's current size and then
-// the held keys in the order they were typed (a failed start, a restart and Close drop them).
+// The real terminal, two start-up problems. (1) The phone stores a session only after the process has been spawned, so keys and a resize sent before the start notice are dropped
+// there: the page now holds the keys while the session is starting and, when the start succeeds, sends the terminal's current size and then the held keys in the order they were
+// typed (a failed start, a restart and Close drop them). (2) rtOpen(backend) on a running session no longer relabels it: with no backend asked the running one is kept and shown
+// in the dropdown; an explicit, different backend does what picking it from the dropdown does (close, restart on it, remember it).
 // The mock phone below behaves like the Java side: ptyWrite / ptyResize reach a session only when it has been published (the start notice sent) and is still the current one.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
@@ -68,6 +69,36 @@ const { chromium, PAGE } = require('./lib/pw');
   check('keys held when the screen was closed are not sent into the session started afterwards', (await ph()).got.filter(x => x.w !== undefined).length === 0, JSON.stringify((await ph()).got));
   await ev(() => rtOpen()); await wait(300);
 
+  // ---- (2) rtOpen and the backend of the running session
+  // a clean page state: a running 'app' session, nothing remembered
+  await ev(() => { rtPickShell('app'); window.__kv.rt_shell = ''; window.__publish(true); }); await wait(200);
+  const base = await ph();
+  await page.click('.rt-x'); await wait(200);
+  await ev(() => { txState.shell = 'priv'; rtOpen(); }); await wait(400);
+  const a = await ev(() => ({ backend: rt.backend, sel: document.getElementById('rtShell').value, starts: window.__ph.starts.length, closes: window.__ph.closes, saved: kvGet('rt_shell', '') }));
+  check('rtOpen() with no backend keeps the running session and its label (the simple terminal switched to priv meanwhile)', a.backend === 'app' && a.sel === 'app' && a.starts === base.starts.length && a.closes === base.closes, JSON.stringify(a));
+  check('and remembers nothing', a.saved === '', JSON.stringify(a));
+
+  await page.click('.rt-x'); await wait(200);
+  await ev(() => rtOpen('termux')); await wait(500);
+  const t = await ev(() => ({ backend: rt.backend, sel: document.getElementById('rtShell').value, starts: window.__ph.starts, closes: window.__ph.closes, saved: kvGet('rt_shell', ''), state: rt.state }));
+  check('rtOpen("termux") on a running app session restarts it on termux, like the dropdown', t.starts.length === base.starts.length + 1 && t.starts[t.starts.length - 1].backend === 'termux' && t.closes === base.closes + 1 && t.state === 'starting', JSON.stringify(t));
+  check('the dropdown and the running backend agree', t.backend === 'termux' && t.sel === 'termux' && t.starts[t.starts.length - 1].backend === 'termux', JSON.stringify(t));
+  check('and the choice is remembered as the dropdown does', t.saved === 'termux', String(t.saved));
+  await ev(() => window.__publish(true)); await wait(100);
+
+  await page.click('.rt-x'); await wait(200);
+  await ev(() => { txState.shell = 'app'; rtOpen(); }); await wait(400);
+  const c = await ev(() => ({ backend: rt.backend, sel: document.getElementById('rtShell').value, starts: window.__ph.starts.length }));
+  check('rtOpen() afterwards leaves the termux session as it is', c.backend === 'termux' && c.sel === 'termux' && c.starts === t.starts.length, JSON.stringify(c));
+  await page.click('.rt-x'); await wait(200);
+  await ev(() => rtOpen('termux')); await wait(400);
+  const d = await ev(() => ({ closes: window.__ph.closes, starts: window.__ph.starts.length, sel: document.getElementById('rtShell').value }));
+  check('asking for the backend that already runs does not restart it', d.starts === t.starts.length && d.closes === t.closes && d.sel === 'termux', JSON.stringify(d));
+  await page.click('.rt-x'); await wait(200);
+  await ev(() => rtOpen('priv')); await wait(400);
+  const e = await ev(() => ({ backend: rt.backend, sel: document.getElementById('rtShell').value, last: window.__ph.starts[window.__ph.starts.length - 1].backend, saved: kvGet('rt_shell', '') }));
+  check('and asking for another one switches to it', e.backend === 'priv' && e.sel === 'priv' && e.last === 'priv' && e.saved === 'priv', JSON.stringify(e));
   console.log('errors:', JSON.stringify(errors));
   if (failed || errors.length) { console.log((failed || errors.length) + ' FAILED'); process.exit(1); }
   await b.close();

@@ -39374,9 +39374,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!window.AndroidBridge || !window.AndroidBridge.ptyStart) { showToast('The full-screen terminal needs the app (not a plain browser)'); return; }
             haptic();
             if (txFullOn) txFullToggle(false);
-            rt.backend = backend || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
-            if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
-            const sel = document.getElementById('rtShell'); if (sel) sel.value = rt.backend;
+            // A session that is running keeps its backend (the dropdown shows it). A backend asked for explicitly (the Termux setup button) that differs from the running one
+            // is picked as the dropdown would pick it (restart on it); either way an explicit choice is remembered like the dropdown does.
+            const want = ['app', 'priv', 'termux'].includes(backend) ? backend : '';
+            const switching = !!(rt.started && want && want !== rt.backend);
+            if (!rt.started) {
+                rt.backend = want || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
+                if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
+            }
+            if (want) kvSet('rt_shell', want);
+            const sel = document.getElementById('rtShell'); if (sel) sel.value = switching ? want : rt.backend;
             rt.font = Math.max(8, Math.min(28, parseInt(kvGet('rt_font', 14), 10) || 14));
             document.getElementById('rtOverlay').classList.add('show');
             document.body.classList.add('rt-open');
@@ -39385,7 +39392,7 @@ Type any command above (e.g. pm list packages -d)</div>
             rtSize();
             if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
             window.addEventListener('resize', rtSize);
-            rtLoad(() => { rtInit(); rtSize(); if (!rt.started) rtStart(); else rt.term.focus(); });
+            rtLoad(() => { rtInit(); rtSize(); if (switching) rtPickShell(want); else if (!rt.started) rtStart(); else rt.term.focus(); });
         }
         function rtHide() {
             rt.open = false;
