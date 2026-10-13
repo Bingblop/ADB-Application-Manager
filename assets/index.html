@@ -13141,6 +13141,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
                 `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:10px;">${escapeHtml(x.p.pkg)}</span></div>`).join('');
             pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
+            batchConfirmShowBody('confirm');                 // a batch before this left the modal on its progress body
             document.getElementById('batchConfirmModal').classList.add('show');
         }
 
@@ -19291,7 +19292,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
             let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
-            if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
+            if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
             const rows = (res.rows || []).map(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
@@ -21741,7 +21742,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (failed.length) {
                     showCommandResults('File manager', verb.toLowerCase(), failed.map(f => ({ name: fmBase(f.p), pkg: f.p, output: f.error, success: false })));
                 }
-                if (r.op === 'mv' && fmClip && !failed.length && !r.cancelled && !r.skipped) fmClip = null;
+                if (r.op === 'mv' && fmClip && !r.cancelled && (!r.skipped || Array.isArray(r.kept))) {       // kept: the items left alone, by path
+                    const left = new Set(failed.map(f => f.p).concat(Array.isArray(r.kept) ? r.kept : []));
+                    fmClip.paths = fmClip.paths.filter(p => left.has(p));
+                    if (!fmClip.paths.length) fmClip = null;
+                }
             }
             fmClipRender();
             fmRefresh();
@@ -22119,8 +22124,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cnt) cnt.innerHTML = fmSearchCountHtml + (fmSearchFilters.size ? ' · <span>' + fmSearchShown.length + ' shown</span>' : '');
             document.getElementById('fmSearchList').innerHTML = fmSearchNotes + (fmSearchShown.length ? fmSearchShown.map(({ h, i }) => {
                 const entry = h.entry ? h.entry.replace(/\/$/, '') : '';
-                const name = entry ? entry.split('/').pop() : h.path.split('/').pop();
-                const where = h.entry ? h.path + ' › ' + h.entry : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
+                const name = entry ? entry.split('/').pop() : (h.name || h.path.split('/').pop());
+                const where = h.entry ? h.path + ' › ' + h.entry : h.parent || h.path.slice(0, h.path.lastIndexOf('/')) || '/';
                 const meta = [h.dir ? '' : fmtInstallSize(h.size), fmWhen(h.mtime)].filter(Boolean).join(' · ');
                 const line = h.line ? '<div class="fm-hit-line">' + (h.lineNo ? escapeHtml(String(h.lineNo)) + ': ' : '') + escapeHtml(h.line) + '</div>' : '';
                 const ico = (h.dir || (h.entry && /\/$/.test(h.entry))) ? '<div class="fm-folder"></div>' : '<div class="fm-page"></div>';
@@ -22135,15 +22140,22 @@ Type any command above (e.g. pm list packages -d)</div>
             const h = fmSearchHits[i];
             if (!h) return;
             if (h.entry) { fmSearchExit(); arcOpen(h.path, r => showToast((r && r.error) || 'Not a readable archive')); const base = h.entry.replace(/\/$/, '').split('/').pop(); setTimeout(() => { const a = document.getElementById('arcSearch'); if (a) { a.value = base; arcSearchInput(); } }, 400); return; }
-            if (h.dir) { fmSearchExit(); fmGo(h.path); return; }
-            fmActions(h.path, false, h.path.split('/').pop());
+            if (h.dir) { fmSearchExit(); if (h.parent) fmSafStack = fmSearchSafTrail(h); fmGo(h.path); return; }
+            fmActions(h.path, false, h.name || h.path.split('/').pop());
         }
         function fmSearchReveal(i) {
             const h = fmSearchHits[i];
             if (!h) return;
+            if (h.parent) { fmSearchExit(); fmSafStack = fmSearchSafTrail(h).slice(0, -1); fmGo(h.parent); return; }       // added storage: the folder is its parent URI
             const parent = h.dir ? h.path : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
             fmSearchExit();
             fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
+        }
+        // the ".." trail for a hit in added storage: the storage it was found in (when the hit is deeper), then its parent
+        function fmSearchSafTrail(h) {
+            fmSafRootsLoad();
+            const root = fmSafRoots.find(r => r.uri && h.path.startsWith(r.uri));
+            return root && root.uri !== h.parent ? [root.uri, h.parent] : [h.parent];
         }
 
         // ---- the password dialog: asked when an archive or an entry needs one; never stored ----
@@ -26569,6 +26581,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
             if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
         }
+        // the poll runs only while the tab is on screen: the app going to the background stops it, coming back starts it again
+        document.addEventListener('visibilitychange', function () {
+            if (currentViewName() !== 'taskmgr') return;
+            if (document.hidden) tmStop(); else onTaskMgrShown();
+        });
 
         // ---- settings controls ----
         function tmAutoRefreshChange() {
@@ -34220,7 +34237,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!d || d.app !== 'adb-app-manager' || d.kind !== 'hidden-settings' || !Array.isArray(d.settings)) return null;
             const out = [], seen = new Set();
             d.settings.slice(0, 2000).forEach(x => {
-                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || !/^[A-Za-z0-9_.:@-]{1,200}$/.test(x.key)) return;
+                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || sdbKeyProblem(x.key)) return;      // the same rule as for a name typed in
                 if (!(x.value === null || (typeof x.value === 'string' && x.value.length <= 2000))) return;
                 const id = x.ns + '/' + x.key;
                 if (seen.has(id)) return;
@@ -36082,6 +36099,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function applyProfile() {
             if (!profilePending) return;
             if (!guardPrivilege('Apply profile')) return;
+            if (batchRunActive || profileRunActive || optimizeRunActive) { showToast('Another batch action is already running'); return; }     // its modal is that run's
             haptic();
             const pr = loadProfiles().find(x => x.id === profilePending.id);
             const plan = profilePending.plan;

@@ -135,6 +135,124 @@ const ROOT = '/storage/emulated/0';
   check('   and the toast counts both', /Restored 2 of 2/.test(await toast(page)), await toast(page));
   await page.close();
 
+  // ---- 4. Debloater review after a batch left the modal in progress mode (A2); a profile over a running batch (A3); a batch that did not run (A4) ----
+  page = await newPage();
+  await page.addInitScript(() => {
+    const apps = [
+      { pkg: 'com.a', name: 'App A', isSystem: true, isRunning: false, isFrozen: false, isUninstalled: false, isSuspended: false },
+      { pkg: 'com.b', name: 'App B', isSystem: true, isRunning: false, isFrozen: false, isUninstalled: false, isSuspended: false },
+    ];
+    window.AndroidBridge = {
+      vibrate() {}, loadPreferences() { return '{}'; }, savePreferences() {}, loadCustomLists() { return '[]'; }, saveCustomLists() {},
+      getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
+      saveStore() { return true; }, loadStore() { return ''; },
+      loadPackages() { return JSON.stringify(apps); },
+      getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true }); },
+      getAppDetails() { return JSON.stringify({ permissions: [], appopsRaw: '', activityInfo: [], services: [] }); },
+      executeAppAction(action, pkg) { return '\u00011ok ' + action + ' ' + pkg; },
+      getUadMatches() { return JSON.stringify({ packages: [
+        { pkg: 'com.a', name: 'App A', list: 'Google', removal: 'Recommended', state: 'enabled', description: 'x' },
+        { pkg: 'com.b', name: 'App B', list: 'Google', removal: 'Recommended', state: 'enabled', description: 'y' } ] }); },
+      getUadStatus() { return JSON.stringify({ cached: true, count: 2, updatedAt: Date.now(), stale: false }); },
+    };
+  });
+  await page.addInitScript(appBatchMock.installAppBatchMock);
+  await page.goto(PAGE); await page.waitForTimeout(500);
+  const modal = () => page.evaluate(() => ({
+    shown: document.getElementById('batchConfirmModal').classList.contains('show'),
+    confirmBody: getComputedStyle(document.getElementById('batchConfirmBody')).display !== 'none',
+    progressBody: getComputedStyle(document.getElementById('batchProgressBody')).display !== 'none',
+    title: document.getElementById('batchConfirmTitle').innerText,
+    rows: document.querySelectorAll('#batchConfirmList .confirm-list-row').length,
+  }));
+  await page.evaluate(() => { selectedPkgs.add('com.a'); selectedPkgs.add('com.b'); updateBatchBar(); batchAction('force_stop'); });
+  await page.waitForTimeout(800);
+  let m = await modal();
+  check('5. a plain batch ran and its modal closed on the progress body', !m.shown && m.progressBody && !m.confirmBody, JSON.stringify(m));
+  await page.evaluate(() => { document.getElementById('commandResultsModal').classList.remove('show'); switchView('debloater'); }); await page.waitForTimeout(300);
+  await page.evaluate(() => { loadUadMatches(); uadSelected.add('com.a'); uadSelected.add('com.b'); uadAction('uninstall'); }); await page.waitForTimeout(200);
+  m = await modal();
+  check('   the Debloater review sheet shows its list, not the stale progress', m.shown && m.confirmBody && !m.progressBody && m.title === 'Review: Uninstall Packages' && m.rows === 2, JSON.stringify(m));
+  await page.evaluate(() => closeBatchConfirmModal());
+  // A3: a profile asked to run while a batch is in flight leaves that batch's modal alone
+  await page.evaluate(() => { switchView('apps'); batchRunActive = true; profilePending = { id: 'x', plan: { steps: {} } }; applyProfile(); });
+  check('6. a profile over a running batch is refused without touching the modal', /Another batch action is already running/.test(await toast(page)) && await page.evaluate(() => !!profilePending && !profileRunActive), await toast(page));
+  await page.evaluate(() => { batchRunActive = false; profilePending = null; });
+  // A4: a batch whose native run reports a failure leaves no label for the next one
+  await page.evaluate(() => { batchRunLabel = 'Old label'; batchRunHist = 'custom'; window.onAppBatchDone(JSON.stringify({ ok: false })); });
+  check('7. a batch that failed to run clears its label and history kind', await page.evaluate(() => batchRunLabel === '' && batchRunHist === '') && /failed to run/.test(await toast(page)), await toast(page));
+  await page.close();
+
+  // ---- 5. File manager: a move paste with Skip keeps only the skipped paths in the clipboard (D7); search hits in added storage (D2) ----
+  page = await newPage();
+  await page.addInitScript(fm.initScript, { files: { [ROOT + '/a.txt']: 'A', [ROOT + '/b.txt']: 'B', [ROOT + '/Dest']: null, [ROOT + '/Dest/a.txt']: 'old A', [ROOT + '/Other']: null } });
+  await page.goto(PAGE); await page.waitForTimeout(300);
+  await page.evaluate(() => switchView('files'));
+  await page.waitForFunction(() => document.querySelectorAll('#fmList .perm-row').length > 0);
+  await page.evaluate(() => { fmSel.add('/storage/emulated/0/a.txt'); fmSel.add('/storage/emulated/0/b.txt'); fmClipSet('mv'); fmGo('/storage/emulated/0/Dest'); });
+  await page.waitForFunction(() => fmPath === '/storage/emulated/0/Dest' && fmLast.entries.length === 1);
+  await page.evaluate(() => fmPaste()); await page.waitForTimeout(100);
+  check('8. pasting the move asks about the taken name', await page.evaluate(() => document.getElementById('fmConflictModal').classList.contains('show')));
+  await page.evaluate(() => fmConflictChoose('skip')); await page.waitForTimeout(300);
+  check('   Skip: one moved, one skipped', /Moved 1 of 2 • 1 skipped/.test(await toast(page)) && await page.evaluate(() => !!window.__fm.fs['/storage/emulated/0/Dest/b.txt'] && window.__fm.fs['/storage/emulated/0/Dest/a.txt'].text === 'old A'), await toast(page));
+  check('   the clipboard keeps only the skipped path', JSON.stringify(await page.evaluate(() => fmClip && fmClip.paths)) === '["/storage/emulated/0/a.txt"]', JSON.stringify(await page.evaluate(() => fmClip)));
+  await page.evaluate(() => fmGo('/storage/emulated/0/Other')); await page.waitForTimeout(100);
+  await page.evaluate(() => fmPaste()); await page.waitForTimeout(300);
+  check('   a second paste elsewhere moves only that one and empties the clipboard', /Moved 1 of 1/.test(await toast(page)) && await page.evaluate(() => fmClip === null), await toast(page));
+  // D2: hits from added storage carry name and parent
+  const TREE = 'content://com.android.externalstorage.documents/tree/1234-5678%3A';
+  const hits = [
+    { path: TREE + '/document/1234-5678%3ADocs%2Fnotes.txt', name: 'notes.txt', parent: TREE + '/document/1234-5678%3ADocs', dir: false, size: 12, mtime: 1700000000000, why: 'name' },
+    { path: TREE + '/document/1234-5678%3ADocs', name: 'Docs', parent: TREE, dir: true, size: 0, mtime: 1700000000000, why: 'name' },
+  ];
+  await page.evaluate(([h, tree]) => { fmSafRootsLoad(); fmSafRoots = [{ uri: tree, label: 'SD card' }]; window.AndroidBridge.fmList = p => JSON.stringify({ path: p, entries: [], source: 'saf' }); fmSearchShow(true); window.onFmSearchDone({ ok: true, hits: h, ms: 5 }); }, [hits, TREE]);
+  const shown = await page.evaluate(() => Array.from(document.querySelectorAll('#fmSearchList .perm-row')).map(r => [r.querySelector('.perm-name').innerText, r.querySelectorAll('.perm-sub')[0].innerText]));
+  check('9. a hit in added storage is listed by its name, under its parent', JSON.stringify(shown) === JSON.stringify([['notes.txt', hits[0].parent], ['Docs/', TREE]]), JSON.stringify(shown));
+  await page.evaluate(() => fmSearchOpen(0)); await page.waitForTimeout(100);
+  check('   opening the file hit names it by its display name', await page.evaluate(() => document.getElementById('fmActionName').innerText === 'notes.txt' && fmActionTarget.full === fmSearchHits[0].path));
+  await page.evaluate(() => { closeFmAction(); fmSearchReveal(0); }); await page.waitForTimeout(100);
+  check('   "In folder" goes to the parent document with a way back to the storage', await page.evaluate(h => fmPath === h.parent && JSON.stringify(fmSafStack) === JSON.stringify([h.tree]), { parent: hits[0].parent, tree: TREE }), await page.evaluate(() => fmPath + ' ' + JSON.stringify(fmSafStack)));
+  await page.evaluate(([h]) => { fmSearchShow(true); window.onFmSearchDone({ ok: true, hits: h, ms: 5 }); fmSearchOpen(1); }, [hits]); await page.waitForTimeout(100);
+  check('   opening the folder hit goes into it with ".." back to the storage', await page.evaluate(h => fmPath === h.path && JSON.stringify(fmSafStack) === JSON.stringify([h.parent]), hits[1]), await page.evaluate(() => fmPath + ' ' + JSON.stringify(fmSafStack)));
+  await page.close();
+
+  // ---- 6. Task Manager: the poll stops while the app is in the background (D3) ----
+  page = await newPage();
+  await page.addInitScript(() => {
+    window.__tm = { start: [], stop: 0 };
+    window.AndroidBridge = {
+      vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, loadPackages() { return '[]'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
+      getWorkingMode() { return JSON.stringify({ activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true, configuredMode: 'auto', adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {} }); },
+      tmStart(ms) { window.__tm.start.push(ms); }, tmStop() { window.__tm.stop++; }, tmRefreshNow() {},
+    };
+  });
+  await page.goto(PAGE); await page.waitForTimeout(400);
+  await page.evaluate(() => switchView('taskmgr')); await page.waitForTimeout(300);
+  const hide = h => page.evaluate(h => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => h ? 'hidden' : 'visible' }); document.dispatchEvent(new Event('visibilitychange')); }, h);
+  check('10. opening the tab starts the poll', await page.evaluate(() => window.__tm.start.length === 1 && window.__tm.stop === 0), JSON.stringify(await page.evaluate(() => window.__tm)));
+  await hide(true); await page.waitForTimeout(50);
+  check('   the app going to the background stops it', await page.evaluate(() => window.__tm.stop === 1 && tmRedrawTimer === null), JSON.stringify(await page.evaluate(() => window.__tm)));
+  await hide(false); await page.waitForTimeout(50);
+  check('   coming back starts it again', await page.evaluate(() => window.__tm.start.length === 2 && tmRedrawTimer !== null), JSON.stringify(await page.evaluate(() => window.__tm)));
+  await page.evaluate(() => switchView('apps')); await page.waitForTimeout(100);
+  const stops = await page.evaluate(() => window.__tm.stop);
+  await hide(true); await hide(false); await page.waitForTimeout(50);
+  check('   on another tab the background does nothing to it', await page.evaluate(s => window.__tm.stop === s && window.__tm.start.length === 2, stops), JSON.stringify(await page.evaluate(() => window.__tm)));
+  await page.close();
+
+  // ---- 7. Hidden Settings: a backup key with / + , $ restores (D5) ----
+  page = await newPage();
+  const dlg2 = []; page.on('dialog', d => { dlg2.push(d.message()); d.accept(); });
+  await page.addInitScript(sdb.initScript);
+  await page.goto(PAGE); await page.waitForTimeout(500);
+  await page.evaluate(() => { checkAllWorkingModes(false); switchView('settings'); }); await page.waitForTimeout(500);
+  await page.evaluate(() => { window.__calls.op.length = 0; });
+  const bk2 = JSON.stringify({ app: 'adb-app-manager', format: 1, kind: 'hidden-settings', settings: [{ ns: 'global', key: 'weird.key:with-chars/and+more', value: 'w2' }, { ns: 'global', key: 'a,b$c', value: '1' }, { ns: 'global', key: 'bad key', value: '1' }, { ns: 'global', key: '-dash', value: '1' }] });
+  await page.evaluate(text => window.onTextFilePicked({ tag: 'hs-restore', text }), bk2); await page.waitForTimeout(600);
+  const ops2 = await page.evaluate(() => window.__calls.op.map(o => o.key + '=' + o.value).sort().join('|'));
+  check('11. keys with / + , $ are restored; a space or a leading dash is still refused', ops2 === 'a,b$c=1|weird.key:with-chars/and+more=w2' && /Put 2 hidden settings back/.test(dlg2[0] || '') && /Restored 2 of 2/.test(await toast(page)), ops2 + ' | ' + await toast(page));
+  await page.close();
+
   console.log('errors:', JSON.stringify(errors));
   console.log(bad ? bad + ' FAILED' : 'ALL OK');
   await b.close();

@@ -54,6 +54,7 @@ public final class FileOps {
         public long bytes;                                 // bytes copied (a move by rename copies none)
         public boolean cancelled;
         public final List<String[]> failed = new ArrayList<String[]>();   // {path, reason}
+        public final List<String> kept = new ArrayList<String>();          // the items left alone as a whole (counted in skipped), by path
     }
 
     public static int policyOf(String s) {
@@ -161,7 +162,7 @@ public final class FileOps {
             File s = sources.get(i);
             if (r.cancelled) break;
             try {
-                if (transfer(s, destDir, c, move)) r.done++;
+                if (transfer(s, destDir, c, move)) r.done++; else r.kept.add(s.getPath());
             } catch (IOException e) {
                 r.failed.add(new String[]{s.getPath(), msg(e)});
             }

@@ -13077,6 +13077,7 @@ public class MainActivity extends Activity {
                             for (FileSearch.Hit h : hits) {
                                 JSONObject o = new JSONObject().put("path", h.path).put("dir", h.dir).put("size", h.size).put("mtime", h.mtime).put("why", h.why);
                                 if (h.entry != null) o.put("entry", h.entry);
+                                if (h.name != null) { o.put("name", h.name); o.put("parent", h.parent); }
                                 if (h.line != null) { o.put("line", h.line); o.put("lineNo", h.lineNo); }
                                 arr.put(o);
                             }
@@ -13190,6 +13191,7 @@ public class MainActivity extends Activity {
                         if (FileSearch.matchesListing(q, name, c.isNull(3) ? 0 : c.getLong(3), c.isNull(4) ? 0 : c.getLong(4), isDir)) {
                             FileSearch.Hit h = new FileSearch.Hit();
                             h.path = child.toString(); h.dir = isDir; h.size = c.isNull(3) ? 0 : c.getLong(3); h.mtime = c.isNull(4) ? 0 : c.getLong(4); h.why = "name";
+                            h.name = name; h.parent = dir.toString();           // the path is a document URI: the page shows the name and goes to the parent
                             boolean keep = true;
                             if (!q.content.isEmpty()) {
                                 // content: reads the file through its provider (text files only, the same size limit as on the phone's own storage)
@@ -13787,7 +13789,7 @@ public class MainActivity extends Activity {
 
         /** A cp / mv / rm batch where some path, or the destination, is added storage (a SAF document URI): one item at a time through fmOpSaf, with the name rule applied here (replace deletes the clash first, skip leaves it, keep lets the provider number the copy). Fills {@code res} like the shell batch. */
         private void runSafBatch(String op, List<String> paths, String dest, String policyName, JSONObject res) {
-            JSONArray failed = new JSONArray();
+            JSONArray failed = new JSONArray(), kept = new JSONArray();
             int done = 0, skipped = 0;
             boolean cancelled = false;
             Runnable hook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
@@ -13816,8 +13818,8 @@ public class MainActivity extends Activity {
                             if (dest.startsWith("content://") && !name.isEmpty()) {
                                 Uri clash = safChildNamed(Uri.parse(dest), name);
                                 if (clash != null) {
-                                    if (clash.equals(Uri.parse(q))) { skipped++; continue; }
-                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if (clash.equals(Uri.parse(q))) { skipped++; kept.put(q); continue; }
+                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }
                                     if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
                                 }
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
@@ -13838,6 +13840,7 @@ public class MainActivity extends Activity {
                 res.put("total", paths.size());
                 res.put("done", done);
                 res.put("skipped", skipped);
+                res.put("kept", kept);
                 res.put("cancelled", cancelled);
                 res.put("failed", failed);
                 res.put("ok", failed.length() == 0 && !cancelled);
@@ -13936,7 +13939,7 @@ public class MainActivity extends Activity {
         /**
          * Like fmBatch, with the rule for a name that is already in destDir: "replace" (folders merge), "skip" or "keep" (both: name (1).ext).
          * Whatever the app can read and write itself is done in Java with no shell (so it works without a working mode); the rest goes
-         * through the privileged shell as before. Ends with window.onFmBatchDone({op, ok, total, done, skipped, cancelled, failed: [{p, error}]}).
+         * through the privileged shell as before. Ends with window.onFmBatchDone({op, ok, total, done, skipped, kept: [path], cancelled, failed: [{p, error}]}) (kept: the items left alone because of the name rule).
          */
         @JavascriptInterface
         public String fmBatch2(final String op, final String pathsJson, final String destDir, final String policyName) {
@@ -13976,7 +13979,7 @@ public class MainActivity extends Activity {
                             notifyJs("window.onFmBatchDone && window.onFmBatchDone(" + res.toString() + ")");
                             return;
                         }
-                        JSONArray failed = new JSONArray();
+                        JSONArray failed = new JSONArray(), kept = new JSONArray();
                         List<String> todo = new ArrayList<String>();
                         for (String q : paths) {
                             if (fmProtectedPath(q)) failed.put(new JSONObject().put("p", q).put("error", "System location: not touched"));
@@ -14017,6 +14020,7 @@ public class MainActivity extends Activity {
                             FileOps.Result fr = "rm".equals(op) ? FileOps.delete(direct, prog) : "cp".equals(op) ? FileOps.copy(direct, new File(dest), policy, prog) : FileOps.move(direct, new File(dest), policy, prog);
                             done += fr.done;
                             skipped += fr.skipped;
+                            for (String k : fr.kept) kept.put(k);
                             cancelled = fr.cancelled;
                             for (String[] f : fr.failed) failed.put(new JSONObject().put("p", f[0]).put("error", f[1]));
                         }
@@ -14039,7 +14043,7 @@ public class MainActivity extends Activity {
                                     if (linkLost) { failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost")); continue; }
                                     String o2 = batchShell(FileOps.shellScript("cp".equals(op) ? "cp -r" : "mv", q, dest, policy));
                                     if (FileRules.okLine(o2, "FMOK")) done++;
-                                    else if (o2 != null && o2.contains("FMSKIP")) skipped++;
+                                    else if (o2 != null && o2.contains("FMSKIP")) { skipped++; kept.put(q); }
                                     else {
                                         String m2 = o2 == null ? "failed" : o2.trim();
                                         if (fmTransportLost(m2)) linkLost = true;
@@ -14103,6 +14107,7 @@ public class MainActivity extends Activity {
                         res.put("total", paths.size());
                         res.put("done", done);
                         res.put("skipped", skipped);
+                        res.put("kept", kept);
                         res.put("cancelled", cancelled);
                         res.put("failed", failed);
                         res.put("ok", failed.length() == 0 && !cancelled);
