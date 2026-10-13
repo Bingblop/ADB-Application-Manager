@@ -71,6 +71,21 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 Updating? Just install the new APK over the old one, or let the app tell you when a release is out.
 
+### Get it with Obtainium
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs the app straight from this repository's Releases page and tells you when a new version is out. Tap the badge on your phone (it opens Obtainium, or offers to install it first); the configuration it adds picks the `-arm64-v8a` file of each release.
+
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.bloatware.bingblop%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FBingblop%2FADB-Application-Manager%22%2C%22author%22%3A%22Bingblop%22%2C%22name%22%3A%22ADB%20Application%20Manager%20Pro%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22arm64-v8a%5C%22%7D%22%7D"><img src="docs/screenshots/badge_obtainium.png" height="56" alt="Get it on Obtainium"></a>
+
+Adding it by hand instead: in Obtainium tap **+**, paste `https://github.com/Bingblop/ADB-Application-Manager`, and under *Filter APKs by regular expression* enter `arm64-v8a` (or `universal` for the file that holds both CPU types).
+
+Verification info, for Obtainium's and other installers' signature checks:
+
+| | |
+| --- | --- |
+| Package ID | `com.bloatware.bingblop` |
+| Signing certificate SHA-256 | `94:61:87:0F:7C:D2:40:64:06:A1:19:F4:D3:75:33:C2:3B:B7:D1:ED:85:05:06:BA:D7:EA:3E:6B:4B:D2:6D:17` |
+
 ### Signing certificate
 
 Every release APK is signed with the same certificate. Check it against these values before you trust a copy that did not come from the Releases page (it is the same for the `-arm64-v8a`, `-armeabi-v7a` and `-universal` files):
@@ -129,7 +144,7 @@ The complete reference lives in the **[Full Guide](docs/FULL-GUIDE.md)**:
 [Testing](docs/FULL-GUIDE.md#testing).
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
-## What's new in v7.10
+## What's new
 
 - **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias (bingblop.coral666@simplelogin.fr) so the developer's own address stays private.
 - **Honest results**: after an uninstall, reinstall, freeze, unfreeze, suspend or unsuspend (one app or a batch, on this phone or on a connected device), and after Clear data in Root mode, the app asks what became of each app, says *Checking the phone…* (or *the device…*) while it does, and shows *Uninstalled / Still installed*, *Data cleared* and so on instead of trusting the command's exit status. **Settings → Progress messages** turns the "Working on it…" / "Checking…" messages off.
