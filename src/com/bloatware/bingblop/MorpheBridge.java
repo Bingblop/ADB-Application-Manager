@@ -575,13 +575,7 @@ public final class MorpheBridge {
                     ir.put("t", "install");
                     ev(jobId, ir);
                     step(jobId, "Installing", ir.optBoolean("ok") ? "OK" : "FAIL");
-                    if (ir.optBoolean("ok")) {
-                        markInstalled(saved.optString("id"));
-                        if (a.optBoolean("deleteAfter")) {
-                            library.delete(saved.optString("id"));
-                            ev(jobId, new JSONObject().put("t", "deleted"));
-                        }
-                    }
+                    if (MorpheInstallStep.settle(library, saved.optString("id"), ir, a.optBoolean("deleteAfter"))) ev(jobId, new JSONObject().put("t", "deleted"));
                 }
                 result.put("item", saved);
             } else if (engineResult.optBoolean("success")) {
@@ -691,16 +685,6 @@ public final class MorpheBridge {
         return item;
     }
 
-    private void markInstalled(String id) {
-        try {
-            JSONObject m = library.get(id);
-            if (m == null) return;
-            m.put("installed", true);
-            File f = new File(new File(base, "patched"), id + "/meta.json");
-            writeText(f, m.toString());
-        } catch (Exception ignored) {}
-    }
-
     private JSONObject patchedExport(String id) throws Exception {
         File dest = library.exportTo(id, new File(host.downloadsDir(), "Morphe Patcher"));
         return new JSONObject().put("path", dest.getAbsolutePath());
@@ -720,7 +704,7 @@ public final class MorpheBridge {
         }
         if (!apk.isFile()) throw new IOException("the APK is gone");
         JSONObject r = host.install(apk, pkg, a.optBoolean("uninstallFirst"));
-        if (r.optBoolean("ok") && !a.optString("id").isEmpty()) markInstalled(a.optString("id"));
+        if (!a.optString("id").isEmpty()) MorpheInstallStep.settle(library, a.optString("id"), r, false);
         return r;
     }
 

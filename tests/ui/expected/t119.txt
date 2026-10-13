@@ -50,6 +50,9 @@ ok   Cancel keeps you on the patch page
 ok   Install off makes the delete box unavailable
 ok   the choices are remembered with the settings
 ok   with delete on the log says the APK was deleted after the install
+ok   with only the system installer opened the result does not say Installed.
+ok   it shows the words Java gave: the system installer was opened
+ok   the Install button stays, and the log does not claim the APK was deleted
 ok   the Community tab loaded the finder data
 ok   apps are listed with their bundle counts
 ok   categories are a dropdown with the finder's categories

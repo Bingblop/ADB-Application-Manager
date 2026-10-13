@@ -76,7 +76,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
               const item = { id: 'p1', pkg: a.pkg, appName: a.name, versionName: a.version, fileName: a.pkg + '_' + a.version + '-patched.apk', size: 130000000, keptIn: ['the app folder', 'Downloads/Morphe Patcher'], patchedAt: 1791000000000, patches: a.bundles[0].patches, installed: false };
               M.patched = [item];
               t(260, { t: 'saved', item }); t(270, { t: 'step', name: 'Saving', state: 'OK' });
-              if (a.installAfter) { t(290, { t: 'step', name: 'Installing', state: 'RUNNING' }); t(310, { t: 'install', ok: true, output: 'Success' }); t(315, { t: 'step', name: 'Installing', state: 'OK' }); if (a.deleteAfter) t(320, { t: 'deleted' }); }
+              if (a.installAfter) { t(290, { t: 'step', name: 'Installing', state: 'RUNNING' }); t(310, M.sysInstall ? { t: 'install', ok: true, system: true, handedOff: true, output: 'The system installer was opened. Confirm the install there. (Set up a working mode to install through ADB, Shizuku or Root.)' } : { t: 'install', ok: true, output: 'Success' }); t(315, { t: 'step', name: 'Installing', state: 'OK' }); if (a.deleteAfter && !M.sysInstall) t(320, { t: 'deleted' }); }
               t(340, { t: 'result', result: { success: true, applied: a.bundles[0].patches, failed: [], package: a.pkg, item: item } });
             }
             return;
@@ -263,7 +263,15 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await page.click('#mpGo');
   await page.waitForFunction(() => /is patched/.test(document.getElementById('mpResult').innerText), null, { timeout: 15000 });
   check('with delete on the log says the APK was deleted after the install', await ev(() => /deleted after the install/.test(document.getElementById('mpLog').innerText)));
-  await ev(() => { mpBackToPatches(); mpPageBack(); const d = document.getElementById('mpDeleteAfter'); mp.cfg.deleteAfter = false; mpCfgSave(); });
+  // no working mode: the installer was only opened, so the page must not say "Installed." (and Java keeps the APK)
+  await ev(() => { mpBackToPatches(); window.__mp.sysInstall = true; });
+  await page.click('#mpGo');
+  await page.waitForFunction(() => /is patched/.test(document.getElementById('mpResult').innerText), null, { timeout: 15000 });
+  const sysRes = await text('#mpResult');
+  check('with only the system installer opened the result does not say Installed.', !/Installed\./.test(sysRes), sysRes);
+  check('it shows the words Java gave: the system installer was opened', /The system installer was opened\. Confirm the install there\./.test(sysRes), sysRes);
+  check('the Install button stays, and the log does not claim the APK was deleted', await ev(() => !!document.querySelector('#mpResult .mode-action-btn.primary') && /Install/.test(document.querySelector('#mpResult .mode-action-btn.primary').innerText) && !/deleted after the install/.test(document.getElementById('mpLog').innerText)));
+  await ev(() => { window.__mp.sysInstall = false; mpBackToPatches(); mpPageBack(); const d = document.getElementById('mpDeleteAfter'); mp.cfg.deleteAfter = false; mpCfgSave(); });
 
   // ---- Community ----
   await page.click('#mpTabs .mp-tab[data-sub="community"]'); await wait(500);

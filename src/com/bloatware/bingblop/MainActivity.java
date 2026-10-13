@@ -7672,6 +7672,7 @@ public class MainActivity extends Activity {
             });
             r.put("ok", true);
             r.put("system", true);
+            r.put("handedOff", true);       // opened, not installed: the person has not answered yet (the bridge keeps the patched APK)
             r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install through ADB, Shizuku or Root.)");
             return r;
         }
