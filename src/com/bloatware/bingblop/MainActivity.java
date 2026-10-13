@@ -8343,9 +8343,14 @@ public class MainActivity extends Activity {
             } else if ("shizuku".equals(mode)) {
                 output = runShizukuShell(cmd);
             } else if ("root".equals(mode)) {
-                ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
-                pb.redirectErrorStream(true);
-                output = runProcessWithTimeout(pb, 10000);
+                // a refused su prints nothing (or "Permission denied") and runs nothing: that is a failure, not an empty success
+                if (!isRootGranted()) {
+                    output = "Error: root access is not granted to this app (su refused). Allow it in the root manager and check Working Modes again.";
+                } else {
+                    ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
+                    pb.redirectErrorStream(true);
+                    output = runProcessWithTimeout(pb, 10000);
+                }
             } else {
                 ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", "-c", cmd);
                 pb.redirectErrorStream(true);
@@ -9910,6 +9915,12 @@ public class MainActivity extends Activity {
             String marker = "__RC" + System.nanoTime() + "__";
             String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
             ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
+            // Every backend here runs a shell, so the marker is missing only when the command never ran (su refused or not granted, a
+            // backend that did not start, a timeout): that is a failure whatever else was printed, never an "ok" from an empty answer.
+            if (raw == null || raw.lastIndexOf(marker + ":") < 0) {
+                String text = o.text == null ? "" : o.text.trim();
+                return flagged(false, text.isEmpty() ? "Error: the command did not run (no exit status came back from the shell)" : text);
+            }
             return flagged(o.ok, o.text);
         }
 
