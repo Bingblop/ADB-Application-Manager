@@ -14,7 +14,7 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => {
       const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
-      const st = window.__st = { calls: [], devs: ['a', 'b'], xferMs: 0, pmMs: 0, pullOut: null };
+      const st = window.__st = { calls: [], devs: ['a', 'b'], xferMs: 0, pmMs: 0, pullOut: null, pushOut: null };
       const reply = (tag, out, ms) => setTimeout(() => window.onCdResult({ tag, out, ms: 4 }), ms || 8);
       const shell = (cmd, serial) => {
         if (/^for p in/.test(cmd)) return ['ro.product.manufacturer=x', 'ro.product.model=M-' + serial, 'ro.build.version.release=14', 'ro.build.version.sdk=34', 'ro.product.cpu.abilist=arm64-v8a', 'ro.sf.lcd_density=320', 'wmsize=Physical size: 450x450 ', 'wmdens=Physical density: 320 ', 'batt=  level: 83   status: 3 '].join('\n');
@@ -38,7 +38,7 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
           }
           st.calls.push({ serial, cmd: a[0] === 'shell' ? a[1] : a.join(' ') });
           if (a[0] === 'shell') return reply(tag, shell(a[1], serial), /^pm path/.test(a[1]) ? st.pmMs : 0);
-          if (a[0] === 'push') return reply(tag, '/x: 1 file pushed, 0 skipped.', st.xferMs);
+          if (a[0] === 'push') return reply(tag, st.pushOut || '/x: 1 file pushed, 0 skipped.', st.xferMs);
           if (a[0] === 'pull') return reply(tag, st.pullOut || '/x: 1 file pulled, 0 skipped.', st.xferMs);
           return reply(tag, '');
         },
@@ -123,6 +123,30 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
   await page.evaluate(() => { window.__st.devs = ['b']; return cdRefreshDevices(false); }); await settle(page);
   check('   APK pull, A drops while the device is still asked for the APK path: no pull at all', (await xfers(page, 'pull')).length === 0 && !/Saved to/.test(await toast(page)), (await xfers(page, 'pull')).join('|') + ' ' + await toast(page));
   await page.close();
+
+  // ---- 3. A pull or push that skipped files is not "Saved" / "sent": adb's summary line comes last, the complaints before it ----
+  const SKIPPED = "pull: building file list...\nadb: error: failed to copy '/sdcard/Folder/secret.db' to '/dl/Folder/secret.db': remote open failed: Permission denied\n/sdcard/Folder/: 3 files pulled, 1 skipped. 1.2 MB/s (4096 bytes in 0.003s)";
+  const SKIP_ONLY = '/sdcard/Folder/: 3 files pulled, 1 skipped. 1.2 MB/s (4096 bytes in 0.003s)';
+  const CLEAN = '/sdcard/Folder/: 4 files pulled, 0 skipped. 1.2 MB/s (4096 bytes in 0.003s)';
+  const pull = async (out) => { page = await open(); await page.evaluate(o => { window.__st.pullOut = o; cdFmPull('/sdcard/Folder'); }, out); await page.waitForTimeout(500); const t = await toast(page); await page.close(); return t; };
+  let t = await pull(CLEAN);
+  check('4. a folder pull with nothing skipped says Saved', /^Saved to Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555$/.test(t), t);
+  t = await pull(SKIPPED);
+  check('   a folder pull with an error line and a skipped file does not say Saved, it shows the error', !/Saved/.test(t) && /failed to copy '\/sdcard\/Folder\/secret\.db'.*Permission denied/.test(t), t);
+  t = await pull(SKIP_ONLY);
+  check('   a folder pull that only reports a skipped file does not say Saved either', !/Saved/.test(t) && /3 files pulled, 1 skipped/.test(t), t);
+  page = await open();
+  await page.evaluate(() => { window.__st.pullOut = '/data/app/x/base.apk: 1 file pulled, 0 skipped.'; cdPullApk('com.example.app'); }); await page.waitForTimeout(700);
+  t = await toast(page); await page.close();
+  check('   the APK pull with nothing skipped says Saved', /^Saved to /.test(t), t);
+  page = await open();
+  await page.evaluate(() => { window.__st.pullOut = "pull: building file list...\nadb: error: failed to copy '/data/app/x/base.apk' to '/dl/a.apk': Permission denied\n/data/app/x/base.apk: 0 files pulled, 1 skipped."; cdPullApk('com.example.app'); }); await page.waitForTimeout(700);
+  t = await toast(page); await page.close();
+  check('   the APK pull that skipped a file does not say Saved', !/Saved/.test(t) && /Permission denied/.test(t), t);
+  page = await open();
+  await page.evaluate(f => { window.__st.pushOut = '/cache/cd_pick/1/f1.bin: 0 files pushed, 1 skipped.'; window.onCdPicked({ tag: 'push', files: [f] }); }, files[0]); await page.waitForTimeout(500);
+  t = await toast(page); await page.close();
+  check('   a push that skipped the file does not say it was sent', !/sent to/.test(t) && /1 skipped/.test(t), t);
 
   console.log('errors:', JSON.stringify(errors));
   console.log(bad ? bad + ' FAILED' : 'ALL OK');

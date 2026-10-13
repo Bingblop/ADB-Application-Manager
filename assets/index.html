@@ -24115,6 +24115,14 @@ Type any command above (e.g. pm list packages -d)</div>
             return '';
         }
 
+        // adb pull / push: '' when it all went through. adb prints a complaint per file it could not copy and ends with "N files pulled, M skipped.", so every line counts, not only the first
+        function cdXferFail(out) {
+            const f = cdFail(out);
+            if (f) return f;
+            const l = String(out || '').split('\n').map(x => x.trim()).find(x => /^(adb(\.exe)?: )?error: /i.test(x) || /\b[1-9]\d* skipped\b/.test(x));
+            return l ? l.replace(/^(adb(\.exe)?: |error: )+/i, '') : '';
+        }
+
         // ---- devices ----
         function cdTransport(serial) {
             if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'Bluetooth link';
@@ -25007,10 +25015,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 const base = cdBase(p);
                 const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000, serial: serial });
                 last = o;
-                if (/pulled/i.test(o) && !cdFail(o)) okCount++;
+                if (/pulled/i.test(o) && !cdXferFail(o)) okCount++;
             }
             if (okCount === paths.length) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
+            else showToast(cdXferFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
         }
         function cdDownloadDir() {
             const dir = window.AndroidBridge && window.AndroidBridge.cdDownloadDir ? window.AndroidBridge.cdDownloadDir(cd.serial) : '';
@@ -25399,8 +25407,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!dir) return;
             showToast('Pulling ' + cdBase(p) + '...');
             const out = await cdRun(['pull', p, dir + '/'], { timeout: 3600000 });
-            if (/pulled/i.test(out) && !cdFail(out)) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
+            if (/pulled/i.test(out) && !cdXferFail(out)) showToast('Saved to ' + cdShortDir(dir));
+            else showToast(cdXferFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
         }
         async function cdFmRename(p, e) {
             const serial = cd.serial;                                   // the path is from this device's listing: it goes to this device only
@@ -25443,9 +25451,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast('Sending ' + f.name + '...');
                 const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
                 last = out;
-                if (/pushed/i.test(out) && !cdFail(out)) okN++;
+                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
             }
-            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
+            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();
         }
 

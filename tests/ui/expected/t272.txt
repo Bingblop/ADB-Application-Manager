@@ -18,5 +18,11 @@ ok   3. APK pull, no change of device: the three files come from A and are saved
 ok      APK pull, A drops after the first file and B is picked: nothing is pulled from B: 192.168.1.20:5555 pull /data/app/x/base.apk /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/com.example.app.apk
 ok      and it does not say "Saved": The pull did not finish
 ok      APK pull, A drops while the device is still asked for the APK path: no pull at all:  The pull did not finish
+ok   4. a folder pull with nothing skipped says Saved: Saved to Download/ADB App Manager/Devices/192.168.1.20_5555
+ok      a folder pull with an error line and a skipped file does not say Saved, it shows the error: failed to copy '/sdcard/Folder/secret.db' to '/dl/Folder/secret.db': remote open failed: Permission denied
+ok      a folder pull that only reports a skipped file does not say Saved either: /sdcard/Folder/: 3 files pulled, 1 skipped. 1.2 MB/s (4096 bytes in 0.003s)
+ok      the APK pull with nothing skipped says Saved: Saved to Download/ADB App Manager/Devices/192.168.1.20_5555
+ok      the APK pull that skipped a file does not say Saved: failed to copy '/data/app/x/base.apk' to '/dl/a.apk': Permission denied
+ok      a push that skipped the file does not say it was sent: /cache/cd_pick/1/f1.bin: 0 files pushed, 1 skipped.
 errors: []
 ALL OK
