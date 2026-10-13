@@ -517,16 +517,20 @@ public final class MorpheVirusTotal {
     }
 
     /**
-     * What is left of the key's quota, as VirusTotal itself counts it (so a scan made by the Installer counts too): GET /users/current, then /users/&lt;key&gt;/overall_quotas
-     * when that carries no quotas. The answer: {source "virustotal", dayAllowed, dayUsed, dayLeft, hourAllowed, hourUsed, monthAllowed, monthUsed, resetDayInMs}. When VirusTotal answers
+     * What is left of the key's quota, as VirusTotal itself counts it (so a scan made by the Installer counts too): GET /users/current, then /users/&lt;id&gt;/overall_quotas
+     * (the id the user object gives; the key itself never goes into an address) when that carries no quotas. The answer: {source "virustotal", dayAllowed, dayUsed, dayLeft, hourAllowed, hourUsed, monthAllowed, monthUsed, resetDayInMs}. When VirusTotal answers
      * without any counter, this app's own count of the day is given instead ({source "local"}, the free key's 500 a day). A wrong key, a used-up quota and no connection are
      * IOExceptions as in {@link #validateKey}.
      */
     public static JSONObject accountQuota(String key, File stateFile) throws IOException {
         MorpheVirusTotal v = new MorpheVirusTotal(key, stateFile);
         v.needKey();
-        JSONObject q = v.fetchQuota("/users/current");
-        if (q == null) q = v.fetchQuota("/users/" + v.key + "/overall_quotas");
+        JSONObject user = v.fetchJson("/users/current");
+        JSONObject q = user == null ? null : parseQuotas(user);
+        if (q == null && user != null) {
+            String id = str(obj(user, "data"), "id");
+            if (id.matches("[A-Za-z0-9._@-]+")) q = v.fetchQuota("/users/" + id + "/overall_quotas");
+        }
         long now = v.now();
         if (q == null) {
             JSONObject l = v.quota();
@@ -543,6 +547,12 @@ public final class MorpheVirusTotal {
     }
 
     private JSONObject fetchQuota(String path) throws IOException {
+        JSONObject root = fetchJson(path);
+        return root == null ? null : parseQuotas(root);
+    }
+
+    /** The JSON object a GET answers; null when the address is not there (404 / 405) or the answer is not an object. */
+    private JSONObject fetchJson(String path) throws IOException {
         MorpheNet.Response r;
         try {
             r = MorpheNet.request("GET", apiBase + path, headers(), null);
@@ -557,7 +567,7 @@ public final class MorpheVirusTotal {
         }
         if (r.status < 200 || r.status >= 300) throw statusError(r);
         try {
-            return parseQuotas(new JSONObject(r.text == null ? "" : r.text.trim()));
+            return new JSONObject(r.text == null ? "" : r.text.trim());
         } catch (JSONException e) {
             return null;
         }

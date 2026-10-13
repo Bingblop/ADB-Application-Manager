@@ -67,7 +67,7 @@ public class PtyShellTest {
         is("a size of 0 becomes 1", PtyShell.command("h", 0, -4, Arrays.asList("x")).subList(1, 3).equals(Arrays.asList("1", "1")));
         String sc = PtyShell.launchScript("/data/app/x y/lib/libptyexec.so", "/data/local/tmp/.cp", 24, 80, "/system/bin/sh");
         is("script: tries the helper where it is, copies it when it cannot run, then execs it with the size and the program",
-                sc.contains("H='/data/app/x y/lib/libptyexec.so'") && sc.contains("1 1 -- /system/bin/true") && sc.contains("cp -f \"$H\" \"$C\"") && sc.contains("C=/data/local/tmp/.cp")
+                sc.contains("H='/data/app/x y/lib/libptyexec.so'") && sc.contains("1 1 -- /system/bin/true </dev/null >/dev/null") && sc.contains("cp -f \"$H\" \"$C\"") && sc.contains("C=/data/local/tmp/.cp")
                 && sc.trim().endsWith("exec \"$P\" 24 80 -- /system/bin/sh"), sc);
         is("script without a copy path has no copy step", !PtyShell.launchScript("/h", "", 24, 80, "sh").contains("cp -f"));
         String ts = TermuxLink.ptyScript("/lib/libptyexec.so", 40, 120, "/data/data/com.termux/files/usr/bin/bash", 4321, "tok123", "");

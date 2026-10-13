@@ -51,8 +51,9 @@ public class JobService extends Service {
         }
     }
 
-    /** One job is done. The last one stops the service (after it has started, if it has not yet) and leaves a short "done" note. */
-    public static void end(Context c, Runnable onCancel, String doneText) {
+    /** One job is done. The last one stops the service (after it has started, if it has not yet) and leaves a short "done" note headed by
+     *  {@code jobTitle}, the title the job began with (the shared title is the newest job's, which is another job's when two overlap). */
+    public static void end(Context c, Runnable onCancel, String jobTitle, String doneText) {
         boolean last;
         synchronized (JobService.class) {
             if (onCancel != null) cancelHooks.remove(onCancel);
@@ -66,10 +67,11 @@ public class JobService extends Service {
         if (doneText == null || doneText.isEmpty()) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
+        String doneTitle = jobTitle == null || jobTitle.isEmpty() ? title : jobTitle;
         try {
             if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(new NotificationChannel(DONE_CHANNEL, "File jobs finished", NotificationManager.IMPORTANCE_LOW));
             Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, DONE_CHANNEL) : new Notification.Builder(c);
-            b.setSmallIcon(android.R.drawable.stat_sys_download_done).setContentTitle(title).setContentText(doneText).setAutoCancel(true);
+            b.setSmallIcon(android.R.drawable.stat_sys_download_done).setContentTitle(doneTitle).setContentText(doneText).setAutoCancel(true);
             Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             b.setContentIntent(PendingIntent.getActivity(c, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
             nm.notify(DONE_ID, b.build());

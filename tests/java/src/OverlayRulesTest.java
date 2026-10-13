@@ -87,11 +87,11 @@ public class OverlayRulesTest {
             "#!/bin/sh\n" +
             "{ echo '---'; for x in \"$@\"; do printf '[%s]\\n' \"$x\"; done; } >> \"$OVL_FAKE/cmd.log\"\n" +
             "[ \"$1\" = overlay ] || { echo \"cmd: Can't find service: $1\"; exit 1; }\n" +
-            "verb=$2\n" +
+            "verb=$2; shift 2; if [ \"$1\" = --user ]; then shift 2; fi\n" +        // the real one takes --user <id>|current after the verb
             "f=\"$OVL_FAKE/overlays\"\n" +
             "case \"$verb\" in\n" +
             " list) last=; while read -r tgt st id; do if [ \"$tgt\" != \"$last\" ]; then [ -n \"$last\" ] && echo; echo \"$tgt\"; last=$tgt; fi; case $st in 1) echo \"[x] $id\";; 0) echo \"[ ] $id\";; *) echo \"--- $id\";; esac; done < \"$f\"; echo;;\n" +
-            " enable|disable) id=$3; want=1; [ \"$verb\" = disable ] && want=0\n" +
+            " enable|disable) id=$1; want=1; [ \"$verb\" = disable ] && want=0\n" +
             "   if ! grep -q \" $id\\$\" \"$f\"; then echo \"Error: overlay '$id' not found\"; exit 1; fi\n" +
             "   if grep -q \" -1 $id\\$\" \"$f\"; then echo \"Error: failed to $verb overlay (not available)\"; exit 1; fi\n" +
             "   if grep -q \" 1 FIXED:$id\\$\" \"$f\"; then :; fi\n" +
@@ -102,6 +102,7 @@ public class OverlayRulesTest {
         // a fake `settings`: settings get|put <ns> <key> [value]; files $OVL_FAKE/settings/<ns>__<key>
         write(fakeBin.resolve("settings"),
             "#!/bin/sh\n" +
+            "if [ \"$1\" = --user ]; then shift 2; fi\n" +
             "d=\"$OVL_FAKE/settings\"; mkdir -p \"$d\"\n" +
             "case \"$1\" in\n" +
             " get) f=\"$d/$2__$3\"; if [ -f \"$f\" ]; then cat \"$f\"; echo; else echo null; fi;;\n" +
@@ -117,11 +118,18 @@ public class OverlayRulesTest {
         for (String o : new String[] {"", null, "list", "enable-exclusive", "Enable", "enable ", "remove"}) eq("bad op " + o, OverlayRules.isOp(o), false);
 
         // ---- exact commands ----
-        eq("list cmd", OverlayRules.listCommand(), "cmd overlay list");
-        eq("enable cmd", OverlayRules.changeCommand("enable", "com.foo.bar"), "cmd overlay enable 'com.foo.bar'");
-        eq("disable cmd", OverlayRules.changeCommand("disable", "com.foo:name"), "cmd overlay disable 'com.foo:name'");
-        eq("quote", OverlayRules.changeCommand("enable", "it's"), "cmd overlay enable 'it'\\''s'");
-        eq("script", OverlayRules.changeScript("enable", "x.y"), "cmd overlay enable 'x.y'; echo @@OVL-GET@@; cmd overlay list; echo @@OVL-END@@");
+        eq("list cmd", OverlayRules.listCommand(), "cmd overlay list --user current");
+        eq("enable cmd", OverlayRules.changeCommand("enable", "com.foo.bar"), "cmd overlay enable --user current 'com.foo.bar'");
+        eq("disable cmd", OverlayRules.changeCommand("disable", "com.foo:name"), "cmd overlay disable --user current 'com.foo:name'");
+        eq("quote", OverlayRules.changeCommand("enable", "it's"), "cmd overlay enable --user current 'it'\\''s'");
+        eq("script", OverlayRules.changeScript("enable", "x.y"), "cmd overlay enable --user current 'x.y'; echo @@OVL-GET@@; cmd overlay list --user current; echo @@OVL-END@@");
+        // every command names the user this app runs as: without --user the shell acts on user 0, another user's overlays and theme in a work profile or a secondary user
+        for (String c : new String[] { OverlayRules.listCommand(), OverlayRules.listScript(), OverlayRules.changeScript("disable", "x.y"), OverlayRules.themeReadScript(),
+                OverlayRules.themeWriteScript("{\"android.theme.customization.system_palette\":\"FF0000\"}", new int[] {1, 1, 1}),
+                OverlayRules.flagRestoreScript(Arrays.asList(new OverlayRules.FlagChange("global", "1", "0"))) }) {
+            is("names the running user: " + c, c.replace("cmd overlay list --user current", "").replace("cmd overlay disable --user current", "").replace("settings --user current ", "").indexOf("settings ") < 0
+                    && c.replace("cmd overlay list --user current", "").replace("cmd overlay disable --user current", "").indexOf("cmd overlay") < 0);
+        }
         throwsIae("bad op script", () -> OverlayRules.changeScript("list", "x.y"));
         throwsIae("bad id script", () -> OverlayRules.changeScript("enable", "-x"));
         throwsIae("empty id script", () -> OverlayRules.changeScript("enable", ""));
@@ -198,9 +206,9 @@ public class OverlayRulesTest {
             Files.deleteIfExists(fakeDir.resolve("cmd.log"));
             String o = runShell(OverlayRules.changeScript("enable", h));
             String log = read(fakeDir.resolve("cmd.log"));
-            // first call is the enable: ---, [overlay], [enable], [<id>]
+            // first call is the enable: ---, [overlay], [enable], [--user], [current], [<id>]
             String first = log.substring(0, log.indexOf("---", 3) > 0 ? log.indexOf("---", 3) : log.length());
-            eq("hostile argv " + h, first, "---\n[overlay]\n[enable]\n[" + h + "]\n");
+            eq("hostile argv " + h, first, "---\n[overlay]\n[enable]\n[--user]\n[current]\n[" + h + "]\n");
             OverlayRules.ChangeResult cr = OverlayRules.parseChange(viaReader(o));
             is("hostile judged refused " + h, !OverlayRules.judge("enable", h, cr).ok);
         }
@@ -331,14 +339,14 @@ public class OverlayRulesTest {
 
         // ---- the script ----
         String sc = OverlayRules.themeWriteScript(pv);
-        is("script probes all three tables", sc.contains("settings get system wallpapertheme_state") && sc.contains("settings get secure wallpapertheme_state") && sc.contains("settings get global wallpapertheme_state"));
-        is("script sets a switch only where it holds a number", sc.contains("case \"$v\" in [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) settings put system wallpapertheme_state 0;"));
-        is("script ends with the theme write and its read-back", sc.endsWith("settings put secure theme_customization_overlay_packages '" + pv + "'; echo @@OVL-GET@@; settings get secure theme_customization_overlay_packages; echo @@OVL-END@@"));
-        eq("reset script has no switch", OverlayRules.themeWriteScript("").startsWith("settings put secure"), true);
-        eq("a plan that skips a table", OverlayRules.themeWriteScript(pv, new int[] {-1, -1, 5}).contains("settings get system"), false);
-        is("a plan for one table", OverlayRules.themeWriteScript(pv, new int[] {-1, -1, 5}).contains("settings put global wallpapertheme_state 5;"));
-        is("a plan value out of range is ignored", !OverlayRules.themeWriteScript(pv, new int[] {1000, -1, -1}).contains("settings get system"));
-        is("a null plan is no plan", OverlayRules.themeWriteScript(pv, null).startsWith("settings put secure"));
+        is("script probes all three tables", sc.contains("settings --user current get system wallpapertheme_state") && sc.contains("settings --user current get secure wallpapertheme_state") && sc.contains("settings --user current get global wallpapertheme_state"));
+        is("script sets a switch only where it holds a number", sc.contains("case \"$v\" in [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) settings --user current put system wallpapertheme_state 0;"));
+        is("script ends with the theme write and its read-back", sc.endsWith("settings --user current put secure theme_customization_overlay_packages '" + pv + "'; echo @@OVL-GET@@; settings --user current get secure theme_customization_overlay_packages; echo @@OVL-END@@"));
+        eq("reset script has no switch", OverlayRules.themeWriteScript("").startsWith("settings --user current put secure"), true);
+        eq("a plan that skips a table", OverlayRules.themeWriteScript(pv, new int[] {-1, -1, 5}).contains("settings --user current get system"), false);
+        is("a plan for one table", OverlayRules.themeWriteScript(pv, new int[] {-1, -1, 5}).contains("settings --user current put global wallpapertheme_state 5;"));
+        is("a plan value out of range is ignored", !OverlayRules.themeWriteScript(pv, new int[] {1000, -1, -1}).contains("settings --user current get system"));
+        is("a null plan is no plan", OverlayRules.themeWriteScript(pv, null).startsWith("settings --user current put secure"));
 
         // ---- lines the script prints, and what is made of them ----
         OverlayRules.ThemeResult pf = OverlayRules.parseTheme("@@OVL-FLAG@@ system 1 0\n@@OVL-FLAG@@ global 12\n@@OVL-FLAG@@ nope 1 1\n@@OVL-FLAG@@\nnoise\n@@OVL-GET@@\nx\n@@OVL-END@@\n");
@@ -428,7 +436,7 @@ public class OverlayRulesTest {
         eq("snapshot of nothing moved", OverlayRules.flagSnapshot(5L, new ArrayList<OverlayRules.FlagChange>()), "5|-");
         eq("snapshot skips bad entries", OverlayRules.flagSnapshot(5L, Arrays.asList(new OverlayRules.FlagChange("nope", "1", "0"), new OverlayRules.FlagChange("system", "x", "0"))), "5|-");
         eq("snapshot of two", OverlayRules.flagSnapshot(5L, Arrays.asList(new OverlayRules.FlagChange("system", "0", "1"), new OverlayRules.FlagChange("global", "12", "1"))), "5|system=0,global=12");
-        eq("restore script", OverlayRules.flagRestoreScript(Arrays.asList(new OverlayRules.FlagChange("global", "1", "0"), new OverlayRules.FlagChange("nope", "1", "0"), new OverlayRules.FlagChange("system", "a b", "0"))), "settings put global wallpapertheme_state 1; n=$(settings get global wallpapertheme_state 2>/dev/null); echo \"@@OVL-FLAG@@ global 1 $n\"; echo @@OVL-END@@");
+        eq("restore script", OverlayRules.flagRestoreScript(Arrays.asList(new OverlayRules.FlagChange("global", "1", "0"), new OverlayRules.FlagChange("nope", "1", "0"), new OverlayRules.FlagChange("system", "a b", "0"))), "settings --user current put global wallpapertheme_state 1; n=$(settings --user current get global wallpapertheme_state 2>/dev/null); echo \"@@OVL-FLAG@@ global 1 $n\"; echo @@OVL-END@@");
         eq("restore script of nothing", OverlayRules.flagRestoreScript(new ArrayList<OverlayRules.FlagChange>()), "echo @@OVL-END@@");
 
         // ---- reading a flat JSON object ----
@@ -527,7 +535,7 @@ public class OverlayRulesTest {
         eq("apply: the value", a1.value, OverlayRules.themeValue("preset", "7E57C2", "EXPRESSIVE", te.now));
         eq("apply: the switch table", a1.flags.toString(), "[global]"); eq("apply: the switch moved", read(FLAGG), "0");
         eq("apply: the snapshot for Undo", te.snap, te.now + "|global=1");
-        eq("apply: a read, then one write", te.scripts.size() + ":" + te.scripts.get(0).startsWith("echo @@OVL-GET@@; settings get secure"), "2:true");
+        eq("apply: a read, then one write", te.scripts.size() + ":" + te.scripts.get(0).startsWith("echo @@OVL-GET@@; settings --user current get secure"), "2:true");
         eq("apply: no warning", a1.warning, "");
         OverlayRules.ThemeOutcome un = OverlayRules.runTheme(te, "undo", "", "", "", "");
         is("undo: ok", un.ok); eq("undo: back to the default", un.value, ""); eq("undo: the switch is back", read(FLAGG), "1"); eq("undo: the snapshot is used up", te.snap, "");
@@ -686,7 +694,7 @@ public class OverlayRulesTest {
         is("advice not found", OverlayRules.advice("Error: overlay 'x' not found").contains("Reload"));
 
         // ---- a list that was cut short is not a list ----
-        eq("list script", OverlayRules.listScript(), "cmd overlay list; echo @@OVL-END@@");
+        eq("list script", OverlayRules.listScript(), "cmd overlay list --user current; echo @@OVL-END@@");
         OverlayRules.ListResult lrr = OverlayRules.readList("android\n[x] a.b\n[ ] c.d\n\n@@OVL-END@@\n");
         is("a finished list is complete", lrr.complete); eq("with its overlays", lrr.overlays.size(), 2); eq("and their states", lrr.overlays.get(0).state + "," + lrr.overlays.get(1).state, "1,0");
         is("a list cut mid-line is incomplete", !OverlayRules.readList("android\n[x] a.b\n[ ] c.").complete);

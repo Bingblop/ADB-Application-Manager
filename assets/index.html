@@ -10857,8 +10857,10 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavLP = { slot, x: e.clientX, y: e.clientY, fired: false };
             bnavLP.timer = setTimeout(() => {
                 if (!bnavLP) return;
+                const key = slot.dataset.tab, nav = bnavEl();
+                const cur = slot.isConnected ? slot : (nav && nav.querySelector('.bn-item[data-tab="' + key + '"]')) || slot;     // a badge update redraws the bar during the hold: the slot is found again by its tab
                 bnavLP.fired = true;
-                if (!bnavMenuOpen(slot.dataset.tab, slot)) bnavLP.fired = false;
+                if (!bnavMenuOpen(key, cur)) bnavLP.fired = false;
             }, BNAV_HOLD_MS);
             document.addEventListener('pointermove', bnavHoldMove);
             document.addEventListener('pointerup', bnavHoldEnd);
@@ -11062,13 +11064,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'extrasettings') { animShow(); brShow(); telShow(); }
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'terminal' && typeof onTerminalShown === 'function') onTerminalShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
@@ -13145,6 +13141,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
                 `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:10px;">${escapeHtml(x.p.pkg)}</span></div>`).join('');
             pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
+            batchConfirmShowBody('confirm');                 // a batch before this left the modal on its progress body
             document.getElementById('batchConfirmModal').classList.add('show');
         }
 
@@ -13905,6 +13902,7 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[pkg] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(pkg);
+            updStartWatch(pkg);
         }
 
         // One at a time, so downloads don't compete and installs don't overlap.
@@ -13950,8 +13948,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function updStartQueue(pkgs) {
-            updQueue = pkgs.slice();
-            updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
+            pkgs.forEach(p => { if (!updQueue.includes(p)) updQueue.push(p); });          // a second Update All (after failures) joins the apps still waiting; it does not replace them
+            pkgs.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
             renderUpdates();
             startNextQueuedUpdate();
         }
@@ -13967,6 +13965,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onUpdateAllAnswer = onUpdateAllAnswer;
 
+        let UPD_START_WAIT_MS = 15000;          // let: the UI script shortens the wait
+        // The app answers installUpdate with a progress event within moments. If none comes (it did not take the request), the row must not stay "Downloading" forever.
+        function updStartWatch(pkg) {
+            const row = updProgress[pkg];
+            setTimeout(() => { if (row && updProgress[pkg] === row) onUpdateProgress(JSON.stringify({ pkg, stage: 'error', percent: 0, message: 'Could not start the update' })); }, UPD_START_WAIT_MS);
+        }
         function startNextQueuedUpdate() {
             const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing' || p.stage === 'confirming');
             if (busy) return;
@@ -13975,12 +13979,18 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(next);
+            updStartWatch(next);
         }
 
         // Called by MainActivity while an update downloads and installs
         function onUpdateProgress(json) {
             const p = JSON.parse(json || '{}');
             updProgress[p.pkg] = p;
+            if (p.stage === 'cancelled') {                           // a No to the app's question, or no privileged mode: nothing was tried, so not a failure in the history
+                showToast(p.message || 'Updates cancelled');
+                updateUpdatesTabBadge();
+                setTimeout(startNextQueuedUpdate, 300);
+            }
             if (p.stage === 'done' || p.stage === 'error') {
                 const u = updList.find(x => x.pkg === p.pkg);
                 recordHistory('updates', (p.stage === 'done' ? 'Updated ' : 'Update failed: ') + (u ? u.name : p.pkg),
@@ -16620,7 +16630,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!lp.ok) return { profErr: lp.error || txT('The phone did not answer.'), lowPower: null, fixed: null };
             const lowPower = lp.value == null ? null : String(lp.value).trim();
             let help = xdz.help;
-            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output) || { fixed: false, adaptive: false, unknown: true }; }
+            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output); }       // no answer (a timeout, an empty output) is not kept: the next read asks again
             const fx = await xqRun("dumpsys power | grep -iE 'fixed.?performance' | head -n 3", 8000);
             return { profErr: null, lowPower, help, fixed: xdzParseFixed(fx.output) };
         }
@@ -19282,7 +19292,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
             let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
-            if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
+            if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
             const rows = (res.rows || []).map(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
@@ -21732,7 +21742,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (failed.length) {
                     showCommandResults('File manager', verb.toLowerCase(), failed.map(f => ({ name: fmBase(f.p), pkg: f.p, output: f.error, success: false })));
                 }
-                if (r.op === 'mv' && fmClip && !failed.length && !r.cancelled && !r.skipped) fmClip = null;
+                if (r.op === 'mv' && fmClip && !r.cancelled && (!r.skipped || Array.isArray(r.kept))) {       // kept: the items left alone, by path
+                    const left = new Set(failed.map(f => f.p).concat(Array.isArray(r.kept) ? r.kept : []));
+                    fmClip.paths = fmClip.paths.filter(p => left.has(p));
+                    if (!fmClip.paths.length) fmClip = null;
+                }
             }
             fmClipRender();
             fmRefresh();
@@ -22110,8 +22124,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cnt) cnt.innerHTML = fmSearchCountHtml + (fmSearchFilters.size ? ' · <span>' + fmSearchShown.length + ' shown</span>' : '');
             document.getElementById('fmSearchList').innerHTML = fmSearchNotes + (fmSearchShown.length ? fmSearchShown.map(({ h, i }) => {
                 const entry = h.entry ? h.entry.replace(/\/$/, '') : '';
-                const name = entry ? entry.split('/').pop() : h.path.split('/').pop();
-                const where = h.entry ? h.path + ' › ' + h.entry : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
+                const name = entry ? entry.split('/').pop() : (h.name || h.path.split('/').pop());
+                const where = h.entry ? h.path + ' › ' + h.entry : h.parent || h.path.slice(0, h.path.lastIndexOf('/')) || '/';
                 const meta = [h.dir ? '' : fmtInstallSize(h.size), fmWhen(h.mtime)].filter(Boolean).join(' · ');
                 const line = h.line ? '<div class="fm-hit-line">' + (h.lineNo ? escapeHtml(String(h.lineNo)) + ': ' : '') + escapeHtml(h.line) + '</div>' : '';
                 const ico = (h.dir || (h.entry && /\/$/.test(h.entry))) ? '<div class="fm-folder"></div>' : '<div class="fm-page"></div>';
@@ -22126,15 +22140,22 @@ Type any command above (e.g. pm list packages -d)</div>
             const h = fmSearchHits[i];
             if (!h) return;
             if (h.entry) { fmSearchExit(); arcOpen(h.path, r => showToast((r && r.error) || 'Not a readable archive')); const base = h.entry.replace(/\/$/, '').split('/').pop(); setTimeout(() => { const a = document.getElementById('arcSearch'); if (a) { a.value = base; arcSearchInput(); } }, 400); return; }
-            if (h.dir) { fmSearchExit(); fmGo(h.path); return; }
-            fmActions(h.path, false, h.path.split('/').pop());
+            if (h.dir) { fmSearchExit(); if (h.parent) fmSafStack = fmSearchSafTrail(h); fmGo(h.path); return; }
+            fmActions(h.path, false, h.name || h.path.split('/').pop());
         }
         function fmSearchReveal(i) {
             const h = fmSearchHits[i];
             if (!h) return;
+            if (h.parent) { fmSearchExit(); fmSafStack = fmSearchSafTrail(h).slice(0, -1); fmGo(h.parent); return; }       // added storage: the folder is its parent URI
             const parent = h.dir ? h.path : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
             fmSearchExit();
             fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
+        }
+        // the ".." trail for a hit in added storage: the storage it was found in (when the hit is deeper), then its parent
+        function fmSearchSafTrail(h) {
+            fmSafRootsLoad();
+            const root = fmSafRoots.find(r => r.uri && h.path.startsWith(r.uri));
+            return root && root.uri !== h.parent ? [root.uri, h.parent] : [h.parent];
         }
 
         // ---- the password dialog: asked when an archive or an entry needs one; never stored ----
@@ -26560,6 +26581,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
             if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
         }
+        // the poll runs only while the tab is on screen: the app going to the background stops it, coming back starts it again
+        document.addEventListener('visibilitychange', function () {
+            if (currentViewName() !== 'taskmgr') return;
+            if (document.hidden) tmStop(); else onTaskMgrShown();
+        });
 
         // ---- settings controls ----
         function tmAutoRefreshChange() {
@@ -32415,8 +32441,8 @@ Type any command above (e.g. pm list packages -d)</div>
             txCloseTermux();
             const sel = document.getElementById('txShell');
             if (sel) sel.value = 'termux';
+            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // when it is up: what it took over (set first: a start that fails at once clears it)
             txPickShell('termux');                                   // starts it again, with the Termux environment on
-            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // and when it is up: what it took over
             showToast('Syncing with Termux...');
         }
         function txTermuxStorage() { haptic(); txCloseSettings(); txCloseTermux(); txOpenTermux(TX_STORAGE_CMD); }
@@ -34211,7 +34237,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!d || d.app !== 'adb-app-manager' || d.kind !== 'hidden-settings' || !Array.isArray(d.settings)) return null;
             const out = [], seen = new Set();
             d.settings.slice(0, 2000).forEach(x => {
-                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || !/^[A-Za-z0-9_.:@-]{1,200}$/.test(x.key)) return;
+                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || sdbKeyProblem(x.key)) return;      // the same rule as for a name typed in
                 if (!(x.value === null || (typeof x.value === 'string' && x.value.length <= 2000))) return;
                 const id = x.ns + '/' + x.key;
                 if (seen.has(id)) return;
@@ -36073,6 +36099,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function applyProfile() {
             if (!profilePending) return;
             if (!guardPrivilege('Apply profile')) return;
+            if (batchRunActive || profileRunActive || optimizeRunActive) { showToast('Another batch action is already running'); return; }     // its modal is that run's
             haptic();
             const pr = loadProfiles().find(x => x.id === profilePending.id);
             const plan = profilePending.plan;
@@ -37077,7 +37104,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return new Promise(resolve => {
                 let done = false;
                 mpSheetOpen({ title: o.title, sub: o.sub || '', body: '<div class="mp-note" style="white-space:pre-line;">' + escapeHtml(o.text || '') + '</div>',
-                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', fn: () => { done = true; resolve(i); } })), onClose: () => { if (!done) resolve(-1); } });
+                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', keep: true, fn: () => { done = true; resolve(i); mpSheetClose(); } })), onClose: () => { if (!done) resolve(-1); } });
             });
         }
         async function mpStart() {
@@ -37259,7 +37286,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         async function mpHelperOpen(pkg, version) {
             await mpHelperLoad();
-            mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
+            if (mp.h && mp.h.busy) mp.h.tab = 'get';           // a download is running: its state (and its result, when it comes) stays
+            else mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
             mpSheetOpen({ title: 'Morphe Helper', sub: 'Get the original app the patches need (APK, APKM, APKS or XAPK)', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
             mp.helperOpen = true;
             mpHelperRender();

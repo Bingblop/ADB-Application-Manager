@@ -61,7 +61,7 @@ public final class PtyShell {
         StringBuilder s = new StringBuilder();
         s.append("H=").append(h).append("; P=\"$H\"\n");
         if (copyTo != null && !copyTo.isEmpty()) {
-            s.append("if ! \"$H\" 1 1 -- /system/bin/true >/dev/null 2>&1; then\n");
+            s.append("if ! \"$H\" 1 1 -- /system/bin/true </dev/null >/dev/null 2>&1; then\n");       // </dev/null: the probe's throwaway pty must not eat keys typed early
             s.append("  C=").append(copyTo).append("\n");
             s.append("  mkdir -p \"$(dirname \"$C\")\" 2>/dev/null\n");
             s.append("  if cp -f \"$H\" \"$C\" 2>/dev/null && chmod 755 \"$C\" 2>/dev/null; then P=\"$C\"; fi\n");

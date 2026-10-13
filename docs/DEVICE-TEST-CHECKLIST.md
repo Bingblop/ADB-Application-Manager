@@ -482,6 +482,42 @@ Not run on a device. The bar was checked in headless Chromium at 360, 412 and 80
 - [ ] **Long-press shortcuts on the rail, and the switch.** In landscape the menu opens beside the item. Settings > Navigation: switch **Long-press shortcuts** off: a hold does nothing; on again. Under **Shortcuts** choose and order the entries of a slot (four at most) and **Reset shortcuts**. The hint "Long-press a tab for shortcuts" appears once, the first time, and never again.
 - [ ] **TalkBack.** The bar is read as "Main navigation", each slot as a button, the lit one as the current page. The long-press gesture of TalkBack (double-tap and hold) opens the shortcuts menu of a slot, whose entries are menu items; Back closes it.
 
+## 28. Bug fixes from the code review of 2026-10-13 (v7.13.1)
+
+Fifty-four fixes; the steps below exercise the ones a phone can show. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+
+**The eleven serious ones**
+
+- [ ] SD Maid → Deduplicator: scan, open a set of three copies, untick ONE copy that is not marked *Kept*, delete. The *Kept* copy and the unticked copy stay; only the third is deleted.
+- [ ] Connected Devices with two devices attached (or a watch and a phone): start a batch Freeze of three apps on device A, then switch the device select to B while it runs. The select is greyed out during the batch; every result names device A; nothing changed on B. Also: drop A's connection mid-batch (Wi-Fi off on the watch): the remaining rows say the device is gone, not "Frozen".
+- [ ] Root mode with the su prompt denied (or Magisk's grant revoked): Freeze an app. The result says root is not granted, never "Success". Re-grant, use *check Working Modes again*, and the same action works.
+- [ ] Terminal tab, full-screen terminal, app shell: run `sleep 300`, paste a few hundred lines of text, then close the terminal. The app does not freeze (no ANR), and `ps` in a new terminal shows no leftover `ptyexec` or `sleep`.
+- [ ] File Manager: in a folder with a folder `Backup` and a file `notes.txt`, rename `notes.txt` to `Backup`. Refused with a "name is taken" message; nothing moved. Renaming `notes.txt` to `Notes.txt` (case only) is allowed.
+- [ ] File Manager: Copy with a typed destination that names an existing file. Refused; the existing file is untouched.
+- [ ] File Manager, added storage (an SD card or a document provider): copy a file into a local folder that already has one of that name and answer *Skip*, then again with *Keep both*. Skip leaves the local file untouched; Keep both makes `name (1)`; a Move with Skip leaves the source in place.
+- [ ] File Manager: extract an archive containing a file `docs` into a folder that already has an empty folder `docs`, answer *Keep both*. The folder stays a folder; the file arrives as `docs (1)`.
+- [ ] Morphe Patcher → Helper set to save into Downloads: download a plain `.apk`, tap Install in a privileged mode. The confirmation names the app, and the install works (the file was copied into the app's cache first).
+- [ ] Hidden Settings: open the tab and, while the Secure table is still loading (a few seconds over ADB), menu → Restore from a backup that changes a Secure setting. The journal shows the real old value ("was X"), and Revert puts X back; nothing shows "(not set)".
+- [ ] (Root, a phone with a second user) SD Maid → CorpseFinder from the second user: the private and public app-data filters are listed as skipped for that user and no app of user 0 is offered as a corpse.
+
+**The rest, by tab**
+
+- [ ] Debloater: run any batch first, then Debloater → select → Uninstall. The review sheet shows the list and a Confirm button, not the previous batch's progress.
+- [ ] Installer → Application Updater: Update All with four approved apps where two fail; tap Update All again. The two still waiting are not dropped and no row says "Queued" forever. Then tap *Check again* while a queue runs: no row stays "Downloading" forever (an error appears within 15 s if the update could not start). Decline an update's install question: the history has no "Update failed" entry.
+- [ ] App Stores → Orion: the catalog loads even if one entry is malformed (if it ever fails, the error names one entry, not the tab).
+- [ ] Morphe Patcher, Advanced mode: tick a patch marked *Not for this version* and tap Patch. The three buttons of the "not supported" sheet do what they say. Close the Helper sheet while "Looking for the file…" and reopen it: it still shows the running download, and a second one cannot start.
+- [ ] Switch to the Morphe Patcher tab: it loads once (no flicker of the sources list, no doubled entries).
+- [ ] Bottom bar: hold the Installer slot while an update check is finishing. The shortcut menu opens above the slot, not in the top-left corner.
+- [ ] Extra Settings → Doze & power governor on Android 11+: if the first read fails (switch Wi-Fi off and on quickly), Refresh recovers the Performance profile instead of saying "Not on this Android version".
+- [ ] Task Manager: open it, press Home, wait a minute. `adb shell ps` shows no `ps`/stat commands from the app while it is in the background; they resume when it comes back.
+- [ ] Logcat tab → Start recording, press Back to leave the app, open it again: the tab says a recording is running and Stop stops it; Start cannot start a second one.
+- [ ] Hidden Settings and Overlays from a work profile or second user: a change shows up for THAT user (both commands now name the running user).
+- [ ] File Manager → Search on an added storage: hits show the file's real name, *In folder* opens the folder, and the `..` row is there after opening a folder hit. Move with *Skip*: the clipboard afterwards offers only the skipped items.
+- [ ] Extract a multi-GB entry: the notification keeps a moving percentage and ETA and never says "nothing has moved".
+- [ ] Hidden Settings → Restore a backup containing a key with `/` or `+`: it is restored and counted.
+- [ ] Two file jobs at once (a big copy and an extract): each "done" notification carries its own title.
+- [ ] Updater check with the phone's clock stepped forward by a minute mid-run (toggle automatic time): the run does not end with every app "timed out".
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

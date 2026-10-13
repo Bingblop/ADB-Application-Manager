@@ -188,6 +188,12 @@ public class MainActivity extends Activity {
     // Working modes: "auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged".
     // The configured mode is only ever changed by an explicit user action (selecting a mode,
     // connecting, authorizing Shizuku). Status checks never change it.
+    private static final java.util.List<String> WORKING_MODES = java.util.Arrays.asList("auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged");
+    /** The mode as one of the known names; anything else (a made-up or stale value) is "auto", so no unknown string ever passes a privileged check. */
+    private static String knownWorkingMode(String mode) {
+        String m = mode == null ? "" : mode.trim();
+        return WORKING_MODES.contains(m) ? m : "auto";
+    }
     private volatile String activeWorkingMode = "auto";
     private volatile String adbTcpHost = "127.0.0.1";
     private volatile int adbTcpPort = 5555;
@@ -233,7 +239,7 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences("adb_app_manager_prefs", Context.MODE_PRIVATE);
 
         // Load saved working mode settings
-        activeWorkingMode = prefs.getString("working_mode", "auto");
+        activeWorkingMode = knownWorkingMode(prefs.getString("working_mode", "auto"));
         adbTcpHost = prefs.getString("adb_tcp_host", "127.0.0.1");
         adbTcpPort = prefs.getInt("adb_tcp_port", 5555);
         adbWirelessHost = prefs.getString("adb_wireless_host", "127.0.0.1");
@@ -671,7 +677,7 @@ public class MainActivity extends Activity {
 
     private void setConfiguredMode(String mode) {
         invalidateModeCache();
-        activeWorkingMode = (mode == null || mode.trim().isEmpty()) ? "auto" : mode.trim();
+        activeWorkingMode = knownWorkingMode(mode);
         cachedAutoMode = null;
         prefs.edit().putString("working_mode", activeWorkingMode).apply();
     }
@@ -723,11 +729,8 @@ public class MainActivity extends Activity {
             if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
             int v = 0;
             try {
-                Process p = Runtime.getRuntime().exec(new String[]{"getprop", "ro.build.version.oneui"});
-                BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line = r.readLine();
-                r.close();
-                if (line != null && line.trim().matches("\\d{4,7}")) v = Integer.parseInt(line.trim());
+                String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (line.matches("\\d{4,7}")) v = Integer.parseInt(line);
             } catch (Throwable ignored) {}
             if (v <= 0) {
                 try {
@@ -1022,6 +1025,7 @@ public class MainActivity extends Activity {
         } catch (Exception timeoutEx) {
             future.cancel(true);
             try { p.destroy(); } catch (Exception ignored) {}
+            try { p.getInputStream().close(); } catch (Exception ignored) {}     // ends the reader even when a child keeps the pipe open
             synchronized (sb) {
                 sb.append("\n[Process timed out after ").append(timeoutMs).append("ms]");
             }
@@ -1342,7 +1346,7 @@ public class MainActivity extends Activity {
         rishHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (webView == null) return;
+                if (activityDestroyed || webView == null) return;     // onDestroy may have run since this was queued
                 int i = 0;
                 while (i < text.length()) {
                     int end = Math.min(text.length(), i + 32000);
@@ -1433,7 +1437,7 @@ public class MainActivity extends Activity {
             rishHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (webView == null) return;
+                    if (activityDestroyed || webView == null) return;     // onDestroy may have run since this was queued
                     int i = 0;
                     while (i < text.length()) {
                         int end = Math.min(text.length(), i + 32000);
@@ -2536,7 +2540,11 @@ public class MainActivity extends Activity {
     /** Downloads the official APK, verifies it, and installs it through the active privileged mode. */
     private void runInstallUpdate(final String pkg) {
         final JSONObject u = updateResults.get(pkg);
-        if (u == null || !installingUpdates.add(pkg)) return;
+        if (u == null) {                    // a new check replaced the list meanwhile: the page is told, or its row would wait forever
+            progress(pkg, "cancelled", 0, "Update cancelled: this update is no longer in the list. Check for updates again.");
+            return;
+        }
+        if (!installingUpdates.add(pkg)) return;    // already running: that run reports
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -2545,7 +2553,7 @@ public class MainActivity extends Activity {
                     String source = u.optString("source");
                     if ("self".equals(source) || "external".equals(source)) throw new IllegalStateException("this update opens in the browser or Obtainium");
                     if ("standard".equals(resolveExecMode())) {
-                        throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                        throw new InstallCancelled("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                     }
                     apk.getParentFile().mkdirs();
                     progress(pkg, "downloading", 0, "Getting download link...");
@@ -2587,12 +2595,12 @@ public class MainActivity extends Activity {
                     // what was read from the downloaded file itself. A yes given for the whole "Update all" list already covers this app.
                     if (!takeUpdateApproval(pkg)) {
                         String mode = resolveExecMode();
-                        if (!isPrivilegedMode(mode)) throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                        if (!isPrivilegedMode(mode)) throw new InstallCancelled("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                         String label = u.optString("name");
                         progress(pkg, "confirming", 100, "Waiting for your OK to update " + (label.isEmpty() ? pkg : label) + "...");
                         if (!confirmInMode(mode, null, InstallConfirm.messageUpdate(label, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl),
                                 InstallConfirm.hostOf(url), installedVersionOrNull(pkg), mode))) {
-                            throw new IllegalStateException("Update cancelled. Nothing was installed.");
+                            throw new InstallCancelled("Update cancelled. Nothing was installed.");
                         }
                     }
                     progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
@@ -2604,7 +2612,8 @@ public class MainActivity extends Activity {
                         throw new IllegalStateException(out.trim().isEmpty() ? "install failed" : out.trim());
                     }
                 } catch (Exception e) {
-                    progress(pkg, "error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                    // "cancelled": a No to the question, or no privileged mode - nothing was tried, and the page does not count it as a failure
+                    progress(pkg, e instanceof InstallCancelled ? "cancelled" : "error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 } finally {
                     apk.delete();
                     installingUpdates.remove(pkg);
@@ -3702,17 +3711,35 @@ public class MainActivity extends Activity {
             m.setAccessible(true);
             shizukuNewProcessMethod = m;
         }
-        Process p = (Process) shizukuNewProcessMethod.invoke(null,
+        final Process p = (Process) shizukuNewProcessMethod.invoke(null,
                 new String[]{"sh", "-c", "exec 2>&1; " + cmd}, null, null);
-        OutputStream os = p.getOutputStream();
-        if (stdin != null) {
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = stdin.read(buf)) > 0) os.write(buf, 0, n);
+        try {
+            // stdin is fed on a thread of its own while the output is read: a command that stops reading early (an install-write that
+            // refuses the file) would otherwise end this write with EPIPE before its own error line was ever read
+            final OutputStream os = p.getOutputStream();
+            final InputStream src = stdin;
+            Thread pump = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (src != null) {
+                            byte[] buf = new byte[65536];
+                            int n;
+                            while ((n = src.read(buf)) > 0) os.write(buf, 0, n);
+                        }
+                        os.flush();
+                    } catch (IOException ignored) {       // the command ended first: what it printed says why
+                    } finally {
+                        try { os.close(); } catch (IOException ignored) {}
+                    }
+                }
+            }, "shizuku-stdin");
+            pump.setDaemon(true);
+            pump.start();
+            return readProcessWithTimeout(p, timeoutMs);
+        } finally {
+            try { p.destroy(); } catch (Exception ignored) {}
         }
-        os.flush();
-        os.close();
-        return readProcessWithTimeout(p, timeoutMs);
     }
 
     /** Installs one APK, or a base APK with its splits, through a mode the caller already chose (and asked about): the working mode is not read again. */
@@ -7807,6 +7834,10 @@ public class MainActivity extends Activity {
         });
     }
 
+    // The log recorder is held by the app, not by an activity or its bridge: a recording goes on across a recreate() (a theme change,
+    // Back and reopen), the new activity sees it in the status and can stop it, and it cannot start a second one beside it.
+    private static volatile LogRecorder logRec;
+
     private class AndroidBridge {
 
         @JavascriptInterface
@@ -10059,9 +10090,10 @@ public class MainActivity extends Activity {
                 JSONArray pkgs = new JSONArray(pkgsJson);
                 for (int i = 0; i < pkgs.length(); i++) {
                     String pkg = pkgs.getString(i);
-                    String output = executeAppAction(action, pkg);
-                    if (output == null) output = "";
-                    boolean ok = !launchOutputFailed(output) && !output.toLowerCase().contains("exception occurred");
+                    String raw = executeAppAction(action, pkg);
+                    boolean hasFlag = raw != null && raw.length() >= 2 && raw.charAt(0) == RC_FLAG;
+                    String output = flagText(raw);      // never the flag itself in what the page shows
+                    boolean ok = hasFlag ? flagOk(raw) : (!launchOutputFailed(output) && !output.toLowerCase().contains("exception occurred"));
                     if (ok) success++; else failed++;
                     JSONObject row = new JSONObject();
                     row.put("pkg", pkg);
@@ -11658,7 +11690,11 @@ public class MainActivity extends Activity {
                     JSONObject res;
                     try {
                         synchronized (installInspectLock) {       // two overlapping runs would share (and clear) the same work folder
-                            res = inspectInstallSourceImpl(ref);
+                            try {
+                                res = inspectInstallSourceImpl(ref);
+                            } finally {
+                                fmInstallStagedDone(ref);          // the Installer works from its own copy from here on
+                            }
                         }
                     } catch (Exception e) {
                         res = new JSONObject();
@@ -11897,7 +11933,7 @@ public class MainActivity extends Activity {
         }
 
         // ---- Log recorder: the log written to a file while it is on, looked at afterwards ----
-        private LogRecorder logRec;
+        // the recorder itself is MainActivity.logRec: one for the whole app, not one per activity (see there)
         private File logRecDir() { return new File(getFilesDir(), "logs"); }
 
         private String logRecStatusJson() {
@@ -11922,22 +11958,25 @@ public class MainActivity extends Activity {
             JSONObject r = new JSONObject();
             try {
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("error", "Recording the log needs ADB, Shizuku or Root."); return r.toString(); }
-                if (logRec != null && logRec.status().running) { r.put("ok", false); r.put("error", "A recording is already running."); return r.toString(); }
-                final String lv = level != null && level.matches("[VDIWEF]") ? level : "V";
-                final String app = pkg == null || pkg.trim().isEmpty() ? null : pkg.trim();
-                final String flt = filter == null ? "" : filter;
-                logRec = new LogRecorder(logRecDir(), new LogRecorder.Source() {
-                    @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
-                }, 2000, 25L * 1024 * 1024);
-                java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                head.add("ADB Application Manager - log recording");
-                head.add("Started: " + new java.util.Date());
-                head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
-                head.add("Level: " + lv + " and above");
-                head.add("App: " + (app == null ? "all apps" : (appName != null && !appName.isEmpty() ? appName + " (" + app + ")" : app)) + (flt.trim().isEmpty() ? "" : " | Text filter: \"" + flt.trim() + "\""));
-                String name = logRec.start(head);
-                if (name.isEmpty()) { r.put("ok", false); r.put("error", "The recording file could not be created."); return r.toString(); }
-                r.put("ok", true); r.put("name", name);
+                synchronized (LogRecorder.class) {                                   // the recorder is shared by every activity: check and start under one lock
+                    if (logRec != null && logRec.status().running) { r.put("ok", false); r.put("error", "A recording is already running."); return r.toString(); }
+                    final String lv = level != null && level.matches("[VDIWEF]") ? level : "V";
+                    final String app = pkg == null || pkg.trim().isEmpty() ? null : pkg.trim();
+                    final String flt = filter == null ? "" : filter;
+                    LogRecorder rec = new LogRecorder(logRecDir(), new LogRecorder.Source() {
+                        @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
+                    }, 2000, 25L * 1024 * 1024);
+                    java.util.ArrayList<String> head = new java.util.ArrayList<String>();
+                    head.add("ADB Application Manager - log recording");
+                    head.add("Started: " + new java.util.Date());
+                    head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
+                    head.add("Level: " + lv + " and above");
+                    head.add("App: " + (app == null ? "all apps" : (appName != null && !appName.isEmpty() ? appName + " (" + app + ")" : app)) + (flt.trim().isEmpty() ? "" : " | Text filter: \"" + flt.trim() + "\""));
+                    String name = rec.start(head);
+                    if (name.isEmpty()) { r.put("ok", false); r.put("error", "The recording file could not be created."); return r.toString(); }
+                    logRec = rec;
+                    r.put("ok", true); r.put("name", name);
+                }
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
             }
@@ -11946,7 +11985,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public synchronized String logRecStop() {
-            if (logRec != null) logRec.stop("stopped");
+            synchronized (LogRecorder.class) { if (logRec != null) logRec.stop("stopped"); }
             return logRecStatusJson();
         }
 
@@ -11981,7 +12020,9 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public synchronized String logRecDelete(String name) {
-            if (logRec != null && logRec.status().running && name != null && name.equals(logRec.status().name)) return "Error: stop the recording first";
+            synchronized (LogRecorder.class) {
+                if (logRec != null && logRec.status().running && name != null && name.equals(logRec.status().name)) return "Error: stop the recording first";
+            }
             return LogRecorder.delete(logRecDir(), name) ? "ok" : "Error: could not delete it";
         }
 
@@ -13063,6 +13104,7 @@ public class MainActivity extends Activity {
                             for (FileSearch.Hit h : hits) {
                                 JSONObject o = new JSONObject().put("path", h.path).put("dir", h.dir).put("size", h.size).put("mtime", h.mtime).put("why", h.why);
                                 if (h.entry != null) o.put("entry", h.entry);
+                                if (h.name != null) { o.put("name", h.name); o.put("parent", h.parent); }
                                 if (h.line != null) { o.put("line", h.line); o.put("lineNo", h.lineNo); }
                                 arr.put(o);
                             }
@@ -13176,6 +13218,7 @@ public class MainActivity extends Activity {
                         if (FileSearch.matchesListing(q, name, c.isNull(3) ? 0 : c.getLong(3), c.isNull(4) ? 0 : c.getLong(4), isDir)) {
                             FileSearch.Hit h = new FileSearch.Hit();
                             h.path = child.toString(); h.dir = isDir; h.size = c.isNull(3) ? 0 : c.getLong(3); h.mtime = c.isNull(4) ? 0 : c.getLong(4); h.why = "name";
+                            h.name = name; h.parent = dir.toString();           // the path is a document URI: the page shows the name and goes to the parent
                             boolean keep = true;
                             if (!q.content.isEmpty()) {
                                 // content: reads the file through its provider (text files only, the same size limit as on the phone's own storage)
@@ -13773,7 +13816,7 @@ public class MainActivity extends Activity {
 
         /** A cp / mv / rm batch where some path, or the destination, is added storage (a SAF document URI): one item at a time through fmOpSaf, with the name rule applied here (replace deletes the clash first, skip leaves it, keep lets the provider number the copy). Fills {@code res} like the shell batch. */
         private void runSafBatch(String op, List<String> paths, String dest, String policyName, JSONObject res) {
-            JSONArray failed = new JSONArray();
+            JSONArray failed = new JSONArray(), kept = new JSONArray();
             int done = 0, skipped = 0;
             boolean cancelled = false;
             Runnable hook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
@@ -13802,8 +13845,8 @@ public class MainActivity extends Activity {
                             if (dest.startsWith("content://") && !name.isEmpty()) {
                                 Uri clash = safChildNamed(Uri.parse(dest), name);
                                 if (clash != null) {
-                                    if (clash.equals(Uri.parse(q))) { skipped++; continue; }
-                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if (clash.equals(Uri.parse(q))) { skipped++; kept.put(q); continue; }
+                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }
                                     if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
                                 }
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
@@ -13824,13 +13867,14 @@ public class MainActivity extends Activity {
                 res.put("total", paths.size());
                 res.put("done", done);
                 res.put("skipped", skipped);
+                res.put("kept", kept);
                 res.put("cancelled", cancelled);
                 res.put("failed", failed);
                 res.put("ok", failed.length() == 0 && !cancelled);
             } catch (Throwable t) {
                 try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
             } finally {
-                JobService.end(MainActivity.this, hook, fmBatchDoneText(op, res));
+                JobService.end(MainActivity.this, hook, title, fmBatchDoneText(op, res));
             }
         }
 
@@ -13922,7 +13966,7 @@ public class MainActivity extends Activity {
         /**
          * Like fmBatch, with the rule for a name that is already in destDir: "replace" (folders merge), "skip" or "keep" (both: name (1).ext).
          * Whatever the app can read and write itself is done in Java with no shell (so it works without a working mode); the rest goes
-         * through the privileged shell as before. Ends with window.onFmBatchDone({op, ok, total, done, skipped, cancelled, failed: [{p, error}]}).
+         * through the privileged shell as before. Ends with window.onFmBatchDone({op, ok, total, done, skipped, kept: [path], cancelled, failed: [{p, error}]}) (kept: the items left alone because of the name rule).
          */
         @JavascriptInterface
         public String fmBatch2(final String op, final String pathsJson, final String destDir, final String policyName) {
@@ -13938,6 +13982,7 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     try {
                         res.put("op", op);
                         if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
@@ -13961,7 +14006,7 @@ public class MainActivity extends Activity {
                             notifyJs("window.onFmBatchDone && window.onFmBatchDone(" + res.toString() + ")");
                             return;
                         }
-                        JSONArray failed = new JSONArray();
+                        JSONArray failed = new JSONArray(), kept = new JSONArray();
                         List<String> todo = new ArrayList<String>();
                         for (String q : paths) {
                             if (fmProtectedPath(q)) failed.put(new JSONObject().put("p", q).put("error", "System location: not touched"));
@@ -13981,7 +14026,8 @@ public class MainActivity extends Activity {
                         final ProgressMeter meter = new ProgressMeter(totalBytes, todo.size(), System.currentTimeMillis());
                         final String title = fmBatchLabel(op) + " " + todo.size() + (todo.size() == 1 ? " item" : " items");
                         cancelHook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
-                        JobService.begin(MainActivity.this, title, cancelHook);
+                        jobTitle = title;
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, fmBatchLabel(op), 1000, 20000, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14001,6 +14047,7 @@ public class MainActivity extends Activity {
                             FileOps.Result fr = "rm".equals(op) ? FileOps.delete(direct, prog) : "cp".equals(op) ? FileOps.copy(direct, new File(dest), policy, prog) : FileOps.move(direct, new File(dest), policy, prog);
                             done += fr.done;
                             skipped += fr.skipped;
+                            for (String k : fr.kept) kept.put(k);
                             cancelled = fr.cancelled;
                             for (String[] f : fr.failed) failed.put(new JSONObject().put("p", f[0]).put("error", f[1]));
                         }
@@ -14023,7 +14070,7 @@ public class MainActivity extends Activity {
                                     if (linkLost) { failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost")); continue; }
                                     String o2 = batchShell(FileOps.shellScript("cp".equals(op) ? "cp -r" : "mv", q, dest, policy));
                                     if (FileRules.okLine(o2, "FMOK")) done++;
-                                    else if (o2 != null && o2.contains("FMSKIP")) skipped++;
+                                    else if (o2 != null && o2.contains("FMSKIP")) { skipped++; kept.put(q); }
                                     else {
                                         String m2 = o2 == null ? "failed" : o2.trim();
                                         if (fmTransportLost(m2)) linkLost = true;
@@ -14087,6 +14134,7 @@ public class MainActivity extends Activity {
                         res.put("total", paths.size());
                         res.put("done", done);
                         res.put("skipped", skipped);
+                        res.put("kept", kept);
                         res.put("cancelled", cancelled);
                         res.put("failed", failed);
                         res.put("ok", failed.length() == 0 && !cancelled);
@@ -14097,7 +14145,7 @@ public class MainActivity extends Activity {
                         } catch (Exception ignored) {}
                     } finally {
                         if (ticker != null) ticker.stop();
-                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, fmBatchDoneText(op, res));
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, jobTitle, fmBatchDoneText(op, res));
                         synchronized (fmBatchLock) {
                             fmBatchBusy = false;
                         }
@@ -14116,6 +14164,15 @@ public class MainActivity extends Activity {
         /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}.
          *  When the app itself can read the file (storage with All-files access), the Installer reads it in
          *  place with no shell at all; only truly privileged paths fall back to staging in /data/local/tmp. */
+        /** Where {@link #fmInstall} stages a package the app cannot read itself (see {@link #fmInstallStagedDone}). */
+        private static final String FM_INSTALL_STAGE_PREFIX = "/data/local/tmp/fm_install_";
+
+        /** Removes a staged copy made by {@link #fmInstall} once the Installer has read it into its own work folder (nothing else is ever removed). */
+        private void fmInstallStagedDone(String ref) {
+            if (ref == null || !ref.startsWith(FM_INSTALL_STAGE_PREFIX) || !ref.matches("[A-Za-z0-9_./]+")) return;
+            try { executeShell("rm -f " + ref); } catch (Throwable ignored) {}
+        }
+
         @JavascriptInterface
         public String fmInstall(String path) {
             JSONObject res = new JSONObject();
@@ -14127,7 +14184,7 @@ public class MainActivity extends Activity {
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
                 } catch (Exception ignored) {}
                 if ("standard".equals(resolveExecMode())) { needFileAccess("To read this package from storage", path); res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
-                String staged = "/data/local/tmp/fm_install.apk";
+                String staged = FM_INSTALL_STAGE_PREFIX + android.os.Process.myPid() + "_" + Long.toHexString(System.nanoTime()) + ".apk";    // one per call: two installs never share (or overwrite) a file
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
                 if (!FileRules.okLine(out, "OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
                 res.put("ok", true);
@@ -14444,6 +14501,7 @@ public class MainActivity extends Activity {
                     File tmp = null;
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     try {
                         res.put("op", "extract");
                         ZipTool.Archive a = archiveFor(path, false, null, new ArchiveIo.Progress() {      // opening it first can be the longest part: Cancel stops that too
@@ -14458,7 +14516,8 @@ public class MainActivity extends Activity {
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
                         final ProgressMeter meter = new ProgressMeter(tree ? ZipTool.sizeUnder(a, name) : 0, 0, System.currentTimeMillis());
                         cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
-                        JobService.begin(MainActivity.this, "Extracting " + new File(fmCanonicalPath(path)).getName(), cancelHook);
+                        jobTitle = "Extracting " + new File(fmCanonicalPath(path)).getName();
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, "Extracting", 1000, tree ? 20000 : Long.MAX_VALUE / 4, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14533,7 +14592,7 @@ public class MainActivity extends Activity {
                         if (tmp != null) tmp.delete();
                         if (ticker != null) ticker.stop();
                         String doneText = res.optBoolean("ok") ? "Extracted " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") + (res.optInt("kept") > 0 ? " · " + res.optInt("kept") + " left as they were" : "") : res.optString("error");
-                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, doneText);
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, jobTitle, doneText);
                         synchronized (archiveLock) {
                             archiveBusy = false;
                         }
@@ -14760,6 +14819,7 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     char[] pw = null;
                     try {
                         res.put("op", "create");
@@ -14796,7 +14856,8 @@ public class MainActivity extends Activity {
                         pw = password.isEmpty() ? null : password.toCharArray();
                         final ProgressMeter meter = new ProgressMeter(totalBytes, 0, System.currentTimeMillis());
                         cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
-                        JobService.begin(MainActivity.this, "Compressing " + dest.getName(), cancelHook);
+                        jobTitle = "Compressing " + dest.getName();
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, "Compressing", 1000, 20000, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14842,7 +14903,7 @@ public class MainActivity extends Activity {
                         if (ticker != null) ticker.stop();
                         if (cancelHook != null) {
                             String doneText = res.optBoolean("ok") ? "Compressed " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") : res.optString("error");
-                            JobService.end(MainActivity.this, cancelHook, doneText);
+                            JobService.end(MainActivity.this, cancelHook, jobTitle, doneText);
                         }
                         synchronized (archiveLock) {
                             archiveBusy = false;
@@ -15572,27 +15633,19 @@ public class MainActivity extends Activity {
         public String saveTextToDownloads(String fileName, String text) {
             String safeName = (fileName == null ? "export.txt" : fileName).replaceAll("[^A-Za-z0-9._-]", "_");
             byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            Object[] target = null;
             try {
-                if (Build.VERSION.SDK_INT >= 29) {
-                    android.content.ContentValues values = new android.content.ContentValues();
-                    values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName);
-                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain");
-                    values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/ADB App Manager");
-                    Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                    if (uri == null) return "Error: could not create file";
-                    OutputStream out = getContentResolver().openOutputStream(uri);
+                String mime = safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain";
+                target = openDownloadOutput(safeName, mime, null);
+                OutputStream out = (OutputStream) target[0];
+                try {
                     out.write(bytes);
+                } finally {
                     out.close();
-                    return "Download/ADB App Manager/" + safeName;
                 }
-                File dir = new File(getExternalFilesDir(null), "exports");
-                if (!dir.exists()) dir.mkdirs();
-                File file = new File(dir, safeName);
-                OutputStream out = new FileOutputStream(file);
-                out.write(bytes);
-                out.close();
-                return file.getAbsolutePath();
+                return (String) target[1];
             } catch (Exception e) {
+                deleteDownloadTarget(target);       // no empty, half-written entry left looking like the export
                 return "Error: " + e.getMessage();
             }
         }
@@ -15815,7 +15868,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (isHeadless()) return;
-        String saved = prefs.getString("working_mode", activeWorkingMode);
+        String saved = knownWorkingMode(prefs.getString("working_mode", activeWorkingMode));
         if (!saved.equals(activeWorkingMode)) {
             // A tile or the widget switched the mode while the app was in the background
             activeWorkingMode = saved;

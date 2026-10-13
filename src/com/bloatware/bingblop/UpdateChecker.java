@@ -45,12 +45,22 @@ public final class UpdateChecker {
 
     public interface Clock {
         long now();
+
+        /** A time that only moves forward, for the run's deadline: the wall clock steps when the phone syncs its time. The default is now(). */
+        default long monotonicMs() {
+            return now();
+        }
     }
 
     public static final Clock SYSTEM_CLOCK = new Clock() {
         @Override
         public long now() {
             return System.currentTimeMillis();
+        }
+
+        @Override
+        public long monotonicMs() {
+            return System.nanoTime() / 1_000_000L;
         }
     };
 
@@ -153,6 +163,7 @@ public final class UpdateChecker {
     private volatile boolean offline;
     private volatile boolean closed;                         // the run is over: late answers are thrown away
     private final Object lock = new Object();
+    private final Object deviceLock = new Object();          // the device probe runs process calls: never under `lock`, which the commits and the progress reports need
 
     // per run
     private Options opts;
@@ -517,7 +528,7 @@ public final class UpdateChecker {
         this.listener = l;
         this.guard = new Guard(net);
         this.myGeneration = options.generation == null ? 0 : options.generation.begin();
-        long t0 = clock.now();
+        long t0 = clock.monotonicMs();                       // the deadline runs on the monotonic time: a step of the wall clock must not expire the run
         long deadlineAt = t0 + options.deadlineMs;
 
         List<Job> jobs = new ArrayList<Job>();
@@ -595,7 +606,7 @@ public final class UpdateChecker {
                     if (finished.size() >= total && selfDone()) break;      // all results are in; the barrier below waits for their side effects
                 }
                 if (cancelled || offline) break;
-                if (clock.now() >= deadlineAt) {
+                if (clock.monotonicMs() >= deadlineAt) {
                     expired = true;
                     break;
                 }
@@ -643,7 +654,7 @@ public final class UpdateChecker {
                 String lane = (j.app.openSource ? LANE_OS : "") + (j.app.openSource && j.app.galaxy ? "+" : "") + (j.app.galaxy ? LANE_GX : "");
                 addFailure(j.app, offline ? new Failure("offline", "no internet", "", lane) : new Failure("deadline", "timed out", "", lane));
             }
-            summary = buildSummary(jobs, clock.now() - t0);
+            summary = buildSummary(jobs, clock.monotonicMs() - t0);
         }
         cache.save();
         progress("done");
@@ -1107,7 +1118,7 @@ public final class UpdateChecker {
     // ------------------------------------------------------------------------------------------------
 
     private UpdateManager.Device device() throws Exception {
-        synchronized (lock) {
+        synchronized (deviceLock) {
             if (deviceMemo == null) {
                 if (opts.device == null) throw new IllegalStateException("no device identity for the Galaxy Store");
                 deviceMemo = opts.device.get();
