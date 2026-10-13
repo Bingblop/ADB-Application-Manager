@@ -7807,6 +7807,10 @@ public class MainActivity extends Activity {
         });
     }
 
+    // The log recorder is held by the app, not by an activity or its bridge: a recording goes on across a recreate() (a theme change,
+    // Back and reopen), the new activity sees it in the status and can stop it, and it cannot start a second one beside it.
+    private static volatile LogRecorder logRec;
+
     private class AndroidBridge {
 
         @JavascriptInterface
@@ -11897,7 +11901,7 @@ public class MainActivity extends Activity {
         }
 
         // ---- Log recorder: the log written to a file while it is on, looked at afterwards ----
-        private LogRecorder logRec;
+        // the recorder itself is MainActivity.logRec: one for the whole app, not one per activity (see there)
         private File logRecDir() { return new File(getFilesDir(), "logs"); }
 
         private String logRecStatusJson() {
@@ -11922,22 +11926,25 @@ public class MainActivity extends Activity {
             JSONObject r = new JSONObject();
             try {
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("error", "Recording the log needs ADB, Shizuku or Root."); return r.toString(); }
-                if (logRec != null && logRec.status().running) { r.put("ok", false); r.put("error", "A recording is already running."); return r.toString(); }
-                final String lv = level != null && level.matches("[VDIWEF]") ? level : "V";
-                final String app = pkg == null || pkg.trim().isEmpty() ? null : pkg.trim();
-                final String flt = filter == null ? "" : filter;
-                logRec = new LogRecorder(logRecDir(), new LogRecorder.Source() {
-                    @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
-                }, 2000, 25L * 1024 * 1024);
-                java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                head.add("ADB Application Manager - log recording");
-                head.add("Started: " + new java.util.Date());
-                head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
-                head.add("Level: " + lv + " and above");
-                head.add("App: " + (app == null ? "all apps" : (appName != null && !appName.isEmpty() ? appName + " (" + app + ")" : app)) + (flt.trim().isEmpty() ? "" : " | Text filter: \"" + flt.trim() + "\""));
-                String name = logRec.start(head);
-                if (name.isEmpty()) { r.put("ok", false); r.put("error", "The recording file could not be created."); return r.toString(); }
-                r.put("ok", true); r.put("name", name);
+                synchronized (LogRecorder.class) {                                   // the recorder is shared by every activity: check and start under one lock
+                    if (logRec != null && logRec.status().running) { r.put("ok", false); r.put("error", "A recording is already running."); return r.toString(); }
+                    final String lv = level != null && level.matches("[VDIWEF]") ? level : "V";
+                    final String app = pkg == null || pkg.trim().isEmpty() ? null : pkg.trim();
+                    final String flt = filter == null ? "" : filter;
+                    LogRecorder rec = new LogRecorder(logRecDir(), new LogRecorder.Source() {
+                        @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
+                    }, 2000, 25L * 1024 * 1024);
+                    java.util.ArrayList<String> head = new java.util.ArrayList<String>();
+                    head.add("ADB Application Manager - log recording");
+                    head.add("Started: " + new java.util.Date());
+                    head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
+                    head.add("Level: " + lv + " and above");
+                    head.add("App: " + (app == null ? "all apps" : (appName != null && !appName.isEmpty() ? appName + " (" + app + ")" : app)) + (flt.trim().isEmpty() ? "" : " | Text filter: \"" + flt.trim() + "\""));
+                    String name = rec.start(head);
+                    if (name.isEmpty()) { r.put("ok", false); r.put("error", "The recording file could not be created."); return r.toString(); }
+                    logRec = rec;
+                    r.put("ok", true); r.put("name", name);
+                }
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
             }
@@ -11946,7 +11953,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public synchronized String logRecStop() {
-            if (logRec != null) logRec.stop("stopped");
+            synchronized (LogRecorder.class) { if (logRec != null) logRec.stop("stopped"); }
             return logRecStatusJson();
         }
 
@@ -11981,7 +11988,9 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public synchronized String logRecDelete(String name) {
-            if (logRec != null && logRec.status().running && name != null && name.equals(logRec.status().name)) return "Error: stop the recording first";
+            synchronized (LogRecorder.class) {
+                if (logRec != null && logRec.status().running && name != null && name.equals(logRec.status().name)) return "Error: stop the recording first";
+            }
             return LogRecorder.delete(logRecDir(), name) ? "ok" : "Error: could not delete it";
         }
 
@@ -13830,7 +13839,7 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
             } finally {
-                JobService.end(MainActivity.this, hook, fmBatchDoneText(op, res));
+                JobService.end(MainActivity.this, hook, title, fmBatchDoneText(op, res));
             }
         }
 
@@ -13938,6 +13947,7 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     try {
                         res.put("op", op);
                         if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
@@ -13981,7 +13991,8 @@ public class MainActivity extends Activity {
                         final ProgressMeter meter = new ProgressMeter(totalBytes, todo.size(), System.currentTimeMillis());
                         final String title = fmBatchLabel(op) + " " + todo.size() + (todo.size() == 1 ? " item" : " items");
                         cancelHook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
-                        JobService.begin(MainActivity.this, title, cancelHook);
+                        jobTitle = title;
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, fmBatchLabel(op), 1000, 20000, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14097,7 +14108,7 @@ public class MainActivity extends Activity {
                         } catch (Exception ignored) {}
                     } finally {
                         if (ticker != null) ticker.stop();
-                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, fmBatchDoneText(op, res));
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, jobTitle, fmBatchDoneText(op, res));
                         synchronized (fmBatchLock) {
                             fmBatchBusy = false;
                         }
@@ -14444,6 +14455,7 @@ public class MainActivity extends Activity {
                     File tmp = null;
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     try {
                         res.put("op", "extract");
                         ZipTool.Archive a = archiveFor(path, false, null, new ArchiveIo.Progress() {      // opening it first can be the longest part: Cancel stops that too
@@ -14458,7 +14470,8 @@ public class MainActivity extends Activity {
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
                         final ProgressMeter meter = new ProgressMeter(tree ? ZipTool.sizeUnder(a, name) : 0, 0, System.currentTimeMillis());
                         cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
-                        JobService.begin(MainActivity.this, "Extracting " + new File(fmCanonicalPath(path)).getName(), cancelHook);
+                        jobTitle = "Extracting " + new File(fmCanonicalPath(path)).getName();
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, "Extracting", 1000, tree ? 20000 : Long.MAX_VALUE / 4, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14533,7 +14546,7 @@ public class MainActivity extends Activity {
                         if (tmp != null) tmp.delete();
                         if (ticker != null) ticker.stop();
                         String doneText = res.optBoolean("ok") ? "Extracted " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") + (res.optInt("kept") > 0 ? " · " + res.optInt("kept") + " left as they were" : "") : res.optString("error");
-                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, doneText);
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, jobTitle, doneText);
                         synchronized (archiveLock) {
                             archiveBusy = false;
                         }
@@ -14760,6 +14773,7 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     JobTicker ticker = null;
                     Runnable cancelHook = null;
+                    String jobTitle = null;
                     char[] pw = null;
                     try {
                         res.put("op", "create");
@@ -14796,7 +14810,8 @@ public class MainActivity extends Activity {
                         pw = password.isEmpty() ? null : password.toCharArray();
                         final ProgressMeter meter = new ProgressMeter(totalBytes, 0, System.currentTimeMillis());
                         cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
-                        JobService.begin(MainActivity.this, "Compressing " + dest.getName(), cancelHook);
+                        jobTitle = "Compressing " + dest.getName();
+                        JobService.begin(MainActivity.this, jobTitle, cancelHook);
                         ticker = new JobTicker(meter, "Compressing", 1000, 20000, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -14842,7 +14857,7 @@ public class MainActivity extends Activity {
                         if (ticker != null) ticker.stop();
                         if (cancelHook != null) {
                             String doneText = res.optBoolean("ok") ? "Compressed " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") : res.optString("error");
-                            JobService.end(MainActivity.this, cancelHook, doneText);
+                            JobService.end(MainActivity.this, cancelHook, jobTitle, doneText);
                         }
                         synchronized (archiveLock) {
                             archiveBusy = false;

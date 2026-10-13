@@ -117,7 +117,7 @@ final class SdmHost implements SdmBridge.Host {
             if (active && !notifying) { notifying = true; JobService.begin(ctx, "SD Maid SE", cancelAll); }
             else if (!active && notifying) {
                 notifying = false;
-                JobService.end(ctx, cancelAll, "done".equals(kind) ? ev.optJSONObject("d") != null ? doneText(ev.optJSONObject("d")) : "" : "");
+                JobService.end(ctx, cancelAll, "SD Maid SE", "done".equals(kind) ? ev.optJSONObject("d") != null ? doneText(ev.optJSONObject("d")) : "" : "");
             }
         }
     }
