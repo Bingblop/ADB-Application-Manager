@@ -13839,7 +13839,7 @@ public class MainActivity extends Activity {
                 if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo FMOK";
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo FMOK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo FMOK";
-                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK";
+                else if ("cp".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
