@@ -14,7 +14,7 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => {
       const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
-      const st = window.__st = { calls: [], devs: ['a', 'b'], xferMs: 0, pullOut: null };
+      const st = window.__st = { calls: [], devs: ['a', 'b'], xferMs: 0, pmMs: 0, pullOut: null };
       const reply = (tag, out, ms) => setTimeout(() => window.onCdResult({ tag, out, ms: 4 }), ms || 8);
       const shell = (cmd, serial) => {
         if (/^for p in/.test(cmd)) return ['ro.product.manufacturer=x', 'ro.product.model=M-' + serial, 'ro.build.version.release=14', 'ro.build.version.sdk=34', 'ro.product.cpu.abilist=arm64-v8a', 'ro.sf.lcd_density=320', 'wmsize=Physical size: 450x450 ', 'wmdens=Physical density: 320 ', 'batt=  level: 83   status: 3 '].join('\n');
@@ -37,7 +37,7 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
             return reply(tag, out);
           }
           st.calls.push({ serial, cmd: a[0] === 'shell' ? a[1] : a.join(' ') });
-          if (a[0] === 'shell') return reply(tag, shell(a[1], serial));
+          if (a[0] === 'shell') return reply(tag, shell(a[1], serial), /^pm path/.test(a[1]) ? st.pmMs : 0);
           if (a[0] === 'push') return reply(tag, '/x: 1 file pushed, 0 skipped.', st.xferMs);
           if (a[0] === 'pull') return reply(tag, st.pullOut || '/x: 1 file pulled, 0 skipped.', st.xferMs);
           return reply(tag, '');
@@ -88,6 +88,41 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
     check('   ' + name + ' does not claim it was done; the toast is the one about the lost connection', !done.test(await toast(page)) && /Lost the connection to Watch/.test(await toast(page)), await toast(page));
     await page.close();
   }
+
+  // ---- 2. A multi-file push (Send a file here) and the APK pull (Apps menu) keep to the device they started on ----
+  const files = [1, 2, 3].map(i => ({ name: 'f' + i + '.bin', path: '/cache/cd_pick/1/f' + i + '.bin', size: 10 }));
+  const xfers = (page, verb) => page.evaluate(v => window.__st.calls.filter(c => c.cmd.split(' ')[0] === v).map(c => c.serial + ' ' + c.cmd), verb);
+  const pushStart = page => page.evaluate(f => { window.__st.xferMs = 250; window.onCdPicked({ tag: 'push', files: f }); }, files);
+  const pullStart = page => page.evaluate(() => { window.__st.xferMs = 250; cdPullApk('com.example.app'); });
+  const inFlight = (page, verb, n) => page.waitForFunction(([v, n]) => window.__st.calls.filter(c => c.cmd.split(' ')[0] === v).length >= n, [verb, n], { timeout: 3000 });
+  const settle = page => page.waitForTimeout(1400);
+  page = await open();
+  await pushStart(page); await settle(page);
+  check('2. push, no change of device: the three files go to A and the summary counts them', (await xfers(page, 'push')).join('|') === [1, 2, 3].map(i => A + ' push /cache/cd_pick/1/f' + i + '.bin /sdcard/').join('|') && /3 files sent to \/sdcard/.test(await toast(page)), (await xfers(page, 'push')).join('|') + ' ' + await toast(page));
+  await page.close();
+  page = await open();
+  await pushStart(page); await inFlight(page, 'push', 1);
+  await drop(page); await settle(page);
+  const pushed = await xfers(page, 'push');
+  check('   push, A drops after the first file and B is picked: nothing is pushed to B', await page.evaluate(b => cd.serial === b, B) && pushed.every(c => c.startsWith(A + ' ')) && pushed.length === 1, pushed.join('|'));
+  check('   and it does not say all three were sent', !/files sent/.test(await toast(page)) && /The push did not finish/.test(await toast(page)), await toast(page));
+  await page.close();
+  page = await open();
+  await pullStart(page); await settle(page);
+  check('3. APK pull, no change of device: the three files come from A and are saved', (await xfers(page, 'pull')).length === 3 && (await xfers(page, 'pull')).every(c => c.startsWith(A + ' pull /data/app/x/')) && /Saved to Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555/.test(await toast(page)), (await xfers(page, 'pull')).join('|') + ' ' + await toast(page));
+  await page.close();
+  page = await open();
+  await pullStart(page); await inFlight(page, 'pull', 1);
+  await drop(page); await settle(page);
+  const pulled = await xfers(page, 'pull');
+  check('   APK pull, A drops after the first file and B is picked: nothing is pulled from B', await page.evaluate(b => cd.serial === b, B) && pulled.every(c => c.startsWith(A + ' ')) && pulled.length === 1, pulled.join('|'));
+  check('   and it does not say "Saved"', !/Saved to/.test(await toast(page)) && /The pull did not finish/.test(await toast(page)), await toast(page));
+  await page.close();
+  page = await open();
+  await page.evaluate(() => { window.__st.pmMs = 300; cdPullApk('com.example.app'); });
+  await page.evaluate(() => { window.__st.devs = ['b']; return cdRefreshDevices(false); }); await settle(page);
+  check('   APK pull, A drops while the device is still asked for the APK path: no pull at all', (await xfers(page, 'pull')).length === 0 && !/Saved to/.test(await toast(page)), (await xfers(page, 'pull')).join('|') + ' ' + await toast(page));
+  await page.close();
 
   console.log('errors:', JSON.stringify(errors));
   console.log(bad ? bad + ' FAILED' : 'ALL OK');
