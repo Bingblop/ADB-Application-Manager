@@ -25400,24 +25400,30 @@ Type any command above (e.g. pm list packages -d)</div>
             else showToast(cdFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
         }
         async function cdFmRename(p, e) {
+            const serial = cd.serial;                                   // the path is from this device's listing: it goes to this device only
             const r = await cdAsk({ title: 'Rename', text: p, input: 'New name', value: e.name, ok: 'Rename' });
             if (!r || !r.a.trim() || r.a.trim() === e.name) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()));
+            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Renamed');
             cdFmRefresh();
         }
         async function cdFmDelete(p, e) {
+            const serial = cd.serial;
             if (!(await cdAsk({ title: 'Delete ' + e.name + '?', text: p + (e.isDir ? '\n\nThe folder and everything in it is removed from the device.' : ''), ok: 'Delete', danger: true }))) return;
-            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p));
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
+            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Deleted');
             cdFmRefresh();
         }
         async function cdFmNewFolder() {
-            const r = await cdAsk({ title: 'New folder', text: 'In ' + cd.fm.path, input: 'Folder name', ok: 'Create' });
+            const serial = cd.serial, dir = cd.fm.path;
+            const r = await cdAsk({ title: 'New folder', text: 'In ' + dir, input: 'Folder name', ok: 'Create' });
             if (!r || !r.a.trim()) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mkdir -p ' + cdQ((cd.fm.path === '/' ? '' : cd.fm.path) + '/' + r.a.trim()));
+            const out = await cdSh('mkdir -p ' + cdQ((dir === '/' ? '' : dir) + '/' + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Folder made');
             cdFmRefresh();
         }

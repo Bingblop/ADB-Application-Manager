@@ -1,0 +1,15 @@
+ok   1. the first device (A) is chosen and its folder is listed
+ok      control: Delete runs on A: 192.168.1.20:5555 rm '/sdcard/notes.txt' Deleted
+ok      control: Rename runs on A: 192.168.1.20:5555 mv '/sdcard/notes.txt' '/sdcard/other.txt' Renamed
+ok      control: New folder runs on A: 192.168.1.20:5555 mkdir -p '/sdcard/Pics' Folder made
+ok      Delete: while its question is open the list moved to B
+ok      Delete confirmed after that: no command reached any device:
+ok      Delete does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+ok      Rename: while its question is open the list moved to B
+ok      Rename confirmed after that: no command reached any device:
+ok      Rename does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+ok      New folder: while its question is open the list moved to B
+ok      New folder confirmed after that: no command reached any device:
+ok      New folder does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+errors: []
+ALL OK
