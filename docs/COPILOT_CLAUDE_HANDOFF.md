@@ -177,6 +177,23 @@ Things the next person should know:
 - **Open questions for the owner:** #164 made "Bottom bar only" the default, which hides the top tab bar on every phone that updates (the owner has not objected); the project thread's drafts #167/#168/#169 are not in this release and will base-merge after the bump.
 - **Not in this release:** the `.sig` check of Morphe bundles, M-13's fixed key credentials, the Z-6 rows, item 9 (Termux minor), the Hidden Settings backup/restore idea.
 
+## v7.13.1 (cut from `main`; written 2026-10-13)
+
+A fix release: the fifty-four findings of the whole-codebase review of 2026-10-13, nothing new. The review ran ten readers in parallel (four over `assets/index.html`, six over the Java and the native pty helper), each required to trace a path from an input to a wrong outcome; twelve findings were reproduced by running the code. The full report with line numbers is not in the repository (it names lines of the commit it was written against, 8f6df7a); the two pull request bodies and section 28 of the device checklist carry the list.
+
+| PR | What | Merge | Tests | Checklist |
+|---|---|---|---|---|
+| #183 | The eleven serious findings: Deduplicator keeper, Connected Devices device pinning, shell exit-status verdict and a refused `su`, terminal close() deadlock, rename/copy/SAF/extract overwrites, SAF names as paths, Morphe plain-APK TOCTOU, Hidden Settings restore during a load, SD Maid on a second user | 48385d2 (merge commit; five commits kept) | t270; `shelloutcome` (33), `ptyshell`, `ziptool`, `sdmdedup`, `sdmcorpsefinder`, `sdmareas` | 28 (first eleven) |
+| #184 | The other forty-three, in six commits by area, plus checklist section 28 | 134781d (merge commit) | t271; checks added to `archiveio`, `ziptool`, `zipcrypt`, `jobticker`, `komi`, `updatechecker`, `morphevirustotal`, `sdmareas`, `settingsdb`, `overlayrules`, `trackerupdate`, `adbargs`, `ptyshell`; t180 and the `sdmdedup`, `rish`, flaky-shell suites updated | 28 (the rest) |
+| bump | Version 7.13.1 (855), changelog, README, guides, this page, `docs/RELEASE-CHECKLIST-v7.13.1.md` | (see the release) | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Left open on purpose:** #185, the update check's progress count can step back by one (events snapshotted under the lock, delivered outside it); the ticket carries the trace and a drain-on-caller queue as the proposed fix. M-4 (a Stop pressed before the Morphe service is up is lost) is still open from the v7.12.9 audits.
+- **Not reached by the review** (a narrower second pass was started on 2026-10-13): the Connected Devices Send/Console/Logcat/Files sub-tabs, Backups beyond a skim, the pty terminal page code (`rt*`), junrar's RAR4 decoding, `MorpheLibrary`/`MorpheRunner`/`MorpheService`, `AdbRuntime`'s server/socket setup, the `acs_labels.json` tables, and all on-device behaviour.
+- **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
+- **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
+
 ## Definition of done for implementation PRs
 
 - Link the relevant finding or user requirement and explain scope.

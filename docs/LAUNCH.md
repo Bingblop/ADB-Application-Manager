@@ -6,7 +6,7 @@ The plan for distributing and announcing ADB Application Manager Pro, starting w
 
 | Channel | Status | What it takes |
 | --- | --- | --- |
-| **GitHub Releases** | Live: v7.13.0, three APKs and `SHA256SUMS.txt`, signed with the one release certificate. | Nothing more. Keep the 64-bit file first in the asset list (the in-app updater takes the first `.apk`). |
+| **GitHub Releases** | Live: v7.13.1 (v7.13.0 before it), three APKs and `SHA256SUMS.txt`, signed with the one release certificate. | Nothing more. Keep the 64-bit file first in the asset list (the in-app updater takes the first `.apk`). |
 | **Obtainium** (badge in the README) | Ready with this branch: the badge adds a configuration that follows the Releases page and picks the `-arm64-v8a` file. | Merge this branch. The redirect page offers Obtainium to a visitor who does not have it. |
 | **Obtainium directory** (apps.obtainium.imranr.dev) | **Not yet.** Their rules: the source repository must be at least 4 months old and have at least 35 stars. This repository was created on 2026-09-30 (eligible from 2027-01-30) and has 31 stars. | After 2027-01-30, open a pull request on `ImranR98/apps.obtainium.imranr.dev` adding `public/data/apps/complex/com.bloatware.bingblop.json` with the configuration below. |
 | **APKMirror** | Open to any free app. The uploader checks the signature against earlier uploads, so the first upload sets the certificate. | Upload the `-universal` APK at https://www.apkmirror.com/apk-upload/ with the release notes. Later versions can be uploaded by anyone and are matched by certificate. |
