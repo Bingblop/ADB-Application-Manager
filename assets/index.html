@@ -37277,6 +37277,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mpToggleTrace(i) { const e = document.getElementById('mpTrace' + i); if (e) e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
         function mpFailHint(res, trace) {
+            if (res.busy) return '';                                          // the patcher is busy with another job: the error says so, a hint about patches would mislead
             const s = (res.error || '') + '\n' + (trace || '') + '\n' + (res.trace || '');
             if (/OutOfMemory|killed|heap/i.test(s)) return 'The patcher ran out of memory. Close other apps and try again, or turn on "Strip unused native libraries" in the patcher settings.';
             if (/No patch is left|incompatible|does not patch|not support/i.test(s)) return 'The patches do not support this version of the app. Get a supported version with Morphe Helper, or turn on "Patch unsupported versions" in the patcher settings.';

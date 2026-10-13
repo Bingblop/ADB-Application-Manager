@@ -78,7 +78,7 @@ public final class MorpheBridge {
     private final Object catalogLock = new Object();                                // one catalog read at a time (they share jobs/list)
     private final MorpheRunner runner = new MorpheRunner(new MorpheRunner.Launcher() {
         @Override public boolean start(String cmd, File job, File events, String title) { return MorpheService.start(host.context(), cmd, job, events, title); }
-        @Override public void cancel() { MorpheService.cancel(host.context()); }
+        @Override public void cancel(File events) { MorpheService.cancel(host.context(), events); }
         @Override public boolean alive() { return serviceAlive(); }
     });
     private final MorpheSlot slot = new MorpheSlot();                                   // the one patch run at a time (an atomic take, see MorpheSlot)
