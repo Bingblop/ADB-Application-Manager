@@ -1762,6 +1762,54 @@
             padding: var(--space-4) 0;
         }
 
+        /* A list with nothing in it, the same everywhere (emptyStateHtml): a muted icon, a title, a hint when there is one, and the button that
+           gets something into the list (Clear search, Clear filters, Reload ...). .list-empty stays for the one-line notes inside a card or sheet. */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: var(--space-2);
+            padding: var(--space-6) var(--space-5);
+            color: var(--text-muted);
+        }
+        .empty-state.compact { padding: var(--space-5) var(--space-3); }
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            flex: none;
+            border-radius: 50%;
+            background: var(--fill-2);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--space-1);
+        }
+        .empty-state-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .empty-state-title {
+            color: var(--text-main);
+            font-size: var(--fs-label);
+            font-weight: var(--fw-bold);
+            line-height: 1.35;
+            max-width: 32em;
+            overflow-wrap: anywhere;
+        }
+        .empty-state-hint {
+            font-size: var(--fs-body);
+            line-height: 1.5;
+            max-width: 32em;
+            overflow-wrap: anywhere;
+        }
+        .empty-state-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--space-3);
+            margin-top: var(--space-3);
+        }
+        .empty-state-actions .mode-action-btn { min-height: var(--ctl-h); max-width: 100%; white-space: normal; overflow-wrap: anywhere; justify-content: center; }
+
         .perm-row {
             display: flex;
             align-items: center;
@@ -2546,7 +2594,6 @@
         .agent-ask-hist-row:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .agent-ask-hist-row b { display: block; font-size: var(--fs-item); overflow-wrap: anywhere; }
         .agent-ask-hist-row span { display: block; font-size: var(--fs-pill); color: var(--text-muted); }
-        .agent-ask-hist-empty { padding: var(--space-4); font-size: var(--fs-body); color: var(--text-muted); }
         .agent-ask-foot { margin-top: var(--space-3h); font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); }
         #agentCard.flash { animation: agentFlash 1.1s ease 2; }
         @keyframes agentFlash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--accent); } }
@@ -5115,7 +5162,6 @@
                 .sdb-sw.on { background:var(--accent); border-color:transparent; }
                 .sdb-sw.on span { transform:translateX(18px); background:var(--on-accent); }
                 .sdb-empty { text-align:center; padding:26px var(--space-4); color:var(--text-muted); font-size:var(--fs-body); line-height:1.5; overflow-wrap:anywhere; }
-                .sdb-empty .mode-action-btn { margin-top:var(--space-3h); max-width:100%; white-space:normal; }
                 .sdb-skel { height:62px; border-radius:var(--radius-md); background:linear-gradient(90deg,var(--fill-1),var(--fill-3),var(--fill-1)); background-size:200% 100%; animation:sdbShimmer 1.2s linear infinite; }
                 @keyframes sdbShimmer { to { background-position:-200% 0; } }
                 .sdb-err { border:1px solid var(--line-bloat); background:var(--tint-bloat); border-radius:var(--radius-md); padding:var(--space-4); font-size:var(--fs-body); line-height:1.5; }
@@ -5562,13 +5608,7 @@
             <div class="filter-scroll" id="savedFilterRow"></div>
             <div class="switch-sub" id="savedFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
 
-            <div id="savedListsContainer">
-                <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
-                    <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Saved Lists Yet</div>
-                    <div style="font-size:11px; margin-bottom:14px;">Select multiple apps in the Application Manager tab, then tap Save to List.</div>
-                    <button class="mode-action-btn primary" onclick="switchView('apps')">Go to Application Manager</button>
-                </div>
-            </div>
+            <div id="savedListsContainer"></div>
         </section>
 
         <!-- VIEW 3: SETTINGS (appearance, colors, the Feature List) -->
@@ -6804,9 +6844,6 @@
                 .mp-act:active { background: var(--accent); color: var(--on-accent); }
                 .mp-act:disabled { opacity: 0.45; }
                 .mp-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .mp-empty { text-align: center; padding: 22px var(--space-5); border: 1px dashed var(--border-glass); border-radius: var(--radius-lg); background: var(--fill-1); margin-top: var(--space-3); }
-                .mp-empty h3 { font-size: var(--fs-sheet); font-weight:var(--fw-heavy); margin-bottom: var(--space-2); }
-                .mp-empty p { font-size: var(--fs-body); line-height: 1.55; color: var(--text-muted); max-width: 420px; margin: 0 auto var(--space-4); }
                 .mp-feat { display: flex; gap: var(--space-3); overflow-x: auto; padding: var(--space-1) 0 var(--space-3); scrollbar-width: none; }
                 .mp-feat::-webkit-scrollbar { display: none; }
                 .mp-feat-item { flex: 0 0 auto; width: 74px; text-align: center; cursor: pointer; }
@@ -11521,6 +11558,39 @@ Type any command above (e.g. pm list packages -d)</div>
                 .replace(/'/g, '&#39;');
         }
 
+        // ---- An empty list, drawn the same way everywhere: emptyStateHtml({ key, icon, title, hint, actions: [{ label, onclick, primary }], compact }) ----
+        // key names the state (data-empty, for the tests); icon is one of EMPTY_ICONS (outline, drawn in the muted text colour); title and hint are
+        // text (hintHtml is markup the caller made safe); each action is a button of the usual class with an inline handler written by the page.
+        const EMPTY_ICONS = {
+            apps: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+            search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>',
+            filter: '<path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/>',
+            folder: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
+            list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+            archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
+            wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+            log: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+            cpu: '<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
+            check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+            clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+            layers: '<path d="M12 3L2 8l10 5 10-5z"/><path d="M2 16l10 5 10-5M2 12l10 5 10-5"/>',
+            alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.5h.01"/>',
+            lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+            store: '<path d="M6 3L3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7l-3-4z"/><path d="M3 7h18M16 11a4 4 0 0 1-8 0"/>',
+            terminal: '<path d="M4 17l6-6-6-6M12 19h8"/>',
+            chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/>',
+            update: '<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/>',
+        };
+        function emptyStateHtml(o) {
+            const acts = (o.actions || []).filter(Boolean).map(a => '<button type="button" class="mode-action-btn' + (a.primary ? ' primary' : '') + '" onclick="' + a.onclick + '">' + escapeHtml(a.label) + '</button>').join('');
+            return '<div class="empty-state' + (o.compact ? ' compact' : '') + '"' + (o.key ? ' data-empty="' + escapeHtml(o.key) + '"' : '') + '>'
+                + '<div class="empty-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">' + (EMPTY_ICONS[o.icon] || EMPTY_ICONS.list) + '</svg></div>'
+                + '<div class="empty-state-title">' + escapeHtml(o.title) + '</div>'
+                + (o.hintHtml ? '<div class="empty-state-hint">' + o.hintHtml + '</div>' : o.hint ? '<div class="empty-state-hint">' + escapeHtml(o.hint) + '</div>' : '')
+                + (acts ? '<div class="empty-state-actions">' + acts + '</div>' : '')
+                + '</div>';
+        }
+
         function parsePackageLines(raw) {
             const seen = new Set();
             return String(raw || '').split(/\r?\n|,/).map(v => v.trim()).filter(Boolean).filter(v => {
@@ -11767,17 +11837,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const sum = document.getElementById('savedFilterSummary');
             setFilterSummary(sum, savedFilters, 'setSavedFilter');
             if (!customLists.length) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Saved Lists Yet</div>
-                        <div style="font-size:11px; margin-bottom:14px;">Select multiple apps in the Application Manager tab, then tap Save to List.</div>
-                        <button class="mode-action-btn primary" onclick="switchView('apps')">Go to Application Manager</button>
-                    </div>`;
+                container.innerHTML = emptyStateHtml({ key: 'saved-none', icon: 'list', title: 'No Saved Lists Yet', hint: 'Select multiple apps in the Application Manager tab, then tap Save to List.',
+                    actions: [{ label: 'Go to Application Manager', onclick: "switchView('apps')", primary: true }] });
                 return;
             }
             const shownLists = customLists.filter(l => !savedFilters.size || savedListShown(l).length);
             if (!shownLists.length) {
-                container.innerHTML = '<div style="text-align:center; padding: 28px 20px; color: var(--text-muted); font-size:12px;">No saved list has apps that match these filters.</div>';
+                container.innerHTML = emptyStateHtml({ key: 'saved-nomatch', icon: 'filter', title: 'No saved list has apps that match these filters.',
+                    actions: [{ label: 'Clear filters', onclick: "setSavedFilter('all')" }] });
                 return;
             }
             container.innerHTML = shownLists.map(list => {
@@ -12964,7 +13031,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function askHistRender(ui) {
             const h = document.getElementById(ui + 'Hist'), list = askHistSorted(ui);
-            if (!list.length) { h.innerHTML = '<div class="agent-ask-hist-empty">' + escapeHtml(txT('No answers are kept yet.')) + '</div>'; return; }
+            if (!list.length) { h.innerHTML = emptyStateHtml({ key: 'ask-hist-none', icon: 'chat', title: txT('No answers are kept yet.'), compact: true }); return; }
             h.innerHTML = list.map((e, i) => '<div class="agent-ask-hist-item"><button class="agent-ask-hist-row" type="button" onclick="askHistOpen(\'' + ui + '\',' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
                 + escapeHtml(e.label || '') + ' · <span style="display:inline" translate="no">' + escapeHtml(askHistWhen(e)) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>'
                 + '<button class="agent-ask-hist-pin' + (e.pinned ? ' on' : '') + '" type="button" aria-pressed="' + (e.pinned ? 'true' : 'false') + '" onclick="askHistPin(\'' + ui + '\',' + i + ')">' + escapeHtml(e.pinned ? txT('Pinned') : txT('Pin')) + '</button></div>').join('')
@@ -13058,6 +13125,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (typeof uadPackages === 'undefined' || uadPackages.length <= 250) { renderUadList(); return; }
             uadSearchTimer = setTimeout(renderUadList, 130);          // a long list waits for a pause in typing
         }
+        function uadClearSearch() {
+            clearTimeout(uadSearchTimer);
+            document.getElementById('uadSearch').value = '';
+            renderUadList();
+        }
 
         // Uninstall, Disable, Restore and Save to List work on the selection: off (dimmed) while nothing is selected
         function uadSyncActionBtns() {
@@ -13071,7 +13143,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!container) return;
             const bridge = uadBridge();
             if (!bridge) {
-                container.innerHTML = '<div class="list-empty">The debloater is only available in the app.</div>';
+                container.innerHTML = emptyStateHtml({ key: 'uad-noapp', icon: 'lock', title: 'The debloater is only available in the app.' });
                 return;
             }
             if (!uadLoaded) {
@@ -13083,9 +13155,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const rows = uadVisiblePackages();
             document.getElementById('uadCount').innerText = `${rows.length} shown • ${uadSelected.size} selected`;
             if (!rows.length) {
+                // a search that finds nothing gets the button that clears it; the chips above are the filters (Recommended is on to begin with)
+                const searching = !!document.getElementById('uadSearch').value.trim();
                 container.innerHTML = uadPackages.length
-                    ? '<div class="list-empty">No packages match these filters.</div>'
-                    : '<div class="list-empty">None of the packages on this phone are in the UAD-NG list.</div>';
+                    ? emptyStateHtml({ key: searching ? 'uad-nomatch-search' : 'uad-nomatch', icon: searching ? 'search' : 'filter', title: 'No packages match these filters.',
+                        actions: [searching && { label: 'Clear search', onclick: 'uadClearSearch()' }] })
+                    : emptyStateHtml({ key: 'uad-none', icon: 'check', title: 'None of the packages on this phone are in the UAD-NG list.' });
                 return;
             }
             const installedPkgs = new Set(uadPackages.filter(p => p.state !== 'uninstalled').map(p => p.pkg));
@@ -13325,7 +13400,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const h = getHistory();
             document.getElementById('historySubtitle').innerText = h.length ? `${h.length} entr${h.length === 1 ? 'y' : 'ies'} • newest first` : 'Every uninstall, disable and restore, with one-tap undo';
             if (!h.length) {
-                list.innerHTML = '<div class="list-empty">No actions recorded yet. Debloater and batch actions appear here.</div>';
+                list.innerHTML = emptyStateHtml({ key: 'history-none', icon: 'clock', title: 'No actions recorded yet.', hint: 'Debloater and batch actions appear here.', compact: true });
                 return;
             }
             list.innerHTML = h.map(e => {
@@ -13523,7 +13598,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!selfUpdChecked) checkSelfUpdateUI(true);  // this app's own update, in its own card
             const b = updBridge();
             if (!b) {
-                document.getElementById('updContainer').innerHTML = '<div class="list-empty">Updates are only available in the app.</div>';
+                document.getElementById('updContainer').innerHTML = emptyStateHtml({ key: 'upd-noapp', icon: 'lock', title: 'Updates are only available in the app.' });
                 return;
             }
             const st = JSON.parse(b.getUpdateState() || '{}');
@@ -13647,7 +13722,8 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             updRenderRetry();
             if (!updList.length) {
-                container.innerHTML = `<div class="list-empty">${escapeHtml(updEmptyText(st))}</div>`;
+                const bad = !updRunning && (updInfo.error || updInfo.offline || updInfo.failedCount), done = !updRunning && !bad && !updInfo.cancelled && (updChecked || (st && st.checkedAt));
+                container.innerHTML = emptyStateHtml({ key: 'upd-none', icon: bad ? 'alert' : done ? 'check' : 'update', title: updEmptyText(st) });
                 return;
             }
             const sorted = updList.slice().sort((a, b) => (a.source === 'self' ? -1 : 0) - (b.source === 'self' ? -1 : 0) || a.name.localeCompare(b.name));
@@ -14538,6 +14614,8 @@ Type any command above (e.g. pm list packages -d)</div>
             return arr;
         }
 
+        function storeClearSearch() { document.getElementById('storeSearch').value = ''; storeShown = 60; renderStoreList(); }
+        function storeClearCat() { document.getElementById('storeCat').value = ''; storeShown = 60; renderStoreList(); }
         function renderStoreList() {
             if (!storeLoaded) return;
             const q = (document.getElementById('storeSearch').value || '').trim().toLowerCase();
@@ -14573,7 +14651,10 @@ Type any command above (e.g. pm list packages -d)</div>
                     <button class="store-inst-btn" id="ss-bt-${sid}" data-slug="${esc(a.slug)}" onclick="event.stopPropagation(); installStoreRowEl(this)" aria-label="Install ${esc(a.name || a.slug)}">Install</button>
                 </div>`;
             });
-            document.getElementById('storeList').innerHTML = rows.join('') || '<div class="uad-status">No apps match your search.</div>';
+            document.getElementById('storeList').innerHTML = rows.join('') || (q
+                ? emptyStateHtml({ key: 'store-nomatch-search', icon: 'search', title: 'No apps match your search.', actions: [{ label: 'Clear search', onclick: 'storeClearSearch()' }] })
+                : cat ? emptyStateHtml({ key: 'store-nomatch-filters', icon: 'filter', title: 'No apps match your filters.', actions: [{ label: 'Clear filters', onclick: 'storeClearCat()' }] })
+                : emptyStateHtml({ key: 'store-none', icon: 'store', title: 'No apps found.' }));
             apps.slice(0, storeShown).forEach(a => storeRowPaint(a.slug));            // a row drawn again keeps what it was showing (an install in progress, an error, "No APK")
         }
 
@@ -17886,12 +17967,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     }, 100);
                 }
             } catch (e) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding:35px 20px; color:var(--text-muted);">
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Applications Loaded</div>
-                        <div style="font-size:11px; margin-bottom:14px;">${escapeHtml(e.message || "Failed to query system applications.")}</div>
-                        <button class="mode-action-btn primary" onclick="loadPackageData()">Reload Packages</button>
-                    </div>`;
+                container.innerHTML = emptyStateHtml({ key: 'apps-error', icon: 'alert', title: 'No Applications Loaded', hint: e.message || 'Failed to query system applications.',
+                    actions: [{ label: 'Reload Packages', onclick: 'loadPackageData()', primary: true }] });
             }
         }
 
@@ -18058,6 +18135,21 @@ Type any command above (e.g. pm list packages -d)</div>
                 + keys.map(k => '<div class="filter-pill' + (set.has(k) ? ' active' : '') + '" data-filter="' + k + '" onclick="' + fn + '(\'' + k + '\')">' + FILTER_NAMES[k] + '</div>').join('');
         }
 
+        // The Apps list with nothing to show. It says to clear the search or the filters only when one is on (with the button that does it);
+        // with neither on, no app was read, and the button reads the list again.
+        function appsEmptyHtml() {
+            const searching = !!document.getElementById('searchInput').value.trim(), filtering = activeFilters.size > 0;
+            if (!allApps.length || (!searching && !filtering)) {
+                return emptyStateHtml({ key: 'apps-none', icon: 'apps', title: 'No Applications Loaded', hint: 'No apps were read from this phone yet.',
+                    actions: [{ label: 'Reload Packages', onclick: 'refreshAppsList()', primary: true }] });
+            }
+            return emptyStateHtml({
+                key: searching && filtering ? 'apps-nomatch' : searching ? 'apps-nomatch-search' : 'apps-nomatch-filters', icon: searching ? 'search' : 'filter', title: 'No Applications Found',
+                hint: searching && filtering ? 'Try clearing your search query or changing active filter pills.' : searching ? 'No apps match your search.' : 'No apps match your filters.',
+                actions: [searching && { label: 'Clear search', onclick: 'clearSearch()' }, filtering && { label: 'Clear filters', onclick: "setFilter('all')" }],
+            });
+        }
+
         // Render Apps
         function renderApps() {
             const match = buildAppMatcher(document.getElementById('searchInput').value);
@@ -18098,11 +18190,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
             const container = document.getElementById('appsListContainer');
             if (filteredApps.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Applications Found</div>
-                        <div style="font-size:11px;">Try clearing your search query or changing active filter pills.</div>
-                    </div>`;
+                container.innerHTML = appsEmptyHtml();
                 return;
             }
 
@@ -20227,7 +20315,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         ${pkgLine}
                     </div>
                 </div>`;
-            }).join('') || '<div class="uad-status">Nothing matches that filter.</div>';
+            }).join('') || emptyStateHtml({ key: 'apkscan-nomatch', icon: 'filter', title: 'Nothing matches that filter.', compact: true });
             apkSelRender();
             if (shown.length > apkScanShown) {
                 list.insertAdjacentHTML('beforeend', `<button class="batch-tool-link" style="display:block;margin:8px auto;" onclick="apkScanShown += 300; renderApkScan()">Show ${Math.min(300, shown.length - apkScanShown)} more · ${shown.length - apkScanShown} left</button>`);
@@ -21352,6 +21440,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (key === 'hidden') { const here = new Set(fmRows.map(r => r.full)); Array.from(fmSel).forEach(p => { if (!here.has(p)) fmSel.delete(p); }); }     // what is no longer listed is no longer picked
             fmSelRender();
         }
+        function fmShowHidden() { const c = document.getElementById('fmHiddenChk'); if (c) c.checked = true; fmSetOpt('hidden', true); }
         function onFilesShown() { fmOptsLoad(); fmSafRootsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
         function fmGo(path, auto, keepSearch) {
@@ -21505,14 +21594,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const shown = fmOpts.hidden ? all : all.filter(e => !(e.name && e.name.charAt(0) === '.'));
             const hiddenN = all.length - shown.length;
             if (!shown.length) {
-                if (d.error && !all.length) { el.innerHTML = up + '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
+                if (d.error && !all.length) { el.innerHTML = up + emptyStateHtml({ key: 'fm-error', icon: 'alert', title: d.error }); return; }
                 if (!all.length && d.raw && d.raw.trim()) {
                     // Nothing parsed but the listing wasn't empty - show the raw output so the format is visible.
                     el.innerHTML = up + '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
                         + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:11px; color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
                     return;
                 }
-                el.innerHTML = up + '<div class="list-empty">' + (hiddenN ? 'Only hidden files are here. Tick Show hidden files to see them.' : 'Empty folder.') + '</div>';
+                el.innerHTML = up + (hiddenN
+                    ? emptyStateHtml({ key: 'fm-hidden', icon: 'folder', title: 'Only hidden files are here.', hint: 'Tick Show hidden files to see them.', actions: [{ label: 'Show hidden files', onclick: 'fmShowHidden()' }] })
+                    : emptyStateHtml({ key: 'fm-empty', icon: 'folder', title: 'Empty folder.' }));
                 return;
             }
             const entries = shown.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
@@ -22136,7 +22227,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const st = document.getElementById('fmSearchStatus');
             st.style.display = 'none';
             if (!fmSearchMode) return;
-            if (!r || !r.ok) { document.getElementById('fmSearchList').innerHTML = '<div class="list-empty">' + escapeHtml((r && r.error) || 'The search failed') + '</div>'; return; }
+            if (!r || !r.ok) { document.getElementById('fmSearchList').innerHTML = emptyStateHtml({ key: 'fm-search-error', icon: 'alert', title: (r && r.error) || 'The search failed' }); return; }
             fmSearchHits = r.hits || [];
             const n = fmSearchHits.length;
             // each piece is its own element: the count and the notes are text of the app, the time is a number
@@ -22145,7 +22236,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmSearchCount').innerHTML = fmSearchCountHtml;
             const notes = (r.problems && r.problems.length) ? '<div class="list-empty" style="padding:6px 0;">' + escapeHtml(r.problems.join('; ')) + '</div>' : '';
             ['fmSearchFilterRow', 'fmSearchFilterSummary'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
-            if (!n) { document.getElementById('fmSearchList').innerHTML = notes + '<div class="list-empty">' + (r.empty ? 'Type something to search for.' : 'Nothing found.') + '</div>'; return; }
+            if (!n) { document.getElementById('fmSearchList').innerHTML = notes + emptyStateHtml({ key: r.empty ? 'fm-search-blank' : 'fm-search-none', icon: 'search', title: r.empty ? 'Type something to search for.' : 'Nothing found.' }); return; }
             fmSearchNotes = notes;
             fmSearchRender();
         };
@@ -22210,7 +22301,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     + '<div class="perm-info"><div class="perm-name' + (h.dir ? ' fm-dir' : '') + '">' + escapeHtml(name) + (h.dir ? '/' : '') + '</div>'
                     + '<div class="perm-sub">' + escapeHtml(where) + '</div><div class="perm-sub">' + escapeHtml(meta) + '</div>' + line + '</div>'
                     + '<button class="perm-toggle-btn locked fm-more" style="width:auto; padding:0 10px;" aria-label="Show in the folder" onclick="event.stopPropagation(); fmSearchReveal(' + i + ')">In folder</button></div>';
-            }).join('') : '<div class="list-empty">No result matches these filters.</div>');
+            }).join('') : emptyStateHtml({ key: 'fm-search-nomatch', icon: 'filter', title: 'No result matches these filters.', actions: [{ label: 'Clear filters', onclick: "fmSearchSetFilter('all')" }] }));
         }
         function fmSearchOpen(i) {
             const h = fmSearchHits[i];
@@ -24837,6 +24928,7 @@ Type any command above (e.g. pm list packages -d)</div>
             toggleFilterIn(cd.filters, k, CD_FILTER_GROUPS);
             cdAppsRender();
         }
+        function cdAppClearSearch() { document.getElementById('cdAppSearch').value = ''; cdAppsRender(); }
         function cdAppsRender() {
             const list = document.getElementById('cdAppList');
             if (!list || !cd.apps) return;
@@ -24852,7 +24944,9 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdAppCount').innerText = rows.length + (rows.length === 1 ? ' app' : ' apps') + (rows.length !== cd.apps.length ? ' of ' + cd.apps.length : '');
             const shown = rows.slice(0, 600);
             list.innerHTML = shown.map(cdAppCardHtml).join('') + (rows.length > shown.length ? '<div class="cd-note">' + (rows.length - shown.length) + ' more: search or filter to find them.</div>' : '') +
-                (!rows.length ? '<div class="cd-note">No app matches.</div>' : '');
+                (!rows.length ? (!cd.apps.length ? emptyStateHtml({ key: 'cd-apps-none', icon: 'apps', title: 'No apps found.', compact: true })
+                    : emptyStateHtml({ key: q ? 'cd-apps-nomatch-search' : 'cd-apps-nomatch-filters', icon: q ? 'search' : 'filter', title: 'No app matches.', compact: true,
+                        actions: [q && { label: 'Clear search', onclick: 'cdAppClearSearch()' }, cd.filters.size && { label: 'Clear filters', onclick: "cdFilter('all')" }] })) : '');
             rowBusyApply();
             cdBatchBar();
             cdLoadIcons(shown);
@@ -25999,7 +26093,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 return lcRowHtml(e, lcRowMap.length - 1, rx);
             }).join('');
             const anyVisible = entries.some(e => e.kind === 'entry' && !logcatHidden.has(e.lvl));
-            el.innerHTML = anyVisible ? html : (html || '') + `<div class="lc-meta">${entries.some(e => e.kind === 'entry') ? 'Every level is hidden - tap the color key above to show some.' : 'No log lines.'}</div>`;
+            el.innerHTML = anyVisible ? html : (html || '') + (entries.some(e => e.kind === 'entry')
+                ? emptyStateHtml({ key: 'logcat-hidden', icon: 'filter', title: 'Every level is hidden - tap the color key above to show some.', compact: true })
+                : emptyStateHtml({ key: 'logcat-none', icon: 'log', title: 'No log lines.', compact: true }));
             if (toBottom || wasAtBottom) el.scrollTop = el.scrollHeight;
         }
 
@@ -26294,7 +26390,7 @@ Type any command above (e.g. pm list packages -d)</div>
             lcRecItems = items;
             box.innerHTML = items.length
                 ? items.map((it, i) => `<div class="lc-rec-row" onclick="lcvOpen(lcRecItems[${i}].name)" role="button" tabindex="0"><div class="lc-rec-main"><div class="lc-rec-name" translate="no">${escapeHtml(lcRecWhen(it.name, it.modified))}</div><div class="lc-rec-sub" translate="no">${escapeHtml(it.name)} · ${lcRecSize(it.size)}</div></div><div class="lc-rec-del" onclick="event.stopPropagation(); lcRecDelete(${i})" role="button" aria-label="Delete">✕</div></div>`).join('')
-                : '<div class="lc-meta">No recordings yet. Tap Record to file in Console, Live Logcat to make one.</div>';
+                : emptyStateHtml({ key: 'lcrec-none', icon: 'log', title: 'No recordings yet.', hint: 'Tap Record to file in Console, Live Logcat to make one.', compact: true });
         }
         let lcRecItems = [];
         function lcRecDelete(i) {
@@ -26353,7 +26449,7 @@ Type any command above (e.g. pm list packages -d)</div>
             lcv.page = page < 0 ? pages - 1 : Math.min(page, pages - 1);
             const from = lcv.page * LCV_PAGE, rows = all.slice(from, from + LCV_PAGE);
             lcv.map = rows;
-            out.innerHTML = rows.length ? rows.map((e, i) => lcRowHtml(e, i, rx, 'v')).join('') : '<div class="lc-meta">Nothing matches.</div>';
+            out.innerHTML = rows.length ? rows.map((e, i) => lcRowHtml(e, i, rx, 'v')).join('') : emptyStateHtml({ key: 'lcv-nomatch', icon: 'search', title: 'Nothing matches.', compact: true });
             out.scrollTop = 0;
             const info = 'Entries ' + (from + 1) + '–' + (from + rows.length) + ' of ' + all.length;
             const nav = (label, page, off) => '<button class="batch-tool-link" onclick="lcvDraw(' + page + ')"' + (off ? ' disabled' : '') + '>' + label + '</button>';
@@ -26837,7 +26933,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!d) { el.innerHTML = '<div class="list-empty">Open this tab to see what is running.</div>'; statusEl.innerText = ''; return; }
             if (d.privileged === false) {
                 statusEl.innerText = '';
-                el.innerHTML = '<div class="list-empty">Needs ADB, Wireless Debugging, Shizuku or Root to list processes.</div>';
+                el.innerHTML = emptyStateHtml({ key: 'tm-procs-locked', icon: 'lock', title: 'Needs ADB, Wireless Debugging, Shizuku or Root to list processes.', compact: true });
                 return;
             }
             const procs = (d.procs || []).slice().sort(tmSort === 'mem' ? (a, b) => b.rssKb - a.rssKb : (a, b) => b.cpuPercent - a.cpuPercent);
@@ -26846,7 +26942,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 procs.length = 0; apps.concat(rest).forEach(p => procs.push(p));
             }
             statusEl.innerText = procs.length + ' process' + (procs.length === 1 ? '' : 'es') + (d.procsFullFormat === false ? ' (reduced ps output on this device)' : '');
-            if (!procs.length) { el.innerHTML = '<div class="list-empty">No processes read.</div>'; return; }
+            if (!procs.length) { el.innerHTML = emptyStateHtml({ key: 'tm-procs-none', icon: 'cpu', title: 'No processes read.', compact: true }); return; }
             el.innerHTML = procs.slice(0, 200).map(p => {
                 const app = p.pkg ? allApps.find(a => a.pkg === p.pkg) : null;
                 const title = app ? app.name : p.name;
@@ -27106,7 +27202,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function listPlayApps() {
             const el = document.getElementById('playAppsList');
             const apps = (allApps || []).filter(a => !a.isSystem).slice().sort((a, b) => a.name.localeCompare(b.name));
-            if (!apps.length) { el.innerHTML = '<div class="list-empty">No user apps loaded yet.</div>'; return; }
+            if (!apps.length) { el.innerHTML = emptyStateHtml({ key: 'tm-apps-none', icon: 'apps', title: 'No user apps loaded yet.', compact: true }); return; }
             el.innerHTML = apps.map(a => `<div class="perm-row">
                 <div class="perm-info"><div class="perm-name">${escapeHtml(a.name)}</div><div class="perm-sub">${escapeHtml(a.pkg)}</div></div>
                 <button class="perm-toggle-btn granted" data-pkg="${escapeHtml(a.pkg)}" onclick="openInStore(this.dataset.pkg)">Store</button>
@@ -29599,7 +29695,7 @@ Type any command above (e.g. pm list packages -d)</div>
                             <button class="term-mini run" onclick="termHistRun(${x.i})" title="Run">Run</button>
                             <button class="term-mini" onclick="termHistSave(${x.i})" title="Save">Save</button>
                             <button class="term-mini" onclick="termHistDelete(${x.i})" title="Remove" aria-label="Remove from history">✕</button>
-                        </div>`).join('') : `<div class="list-empty">${termHistory.length ? 'Nothing matches.' : 'Commands you run show up here.'}</div>`)
+                        </div>`).join('') : (termHistory.length ? emptyStateHtml({ key: 'term-hist-nomatch', icon: 'search', title: 'Nothing matches.', compact: true }) : emptyStateHtml({ key: 'term-hist-none', icon: 'terminal', title: 'Commands you run show up here.', compact: true })))
                     + (termHistory.length ? `<button class="mode-action-btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="termHistClear()">Clear history</button>` : '');
                 const list = document.getElementById('termHistList');
                 if (body.dataset.rendered === 'history' && list && !!document.getElementById('termHistFilter') === wantFilter) {
@@ -29624,7 +29720,7 @@ Type any command above (e.g. pm list packages -d)</div>
                             <button class="term-mini run" onclick="termSavedRun(${i})" title="Run">Run</button>
                             <button class="term-mini${x.pinned ? ' pinned' : ''}" onclick="termSavedPin(${i})" title="Pin as a chip">${x.pinned ? 'Unpin' : 'Pin'}</button>
                             <button class="term-mini" onclick="termEditStart(${i})" title="Edit">Edit</button>
-                        </div>`).join('') : `<div class="list-empty">Nothing saved yet. Save a command from the history (Save), or tap “New saved command”. A script can have several lines.</div>`);
+                        </div>`).join('') : emptyStateHtml({ key: 'term-saved-none', icon: 'terminal', title: 'Nothing saved yet.', hint: 'Save a command from the history (Save), or tap “New saved command”. A script can have several lines.', compact: true }));
             } else {
                 body.dataset.rendered = 'edit';
                 const x = termEditIdx >= 0 ? termSaved[termEditIdx] : { name: '', cmd: termEditDraft };
@@ -33247,7 +33343,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const list = backupList();
             const el = document.getElementById('backupsList');
-            if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No backups yet. Open an app\'s ⋯ menu and tap Backup, or choose a backup file from another phone.</p>'; return; }
+            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Open an app\'s ⋯ menu and tap Backup, or choose a backup file from another phone.', compact: true }); return; }
             el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
                 <p>${new Date(r.createdAt).toLocaleString(langLocale())} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
                 <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">Restore</button>
@@ -34052,11 +34148,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const keys = sdbFiltered(ns);
             if (!keys.length) {
                 const q = sdbQuery.trim();
-                let msg = q ? 'Nothing matches “' + escapeHtml(q) + '” in ' + SDB_TITLES[ns] + '.' : sdbFilter === 'edited' ? 'Nothing here was changed with this app yet.' : sdbFilter === 'switch' ? 'No switch-like values here.' : 'Nothing to show.';
-                let act = '';
-                if (q && !/\s/.test(q) && !sdbKeyProblem(q)) act = '<div><button class="mode-action-btn primary" onclick="sdbOpenNew(\'' + ns + '\', ' + escapeHtml(JSON.stringify(q)).replace(/'/g, '&#39;') + ')">＋ Create “' + escapeHtml(sdbClip(q, 40)) + '” in ' + SDB_TITLES[ns] + '</button></div>';
-                if (q || sdbFilter !== 'all') act += '<div><button class="mode-action-btn" onclick="sdbResetView()">Show everything</button></div>';
-                box.innerHTML = '<div class="sdb-empty">' + msg + act + '</div>';
+                const msg = q ? 'Nothing matches “' + q + '” in ' + SDB_TITLES[ns] + '.' : sdbFilter === 'edited' ? 'Nothing here was changed with this app yet.' : sdbFilter === 'switch' ? 'No switch-like values here.' : 'Nothing to show.';
+                const acts = [];
+                if (q && !/\s/.test(q) && !sdbKeyProblem(q)) acts.push({ label: '＋ Create “' + sdbClip(q, 40) + '” in ' + SDB_TITLES[ns], onclick: 'sdbOpenNew(sdbNs, sdbQuery.trim())', primary: true });
+                if (q || sdbFilter !== 'all') acts.push({ label: 'Show everything', onclick: 'sdbResetView()' });
+                box.innerHTML = emptyStateHtml({ key: q ? 'sdb-nomatch-search' : sdbFilter !== 'all' ? 'sdb-nomatch-filter' : 'sdb-none', icon: q ? 'search' : sdbFilter !== 'all' ? 'filter' : 'list', title: msg, actions: acts });
                 return;
             }
             const terms = sdbTerms();
@@ -34350,7 +34446,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function sdbRenderJournal() {
             const box = document.getElementById('sdbJournalList');
             document.getElementById('sdbJournalClear').style.display = sdbJournal.length ? '' : 'none';
-            if (!sdbJournal.length) { box.innerHTML = '<div class="sdb-empty">Nothing was changed with this app yet.</div>'; return; }
+            if (!sdbJournal.length) { box.innerHTML = emptyStateHtml({ key: 'sdb-journal-none', icon: 'clock', title: 'Nothing was changed with this app yet.', compact: true }); return; }
             box.innerHTML = sdbJournal.map(e => '<div class="sdb-jrow"><div class="sdb-key">' + escapeHtml(e.k) + '</div>'
                 + '<div class="sdb-hint">' + SDB_TITLES[e.ns] + ' · ' + sdbAgo(e.t) + '</div>'
                 + '<div class="sdb-change">' + sdbShowValue(e.f, e.lf) + ' → ' + sdbShowValue(e.v, e.lv) + '</div>'
@@ -35473,8 +35569,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const rows = ovlFiltered();
             if (!rows.length) {
                 const q = ovlQuery.trim();
-                box.innerHTML = '<div class="sdb-empty">' + (ovlList.length ? (q ? 'Nothing matches “' + escapeHtml(q) + '”.' : 'Nothing to show with this filter.') : 'This phone lists no overlays.')
-                    + (q || ovlFilter !== 'all' ? '<div><button class="mode-action-btn" onclick="ovlShowAll()">Show everything</button></div>' : '') + '</div>';
+                box.innerHTML = emptyStateHtml({ key: !ovlList.length ? 'ovl-none' : q ? 'ovl-nomatch-search' : 'ovl-nomatch-filter', icon: !ovlList.length ? 'layers' : q ? 'search' : 'filter',
+                    title: ovlList.length ? (q ? 'Nothing matches “' + q + '”.' : 'Nothing to show with this filter.') : 'This phone lists no overlays.',
+                    actions: [(q || ovlFilter !== 'all') && { label: 'Show everything', onclick: 'ovlShowAll()' }] });
                 return;
             }
             const slice = rows.slice(0, ovlLimit);
@@ -36055,7 +36152,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('profileScopeHint').innerText = (selectedPkgs.size ? 'Only the selected apps are saved. ' : 'Every app that is not enabled is saved. ') + scope.length + ' app' + (scope.length === 1 ? '' : 's') + ' would be saved now.';
             const list = loadProfiles();
             const el = document.getElementById('profilesList');
-            if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No profiles yet. Disable, suspend or uninstall apps the way you like, then save them here.</p>'; return; }
+            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'profiles-none', icon: 'layers', title: 'No profiles yet.', hint: 'Disable, suspend or uninstall apps the way you like, then save them here.', compact: true }); return; }
             el.innerHTML = list.map(pr => {
                 const c = { disabled: 0, suspended: 0, uninstalled: 0 };
                 pr.apps.forEach(a => { if (c[a.state] !== undefined) c[a.state]++; });
@@ -36546,12 +36643,10 @@ Type any command above (e.g. pm list packages -d)</div>
             else cnt.textContent = out.length + (out.length === 1 ? ' app' : ' apps') + (rows.length !== out.length ? ' of ' + rows.length : '') + ' have patches in your sources';
             if (!rows.length) {
                 const first = mp.sources.find(s => s.builtIn);
-                list.innerHTML = '<div class="mp-empty"><h3>' + (dl ? 'No patches to show' : 'Get the Morphe patches') + '</h3><p>' +
-                    (dl ? (mp.catBusy ? 'Reading the patches of your sources...' : 'The sources that are on do not have patches yet, or the patch engine could not read them. Open Sources to update them.')
-                        : 'Morphe patches come in bundles called sources. Download the official source, Morphe Patches (about 11 MB), to see the apps it can patch. You can add more from the Community tab.') +
-                    '</p><div class="mode-btn-row" style="justify-content:center;">' +
-                    (first && !first.file ? '<button class="mode-action-btn primary" onclick="mpSourceUpdate(' + jsArg(first.id) + ')">Download Morphe Patches</button>' : '') +
-                    '<button class="mode-action-btn" onclick="mpSourcesOpen()">Sources</button></div></div>';
+                list.innerHTML = emptyStateHtml({ key: dl ? 'mp-none' : 'mp-get', icon: 'wrench', title: dl ? 'No patches to show' : 'Get the Morphe patches',
+                    hint: dl ? (mp.catBusy ? 'Reading the patches of your sources...' : 'The sources that are on do not have patches yet, or the patch engine could not read them. Open Sources to update them.')
+                        : 'Morphe patches come in bundles called sources. Download the official source, Morphe Patches (about 11 MB), to see the apps it can patch. You can add more from the Community tab.',
+                    actions: [first && !first.file && { label: 'Download Morphe Patches', onclick: 'mpSourceUpdate(' + jsArg(first.id) + ')', primary: true }, { label: 'Sources', onclick: 'mpSourcesOpen()' }] });
                 return;
             }
             list.innerHTML = out.map(r => {
@@ -36930,7 +37025,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mpPatchedRender() {
             if (!mp.patchedOpen) return;
-            if (!mp.patched.length) { mpSheetBody('<div class="mp-empty"><h3>No patched APKs yet</h3><p>The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.</p></div>'); return; }
+            if (!mp.patched.length) { mpSheetBody(emptyStateHtml({ key: 'patched-none', icon: 'wrench', title: 'No patched APKs yet', hint: 'The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.' })); return; }
             mpSheetBody('<div class="mp-note">' + mp.patched.length + (mp.patched.length === 1 ? ' patched APK' : ' patched APKs') + ', newest first.</div>' + mp.patched.map(p =>
                 '<div class="color-card" style="margin:0 0 10px;"><div class="mp-name" translate="no">' + escapeHtml(p.appName || p.pkg) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(p.versionName || '') + '</span></div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(p.pkg) + '</div>' +
@@ -37167,7 +37262,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ts = mpTargetSources();
             if (!ts.length) {
                 note.textContent = '';
-                box.innerHTML = '<div class="mp-empty"><h3>No patches for this app</h3><p>None of the sources that are on has patches for ' + escapeHtml(t.pkg) + '. Add a source that does from the Community tab.</p></div>';
+                box.innerHTML = emptyStateHtml({ key: 'mp-app-none', icon: 'wrench', title: 'No patches for this app', hint: 'None of the sources that are on has patches for ' + t.pkg + '. Add a source that does from the Community tab.', compact: true });
                 return;
             }
             if (mp.cfg.mode === 'simple') {
@@ -39114,7 +39209,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 o.body = '<div class="sd-bar-row"><input class="modal-text-input" id="sdRevQ" placeholder="Search" value="' + sdAttr(r.q) + '" oninput="sdRevSearch(this.value)" autocomplete="off" autocapitalize="off" spellcheck="false">' +
                     '<button class="mode-action-btn" onclick="sdSelAll(true)">All</button><button class="mode-action-btn" onclick="sdSelAll(false)">None</button></div>' +
                     '<div class="sd-note">Tick what should be deleted. Tap a row to see what is inside it. ' + r.gTotal + ' in the list.</div>' +
-                    (rows || '<div class="sd-note">' + (r.q ? 'No matches.' : 'Nothing found.') + '</div>') + more;
+                    (rows || (r.q ? emptyStateHtml({ key: 'sd-nomatch', icon: 'search', title: 'No matches.', compact: true }) : emptyStateHtml({ key: 'sd-none', icon: 'check', title: 'Nothing found.', compact: true }))) + more;
             } else {
                 const g = r.group;
                 o.back = () => { r.level = 'groups'; r.items = []; sdRevPaint(); };
@@ -39129,7 +39224,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const more = r.items.length < r.iTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdRevLoadItems(true)">Show more (' + (r.iTotal - r.items.length) + ')</button></div>' : '';
                 o.sub = [g.sub, (g.count || 0) + ' items', sdSizeStr(g.bytes)].filter(Boolean).join(' - ');
                 o.body = '<div class="sd-bar-row"><div class="sd-note" style="flex:1;margin:0;align-self:center;">' + r.iTotal + ' in this list</div><button class="mode-action-btn" onclick="sdGroupToggleCur(true)">All</button><button class="mode-action-btn" onclick="sdGroupToggleCur(false)">None</button></div>' +
-                    (rows || '<div class="sd-note">Nothing inside.</div>') + more;
+                    (rows || emptyStateHtml({ key: 'sd-group-none', icon: 'folder', title: 'Nothing inside.', compact: true })) + more;
             }
             const q = document.getElementById('sdRevQ'), had = q && document.activeElement === q;
             sdSheetPaint();
@@ -39265,7 +39360,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     '<button class="sd-ex" onclick="sdExclRemove(' + i + ')">Remove</button></div>';
             }).join('');
             sdSheetBody('<div class="sd-note">An excluded file, folder or app is skipped by the tools you choose, and nothing in an excluded folder is deleted. Exclude from a scan result with the Exclude button of a row.</div>' +
-                (rows || '<div class="sd-note">No exclusions yet. Use the + button to create one, or exclude items from any tool\'s results.</div>'));
+                (rows || emptyStateHtml({ key: 'sd-excl-none', icon: 'list', title: 'No exclusions yet.', hint: 'Use the + button to create one, or exclude items from any tool\'s results.', compact: true })));
         }
         async function sdExclRemove(i) {
             const x = SD.excl[i]; if (!x) return;
