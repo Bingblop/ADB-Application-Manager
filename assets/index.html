@@ -25031,7 +25031,14 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Send ----
         function cdPickFiles() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('send');
+            window.AndroidBridge.cdPickPackages('send', cdPickInUse());
+        }
+        // the files of earlier picks that are still needed (the Send queue, a push in progress): the app keeps them when it clears old picks from its cache
+        function cdPickInUse() {
+            const out = [];
+            cd.queue.forEach(q => { if (q.archive) out.push(q.archive); (q.paths || []).forEach(p => out.push(p)); (q.sendFiles || []).forEach(f => out.push(f.path)); });
+            (cd.pushing || []).forEach(p => out.push(p));
+            return JSON.stringify(out.filter((p, i) => p && out.indexOf(p) === i));
         }
         function cdPicked(r) {
             const files = r.files || [];
@@ -25441,18 +25448,23 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdFmPush() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('push');
+            window.AndroidBridge.cdPickPackages('push', cdPickInUse());
         }
         async function cdFmPushPicked(files) {
             const dest = cd.fm.path, good = files.filter(f => !f.error), serial = cd.serial;
             if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
             let okN = 0, last = '';
-            for (const f of good) {
-                if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
-                showToast('Sending ' + f.name + '...');
-                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
-                last = out;
-                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+            cd.pushing = (cd.pushing || []).concat(good.map(f => f.path));
+            try {
+                for (const f of good) {
+                    if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
+                    showToast('Sending ' + f.name + '...');
+                    const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
+                    last = out;
+                    if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+                }
+            } finally {
+                cd.pushing = (cd.pushing || []).filter(p => !good.some(f => f.path === p));
             }
             showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();

@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
@@ -105,6 +106,26 @@ public final class DeviceLink {
             else out.addAll(listOf(it.optJSONArray("paths")));
         }
         return out;
+    }
+
+    /**
+     * Clears old picks from {@code root} (cache/cd_pick, one folder per chosen file): a folder older than {@code maxAgeMs} goes, unless it holds a file
+     * in {@code inUse} (what the page still has in its Send queue or is pushing). Answer: the folders removed.
+     */
+    public static List<File> clearOldPicks(File root, long now, long maxAgeMs, Collection<String> inUse) {
+        List<File> gone = new ArrayList<File>();
+        File[] dirs = root == null ? null : root.listFiles();
+        if (dirs == null) return gone;
+        for (File d : dirs) {
+            if (!d.isDirectory() || d.lastModified() >= now - maxAgeMs) continue;
+            File[] fs = d.listFiles();
+            boolean used = false;
+            if (fs != null && inUse != null) for (File f : fs) if (inUse.contains(f.getAbsolutePath())) used = true;
+            if (used) continue;
+            if (fs != null) for (File f : fs) f.delete();
+            if (d.delete()) gone.add(d);
+        }
+        return gone;
     }
 
     /**

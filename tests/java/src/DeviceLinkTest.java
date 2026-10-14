@@ -42,6 +42,19 @@ public class DeviceLinkTest {
     File tmp = Files.createTempDirectory("dl").toFile();
     // #190: every file an install would read, so the bridge can refuse the app's private ones first
     check("localFiles names each item's archive or its paths", DeviceLink.localFiles(new org.json.JSONArray("[{\"name\":\"a\",\"archive\":\"/x/a.apks\"},{\"name\":\"b\",\"paths\":[\"/x/b1.apk\",\"/x/b2.apk\"]}]")).equals(java.util.Arrays.asList("/x/a.apks", "/x/b1.apk", "/x/b2.apk")));
+    // old picks: a new pick clears folders over an hour old, but not one whose file is still in the Send queue or being pushed (#189)
+    {
+      File root = Files.createTempDirectory("cdpick").toFile();
+      long now = System.currentTimeMillis(), hour = 3600000L;
+      File queued = new File(root, "a"), stale = new File(root, "b"), fresh = new File(root, "c");
+      for (File d : new File[]{queued, stale, fresh}) { d.mkdirs(); new FileOutputStream(new File(d, "x.apk")).close(); }
+      queued.setLastModified(now - 2 * hour); stale.setLastModified(now - 2 * hour); fresh.setLastModified(now - 60000L);
+      List<File> gone = DeviceLink.clearOldPicks(root, now, hour, Arrays.asList(new File(queued, "x.apk").getAbsolutePath()));
+      check("old picks: the folder of a file still in the queue stays, even after two hours", new File(queued, "x.apk").isFile());
+      check("old picks: an old folder nobody uses goes", !stale.exists() && gone.size() == 1);
+      check("old picks: a folder from a minute ago stays", new File(fresh, "x.apk").isFile());
+      check("old picks: no folder and no list are fine", DeviceLink.clearOldPicks(new File(root, "none"), now, hour, null).isEmpty());
+    }
     // serials and verdicts
     check("serials: an IP:port, a USB serial and an IPv6 address are fine", DeviceLink.validSerial("192.168.1.20:5555") && DeviceLink.validSerial("R5CT1234ABC") && DeviceLink.validSerial("[fe80::1]:5555") && DeviceLink.validSerial("adb-R5CT-xyz._adb-tls-connect._tcp"));
     check("serials: option-looking, spaced, shell or empty ones are refused", !DeviceLink.validSerial("-s") && !DeviceLink.validSerial("a b") && !DeviceLink.validSerial("a;b") && !DeviceLink.validSerial("") && !DeviceLink.validSerial(null) && !DeviceLink.validSerial("$(x)"));
