@@ -4,7 +4,7 @@ ok      a default agent that is not connected says so: Claude (Anthropic) is not
 ok      a connected agent answers the sample question; the line says it works and how long it took; only the sample is sent (no phone details)
 ok      a failing agent is reported: It did not work. The message above says why.
 ok      while it waits there is a progress bar and Stop; Stop ends the test: {"hold":{"stop":"flex","prog":true},"stopped":{"out":"Stopped.","prog":false,"btn":false}}
-ok   2. Connected Devices: Enable and Reinstall are green, Disable is blue and Uninstall red, like the app menu: ["rgb(0, 240, 80)","rgb(41, 121, 255)","rgb(255, 82, 82)","rgb(0, 240, 80)"]
+ok   2. Connected Devices: Enable and Reinstall are green, Disable is blue and Uninstall red, like the app menu: ["rgb(0, 240, 80)","rgb(148, 188, 255)","rgb(255, 159, 159)","rgb(0, 240, 80)"] tokens ["rgb(0, 240, 80)","rgb(148, 188, 255)","rgb(255, 159, 159)"]
 ok   3. the answers are kept, newest first, with a Clear history row: {"rows":["zen_mode Setting · Oct 3, 2026, 4:00 AM · Own server","com.example.alpha Package · Oct 3, 2026, 4:00 AM · Own server","Clear history Pinned answers stay. Answers are kept on this phone only."],"stored":2}
 ok      tapping one shows the saved answer (no new request), with its question: {"subj":"com.example.alpha","ai":"Saved answer from Oct 3, 2026, 4:00 AM. Ask again for a new one.\nFirst answer about alpha.","hidden":true,"sent":"Android 17 on samsung SM-S948U1\nPackage: com.example.alpha\nApp name: Alpha"}
 ok      asking about the same thing again replaces the old entry (no duplicates)

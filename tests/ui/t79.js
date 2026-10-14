@@ -100,7 +100,7 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
     await p.close();
   }
   const sz = await ev(() => ({ sdbTab: getComputedStyle(document.querySelector('#sdbTabs .sdb-tab, #ovlTabs .sdb-tab')).fontSize, store: getComputedStyle(document.querySelector('.store-subtab')).fontSize, lc: getComputedStyle(document.querySelector('.lc-chip, .lc-key') || document.body).fontSize }));
-  check('   the sub-tabs of Hidden Settings and App Stores are 14 px (they were 13), the log level chips 12 px (11)', sz.sdbTab === '14px' && sz.store === '14px', JSON.stringify(sz));
+  check('   the sub-tabs of Hidden Settings and App Stores are 14.5 px (they were 13, then 14; --fs-label of the type scale)', sz.sdbTab === '14.5px' && sz.store === '14.5px', JSON.stringify(sz));
 
   // 4) readable buttons that only have words: the filled accent ones
   for (const mode of ['dark', 'light']) {
