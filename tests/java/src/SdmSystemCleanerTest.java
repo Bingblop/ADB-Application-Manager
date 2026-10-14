@@ -372,6 +372,7 @@ public class SdmSystemCleanerTest {
             deleteAll();
             deleteSelection();
             deleteReverify();
+            deleteShellDies();
             deleteCancel();
             apkFilter();
             screenshotAge();
@@ -1030,6 +1031,42 @@ public class SdmSystemCleanerTest {
         for (Sdm.Deleted d : rep.deleted) is("a deleted record is no longer in the result: " + d.path, after.contains(d.path), false);
         // a dropped group does not stop its own nested items of other groups from being deleted when the root is not dropped
         // (the .chartboost folder is an ads item; Analytics' files under another root are separate)
+    }
+
+    /**
+     * The working mode as SdmFsShell sees it when it is lost during the delete: the look before the delete answers, then the delete batch gets no answer
+     * (nothing reported gone), and from then on every command fails: stat throws, exists says false (SdmFsShell.exists on an IOException).
+     */
+    static final class DyingFs implements Sdm.Fs {
+        final SdmFsJava java = new SdmFsJava();
+        boolean dead;
+        @Override public String[] list(String dir) throws IOException { if (dead) throw new IOException("device offline"); return java.list(dir); }
+        @Override public Sdm.Entry stat(String path) throws IOException { if (dead) throw new IOException("device offline"); return java.stat(path); }
+        @Override public void walk(String root, Sdm.EntrySink sink, Sdm.Cancel cancel) throws IOException { if (dead) throw new IOException("device offline"); java.walk(root, sink, cancel); }
+        @Override public boolean exists(String path) { return !dead && java.exists(path); }
+        @Override public boolean delete(String path) { dead = true; return false; }
+        @Override public Set<String> deleteAll(java.util.Collection<String> paths, Sdm.Cancel cancel) { dead = true; return new HashSet<String>(); }
+        @Override public String sha256(String path, Sdm.Cancel cancel) throws IOException { throw new IOException("device offline"); }
+        @Override public byte[] head(String path, int max) throws IOException { throw new IOException("device offline"); }
+    }
+
+    /** SDM-1: what the delete cannot see any more is "cannot tell", never "gone": not reported deleted, not counted, still in the result, reported as failed. */
+    static void deleteShellDies() throws Exception {
+        fresh();
+        file(S + "a.tmp", 10);
+        file(S + "b.tmp", 20);
+        JSONObject set = new JSONObject();
+        for (String id : SdmSystemCleaner.filterIds()) set.put(SdmSystemCleaner.filterKey(id), id.equals("tempfiles"));
+        SdmSystemCleaner.SysResult r = scan(ctx(set, 0, null, null, null, null));
+        eq("shell dies: scan finds 2 tmp files", r.paths("tempfiles").size(), 2);
+        DyingFs fs = new DyingFs();
+        Sdm.Ctx c = new Sdm.Ctx(fs, areas(), new FakePkgs(), new FakeEx(), new FakeShell(2000), set, null, null, now);
+        Sdm.DeleteReport rep = new SdmSystemCleaner().delete(r, new Sdm.Selection(), c);
+        is("shell dies: the files are still on disk", exists(S + "a.tmp") && exists(S + "b.tmp"), true);
+        eq("shell dies: nothing is reported deleted", rep.deleted.size(), 0);
+        eq("shell dies: no bytes freed", rep.bytes(), 0L);
+        is("shell dies: both are reported as failed", rep.failed.contains(p(S + "a.tmp")) && rep.failed.contains(p(S + "b.tmp")), true);
+        eq("shell dies: both stay in the result", r.paths("tempfiles").size(), 2);
     }
 
     static void deleteReverify() throws Exception {
