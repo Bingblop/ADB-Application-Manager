@@ -635,85 +635,36 @@
             display: block;
         }
 
-        /* Stats Dashboard Strip */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: var(--space-3);
-            margin-bottom: var(--space-4);
-        }
-
-        .stats-grid > .stat-card { grid-column: span 2; }
-        /* a pair that is one filter (Enabled / Frozen, 3rd Party / System): two buttons in one box */
-        .stat-split { grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-            border: 1px solid var(--border-glass); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); }
-        .stat-split .stat-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-        .stat-split .stat-card + .stat-card { border-left: 1px solid var(--border-glass); }
-        .stat-split .stat-card.active { background: var(--fill-3); box-shadow: inset 0 0 0 1px var(--accent); }
-        .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
-        /* each box wears its own colour (the one its number has): a faint tint when off, a strong one with a ring when it is the filter in use */
+        /* The counts that are also filters (Installed, Running, 3rd Party / System, Enabled / Frozen, Uninstalled) are pills in the filter row:
+           each wears its own colour (the one its number has), a faint tint when off and a strong one with a ring when it is the filter in use */
         .stat-card[data-filter="running"] { --tone: var(--apps-running); }
         .stat-card[data-filter="uninstalled"] { --tone: var(--apps-uninstalled); }
         .stat-card[data-filter="enabled"] { --tone: var(--apps-enabled); }
         .stat-card[data-filter="frozen"] { --tone: var(--apps-frozen); }
         .stat-card[data-filter="user"] { --tone: var(--status-user); }
         .stat-card[data-filter="system"] { --tone: var(--apps-system); }
-        .stat-card[data-filter="running"], .stat-card[data-filter="uninstalled"], .stat-card[data-filter="enabled"],
-        .stat-card[data-filter="frozen"], .stat-card[data-filter="user"], .stat-card[data-filter="system"] { background: color-mix(in srgb, var(--tone) 7%, var(--bg-card)); }
-        .stats-grid .stat-card.active[data-filter="running"], .stats-grid .stat-card.active[data-filter="uninstalled"],
-        .stat-split .stat-card.active { background: color-mix(in srgb, var(--tone) 30%, var(--bg-card)); border-color: var(--tone); box-shadow: inset 0 0 0 1.5px var(--tone), 0 2px 12px color-mix(in srgb, var(--tone) 40%, transparent); }
-        .stat-split .stat-card { background: color-mix(in srgb, var(--tone) 7%, transparent); }
-        .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
-        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--apps-enabled); box-shadow: 0 0 0 1px var(--apps-enabled), 0 2px 12px color-mix(in srgb, var(--apps-enabled) 40%, transparent); }
-        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--apps-frozen); box-shadow: 0 0 0 1px var(--apps-frozen), 0 2px 12px color-mix(in srgb, var(--apps-frozen) 40%, transparent); }
-        .stat-split:has(.stat-card.active[data-filter="user"]) { border-color: var(--status-user); box-shadow: 0 0 0 1px var(--status-user), 0 2px 12px color-mix(in srgb, var(--status-user) 40%, transparent); }
-        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--apps-system); box-shadow: 0 0 0 1px var(--apps-system), 0 2px 12px color-mix(in srgb, var(--apps-system) 40%, transparent); }
+        .stat-card .stat-num { color: var(--tone, var(--accent)); font-weight: var(--fw-black); }
+        .filter-pill.stat-card:not([data-filter="installed"]) { background: color-mix(in srgb, var(--tone) 7%, var(--fill-2)); }
+        .filter-pill.stat-card.active:not([data-filter="installed"]) { background: color-mix(in srgb, var(--tone) 30%, var(--bg-card)); border-color: var(--tone); color: var(--text-main);
+            box-shadow: inset 0 0 0 1px var(--tone); }
+        .filter-pill.stat-card.active[data-filter="installed"] { box-shadow: inset 0 0 0 1px var(--accent); }
+        .filter-pill.stat-card { transition: transform 0.15s; }                 /* the colours change at once, like the stat boxes they were */
+        .filter-pill.stat-card:active { transform: scale(0.96); }
+        .filter-pill.stat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        /* a pair that splits the apps in two (3rd Party / System, Enabled / Frozen): two pills in one frame, the frame in the colour of the side that is on */
+        .stat-split { flex: 0 0 auto; display: inline-flex; border: 1px solid var(--border-glass); border-radius: var(--radius-chip); overflow: hidden; }
+        .stat-split .filter-pill.stat-card { border: 0; border-radius: 0; }
+        .stat-split .filter-pill.stat-card + .filter-pill.stat-card { border-inline-start: 1px solid var(--border-glass); }
+        .stat-split .filter-pill.stat-card.active { border-color: var(--tone); }
+        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--apps-enabled); }
+        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--apps-frozen); }
+        .stat-split:has(.stat-card.active[data-filter="user"]) { border-color: var(--status-user); }
+        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--apps-system); }
         .filter-summary-row { display: flex; align-items: center; gap: var(--space-3); }
         .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
         .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
             border-radius: var(--radius-pill); padding: var(--space-1) var(--space-4); font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; }
         .filter-clear-chip:active { transform: scale(0.96); }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-md);
-            padding: var(--space-3h) var(--space-3);
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.15s;
-        }
-
-        .stat-card:active {
-            transform: scale(0.96);
-            background: var(--bg-card-hover);
-        }
-
-        /* the card whose filter the list below is showing */
-        .stat-card.active {
-            border-color: var(--accent);
-            background: var(--fill-3);
-            box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow);
-        }
-
-        .stat-card.active .stat-label {
-            color: var(--text-main);
-        }
-
-        .stat-num {
-            font-size: var(--fs-title);
-            font-weight:var(--fw-black);
-            color: var(--accent);
-            margin-bottom: 2px;
-        }
-
-        .stat-label {
-            font-size: var(--fs-overline);
-            font-weight:var(--fw-bold);
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
 
         /* Search Bar */
         .search-box {
@@ -3703,54 +3654,38 @@
             white-space: nowrap;
         }
 
-        /* A small tip bubble between the buttons and the filter chips, its point aimed at the chips */
+        /* The tip that the filter row scrolls sideways: an arrow that stays at the right end of the row (sticky) over a fade, until the row has been scrolled */
         .filters-hint {
-            position: relative;
+            position: sticky;
+            inset-inline-end: 0;
+            flex: 0 0 auto;
+            align-self: stretch;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: var(--space-3);
-            margin: 2px 0 var(--space-3h);
-            padding: var(--space-2) var(--space-3h);
-            border: 1px dashed var(--border-glass);
-            border-radius: var(--radius-md);
-            background: var(--fill-1);
-            font-size: var(--fs-caption);
-            font-weight:var(--fw-bold);
-            color: var(--text-muted);
-        }
-
-        .filters-hint::after {
-            content: '';
-            position: absolute;
-            left: 22px;
-            bottom: -6px;
-            width: 10px;
-            height: 10px;
-            background: var(--bg-base);
-            border-right: 1px dashed var(--border-glass);
-            border-bottom: 1px dashed var(--border-glass);
-            transform: rotate(45deg);
-        }
-
-        .filters-hint-x {
-            flex: 0 0 auto;
-            padding: var(--space-3) var(--space-3h);
-            margin: -6px -6px -6px 0;
+            justify-content: flex-end;
+            width: 48px;
+            min-height: 36px;
+            margin-inline-start: -40px;
+            padding: 0 var(--space-3);
+            border: 0;
+            background: linear-gradient(to right, transparent, var(--bg-base) 55%);
+            color: var(--accent);
+            font-size: var(--fs-title);
+            font-weight: var(--fw-black);
+            line-height: 1;
             cursor: pointer;
-            border-radius: var(--radius-sm);
         }
-
-        .filters-hint-x:focus-visible {
-            outline: 2px solid var(--accent);
-        }
+        [dir="rtl"] .filters-hint { background: linear-gradient(to left, transparent, var(--bg-base) 55%); }
+        [dir="rtl"] .filters-hint span { display: inline-block; transform: scaleX(-1); }
+        .filters-hint:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
         .apps-sort-select {
-            flex: 0 1 auto;
+            flex: 0 0 auto;
             min-width: 60px;
-            width: 60px;
             font-size: var(--fs-caption);
         }
+        /* the sort menu is as wide as the choice it shows (where the WebView knows field-sizing; elsewhere as wide as its longest choice) */
+        #appSort { width: auto; field-sizing: content; }
 
         .apps-sort-select.apps-ab-select { width: 138px; flex: 0 0 auto; }
         .ab-pick { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-1); text-align: left; cursor: pointer; }
@@ -3841,7 +3776,7 @@
         input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; }
         .tab-btn:focus-visible { outline-offset: -2px; }
         /* figures keep their width, so a count that changes does not make its neighbours jump */
-        .stat-num, .stat-label, .tag-badge, .about-ver, .cd-count, .lc-n, .hg-toc li a b { font-variant-numeric: tabular-nums; }
+        .stat-num, .tag-badge, .about-ver, .cd-count, .lc-n, .hg-toc li a b { font-variant-numeric: tabular-nums; }
         /* cards: a hairline of light along the top edge and a soft shadow, so they sit a little above the page */
         .color-card { box-shadow: 0 1px 0 var(--fill-2) inset, 0 6px 18px rgba(0, 0, 0, 0.16); }
         .mode-action-btn.primary, .batch-grid-btn.accent { box-shadow: 0 2px 10px var(--accent-glow); }
@@ -3934,42 +3869,6 @@
                 <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;">✕</button>
             </div>
 
-            <!-- Live Statistics Grid -->
-            <div class="stats-grid">
-                <div class="stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" id="statTotal">--</div>
-                    <div class="stat-label">Installed</div>
-                </div>
-                <div class="stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--apps-running);" id="statRunning">--</div>
-                    <div class="stat-label">Running</div>
-                </div>
-                <div class="stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--apps-uninstalled);" id="statUninstalled">--</div>
-                    <div class="stat-label">Bloatware (Uninstalled)</div>
-                </div>
-                <div class="stat-split">
-                    <div class="stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--apps-enabled);" id="statEnabled">--</div>
-                        <div class="stat-label">Enabled</div>
-                    </div>
-                    <div class="stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--apps-frozen);" id="statFrozen">--</div>
-                        <div class="stat-label">Frozen</div>
-                    </div>
-                </div>
-                <div class="stat-split">
-                    <div class="stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--status-user);" id="statUser">--</div>
-                        <div class="stat-label">3rd Party</div>
-                    </div>
-                    <div class="stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--apps-system);" id="statSystem">--</div>
-                        <div class="stat-label">System</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Sort and export -->
             <div class="apps-sort-row">
                 <select id="appSort" class="op-select apps-sort-select" aria-label="Sort apps by" onchange="setAppSort(this.value)">
@@ -3985,26 +3884,22 @@
                 <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
             </div>
 
-            <!-- Tooltip under the Export / Share CSV buttons: the filter chips below scroll sideways -->
-            <div class="filters-hint" id="filtersHint" role="note">
-                <span class="filters-hint-text">Scroll the filters below sideways for more filters</span>
-                <span class="filters-hint-x" role="button" tabindex="0" aria-label="Hide this tip" onclick="dismissFiltersHint()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dismissFiltersHint();}">✕</span>
-            </div>
-
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
+            <!-- The filters, with their counts. The ones with a colour (Installed, Running, 3rd Party / System, Enabled / Frozen, Uninstalled) are
+                 buttons with a pressed state; a pair that splits the apps in two shares one frame -->
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
-                <div class="filter-pill" data-filter="installed" onclick="setFilter('installed', this)">Installed (<span id="countInstalled">0</span>)</div>
+                <div class="filter-pill stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Installed (<span class="stat-num" id="statTotal">--</span>)</div>
+                <div class="filter-pill stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Running (<span class="stat-num" id="statRunning">--</span>)</div>
+                <div class="stat-split"><div class="filter-pill stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">3rd Party (<span class="stat-num" id="statUser">--</span>)</div><div class="filter-pill stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">System (<span class="stat-num" id="statSystem">--</span>)</div></div>
+                <div class="stat-split"><div class="filter-pill stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Enabled (<span class="stat-num" id="statEnabled">--</span>)</div><div class="filter-pill stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Frozen (<span class="stat-num" id="statFrozen">--</span>)</div></div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
-                <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">Running (<span id="countRunning">0</span>)</div>
-                <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">3rd Party (<span id="countUser">0</span>)</div>
-                <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">System (<span id="countSystem">0</span>)</div>
-                <div class="filter-pill" data-filter="enabled" onclick="setFilter('enabled', this)">Enabled (<span id="countEnabled">0</span>)</div>
-                <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="trackers" onclick="setFilter('trackers', this)">Trackers (<span id="countTrackers">?</span>)</div>
-                <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">Uninstalled (<span id="countUninstalled">0</span>)</div>
+                <div class="filter-pill stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Uninstalled (<span class="stat-num" id="statUninstalled">--</span>)</div>
+                <!-- The tip that this row scrolls sideways: an arrow held at the right end of the row (it scrolls the row), until the row has been scrolled once -->
+                <button type="button" class="filters-hint" id="filtersHint" aria-label="Scroll the filters below sideways for more filters" title="Scroll the filters below sideways for more filters" onclick="filtersMore()"><span aria-hidden="true">&#8250;</span></button>
             </div>
 
             <!-- Search bar: under the filters, with a menu for what is searched and how -->
@@ -18067,16 +17962,9 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('statSystem').innerText = n.system;
             document.getElementById('statUninstalled').innerText = n.uninstalled;
 
-            document.getElementById('countAll').innerText = allApps.length;
-            document.getElementById('countInstalled').innerText = n.installed;
-            document.getElementById('countRunning').innerText = n.running;
-            document.getElementById('countUser').innerText = n.user;
-            document.getElementById('countSystem').innerText = n.system;
-            document.getElementById('countEnabled').innerText = n.enabled;
-            document.getElementById('countFrozen').innerText = n.frozen;
+            document.getElementById('countAll').innerText = allApps.length;          // the pills with a colour show the counts above (statTotal, statRunning, ...)
             document.getElementById('countRecent').innerText = n.recent;
             document.getElementById('countSuspended').innerText = n.suspended;
-            document.getElementById('countUninstalled').innerText = n.uninstalled;
             document.getElementById('countPatched').innerText = n.patched;
             document.getElementById('countTrackers').innerText = trackersCountLabel(n.trackers);
 
@@ -19493,7 +19381,7 @@ Type any command above (e.g. pm list packages -d)</div>
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // The pills and the big boxes at the top light up for every filter that is on; All Apps when none is
+        // The pills light up for every filter that is on; All Apps when none is
         function syncFilterUi() {
             const none = activeFilters.size === 0;
             document.querySelectorAll('#filterScroll .filter-pill[data-filter]').forEach(p => {
@@ -19508,7 +19396,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
 
-        // The big buttons at the top (Installed, Running, ...) light up when the list below is showing their filter
+        // The pills with a colour (Installed, Running, ...) are buttons: their pressed state follows the filter
         function syncStatCards() {
             document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
                 const k = c.getAttribute('data-filter');
@@ -19518,7 +19406,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
         }
 
-        // The tip under Export / Share CSV goes away for good once the filter chips have been scrolled sideways (or it is closed)
+        // The arrow at the end of the filter row goes away for good once the row has been scrolled sideways (by hand or by the arrow)
         let filtersHintDone = false;
         function applyFiltersHint() {
             const h = document.getElementById('filtersHint');
@@ -19532,7 +19420,14 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function filtersScrolled() {
             const el = document.getElementById('filterScroll');
-            if (el && el.scrollLeft > 24) dismissFiltersHint();
+            if (el && Math.abs(el.scrollLeft) > 24) dismissFiltersHint();                  // negative from right to left (Arabic)
+        }
+        // The arrow at the end of the filter row: scrolls the row on by most of its width (which also puts the tip away)
+        function filtersMore() {
+            const el = document.getElementById('filterScroll');
+            if (!el) return;
+            const rtl = getComputedStyle(el).direction === 'rtl';
+            el.scrollBy({ left: (rtl ? -1 : 1) * Math.round(el.clientWidth * 0.7), behavior: 'smooth' });
         }
 
         let appsSearchTimer = null;
@@ -39705,6 +39600,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!sh) return;
                 const pt = point(e), r = sh.getBoundingClientRect();
                 if (pt.clientY - r.top > ZONE) return;
+                if (e.type === 'mousedown' && !e.target.closest('input, textarea, select, [contenteditable]')) e.preventDefault();      // a mouse drag of the handle does not select the page's text (a selection would turn the next drag into a drag of that text)
                 st = { sh, y0: pt.clientY, dy: 0, t0: Date.now(), moved: false };
                 document.addEventListener('touchmove', move, { passive: false });      // only while the handle is held: a scroll anywhere else stays smooth
             }

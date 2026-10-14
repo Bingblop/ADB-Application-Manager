@@ -56,7 +56,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the one in use is a clearly stronger shade than when it is off, with a ring in its colour', ['enabled', 'frozen', 'user', 'system'].every(k => colors[k].on !== colors[k].off && colors[k].border !== 'rgba(0, 0, 0, 0)'), JSON.stringify(colors.user));
   check('   the four colours differ from each other', new Set(['enabled', 'frozen', 'user', 'system'].map(k => colors[k].on)).size === 4);
   check('   a pair keeps its frame in the colour of the side that is on', await ev(() => {
-    const box = document.querySelector('.stat-split'); const c = box.querySelector('.stat-card[data-filter="frozen"]');
+    const c = document.querySelector('.stat-card[data-filter="frozen"]'), box = c.closest('.stat-split');
     c.classList.add('active'); const bc = getComputedStyle(box).borderTopColor; c.classList.remove('active');
     const probe = document.createElement('i'); probe.style.color = 'var(--apps-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
     return bc === want;
