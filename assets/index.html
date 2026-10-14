@@ -3177,13 +3177,13 @@
         }
 
         /* Connection check card (Working Modes): one row per thing a privileged connection needs */
-        .cc-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border-glass); }
+        .cc-row { display: flex; align-items: flex-start; gap: var(--space-3h); padding: var(--space-3) 0; border-top: 1px solid var(--border-glass); }
         .cc-row:first-of-type { border-top: 0; }
         .cc-main { flex: 1 1 auto; min-width: 0; }
-        .cc-title { font-size: 13px; font-weight: 800; }
-        .cc-detail { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
-        .cc-data { color: var(--text-primary, inherit); font-weight: 700; }
-        .cc-row .mode-btn-row { margin-top: 7px; }
+        .cc-title { font-size: var(--fs-item); font-weight: var(--fw-heavy); }
+        .cc-detail { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
+        .cc-data { color: var(--text-primary, inherit); font-weight: var(--fw-bold); }
+        .cc-row .mode-btn-row { margin-top: var(--space-2); }
         .cc-row .mode-status-tag { flex: 0 0 auto; margin-top: 1px; }
 
         .mode-card.pending-mode {
