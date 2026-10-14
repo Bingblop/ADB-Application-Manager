@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Animationsdauer-Skala (1 = normal, 0 = aus)",
 "Another archive job is still running": "Ein anderer Archivvorgang läuft noch",
 "Another batch action is already running": "Eine andere Stapelaktion läuft bereits",
+"Another device was chosen: nothing was sent": "Ein anderes Gerät wurde gewählt: Es wurde nichts gesendet",
 "Another folder": "Anderer Ordner",
 "Another theme": "Anderes Design",
 "Answers": "Antwortet",

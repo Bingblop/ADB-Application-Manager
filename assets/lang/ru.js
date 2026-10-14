@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Масштаб длительности анимации (1 = обычная, 0 = выкл.)",
 "Another archive job is still running": "Другая операция с архивом ещё выполняется",
 "Another batch action is already running": "Другое групповое действие уже выполняется",
+"Another device was chosen: nothing was sent": "Выбрано другое устройство: ничего не отправлено",
 "Another folder": "Другая папка",
 "Another theme": "Другая тема",
 "Answers": "Отвечает",

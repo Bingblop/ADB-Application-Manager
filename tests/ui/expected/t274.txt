@@ -1,0 +1,13 @@
+ok   1. the command runs on A and the button says Stop: 192.168.1.20:5555 sleep 600 Stop
+ok      A drops off and B is picked
+ok      the command on A is cancelled: ["cdterm4"]
+ok      once it has ended the button says Run: Run
+ok      a new command goes to B and Stop stops that one: 10.0.0.9:5555 sleep 700
+ok      ... pressing it cancels the command on B and starts nothing: ["cdterm4","cdterm7"]
+ok   2. while the old command is still ending, Run/Stop does not start the typed line on B:  Stop
+ok   3. automatic: the live log plays on A
+ok      after the change to B the live poll does not read B and the button says Play:
+ok   3. by hand: the live log plays on A
+ok      after the change to B the live poll does not read B and the button says Play:
+errors: []
+ALL OK

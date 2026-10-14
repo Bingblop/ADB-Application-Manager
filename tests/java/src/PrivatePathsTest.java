@@ -267,7 +267,14 @@ public class PrivatePathsTest {
       routeHas(m, "public String fmReadB64(", "openUnlessPrivate(", "new java.io.FileInputStream(");
       routeHas(m, "public String fmWriteText(", "fmPrivate(", null);
       routeHas(m, "public String fmOp(", "fmPrivate(a)", null);
-      routeHas(m, "public String fmBatch2(", "fmPrivate(q)", null);
+      routeHas(m, "public String fmBatch2(", "fmBatchRefusal(op, q, dest)", null);
+      // MA2-2: the routes into and out of added storage (SAF) keep the same guards as the plain ones
+      routeHas(m, "private void runSafBatch(", "fmBatchRefusal(op, q, dest)", null);
+      routeHas(m, "private String fmBatchRefusal(", "fmPrivate(path)", null);
+      routeHas(m, "private String safCopyPosixIntoSaf(", "openUnlessPrivate(srcFile)", "new java.io.FileInputStream(");
+      routeHas(m, "private File addSource(", "isPrivateData(src)", null);
+      String fo = bodyOf(m, "public String fmOp(");
+      is("fmOp judges the private data before it hands a content:// side to fmOpSaf", fo != null && fo.indexOf("fmPrivate(a)") > 0 && fo.indexOf("fmPrivate(a)") < fo.indexOf("fmOpSaf(op, a, b)"));
       routeHas(m, "public String fmInstall(", "fmPrivate(path)", null);
       routeHas(m, "private String fmThumbFor(", "isPrivateData(f)", null);
       routeHas(m, "public void fmImage(", "isPrivateData(f)", null);

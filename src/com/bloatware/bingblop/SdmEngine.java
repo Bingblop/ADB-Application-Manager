@@ -213,13 +213,15 @@ public final class SdmEngine {
         this.env = env;
         this.events = events;
         this.settings = new SdmSettings(env.dataDir());
-        this.exclusions = new SdmExclusions(env.dataDir());
+        int user = 0;
+        try { Sdm.Areas a = env.areas(); if (a != null) user = a.userId(); } catch (RuntimeException e) { user = 0; }
+        this.exclusions = new SdmExclusions(env.dataDir(), user);         // /sdcard in a path exclusion is this user's storage
         this.history = new SdmHistory(env.dataDir(), settings);
         for (Sdm.Tool t : Sdm.Tool.values()) states.put(t, new ToolState(t));
         String[] names = { "SdmSystemCleaner", "SdmAppCleaner", "SdmCorpseFinder", "SdmDedup" };
         for (String n : names) {
             try {
-                Object o = Class.forName("com.bloatware.bingblop." + n).newInstance();
+                Object o = Class.forName("com.bloatware.bingblop." + n).newInstance();  // the names come from the fixed array above, never from input. nosemgrep: java.lang.security.audit.unsafe-reflection.unsafe-reflection
                 if (o instanceof Sdm.ToolImpl) register((Sdm.ToolImpl) o);
             } catch (Throwable missingOrBroken) {
                 // the tool is not part of this build: its card says so

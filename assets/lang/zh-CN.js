@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Animator 时长缩放（1 = 正常，0 = 关闭）",
 "Another archive job is still running": "另一个压缩包任务仍在进行",
 "Another batch action is already running": "另一项批量操作正在运行",
+"Another device was chosen: nothing was sent": "已选择另一台设备：未发送任何内容",
 "Another folder": "其他文件夹",
 "Another theme": "其他主题",
 "Answers": "有响应",

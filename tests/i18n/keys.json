@@ -382,6 +382,7 @@
 {"k":"Animator duration scale (1 = normal, 0 = off)","ctx":"built by the code of: top level"},
 {"k":"Another archive job is still running","ctx":"built by the code of: cz go"},
 {"k":"Another batch action is already running","ctx":"built by the code of: run batch action"},
+{"k":"Another device was chosen: nothing was sent","ctx":"built by the code of: top level"},
 {"k":"Another folder","ctx":"in a sheet (ex) / sheet (cz)"},
 {"k":"Another host name","ctx":"in the view-extrasettings"},
 {"k":"Another theme","ctx":"built by the code of: ovl render now"},

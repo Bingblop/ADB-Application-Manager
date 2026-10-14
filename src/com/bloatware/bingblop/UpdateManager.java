@@ -599,7 +599,8 @@ public final class UpdateManager {
     /**
      * Compares dotted versions numerically ("3.10-Pro" > "3.9"). When the numbers tie, what follows them decides: a pre-release suffix
      * (-alpha, -beta, -pre, -rc, any case: "2.0-beta1") is older than none ("2.0"), a trailing number ("1.2.3-4") is newer than none and
-     * compares as a number ("-1" < "-2"); any other suffix ("-Pro") is ignored.
+     * compares as a number ("-1" < "-2"); any other suffix ("-Pro") is ignored. A version with no dot after its first number takes dashes and underscores
+     * as the separators instead ("2024-11-15" > "2024-10-01", "v1_2_4" > "1_2_3").
      */
     public static int compareVersions(String a, String b) {
         String[] pa = numericParts(a), pb = numericParts(b);
@@ -613,18 +614,19 @@ public final class UpdateManager {
         return 0;
     }
 
-    private static final Pattern VERSION_NUMBER = Pattern.compile("([0-9]+(?:\\.[0-9]+)*)");
+    // dotted ("1.2.3", what follows is the suffix), else digit runs split by - _ or . ("2024-11-15", "1_2_4"; "2-beta1" is 2 and the suffix "-beta1")
+    private static final Pattern VERSION_NUMBER = Pattern.compile("([0-9]+(?:\\.[0-9]+)+|[0-9]+(?:[-_.][0-9]+)*)");
     private static final Pattern PRE_RELEASE = Pattern.compile("^[-._ ]?(alpha|beta|pre|rc)(?![a-z])[-._ ]?([0-9]*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern TRAILING_NUMBER = Pattern.compile("^[-._ ]([0-9]+)$");
     private static final java.util.List<String> PRE_KINDS = java.util.Arrays.asList("alpha", "beta", "pre", "rc");
 
     private static String[] numericParts(String v) {
-        // First dotted number anywhere: "v1.2.3", "release-1.2.3", "app_1.2.3-beta"
+        // First version number anywhere: "v1.2.3", "release-1.2.3", "app_1.2.3-beta", "build-2024-11-15"
         Matcher m = VERSION_NUMBER.matcher(v == null ? "" : v.trim());
-        return m.find() ? m.group(1).split("\\.") : new String[]{"0"};
+        return m.find() ? m.group(1).split("[-_.]") : new String[]{"0"};
     }
 
-    /** What follows the first dotted number ("-beta1", "-4", "-Pro"); "" when there is none. */
+    /** What follows the first version number ("-beta1", "-4", "-Pro"); "" when there is none. */
     private static String suffix(String v) {
         String s = v == null ? "" : v.trim();
         Matcher m = VERSION_NUMBER.matcher(s);
