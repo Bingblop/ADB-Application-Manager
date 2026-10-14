@@ -19285,12 +19285,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, 'Checking…');
         };
 
-        // Fires once the native run has finished (to completion, or stopped early).
+        // Fires once the native run has finished (to completion, or stopped early). MainActivity passes the result as an object
+        // (window.onAppBatchDone({...}), not a quoted JSON text); a string is still taken, so either form works.
         window.onAppBatchDone = function (resultJson) {
             if (profileRunActive) { profileOnBatchDone(resultJson); return; }
             batchRunActive = false;
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
@@ -27356,9 +27357,9 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
             document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
         };
-        window.onOptimizeBatchDone = function (resultJson) {
+        window.onOptimizeBatchDone = function (resultJson) {          // an object from MainActivity, like onAppBatchDone's (a JSON text is taken too)
             optimizeRunActive = false;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { showToast('Dex optimization failed to run'); return; }
             const total = res.total, stopped = !!res.cancelled;
@@ -36157,7 +36158,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function profileOnBatchDone(resultJson) {
             const st = profileRunState;
             if (!st) return;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             if (!res || !res.ok) { profileRunFinish(false); return; }
             const action = res.action;
             (res.rows || []).forEach(r => {

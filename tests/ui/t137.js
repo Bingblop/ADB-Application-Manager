@@ -60,7 +60,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const prog = await ev(() => ({ text: document.getElementById('batchProgressText').innerText, bar: document.getElementById('batchProgressBar').style.width, stop: document.getElementById('batchProgressStopBtn').disabled }));
   check('2. the progress sheet says "Checking the phone…" with the number of apps and a full bar', /Checking the phone… \(2 apps\)/.test(prog.text) && prog.bar === '100%', JSON.stringify(prog));
   check('   Stop is off while it checks', prog.stop === true);
-  await ev(() => window.onAppBatchDone(JSON.stringify({ ok: true, action: 'uninstall', total: 2, done: 2, cancelled: false, rows: [{ pkg: 'com.example.alpha', success: true, label: 'Uninstalled', output: 'ok' }, { pkg: 'com.example.bravo', success: true, label: 'Uninstalled', output: 'ok' }] }))); await sleep(100);
+  await ev(() => window.onAppBatchDone({ ok: true, action: 'uninstall', total: 2, done: 2, cancelled: false, rows: [{ pkg: 'com.example.alpha', success: true, label: 'Uninstalled', output: 'ok' }, { pkg: 'com.example.bravo', success: true, label: 'Uninstalled', output: 'ok' }] })); await sleep(100);
   check('   then the results open', await ev(() => document.getElementById('commandResultsModal').classList.contains('show')));
   await ev(() => { document.getElementById('commandResultsModal').classList.remove('show'); });
 
