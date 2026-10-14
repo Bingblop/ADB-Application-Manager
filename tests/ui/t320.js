@@ -1,6 +1,7 @@
 // The app menu's header at 320, 360 and 400 px (and in German and Spanish): the icon sits at the top of the name block, the dates and sizes
 // wrap between words (never "Update/d" or "Ca/che"), Copy package and Copy name are whole and inside the sheet, the close and Share stay
-// inside it, and a long package name wraps inside the text column instead of running out of it.
+// inside it (the close's round 44 px target may reach into the sheet's padding, its glyph not), and a long package name wraps inside the
+// text column instead of running out of it.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok || extra === undefined ? '' : ': ' + extra)); }
@@ -42,7 +43,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       return out;
     };
     const outside = [];
-    ['.sheet-header', '.sheet-header-actions', '.sheet-meta'].forEach(s => { const box = q(s); if (!box) return; [box, ...box.querySelectorAll('*')].forEach(el => { if (!vis(el)) return; const r = el.getBoundingClientRect(); if (r.left < left || r.right > right) outside.push((el.id || el.className || el.tagName) + ' ' + Math.round(r.left) + '..' + Math.round(r.right)); }); });
+    ['.sheet-header', '.sheet-header-actions', '.sheet-meta'].forEach(s => { const box = q(s); if (!box) return; [box, ...box.querySelectorAll('*')].forEach(el => { if (!vis(el)) return; const r = el.getBoundingClientRect(), wide = el.classList.contains('sheet-close'); if (r.left < (wide ? sr.left : left) || r.right > (wide ? sr.right : right)) outside.push((el.id || el.className || el.tagName) + ' ' + Math.round(r.left) + '..' + Math.round(r.right)); }); });
     const chips = [...document.querySelectorAll('#inspectorModal .copy-row .copy-chip')].map(c => { const r = c.getBoundingClientRect(); return { t: c.innerText, whole: c.scrollWidth <= c.clientWidth + 1 && r.left >= left && r.right <= right }; });
     const row = q('.copy-row');
     const av = q('#sheetAvatar').getBoundingClientRect(), h3 = q('#sheetTitle').getBoundingClientRect(), pkg = q('#sheetPkg'), pr = pkg.getBoundingClientRect(), col = q('.sheet-app-hero .sheet-title').getBoundingClientRect();
@@ -52,7 +53,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       outside, chips, rowClips: row.scrollWidth > row.clientWidth + 1,
       avatarTop: Math.abs(av.top - h3.top) <= 4, avatarDy: Math.round(av.top - h3.top),
       pkgInside: pr.right <= col.right + 1 && pkg.scrollWidth <= pkg.clientWidth + 1, pkgLines: Math.round(pr.height / parseFloat(getComputedStyle(pkg).lineHeight || 12) || 0), pkgH: Math.round(pr.height),
-      closeIn: cr.right <= right && cr.left >= left, shareBeforeClose: share.right <= cr.left,
+      closeIn: cr.right <= sr.right && cr.left >= sr.left && cr.right - (cr.width - 20) / 2 <= right, shareBeforeClose: share.right <= cr.left,
       ask: vis(document.getElementById('sheetAsk')), docW: document.documentElement.scrollWidth, W: innerWidth,
     };
   });

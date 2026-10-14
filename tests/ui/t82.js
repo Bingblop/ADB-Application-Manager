@@ -389,7 +389,7 @@ const FILES = {
   await page.setViewportSize({ width: 320, height: 700 });
   const longName = 'A_very_long_file_name_without_any_spaces_'.repeat(4) + '.txt';
   await ev(page, n => { fmActions('/storage/emulated/0/' + n, false, n); fmEditOpen(); }, longName); await sleep(60);
-  const sh = await ev(page, () => { const x = document.querySelector('#fmEditModal .sheet-header > div:last-child').getBoundingClientRect(); return { right: Math.round(x.right), w: window.innerWidth, over: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
+  const sh = await ev(page, () => { const x = document.querySelector('#fmEditModal .sheet-header > .sheet-close').getBoundingClientRect(); return { right: Math.round(x.right), w: window.innerWidth, over: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
   check('   at 320 px the editor\'s close button stays on screen', sh.right <= sh.w && sh.over <= 0, JSON.stringify(sh));
   await ev(page, () => fmEditClose());
   await page.close();
