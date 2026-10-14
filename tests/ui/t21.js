@@ -57,6 +57,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // share + delete
   await p.locator('#backupsList .backup-item').first().locator('button:has-text("Share")').click();
   console.log('share call:', (await calls(p)).filter(c => c.startsWith('share')).join());
+  p.once('dialog', d => d.accept());                                                                       // Delete asks first
   await p.locator('#backupsList .backup-item').nth(1).locator('button:has-text("Delete")').click();
   console.log('after delete rows:', await p.locator('#backupsList .backup-item').count(), '|', (await calls(p)).filter(c => c.startsWith('delete')).join());
   // picker
