@@ -1,0 +1,8 @@
+ok   1. turning pre-releases on stores on
+ok      and the toast says on: Pre-releases are on for Morphe. Update it to switch.
+ok   2. turning them off stores off
+ok      and the toast says off: Pre-releases are off for Morphe. Update it to switch.
+ok   3. a refused change says why instead of claiming it switched: No source with that id
+ok      and nothing changed
+ok   no page errors
+all passed

@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -695,6 +696,59 @@ public class SdmAppCleanerTest {
 
     static boolean exists(String path) { return new File(path).exists(); }
 
+    /** A shell whose every command fails, as when the ADB connection drops or Shizuku is killed. */
+    static final class DeadShell implements Sdm.Shell {
+        @Override public int uid() { return 2000; }
+        @Override public String run(String script, int timeoutMs) throws IOException { throw new IOException("device offline"); }
+        @Override public void stream(String script, int timeoutMs, Sdm.LineSink sink, Sdm.Cancel cancel) throws IOException { throw new IOException("device offline"); }
+    }
+
+    /** Java without the right to look into one folder: what it says there is "nothing", as SdmFsJava does on "permission denied". */
+    static final class BlindFs extends SdmFsJava {
+        final String blind;
+        BlindFs(String blind) { this.blind = blind; }
+        boolean hidden(String path) { return path.equals(blind) || Sdm.isInside(path, blind); }
+        @Override public Sdm.Entry stat(String path) { return hidden(path) ? null : super.stat(path); }
+        @Override public boolean exists(String path) { return !hidden(path) && super.exists(path); }
+        @Override public String[] list(String dir) { return hidden(dir) ? null : super.list(dir); }
+        @Override public boolean delete(String path) { return hidden(path) ? false : super.delete(path); }
+    }
+
+    /**
+     * SDM-1: the working mode is lost between the scan and the delete. Android/data is then read through a shell that does not answer (mode 0), or the
+     * areas were worked out again without a mode and Android/data cannot be read at all (mode 1). A stat that fails is "cannot tell", never "gone": the
+     * files stay on disk, are not reported as deleted and stay in the result.
+     */
+    static void testDeadShell() throws Exception {
+        for (int mode = 0; mode < 2; mode++) {
+            String m = mode == 0 ? "dead shell: " : "unreadable area: ";
+            Phone p = deletePhone();
+            try {
+                SdmAppCleaner.AppResult r = p.scan();
+                int alphaBefore = r.itemCountOf("com.alpha");
+                FakeAreas sa = new FakeAreas();
+                for (Sdm.AreaInfo i : p.areas.list) {
+                    if (i.area != Sdm.Area.PUBLIC_DATA) sa.list.add(i);
+                    else if (mode == 0) sa.list.add(new Sdm.AreaInfo(i.area, i.root, true, "shell", ""));
+                    else sa.list.add(new Sdm.AreaInfo(i.area, i.root, true, "", "needs ADB"));
+                }
+                Sdm.Fs fs = mode == 0 ? new SdmFs(sa, new SdmFsJava(), new SdmFsShell(new DeadShell())) : new SdmFs(sa, new BlindFs(p.pubData), null);
+                Sdm.Ctx c = new Sdm.Ctx(fs, sa, p.pkgs, p.excl, mode == 0 ? new DeadShell() : null, p.settings, null, Sdm.NEVER, NOW);
+                Sdm.DeleteReport rep = new SdmAppCleaner().delete(r, sel("{\"dropGroups\":[\"com.beta\",\"com.sys\"],\"options\":{\"includeInaccessible\":false}}"), c);
+                is(m + "the cache file is still on disk", exists(p.pubData + "/com.alpha/cache/a.tmp"), true);
+                is(m + "the thumbnail is still on disk", exists(p.pubData + "/com.alpha/files/.thumbnails/t.jpg"), true);
+                is(m + "the cache file is not reported deleted", contains(rep, p.pubData + "/com.alpha/cache/a.tmp"), false);
+                is(m + "the thumbnail is not reported deleted", contains(rep, p.pubData + "/com.alpha/files/.thumbnails/t.jpg"), false);
+                is(m + "the cache file is reported as failed", rep.failed.contains(p.pubData + "/com.alpha/cache/a.tmp") || rep.failed.contains(p.pubData + "/com.alpha/cache"), true);
+                is(m + "the cache file stays in the result", pathsOf(r, "com.alpha").contains(p.pubData + "/com.alpha/cache/a.tmp"), true);
+                is(m + "the thumbnail stays in the result", pathsOf(r, "com.alpha").contains(p.pubData + "/com.alpha/files/.thumbnails/t.jpg"), true);
+                is(m + "the private cache (read with Java) did go", exists(p.priv + "/com.alpha/cache/c1"), false);
+                eq(m + "only the private cache is reported deleted", rep.deleted.size(), 1);
+                eq(m + "what is left of Alpha", r.itemCountOf("com.alpha"), alphaBefore - 1);
+            } finally { p.cleanup(); }
+        }
+    }
+
     static void testDeleteFiles() throws Exception {
         Phone p = deletePhone();
         try {
@@ -1237,6 +1291,7 @@ public class SdmAppCleanerTest {
             testScan();
             testInaccessible();
             testDeleteFiles();
+            testDeadShell();
             testSafety();
             testTrimAndAutomation();
             testAutomation();

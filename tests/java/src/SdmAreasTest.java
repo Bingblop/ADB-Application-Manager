@@ -319,6 +319,29 @@ public class SdmAreasTest {
         fs.walk(sd.getPath() + "/Android/data/com.w", Arrays.asList(sd.getPath() + "/Android/data/com.w/skip"), new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { seen.add(e.path.substring(e.path.indexOf("com.w/") + 6)); return true; } }, null);
         java.util.Collections.sort(seen);
         eq("pruned walk (shell)", seen.toString(), "[keep, keep/a]");
+        // SDM-1: "cannot tell" is not "nothing there"
+        ar.mode = "standard";                                   // the working mode is lost: every shell command throws
+        boolean threwStat = false;
+        try { fs.stat(sd.getPath() + "/Android/data/com.me/files/y"); } catch (IOException e) { threwStat = true; }
+        is("stat through a shell that cannot answer throws (it is not \"gone\")", threwStat, true);
+        ar.mode = "root";
+        SdmFsJava blind = new SdmFsJava() {                     // what Java says about a folder it may not look into: nothing there
+            @Override public Sdm.Entry stat(String path) { return path.contains("/Android/data") ? null : super.stat(path); }
+        };
+        FakeAreas lost = new FakeAreas();
+        lost.l.add(new Sdm.AreaInfo(Sdm.Area.SDCARD, sd.getPath(), true, "java", ""));
+        lost.l.add(new Sdm.AreaInfo(Sdm.Area.PUBLIC_DATA, sd.getPath() + "/Android/data", true, "", "needs ADB"));
+        lost.l.add(new Sdm.AreaInfo(Sdm.Area.PUBLIC_OBB, sd.getPath() + "/Android/obb", true, "shell", ""));
+        SdmFs lostFs = new SdmFs(lost, blind, null);
+        threwStat = false;
+        try { lostFs.stat(sd.getPath() + "/Android/data/com.me/files/y"); } catch (IOException e) { threwStat = true; }
+        is("stat in an area that cannot be read throws instead of saying \"nothing there\"", threwStat, true);
+        new File(sd, "Android/obb/com.game/x.obb").getParentFile().mkdirs();
+        is("…but what Java can see there is still answered", lostFs.stat(sd.getPath() + "/Android/obb/com.game") != null, true);
+        threwStat = false;
+        try { lostFs.stat(sd.getPath() + "/Android/obb/com.game/nothing-here"); } catch (IOException e) { threwStat = true; }
+        is("a shell area while there is no shell: Java's \"nothing there\" is not believed either", threwStat, true);
+        is("a path that is not there in an area read with Java is null", lostFs.stat(sd.getPath() + "/DCIM/nothing-here") == null, true);
 
         // ======================================================================= SdmFsShell on a real tree
         Runner pr = new Runner();

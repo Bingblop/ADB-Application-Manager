@@ -33,11 +33,42 @@ public class AdbArgsTest {
     };
     for (String[] b : bad) is("refused: adb " + String.join(" ", b), AdbArgs.check(l(b)) != null);
 
+    // the pairing address and code that AdbPair passes on
+    String[] okEp = {"192.168.1.5:37000", "127.0.0.1:1", "localhost:65535", "phone.local:41234", "[fe80::1]:37000", "[::1]:5555", "a:1"};
+    for (String e : okEp) is("pairing address accepted: " + e, AdbArgs.validPairEndpoint(e));
+    String[] badEp = {null, "", "-P5037:1", "-s:5555", "--help:1", "192.168.1.5", "192.168.1.5:", "192.168.1.5:0", "192.168.1.5:65536", "192.168.1.5:99999999999",
+      "a b:1", "a;b:1", "$(id):1", "a:1\n", "a:1 ", ":5555", "[]:1", "[g::1]:1", "host.:1", ".host:1", "a:1:2"};
+    for (String e : badEp) is("pairing address refused: " + e, !AdbArgs.validPairEndpoint(e));
+    is("pairing code: six digits", AdbArgs.validPairCode("123456") && AdbArgs.validPairCode("000000"));
+    is("pairing code: nothing else", !AdbArgs.validPairCode(null) && !AdbArgs.validPairCode("") && !AdbArgs.validPairCode("12345") && !AdbArgs.validPairCode("1234567")
+      && !AdbArgs.validPairCode("12345a") && !AdbArgs.validPairCode("-12345") && !AdbArgs.validPairCode("123456\n") && !AdbArgs.validPairCode("\u0663\u0662\u0661\u0660\u0669\u0668"));
+
     is("no arguments is refused", AdbArgs.check(l()) != null && AdbArgs.check(null) != null);
     is("a NUL in an argument is refused", AdbArgs.check(l("shell", "a\u0000b")) != null);
     String[] many = new String[81]; Arrays.fill(many, "devices");
     is("more than 80 arguments are refused", AdbArgs.check(l(many)) != null);
     is("a subcommand word far into a shell command is only text", AdbArgs.check(l("shell", "ls", "/sdcard", "-l", "kill-server")) == null);
+
+    // #190: the arguments that may name a file on this phone, so the bridge can refuse the app's own private files
+    String key = "/data/user/0/com.bloatware.bingblop/files/adb_home/.android/adbkey";
+    is("push: the local file is among them", AdbArgs.localFileArgs(l("push", key, "/sdcard/")).contains(key));
+    is("push after -s and wait-for-device too", AdbArgs.localFileArgs(l("-s", "x", "wait-for-device", "push", "--sync", key, "/sdcard/")).contains(key));
+    is("pull: the local destination is among them", AdbArgs.localFileArgs(l("pull", "/sdcard/a", key)).contains(key));
+    is("install / install-multiple / sideload / backup -f / restore", AdbArgs.localFileArgs(l("install", "-r", key)).contains(key) && AdbArgs.localFileArgs(l("install-multiple", "a.apk", key)).contains(key)
+        && AdbArgs.localFileArgs(l("sideload", key)).contains(key) && AdbArgs.localFileArgs(l("backup", "-f", key, "-all")).contains(key) && AdbArgs.localFileArgs(l("restore", key)).contains(key));
+    is("an --option=value names a file too", AdbArgs.localFileArgs(l("install", "--apex=" + key)).contains(key));
+    is("a relative name is read from the root, where adb runs", AdbArgs.localFileArgs(l("push", "data/user/0/x", "/sdcard/")).contains("/data/user/0/x"));
+    is("shell, logcat and others name no local file", AdbArgs.localFileArgs(l("shell", "cat", key)).isEmpty() && AdbArgs.localFileArgs(l("logcat", "-f", key)).isEmpty() && AdbArgs.localFileArgs(l("-s", "push", "shell", key)).isEmpty());
+    // ... and the bridge refuses them (a source check: isPrivateData needs Android)
+    try {
+      java.io.File src = null;
+      for (java.io.File d = new java.io.File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { java.io.File f = new java.io.File(d, "src/com/bloatware/bingblop/MainActivity.java"); if (f.isFile()) src = f; }
+      String m = new String(java.nio.file.Files.readAllBytes(src.toPath()), "UTF-8");
+      int a = m.indexOf("public void cdAdb("), b = m.indexOf("cdExecutor.submit", a);
+      is("cdAdb checks every local file argument with isPrivateData before it runs", a > 0 && b > a && m.substring(a, b).contains("AdbArgs.localFileArgs(given)") && m.substring(a, b).contains("isPrivateData(new File(local))"));
+      a = m.indexOf("public void cdInstall("); b = m.indexOf("cdExecutor.submit", a);
+      is("cdInstall checks every file it would send with isPrivateData before it runs", a > 0 && b > a && m.substring(a, b).contains("DeviceLink.localFiles(") && m.substring(a, b).contains("isPrivateData(new File(f))"));
+    } catch (Exception e) { is("MainActivity.java was read: " + e, false); }
 
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);

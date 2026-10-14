@@ -2,7 +2,7 @@ package com.bloatware.bingblop;
 
 public class FileRulesTest {
     static int fails = 0, n = 0;
-    static void eq(String what, String got, String want) { n++; if (!want.equals(got)) { fails++; System.out.println("FAIL " + what + ": got " + got + " want " + want); } }
+    static void eq(String what, String got, String want) { n++; if (want == null ? got != null : !want.equals(got)) { fails++; System.out.println("FAIL " + what + ": got " + got + " want " + want); } }
     static void is(String what, boolean got, boolean want) { n++; if (got != want) { fails++; System.out.println("FAIL " + what + ": got " + got + " want " + want); } }
     static final String P = "/storage/emulated/0";
     static String c(String s) { return FileRules.canonical(s, P); }
@@ -104,6 +104,31 @@ public class FileRulesTest {
         is("okLine: FMOK is not OK", FileRules.okLine("FMOK", "OK"), false);
         is("okLine: the message of a taken name is not a success", FileRules.okLine("A file or folder with that name is already there", "FMOK"), false);
         is("okLine: null and empty", FileRules.okLine(null, "OK") || FileRules.okLine("", "OK") || FileRules.okLine("OK", ""), false);
+
+        // MA2-2: which items of a cp / mv / rm batch are refused, whichever route the batch takes (plain, or into or out of added storage)
+        final String D = "/data/user/0/com.bloatware.bingblop";
+        FileRules.PrivateTest priv = new FileRules.PrivateTest() {
+            public boolean isPrivate(String p) { return !p.startsWith("content://") && (p.equals(D) || p.startsWith(D + "/")) && !p.startsWith(D + "/cache/share/"); }
+        };
+        String WHY = "private", SYS = "System location: not touched";
+        String key = D + "/files/adb_home/.android/adbkey", prefs = D + "/shared_prefs";
+        String saf = "content://com.android.externalstorage.documents/tree/1234-5678%3A/document/1234-5678%3A";
+        String safFile = saf + "notes.txt";
+        eq("the adb key copied to added storage is refused", FileRules.batchRefusal("cp", key, saf, priv, WHY), WHY);
+        eq("the adb key moved to added storage is refused", FileRules.batchRefusal("mv", key, saf, priv, WHY), WHY);
+        eq("the adb key copied to a plain folder is refused", FileRules.batchRefusal("cp", key, P + "/Download", priv, WHY), WHY);
+        eq("a file of added storage copied into the app's settings folder is refused", FileRules.batchRefusal("cp", safFile, prefs, priv, WHY), WHY);
+        eq("a file of added storage moved into the app's settings folder is refused", FileRules.batchRefusal("mv", safFile, prefs, priv, WHY), WHY);
+        eq("a plain file copied into the app's settings folder is refused", FileRules.batchRefusal("cp", P + "/a.txt", prefs, priv, WHY), WHY);
+        eq("a system tree moved to added storage is refused", FileRules.batchRefusal("mv", "/system/app", saf, priv, WHY), SYS);
+        eq("a whole storage root moved to added storage is refused", FileRules.batchRefusal("mv", P, saf, priv, WHY), SYS);
+        eq("a shared-storage file copied to added storage is allowed", FileRules.batchRefusal("cp", P + "/Download/a.txt", saf, priv, WHY), null);
+        eq("a file of added storage copied to shared storage is allowed", FileRules.batchRefusal("cp", safFile, P + "/Download", priv, WHY), null);
+        eq("added storage to added storage is allowed", FileRules.batchRefusal("mv", safFile, saf, priv, WHY), null);
+        eq("a file of added storage removed is allowed", FileRules.batchRefusal("rm", safFile, "", priv, WHY), null);
+        eq("an allowed cache folder of the app copied to added storage is allowed", FileRules.batchRefusal("cp", D + "/cache/share/a/app.apk", saf, priv, WHY), null);
+        eq("rm ignores the destination", FileRules.batchRefusal("rm", P + "/Download/a.txt", prefs, priv, WHY), null);
+        eq("the adb key removed is refused", FileRules.batchRefusal("rm", key, "", priv, WHY), WHY);
 
         System.out.println(n + " checks, " + fails + " failed");
         if (fails != 0) System.exit(1);

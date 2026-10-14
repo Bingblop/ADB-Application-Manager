@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "애니메이터 길이 배율 (1 = 보통, 0 = 꺼짐)",
 "Another archive job is still running": "다른 압축 파일 작업이 아직 실행 중입니다",
 "Another batch action is already running": "다른 일괄 작업이 이미 실행 중입니다",
+"Another device was chosen: nothing was sent": "다른 기기가 선택되었습니다: 아무것도 보내지 않았습니다",
 "Another folder": "다른 폴더",
 "Another theme": "다른 테마",
 "Answers": "응답함",

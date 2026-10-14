@@ -311,6 +311,17 @@ public final class FileOps {
         return new File(dir, ".fo" + System.nanoTime() + ".tmp");
     }
 
+    /**
+     * The temporary file {@code dest} is written to before it is moved into place: {@code prefix + name + ".part"} next to it, or a short random
+     * ".part" name there when the name plus the suffix would not fit (a file name is at most 255 bytes, and {@code dest}'s own may be 255).
+     */
+    static File partFor(File dest, String prefix) {
+        File parent = dest.getAbsoluteFile().getParentFile();
+        String n = prefix + dest.getName() + ".part";
+        if (n.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 255) return new File(parent, n);
+        return new File(parent, tmpFor(parent).getName() + ".part");
+    }
+
     /** Puts tmp in place of target in one step: the old file is never removed before the new one is there. */
     private static void replaceWith(File tmp, File target) throws IOException {
         if (exists(target) && !isLink(target) && target.isDirectory()) throw new IOException("A folder with that name is in the way");

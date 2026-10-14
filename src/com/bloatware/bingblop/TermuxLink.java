@@ -195,7 +195,7 @@ public final class TermuxLink {
     }
 
     private static Process connect(Launcher launcher, long timeoutMs, ScriptMaker maker) throws IOException {
-        ServerSocket server = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
+        ServerSocket server = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));  // bound to 127.0.0.1 only, and a connection must send this session's random token. nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
         final SessionProcess proc = new SessionProcess(launcher);
         // Any app on the phone can open this loopback port. A peer that connects and says nothing used to hold the accepting thread for 3 s, so a few
         // such peers kept Termux's real connection waiting until the timeout. The hellos are therefore read here without blocking, all connections

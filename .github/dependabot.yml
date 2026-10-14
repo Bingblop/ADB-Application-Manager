@@ -1,0 +1,11 @@
+# Keeps the commit-pinned actions in .github/workflows current: a pull request per updated action, with the new tag in the comment.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]

@@ -430,6 +430,9 @@ object EngineMain {
                 }
                 if (abort) { step("Patching", "FAIL"); steps += Triple("Patching", false, failed.lastOrNull()?.first?.let { "\"$it\" failed" }); return finish(false, "A patch failed") }
                 steps += Triple("Patching", failed.isEmpty(), null); step("Patching", if (failed.isEmpty()) "OK" else "FAIL")
+                // With "Stop when a patch fails" off a failing patch does not stop the run. When none of the selected patches went in, what would be
+                // rebuilt and signed is the unchanged app: filing or installing it would replace the app with its unpatched self, so it is a failure.
+                if (selected.none { it.name in applied }) return finish(false, "No patch could be applied")
 
                 step("Rebuilding", "RUNNING")
                 val rebuilt = File(temp, "rebuilt.apk")

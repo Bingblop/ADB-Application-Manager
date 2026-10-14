@@ -2,12 +2,12 @@ package com.bloatware.bingblop;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -179,7 +179,7 @@ public final class SdmAreas implements Sdm.Areas {
 
     private boolean writeTest(String root) {
         if (!cfg.writeTest) return true;
-        File f = new File(root, "eu.darken.sdmse-test-sd-area-access-" + Math.abs(new Random().nextInt()));
+        File f = new File(root, "eu.darken.sdmse-test-sd-area-access-" + new SecureRandom().nextInt(Integer.MAX_VALUE));
         try {
             if (!f.createNewFile()) return false;
             return f.delete() || !f.exists();
