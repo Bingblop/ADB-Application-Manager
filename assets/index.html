@@ -37261,6 +37261,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 el.innerHTML = '<div class="mp-result"><h3>Cancelled</h3><div class="mp-note">Nothing was saved.</div><div class="mp-row"><button class="mode-action-btn" onclick="mpBackToPatches()">Back to the patches</button></div></div>';
                 mpRunStatus('Cancelled'); return;
             }
+            // an APK with no patch in it is the unchanged app: never "is patched" (the app turns such an answer into a failure; this covers an older one)
+            if (res.success && !(res.applied || r.applied || []).length) res = Object.assign({}, res, { success: false, error: res.error || 'No patch could be applied' });
             if (res.success) {
                 const it = r.saved || {};
                 const ins = r.install;

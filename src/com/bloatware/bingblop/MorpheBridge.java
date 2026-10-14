@@ -593,9 +593,9 @@ public final class MorpheBridge {
                 }
             }, keystore, keyInfo, MorpheJobs.abiName(Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""));
             step(jobId, "Preparing", "OK");
-            final JSONObject engineResult = runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
+            final JSONObject engineResult = MorpheJobs.checkApplied(runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
                 @Override public void accept(JSONObject e) { ev(jobId, e); }
-            }, 45L * 60 * 1000);
+            }, 45L * 60 * 1000));                                                              // nothing applied is a failure: the APK is the unpatched app
             result = engineResult;
             if (engineResult.optBoolean("success") && output.isFile()) {
                 step(jobId, "Saving", "RUNNING");

@@ -74,6 +74,25 @@ public final class MorpheJobs {
         return new JSONObject().put("out", out.getAbsolutePath()).put("bundles", a);
     }
 
+    /**
+     * The engine's answer, except that a success with an empty "applied" list becomes a failure (a copy; null stays null). With "Stop when a patch
+     * fails" off, an engine without its own check ran on when every selected patch failed and signed the unchanged app; filing or installing that
+     * would replace the app with its unpatched self.
+     */
+    public static JSONObject checkApplied(JSONObject r) {
+        if (r == null || !r.optBoolean("success")) return r;
+        JSONArray applied = r.optJSONArray("applied");
+        if (applied == null || applied.length() > 0) return r;
+        try {
+            JSONObject c = new JSONObject(r.toString());
+            c.put("success", false);
+            c.put("error", "No patch could be applied");
+            return c;
+        } catch (JSONException e) {
+            return r;
+        }
+    }
+
     /** True when path is inside one of the roots (after resolving links and ..). The page may only name files in these folders. */
     public static boolean inside(File path, List<File> roots) {
         try {

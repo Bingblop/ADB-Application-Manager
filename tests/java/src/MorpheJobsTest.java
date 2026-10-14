@@ -63,6 +63,17 @@ public class MorpheJobsTest {
         try { java.nio.file.Files.createSymbolicLink(link.toPath(), outside.toPath()); linked = true; } catch (Exception ignored) {}
         if (linked) check("a link that points out of the root is not allowed", !MorpheJobs.inside(link, roots), null);
 
+        // MOR-1: a success with nothing applied (every selected patch failed, "Stop when a patch fails" off) is a failure; the bridge and the orphan scan use it
+        JSONObject none = MorpheJobs.checkApplied(new JSONObject("{\"success\":true,\"output\":\"/x/p.apk\",\"applied\":[],\"failed\":[{\"name\":\"A\",\"error\":\"boom\"}],\"steps\":[]}"));
+        check("nothing applied: the answer becomes a failure with words, the failed list and the rest kept", !none.optBoolean("success") && none.optString("error").equals("No patch could be applied") && none.getJSONArray("failed").length() == 1 && none.optString("output").equals("/x/p.apk"), none.toString());
+        JSONObject noneEither = MorpheJobs.checkApplied(new JSONObject("{\"success\":true,\"applied\":[],\"failed\":[]}"));
+        check("nothing applied and nothing failed is a failure too", !noneEither.optBoolean("success"), noneEither.toString());
+        JSONObject some = new JSONObject("{\"success\":true,\"applied\":[\"B\"],\"failed\":[{\"name\":\"A\"}]}");
+        check("one applied, one failed: still a success (the same object)", MorpheJobs.checkApplied(some) == some && some.optBoolean("success"), null);
+        JSONObject bad0 = new JSONObject("{\"success\":false,\"error\":\"A patch failed\",\"applied\":[]}");
+        check("a failure stays the same failure; an answer without an applied list (cancel, timeout) and null pass through", MorpheJobs.checkApplied(bad0) == bad0 && bad0.optString("error").equals("A patch failed")
+            && MorpheJobs.checkApplied(new JSONObject("{\"success\":true}")).optBoolean("success") && MorpheJobs.checkApplied(null) == null, null);
+
         check("abi names", MorpheJobs.abiName("arm64-v8a").equals("arm64-v8a") && MorpheJobs.abiName("armeabi-v7a").equals("armeabi-v7a") && MorpheJobs.abiName("mips").isEmpty() && MorpheJobs.abiName(null).isEmpty(), null);
         check("the died message mentions memory and the last log", MorpheJobs.diedMessage("LOG INFO Applying").contains("out of memory") && MorpheJobs.diedMessage("LOG INFO Applying").contains("Applying") && !MorpheJobs.diedMessage("").contains("Last lines"), null);
         StringBuilder big = new StringBuilder(); for (int i = 0; i < 5000; i++) big.append('x');
@@ -88,6 +99,8 @@ public class MorpheJobsTest {
             String startBody = sp < 0 ? "" : m.substring(sp, pa > sp ? pa : m.length());
             check("startPatch refuses a bad id before it takes the running slot", startBody.indexOf("validJobId(jobId)") > 0 && startBody.indexOf("validJobId(jobId)") < startBody.indexOf("slot.tryStart(jobId)"), null);
             String patchBody = pa < 0 ? "" : m.substring(pa, Math.min(m.length(), pa + 1200));
+            String engineCall = patchBody.length() > 0 ? m.substring(pa, Math.min(m.length(), pa + 4000)) : "";
+            check("patch checks the engine's answer for nothing applied before it files or installs anything", engineCall.contains("MorpheJobs.checkApplied(runEngine(\"patch\"") && engineCall.indexOf("checkApplied(") < engineCall.indexOf("save(a, output, dir, engineResult)"), null);
             check("patch refuses a bad id before it empties the job folder", patchBody.indexOf("validJobId(jobId)") > 0 && patchBody.indexOf("validJobId(jobId)") < patchBody.indexOf("deleteTree(dir)"), null);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
