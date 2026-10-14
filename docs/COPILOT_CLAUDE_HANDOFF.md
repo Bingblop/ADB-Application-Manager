@@ -194,6 +194,25 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.13.3 (cut from `main`; written 2026-10-14)
+
+A screen-layout release: the usability findings of the 2026-10-14 UI audit, #216 and #220 to #227, and nothing else. No command, setting or permission changes. Two lists changed shape (the Apps rows: the icon is the checkbox; the File Manager: the rarely used options are under ⋯ More), so they are the first things to look at on a phone.
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #216 | toast, Debloater buttons off with no selection, Console "?", batch sheet spacing | t171 token rules, UI goldens | PHONE-SCRIPT-v7.13.3 step 13 |
+| #220, #221 | app menu header, one close button, 36 px controls with a 44 px tap area, quiet "Ask agent" | UI goldens, t171 | steps 8, 12, 14 |
+| #222, #223, #224 | translated date line, Task Manager tabs, header badge and gear, Terminal keys; Apps list near the top, short intros; shared empty lists (t142 timing flake fixed) | UI goldens, i18n check | steps 1, 4, 7, 10 to 12 |
+| #225 | readable small text, badges at 4.5:1 in every preset (t75 rounding flake fixed) | UI goldens, contrast checks | steps 9, 11 |
+| #226, #227 | the icon is the checkbox ("Select {0}"); File Manager options under ⋯ More (four strings, Help Guide page) | UI goldens, i18n check | steps 2, 3, 5 to 7 |
+| bump | Version 7.13.3 (857), changelog, README, guide, this page, `docs/RELEASE-CHECKLIST-v7.13.3.md`, `docs/PHONE-SCRIPT-v7.13.3.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device.** Layout depends on font scale and screen width; the German and Russian strings are the likeliest to wrap badly.
+- **Held, not in this release:** the drafts #167 (Connection Check), #168 (Wireless Debugging reconnect), #169 (Start Shizuku), #177 (Wireless Debugging toggle) and #179 (screenshot and recording). Each needs a phone test first.
+- **Running UI scripts locally:** hide the Inter font from Chromium (a fonts.conf with `rejectfont` for Inter, passed as `FONTCONFIG_FILE`); CI has none and the goldens are recorded without it. t217 still differs locally and passes on CI.
+
 ## v7.13.2 (cut from `main`; written 2026-10-14)
 
 A fix release: the nine serious and wrong-result findings of the second review pass (the Connected Devices sub-tabs, Backups, the real-terminal page code, the Morphe runner), the update check's out-of-order progress count (#185), a robust UI script t104, and the SD Maid AppCleaner change the owner asked for (it starts the accessibility service itself; this app and Android System WebView are never force-stopped). Nothing else is new.
