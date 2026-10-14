@@ -1,0 +1,11 @@
+1. the Codex steps: ["Install proot-distro (Termux package)","Install a Debian container (first time only, about 100 MB)","Install curl, git and certificates inside Debian","Make sure Python is there (to edit Codex CLI's config file)","Add it to Codex CLI's own config","Save the token for Codex CLI"]
+ok      the token step is not guarded by a grep that skips it when a line is there: sed -i '/^export MCP_GITHUB_TOKEN=/d' ~/.bashrc 2>/dev/null; echo 'export MCP_GITHUB_TOKEN=YOUR_GITHUB_TOKEN' >> ~/.bashrc && grep -qxF 'export MCP_GITHUB_TOKEN=YOUR_GITHUB_TOKEN' ~/.bashrc
+ok   2. with no ~/.bashrc yet the step succeeds
+ok      and writes the line: ["export MCP_GITHUB_TOKEN=YOUR_GITHUB_TOKEN"]
+ok   3. adding it again with the real token succeeds
+ok      the old line is gone and the new one is there once: ["alias ll=\"ls -l\"","export MCP_GITHUB_TOKENS_OTHER=keep","export MCP_GITHUB_TOKEN=ghp_new123"]
+ok      the user's other lines are kept: ["alias ll=\"ls -l\"","export MCP_GITHUB_TOKENS_OTHER=keep","export MCP_GITHUB_TOKEN=ghp_new123"]
+ok      bash now gives Codex the new token: ghp_new123
+ok   4. the same token a third time: ["alias ll=\"ls -l\"","export MCP_GITHUB_TOKENS_OTHER=keep","export MCP_GITHUB_TOKEN=ghp_new123"]
+ok   no page errors
+all passed

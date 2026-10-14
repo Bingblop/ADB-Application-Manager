@@ -31760,7 +31760,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const steps = debian ? TX_DEBIAN_STEPS.slice() : [];
             steps.push({ label: 'Make sure Python is there (to edit ' + cli.name + '\'s config file)', cmd: 'command -v python3 >/dev/null 2>&1 || apt-get install -y python3 2>/dev/null || pkg install -y python', debian });
             steps.push({ label: 'Add it to ' + cli.name + '\'s own config', cmd, debian });
-            if (entry.exportVar) steps.push({ label: 'Save the token for ' + cli.name, cmd: 'grep -q ' + txQ(entry.exportVar[0] + '=') + ' ~/.bashrc 2>/dev/null || echo ' + txQ('export ' + entry.exportVar[0] + '=' + entry.exportVar[1]) + ' >> ~/.bashrc', debian });
+            // an earlier line for this server (a placeholder or an expired token) is replaced: a guard that skipped the echo when one was there kept the old token for good
+            if (entry.exportVar) {
+                const line = 'export ' + entry.exportVar[0] + '=' + entry.exportVar[1];
+                steps.push({ label: 'Save the token for ' + cli.name, cmd: 'sed -i ' + txQ('/^export ' + entry.exportVar[0] + '=/d') + ' ~/.bashrc 2>/dev/null; echo ' + txQ(line) + ' >> ~/.bashrc && grep -qxF ' + txQ(line) + ' ~/.bashrc', debian });
+            }
             return steps;
         }
 
