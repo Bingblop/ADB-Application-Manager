@@ -29,7 +29,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await sleep(350);
   };
-  const find = async text => { await ev(t => { const i = document.getElementById('ovlSearch'); i.value = t; ovlSearchInput(); }, text); await sleep(320); };
+  // the found row goes to the middle of the screen, clear of the Undo snackbar at the bottom (the text above it grew with the type scale)
+  const find = async text => { await ev(t => { const i = document.getElementById('ovlSearch'); i.value = t; ovlSearchInput(); }, text); await sleep(320); await ev(t => { const r = document.querySelector('#ovlRows .ovl-row[data-id="' + t + '"]'); if (r) r.scrollIntoView({ block: 'center' }); }, text); await sleep(120); };
 
   await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); switchView('overlays'); ovlSetSub('list'); }); await sleep(700);
 
@@ -38,7 +39,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   for (const ms of [520, 600, 690, 800, 1000, 1500]) {
     await closeAll(); await find(target); await reset();
     const before = await rowOn(target);
-    const box = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"]').first().boundingBox();
+    // on the overlay's name: the middle of the row is now close to the 36px Ask agent button, and a finger that near it is the button's
+    const box = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-key').first().boundingBox();
     await touch(box.x + 24, box.y + box.height / 2, ms);
     const o = await ops();
     const sheet = await ev(() => document.getElementById('ovlDetailModal').classList.contains('show'));
@@ -51,7 +53,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     check('   touch hold ' + ms + ' ms on the switch: one change, not two', (await ops()).length === 1);
   }
   await closeAll(); await find(target); await reset();
-  const tb = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"]').first().boundingBox();
+  const tb = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-key').first().boundingBox();
   await touch(tb.x + 24, tb.y + tb.height / 2, 60);
   check('   a short tap opens the sheet and changes nothing', (await ev(() => document.getElementById('ovlDetailModal').classList.contains('show'))) && (await ops()).length === 0);
   await closeAll();

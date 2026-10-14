@@ -1,5 +1,41 @@
 # Changelog
 
+## v7.13.3-Pro (versionCode 857)
+
+A screen-layout release on top of v7.13.2, cut from `main`. It carries the usability findings of the 2026-10-14 UI audit (#216 and #220 to #227) and nothing else: no feature, no new setting, no change to what any command does. The pages are tighter, the small text and badges are readable in every theme preset, and the controls are easier to hit. Two lists changed shape (the Apps rows and the File Manager's top card), so they are the ones to look at first. Each change is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** `docs/PHONE-SCRIPT-v7.13.3.md` is one phone step per change.
+
+**Apps tab**
+
+- **The list starts near the top.** It used to start 420 px down; the counts are merged into the filter pills (each pill shows its count and the counts follow the filtering), the paired frames (3rd Party | System, Enabled | Frozen) light the side that is on, and the › at the end of the filter row shows only while there is more to scroll to (#223, #224).
+- **An app's icon is its checkbox.** Tapping the icon selects the app (a check badge on the icon, the row tinted) and the batch count follows; tapping the name still selects. A long press on the icon saves it without selecting; a long press on the name opens the app menu. The gear and ⋯ are slim icons that no longer catch each other's taps, and a long name fits on one line. One new string, "Select {0}", read as "Select <app>, checkbox" by TalkBack (#226).
+- **Empty lists share one look** (icon, title, hint, button) and give the right advice: "No apps match your search." with Clear search, "No apps match your filters." with Clear filters, and in the File Manager an empty folder or one that only holds hidden files, which offers Show hidden files (#224).
+
+**File Manager**
+
+- **The list starts near the top** (it was pushed down to about 635 px by the top card). The rarely used toggles, the scope and tick boxes, hidden files, the system folders and Add storage moved into a sheet opened by **⋯ More**; a search uses what is set there. Four new strings; the Help Guide page is updated (#227).
+
+**App menu and sheets**
+
+- **The app menu header no longer breaks dates and sizes in the middle of a word** or cuts "Copy name" off, and the date line is translated whole ("Installiert: … • Aktualisiert: …") (#220, #222).
+- **Every sheet closes with the same round 44 px ✕** (the More sheet, the batch menu, the Help Guide), read as a "Close" button by TalkBack (#220).
+- **On dark themes the app menu's Freeze and Uninstall buttons are now pastel blue and red.** The vivid ones were below 4.5:1 contrast (#225).
+
+**Readable text and touch targets**
+
+- **Small text is readable:** badges and overlines 11 px, package names 12 px, app names 14 px; status badges (USER, SYSTEM, FROZEN, MOD) read at 4.5:1 on every row, in light and dark, in every theme preset (#225).
+- **Buttons and chips are 36 px tall and take a tap over 44 px;** a tap just beside a small chip, the "?", a checkbox or a File Manager tick box still lands on it; the filter-pill and sort rows no longer wobble up and down when swiped sideways (#221).
+- **"Ask agent" is a quiet ghost button** on Hidden Settings and Overlays rows, accent only while pressed (#221).
+
+**Header, Task Manager, Terminal, Console, Debloater**
+
+- The header's mode badge stays on one line and the settings gear is a monochrome outline; Task Manager's tabs are two even rows of three; the Terminal's input line and extra keys sit above the bottom bar, also after the keyboard closes (#222).
+- Long intro paragraphs (SD Maid, Hidden Settings, the stores) show two lines; tap the text to read the rest (#223).
+- The Debloater's Uninstall, Disable, Restore and Save to List are dimmed while nothing is selected; the Console tab's "?" has its own room and covers no tab name; the toast has an inverse look that reads in the light and dark themes; the batch sheet's spacing is even (#216).
+
+**Tests only**
+
+- The UI scripts t75 and t142 no longer depend on animation timing (#224, #225); goldens follow the layout.
+
 ## v7.13.2-Pro (versionCode 856)
 
 A fix release on top of v7.13.1, cut from `main`. It carries the serious and wrong-result findings of a second, narrower review pass over the areas the first one did not reach (the Connected Devices sub-tabs, Backups, the real-terminal page code and the Morphe patcher runner), the update check's out-of-order progress count that v7.13.1 left open (#185), and one change you asked for: the SD Maid AppCleaner now starts its accessibility service on its own and never force-stops this app or Android System WebView. It also carries the full code review of 2026-10-14 (#206 to #215), a small spacing and toast polish (#216) and the Semgrep hardening (#217, #218). Nothing else is new: no feature, no wording change. The thirteen smaller findings of the same pass (#187 to #199) are fixed below. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 29 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, and `docs/PHONE-SCRIPT-v7.13.2.md` is the one-page version.

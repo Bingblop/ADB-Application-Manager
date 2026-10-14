@@ -1,0 +1,41 @@
+ok   en 320 tcp: one line, not wrapped
+ok   en 320 tcp:   the whole name shows (no "…")
+ok   en 320 tcp:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 320 wireless: one line, not wrapped
+ok   en 320 wireless:   the longest name ("Auto • Wireless ADB (41235)") ends in "…" at 320 px
+ok   en 320 wireless:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 320 setup: one line, not wrapped
+ok   en 320 setup:   the whole name shows (no "…")
+ok   en 320 setup:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 320 readonly: one line, not wrapped
+ok   en 320 readonly:   the whole name shows (no "…")
+ok   en 320 readonly:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 360 tcp: one line, not wrapped
+ok   en 360 tcp:   the whole name shows (no "…")
+ok   en 360 tcp:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 360 wireless: one line, not wrapped
+ok   en 360 wireless:   the whole name shows (no "…")
+ok   en 360 wireless:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 360 setup: one line, not wrapped
+ok   en 360 setup:   the whole name shows (no "…")
+ok   en 360 setup:   inside the screen, no sideways scroll, the title clear of the gear
+ok   en 360 readonly: one line, not wrapped
+ok   en 360 readonly:   the whole name shows (no "…")
+ok   en 360 readonly:   inside the screen, no sideways scroll, the title clear of the gear
+ok   de 320 tcp: one line, cut with an ellipsis when it is longer than its room
+ok   de 320 tcp:   inside the screen, no sideways scroll, the title clear of the gear
+ok   de 320 setup: one line, cut with an ellipsis when it is longer than its room
+ok   de 320 setup:   inside the screen, no sideways scroll, the title clear of the gear
+ok   de 360 tcp: one line, cut with an ellipsis when it is longer than its room
+ok   de 360 tcp:   inside the screen, no sideways scroll, the title clear of the gear
+ok   de 360 setup: one line, cut with an ellipsis when it is longer than its room
+ok   de 360 setup:   inside the screen, no sideways scroll, the title clear of the gear
+ok   dark: the header gear is an SVG with no text (no colour emoji)
+ok   dark:   drawn in the theme's text colour
+ok   dark:   a tap target of at least 38 x 38 px called Settings
+ok   dark:   a tap opens Settings
+ok   light: the header gear is an SVG with no text (no colour emoji)
+ok   light:   drawn in the theme's text colour
+ok   light:   a tap target of at least 38 x 38 px called Settings
+ok   light:   a tap opens Settings
+errors: []
