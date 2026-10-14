@@ -1,0 +1,71 @@
+ok   the page knows 14 languages (English and 13 translations)
+ok   en: installed and updated: the line is the dictionary's sentence with both dates
+ok   en: never updated: only the install date
+ok   en: only an update time: "Last updated" with the date
+ok   en: no dates: the line is hidden
+ok   es: installed and updated: the line is the dictionary's sentence with both dates
+ok   es:   no English word is left on it
+ok   es: never updated: only the install date
+ok   es: only an update time: "Last updated" with the date
+ok   es: no dates: the line is hidden
+ok   fr: installed and updated: the line is the dictionary's sentence with both dates
+ok   fr:   no English word is left on it
+ok   fr: never updated: only the install date
+ok   fr: only an update time: "Last updated" with the date
+ok   fr: no dates: the line is hidden
+ok   de: installed and updated: the line is the dictionary's sentence with both dates
+ok   de:   no English word is left on it
+ok   de: never updated: only the install date
+ok   de: only an update time: "Last updated" with the date
+ok   de: no dates: the line is hidden
+ok   pt-BR: installed and updated: the line is the dictionary's sentence with both dates
+ok   pt-BR:   no English word is left on it
+ok   pt-BR: never updated: only the install date
+ok   pt-BR: only an update time: "Last updated" with the date
+ok   pt-BR: no dates: the line is hidden
+ok   it: installed and updated: the line is the dictionary's sentence with both dates
+ok   it:   no English word is left on it
+ok   it: never updated: only the install date
+ok   it: only an update time: "Last updated" with the date
+ok   it: no dates: the line is hidden
+ok   ru: installed and updated: the line is the dictionary's sentence with both dates
+ok   ru:   no English word is left on it
+ok   ru: never updated: only the install date
+ok   ru: only an update time: "Last updated" with the date
+ok   ru: no dates: the line is hidden
+ok   zh-CN: installed and updated: the line is the dictionary's sentence with both dates
+ok   zh-CN:   no English word is left on it
+ok   zh-CN: never updated: only the install date
+ok   zh-CN: only an update time: "Last updated" with the date
+ok   zh-CN: no dates: the line is hidden
+ok   ja: installed and updated: the line is the dictionary's sentence with both dates
+ok   ja:   no English word is left on it
+ok   ja: never updated: only the install date
+ok   ja: only an update time: "Last updated" with the date
+ok   ja: no dates: the line is hidden
+ok   ko: installed and updated: the line is the dictionary's sentence with both dates
+ok   ko:   no English word is left on it
+ok   ko: never updated: only the install date
+ok   ko: only an update time: "Last updated" with the date
+ok   ko: no dates: the line is hidden
+ok   ar: installed and updated: the line is the dictionary's sentence with both dates
+ok   ar:   no English word is left on it
+ok   ar: never updated: only the install date
+ok   ar: only an update time: "Last updated" with the date
+ok   ar: no dates: the line is hidden
+ok   hi: installed and updated: the line is the dictionary's sentence with both dates
+ok   hi:   no English word is left on it
+ok   hi: never updated: only the install date
+ok   hi: only an update time: "Last updated" with the date
+ok   hi: no dates: the line is hidden
+ok   tr: installed and updated: the line is the dictionary's sentence with both dates
+ok   tr:   no English word is left on it
+ok   tr: never updated: only the install date
+ok   tr: only an update time: "Last updated" with the date
+ok   tr: no dates: the line is hidden
+ok   id: installed and updated: the line is the dictionary's sentence with both dates
+ok   id:   no English word is left on it
+ok   id: never updated: only the install date
+ok   id: only an update time: "Last updated" with the date
+ok   id: no dates: the line is hidden
+errors: []

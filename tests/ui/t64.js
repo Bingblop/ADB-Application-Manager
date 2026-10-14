@@ -89,7 +89,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await p3.addInitScript(mock.initScript); await p3.goto(URL); await p3.waitForTimeout(300);
   await p3.evaluate(() => { window.__mode.priv = true; checkAllWorkingModes(false); switchView('settings'); }); await p3.waitForTimeout(600);
   await p3.evaluate(() => { const i = document.getElementById('sdbSearch'); i.value = 'accessibility_display_magnification_enabled_and_some_more_unbroken_text_here_and_there_' + 'x'.repeat(100); sdbSearchInput(); }); await p3.waitForTimeout(400);
-  const w3 = await p3.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, btn: Array.from(document.querySelectorAll('.sdb-empty .mode-action-btn')).map(b => Math.round(b.getBoundingClientRect().right)) }));
+  const w3 = await p3.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, btn: Array.from(document.querySelectorAll('#sdbList .empty-state .mode-action-btn')).map(b => Math.round(b.getBoundingClientRect().right)) }));
   check('3. 150 characters with no space: nothing sticks out at 320 px', w3.sw <= w3.cw && w3.btn.every(r => r <= 320), JSON.stringify(w3));
   await p3.evaluate(() => { sdbOpenNew('global', 'k'); const k = document.getElementById('sdbNewKey'); k.value = 'a_very_long_existing_name_' + 'y'.repeat(120); sdbData.global.set(k.value, 'v'); sdbNewInput(); });
   const w3b = await p3.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, note: document.getElementById('sdbNewNote').getBoundingClientRect().right }));

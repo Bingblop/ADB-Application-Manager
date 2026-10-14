@@ -1,0 +1,65 @@
+ok   en 320: six tabs in a grid, two rows
+ok   en 320:   three in each row, the same left edges in both
+ok   en 320:   all six the same width and height
+ok   en 320:   every label on one line, none cut off, at least 36 px tall
+ok   en 320:   the page does not scroll sideways
+ok   en 360: six tabs in a grid, two rows
+ok   en 360:   three in each row, the same left edges in both
+ok   en 360:   all six the same width and height
+ok   en 360:   every label on one line, none cut off, at least 36 px tall
+ok   en 360:   the page does not scroll sideways
+ok   en 360:   a tap on Network switches to it
+ok   en 400: six tabs in a grid, two rows
+ok   en 400:   three in each row, the same left edges in both
+ok   en 400:   all six the same width and height
+ok   en 400:   every label on one line, none cut off, at least 36 px tall
+ok   en 400:   the page does not scroll sideways
+ok   de 320: six tabs in a grid, two rows
+ok   de 320:   three in each row, the same left edges in both
+ok   de 320:   all six the same width and height
+ok   de 320:   every label on one line, none cut off, at least 36 px tall
+ok   de 320:   the page does not scroll sideways
+ok   de 360: six tabs in a grid, two rows
+ok   de 360:   three in each row, the same left edges in both
+ok   de 360:   all six the same width and height
+ok   de 360:   every label on one line, none cut off, at least 36 px tall
+ok   de 360:   the page does not scroll sideways
+ok   de 360:   a tap on Network switches to it
+ok   de 400: six tabs in a grid, two rows
+ok   de 400:   three in each row, the same left edges in both
+ok   de 400:   all six the same width and height
+ok   de 400:   every label on one line, none cut off, at least 36 px tall
+ok   de 400:   the page does not scroll sideways
+ok   ru 320: six tabs in a grid, two rows
+ok   ru 320:   three in each row, the same left edges in both
+ok   ru 320:   all six the same width and height
+ok   ru 320:   every label on one line, none cut off, at least 36 px tall
+ok   ru 320:   the page does not scroll sideways
+ok   ru 360: six tabs in a grid, two rows
+ok   ru 360:   three in each row, the same left edges in both
+ok   ru 360:   all six the same width and height
+ok   ru 360:   every label on one line, none cut off, at least 36 px tall
+ok   ru 360:   the page does not scroll sideways
+ok   ru 360:   a tap on Network switches to it
+ok   ru 400: six tabs in a grid, two rows
+ok   ru 400:   three in each row, the same left edges in both
+ok   ru 400:   all six the same width and height
+ok   ru 400:   every label on one line, none cut off, at least 36 px tall
+ok   ru 400:   the page does not scroll sideways
+ok   fr 320: six tabs in a grid, two rows
+ok   fr 320:   three in each row, the same left edges in both
+ok   fr 320:   all six the same width and height
+ok   fr 320:   every label on one line, none cut off, at least 36 px tall
+ok   fr 320:   the page does not scroll sideways
+ok   fr 360: six tabs in a grid, two rows
+ok   fr 360:   three in each row, the same left edges in both
+ok   fr 360:   all six the same width and height
+ok   fr 360:   every label on one line, none cut off, at least 36 px tall
+ok   fr 360:   the page does not scroll sideways
+ok   fr 360:   a tap on Network switches to it
+ok   fr 400: six tabs in a grid, two rows
+ok   fr 400:   three in each row, the same left edges in both
+ok   fr 400:   all six the same width and height
+ok   fr 400:   every label on one line, none cut off, at least 36 px tall
+ok   fr 400:   the page does not scroll sideways
+errors: []

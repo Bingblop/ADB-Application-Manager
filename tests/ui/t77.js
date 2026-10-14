@@ -40,9 +40,9 @@ const APPS = [
   const g = await ev(page, () => {
     const top = id => Math.round(document.getElementById(id).getBoundingClientRect().top + scrollY), bottom = id => Math.round(document.getElementById(id).getBoundingClientRect().bottom + scrollY);
     const sort = document.querySelector('.apps-sort-row').getBoundingClientRect();
-    return { sortBottom: Math.round(sort.bottom + scrollY), hintTop: top('filtersHint'), filterTop: top('filterScroll'), filterBottom: bottom('filterScroll'), searchTop: top('searchBox'), searchBottom: bottom('searchBox'), listTop: top('appsListContainer'), statsBottom: Math.round(document.querySelector('.stats-grid').getBoundingClientRect().bottom + scrollY) };
+    return { sortBottom: Math.round(sort.bottom + scrollY), hintTop: top('filtersHint'), filterTop: top('filterScroll'), filterBottom: bottom('filterScroll'), searchTop: top('searchBox'), searchBottom: bottom('searchBox'), listTop: top('appsListContainer'), statsInRow: document.querySelectorAll('#filterScroll .stat-card').length };
   });
-  check('1. the search bar is under all the filters (stat buttons, sort and export, the tip, the filter pills) and above the list', g.statsBottom <= g.sortBottom && g.sortBottom <= g.hintTop && g.filterBottom <= g.searchTop && g.searchBottom <= g.listTop, JSON.stringify(g));
+  check('1. the search bar is under all the filters (sort and export, then the filter pills with the counts and the tip arrow in their row) and above the list', g.statsInRow === 7 && g.sortBottom <= g.filterTop && g.hintTop >= g.filterTop && g.filterBottom <= g.searchTop && g.searchBottom <= g.listTop, JSON.stringify(g));
   check('   nothing else sits between the filters and the search bar', await ev(page, () => document.getElementById('filterScroll').nextElementSibling === document.getElementById('searchBox')));
   const ph = await ev(page, () => document.getElementById('searchInput').placeholder);
   check('   the box says what it searches', ph === 'Search by name or package', ph);
@@ -72,7 +72,7 @@ const APPS = [
   check('   nothing is saved until an option changes', (await saved(page)) === null);
 
   // 4) it closes: a tap elsewhere, Escape, Back, the button again
-  await page.click('.stats-grid .stat-card >> nth=0');
+  await page.click('#filterScroll .stat-card >> nth=0');
   check('4. a tap elsewhere closes it', !(await menuOpen(page)));
   await page.click('#searchMenuBtn'); await page.keyboard.press('Escape');
   check('   Escape closes it and the focus goes back to the button', !(await menuOpen(page)) && (await ev(page, () => document.activeElement.id)) === 'searchMenuBtn');

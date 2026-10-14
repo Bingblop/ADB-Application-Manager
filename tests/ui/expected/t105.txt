@@ -6,6 +6,7 @@ Saved: System + Frozen: [["Mixed 1 of 5 apps [com.s.off] Recall 1"],["system","f
 Saved: Enabled replaces Frozen, System stays: [["Mixed 1 of 5 apps [com.s.run] Recall 1"],["system","enabled"]]
 Saved: Recall takes only the matching apps: [["com.s.run"],"Recalled 1 apps from Mixed (filtered)"]
 Saved: nothing matches -> a message: No saved list has apps that match these filters.
+Clear filters
 Debloater: extra pills: ["All","Updated 7d","Running","3rd Party","System","Suspended","Patched"]
 Debloater: none on shows all five: ["Sys Gone","Sys Off","Sys Run","User Idle","User Run"]
 Debloater: Running + System: ["Sys Run"]

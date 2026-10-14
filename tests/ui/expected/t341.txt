@@ -1,0 +1,26 @@
+ok   material3 light: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   material3 light: every badge at 4.5:1 or more on its row
+ok   material3 light: on selected rows and with the Normal row tints too
+ok   material3 dark: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   material3 dark: every badge at 4.5:1 or more on its row
+ok   material3 dark: on selected rows and with the Normal row tints too
+ok   cyberpunk light: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   cyberpunk light: every badge at 4.5:1 or more on its row
+ok   cyberpunk light: on selected rows and with the Normal row tints too
+ok   cyberpunk dark: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   cyberpunk dark: every badge at 4.5:1 or more on its row
+ok   cyberpunk dark: on selected rows and with the Normal row tints too
+ok   amoled light: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   amoled light: every badge at 4.5:1 or more on its row
+ok   amoled light: on selected rows and with the Normal row tints too
+ok   amoled dark: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   amoled dark: every badge at 4.5:1 or more on its row
+ok   amoled dark: on selected rows and with the Normal row tints too
+ok   amber light: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   amber light: every badge at 4.5:1 or more on its row
+ok   amber light: on selected rows and with the Normal row tints too
+ok   amber dark: badges on the page: bloat, frozen, mod, mode badge, running, suspended, system, user
+ok   amber dark: every badge at 4.5:1 or more on its row
+ok   amber dark: on selected rows and with the Normal row tints too
+ok   no light-mode twin rule for a badge or a status colour
+errors: []

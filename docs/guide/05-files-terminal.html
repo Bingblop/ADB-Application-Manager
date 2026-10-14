@@ -22,7 +22,7 @@
 <li>Tap a file to see what you can do with it, or press and hold a row to select things (both below).</li>
 </ol>
 <p>Each row has an icon (a small picture for photos and videos), the name (folder names end with a slash) and a grey line such as <i>-rw- • 1.2 MB</i>. A first letter <b>d</b> means a folder. The other letters say what this app may do with it: r read, w write, x run (for a folder: enter). For system places listed through a working mode you see the longer form that the <code>ls</code> command prints, such as <i>drwxrwx--x</i>. The button with three dots at the right of a row opens the same actions as tapping a file, for folders too.</p>
-<p>Under the path box are shortcuts: <b>Storage</b>, <b>/data/local/tmp</b> and <b>/system</b> (these two need a working mode), <b>+ Folder</b> and <b>+ File</b> (make a new one here), <b>Refresh</b> and <b>Select</b>. Storages you add appear in the row above them.</p>
+<p>Under the search box are <b>Select</b>, <b>+ Folder</b> and <b>+ File</b> (make a new one here). The rest is one tap further: <b>⋯ More</b>, next to the title, opens a sheet called <i>File Manager options</i> with where to search and the two search tick boxes, <b>Show hidden files</b>, <b>Show thumbnails</b>, <b>Refresh</b> and <b>Clear thumbnail cache</b>, and under <i>Go to</i> the shortcuts <b>Storage</b>, <b>/data/local/tmp</b> and <b>/system</b> (these two need a working mode), the storages you add and <b>+ Add storage</b>. A shortcut opens its folder and closes the sheet; tap outside the sheet, its X or Back to close it yourself.</p>
 
 <h4>What you can do with a file or folder</h4>
 <p>Tap a file, or the three-dot button on any row. A sheet opens with the name, the path and these buttons (only the ones that fit are shown):</p>
@@ -84,6 +84,7 @@
 </ul>
 
 <h4>Options and order</h4>
+<p>These are in <b>⋯ More</b>, under <i>In the list</i>.</p>
 <ul>
 <li><b>Show hidden files</b> (off): also lists names that start with a dot (file managers usually hide these). While it is off, a line at the end of the list says how many hidden items are not shown. The search uses this switch too.</li>
 <li><b>Show thumbnails</b> (on): small pictures for photos and videos on your storage (none for pictures over 80 MB or for added storage). They are cached, up to 48 MB; <b>Clear thumbnail cache</b> empties it.</li>
@@ -113,15 +114,15 @@
 
 <h4>Step by step</h4>
 <ol class="hg-steps">
-<li>Choose where to look in the drop-down next to the tick boxes. It starts as <b>This folder</b>. The other choices are <b>Internal storage</b>, <b>Downloads</b>, <b>Camera and photos</b>, <b>Pictures</b>, <b>Documents</b>, <b>Music</b> and <b>Movies</b> (only those folders that exist), <b>SD card or drive</b> with a code when the phone shows one, and <b>Whole phone</b>.</li>
-<li>Set the two tick boxes. <b>Include subfolders</b> (on) looks in every folder below; off, it looks only at what is directly in the folder. <b>Search inside archives</b> (off) also looks at names inside zip files.</li>
+<li>Tap <b>⋯ More</b> next to the title. Under <i>Search options</i>, choose where to look in the drop-down. It starts as <b>This folder</b>. The other choices are <b>Internal storage</b>, <b>Downloads</b>, <b>Camera and photos</b>, <b>Pictures</b>, <b>Documents</b>, <b>Music</b> and <b>Movies</b> (only those folders that exist), <b>SD card or drive</b> with a code when the phone shows one, and <b>Whole phone</b>.</li>
+<li>Set the two tick boxes under it, then close the sheet. <b>Include subfolders</b> (on) looks in every folder below; off, it looks only at what is directly in the folder. <b>Search inside archives</b> (off) also looks at names inside zip files.</li>
 <li>Type what you look for and tap <b>Search</b> (or press Enter). If the box is empty you see <i>Type what to search for</i>.</li>
 <li>Watch the line <i>Searching /storage/emulated/0/Download · 1200 looked at · 3 found</i>. The Search button becomes <b>Stop</b>, and the line has a <b>Cancel</b> button.</li>
 <li>The results replace the folder list. A line says how many were found and how long it took, for example <i>12 found · 0.8 s</i>. Tap <b>Back to the folder</b> to return.</li>
 </ol>
 
 <h4>What you can type</h4>
-<p>You can type plain words, or add the special words below. Several parts together all have to fit: <code>report ext:pdf date:30d size:&gt;1mb</code>. Tap <b>Search help</b> for a short reminder on screen.</p>
+<p>You can type plain words, or add the special words below. Several parts together all have to fit: <code>report ext:pdf date:30d size:&gt;1mb</code>. Tap <b>⋯ More</b>, then <b>Search help</b>, for a short reminder on screen.</p>
 <table class="hg-table">
 <thead><tr><th>You type</th><th>It finds</th><th>Example</th></tr></thead>
 <tbody>
@@ -242,7 +243,7 @@
 
 <section id="files-storage" data-title="SD cards, USB drives and other storage" data-group="The tabs">
 <p class="hg-lead">Add an SD card, a USB drive or a folder that another app shares (Termux, or a cloud app that offers its files to Android, for example), so the <a href="#tab-files">File Manager</a> can work on it. You do it once, through Android's own picker.</p>
-<p><b>Where to find it:</b> File Manager, the row of links under the options, button <b>+ Add storage</b>.</p>
+<p><b>Where to find it:</b> File Manager, <b>⋯ More</b> next to the title, under <i>Go to</i>, button <b>+ Add storage</b>.</p>
 
 <h4>Why Android asks you to pick the folder</h4>
 <p>Android does not let an app open any folder it likes on a card, a drive or another app's space. It must be given a folder by you, in a system screen (the Storage Access Framework). The app then holds that one folder only. This needs no <a href="#modes-overview">working mode</a>, no root and no All-files access.</p>
@@ -250,9 +251,9 @@
 
 <h4>Add a storage</h4>
 <ol class="hg-steps">
-<li>Plug in or insert the card or drive. In the File Manager tap <b>+ Add storage</b>.</li>
+<li>Plug in or insert the card or drive. In the File Manager tap <b>⋯ More</b>, then <b>+ Add storage</b>.</li>
 <li>Android shows its own file picker (its look differs from phone to phone). Open its side menu, choose the card or drive, then use its button that allows access to this folder (often <i>Use this folder</i> and then <i>Allow</i>).</li>
-<li>The File Manager opens the storage and a button with its name appears in the row, with an X next to it. The grant stays after you restart the app.</li>
+<li>The File Manager opens the storage and a button with its name appears in <b>⋯ More</b> under <i>Go to</i>, with an X next to it. The grant stays after you restart the app.</li>
 <li>Tap the name button at any time to come back to the top of that storage. Inside a folder, the <b>..</b> row goes one level up; the top of a storage has no such row. The name on the button is the one Android gives the storage (for a card it can be a code such as <code>1A2B-3C4D</code>).</li>
 </ol>
 

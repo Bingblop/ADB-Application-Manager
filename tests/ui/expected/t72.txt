@@ -1,6 +1,6 @@
-1. each box has a small button at its very end, inside the box: true {"insideInstaller":true,"insideOrigin":true,"w":40,"h":32,"padR":54}
+1. each box has a small button at its very end, inside the box: true {"insideInstaller":true,"insideOrigin":true,"w":40,"h":33,"padR":54}
    the text never runs under the button (the box keeps room for it): true 54 vs 40
-   the button is big enough to hit (at least 36 px each way): true 40x32
+   the button is big enough to hit (at least 36 px each way): true 40x33
    both buttons say what they do for a screen reader: true
    the lists are closed to start with: true
 2. the button opens a list of installer sources (24): true 24
