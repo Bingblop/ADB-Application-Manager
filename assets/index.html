@@ -4952,8 +4952,9 @@
         <!-- VIEW: TASK MANAGER (processes, CPU, RAM, GPU, battery, network - a live look with no root needed, best with ADB / Shizuku / Root) -->
         <section id="view-taskmgr" class="view-content">
             <style>
-                .tm-tabs { display: flex; gap: var(--space-2); margin: var(--space-4) 0 var(--space-3h); flex-wrap: wrap; }
-                .tm-tabs .sdb-tab { flex: 1 1 auto; min-width: 72px; padding: var(--space-2) var(--space-1) var(--space-2); }
+                /* six tabs as two even rows of three (they wrapped 4 + 2 with a wider last row); the label steps down to 12 px on a 320 px screen so "Processus" or "Процессор" stays one word (a longer one wraps inside its own cell); two classes, so the shared .sdb-tabs flex row further down does not win */
+                .sdb-tabs.tm-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: var(--space-4) 0 var(--space-3h); }
+                .sdb-tabs.tm-tabs .sdb-tab { min-width: 0; min-height: 36px; justify-content: center; text-align: center; font-size: clamp(var(--fs-body), 3.7vw, var(--fs-label)); hyphens: auto; overflow-wrap: anywhere; padding: var(--space-2) var(--space-1) var(--space-2); }
                 .tm-settings { display: flex; flex-direction: column; gap: var(--space-3); margin: 2px 0 var(--space-4); padding: var(--space-3h) var(--space-4); border: 1px solid var(--border-glass); background: var(--fill-1); border-radius: var(--radius-md); }
                 .tm-settings-row { display: flex; align-items: center; gap: var(--space-3h); flex-wrap: wrap; }
                 .tm-settings-row > span:first-child { flex: 0 0 104px; font-size: var(--fs-pill); color: var(--text-muted); font-weight:var(--fw-bold); }
