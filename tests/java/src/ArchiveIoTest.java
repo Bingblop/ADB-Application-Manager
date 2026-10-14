@@ -428,6 +428,7 @@ public class ArchiveIoTest {
         supportMatrix();
         tarFixtures(exp);
         singleFixtures();
+        singleSeveralParts();
         sevenFixtures(exp);
         detectCases(exp);
         passwordCases(exp);
@@ -510,7 +511,7 @@ public class ArchiveIoTest {
             // bz2 never knows its size, xz knows it from the index, gz from the trailer
             if ("bz2".equals(t[0])) check("bz2 size is unknown (-1)", ArchiveIo.list(outBig, null).items.get(0).size == -1);
             if ("xz".equals(t[0])) check("xz size comes from the index", ArchiveIo.list(outBig, null).items.get(0).size == bigData.length);
-            if ("gz".equals(t[0])) { ArchiveIo.Info i = ArchiveIo.list(outBig, null); check("gz size from the trailer, flagged approximate over 4 MB packed", i.items.get(0).size == bigData.length); }
+            if ("gz".equals(t[0])) { ArchiveIo.Info i = ArchiveIo.list(outBig, null); check("gz size counted by unpacking it (a gz of " + outBig.length() + " bytes)", i.items.get(0).size == bigData.length); }
             // wrong extension
             File odd = new File(d, "odd-" + t[0] + ".dat"); Files.copy(outBig.toPath(), odd.toPath());
             check("detect " + t[0] + " named .dat (got " + ArchiveIo.detect(odd) + ")", t[0].equals(ArchiveIo.detect(odd)));
@@ -547,6 +548,79 @@ public class ArchiveIoTest {
             check("suffix is removed whatever its case", ArchiveIo.list(up, null).items.get(0).name.equals("UPPER.TXT"));
         }
     }
+    /**
+     * A single compressed file made of several gzip members, zstd frames or lz4 frames (concatenated files, BGZF): the reader unpacks all of
+     * them, so the size shown and checked on extraction must be all of them, or unknown (-1). The trailer of a .gz (the last member's size,
+     * modulo 4 GiB) or the first frame's content size made extraction refuse the file as damaged. No CLI tool needed.
+     */
+    static void singleSeveralParts() throws Exception {
+        File d = new File(tmp, "parts"); d.mkdirs();
+        Random rnd = new Random(11);
+        byte[] a = "first member\n".getBytes(StandardCharsets.UTF_8), b = new byte[300000];
+        for (int i = 0; i < b.length; i++) b[i] = (byte) ('a' + i % 23);
+        byte[] big = new byte[4500000];                     // packs to more than 4 MB: not counted when listed
+        rnd.nextBytes(big);
+        Object[][] cases = {
+            { "two.txt.gz", gzMembers(a, b), cat(a, b), (long) (a.length + b.length) },
+            { "one.txt.gz", gzMembers(b), b, (long) b.length },
+            { "bigtwo.bin.gz", gzMembers(big, a), cat(big, a), -1L },
+            { "two.txt.zst", cat(zstFrame(a), zstFrame(b)), cat(a, b), -1L },
+            { "one.txt.zst", zstFrame(b), b, (long) b.length },
+            { "two.txt.lz4", cat(lz4Frame(a), lz4Frame(b)), cat(a, b), -1L },
+            { "one.txt.lz4", lz4Frame(b), b, (long) b.length },
+        };
+        for (Object[] c : cases) {
+            String name = (String) c[0];
+            File f = new File(d, name);
+            write(f, (byte[]) c[1]);
+            ZipTool.Archive ar = ArchiveIoSource.open(f, null, null);
+            long size = ar.entries.get(0).size, want = (Long) c[3];
+            check(name + ": size " + size + " (want " + want + ")", size == want);
+            File out = new File(d, "out-" + name);
+            List<String> problems = new ArrayList<String>();
+            long[] res = ZipTool.extractTree(ar, "", out, null, problems);
+            File got = new File(out, ar.entries.get(0).name);
+            check(name + ": extracts whole (" + problems + ")", res[0] == 1 && problems.isEmpty() && got.isFile() && Arrays.equals(Files.readAllBytes(got.toPath()), (byte[]) c[2]));
+        }
+    }
+
+    static byte[] cat(byte[] x, byte[] y) { byte[] r = Arrays.copyOf(x, x.length + y.length); System.arraycopy(y, 0, r, x.length, y.length); return r; }
+
+    static byte[] gzMembers(byte[]... parts) throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        for (byte[] p : parts) { java.util.zip.GZIPOutputStream g = new java.util.zip.GZIPOutputStream(bo); g.write(p); g.finish(); }
+        return bo.toByteArray();
+    }
+
+    /** One zstd frame that declares its content size (aircompressor's one-shot compressor writes it). */
+    static byte[] zstFrame(byte[] p) {
+        io.airlift.compress.zstd.ZstdCompressor c = new io.airlift.compress.zstd.ZstdCompressor();
+        byte[] o = new byte[c.maxCompressedLength(p.length)];
+        return Arrays.copyOf(o, c.compress(p, 0, p.length, o, 0, o.length));
+    }
+
+    /** One lz4 frame with its content size, stored (uncompressed) 64 KiB blocks, block and content checksums. */
+    static byte[] lz4Frame(byte[] p) throws Exception {
+        java.lang.reflect.Method xx = Class.forName("com.bloatware.bingblop.ArchiveIo$Xxh32").getDeclaredMethod("of", byte[].class, int.class, int.class);
+        xx.setAccessible(true);
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        byte[] desc = new byte[10];
+        desc[0] = 0x7C; desc[1] = 0x40;                     // FLG: version 1, independent blocks, block checksums, content size, content checksum; BD: 64 KiB
+        for (int i = 0; i < 8; i++) desc[2 + i] = (byte) ((long) p.length >>> (8 * i));
+        bo.write(new byte[] { 0x04, 0x22, 0x4D, 0x18 }); bo.write(desc); bo.write(((Integer) xx.invoke(null, desc, 0, desc.length)) >> 8);
+        for (int off = 0; off < p.length; off += 65536) {
+            int n = Math.min(65536, p.length - off);
+            le32(bo, n | 0x80000000);
+            bo.write(p, off, n);
+            le32(bo, (Integer) xx.invoke(null, p, off, n));
+        }
+        le32(bo, 0);
+        le32(bo, (Integer) xx.invoke(null, p, 0, p.length));
+        return bo.toByteArray();
+    }
+
+    static void le32(ByteArrayOutputStream o, int v) { for (int i = 0; i < 4; i++) o.write(v >>> (8 * i)); }
+
     static R runToFile(List<String> cmd, File out) {
         R r = new R();
         try {
