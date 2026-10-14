@@ -1,0 +1,35 @@
+apps: three apps are listed to begin with: true
+apps, a search finds nothing: the shared block (icon, title, centered): true {"key":"apps-nomatch-search","title":"No Applications Found","hint":"No apps match your search.","buttons":["Clear search"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  it says the search found nothing and offers Clear search only (no filter is on): true {"key":"apps-nomatch-search","title":"No Applications Found","hint":"No apps match your search.","buttons":["Clear search"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear search empties the field and lists the apps again: true
+apps, a filter matches nothing: says so and offers Clear filters only (no search is on): true {"key":"apps-nomatch-filters","title":"No Applications Found","hint":"No apps match your filters.","buttons":["Clear filters"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear filters turns every filter off and lists the apps again: true
+apps, a search and a filter together: both buttons: true {"key":"apps-nomatch","title":"No Applications Found","hint":"Try clearing your search query or changing active filter pills.","buttons":["Clear search","Clear filters"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear search leaves the filter on (one system app): true
+saved lists, none yet: the shared block with Go to Application Manager: true {"key":"saved-none","title":"No Saved Lists Yet","hint":"Select multiple apps in the Application Manager tab, then tap Save to List.","buttons":["Go to Application Manager"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+saved lists, a filter hides every list: says so with Clear filters: true {"key":"saved-nomatch","title":"No saved list has apps that match these filters.","hint":null,"buttons":["Clear filters"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear filters shows the list again: true
+  Go to Application Manager opens the Apps tab: true
+debloater, the chips hide everything (no search): the shared block, no Clear search: true {"key":"uad-nomatch","title":"No packages match these filters.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  with a search on: Clear search is offered: true {"key":"uad-nomatch-search","title":"No packages match these filters.","hint":null,"buttons":["Clear search"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear search empties the search field: true
+  nothing of this phone is in the list: says so, no button: true {"key":"uad-none","title":"None of the packages on this phone are in the UAD-NG list.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+files, an empty folder: the shared block, the .. row stays: true {"key":"fm-empty","title":"Empty folder.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  only hidden files: says so, with Show hidden files: true {"key":"fm-hidden","title":"Only hidden files are here.","hint":"Tick Show hidden files to see them.","buttons":["Show hidden files"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Show hidden files ticks the option and lists the file: true
+store, a search finds nothing: the shared block with Clear search: true {"key":"store-nomatch-search","title":"No apps match your search.","hint":null,"buttons":["Clear search"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Clear search lists the app again: true
+  an empty catalog with no search: "No apps found." and no Clear search: true {"key":"store-none","title":"No apps found.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+backups, none yet: title and hint split: true {"key":"backups-none","title":"No backups yet.","hint":"Open an app's ⋯ menu and tap Backup, or choose a backup file from another phone.","buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+profiles, none yet: title and hint split: true {"key":"profiles-none","title":"No profiles yet.","hint":"Disable, suspend or uninstall apps the way you like, then save them here.","buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+task manager without a working mode: says what it needs: true {"key":"tm-procs-locked","title":"Needs ADB, Wireless Debugging, Shizuku or Root to list processes.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  with one, but no process read: says so: true {"key":"tm-procs-none","title":"No processes read.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+updates, nothing found: the shared block: true {"key":"upd-none","title":"Tap Check for Updates.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+logcat, no lines: the shared block: true {"key":"logcat-none","title":"No log lines.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+none of these lists still draws its own empty text: true []
+apps, nothing read: "No Applications Loaded", no word of search or filters, Reload Packages: true {"key":"apps-none","title":"No Applications Loaded","hint":"No apps were read from this phone yet.","buttons":["Reload Packages"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  a filter on but no app read: still says no app was read (clearing the filter would not help): true {"key":"apps-none","title":"No Applications Loaded","hint":"No apps were read from this phone yet.","buttons":["Reload Packages"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  Reload Packages reads the list again: true
+320 px, light: the block fits inside the screen with its icon and button: true {"key":"apps-none","title":"No Applications Loaded","hint":"No apps were read from this phone yet.","buttons":["Reload Packages"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+  icon 48 px above the title, the button at least 36 px tall, no sideways scroll: true {"iconW":48,"iconAboveTitle":true,"btnH":36,"docW":320,"W":320}
+de: the title, the hint and the button are translated: true {"key":"apps-nomatch-search","title":"Keine Apps gefunden","hint":"Keine Apps entsprechen Ihrer Suche.","buttons":["Suche löschen"],"icon":true,"iconMuted":true,"centered":true,"inside":true}

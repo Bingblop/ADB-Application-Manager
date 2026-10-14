@@ -1,5 +1,6 @@
 1. roots row starts with only "Add storage": true
 2. Add storage calls the native picker: true
+   picking a root closes the ⋯ More sheet: true
    picking a root adds it to the row and navigates into it: true ["SD Card","✕","＋ Add storage"]
    root listing shows its entries: true
    the root is persisted (uri + label): true [{"uri":"content://mock/root1/root","label":"SD Card"}]

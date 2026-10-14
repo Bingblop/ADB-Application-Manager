@@ -1,12 +1,12 @@
 1. sixteen tabs in the new order: true ["apps","saved-lists","debloater","installer","files","console","terminal","settings","extrasettings","overlays","store","taskmgr","devices","morphe","sdm","about"]
    named as asked, two lines where it reads better: true ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","Installer/\nUpdater","File\nManager","Console","Terminal","Hidden\nSettings","Extra\nSettings","RRO/Monet\nCustomization","App\nStores","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
    Application Manager is active at the start: true
-   every tab is at least 44 px tall and no label is cut off: true ["44","44","44","44","44","44","44","44","44","44","44","44","44","44","44","44"]
-   the text is a little larger than before (14 px, it was 12 px): true 14px
+   every tab is at least 44 px tall and no label is cut off: true ["45","45","45","45","45","45","45","45","45","45","45","45","45","45","45","45"]
+   the text is a little larger than before (14.5 px, the type scale's --fs-label; it was 12 px): true 14.5px
    the page itself does not scroll sideways: true
    switching marks the matching tab and only that one: true
    (also for a tab that was moved): true
-2. the header button is a gear called Settings (not the colours palette): true {"text":"⚙","label":"Settings","role":"button"}
+2. the header button is a gear called Settings (not the colours palette; an SVG gear, no emoji): true {"text":"","svg":true,"label":"Settings","role":"button"}
    it opens Settings, no tab is lit and the gear shows that you are there: true {"view":"prefs","anyTab":false,"gearOn":true}
    the gear goes dark again on a tab: true
 3. Settings: the language at the very top, the Default Ask Agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10): true ["Language","Default Ask Agent","Appearance","Palette Style","My Themes","Curated Theme Palettes","Lists","Motion","Row tints","Haptic feedback","Progress messages","VirusTotal API key","Reconnecting devices","Private DNS","Font","Icon pack","Action Button","Navigation","Feature List","Press and hold guide"]
@@ -61,13 +61,13 @@
     pressed again it turns on, still focused: true
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
     and that one keeps working: true
-    after a tap on an arrow the row is where it was on the screen (662 px, now 662 px), so the next tap moves the same row: true
-13. [320 px, scrolled] the tab bar sticks right under the header (header 76 px), and the top of its first line is not covered: true {"hdr":76,"tabs":57,"tabTop":76,"hdrBottom":76,"firstLineUncovered":true,"uadTop":"137px","pad":"141px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":76,"tabs":57,"tabTop":76,"hdrBottom":76,"firstLineUncovered":true,"uadTop":"137px","pad":"141px"}
-13. [360 px, scrolled] the tab bar sticks right under the header (header 84 px), and the top of its first line is not covered: true {"hdr":84,"tabs":57,"tabTop":84,"hdrBottom":84,"firstLineUncovered":true,"uadTop":"145px","pad":"149px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":84,"tabs":57,"tabTop":84,"hdrBottom":84,"firstLineUncovered":true,"uadTop":"145px","pad":"149px"}
-13. [412 px, scrolled] the tab bar sticks right under the header (header 93 px), and the top of its first line is not covered: true {"hdr":93,"tabs":57,"tabTop":93,"hdrBottom":93,"firstLineUncovered":true,"uadTop":"154px","pad":"158px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":93,"tabs":57,"tabTop":93,"hdrBottom":93,"firstLineUncovered":true,"uadTop":"154px","pad":"158px"}
-14. without ResizeObserver the heights of the header and the tab bar are still followed (84px and 57px a second after the start): true {"hdr":"84px","real":"84px","tabs":"57px","realTabs":"57px","ro":"undefined"}
-    and again when the window changes (99px): true [{"hdr":"84px","real":"84px","tabs":"57px","realTabs":"57px","ro":"undefined"},{"hdr":"99px","real":"99px"}]
+    after a tap on an arrow the row is where it was on the screen (688 px, now 688 px), so the next tap moves the same row: true
+13. [320 px, scrolled] the tab bar sticks right under the header (header 90 px), and the top of its first line is not covered: true {"hdr":90,"tabs":58,"tabTop":90,"hdrBottom":90,"firstLineUncovered":true,"uadTop":"152px","pad":"156px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":90,"tabs":58,"tabTop":90,"hdrBottom":90,"firstLineUncovered":true,"uadTop":"152px","pad":"156px"}
+13. [360 px, scrolled] the tab bar sticks right under the header (header 90 px), and the top of its first line is not covered: true {"hdr":90,"tabs":58,"tabTop":90,"hdrBottom":90,"firstLineUncovered":true,"uadTop":"152px","pad":"156px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":90,"tabs":58,"tabTop":90,"hdrBottom":90,"firstLineUncovered":true,"uadTop":"152px","pad":"156px"}
+13. [412 px, scrolled] the tab bar sticks right under the header (header 100 px), and the top of its first line is not covered: true {"hdr":100,"tabs":58,"tabTop":100,"hdrBottom":100,"firstLineUncovered":true,"uadTop":"162px","pad":"166px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":100,"tabs":58,"tabTop":100,"hdrBottom":100,"firstLineUncovered":true,"uadTop":"162px","pad":"166px"}
+14. without ResizeObserver the heights of the header and the tab bar are still followed (90px and 58px a second after the start): true {"hdr":"90px","real":"90px","tabs":"58px","realTabs":"58px","ro":"undefined"}
+    and again when the window changes (99px): true [{"hdr":"90px","real":"90px","tabs":"58px","realTabs":"58px","ro":"undefined"},{"hdr":"99px","real":"99px"}]
 all checks passed

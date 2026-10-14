@@ -1,0 +1,40 @@
+ok   SD Maid intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":84,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":315}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":6,"h":84,"full":84,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   SD Maid credit: two lines, ending in "…", with more to read; it has links, so it is not made a button: {"lines":2,"h":38,"full":113,"clamped":true,"open":false,"role":null,"tab":-1,"expanded":null,"links":3,"ellipsis":"2","text":334}
+ok      a tap on it opens the whole text: {"lines":6,"h":113,"full":113,"expanded":null}
+ok      another tap closes it again: {"lines":2,"expanded":null}
+ok   Saved lists: Quick actions: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":70,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":243}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":5,"h":70,"full":70,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   Hidden Settings intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":56,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":209}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":4,"h":56,"full":56,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   ShizuStore intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":70,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":257}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":5,"h":70,"full":70,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   GitHub store intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":70,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":258}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":5,"h":70,"full":70,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   F-Droid store intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":56,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":209}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":4,"h":56,"full":56,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   Orion store intro: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":56,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":202}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":4,"h":56,"full":56,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   Default Ask Agent: two lines, ending in "…", with more to read; a button saying it is closed: {"lines":2,"h":28,"full":98,"clamped":true,"open":false,"role":"button","tab":0,"expanded":"false","links":0,"ellipsis":"2","text":420}
+ok      a tap on it opens the whole text (aria-expanded true): {"lines":7,"h":98,"full":98,"expanded":"true"}
+ok      another tap closes it again: {"lines":2,"expanded":"false"}
+ok   Morphe credit: two lines, ending in "…", with more to read; it has links, so it is not made a button: {"lines":2,"h":38,"full":94,"clamped":true,"open":false,"role":null,"tab":-1,"expanded":null,"links":4,"ellipsis":"2","text":232}
+ok      a tap on it opens the whole text: {"lines":5,"h":94,"full":94,"expanded":null}
+ok      another tap closes it again: {"lines":2,"expanded":null}
+ok   2. Enter opens a focused intro and Space closes it (the page does not scroll): ["true","false"]
+ok   3. a tap on a link of the Morphe credit follows the link and does not open the text: https://morphe.software
+ok      moving into the SD Maid credit with Tab opens it, so its last link (once hidden) can be seen: {"link":"SD Maid SE on Google Play","inside":true}
+ok   4. the text of each one is whole in the page: {"SD Maid intro":315,"SD Maid credit":334,"Saved lists: Quick actions":243,"Hidden Settings intro":209,"ShizuStore intro":257,"GitHub store intro":258,"F-Droid store intro":209,"Orion store intro":202,"Default Ask Agent":420,"Morphe credit":232}
+ok   5. an intro that fits in two lines (here: changed text, as a new language may do) is not a button and a tap does nothing: {"clamped":false,"role":null,"tab":null,"expanded":null,"open":false}
+ok   6. 320 px: every one is two lines with more to read:
+ok   6. 360 px: every one is two lines with more to read:
+ok   6. 360 px in German: every one is two lines with more to read:  Der Recherche-Agent hinter jed
+ok   no page errors:
+ALL PASSED
