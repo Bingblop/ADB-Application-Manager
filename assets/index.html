@@ -36679,9 +36679,11 @@ Type any command above (e.g. pm list packages -d)</div>
         async function mpSourcePre(id) {
             const s = mp.sources.find(x => x.id === id);
             if (!s) return;
-            await mpCall('sourcePre', { id: id, on: !s.prerelease });
+            const on = !s.prerelease;            // taken before the reload: mpSourcesLoad puts new objects in mp.sources, s keeps the old value
+            const r = await mpCall('sourcePre', { id: id, on: on });
             await mpSourcesLoad(); mpSourcesRender();
-            showToast('Pre-releases are ' + (!s.prerelease ? 'off' : 'on') + ' for ' + s.name + '. Update it to switch.');
+            if (!r.ok) { showToast(r.error || 'Could not save it'); return; }
+            showToast('Pre-releases are ' + (on ? 'on' : 'off') + ' for ' + s.name + '. Update it to switch.');
         }
         async function mpSourceRename(id) {
             const s = mp.sources.find(x => x.id === id);
