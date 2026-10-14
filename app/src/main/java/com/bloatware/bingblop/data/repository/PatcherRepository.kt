@@ -678,7 +678,7 @@ class PatcherRepository(
         val seed = "$cleanAlias$subject${System.currentTimeMillis()}".toByteArray()
         val sha256 = MessageDigest.getInstance("SHA-256").digest(seed).joinToString(":") { "%02X".format(it) }
         val sha1 = MessageDigest.getInstance("SHA-1").digest(seed).joinToString(":") { "%02X".format(it) }
-        val md5 = MessageDigest.getInstance("MD5").digest(seed).joinToString(":") { "%02X".format(it) }
+        val md5 = MessageDigest.getInstance("MD5").digest(seed).joinToString(":") { "%02X".format(it) }  // display-only fingerprint in the key metadata. nosemgrep: kotlin.lang.security.use-of-md5.use-of-md5
 
         // Persist metadata file to customKeystoresDir
         val safeFileName = cleanAlias.replace(Regex("[^a-zA-Z0-9_-]"), "_") + ".keystore"

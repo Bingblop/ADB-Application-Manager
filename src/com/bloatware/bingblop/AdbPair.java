@@ -35,7 +35,7 @@ public final class AdbPair {
             cmd.add(adbBin(ctx).getAbsolutePath());
             cmd.addAll(AdbRuntime.serverArgs(ctx));
             Collections.addAll(cmd, args);
-            ProcessBuilder pb = new ProcessBuilder(cmd);
+            ProcessBuilder pb = new ProcessBuilder(cmd);  // an argument list, no shell; callers pass fixed words and pair() checks its address and code. nosemgrep: java.lang.security.audit.command-injection-process-builder.command-injection-process-builder
             Map<String, String> env = pb.environment();
             File home = adbHome(ctx);
             env.put("HOME", home.getAbsolutePath());
@@ -67,6 +67,9 @@ public final class AdbPair {
 
     /** `adb pair <endpoint> <code>`. */
     static String pair(Context ctx, String endpoint, String code) {
+        // Both arrive from a notification reply or a mDNS listing: adb gets them only as an address and six digits, never as an option.
+        if (!AdbArgs.validPairEndpoint(endpoint)) return "error: that is not a host:port pairing address";
+        if (!AdbArgs.validPairCode(code)) return "error: the pairing code is six digits";
         return run(ctx, 15000, "pair", endpoint, code);
     }
 

@@ -235,7 +235,7 @@ public final class ZipCrypt {
     private final byte[] counters = new byte[CHUNK], ks = new byte[CHUNK], ctr = new byte[16];
     private int pos, len;                                          // unused keystream is ks[pos, len)
     Ctr(byte[] key) throws GeneralSecurityException {
-      cipher = Cipher.getInstance("AES/ECB/NoPadding");
+      cipher = Cipher.getInstance("AES/ECB/NoPadding");  // WinZip AES-CTR counts little endian, which the JCE CTR mode cannot, so ECB only turns counter blocks into keystream. nosemgrep: java.lang.security.audit.crypto.use-of-aes-ecb.use-of-aes-ecb
       cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
       ctr[0] = 1;
     }

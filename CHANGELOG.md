@@ -1,5 +1,73 @@
 # Changelog
 
+## v7.13.2-Pro (versionCode 856)
+
+A fix release on top of v7.13.1, cut from `main`. It carries the serious and wrong-result findings of a second, narrower review pass over the areas the first one did not reach (the Connected Devices sub-tabs, Backups, the real-terminal page code and the Morphe patcher runner), the update check's out-of-order progress count that v7.13.1 left open (#185), and one change you asked for: the SD Maid AppCleaner now starts its accessibility service on its own and never force-stops this app or Android System WebView. It also carries the full code review of 2026-10-14 (#206 to #215), a small spacing and toast polish (#216) and the Semgrep hardening (#217, #218). Nothing else is new: no feature, no wording change. The thirteen smaller findings of the same pass (#187 to #199) are fixed below. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 29 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, and `docs/PHONE-SCRIPT-v7.13.2.md` is the one-page version.
+
+**SD Maid AppCleaner (the accessibility cleaner)**
+
+- **The accessibility cleaner starts on its own.** When AppCleaner needs the accessibility service and it is off, or on but not running, and you have already given the consent and a working mode (ADB, Wireless Debugging, Shizuku or Root) exists, the app writes the setting itself (or takes the service out and puts it back so Android binds it again), waits up to eight seconds for it to connect, and runs. It never gives the consent for you and does nothing in Read-Only mode or without a working mode; then the old "turn it on" message stays, with one more clause saying what was tried. Whether One UI binds the service this way, and how long it takes, can only be seen on a phone.
+- **This app and Android System WebView are never force-stopped by the cleaner.** The app and the WebView packages (`com.google.android.webview` with its beta, dev and canary variants, and `com.android.webview`) are stock AppCleaner exclusions, removable and back with Restore default exclusions. A guard that does not depend on the list also keeps this app and the WebView provider found at run time out of the force-stop step and out of the list handed to the automation; they show as excluded, not failed. Force-stopping this app ended the accessibility service (Android removes it) and cut the cleaning short.
+
+**Connected Devices**
+
+- **Choose package files and Files "Send a file here" deliver again.** Both used the same request code as the Saved lists backup-folder picker, so the chosen file went to the wrong handler: the queue stayed empty, and a picked APK could repoint the backup folder. The picker has its own code now and a test checks that all request codes differ.
+- **Files Delete, Rename and New folder act on the device you asked about.** The question could stay open while the device list moved on; confirming then ran the command on the other device and said Deleted. The device is fixed before the question and the action is refused if it changed.
+- **A multi-file push and the APK pull stop when the device changes** and say the push or pull did not finish, instead of continuing on the other device and reporting success.
+- **Pulling a folder with skipped files no longer says "Saved".** Every output line is checked: an `adb: error:` line or a non-zero skipped count is shown instead.
+
+**Backups**
+
+- **Restoring an app you removed with "keep data" installs it.** The restore treated it as a removed system app and refused with "signed with a different key" (on a phone with several users it also asked twice). That branch is now taken only for a real system app.
+- **The saved-lists backup in Downloads is saved as `.json`** (it was written as `.json.txt` while the message said `.json`) (#191).
+- **Delete on a backup asks first** and Cancel keeps the backup without calling the phone (#192).
+- **"Also restore app data" on a same-version restore asks the native question** an install asks before replacing the app's data as root (#193).
+- **The Hidden Settings restore says which entries it could not read** instead of dropping the entries of an unreadable table silently (#194).
+- **"Permissions X of Y granted" counts only the permissions that were tried,** so permissions skipped as not dangerous on this Android no longer read as failed grants (#195).
+
+**Terminal**
+
+- **Keys and the terminal size are no longer lost while the real terminal starts.** What you typed before the shell was up, and the size sent for the soft keyboard, were dropped, so vim and top drew with the wrong number of rows. They are held, sent in order, and the size is sent again when the shell reports it started.
+- **Opening the real terminal no longer relabels a running session.** The dropdown said Termux over the app's own shell. The running shell is kept; a different shell you ask for restarts the terminal like the dropdown does.
+- **CTRL and ALT work with arrows, Home, End, PgUp, PgDn and the F-keys.** They send the xterm forms with the modifier (CTRL+Left is `ESC [ 1 ; 5 D`), and a one-shot CTRL or ALT is used up by any key; before, CTRL then an arrow left CTRL armed and the next `d` logged the shell out (#197).
+- **A failed start of the real terminal no longer leaves a blank screen.** The reason is written into the terminal and reopening starts again (#196).
+
+**Morphe Patcher**
+
+- **"Install when finished" with "Delete the APK" no longer deletes the patched APK when the system installer was only opened.** Without a working mode the app can only hand the file to the system installer and cannot know the outcome: nothing is marked installed or deleted, and the page shows the real text instead of "Installed."
+- **A patch keeps being shown and followed after you leave the app and open it again.** The page used to show nothing running, a new patch was refused with the out-of-memory text, and a catalog time-out could cancel the patch that was running. A second patch started while one runs now says the patcher is busy at once and does not touch the first; a cancel acts only on the job it names.
+- **Cancel ends a patch at once with its result line,** which the engine's own output could overwrite; the events file is now emptied and appended to by both (#198).
+- **The patch notification shows patch names with curly quotes or non-Latin letters correctly** (it decoded them as mojibake) (#199).
+
+**Updates**
+
+- **The "N of M" count in the update check only goes forward (#185).** Progress reports are queued in the order the counters changed and delivered one at a time; the final report is last and nothing follows it.
+
+**Full code review of 2026-10-14 (#206 to #215)**
+
+A review of the whole repository on its merged state found more wrong-result bugs; each is fixed with a test where the code can be tested without Android.
+
+- **Connected Devices follows the device you chose.** A device change stops the console command and the live log of the old device; Settings, Reboot and Power off never go to a device chosen after the question opened; the Apps and Logcat sub-tabs read the new device when it is chosen during a read; queued Send files and a running push are kept when old picks are cleared; the app's own private files (adb key, sealed secrets) are never sent or overwritten.
+- **File pickers no longer end the app when the phone has no picker** (Install, Backups, font, text import, Connected Devices).
+- **Downloads:** two Helper downloads with the same file name no longer mix their bytes.
+- **File Manager:** the app's private data is never copied to or from added storage or into an archive; after Share or Open with on an added-storage file the sheet's Edit, Delete and Rename act on that file again; the thumbnail thread stops when the window closes; Compare no longer calls files "the same" when only their sizes match (tar, 7z, RAR and AES zips); a translated confirmation keeps the name of the file or app.
+- **Archives:** a RAR or 7z whose file data is encrypted asks for the password; a `.gz` of several members (or a multi-frame `.zst` / `.lz4`) extracts; files with 250-255 byte names extract; "New folder" in a zip makes a folder unzip can open; file search finds entries in zips with non-UTF-8 names.
+- **Installer:** opening another package while one installs no longer breaks either install; a re-created window no longer opens an old "Open with" package again.
+- **SD Maid:** a delete no longer reports files as deleted when the working mode cannot answer; a path exclusion typed as `/sdcard/...`, in another letter case or with `//` protects the folder; History no longer overwrites the open "Affected paths" list.
+- **Morphe:** a run in which no patch was applied fails instead of installing the unpatched app; file calls from the page can no longer reach the signing key; the source "Pre-releases" toast says what was just set; dated and underscore release tags (2024-11-15, v1_2_4) show as updates.
+- **Page and shell:** Stop Service and the renderer switch say they failed when the shell never ran the command; components with a `$` in the name can be enabled and disabled; Task Manager labels per-core load with the right core after a core goes offline; Console "UID (id)" keeps the typed command and does not ask the AI agent; Enter in the pairing-code field no longer starts a second `adb pair`.
+- **Batch actions, profiles and Dex optimization** report what ran instead of "failed to run"; adding a remote MCP server to Codex again saves the new token, and a server whose setup failed is not listed under "Already added".
+- **build.sh fails when javac reports an error in any class,** not only when MainActivity is missing.
+
+**Appearance (#216)**
+
+- Batch sheet spacing, Debloater buttons switched off while nothing is selected, the Console "?" in its own room and an inverse toast. Tokens only; no new colour.
+
+**Security hardening (#217, #218)**
+
+- Every GitHub Action in the workflows is pinned to a commit SHA (Dependabot keeps them current).
+- Wireless Debugging pairing only accepts a `host:port` address and a six-digit code before they reach the shell; thumbnail cache keys use SHA-256.
+
 ## v7.13.1-Pro (versionCode 855)
 
 A fix release on top of v7.13.0, cut from `main`. It carries the fifty-four findings of the whole-codebase review of 2026-10-13 (ten reviewers read the page and the Java in parallel; every finding was traced from a real input to a wrong outcome and twelve were reproduced by running the code; #183 fixed the eleven serious ones, #184 the rest) and nothing new: no feature, no wording change, no CSS. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 28 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, the eleven serious ones first. The one race found and not fixed is #185 (the update check's progress count can step back by one).
