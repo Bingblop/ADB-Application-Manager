@@ -566,6 +566,14 @@ None of this has been run on a phone yet. Open the working-mode badge at the top
 - [ ] **Android below 11, or a phone that hides the switch.** If you have such a phone: the Wireless Debugging switch row is INFO, not a false CHECK.
 - [ ] **Another language** (Settings > Language): the card, its rows and its buttons are translated, the addresses and ports are not, no text is cut off, in light and in dark.
 
+## 31. Wireless Debugging: the port changed
+
+Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-Fi it uses switched on. None of this has been run on a phone yet.
+
+- [ ] **The saved port goes stale, the app finds the new one.** In Working Modes connect **Wireless Debugging** until the card says connected. Open Android's Developer options, switch **Wireless debugging** off and on again (the port changes every time). Back in the app, in Working Modes tap **Wireless Debugging** to select it again, or open a tab that needs a privileged mode (for example Installer). Expected: within a few seconds the mode is ready again with no new pairing, the card shows the new port, and the connect message reads "Wireless Debugging moved from port ... to ...; connected to ... and saved the new port." Force-stop the app and open it again: it still uses the new port.
+- [ ] **Nothing else changes.** Type a wrong port by hand in the Wireless Debugging card and tap **Connect**: it fails as before and does not jump to another port (a typed port is never replaced). Turn Wireless debugging off completely and select the mode: it says it is not connected; no error loop, no crash.
+- [ ] **A second phone is never picked.** If another phone with Wireless debugging on is on the same Wi-Fi, the app still only reconnects to the address it was saved with (or this phone's own Wi-Fi address when it was saved as 127.0.0.1).
+
 ## 33. Turn on Wireless Debugging (Connection Check)
 
 None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, with a working mode connected (ADB TCP or Shizuku) or the secure-settings permission granted.
@@ -576,6 +584,7 @@ None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, w
 - [ ] **No way to write.** In Read-Only mode with no secure-settings permission the row still offers **Open Developer Options**, not the new button.
 - [ ] **Leaving the Wi-Fi.** With it on, leave the Wi-Fi network: Android switches Wireless debugging off again, and **Check again** shows CHECK.
 - [ ] **Another language:** the row, the button and the toasts are translated and nothing is cut off.
+
 
 ## Report
 
