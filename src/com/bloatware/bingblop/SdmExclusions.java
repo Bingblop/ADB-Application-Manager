@@ -100,12 +100,55 @@ public final class SdmExclusions implements Sdm.Exclusions {
         return sb.toString();
     }
 
-    private static String cleanPath(String p) {
+    /**
+     * The path as the scans name it: absolute, "//" and "/./" collapsed, ".." taken back lexically (a walk never follows a link, so this is the name a scan
+     * reports), no trailing slash. A path typed by hand in the exclusion editor ("/storage/emulated/0//Download/keep/") would otherwise protect nothing.
+     */
+    static String cleanPath(String p) {
         if (p == null) throw new IllegalArgumentException("A path is needed");
-        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         if (p.isEmpty() || p.charAt(0) != '/') throw new IllegalArgumentException("The path must be absolute: " + p);
         for (int i = 0; i < p.length(); i++) { char c = p.charAt(i); if (c == 0 || c == '\n' || c == '\r') throw new IllegalArgumentException("The path holds a control character"); }
-        return p;
+        List<String> segs = new ArrayList<String>();
+        for (String x : p.split("/")) {
+            if (x.isEmpty() || x.equals(".")) continue;
+            if (x.equals("..")) {
+                if (segs.isEmpty()) throw new IllegalArgumentException("The path goes above /: " + p);
+                segs.remove(segs.size() - 1);
+                continue;
+            }
+            segs.add(x);
+        }
+        if (segs.isEmpty()) return "/";
+        StringBuilder sb = new StringBuilder();
+        for (String x : segs) sb.append('/').append(x);
+        return sb.toString();
+    }
+
+    /**
+     * The other names of shared storage, mapped to the one the scans report: /sdcard, /mnt/sdcard and /storage/self/primary are links to
+     * /storage/emulated/&lt;user&gt;, and /data/media/N is what /storage/emulated/N is backed by (and what a scan as root reaches). Any other path is returned as it is.
+     */
+    static String resolveAlias(String path, int user) {
+        for (String l : new String[] { "/sdcard", "/mnt/sdcard", "/storage/self/primary" }) {
+            if (path.equals(l) || path.startsWith(l + "/")) return "/storage/emulated/" + user + path.substring(l.length());
+        }
+        if (path.startsWith("/data/media/")) {
+            int end = path.indexOf('/', 12);
+            String n = end < 0 ? path.substring(12) : path.substring(12, end);
+            boolean digits = !n.isEmpty() && n.length() <= 6;
+            for (int i = 0; i < n.length() && digits; i++) digits = n.charAt(i) >= '0' && n.charAt(i) <= '9';
+            if (digits) return "/storage/emulated/" + n + (end < 0 ? "" : path.substring(end));
+        }
+        return path;
+    }
+
+    /**
+     * What a path exclusion and a path are compared by: the alias resolved and, below /storage (shared storage and SD cards: FUSE / sdcardfs, vfat, exfat,
+     * where "Download" and "download" are the same folder), in lower case. Folding both sides can only make an exclusion hold more, never less.
+     */
+    static String matchKey(String path, int user) {
+        String p = resolveAlias(path, user);
+        return p.startsWith("/storage/") ? p.toLowerCase(Locale.ROOT) : p;
     }
 
     /** general / empty / all four tools collapse to {general}; unknown tags are an error. */
@@ -148,9 +191,17 @@ public final class SdmExclusions implements Sdm.Exclusions {
     private final LinkedHashSet<String> removedDefaults = new LinkedHashSet<String>();
     private volatile Map<Sdm.Tool, Index> indexes = new EnumMap<Sdm.Tool, Index>(Sdm.Tool.class);
 
+    private final int androidUser;          // the Android user this app runs as
+
     /** @param dir the data folder ({@code exclusions.json} lives there); null keeps everything in memory only */
     public SdmExclusions(File dir) {
+        this(dir, 0);
+    }
+
+    /** @param user the Android user this app runs as: /sdcard is that user's /storage/emulated/&lt;user&gt; */
+    public SdmExclusions(File dir, int user) {
         this.file = dir == null ? null : new File(dir, "exclusions.json");
+        this.androidUser = Math.max(0, user);
         load();
     }
 
@@ -290,11 +341,13 @@ public final class SdmExclusions implements Sdm.Exclusions {
     // ---------------------------------------------------------------------------------------------------------- lookups
 
     private static final class Index {
-        final Set<String> exact = new HashSet<String>();         // PathExclusion paths of the tool
-        final Set<String> ancestors = new HashSet<String>();     // every strict ancestor of those paths
+        final int user;
+        final Set<String> exact = new HashSet<String>();         // PathExclusion paths of the tool, as match keys (matchKey)
+        final Set<String> ancestors = new HashSet<String>();     // every strict ancestor of those keys
         final List<Exclusion> segments = new ArrayList<Exclusion>();
         final Set<String> pkgs = new HashSet<String>();
-        final List<String> paths = new ArrayList<String>();
+        final List<String> paths = new ArrayList<String>();     // the paths with their alias resolved (for pruning a walk)
+        Index(int user) { this.user = user; }
     }
 
     private Index index(Sdm.Tool t) {
@@ -303,15 +356,17 @@ public final class SdmExclusions implements Sdm.Exclusions {
         synchronized (this) {
             ix = indexes.get(t);
             if (ix != null) return ix;
-            ix = new Index();
+            ix = new Index(androidUser);
             for (Exclusion e : list()) {
                 if (!e.hasTag(t)) continue;
                 if (PKG.equals(e.kind)) {
                     if (t != Sdm.Tool.DEDUPLICATOR) ix.pkgs.add(e.pkg);
                 } else if (PATH.equals(e.kind)) {
-                    ix.exact.add(e.path);
-                    ix.paths.add(e.path);
-                    forEachAncestor(e.path, ix.ancestors);
+                    String key = matchKey(e.path, androidUser);
+                    ix.exact.add(key);
+                    String resolved = resolveAlias(e.path, androidUser);
+                    if (!ix.paths.contains(resolved)) ix.paths.add(resolved);
+                    forEachAncestor(key, ix.ancestors);
                 } else {
                     ix.segments.add(e);
                 }
@@ -330,9 +385,12 @@ public final class SdmExclusions implements Sdm.Exclusions {
     }
 
     private static boolean matches(Index ix, String path) {
-        if (ix.exact.contains(path)) return true;
-        for (int i = path.length() - 1; i > 0; i--) if (path.charAt(i) == '/' && ix.exact.contains(path.substring(0, i))) return true;
-        if (path.length() > 1 && ix.exact.contains("/")) return true;
+        if (!ix.exact.isEmpty()) {
+            String key = matchKey(path, ix.user);
+            if (ix.exact.contains(key)) return true;
+            for (int i = key.length() - 1; i > 0; i--) if (key.charAt(i) == '/' && ix.exact.contains(key.substring(0, i))) return true;
+            if (key.length() > 1 && ix.exact.contains("/")) return true;
+        }
         if (!ix.segments.isEmpty()) {
             String[] seg = Sdm.segments(path);
             for (Exclusion e : ix.segments) if (containsSegments(seg, e.segments, e.ignoreCase, e.allowPartial)) return true;
@@ -359,7 +417,7 @@ public final class SdmExclusions implements Sdm.Exclusions {
     /** True when deleting this path would break an exclusion: it is excluded itself, or an excluded path lies below it. */
     public boolean blocksDelete(Sdm.Tool t, String path) {
         Index ix = index(t);
-        return matches(ix, path) || ix.ancestors.contains(path);
+        return matches(ix, path) || ix.ancestors.contains(matchKey(path, ix.user));
     }
 
     /** The nested rule: the paths without the excluded ones and without the strict ancestors of excluded ones (order kept). */
@@ -368,11 +426,11 @@ public final class SdmExclusions implements Sdm.Exclusions {
         List<String> survivors = new ArrayList<String>();
         Set<String> ancestorOfExcluded = new HashSet<String>(ix.ancestors);
         for (String p : paths) {
-            if (matches(ix, p)) forEachAncestor(p, ancestorOfExcluded);
+            if (matches(ix, p)) forEachAncestor(matchKey(p, ix.user), ancestorOfExcluded);
             else survivors.add(p);
         }
         List<String> out = new ArrayList<String>();
-        for (String p : survivors) if (!ancestorOfExcluded.contains(p)) out.add(p);
+        for (String p : survivors) if (!ancestorOfExcluded.contains(matchKey(p, ix.user))) out.add(p);
         return out;
     }
 

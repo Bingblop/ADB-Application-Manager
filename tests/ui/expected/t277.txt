@@ -1,0 +1,29 @@
+ok   Settings > Save: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 settings put global 'animator_duration_scale' '0'
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+ok      and the settings of B are not changed on screen
+ok   Settings > Delete: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 settings delete global 'animator_duration_scale'
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+ok      and the settings of B are not changed on screen
+ok   Settings > New: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 settings put global 'my_key' '5'
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+ok      and the settings of B are not changed on screen
+ok   Device menu > Reboot: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 reboot
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+ok   Device menu > Reboot to recovery: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 reboot recovery
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+ok   Device menu > Power off: A is chosen
+ok      with A still there it goes to A: 192.168.1.20:5555 reboot -p
+ok      A drops while it is open and B is chosen
+ok      then nothing is sent, to A or B, and the toast says why:  / Another device was chosen: nothing was sent
+errors: []
+ALL OK

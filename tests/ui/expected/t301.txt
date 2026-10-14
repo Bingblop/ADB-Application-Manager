@@ -1,0 +1,11 @@
+ok   Share hands the cache copy to the share sheet
+ok   the action sheet stays open and its target is still the file in added storage
+ok   Edit reads and saves the file in added storage, not the cache copy
+ok   Delete after Share removes the file in added storage
+ok   and nothing in the cache folder is touched
+ok   Open with hands the cache copy to the chooser
+ok   Rename after Open with renames the file in added storage
+ok   the cache copy of the not-an-archive file is shown as text
+ok   and the sheet's target is the file in added storage again
+ok   Delete then removes the file in added storage
+errors: []

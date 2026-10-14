@@ -1,0 +1,7 @@
+ok   1. the apps of A are being read: 192.168.1.20:5555 echo '#ALL'
+ok      after B is chosen and the read of A returns, the apps of B are read: 192.168.1.20:5555 echo '#ALL'|10.0.0.9:5555 echo '#ALL'
+ok      the list shows the app of B, not a "Reading" line: [{"pkg":"com.from.10","name":"10","system":false,"disabled":false,"uninstalled":false}] 1 app
+ok   2. the log of A is being read: 192.168.1.20:5555 logcat -d -v thr
+ok      after B is chosen and the read of A returns, the log of B is read and shown: 192.168.1.20:5555 logcat -d -v thr|10.0.0.9:5555 logcat -d -v thr 10-14 <clock>.000  100  100 I Tag: line from 10.0.0.9:5555
+errors: []
+ALL OK

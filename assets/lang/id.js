@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Skala durasi animator (1 = normal, 0 = nonaktif)",
 "Another archive job is still running": "Tugas arsip lain masih berjalan",
 "Another batch action is already running": "Tindakan batch lain sedang berjalan",
+"Another device was chosen: nothing was sent": "Perangkat lain dipilih: tidak ada yang dikirim",
 "Another folder": "Folder lain",
 "Another theme": "Tema lain",
 "Answers": "Menjawab",

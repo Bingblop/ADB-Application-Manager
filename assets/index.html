@@ -1254,6 +1254,9 @@
             padding: var(--space-1);
         }
 
+        /* the Keep selection switch of the batch sheet: its second line keeps a row gap from the button grid below */
+        .switch-row.batch-keep-row { margin: var(--space-3h) 0 var(--space-4); padding-top: var(--space-3h); }
+
         /* 3-Column Responsive Grid: 100% On Screen, No Cut Off! */
         .batch-actions-grid {
             display: grid;
@@ -2940,9 +2943,9 @@
             bottom: calc(24px + var(--bnav-h, 0px));
             left: 50%;
             transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px)));
-            background: var(--bg-card);
-            border: 1px solid var(--accent);
-            color: var(--text-main);
+            background: var(--text-main);            /* the inverse surface: a dark toast on the light page, a light one on the dark page, so it never blends into the cards */
+            border: 1px solid var(--text-main);
+            color: var(--bg-base);
             padding: var(--space-3) 18px;
             border-radius: var(--radius-xl);
             font-size: var(--fs-pill);
@@ -4107,11 +4110,11 @@
                     <button class="mode-action-btn" onclick="selectAllUadVisible()">Select shown</button>
                     <button class="mode-action-btn" onclick="clearUadSelection()">✕ Clear</button>
                 </div>
-                <div class="uad-action-grid">
-                    <button class="batch-grid-btn danger" onclick="uadAction('uninstall')">Uninstall</button>
-                    <button class="batch-grid-btn" onclick="uadAction('freeze')">Disable</button>
-                    <button class="batch-grid-btn accent" onclick="uadAction('restore')">Restore</button>
-                    <button class="batch-grid-btn" onclick="saveUadSelectionToList()">Save to List</button>
+                <div class="uad-action-grid" id="uadActionGrid">
+                    <button class="batch-grid-btn danger" onclick="uadAction('uninstall')" disabled>Uninstall</button>
+                    <button class="batch-grid-btn" onclick="uadAction('freeze')" disabled>Disable</button>
+                    <button class="batch-grid-btn accent" onclick="uadAction('restore')" disabled>Restore</button>
+                    <button class="batch-grid-btn" onclick="saveUadSelectionToList()" disabled>Save to List</button>
                 </div>
             </div>
 
@@ -7281,7 +7284,10 @@
                 .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
-                .cn-tabs .help-q { top: 11px; }
+                .cn-tabs .help-q { top: 11px; right: auto; inset-inline-end: var(--space-2); }
+                /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
+                .cn-tabs.has-help { --cn-help-w: calc(26px + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
+                .cn-tabs.has-help .cn-ind { width: calc((100% - var(--cn-help-w)) / 2); }
                 .cn-seg { margin-top: var(--space-4); }
                 .cn-seg[hidden] { display: none; }
                 .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 var(--space-3h); margin-bottom: 0; }
@@ -7416,7 +7422,7 @@
                     <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
                     <button class="apps-tool-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
                     <button class="apps-tool-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
-                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
+                    <button class="apps-tool-btn" onclick="runTerminalCmd('id')">UID (id)</button>
                     <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
                     <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
                     <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
@@ -7693,7 +7699,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button class="batch-grid-btn" onclick="openShowApps()">Show Applications</button>
             </div>
         </div>
-        <label class="switch-row" style="margin-top:10px; padding-top:10px;">
+        <label class="switch-row batch-keep-row">
             <div><div class="switch-title">Keep selection after running</div><div class="switch-sub">Run another command on these same apps without reselecting them</div></div>
             <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" checked onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
         </label>
@@ -11167,6 +11173,16 @@ Type any command above (e.g. pm list packages -d)</div>
             '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
             '#hgBody', '.cd-dev-name', '.cd-dev-sub', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
         ].join(', '));
+        // The same inside a sentence: in these templates the changing part is the name of the app, file, folder or saved item the action is about. Other templates
+        // translate a changing part that is a word of the dictionary (a filter, a mode, a stream); a folder called Download must not become "Descargar" in "Delete Download?"
+        if (LANG_ENGINE.names) LANG_ENGINE.names([
+            'Uninstall {0}?', 'Clear the data of {0}?', 'Delete the data {0} left behind{1}?', 'Launching {0}...', 'Opening {0}…',
+            'Delete {0}?', 'Delete {0} after it was extracted?', 'Delete {0} item ({1})? Folders go with everything in them. This can not be undone.',
+            'Delete {0} items ({1})? Folders go with everything in them. This can not be undone.', 'Delete “{0}” from the archive?', 'Delete “{0}”?',
+            'Delete {0} from the saved devices?', 'Delete "{0}"? This action cannot be undone.', 'Delete the preset {0}?', 'Delete the saved command {0}?',
+            'Delete the theme {0}?', 'Replace the theme {0} with the look in use now?', 'Remove the store "{0}"? Apps you installed from it stay installed.',
+            'Remove "{0}" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.'
+        ]);
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
             if (!sel) return;
@@ -13055,7 +13071,14 @@ Type any command above (e.g. pm list packages -d)</div>
             uadSearchTimer = setTimeout(renderUadList, 130);          // a long list waits for a pause in typing
         }
 
+        // Uninstall, Disable, Restore and Save to List work on the selection: off (dimmed) while nothing is selected
+        function uadSyncActionBtns() {
+            const none = !uadSelected.size;
+            document.querySelectorAll('#uadActionGrid .batch-grid-btn').forEach(b => { b.disabled = none; });
+        }
+
         function renderUadList() {
+            uadSyncActionBtns();
             const container = document.getElementById('uadContainer');
             if (!container) return;
             const bridge = uadBridge();
@@ -19434,12 +19457,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, 'Checking…');
         };
 
-        // Fires once the native run has finished (to completion, or stopped early).
+        // Fires once the native run has finished (to completion, or stopped early). MainActivity passes the result as an object
+        // (window.onAppBatchDone({...}), not a quoted JSON text); a string is still taken, so either form works.
         window.onAppBatchDone = function (resultJson) {
             if (profileRunActive) { profileOnBatchDone(resultJson); return; }
             batchRunActive = false;
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
@@ -19528,7 +19552,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const marker = '__RC' + Date.now() + Math.random().toString(36).slice(2) + '__';
             const raw = String(window.AndroidBridge.executeShell(cmd + '; echo "' + marker + ':$?"') || '');
             const idx = raw.lastIndexOf(marker + ':');
-            if (idx < 0) return { ok: true, output: raw }; // no real shell to parse from - nothing to contradict success
+            // no marker: the command never ran or never finished (the mode is gone, su refused, the adb device dropped - executeShell answers with an
+            // error text then). Every shell the app uses echoes the marker after a command that ran, so this is a failure, not an unknown
+            if (idx < 0) return { ok: false, output: raw || 'No answer from the device' };
             let output = raw.slice(0, idx);
             while (output.endsWith('\n')) output = output.slice(0, -1);
             const rc = parseInt(raw.slice(idx + marker.length + 1).trim(), 10);
@@ -20119,8 +20145,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!apkScanDone && !apkScanning) scanApkFiles(true);
         }
 
+        // True (and says so) while an install runs: reading another package then would take the work folder, and the OBB data, from under it.
+        function installBusy() {
+            if (!installRunning) return false;
+            showToast('An install is already running');
+            return true;
+        }
+
         function pickInstallFile(kind) {
             haptic();
+            if (installBusy()) return;
             if (!window.AndroidBridge || !window.AndroidBridge.pickInstallerFile) {
                 showToast('Installer needs the app build');
                 return;
@@ -20132,6 +20166,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function onInstallFilePicked(ref) {
+            if (installBusy()) { installFilesPending = false; return; }       // the package being installed stays loaded; open this one after it
             installFromFiles = installFilesPending; installFilesPending = false;       // only the file manager's hand-over sets this
             document.getElementById('installPickHint').innerText = 'Reading package...';
             const prog = document.getElementById('installProgress');
@@ -20317,6 +20352,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (apkBatchBusy) return;
             if (apkSelMode) { if (apkSel.has(f.path)) apkSel.delete(f.path); else apkSel.add(f.path); apkSelRender(); return; }
             haptic();
+            if (installBusy()) return;                                        // before a shell-only file is staged
             if (f.shell && window.AndroidBridge && window.AndroidBridge.fmInstall) {
                 let r;
                 try { r = JSON.parse(window.AndroidBridge.fmInstall(f.path)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
@@ -20630,6 +20666,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // Checked before anything is copied: true when a privileged backend is ready, else says so and offers Working Modes.
         function installFilesReady() {
+            if (installBusy()) return false;
             if (privilegedInstallBackend()) return true;
             haptic();
             showToast('Needs ADB, Wireless Debugging or Shizuku');
@@ -22040,8 +22077,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const target = fmActionTarget;
                 arcOpen(target.full, r => {
                     showToast((r && r.error) || 'Not a readable archive');
-                    fmActionTarget = target;
-                    fmViewText();
+                    fmRunStaged(target, fmViewText);
                 });
                 return;
             }
@@ -22530,9 +22566,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!w || !r || r.uri !== w.target.full) return;
             fmStageWant = null;
             if (!r.ok) { showToast(r.error || 'Could not read this file'); return; }
-            fmActionTarget = { full: r.path, isDir: false, name: w.target.name, safUri: w.target.full };
-            w.fn();
+            fmRunStaged({ full: r.path, isDir: false, name: w.target.name, safUri: w.target.full, origin: w.target }, w.fn);
         };
+        // The cache copy stands in for the file only for the one call that needed it: the sheet can stay open (after Share or Open with), and its
+        // other actions (edit, rename, delete, copy) must still act on the file in added storage, not on the hidden copy.
+        function fmRunStaged(t, fn) {
+            fmActionTarget = t;
+            try { fn(); } finally { if (t.origin && fmActionTarget === t) fmActionTarget = t.origin; }
+        }
         function fmOpenWith() {
             if (fmNeedLocal(fmOpenWith)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
@@ -24215,7 +24256,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         const cd = {
             ready: false, devices: [], selfDevs: [], self: [], serial: '', sub: 'apps', info: null, names: {}, sig: '', lastKey: '', poll: null, refreshing: false,
-            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false,
+            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false, pairing: false,
             queue: [], sending: null,
             mode: 'shell', hist: [], histAt: -1, term: [], termRun: '',
             lcTimer: null, lcBusy: false, lcText: '', lcEntries: [],
@@ -24326,7 +24367,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (sig !== cd.sig) { cd.sig = sig; cdRenderDevices(); }
             if (key !== cd.lastKey) {
                 cd.lastKey = key;
-                if (moved) cdResetDevice();
+                if (moved) { cdStopWork(); cdResetDevice(); }
                 cdRenderInfo();
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }
@@ -24364,7 +24405,6 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.info = null; cd.apps = null; cd.sel.clear(); cd.filters.clear(); cd.lcText = ''; cd.lcEntries = [];
             cd.fm = { path: '/sdcard', entries: null, busy: false };
             cd.set = { ns: cd.set.ns, data: {}, loaded: {}, busy: false };
-            cd.termRun = '';
             cdBatchBar();
             const l = document.getElementById('cdAppList'); if (l) l.innerHTML = '';
             const o = document.getElementById('cdLcOut'); if (o) o.innerHTML = '<div class="lc-meta">Press Play, or Refresh, to read the log.</div>';
@@ -24372,7 +24412,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const s = document.getElementById('cdSetList'); if (s) s.innerHTML = '';
         }
 
-        function cdStopWork() { cdLcStop(); }
+        // what runs on the device that is being left: the live log, and a console command (its own cdTermGo clears cd.termRun when the cancelled run returns)
+        const CD_MOVED = 'Another device was chosen: nothing was sent';
+        function cdStopWork() { cdLcStop(); if (cd.termRun) cdStop(cd.termRun); }
 
         function cdParseInfo(out, serial) {
             const kv = {};
@@ -24718,14 +24760,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdDeviceMenu() {
             const d = cdCur(); if (!d) return;
             const net = /^[^\s:]+:\d+$/.test(d.serial);
-            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true }))) return; const out = await cdRun(args); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
+            // a question stays open while the device list may move to another device (the chosen one dropped): what is confirmed goes to the device it was asked about, or nowhere
+            const gone = () => { if (cd.serial === d.serial) return false; showToast(CD_MOVED); return true; };
+            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true })) || gone()) return; const out = await cdRun(args, { serial: d.serial }); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
             const b = [
                 { label: 'Reconnect', fn: () => cdReconnectSerial(d.serial, false) },
                 { label: 'Reload details', fn: () => { cd.lastKey = ''; cdLoadInfo(); showToast('Reading the device...'); } },
                 run('Reboot', ['reboot'], 'The device restarts and the connection drops for a moment.'),
                 run('Reboot to recovery', ['reboot', 'recovery'], 'The device restarts into recovery mode.'),
                 run('Reboot to bootloader', ['reboot', 'bootloader'], 'The device restarts into the bootloader.'),
-                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true }))) return; const out = await cdSh('reboot -p'); showToast(cdFail(out) || 'Power off: sent'); } },
+                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true })) || gone()) return; const out = await cdSh('reboot -p', { serial: d.serial }); showToast(cdFail(out) || 'Power off: sent'); } },
                 { label: 'Copy address', fn: () => copyText(d.serial) }
             ];
             if (net) b.push({ label: 'Disconnect', fn: async () => { cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
@@ -24875,7 +24919,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdAppCount').innerText = 'Reading the apps of the device...';
             const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
             cd.appsBusy = false;
-            if (serial !== cd.serial) return;
+            if (serial !== cd.serial) { if (cd.sub === 'apps' && !cd.apps && cdReady()) cdAppsLoad(); return; }      // another device was chosen meanwhile: its own list was not read (this read held the busy flag)
             const f = cdFail(out);
             if (f) { document.getElementById('cdAppCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
             cd.apps = cdParseApps(out);
@@ -25180,7 +25224,14 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Send ----
         function cdPickFiles() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('send');
+            window.AndroidBridge.cdPickPackages('send', cdPickInUse());
+        }
+        // the files of earlier picks that are still needed (the Send queue, a push in progress): the app keeps them when it clears old picks from its cache
+        function cdPickInUse() {
+            const out = [];
+            cd.queue.forEach(q => { if (q.archive) out.push(q.archive); (q.paths || []).forEach(p => out.push(p)); (q.sendFiles || []).forEach(f => out.push(f.path)); });
+            (cd.pushing || []).forEach(p => out.push(p));
+            return JSON.stringify(out.filter((p, i) => p && out.indexOf(p) === i));
         }
         function cdPicked(r) {
             const files = r.files || [];
@@ -25429,7 +25480,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (live) n = Math.min(n, 300);
             const out = await cdSh('logcat -d -v threadtime -t ' + n + ' \'*:' + lvl + '\'', { timeout: 40000 });
             cd.lcBusy = false;
-            if (serial !== cd.serial || cd.sub !== 'logcat') return;
+            if (serial !== cd.serial) { if (cd.sub === 'logcat' && !cd.lcText && cdReady()) cdLcFetch(false); return; }   // the same for the log of the device chosen meanwhile
+            if (cd.sub !== 'logcat') return;
             const f = cdFail(out);
             if (f) { cdLcNote(f); cdLcStop(); return; }
             if (out === cd.lcText && cd.lcEntries.length) return;
@@ -25590,18 +25642,23 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdFmPush() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('push');
+            window.AndroidBridge.cdPickPackages('push', cdPickInUse());
         }
         async function cdFmPushPicked(files) {
             const dest = cd.fm.path, good = files.filter(f => !f.error), serial = cd.serial;
             if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
             let okN = 0, last = '';
-            for (const f of good) {
-                if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
-                showToast('Sending ' + f.name + '...');
-                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
-                last = out;
-                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+            cd.pushing = (cd.pushing || []).concat(good.map(f => f.path));
+            try {
+                for (const f of good) {
+                    if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
+                    showToast('Sending ' + f.name + '...');
+                    const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
+                    last = out;
+                    if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+                }
+            } finally {
+                cd.pushing = (cd.pushing || []).filter(p => !good.some(f => f.path === p));
             }
             showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();
@@ -25650,26 +25707,31 @@ Type any command above (e.g. pm list packages -d)</div>
                 (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
         }
         function cdSetEdit(key) {
-            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key];
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial;
             cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
-                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value) },
-                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key) },
+                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value, serial) },
+                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key, serial) },
                     { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) }
                 ] });
         }
-        async function cdSetPut(ns, key, value) {
-            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value));
+        // serial: the device whose setting was opened; the sheet or question stays open while the device list may move to another device
+        async function cdSetPut(ns, key, value, serial) {
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value), { serial: serial });
+            if (cd.serial !== serial) return;                                // the table on screen is another device's now
             const t = String(out).trim();
             if (t && /Exception|Error|error:|denied|not allowed/i.test(t)) { cdSheetOpen({ title: 'That did not work', sub: ns + ' ' + key, body: '<div class="cd-log" translate="no">' + escapeHtml(t) + '</div>' }); return; }
             (cd.set.data[ns] = cd.set.data[ns] || {})[key] = value;
             cdSetRender();
             showToast('Saved ' + key);
         }
-        async function cdSetDelete(ns, key) {
+        async function cdSetDelete(ns, key, serial) {
             if (!(await cdAsk({ title: 'Delete ' + key + '?', text: 'From the ' + ns + ' settings of the device.', ok: 'Delete', danger: true }))) return;
-            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key));
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key), { serial: serial });
+            if (cd.serial !== serial) return;
             const t = String(out).trim();
             if (/Exception|Error|error:|denied/i.test(t)) { showToast(t.split('\n')[0]); return; }
             if (cd.set.data[ns]) delete cd.set.data[ns][key];
@@ -25677,10 +25739,11 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Deleted ' + key);
         }
         async function cdSetNew() {
+            const serial = cd.serial;
             const r = await cdAsk({ title: 'New ' + cd.set.ns + ' setting', text: 'A key and its value.', input: 'Key', input2: 'Value', ok: 'Add' });
             if (!r || !r.a.trim()) return;
             if (!/^[\w.:\-]+$/.test(r.a.trim())) { showToast('A key holds letters, digits and . _ : -'); return; }
-            cdSetPut(cd.set.ns, r.a.trim(), r.b);
+            cdSetPut(cd.set.ns, r.a.trim(), r.b, serial);
         }
 
         // ---- Display ----
@@ -25806,10 +25869,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const addr = document.getElementById('cdPairAddr').value.trim(), code = document.getElementById('cdPairCode').value.trim();
             if (!cdValidAddr(addr) || !/:\d{2,5}$/.test(addr)) { showToast('Type the address and port, like 192.168.1.20:37215'); return; }
             if (!/^\d{6}$/.test(code)) { showToast('The pairing code has 6 digits'); return; }
+            if (cd.pairing) return;                                  // Enter in the code field while one runs: a pairing code works once, a second adb pair only muddles the log
             const btn = document.getElementById('cdPairBtn');
-            btn.disabled = true; cdAddLog('Pairing...');
-            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });
-            btn.disabled = false;
+            cd.pairing = true; btn.disabled = true; cdAddLog('Pairing...');
+            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });     // (cdRun always resolves)
+            cd.pairing = false; btn.disabled = false;
             cdAddLog(out);
             if (/Successfully paired/i.test(out)) {
                 showToast('Paired. Now connect.');
@@ -26944,7 +27008,8 @@ Type any command above (e.g. pm list packages -d)</div>
             nowEl.innerText = Math.round(d.cpu.overall) + '%';
             subEl.innerText = d.cpu.cores + ' core' + (d.cpu.cores === 1 ? '' : 's');
             const per = d.cpu.perCore || [];
-            coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
+            const ids = Array.isArray(d.cpu.coreIds) && d.cpu.coreIds.length === per.length ? d.cpu.coreIds : null;     // the real core numbers (an offline core is left out of perCore)
+            coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${ids ? Number(ids[i]) : i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
 
             const c = d.cpu;
             const infoRows = [];
@@ -27505,9 +27570,9 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
             document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
         };
-        window.onOptimizeBatchDone = function (resultJson) {
+        window.onOptimizeBatchDone = function (resultJson) {          // an object from MainActivity, like onAppBatchDone's (a JSON text is taken too)
             optimizeRunActive = false;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { showToast('Dex optimization failed to run'); return; }
             const total = res.total, stopped = !!res.cancelled;
@@ -31908,7 +31973,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const steps = debian ? TX_DEBIAN_STEPS.slice() : [];
             steps.push({ label: 'Make sure Python is there (to edit ' + cli.name + '\'s config file)', cmd: 'command -v python3 >/dev/null 2>&1 || apt-get install -y python3 2>/dev/null || pkg install -y python', debian });
             steps.push({ label: 'Add it to ' + cli.name + '\'s own config', cmd, debian });
-            if (entry.exportVar) steps.push({ label: 'Save the token for ' + cli.name, cmd: 'grep -q ' + txQ(entry.exportVar[0] + '=') + ' ~/.bashrc 2>/dev/null || echo ' + txQ('export ' + entry.exportVar[0] + '=' + entry.exportVar[1]) + ' >> ~/.bashrc', debian });
+            // an earlier line for this server (a placeholder or an expired token) is replaced: a guard that skipped the echo when one was there kept the old token for good
+            if (entry.exportVar) {
+                const line = 'export ' + entry.exportVar[0] + '=' + entry.exportVar[1];
+                steps.push({ label: 'Save the token for ' + cli.name, cmd: 'sed -i ' + txQ('/^export ' + entry.exportVar[0] + '=/d') + ' ~/.bashrc 2>/dev/null; echo ' + txQ(line) + ' >> ~/.bashrc && grep -qxF ' + txQ(line) + ' ~/.bashrc', debian });
+            }
             return steps;
         }
 
@@ -31927,13 +31996,16 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             txCloseMcp();
             const form = { name, transport, command, url, env };
+            const added = [];                    // only the agents whose steps all ran: a failed or refused setup wrote nothing to that agent's config
             for (const agentKey of agents) {
                 const entry = txMcpEntry(agentKey, form);
-                await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry));
+                if (await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry))) added.push(agentKey);
             }
+            if (!added.length) return;
             const saved = kvGet('tx_mcp_servers', []);
             const i = saved.findIndex(s => s.name === name);
-            const rec = { name, agents, at: Date.now() };
+            const had = i >= 0 ? (saved[i].agents || []).filter(a => !added.includes(a)) : [];       // the agents it was added to before still have it
+            const rec = { name, agents: had.concat(added), at: Date.now() };
             if (i >= 0) saved[i] = rec; else saved.push(rec);
             kvSet('tx_mcp_servers', saved);
         }
@@ -36312,7 +36384,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function profileOnBatchDone(resultJson) {
             const st = profileRunState;
             if (!st) return;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             if (!res || !res.ok) { profileRunFinish(false); return; }
             const action = res.action;
             (res.rows || []).forEach(r => {
@@ -36826,9 +36898,11 @@ Type any command above (e.g. pm list packages -d)</div>
         async function mpSourcePre(id) {
             const s = mp.sources.find(x => x.id === id);
             if (!s) return;
-            await mpCall('sourcePre', { id: id, on: !s.prerelease });
+            const on = !s.prerelease;            // taken before the reload: mpSourcesLoad puts new objects in mp.sources, s keeps the old value
+            const r = await mpCall('sourcePre', { id: id, on: on });
             await mpSourcesLoad(); mpSourcesRender();
-            showToast('Pre-releases are ' + (!s.prerelease ? 'off' : 'on') + ' for ' + s.name + '. Update it to switch.');
+            if (!r.ok) { showToast(r.error || 'Could not save it'); return; }
+            showToast('Pre-releases are ' + (on ? 'on' : 'off') + ' for ' + s.name + '. Update it to switch.');
         }
         async function mpSourceRename(id) {
             const s = mp.sources.find(x => x.id === id);
@@ -37416,6 +37490,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 el.innerHTML = '<div class="mp-result"><h3>Cancelled</h3><div class="mp-note">Nothing was saved.</div><div class="mp-row"><button class="mode-action-btn" onclick="mpBackToPatches()">Back to the patches</button></div></div>';
                 mpRunStatus('Cancelled'); return;
             }
+            // an APK with no patch in it is the unchanged app: never "is patched" (the app turns such an answer into a failure; this covers an older one)
+            if (res.success && !(res.applied || r.applied || []).length) res = Object.assign({}, res, { success: false, error: res.error || 'No patch could be applied' });
             if (res.success) {
                 const it = r.saved || {};
                 const ins = r.install;
@@ -39364,13 +39440,20 @@ Type any command above (e.g. pm list packages -d)</div>
         async function sdHistoryOpen() {
             haptic();
             SD.histOpen = true; SD.hist = [];
-            sdSheetOpen({ title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
+            sdSheetOpen({ kind: 'history', title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
             await sdHistoryLoad(false);
+        }
+        // The History list goes into the History sheet: the one shown, or the one under "Affected paths" (a deletion that ends while the
+        // paths are open reloads it), where Back shows it. Never into whatever other sheet is on top.
+        function sdHistoryBody(html) {
+            if (SD.sheet && SD.sheet.kind === 'history') { sdSheetBody(html); return; }
+            const h = SD.stack.find(o => o.kind === 'history');
+            if (h) h.body = html;
         }
         async function sdHistoryLoad(more) {
             const r = await sdCall('historyList', { offset: more ? SD.hist.length : 0, limit: more ? 50 : Math.max(50, SD.hist.length) });
             if (!SD.histOpen || !SD.sheet) return;
-            if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
+            if (!r.ok) { sdHistoryBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
             SD.hist = more ? SD.hist.concat(r.reports || []) : (r.reports || []);
             SD.histTotal = r.total || SD.hist.length;
             const st = r.stats || {};
@@ -39384,18 +39467,18 @@ Type any command above (e.g. pm list packages -d)</div>
                     '<div class="sd-sz">' + sdSizeStr(h.bytes) + '</div></div>';
             }).join('');
             const more2 = SD.hist.length < SD.histTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdHistoryLoad(true)">Show more</button></div>' : '';
-            sdSheetBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
+            sdHistoryBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
         }
         async function sdHistoryPaths(i) {
             const h = SD.hist[i]; if (!h) return;
             SD.hp = { id: h.id, paths: [], total: 0 };
-            sdSheetOpen({ push: true, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
+            sdSheetOpen({ push: true, kind: 'paths', hp: SD.hp, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
             await sdHistoryPathsLoad(false);
         }
         async function sdHistoryPathsLoad(more) {
             const hp = SD.hp; if (!hp) return;
             const r = await sdCall('historyPaths', { id: hp.id, offset: more ? hp.paths.length : 0, limit: 200 });
-            if (SD.hp !== hp || !SD.sheet) return;
+            if (SD.hp !== hp || !SD.sheet || SD.sheet.hp !== hp) return;        // Back was pressed before the paths came: not into the History list
             if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The paths could not be read.') + '</div>'); return; }
             hp.paths = more ? hp.paths.concat(r.paths || []) : (r.paths || []);
             hp.total = r.total || hp.paths.length;

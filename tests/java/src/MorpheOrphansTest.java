@@ -79,6 +79,13 @@ public class MorpheOrphansTest {
         new File(jobs, "jhalf").setLastModified(now); new File(jobs, "jhalf/events.log").setLastModified(now);
         MorpheOrphans.Scan s2 = MorpheOrphans.scan(jobs, "jgoing", now, 6L * 3600 * 1000);
         check("a half-written result is not an answer (and the run is not stale)", !has(s2.debris, new File(jobs, "jhalf")) && !has(s2.finished, "jhalf"), null);
+        // every selected patch failed with "Stop when a patch fails" off: an engine without its own check answered success and signed the unchanged app
+        File none = new File(jobs, "jnone");
+        write(new File(none, "events.log"), "LOG INFO hi\nRESULT {\"success\":true,\"pkg\":\"com.a.b\",\"applied\":[],\"failed\":[{\"name\":\"Hide ads\",\"error\":\"x\"}]}\n");
+        write(new File(none, "patched.apk"), "UNPATCHED");
+        none.setLastModified(now);
+        MorpheOrphans.Scan s3 = MorpheOrphans.scan(jobs, "jgoing", now, 6L * 3600 * 1000);
+        check("a success with no patch applied is not filed: it is debris (the APK is the unpatched app)", !has(s3.finished, "jnone") && has(s3.debris, none), s3.finished.size() + "/" + s3.debris.size());
 
         File src = null;
         for (File d = new File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { File f = new File(d, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }

@@ -607,8 +607,12 @@ public final class SdmDedup implements Sdm.ToolImpl {
                 }
             }
             for (Dup d : go) {
-                Sdm.Entry now = null;
-                try { now = ctx.fs.stat(d.path); } catch (IOException e) { now = null; }
+                Sdm.Entry now;
+                try { now = ctx.fs.stat(d.path); } catch (IOException e) {             // cannot tell is not "gone"
+                    report.failed.add(d.path);
+                    report.notes.add("Skipped " + d.path + ": it could not be looked at.");
+                    continue;
+                }
                 if (now == null) { plan.add(new Planned(d, c, true)); continue; }               // already gone: counts as deleted
                 if (now.type != Sdm.FILE || now.size != d.size || now.mtime != d.mtime) {
                     report.failed.add(d.path);
