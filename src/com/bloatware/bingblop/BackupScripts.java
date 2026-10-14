@@ -33,6 +33,12 @@ final class BackupScripts {
         return pkg;
     }
 
+    /** MIME type for a text export saved to Downloads. MediaProvider keeps the requested extension only when it maps to the requested
+     *  type, so .json must be application/json: asked as text/plain it was stored as name.json.txt. */
+    static String textMimeType(String fileName) {
+        return fileName.endsWith(".xml") ? "text/xml" : fileName.endsWith(".csv") ? "text/csv" : fileName.endsWith(".json") ? "application/json" : "text/plain";
+    }
+
     static boolean isPermission(String s) {
         return s != null && PERMISSION.matcher(s).matches();
     }
