@@ -304,6 +304,11 @@ public final class SdmSystemCleaner implements Sdm.ToolImpl {
         return set.contains("/") && path.length() > 1;
     }
 
+    /** True only when the file system says nothing is there; a stat that fails (the working mode cannot answer) is "cannot tell", not gone. */
+    private static boolean knownGone(Sdm.Fs fs, String path) {
+        try { return fs.stat(path) == null; } catch (IOException e) { return false; } catch (RuntimeException e) { return false; }
+    }
+
     private static String parentOf(String path) {
         int i = path.lastIndexOf('/');
         return i <= 0 ? "/" : path.substring(0, i);
@@ -1076,7 +1081,7 @@ public final class SdmSystemCleaner implements Sdm.ToolImpl {
                 ctx.progress.update(g.meta.label, batch.get(0), done, total, bytesDone);
                 Set<String> ok = ctx.fs.deleteAll(batch, ctx.cancel);
                 for (String p : batch) {
-                    if ((ok != null && ok.contains(p)) || !ctx.fs.exists(p)) { goneRoots.add(p); bytesDone += selected.get(p).size; }
+                    if ((ok != null && ok.contains(p)) || knownGone(ctx.fs, p)) { goneRoots.add(p); bytesDone += selected.get(p).size; }
                     else if (!ctx.cancelled()) rep.failed.add(p);
                 }
                 done += batch.size();
