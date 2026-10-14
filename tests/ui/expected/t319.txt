@@ -1,0 +1,8 @@
+ok   1. History lists the old run: {"title":"History","body":"10 B freed in all, 1 items processed. SystemCleaner Done <date> Old run 10 B"}
+ok   2. Affected paths lists the path: {"title":"Affected paths","body":"1 paths, 10 B /storage/emulated/0/a.log deleted"}
+ok      a deletion that ends leaves the paths list as it is: {"title":"Affected paths","body":"1 paths, 10 B /storage/emulated/0/a.log deleted"}
+ok      Back shows History with the new report: {"title":"History","body":"30 B freed in all, 2 items processed. AppCleaner Done <date> New run 20 B SystemCleaner Done <date> Old run 10 B"}
+ok   3. with History shown, a finished deletion refreshes it: {"title":"History","body":"50 B freed in all, 3 items processed. AppCleaner Done <date> New run 20 B AppCleaner Done <date> New run 20 B SystemCleaner Done <date> Old run 10 B"}
+ok   4. paths answered after Back do not replace the History list: {"title":"History","body":"50 B freed in all, 3 items processed. AppCleaner Done <date> New run 20 B AppCleaner Done <date> New run 20 B SystemCleaner Done <date> Old run 10 B"}
+ok   no page errors
+all passed

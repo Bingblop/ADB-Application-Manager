@@ -98,20 +98,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   and a second successful install shows the buttons again', (await page.locator('#commandResultsActions button').count()) === 2);
   await page.close();
 
-  // 7) the answer to an install comes after another package was opened: the dialog and its buttons are about the one that was installed
+  // 7) another package is opened while an install runs: it is not read (MA1-1, reading it would empty the files the install still uses), and the
+  //    dialog and its buttons are about the one that was installed
   const p3 = await open({ width: 360, height: 800 });
   await p3.evaluate(() => { window.__pkgs['content://pick/2'] = { type: 'apk', pkg: 'com.other.app', label: 'Other App', versionName: '1', versionCode: 1, minSdk: 26, targetSdk: 34, totalSize: 4e6,
     splits: [{ path: '/cache/other.apk', name: 'other.apk', size: 4e6, isBase: true, split: '' }], signed: true, installed: false }; });
   await p3.evaluate(() => runInstall());
   check('7. an install is started for the open package (Example App)', (await p3.evaluate(() => window.__calls.install.length)) === 1 && (await p3.evaluate(() => window.__calls.install[0].pkg)) === 'com.example.app');
   await p3.evaluate(() => onInstallFilePicked('content://pick/2'));
-  await p3.waitForFunction(() => document.getElementById('installPkgLabel').innerText === 'Other App');
+  await p3.waitForTimeout(300);
+  check('   opening Other App during the install is refused and Example App stays open', (await p3.locator('#installPkgLabel').innerText()) === 'Example App', await p3.locator('#installPkgLabel').innerText());
   await result(p3, true, 'Success');
   await p3.waitForSelector('#commandResultsModal.show');
-  check('   the package that is open now is another one (Other App), yet the dialog is about the one installed', (await p3.locator('#commandResultsTitle').innerText()) === 'Install com.example.app' && /Example App/.test(await p3.locator('#commandResultsList').innerText()), await p3.locator('#commandResultsTitle').innerText());
+  check('   the dialog is about the one installed', (await p3.locator('#commandResultsTitle').innerText()) === 'Install com.example.app' && /Example App/.test(await p3.locator('#commandResultsList').innerText()), await p3.locator('#commandResultsTitle').innerText());
   await p3.click('#commandResultsActions button >> nth=0');
   await p3.click('#commandResultsActions button >> nth=1');
-  check('   Launch Application and Application Settings act on the installed one, not on the one that was opened since', JSON.stringify(await p3.evaluate(() => window.__calls.actions)) === '["launch:com.example.app","app_settings:com.example.app"]', JSON.stringify(await p3.evaluate(() => window.__calls.actions)));
+  check('   Launch Application and Application Settings act on the installed one', JSON.stringify(await p3.evaluate(() => window.__calls.actions)) === '["launch:com.example.app","app_settings:com.example.app"]', JSON.stringify(await p3.evaluate(() => window.__calls.actions)));
   await p3.close();
 
   console.log(bad ? bad + ' FAILED' : 'all checks passed');

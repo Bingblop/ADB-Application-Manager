@@ -1,0 +1,14 @@
+ok   1. a batch Freeze reports what ran: Batch Done: 2 succeeded, 0 failed
+ok      and shows its results: {"shown":true,"sub":"FREEZE • 2 of 2 apps"}
+ok      the progress sheet is closed
+ok   2. both groups of the profile are sent, in order: unfreeze:com.example.bravo | freeze:com.example.alpha
+ok      the toast counts every app: Profile applied: 2 succeeded, 0 failed
+ok      the results list both apps: {"shown":true,"sub":"Work • 2 apps"}
+ok      the run is over
+ok   3. a Dex optimization batch reports what ran: Optimized 2/2
+ok      and shows its results: {"shown":true,"sub":"compile -m speed -f • 2 apps"}
+ok   4. a JSON text result is read the same way: Batch Done: 1 succeeded, 0 failed
+ok      an object with ok:false still says the batch failed to run: Batch action failed to run
+ok      and so does a failed Dex optimization: Dex optimization failed to run
+ok   no page errors
+all passed

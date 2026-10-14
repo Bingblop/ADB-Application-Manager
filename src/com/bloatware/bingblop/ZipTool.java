@@ -716,7 +716,7 @@ public final class ZipTool {
     /** As above; {@code pulse}, when given, is told every MB or so, so a single large entry still moves the progress (and can be cancelled). */
     private static long writeStream(Entry e, InputStream in, File dest, Pulse pulse) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
-        File part = new File(parent, "." + dest.getName() + ".part");
+        File part = FileOps.partFor(dest, ".");
         boolean ok = false;
         try {
             long total = 0;
@@ -977,6 +977,49 @@ public final class ZipTool {
     }
 
     /** A WinZip AE-2 entry carries no CRC-32 (the authentication code checks the data instead). */
+    /** The entry carries a CRC-32 of its content: a zip entry other than WinZip AE-2 (other formats and AE-2 have 0 in its place). */
+    private static boolean hasCrc(Entry e) {
+        return !e.foreign && !isAe2(e);
+    }
+
+    private static boolean isLink(Entry e) {
+        return e.linkTarget != null || e.hardLink != null;
+    }
+
+    private static boolean eq(String x, String y) {
+        return x == null ? y == null : x.equals(y);
+    }
+
+    /** The CRC-32 of the content of {@code want}'s entries (by name): one pass over an archive that is read from its start, else entry by entry. */
+    private static Map<String, Long> contentCrcs(final Archive a, final Map<String, Entry> want) throws IOException {
+        final Map<String, Long> out = new HashMap<String, Long>();
+        if (want.isEmpty()) return out;
+        if (a.src != null && a.src.sequential()) {
+            a.src.walk(a, a.password(), new Walker() {
+                @Override
+                public boolean entry(Entry e, InputStream data) throws IOException {
+                    if (!e.dir && want.containsKey(e.name) && !out.containsKey(e.name)) out.put(e.name, crcOf(data));
+                    return out.size() < want.size();
+                }
+            });
+        } else {
+            for (Entry e : want.values()) {
+                InputStream in = a.open(e);
+                try { out.put(e.name, crcOf(in)); } finally { in.close(); }
+            }
+        }
+        if (out.size() < want.size()) throw new IOException("Some files of " + a.file.getName() + " could not be read to compare them");
+        return out;
+    }
+
+    private static long crcOf(InputStream in) throws IOException {
+        CRC32 crc = new CRC32();
+        byte[] buf = new byte[65536];
+        int n;
+        while ((n = in.read(buf)) > 0) crc.update(buf, 0, n);
+        return crc.getValue();
+    }
+
     private static boolean isAe2(Entry e) {
         if (e.method != ZipCrypt.METHOD_AES) return false;
         int[] ax = ZipCrypt.parseAesExtra(e.extra);
@@ -1029,18 +1072,35 @@ public final class ZipTool {
         public boolean truncated;                                           // a list was cut at the limit
     }
 
-    /** Files (not folders) compared by size and CRC-32, which the central directory already holds: nothing is extracted. */
-    public static Diff diff(Archive a, Archive b, int limit) {
+    /**
+     * Files (not folders) compared by size and CRC-32. A zip's central directory holds both, so nothing is extracted; an entry without a CRC of
+     * its own (tar, 7z, RAR, a WinZip AE-2 entry: all carry 0 here) is read to compute one when the other archive has a file of the same name
+     * and size, since equal sizes alone say nothing about the content. Throws when such an entry cannot be read (for instance it needs a password).
+     */
+    public static Diff diff(Archive a, Archive b, int limit) throws IOException {
         Diff d = new Diff();
-        Map<String, Entry> inA = new HashMap<String, Entry>();
+        Map<String, Entry> inA = new HashMap<String, Entry>(), inB = new HashMap<String, Entry>();
         for (Entry e : a.entries) if (!e.dir && !inA.containsKey(e.name)) inA.put(e.name, e);
+        for (Entry e : b.entries) if (!e.dir && !inB.containsKey(e.name)) inB.put(e.name, e);
+        // the pairs whose content must be read: same name and size, and a side without a real CRC
+        Map<String, Entry> readA = new HashMap<String, Entry>(), readB = new HashMap<String, Entry>();
+        for (Entry e : inB.values()) {
+            Entry o = inA.get(e.name);
+            if (o == null || o.size != e.size || isLink(o) || isLink(e) || (hasCrc(o) && hasCrc(e))) continue;
+            readA.put(o.name, o);
+            readB.put(e.name, e);
+        }
+        Map<String, Long> crcA = contentCrcs(a, readA), crcB = contentCrcs(b, readB);
         Set<String> seen = new HashSet<String>();
         for (Entry e : b.entries) {
             if (e.dir || !seen.add(e.name)) continue;
             Entry o = inA.get(e.name);
+            boolean same = o != null && o.size == e.size && (isLink(o) || isLink(e)
+                    ? isLink(o) && isLink(e) && eq(o.linkTarget, e.linkTarget) && eq(o.hardLink, e.hardLink)
+                    : (hasCrc(o) ? o.crc : crcA.get(o.name)) == (hasCrc(e) ? e.crc : crcB.get(e.name)));
             if (o == null) {
                 if (d.added.size() < limit) d.added.add(new DiffItem(e.name, -1, e.size)); else d.truncated = true;
-            } else if (o.crc == e.crc && o.size == e.size) {
+            } else if (same) {
                 d.same++;
             } else if (d.changed.size() < limit) {
                 d.changed.add(new DiffItem(e.name, o.size, e.size));
@@ -1523,7 +1583,8 @@ public final class ZipTool {
         r.time = dosTime;
         r.date = dosDate;
         r.internal = 0;
-        r.external = external != 0 ? external : ((0100644L << 16));
+        // a new folder gets drwxr-xr-x (and the DOS folder bit): with the Unix "made by" above, unzip applies these bits, and 0644 would leave a folder nobody can open
+        r.external = external != 0 ? external : name.endsWith("/") ? (040755L << 16) | 0x10 : (0100644L << 16);
         r.lho = out.pos;
         if (store) {
             CRC32 crc = new CRC32();

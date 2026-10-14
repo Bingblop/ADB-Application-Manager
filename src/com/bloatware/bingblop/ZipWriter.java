@@ -122,7 +122,7 @@ public final class ZipWriter {
         if (level > 9) level = 9;
         File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) throw new IOException("Can't create " + parent);
-        File part = new File(parent, "." + dest.getName() + ".part");
+        File part = FileOps.partFor(dest, ".");
         Count out = null;
         boolean ok = false;
         List<Rec> cd = new ArrayList<Rec>();

@@ -136,8 +136,6 @@ public final class ArchiveIo {
         public boolean anyEncrypted;
         /** The listing stopped at {@link #MAX_ITEMS} items or {@link #MAX_NAME_BYTES} of names: it is not the whole archive. */
         public boolean truncated;
-        /** Item sizes come from a 32 bit field and may be too small by a multiple of 4 GiB (a big .gz). */
-        public boolean sizesApprox;
     }
 
     /** A password is needed ({@code wrong == false}) or the one given does not fit ({@code wrong == true}; the archive may also be damaged). */
@@ -449,10 +447,9 @@ public final class ArchiveIo {
         boolean next() {
             if (done) return false;
             done = true;
-            long[] approx = new long[1];
             Item it = new Item();
             it.name = singleName(file.getName(), comp);
-            it.size = singleSize(file, comp, approx);
+            it.size = singleSize(file, comp);
             it.csize = file.length();
             it.mtime = file.lastModified();
             item = it;
@@ -927,24 +924,23 @@ public final class ArchiveIo {
     }
 
     /** The unpacked size of a single compressed file when it can be read from the file's own headers or trailer; -1 otherwise. */
-    private static long singleSize(File f, String comp, long[] approx) {
+    private static long singleSize(File f, String comp) {
         try {
             RandomAccessFile r = new RandomAccessFile(f, "r");
             try {
                 long len = r.length();
                 if ("gz".equals(comp)) {
-                    if (len < 18) return -1;
-                    byte[] t = new byte[4];
-                    r.seek(len - 4); r.readFully(t);
-                    long isize = (t[0] & 0xffL) | (t[1] & 0xffL) << 8 | (t[2] & 0xffL) << 16 | (t[3] & 0xffL) << 24;
-                    if (len * 1032L >= (1L << 32)) approx[0] = 1;
-                    return isize;
+                    // The trailer holds the size of the LAST member only, modulo 4 GiB, while the reader unpacks every member (a concatenated .gz,
+                    // BGZF): a declared size smaller than the data makes extraction call the file damaged. A small file is counted by unpacking it;
+                    // a larger one has no size until it is extracted.
+                    if (len < 18 || len > GZ_COUNT_PACKED) return -1;
+                    return gzCount(f);
                 }
                 if ("xz".equals(comp)) return xzSize(r, len);
                 if ("zst".equals(comp)) {
                     byte[] h = new byte[18];
                     int n = r.read(h);
-                    if (n < 6) return -1;
+                    if (n < 6 || (h[0] & 0xff) != 0x28 || (h[1] & 0xff) != 0xB5 || (h[2] & 0xff) != 0x2F || (h[3] & 0xff) != 0xFD) return -1;     // a frame first (not a skippable one)
                     int fhd = h[4] & 0xff, fcsFlag = fhd >> 6, single = (fhd >> 5) & 1, dictFlag = fhd & 3;
                     int pos = 5 + (single == 0 ? 1 : 0) + new int[] { 0, 1, 2, 4 }[dictFlag];
                     int fcsSize = fcsFlag == 0 ? (single == 1 ? 1 : 0) : new int[] { 2, 4, 8 }[fcsFlag - 1];
@@ -952,16 +948,58 @@ public final class ArchiveIo {
                     long v = 0;
                     for (int i = fcsSize - 1; i >= 0; i--) v = (v << 8) | (h[pos + i] & 0xffL);
                     if (fcsSize == 2) v += 256;
-                    return v;
+                    // the frame's size is the file's only when no other frame follows it (the reader unpacks the frames one after another)
+                    long p = pos + fcsSize;
+                    byte[] bh = new byte[3];
+                    for (;;) {
+                        if (p + 3 > len) return -1;
+                        r.seek(p); r.readFully(bh);
+                        int b = (bh[0] & 0xff) | (bh[1] & 0xff) << 8 | (bh[2] & 0xff) << 16, type = (b >> 1) & 3;
+                        if (type == 3) return -1;
+                        p += 3 + (type == 1 ? 1 : b >>> 3);                 // an RLE block stores one byte
+                        if ((b & 1) != 0) break;
+                    }
+                    if ((fhd & 0x04) != 0) p += 4;                           // content checksum
+                    return p == len ? v : -1;
                 }
                 if ("lz4".equals(comp)) {
                     byte[] h = new byte[15];
                     int n = r.read(h);
-                    if (n < 15 || (h[4] & 0x08) == 0) return -1;
-                    return le64(h, 6);
+                    if (n < 15 || h[0] != 0x04 || h[1] != 0x22 || h[2] != 0x4D || h[3] != 0x18 || (h[4] & 0x08) == 0 || (h[4] & 0x01) != 0) return -1;
+                    // as for zstd: the frame's size is the file's only when no other frame follows it
+                    boolean blockSum = (h[4] & 0x10) != 0;
+                    long p = 15;
+                    byte[] b4 = new byte[4];
+                    for (;;) {
+                        if (p + 4 > len) return -1;
+                        r.seek(p); r.readFully(b4);
+                        long size = (b4[0] & 0xffL) | (b4[1] & 0xffL) << 8 | (b4[2] & 0xffL) << 16 | (b4[3] & 0x7fL) << 24;
+                        p += 4;
+                        if (size == 0 && (b4[3] & 0x80) == 0) break;          // end mark
+                        p += size + (blockSum ? 4 : 0);
+                    }
+                    if ((h[4] & 0x04) != 0) p += 4;                         // content checksum
+                    return p == len ? le64(h, 6) : -1;
                 }
                 return -1;
             } finally { r.close(); }
+        } catch (IOException e) { return -1; } catch (RuntimeException e) { return -1; }
+    }
+
+    /** A .gz up to this size (packed) is unpacked to count its size when it is listed; it unpacks to at most {@link #GZ_COUNT_MAX} bytes. */
+    private static final long GZ_COUNT_PACKED = 4L << 20, GZ_COUNT_MAX = 256L << 20;
+
+    /** The unpacked size of a .gz (all of its members, as {@link #decompress} reads them); -1 when it is damaged or over {@link #GZ_COUNT_MAX}. */
+    private static long gzCount(File f) {
+        try {
+            InputStream in = decompress("gz", new FileInputStream(f));
+            try {
+                byte[] b = new byte[BUF];
+                long n = 0;
+                int k;
+                while ((k = in.read(b)) > 0) if ((n += k) > GZ_COUNT_MAX) return -1;
+                return n;
+            } finally { in.close(); }
         } catch (IOException e) { return -1; } catch (RuntimeException e) { return -1; }
     }
 
@@ -1043,11 +1081,6 @@ public final class ArchiveIo {
                     info.items.add(r.item);
                 }
                 info.solid = isTar(format) && !"tar".equals(format);
-                if (r instanceof SingleReader) {
-                    long[] approx = new long[1];
-                    singleSize(f, format, approx);
-                    info.sizesApprox = approx[0] != 0;
-                }
             }
             return info;
         } finally { closeQuietly(r); }
@@ -1602,7 +1635,7 @@ public final class ArchiveIo {
         if (single && (sources.size() != 1 || sources.get(0).file == null || !sources.get(0).file.isFile())) throw new IOException("single-file-format-needs-one-file");
         File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory()) parent.mkdirs();
-        File part = new File(dest.getPath() + ".part");
+        File part = FileOps.partFor(dest, "");
         Meter m = new Meter(cb);
         EntryWriter w = null;
         SyncOut sout = null;
@@ -1688,7 +1721,7 @@ public final class ArchiveIo {
     public static void rewrite(File src, File dst, char[] password, List<Edit> edits, Progress cb) throws IOException {
         String format = detect(src);
         if (!supportsEdit(format)) throw new IOException("unsupported-format" + (format == null ? "" : ":" + format));
-        File part = new File(dst.getPath() + ".part");
+        File part = FileOps.partFor(dst, "");
         File parent = dst.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory()) parent.mkdirs();
         Meter m = new Meter(cb);

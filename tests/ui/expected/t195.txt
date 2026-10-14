@@ -3,7 +3,7 @@ ok   the tab bar has Console and Terminal side by side and no Logcat Viewer
 ok   Console opens on ADB Shell: the shell part shows, the log part is hidden, the tab is marked selected
 ok   the log is not read while ADB Shell shows (no poll, no bridge call)
 ok   the command box says "Enter shell command..."
-ok   the underline is under the first tab (half the row wide)
+ok   the underline is under the first tab (as wide as the tab; the "?" keeps its own room at the end of the row)
 ok   Live Logcat shows, is remembered, and starts reading at once (Pause shown, polling, the lines drawn)
 ok   the underline moved under the second tab
 ok   the filter box has the Kotlin console's hint, with "text" (the filter is plain text, not a regex)

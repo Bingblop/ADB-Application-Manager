@@ -732,6 +732,16 @@ public class UpdateCheckerTest {
         UpdateManager.compareVersions("3.10-Pro", "3.9") > 0 && UpdateManager.compareVersions("2.0-beta1", "1.9") > 0 && UpdateManager.compareVersions("2.0.1", "2.0-1") > 0
         && UpdateManager.compareVersions("3.10-Pro", "3.10") == 0 && UpdateManager.compareVersions("v1.0.0", "1.0.0") == 0 && UpdateManager.compareVersions("release-1.2.3", "1.2.3") == 0
         && UpdateManager.compareVersions("", "1.0") < 0 && UpdateManager.compareVersions(null, "") == 0);
+    // NET-2: dates and underscores were compared on their first number only (2024 == 2024), so a dated release never showed as an update
+    is("compareVersions: dates with dashes compare part by part (2024-11-15 > 2024-10-01, build-2024-11-15 > build-2024-10-01, 2024-10-01 == 2024.10.01)",
+        UpdateManager.compareVersions("2024-11-15", "2024-10-01") > 0 && UpdateManager.compareVersions("2024-10-01", "2024-11-15") < 0
+        && UpdateManager.compareVersions("build-2024-11-15", "build-2024-10-01") > 0 && UpdateManager.compareVersions("2024-11-15", "2024-11-15") == 0
+        && UpdateManager.compareVersions("2024-10-01", "2024.10.01") == 0 && UpdateManager.compareVersions("2024-11-15-rc1", "2024-11-15") < 0);
+    is("compareVersions: underscores separate parts too (v1_2_4 > 1_2_3, 1_10 > 1_9)",
+        UpdateManager.compareVersions("v1_2_4", "1_2_3") > 0 && UpdateManager.compareVersions("1_2_3", "v1_2_4") < 0 && UpdateManager.compareVersions("1_10", "1_9") > 0);
+    is("compareVersions: what already worked still does (1.2.10 > 1.2.9, r25 > r24, 1.0.0-beta.10 > 1.0.0-beta.9, 1.2-3 > 1.2, 1.2-3 < 1.2-4, 2-beta1 < 2)",
+        UpdateManager.compareVersions("1.2.10", "1.2.9") > 0 && UpdateManager.compareVersions("r25", "r24") > 0 && UpdateManager.compareVersions("1.0.0-beta.10", "1.0.0-beta.9") > 0
+        && UpdateManager.compareVersions("1.2-3", "1.2") > 0 && UpdateManager.compareVersions("1.2-3", "1.2-4") < 0 && UpdateManager.compareVersions("2-beta1", "2") < 0);
   }
 
   static void deadlineCancelOfflineTests() throws Exception {

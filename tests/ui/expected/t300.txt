@@ -1,0 +1,6 @@
+1. cpu2 offline: the three readings are labelled Core 0, Core 1, Core 3 (cpu3 is not shown as Core 2): true ["50% Core 0","25% Core 1","75% Core 3"]
+   the core count still says 4 cores: true
+2. all four back online: Core 0 to Core 3 in order: true
+3. an answer without core numbers is labelled by position, as before: true
+4. a list of core numbers that does not match the readings is not used: true
+no page errors: true

@@ -159,7 +159,7 @@ public final class DnsProbe {
     public int port = PORT;
     public Lookups lookups = new Lookups(LOOKUP_THREADS);
     public SocketMaker sockets = new SocketMaker() {
-      @Override public Socket create() { return new Socket(Proxy.NO_PROXY); }
+      @Override public Socket create() { return new Socket(Proxy.NO_PROXY); }  // an unconnected socket without a proxy: the probe connects it, and wraps it in TLS itself for DNS over TLS. nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     };
     /** null: the platform's default factory (its trust store). */
     public SSLSocketFactory sslFactory;

@@ -95,7 +95,7 @@ public class HelperDownloadsTest {
             // ---- pause and resume
             is("pause: it was running", until(() -> b.state == BrowserDownload.State.RUNNING && b.done > 60000, 8000), b.state + " " + b.done);
             dl.pause(b.id);
-            is("pause: PAUSED, bytes kept, no error", until(() -> b.state == BrowserDownload.State.PAUSED, 8000) && b.error.isEmpty() && b.done > 0 && b.done < BODY.length && new File(dir, "beta.apkm.part").length() == b.done, b.state + " " + b.done);
+            is("pause: PAUSED, bytes kept, no error", until(() -> b.state == BrowserDownload.State.PAUSED, 8000) && b.error.isEmpty() && b.done > 0 && b.done < BODY.length && b.part().length() == b.done, b.state + " " + b.done);
             long at = b.done;
             is("pause: the journal says PAUSED with the validator", until(() -> journalHas(journal, "\"PAUSED\"") && journalHas(journal, "e-n=beta"), 3000));
             slowMs = 0; reqs.clear();
@@ -122,7 +122,7 @@ public class HelperDownloadsTest {
             is("queue: five started, three run, two wait", until(() -> java.util.stream.Stream.of(five).filter(j -> j.state == BrowserDownload.State.RUNNING).count() == 3, 8000) && java.util.stream.Stream.of(five).filter(j -> j.state == BrowserDownload.State.QUEUED).count() == 2, Arrays.toString(java.util.stream.Stream.of(five).map(j -> j.state).toArray()));
             BrowserDownload.Job waiting = java.util.stream.Stream.of(five).filter(j -> j.state == BrowserDownload.State.QUEUED).findFirst().get();
             dl.pause(waiting.id);
-            is("queue: pausing a waiting job leaves the queue at once, without downloading anything", waiting.state == BrowserDownload.State.PAUSED && waiting.done == 0 && !new File(dir, waiting.name.isEmpty() ? "none" : waiting.name + ".part").exists());
+            is("queue: pausing a waiting job leaves the queue at once, without downloading anything", waiting.state == BrowserDownload.State.PAUSED && waiting.done == 0 && (waiting.part() == null || !waiting.part().exists()));
             slowMs = 0;
             is("queue: the others all finish, never more than three at once", until(() -> java.util.stream.Stream.of(five).filter(j -> j != waiting).allMatch(j -> j.state == BrowserDownload.State.DONE), 20000) && maxLive.get() <= 3, "max live " + maxLive.get());
             dl.resume(waiting.id);
@@ -147,12 +147,12 @@ public class HelperDownloadsTest {
             BrowserDownload.Job c = dl.start(base + "/f?n=cc", "UA", null, dir);
             until(() -> c.state == BrowserDownload.State.RUNNING && c.done > 30000, 8000);
             dl.cancel(c.id);
-            is("cancel: CANCELLED and the part is gone", until(() -> c.state == BrowserDownload.State.CANCELLED, 8000) && !new File(dir, "cc.apkm.part").exists(), c.state + "");
+            is("cancel: CANCELLED and the part is gone", until(() -> c.state == BrowserDownload.State.CANCELLED, 8000) && !c.part().exists() && !new File(dir, "cc.apkm.part").exists(), c.state + "");
             BrowserDownload.Job r = dl.start(base + "/f?n=rr", "UA", null, dir);
             until(() -> r.state == BrowserDownload.State.RUNNING && r.done > 30000, 8000);
             dl.pause(r.id); until(() -> r.state == BrowserDownload.State.PAUSED, 8000);
             dl.cancel(r.id);
-            is("cancel: a paused job is cancelled at once and its part removed", r.state == BrowserDownload.State.CANCELLED && !new File(dir, "rr.apkm.part").exists());
+            is("cancel: a paused job is cancelled at once and its part removed", r.state == BrowserDownload.State.CANCELLED && !r.part().exists());
             slowMs = 0;
             File alpha = a.file;
             dl.remove(a.id);
@@ -189,6 +189,7 @@ public class HelperDownloadsTest {
             Files.write(journal.toPath(), arr.toString().getBytes(StandardCharsets.UTF_8));
             HelperDownloads d3 = new HelperDownloads(journal, ck, ok);
             is("crash: a job that was RUNNING comes back PAUSED with the part's size", d3.get("died1") != null && d3.get("died1").state == BrowserDownload.State.PAUSED && d3.get("died1").done == 7000);
+            is("old journal: the shared part file of an older version (name.part) becomes the job's own", !part.exists() && d3.get("died1").part().length() == 7000 && !d3.get("died1").part().equals(part), Arrays.toString(dir.list()));
             d3.shutdown();
 
             // ---- a bad journal

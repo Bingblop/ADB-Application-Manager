@@ -334,6 +334,8 @@ public final class HelperDownloads {
                     j.total = f.length();
                 } else {
                     File p = j.part();
+                    File old = j.legacyPart();             // a journal from before each job had its own part file: the first job of that name takes the shared one over
+                    if (s != BrowserDownload.State.CANCELLED && p != null && !p.exists() && old != null && old.isFile()) old.renameTo(p);
                     long have = p != null && p.isFile() ? p.length() : 0;
                     j.done = have;
                     if (s == BrowserDownload.State.RUNNING || s == BrowserDownload.State.QUEUED) {
