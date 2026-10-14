@@ -31783,13 +31783,16 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             txCloseMcp();
             const form = { name, transport, command, url, env };
+            const added = [];                    // only the agents whose steps all ran: a failed or refused setup wrote nothing to that agent's config
             for (const agentKey of agents) {
                 const entry = txMcpEntry(agentKey, form);
-                await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry));
+                if (await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry))) added.push(agentKey);
             }
+            if (!added.length) return;
             const saved = kvGet('tx_mcp_servers', []);
             const i = saved.findIndex(s => s.name === name);
-            const rec = { name, agents, at: Date.now() };
+            const had = i >= 0 ? (saved[i].agents || []).filter(a => !added.includes(a)) : [];       // the agents it was added to before still have it
+            const rec = { name, agents: had.concat(added), at: Date.now() };
             if (i >= 0) saved[i] = rec; else saved.push(rec);
             kvSet('tx_mcp_servers', saved);
         }
