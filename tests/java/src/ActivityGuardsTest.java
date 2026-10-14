@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
  * <ul>
  * <li>every {@code startActivityForResult(} call sits inside a {@code try} block of its own method (with no picker app, for example with the
  * Files app frozen, the call throws ActivityNotFoundException, and uncaught on the UI thread that ends the app: review MA2-3).</li>
+ * <li>every executor that MainActivity (or its bridge) keeps in a field is shut down in onDestroy: each recreate() makes a new activity and
+ * bridge, and a pool nobody stops keeps its idle thread for the life of the process (AGENTS.md; review MA2-4).</li>
  * </ul>
  * The scan works on the source with comments, string and character literals blanked out.
  */
@@ -76,6 +78,35 @@ public class ActivityGuardsTest {
     return out;
   }
 
+  /** The body of the method whose header is {@code sig} (blanked source), up to its matching brace; null when not found. */
+  static String bodyOf(String b, String sig) {
+    int i = b.indexOf(sig);
+    if (i < 0) return null;
+    int open = b.indexOf('{', i);
+    if (open < 0) return null;
+    int depth = 0;
+    for (int j = open; j < b.length(); j++) {
+      char c = b.charAt(j);
+      if (c == '{') depth++;
+      else if (c == '}' && --depth == 0) return b.substring(open, j + 1);
+    }
+    return null;
+  }
+
+  /** The names of fields given an executor from Executors.new... whose shutdown (or shutdownNow) is not called in onDestroy. */
+  static List<String> executorsNotStopped(String src, List<String> seen) {
+    String b = blank(src);
+    String destroy = bodyOf(b, "void onDestroy()");
+    List<String> out = new ArrayList<String>();
+    Matcher m = Pattern.compile("\\b(\\w+)\\s*=\\s*(?:java\\.util\\.concurrent\\.)?Executors\\s*\\.\\s*new\\w+").matcher(b);
+    while (m.find()) {
+      String name = m.group(1);
+      if (seen != null) seen.add(name);
+      if (destroy == null || !Pattern.compile("\\b" + name + "\\s*\\.\\s*shutdown(Now)?\\s*\\(").matcher(destroy).find()) out.add(name);
+    }
+    return out;
+  }
+
   static int lineOf(String s, int at) {
     int line = 1;
     for (int i = 0; i < at; i++) if (s.charAt(i) == '\n') line++;
@@ -104,6 +135,11 @@ public class ActivityGuardsTest {
         && unguardedStarts("class A { void f() { /* try { */ startActivityForResult(i, 1); } }").size() == 1);
     check("the declaration of an override is not a call", unguardedStarts("class A { @Override public void startActivityForResult(Intent i, int r) { super.x(); } }").isEmpty());
 
+    check("an executor shut down in onDestroy is fine", executorsNotStopped("class A { final ExecutorService a = Executors.newCachedThreadPool(); protected void onDestroy() { a.shutdown(); } }", null).isEmpty()
+        && executorsNotStopped("class A { ExecutorService t; void f() { t = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(); } protected void onDestroy() { if (t != null) { t.shutdownNow(); } } }", null).isEmpty());
+    check("an executor of an inner class that onDestroy does not stop is named", executorsNotStopped("class A { protected void onDestroy() { a.shutdown(); } class B { final ExecutorService thumbs = Executors.newSingleThreadExecutor(); } }", null).equals(java.util.Arrays.asList("thumbs")));
+    check("a shutdown elsewhere, or only in a comment, does not count", executorsNotStopped("class A { final ExecutorService a = Executors.newCachedThreadPool(); void stop() { a.shutdown(); } protected void onDestroy() { // a.shutdown();\n } }", null).equals(java.util.Arrays.asList("a")));
+
     // the source tree
     File dir = srcDir();
     if (dir == null) { System.out.println("SKIP src/com/bloatware/bingblop not found"); System.out.println("PASS ActivityGuardsTest: " + n + " checks"); return; }
@@ -115,6 +151,10 @@ public class ActivityGuardsTest {
     List<Integer> bad = unguardedStarts(main);
     check("MainActivity: every startActivityForResult is inside a try of its own method (a phone without a picker must not end the app); unguarded at lines " + bad,
         calls > 0 && bad.isEmpty());
+
+    List<String> pools = new ArrayList<String>();
+    List<String> loose = executorsNotStopped(main, pools);
+    check("MainActivity: every executor field is shut down in onDestroy (found " + pools + "); not stopped: " + loose, pools.size() >= 8 && loose.isEmpty());
 
     System.out.println(fails == 0 ? "PASS ActivityGuardsTest: " + n + " checks" : "FAILED ActivityGuardsTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);

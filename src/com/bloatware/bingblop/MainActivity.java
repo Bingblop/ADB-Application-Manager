@@ -7853,6 +7853,10 @@ public class MainActivity extends Activity {
     // Back and reopen), the new activity sees it in the status and can stop it, and it cannot start a second one beside it.
     private static volatile LogRecorder logRec;
 
+    // File Manager thumbnails, one picture at a time (a long list must not decode ten at once). A field of the activity, not of the bridge,
+    // so onDestroy can stop it: every recreate() makes a new bridge, and each pool's idle thread would otherwise live on.
+    private final ExecutorService thumbExec = Executors.newSingleThreadExecutor();
+
     private class AndroidBridge {
 
         @JavascriptInterface
@@ -13376,8 +13380,6 @@ public class MainActivity extends Activity {
             } catch (Throwable t) { return ""; }
         }
 
-        private final java.util.concurrent.ExecutorService thumbExec = java.util.concurrent.Executors.newSingleThreadExecutor();      // one picture at a time: a long list must not decode ten at once
-
         private File thumbDir() { File d = new File(getCacheDir(), "fm_thumbs"); if (!d.isDirectory()) d.mkdirs(); return d; }
 
         /** Small pictures of images and videos (px wide at most), from the cache when there. Each one arrives as window.onFmThumb(path, dataUrl). */
@@ -15991,6 +15993,7 @@ public class MainActivity extends Activity {
             if (sdm != null) sdm.bridge().shutdown();
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
