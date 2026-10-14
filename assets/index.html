@@ -19295,12 +19295,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, 'Checking…');
         };
 
-        // Fires once the native run has finished (to completion, or stopped early).
+        // Fires once the native run has finished (to completion, or stopped early). MainActivity passes the result as an object
+        // (window.onAppBatchDone({...}), not a quoted JSON text); a string is still taken, so either form works.
         window.onAppBatchDone = function (resultJson) {
             if (profileRunActive) { profileOnBatchDone(resultJson); return; }
             batchRunActive = false;
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
@@ -27396,9 +27397,9 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
             document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
         };
-        window.onOptimizeBatchDone = function (resultJson) {
+        window.onOptimizeBatchDone = function (resultJson) {          // an object from MainActivity, like onAppBatchDone's (a JSON text is taken too)
             optimizeRunActive = false;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { showToast('Dex optimization failed to run'); return; }
             const total = res.total, stopped = !!res.cancelled;
@@ -31799,7 +31800,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const steps = debian ? TX_DEBIAN_STEPS.slice() : [];
             steps.push({ label: 'Make sure Python is there (to edit ' + cli.name + '\'s config file)', cmd: 'command -v python3 >/dev/null 2>&1 || apt-get install -y python3 2>/dev/null || pkg install -y python', debian });
             steps.push({ label: 'Add it to ' + cli.name + '\'s own config', cmd, debian });
-            if (entry.exportVar) steps.push({ label: 'Save the token for ' + cli.name, cmd: 'grep -q ' + txQ(entry.exportVar[0] + '=') + ' ~/.bashrc 2>/dev/null || echo ' + txQ('export ' + entry.exportVar[0] + '=' + entry.exportVar[1]) + ' >> ~/.bashrc', debian });
+            // an earlier line for this server (a placeholder or an expired token) is replaced: a guard that skipped the echo when one was there kept the old token for good
+            if (entry.exportVar) {
+                const line = 'export ' + entry.exportVar[0] + '=' + entry.exportVar[1];
+                steps.push({ label: 'Save the token for ' + cli.name, cmd: 'sed -i ' + txQ('/^export ' + entry.exportVar[0] + '=/d') + ' ~/.bashrc 2>/dev/null; echo ' + txQ(line) + ' >> ~/.bashrc && grep -qxF ' + txQ(line) + ' ~/.bashrc', debian });
+            }
             return steps;
         }
 
@@ -31818,13 +31823,16 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             txCloseMcp();
             const form = { name, transport, command, url, env };
+            const added = [];                    // only the agents whose steps all ran: a failed or refused setup wrote nothing to that agent's config
             for (const agentKey of agents) {
                 const entry = txMcpEntry(agentKey, form);
-                await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry));
+                if (await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry))) added.push(agentKey);
             }
+            if (!added.length) return;
             const saved = kvGet('tx_mcp_servers', []);
             const i = saved.findIndex(s => s.name === name);
-            const rec = { name, agents, at: Date.now() };
+            const had = i >= 0 ? (saved[i].agents || []).filter(a => !added.includes(a)) : [];       // the agents it was added to before still have it
+            const rec = { name, agents: had.concat(added), at: Date.now() };
             if (i >= 0) saved[i] = rec; else saved.push(rec);
             kvSet('tx_mcp_servers', saved);
         }
@@ -36203,7 +36211,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function profileOnBatchDone(resultJson) {
             const st = profileRunState;
             if (!st) return;
-            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            let res; try { res = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson; } catch (e) { res = null; }
             if (!res || !res.ok) { profileRunFinish(false); return; }
             const action = res.action;
             (res.rows || []).forEach(r => {
@@ -36717,9 +36725,11 @@ Type any command above (e.g. pm list packages -d)</div>
         async function mpSourcePre(id) {
             const s = mp.sources.find(x => x.id === id);
             if (!s) return;
-            await mpCall('sourcePre', { id: id, on: !s.prerelease });
+            const on = !s.prerelease;            // taken before the reload: mpSourcesLoad puts new objects in mp.sources, s keeps the old value
+            const r = await mpCall('sourcePre', { id: id, on: on });
             await mpSourcesLoad(); mpSourcesRender();
-            showToast('Pre-releases are ' + (!s.prerelease ? 'off' : 'on') + ' for ' + s.name + '. Update it to switch.');
+            if (!r.ok) { showToast(r.error || 'Could not save it'); return; }
+            showToast('Pre-releases are ' + (on ? 'on' : 'off') + ' for ' + s.name + '. Update it to switch.');
         }
         async function mpSourceRename(id) {
             const s = mp.sources.find(x => x.id === id);
@@ -39257,13 +39267,20 @@ Type any command above (e.g. pm list packages -d)</div>
         async function sdHistoryOpen() {
             haptic();
             SD.histOpen = true; SD.hist = [];
-            sdSheetOpen({ title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
+            sdSheetOpen({ kind: 'history', title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
             await sdHistoryLoad(false);
+        }
+        // The History list goes into the History sheet: the one shown, or the one under "Affected paths" (a deletion that ends while the
+        // paths are open reloads it), where Back shows it. Never into whatever other sheet is on top.
+        function sdHistoryBody(html) {
+            if (SD.sheet && SD.sheet.kind === 'history') { sdSheetBody(html); return; }
+            const h = SD.stack.find(o => o.kind === 'history');
+            if (h) h.body = html;
         }
         async function sdHistoryLoad(more) {
             const r = await sdCall('historyList', { offset: more ? SD.hist.length : 0, limit: more ? 50 : Math.max(50, SD.hist.length) });
             if (!SD.histOpen || !SD.sheet) return;
-            if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
+            if (!r.ok) { sdHistoryBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
             SD.hist = more ? SD.hist.concat(r.reports || []) : (r.reports || []);
             SD.histTotal = r.total || SD.hist.length;
             const st = r.stats || {};
@@ -39277,18 +39294,18 @@ Type any command above (e.g. pm list packages -d)</div>
                     '<div class="sd-sz">' + sdSizeStr(h.bytes) + '</div></div>';
             }).join('');
             const more2 = SD.hist.length < SD.histTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdHistoryLoad(true)">Show more</button></div>' : '';
-            sdSheetBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
+            sdHistoryBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
         }
         async function sdHistoryPaths(i) {
             const h = SD.hist[i]; if (!h) return;
             SD.hp = { id: h.id, paths: [], total: 0 };
-            sdSheetOpen({ push: true, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
+            sdSheetOpen({ push: true, kind: 'paths', hp: SD.hp, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
             await sdHistoryPathsLoad(false);
         }
         async function sdHistoryPathsLoad(more) {
             const hp = SD.hp; if (!hp) return;
             const r = await sdCall('historyPaths', { id: hp.id, offset: more ? hp.paths.length : 0, limit: 200 });
-            if (SD.hp !== hp || !SD.sheet) return;
+            if (SD.hp !== hp || !SD.sheet || SD.sheet.hp !== hp) return;        // Back was pressed before the paths came: not into the History list
             if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The paths could not be read.') + '</div>'); return; }
             hp.paths = more ? hp.paths.concat(r.paths || []) : (r.paths || []);
             hp.total = r.total || hp.paths.length;
