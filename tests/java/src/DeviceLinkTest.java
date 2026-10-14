@@ -40,6 +40,8 @@ public class DeviceLinkTest {
 
   public static void main(String[] args) throws Exception {
     File tmp = Files.createTempDirectory("dl").toFile();
+    // #190: every file an install would read, so the bridge can refuse the app's private ones first
+    check("localFiles names each item's archive or its paths", DeviceLink.localFiles(new org.json.JSONArray("[{\"name\":\"a\",\"archive\":\"/x/a.apks\"},{\"name\":\"b\",\"paths\":[\"/x/b1.apk\",\"/x/b2.apk\"]}]")).equals(java.util.Arrays.asList("/x/a.apks", "/x/b1.apk", "/x/b2.apk")));
     // serials and verdicts
     check("serials: an IP:port, a USB serial and an IPv6 address are fine", DeviceLink.validSerial("192.168.1.20:5555") && DeviceLink.validSerial("R5CT1234ABC") && DeviceLink.validSerial("[fe80::1]:5555") && DeviceLink.validSerial("adb-R5CT-xyz._adb-tls-connect._tcp"));
     check("serials: option-looking, spaced, shell or empty ones are refused", !DeviceLink.validSerial("-s") && !DeviceLink.validSerial("a b") && !DeviceLink.validSerial("a;b") && !DeviceLink.validSerial("") && !DeviceLink.validSerial(null) && !DeviceLink.validSerial("$(x)"));

@@ -10725,6 +10725,10 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < a.length(); i++) given.add(a.getString(i));
                 String refused = AdbArgs.check(given);
                 if (refused != null) throw new IllegalArgumentException(refused);
+                // push, install, sideload ... read files on this phone and pull writes them: never the app's own private data (the adb key, the sealed secrets)
+                for (String local : AdbArgs.localFileArgs(given)) {
+                    if (isPrivateData(new File(local))) throw new IllegalArgumentException(PRIVATE_WHY);
+                }
                 if (serial != null && !serial.isEmpty()) {
                     if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
                     args.add("-s");
@@ -10778,6 +10782,15 @@ public class MainActivity extends Activity {
         public void cdInstall(final String tag, final String serial, final String itemsJson, final String optsJson, final String profileJson) {
             final String t = tag == null ? "" : tag;
             if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            // the files sent are read and streamed to the other device: never the app's own private data (the adb key, the sealed secrets)
+            try {
+                for (String f : DeviceLink.localFiles(new JSONArray(itemsJson))) {
+                    if (isPrivateData(new File(f))) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: " + PRIVATE_WHY) + ")"); return; }
+                }
+            } catch (Exception e) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: " + e.getMessage()) + ")");
+                return;
+            }
             cdCancelled.remove(t);
             try {
                 cdExecutor.submit(new Runnable() {

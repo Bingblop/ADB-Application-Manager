@@ -1,6 +1,7 @@
 package com.bloatware.bingblop;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -92,6 +93,18 @@ public final class DeviceLink {
         File[] kids = f.listFiles();
         if (kids != null) for (File k : kids) deleteTree(k);
         f.delete();
+    }
+
+    /** Every file on this phone that {@link #install} would read for {@code items}: each item's archive or its paths. */
+    public static List<String> localFiles(JSONArray items) throws JSONException {
+        List<String> out = new ArrayList<String>();
+        if (items == null) return out;
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject it = items.getJSONObject(i);
+            if (it.has("archive")) out.add(it.getString("archive"));
+            else out.addAll(listOf(it.optJSONArray("paths")));
+        }
+        return out;
     }
 
     /**
