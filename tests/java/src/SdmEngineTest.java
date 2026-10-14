@@ -33,6 +33,7 @@ public class SdmEngineTest {
         volatile boolean started;
         volatile int groups = 2;
         volatile Sdm.Ctx scanCtx, deleteCtx;       // what the engine gave the last scan / delete
+        volatile Sdm.Selection deleteSel;          // the selection the last delete got (after the engine filled in its defaults)
         FakeTool(Sdm.Tool t) { tool = t; }
         @Override public Sdm.Tool tool() { return tool; }
         @Override public Sdm.Result scan(Sdm.Ctx ctx) throws Exception {
@@ -47,6 +48,7 @@ public class SdmEngineTest {
         }
         @Override public Sdm.DeleteReport delete(Sdm.Result result, Sdm.Selection sel, Sdm.Ctx ctx) {
             deleteCtx = ctx;
+            deleteSel = sel;
             FakeResult r = (FakeResult) result;
             Sdm.DeleteReport rep = new Sdm.DeleteReport();
             for (int g = 0; g < r.groups; g++) {
@@ -104,12 +106,23 @@ public class SdmEngineTest {
 
     static SdmEngine engine(File dir, final List<String> events) { return engine(dir, events, null); }
 
-    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation) {
+    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation) { return engine(dir, events, automation, null); }
+
+    /** A shell that is, or is not, a working mode's (uid 2000 / -1). */
+    static final class FakeShell implements Sdm.Shell {
+        final int uid;
+        FakeShell(int uid) { this.uid = uid; }
+        @Override public int uid() { return uid; }
+        @Override public String run(String script, int timeoutMs) { return ""; }
+        @Override public void stream(String script, int timeoutMs, Sdm.LineSink sink, Sdm.Cancel cancel) {}
+    }
+
+    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation, final Sdm.Shell shell) {
         SdmEngine.Env env = new SdmEngine.Env() {
             @Override public Sdm.Fs fs() { return null; }
             @Override public Sdm.Areas areas() { return null; }
             @Override public Sdm.Packages pkgs() { return null; }
-            @Override public Sdm.Shell shell() { return null; }
+            @Override public Sdm.Shell shell() { return shell; }
             @Override public Sdm.Automation automation() { return automation; }
             @Override public File dataDir() { return dir; }
             @Override public long nowSec() { return System.currentTimeMillis() / 1000; }
@@ -283,6 +296,25 @@ public class SdmEngineTest {
             is(c[0] + ": the one-click deletion has no automation and knows why", t3.deleteCtx.automation == null && c[0].equals(t3.deleteCtx.automationNotReady), t3.deleteCtx.automationNotReady);
             e3.shutdown();
         }
+        // ---- an automation that is not ready is handed to a deletion as the one to start (Ctx.automationIdle), and a one-click asks for the automation when it could be started
+        Object[][] starts = {            // reason, shell uid (null: no shell), is the automation asked for by default?
+            { "NOT_ENABLED", 2000, true }, { "NOT_CONNECTED", 2000, true }, { "NOT_ENABLED", -1, false }, { "NOT_CONNECTED", null, false }, { "NO_CONSENT", 2000, false } };
+        for (Object[] c : starts) {
+            String label = c[0] + "/" + (c[1] == null ? "no shell" : "uid " + c[1]) + ": ";
+            SdmEngine e5 = engine(dir, Collections.synchronizedList(new ArrayList<String>()), new FakeAuto(false, (String) c[0]), c[1] == null ? null : new FakeShell((Integer) c[1]));
+            e5.setTimeoutMs(60000);
+            FakeTool t5 = new FakeTool(Sdm.Tool.APPCLEANER);
+            t5.release.countDown();
+            e5.register(t5);
+            e5.scan(Sdm.Tool.APPCLEANER);
+            is(label + "the scan finished", waitFor(() -> e3Has(e5), 3000), "");
+            is(label + "a scan is not handed the automation to start", t5.scanCtx != null && t5.scanCtx.automationIdle == null, "");
+            e5.oneClick(Sdm.Tool.APPCLEANER);
+            is(label + "the one-click ran its deletion", waitFor(() -> t5.deleteCtx != null && !e5.busy(Sdm.Tool.APPCLEANER), 3000), "");
+            is(label + "the deletion gets the automation to start, not as a ready one", t5.deleteCtx.automationIdle != null && t5.deleteCtx.automation == null && c[0].equals(t5.deleteCtx.automationNotReady), "");
+            is(label + "useAutomation by default: " + c[2], t5.deleteSel != null && t5.deleteSel.options.optBoolean("useAutomation") == (Boolean) c[2], t5.deleteSel == null ? "no selection" : t5.deleteSel.options.toString());
+            e5.shutdown();
+        }
         SdmEngine e4 = engine(dir, Collections.synchronizedList(new ArrayList<String>()), new FakeAuto(true, null));
         FakeTool t4 = new FakeTool(Sdm.Tool.APPCLEANER);
         t4.release.countDown();
@@ -291,7 +323,7 @@ public class SdmEngineTest {
         is("ready: the scan finished", waitFor(() -> e3Has(e4), 3000), "");
         e4.delete(Sdm.Tool.APPCLEANER, new Sdm.Selection());
         is("ready: the delete ran", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");
-        is("a ready automation is handed over, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null, "");
+        is("a ready automation is handed over, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null && t4.deleteCtx.automationIdle == null, "");
         t4.deleteCtx = null;
         e4.oneClick(Sdm.Tool.APPCLEANER);
         is("ready: the one-click ran its deletion", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");

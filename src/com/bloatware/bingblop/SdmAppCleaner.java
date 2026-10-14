@@ -1156,6 +1156,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         final Map<String, String> failed = new LinkedHashMap<String, String>();
         final Map<String, Long> freed = new HashMap<String, Long>();
         final Set<String> skippedNoConsent = new LinkedHashSet<String>();
+        boolean startTried;                     // the service was not ready and AppCleaner asked it to start (ensureReady), without success
     }
 
     private static final class Deleter {
@@ -1170,6 +1171,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         String stopped;                      // SCREEN_UNAVAILABLE | ERROR | AUTOMATION_NO_CONSENT
         String error;
         boolean cancelled;
+        private Set<String> neverSet;
 
         Deleter(AppResult res, Sdm.Selection sel, Sdm.Ctx ctx) {
             this.res = res; this.sel = sel; this.ctx = ctx;
@@ -1182,6 +1184,22 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         }
 
         boolean stop() { if (ctx.cancelled()) { cancelled = true; return true; } return false; }
+
+        /**
+         * A package that is neither force-stopped nor driven through its App info screen, whatever the exclusions say: this app, the WebView provider the phone
+         * runs now and the stock WebView packages (this app's screen is a WebView: stopping or clearing it ends the cleaning) and, for a force stop, the system UI. It is "excluded", not
+         * "failed". The global trim is not affected.
+         */
+        boolean protectedPkg(String pkg, boolean forceStop) {
+            if (ownPkg.equals(pkg) || (forceStop && "com.android.systemui".equals(pkg))) return true;
+            for (String wv : SdmExclusions.WEBVIEW_PROVIDERS) if (wv.equals(pkg)) return true;     // the stock providers, also when the phone could not tell which one runs now
+            if (neverSet == null) {
+                Set<String> w = null;
+                try { w = ctx.pkgs == null ? null : ctx.pkgs.neverDrive(); } catch (RuntimeException e) { /* nothing extra */ }
+                neverSet = w == null ? Collections.<String>emptySet() : w;
+            }
+            return neverSet.contains(pkg);
+        }
 
         Sdm.DeleteReport run() {
             synchronized (res) {
@@ -1342,6 +1360,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             for (Junk j : targets) {
                 if (r.success.contains(j.pkg.pkg)) continue;
                 if (willTrim && j.limited) continue;                          // the trim covered it; driving its settings page is what the exclusion ruled out
+                if (protectedPkg(j.pkg.pkg, false)) continue;                  // this app and the WebView: never driven, and not a failure either
                 if (stop()) break;
                 long now = ctx.pkgs.cacheBytes(j.pkg.pkg);
                 if (now == 0) { r.success.add(j.pkg.pkg); zeroSkips.add(j.pkg.pkg); continue; }     // already empty: success without the automation
@@ -1350,6 +1369,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             }
 
             boolean consent = ctx.automation != null && ctx.automation.ready();
+            if (!consent && useAutomation && !remaining.isEmpty() && !cancelled) consent = tryStart(r);
             if (useAutomation && !remaining.isEmpty() && !cancelled && consent) {
                 ctx.progress.update("Preparing automation via accessibility service", "", 0, -1, report.bytes());
                 SdmAcsPlan.AutomationInfo info = ctx.automation instanceof SdmAcsPlan.AutomationInfo ? (SdmAcsPlan.AutomationInfo) ctx.automation : null;
@@ -1380,6 +1400,30 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             for (Map.Entry<String, String> f : r.failed.entrySet()) { Junk j = res.find(f.getKey()); if (j != null) j.acsError = f.getValue(); }
             for (String s : r.success) { Junk j = res.find(s); if (j != null) j.acsError = null; }
             return r;
+        }
+
+        /**
+         * The service is not ready: before giving up, asks it to start itself, only when it may (the consent is given, and a working mode's shell exists; see
+         * {@link SdmAcsStart#decide}). On success the automation is handed to the rest of the run. True when it is ready now.
+         */
+        private boolean tryStart(Inacc2 r) {
+            Sdm.Automation auto = ctx.automation != null ? ctx.automation : ctx.automationIdle;
+            if (auto == null) return false;
+            String why = auto.notReadyReason();
+            if (why == null) why = ctx.automationNotReady;
+            boolean hasShell = ctx.shell != null && ctx.shell.uid() >= 0;
+            if (SdmAcsStart.decide(why, hasShell) == SdmAcsStart.Step.NONE) return false;
+            boolean ok;
+            try { ok = auto.ensureReady(ctx.progress, ctx.cancel); } catch (RuntimeException e) { ok = false; }
+            if (ok && auto.ready()) {
+                ctx.automation = auto;
+                ctx.automationNotReady = null;
+                return true;
+            }
+            r.startTried = true;
+            String now = auto.notReadyReason();
+            if (now != null) ctx.automationNotReady = now;                  // what it is like after the attempt
+            return false;
         }
 
         /** pm trim-caches (global), a wait, then every normal app's size has to change within the budget; system apps count at zero or smaller. */
@@ -1422,7 +1466,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             } catch (IOException e) {
                 for (Junk j : normal) failedLocal.put(j.pkg.pkg, "OTHER");
             }
-            for (Map.Entry<String, String> f : failedLocal.entrySet()) if (!limitedIds.contains(f.getKey())) r.failed.put(f.getKey(), f.getValue());   // a limited one never had a per-app attempt
+            for (Map.Entry<String, String> f : failedLocal.entrySet()) if (!limitedIds.contains(f.getKey()) && !protectedPkg(f.getKey(), false)) r.failed.put(f.getKey(), f.getValue());   // a limited one never had a per-app attempt; a protected one is excluded, not failed
         }
 
         private void forceStop(List<Junk> candidates) {
@@ -1431,7 +1475,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             int n = 0;
             for (Junk j : candidates) {
                 String p = j.pkg.pkg;
-                if (p.equals("com.android.systemui") || p.equals(ownPkg)) continue;          // force-stopping them would break the automation
+                if (protectedPkg(p, true)) continue;                                         // force-stopping them would break the automation
                 if (!p.matches("[A-Za-z0-9._]+")) continue;
                 int user = j.pkg.uid >= 0 ? j.pkg.uid / 100000 : 0;
                 sb.append("am force-stop --user ").append(user).append(' ').append(p).append('\n');
@@ -1532,9 +1576,13 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         // ---- the lines of the result (spec 7.3)
 
         /** Why the automation did not run, in words: the state of the service when the deletion started (the default is the general setup text). */
-        static String notReadyText(String why) {
-            if ("NOT_ENABLED".equals(why)) return "The accessibility service is switched off, so the caches that only it can clear stay. Turn it on in the SD Maid tab (Accessibility service) or in the accessibility settings.";
-            if ("NOT_CONNECTED".equals(why)) return "The accessibility service is switched on but Android is not running it, so the caches that only it can clear stay. Turn it off and on again in the accessibility settings, or restart the phone.";
+        static String notReadyText(String why) { return notReadyText(why, false); }
+
+        /** {@code tried}: AppCleaner asked the service to start through the working mode and it did not come up. */
+        static String notReadyText(String why, boolean tried) {
+            String tell = tried ? " The app tried to start it itself through the working mode, but it did not come up." : "";
+            if ("NOT_ENABLED".equals(why)) return "The accessibility service is switched off, so the caches that only it can clear stay." + tell + " Turn it on in the SD Maid tab (Accessibility service) or in the accessibility settings.";
+            if ("NOT_CONNECTED".equals(why)) return "The accessibility service is switched on but Android is not running it, so the caches that only it can clear stay." + tell + " Turn it off and on again in the accessibility settings, or restart the phone.";
             if ("NO_CONSENT".equals(why)) return "The accessibility service has no consent from you yet, so the caches that only it can clear stay. Tap Give consent in the SD Maid tab (Accessibility service).";
             return "Accessibility service is not set up. Complete the setup and give consent.";
         }
@@ -1556,7 +1604,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
             if (stopped != null) report.notes.add("stopped: " + stopped);
             if (skipped > 0) report.notes.add("skipped: " + skipped);
             if (error != null) report.notes.add("error: " + error);
-            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: " + notReadyText(ctx.automationNotReady));
+            else if (skipped > 0 && affectedCount == 0 && bytes == 0) report.notes.add("error: " + notReadyText(ctx.automationNotReady, inac != null && inac.startTried));
             if (cancelled) report.notes.add("cancelled");
         }
     }

@@ -5942,7 +5942,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_BACKUP_DIR = 4291; // a folder the page keeps its backups in (saved lists)
     private volatile String pickBackupDirTag = "";
     // ---- Connected Devices: another device (a watch, a phone, a TV) driven through the app's own adb server ----
-    private static final int REQ_PICK_CD = 4291;         // package files to send to a connected device
+    private static final int REQ_PICK_CD = 4293;         // package files to send to a connected device
     private static final int REQ_BT_CONNECT = 9203;
     private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
     private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
@@ -6614,7 +6614,9 @@ public class MainActivity extends Activity {
                         try {
                             sysInfo = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags);
                         } catch (PackageManager.NameNotFoundException ignored) {}
-                        if (sysInfo != null) {
+                        // Only a system app has a copy on the system image to bring back. A user app removed with pm uninstall -k (data kept) is returned
+                        // by MATCH_UNINSTALLED_PACKAGES too, but without signing info: it is installed from the backup below.
+                        if (RestorePlan.bringBackSystemApp(sysInfo != null, sysInfo == null || sysInfo.applicationInfo == null ? 0 : sysInfo.applicationInfo.flags)) {
                             requireCompatibleSigner(signerDigests(sysInfo, true), archiveSigners,
                                     "the system app on this phone is signed with a different key than this backup's APK - it does not match this device");
                             // This too is a privileged install, of a copy that is on the phone already: asked before it, like the install below.
@@ -7670,6 +7672,7 @@ public class MainActivity extends Activity {
             });
             r.put("ok", true);
             r.put("system", true);
+            r.put("handedOff", true);       // opened, not installed: the person has not answered yet (the bridge keeps the patched APK)
             r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install through ADB, Shizuku or Root.)");
             return r;
         }
@@ -15961,6 +15964,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         activityDestroyed = true;
+        try { MorpheBridge mb = morpheBridge; if (mb != null) mb.release(); } catch (Throwable ignored) {}      // a patch that is going goes on; the next window takes over its events
         cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)

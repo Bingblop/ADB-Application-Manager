@@ -19892,6 +19892,7 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Installing...');
             let r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true });
             const d = r.data || {};
+            if (r.ok && d.ok && d.handedOff) { showToast(d.output || ''); return; }
             if (r.ok && d.ok) { showToast('Installed'); return; }
             if (d.retry === 'uninstall' && await mpAsk({ title: 'Uninstall the installed copy first?', text: 'Android refuses to install this over the app that is on the phone, because it is signed with another key. Uninstalling the installed copy removes its data too. Back up what you need first.\n\n' + (d.output || ''), ok: 'Uninstall and install', danger: true })) {
                 r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true, uninstallFirst: true });
@@ -24115,6 +24116,14 @@ Type any command above (e.g. pm list packages -d)</div>
             return '';
         }
 
+        // adb pull / push: '' when it all went through. adb prints a complaint per file it could not copy and ends with "N files pulled, M skipped.", so every line counts, not only the first
+        function cdXferFail(out) {
+            const f = cdFail(out);
+            if (f) return f;
+            const l = String(out || '').split('\n').map(x => x.trim()).find(x => /^(adb(\.exe)?: )?error: /i.test(x) || /\b[1-9]\d* skipped\b/.test(x));
+            return l ? l.replace(/^(adb(\.exe)?: |error: )+/i, '') : '';
+        }
+
         // ---- devices ----
         function cdTransport(serial) {
             if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'Bluetooth link';
@@ -24993,21 +25002,24 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
         }
         async function cdPullApk(pkg) {
-            const out = await cdSh('pm path ' + cdQ(pkg));
+            const serial = cd.serial;                                   // the APK paths are this device's: every pull is from this device
+            const out = await cdSh('pm path ' + cdQ(pkg), { serial: serial });
             const paths = String(out).split('\n').map(l => l.trim()).filter(l => l.startsWith('package:')).map(l => l.slice(8));
             if (!paths.length) { showToast(cdFail(out) || 'The device did not give the APK path'); return; }
+            if (cd.serial !== serial) { showToast('The pull did not finish'); return; }
             const dir = cdDownloadDir();
             if (!dir) return;
             showToast('Pulling ' + paths.length + (paths.length === 1 ? ' file...' : ' files...'));
             let okCount = 0, last = '';
             for (const p of paths) {
+                if (cd.serial !== serial) { showToast('The pull did not finish'); return; }               // the device list moved to another device: the rest is not pulled from there
                 const base = cdBase(p);
-                const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000 });
+                const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000, serial: serial });
                 last = o;
-                if (/pulled/i.test(o) && !cdFail(o)) okCount++;
+                if (/pulled/i.test(o) && !cdXferFail(o)) okCount++;
             }
             if (okCount === paths.length) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
+            else showToast(cdXferFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
         }
         function cdDownloadDir() {
             const dir = window.AndroidBridge && window.AndroidBridge.cdDownloadDir ? window.AndroidBridge.cdDownloadDir(cd.serial) : '';
@@ -25396,28 +25408,34 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!dir) return;
             showToast('Pulling ' + cdBase(p) + '...');
             const out = await cdRun(['pull', p, dir + '/'], { timeout: 3600000 });
-            if (/pulled/i.test(out) && !cdFail(out)) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
+            if (/pulled/i.test(out) && !cdXferFail(out)) showToast('Saved to ' + cdShortDir(dir));
+            else showToast(cdXferFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
         }
         async function cdFmRename(p, e) {
+            const serial = cd.serial;                                   // the path is from this device's listing: it goes to this device only
             const r = await cdAsk({ title: 'Rename', text: p, input: 'New name', value: e.name, ok: 'Rename' });
             if (!r || !r.a.trim() || r.a.trim() === e.name) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()));
+            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Renamed');
             cdFmRefresh();
         }
         async function cdFmDelete(p, e) {
+            const serial = cd.serial;
             if (!(await cdAsk({ title: 'Delete ' + e.name + '?', text: p + (e.isDir ? '\n\nThe folder and everything in it is removed from the device.' : ''), ok: 'Delete', danger: true }))) return;
-            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p));
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
+            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Deleted');
             cdFmRefresh();
         }
         async function cdFmNewFolder() {
-            const r = await cdAsk({ title: 'New folder', text: 'In ' + cd.fm.path, input: 'Folder name', ok: 'Create' });
+            const serial = cd.serial, dir = cd.fm.path;
+            const r = await cdAsk({ title: 'New folder', text: 'In ' + dir, input: 'Folder name', ok: 'Create' });
             if (!r || !r.a.trim()) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mkdir -p ' + cdQ((cd.fm.path === '/' ? '' : cd.fm.path) + '/' + r.a.trim()));
+            const out = await cdSh('mkdir -p ' + cdQ((dir === '/' ? '' : dir) + '/' + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Folder made');
             cdFmRefresh();
         }
@@ -25426,16 +25444,17 @@ Type any command above (e.g. pm list packages -d)</div>
             window.AndroidBridge.cdPickPackages('push');
         }
         async function cdFmPushPicked(files) {
-            const dest = cd.fm.path, good = files.filter(f => !f.error);
+            const dest = cd.fm.path, good = files.filter(f => !f.error), serial = cd.serial;
             if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
             let okN = 0, last = '';
             for (const f of good) {
+                if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
                 showToast('Sending ' + f.name + '...');
-                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000 });
+                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
                 last = out;
-                if (/pushed/i.test(out) && !cdFail(out)) okN++;
+                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
             }
-            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
+            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();
         }
 
@@ -36249,6 +36268,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await mpCall('info', {});
             mp.info = r.ok ? r.data : { engine: false, error: r.error };
             mpEngineNote();
+            mpAdopt();
             await mpSourcesLoad();
             mpPatchedLoad();
             mpAppsRender();
@@ -36780,6 +36800,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         async function mpInstallReport(r, id, pkg) {
             const d = r.data || {};
+            if (r.ok && d.ok && d.handedOff) { showToast(d.output || ''); return false; }       // opened in the system installer: not known to be installed
             if (r.ok && d.ok) { showToast('Installed'); await mpPatchedLoad(); if (mp.patchedOpen) mpPatchedRender(); return true; }
             if (d.retry === 'uninstall') {
                 if (await mpAsk({ title: 'Uninstall the installed copy first?', text: 'Android refuses to install this over the app that is on the phone, because the patched app is signed with another key. Uninstalling the installed copy removes its data too. Back up what you need first.\n\n' + (d.output || ''), ok: 'Uninstall and install', danger: true })) {
@@ -37138,15 +37159,35 @@ Type any command above (e.g. pm list packages -d)</div>
             const jobId = 'j' + Date.now().toString(36);
             const job = { job: jobId, pkg: t.pkg, name: t.name, version: t.ver, versionCode: t.code, from: t.from, path: t.path || '', bundles: bundles, installAfter: !!mp.cfg.installAfter, deleteAfter: !!(mp.cfg.installAfter && mp.cfg.deleteAfter),
                 keepIn: mp.cfg.keepIn, stripLibs: !!mp.cfg.stripLibs, failOnError: !!mp.cfg.failOnError, force: force, signer: mp.cfg.signer || 'Morphe', mode: mp.cfg.mode };
-            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: bundles.reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job };
+            mpRunEnter(jobId, job);
+            const r = await mpCall('patch', job);
+            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // The run view for a patch (the one this page starts, or one the app is already running: see mpAdopt)
+        function mpRunEnter(jobId, job) {
+            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: (job.bundles || []).reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job, seq: 0 };
             document.getElementById('mpPrep').style.display = 'none';
             document.getElementById('mpRun').style.display = '';
             document.getElementById('mpResult').innerHTML = '';
             document.getElementById('mpStop').style.display = '';
-            document.getElementById('mpRunTitle').textContent = 'Patching ' + t.name;
+            document.getElementById('mpRunTitle').textContent = 'Patching ' + mp.t.name;
             mpStepsRender(); mpLogRender(); mpRunStatus('Starting...');
-            const r = await mpCall('patch', job);
-            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // A patch keeps going when the window that started it is closed or restarted. When this page opens, ask the app whether one is going and, if so, show it
+        // and play back what has happened so far (the events carry numbers, so the ones that arrive meanwhile are not counted twice).
+        async function mpAdopt() {
+            if (mp.run && mp.run.active) return;
+            const r = await mpCall('jobStatus', {});
+            const d = r.ok && r.data;
+            if (!d || !d.running || !d.request || (mp.run && mp.run.active)) return;
+            const q = d.request;
+            mp.t = { pkg: q.pkg, name: q.name || mpAppName(q.pkg), from: q.from, path: q.path || '', ver: q.version || '', code: q.versionCode || '', info: null };
+            mp.sel = {}; mp.opts = {}; mp.srcTab = '';
+            mpRunEnter(d.job, q);
+            mp.run.adopted = true;
+            document.getElementById('mpPageTitle').textContent = mp.t.name;
+            mpShowPage(true);
+            (d.events || []).forEach(mpOnEvent);
         }
         function mpRunStatus(t) { const el = document.getElementById('mpRunStatus'); if (el) el.textContent = t; }
         function mpRunLog(level, text, ts) { if (!mp.run) return; mp.run.log.push({ ts: ts || Date.now(), level: level, text: text }); if (mp.run.log.length > 6000) mp.run.log.splice(0, 1000); mpLogSoon(); }
@@ -37185,6 +37226,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); usOnProgress(e); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
+            if (e.seq) { if (e.seq <= r.seq) return; r.seq = e.seq; }          // numbered by the app: one already seen (it was in the playback) is not counted again
             switch (e.t) {
                 case 'log': mpRunLog(e.level, e.text, e.ts); break;
                 case 'step': r.steps[e.name] = e.state; if (e.state === 'RUNNING') mpRunStatus(e.name + '...'); mpStepsRender(); mpRunLog('INFO', e.name + ' ' + e.state.toLowerCase(), e.ts); break;
@@ -37193,7 +37235,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (e.ok) { r.applied.push(e.name); mpRunLog('OK', 'Applied: ' + e.name, e.ts); } else { r.failed.push({ name: e.name }); mpRunLog('ERROR', 'Failed: ' + e.name, e.ts); }
                     mpRunStatus((e.ok ? 'Applied ' : 'Failed ') + e.name + ' (' + (r.applied.length + r.failed.length) + ' of ' + r.total + ')'); mpStepsRender(); break;
                 case 'saved': r.saved = e.item; mpPatchedLoad(); break;
-                case 'install': r.install = e; mpRunLog(e.ok ? 'OK' : 'ERROR', 'Install: ' + (e.ok ? 'done' : (e.output || 'failed')), e.ts); break;
+                case 'install': r.install = e; mpRunLog(e.ok ? (e.handedOff ? 'INFO' : 'OK') : 'ERROR', 'Install: ' + (e.ok && !e.handedOff ? 'done' : (e.output || 'failed')), e.ts); break;
                 case 'deleted': mpRunLog('INFO', 'The patched APK was deleted after the install.', e.ts); break;
                 case 'result': mpRunFinish(e.result || e); break;      // the app sends this last, after saving and installing
             }
@@ -37225,9 +37267,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 el.innerHTML = '<div class="mp-result ok"><h3>' + escapeHtml(t.name || 'The app') + ' is patched</h3>' +
                     '<div class="mp-note">' + (res.applied || r.applied).length + ' patches applied' + (failed.length ? ', ' + failed.length + ' failed' : '') + '. <span translate="no">' + escapeHtml(it.fileName || '') + '</span>' + (it.size ? ' (' + escapeHtml(formatBytes(it.size)) + ')' : '') + '</div>' +
                     (failed.length ? (() => { const sp = mpSplitFailed(failed); return '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(sp.roots.map(f => f.name).join(', ')) + '</span>' + (sp.deps.length ? ' and ' + sp.deps.length + ' that depend on ' + (sp.roots.length > 1 ? 'them' : 'it') : '') + '. The rest was applied.</div>'; })() : '') +
-                    (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok ? 'Installed.' : 'The install did not work: ') + (ins.ok ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
+                    (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok && !ins.handedOff ? 'Installed.' : ins.ok ? '' : 'The install did not work: ') + (ins.ok && !ins.handedOff ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
                     (it.keptIn && it.keptIn.length ? '<div class="mp-note">Saved in <span translate="no">' + escapeHtml(it.keptIn.join(' and ')) + '</span>.</div>' : '') +
-                    '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(' + jsArg(it.id) + ')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(' + jsArg(it.id) + ')">Save to Downloads</button>' : '') +
+                    '<div class="mp-row">' + (it.id && !(ins && ins.ok && !ins.handedOff) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(' + jsArg(it.id) + ')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(' + jsArg(it.id) + ')">Save to Downloads</button>' : '') +
                     '<button class="mode-action-btn" onclick="mpPatchedOpen()">Patched APKs</button></div></div>';
                 mpRunStatus('Done'); mpPatchedLoad();
                 return;
@@ -37257,6 +37299,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mpToggleTrace(i) { const e = document.getElementById('mpTrace' + i); if (e) e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
         function mpFailHint(res, trace) {
+            if (res.busy) return '';                                          // the patcher is busy with another job: the error says so, a hint about patches would mislead
             const s = (res.error || '') + '\n' + (trace || '') + '\n' + (res.trace || '');
             if (/OutOfMemory|killed|heap/i.test(s)) return 'The patcher ran out of memory. Close other apps and try again, or turn on "Strip unused native libraries" in the patcher settings.';
             if (/No patch is left|incompatible|does not patch|not support/i.test(s)) return 'The patches do not support this version of the app. Get a supported version with Morphe Helper, or turn on "Patch unsupported versions" in the patcher settings.';
@@ -37266,7 +37309,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (/Patch bundle|corrupt|\bdex\b/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
             return 'A patch could not be applied. This usually means the patch does not fit this version of the app. Check the details below and the log.';
         }
-        function mpBackToPatches() { mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
+        function mpBackToPatches() { if (mp.run && mp.run.adopted) { mpSelDefaults(); mpTargetRender(); } mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
         async function mpRetryContinue() { mp.cfg.failOnError = false; mpCfgSave(); mpBackToPatches(); showToast('Failed patches are skipped now. Patch again.'); }
         async function mpRunInstall() {
             const it = mp.run && mp.run.saved;
@@ -39334,7 +39377,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
         // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
         // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
-        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null };
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null, pend: [], pendLen: 0 };
         const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
         function rtLoad(then) {
             if (window.Terminal && window.FitAddon) { then(); return; }
@@ -39356,9 +39399,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!window.AndroidBridge || !window.AndroidBridge.ptyStart) { showToast('The full-screen terminal needs the app (not a plain browser)'); return; }
             haptic();
             if (txFullOn) txFullToggle(false);
-            rt.backend = backend || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
-            if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
-            const sel = document.getElementById('rtShell'); if (sel) sel.value = rt.backend;
+            // A session that is running keeps its backend (the dropdown shows it). A backend asked for explicitly (the Termux setup button) that differs from the running one
+            // is picked as the dropdown would pick it (restart on it); either way an explicit choice is remembered like the dropdown does.
+            const want = ['app', 'priv', 'termux'].includes(backend) ? backend : '';
+            const switching = !!(rt.started && want && want !== rt.backend);
+            if (!rt.started) {
+                rt.backend = want || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
+                if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
+            }
+            if (want) kvSet('rt_shell', want);
+            const sel = document.getElementById('rtShell'); if (sel) sel.value = switching ? want : rt.backend;
             rt.font = Math.max(8, Math.min(28, parseInt(kvGet('rt_font', 14), 10) || 14));
             document.getElementById('rtOverlay').classList.add('show');
             document.body.classList.add('rt-open');
@@ -39367,7 +39417,7 @@ Type any command above (e.g. pm list packages -d)</div>
             rtSize();
             if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
             window.addEventListener('resize', rtSize);
-            rtLoad(() => { rtInit(); rtSize(); if (!rt.started) rtStart(); else rt.term.focus(); });
+            rtLoad(() => { rtInit(); rtSize(); if (switching) rtPickShell(want); else if (!rt.started) rtStart(); else rt.term.focus(); });
         }
         function rtHide() {
             rt.open = false;
@@ -39396,11 +39446,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function rtStart() {
             if (!rt.term) return;
             try { rt.fit.fit(); } catch (e) {}
-            rt.started = true; rt.state = 'starting';
+            rt.started = true; rt.state = 'starting'; rtPendDrop();
             rtNote('');
             let r = '';
             try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtNote(r.replace(/^error:\s*/, '')); }
+            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtPendDrop(); rtNote(r.replace(/^error:\s*/, '')); }
             else { rt.token = (/^started:(\d+)$/.exec(r) || [])[1] || null; rt.term.focus(); }
         }
         // The phone tags every start/output/end notice with the token of the start it belongs to. A notice queued before a restart can still run after it
@@ -39408,8 +39458,15 @@ Type any command above (e.g. pm list packages -d)</div>
         function rtStale(token) { return token != null && String(token) !== String(rt.token); }
         window.onPtyStarted = function (id, res, token) {
             if (id !== rt.id || rtStale(token)) return;
-            if (res && res.ok) { rt.state = 'running'; return; }
-            rt.state = 'exited';
+            if (res && res.ok) {
+                rt.state = 'running';
+                // the phone stores the session only after the process is spawned, so a resize and keys sent before this notice were dropped there: send the size now and then the held keys
+                try { if (rt.term && window.AndroidBridge && window.AndroidBridge.ptyResize) window.AndroidBridge.ptyResize(rt.id, rt.term.rows, rt.term.cols); } catch (e) {}
+                const held = rt.pend; rtPendDrop();
+                held.forEach(rtSend);
+                return;
+            }
+            rt.state = 'exited'; rtPendDrop();
             rtNote(String((res && res.message) || 'The terminal did not start'));
         };
         window.onPtyData = function (id, b64, token) {
@@ -39422,11 +39479,14 @@ Type any command above (e.g. pm list packages -d)</div>
         };
         window.onPtyExit = function (id, code, token) {
             if (id !== rt.id || rtStale(token)) return;
-            rt.state = 'exited';
+            rt.state = 'exited'; rtPendDrop();
             if (rt.term) rt.term.write('\r\n\x1b[2m[process ended' + (code >= 0 ? ' (' + code + ')' : '') + ': press Enter to start a new one]\x1b[0m\r\n');
         };
+        function rtPendDrop() { rt.pend = []; rt.pendLen = 0; }
         function rtSend(str) {
             if (!str || !window.AndroidBridge || !window.AndroidBridge.ptyWrite) return;
+            // while the session is starting the phone has nothing to write to yet: hold the keys (a few KB at most) until the start notice
+            if (rt.state === 'starting') { if (rt.pendLen + str.length <= 4096) { rt.pend.push(str); rt.pendLen += str.length; } return; }
             const bytes = new TextEncoder().encode(str);
             let bin = '';
             for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
@@ -39512,7 +39572,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!t) { showToast('The clipboard is empty'); return; }
             if (rt.term) { rt.term.paste(t); rt.term.focus(); }
         }
-        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; rt.token = 'closed'; }
+        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; rt.token = 'closed'; rtPendDrop(); }
         function rtRestart() {
             haptic();
             rtEnd();

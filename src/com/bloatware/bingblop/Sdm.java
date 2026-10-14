@@ -139,6 +139,11 @@ public final class Sdm {
         Set<String> running();
         /** Cache size of one app through StorageStatsManager (needs Usage access), or -1. */
         long cacheBytes(String pkg);
+        /**
+         * Packages the cleaner must never force-stop or drive through their App info screen, whatever the exclusions say: the ones the phone itself runs
+         * its screens on right now (the current WebView provider). Read at run time, empty when it cannot be told.
+         */
+        default Set<String> neverDrive() { return java.util.Collections.<String>emptySet(); }
     }
 
     public interface Exclusions {
@@ -175,6 +180,11 @@ public final class Sdm {
         public Automation automation;
         /** Set by the engine for a deletion when the automation exists but is not ready: why (see {@link Automation#notReadyReason}); null otherwise. */
         public String automationNotReady;
+        /**
+         * Set by the engine for a deletion when the automation exists but is not ready: the automation itself, so that AppCleaner can ask it to start
+         * ({@link Automation#ensureReady}) before it gives up; null otherwise. {@link #automation} stays null until it is ready.
+         */
+        public Automation automationIdle;
         public Ctx(Fs fs, Areas areas, Packages pkgs, Exclusions ex, Shell shell, JSONObject settings, Progress progress, Cancel cancel, long nowSec) {
             this.fs = fs; this.areas = areas; this.pkgs = pkgs; this.exclusions = ex; this.shell = shell; this.settings = settings == null ? new JSONObject() : settings;
             this.progress = progress == null ? NO_PROGRESS : progress; this.cancel = cancel == null ? NEVER : cancel; this.nowSec = nowSec;
@@ -194,6 +204,11 @@ public final class Sdm {
         boolean ready();
         /** Why {@link #ready} is false: NO_CONSENT, NOT_ENABLED (the service is switched off) or NOT_CONNECTED (switched on but not running); null when ready or unknown. */
         default String notReadyReason() { return null; }
+        /**
+         * Tries to bring the service up when it is switched off or not running, only if it is allowed to (consent given and a working mode available), shows
+         * what it does through {@code progress}, waits for it for a few seconds and honours {@code cancel}. Returns {@link #ready} afterwards. Never grants consent.
+         */
+        default boolean ensureReady(Progress progress, Cancel cancel) { return ready(); }
         /** Clears the caches of the given packages one by one; returns the packages it cleared. Throws {@link AutomationError}. */
         Set<String> clearCaches(List<String> pkgs, Progress progress, Cancel cancel) throws AutomationError;
     }
