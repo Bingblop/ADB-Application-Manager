@@ -139,7 +139,7 @@ public class MorpheService extends Service {
     /** Passes the bytes on to the file and keeps the notification's text current from the lines that go by. */
     private final class Tee extends OutputStream {
         private final OutputStream out;
-        private final StringBuilder line = new StringBuilder();
+        private final MorpheServiceRules.LineDecoder line = new MorpheServiceRules.LineDecoder();
         private long lastNotify;
 
         Tee(OutputStream out) { this.out = out; }
@@ -150,16 +150,14 @@ public class MorpheService extends Service {
         @Override public void close() throws IOException { out.close(); }
 
         private void feed(byte b) {
-            if (b == '\n') { handle(line.toString()); line.setLength(0); }
-            else if (line.length() < 400) line.append((char) (b & 0xff));
+            String l = line.feed(b);
+            if (l != null) handle(l);
         }
 
         private void handle(String l) {
-            String t = null;
-            if (l.startsWith("STEP ")) t = l.substring(5);
-            else if (l.startsWith("PATCH ")) t = l.substring(6);
+            String t = MorpheServiceRules.noteText(l);
             if (t == null) return;
-            text = t.replace("OK ", "Applied: ").replace("FAIL ", "Failed: ");
+            text = t;
             long now = System.currentTimeMillis();
             if (now - lastNotify < 400) return;
             lastNotify = now;

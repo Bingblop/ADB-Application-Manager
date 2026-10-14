@@ -7,7 +7,8 @@ import java.io.OutputStream;
 
 /**
  * The decisions of the patcher service that need no Android classes, so they can be tested on a computer: what happens to a RUN that arrives while
- * a job is going, which Cancel may stop the job that is going, and how the events file is opened and the Cancel lines are written into it.
+ * a job is going, which Cancel may stop the job that is going, how the events file is opened and the Cancel lines are written into it, and
+ * what the notification says about a line of the engine.
  */
 final class MorpheServiceRules {
     private MorpheServiceRules() {}
@@ -54,5 +55,37 @@ final class MorpheServiceRules {
             FileOutputStream o = new FileOutputStream(f, true);
             try { o.write(s.getBytes("UTF-8")); } finally { o.close(); }
         } catch (IOException ignored) {}
+    }
+
+    /**
+     * Collects the bytes of the engine's output into lines and decodes each line as UTF-8 (the engine prints UTF-8, so a patch name with a curly quote
+     * or a non-Latin letter stays whole). A line is kept up to 400 bytes; the rest of a longer one is dropped.
+     */
+    static final class LineDecoder {
+        private final java.io.ByteArrayOutputStream line = new java.io.ByteArrayOutputStream();
+        private boolean cut;
+
+        /** Feeds one byte; returns the finished line at a line break, otherwise null. */
+        String feed(byte b) {
+            if (b == '\n') {
+                String l;
+                try { l = new String(line.toByteArray(), "UTF-8"); } catch (java.io.UnsupportedEncodingException e) { l = ""; }
+                if (cut) { int n = l.length(); while (n > 0 && l.charAt(n - 1) == '\ufffd') n--; l = l.substring(0, n); }   // the cut may have split a character
+                line.reset();
+                cut = false;
+                return l;
+            }
+            if (line.size() < 400) line.write(b); else cut = true;
+            return null;
+        }
+    }
+
+    /** The text the notification shows for a line of the engine, or null when the line is not one it shows. */
+    static String noteText(String l) {
+        String t = null;
+        if (l.startsWith("STEP ")) t = l.substring(5);
+        else if (l.startsWith("PATCH ")) t = l.substring(6);
+        if (t == null) return null;
+        return t.replace("OK ", "Applied: ").replace("FAIL ", "Failed: ");
     }
 }
