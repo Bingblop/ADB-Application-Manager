@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Animatör süre ölçeği (1 = normal, 0 = kapalı)",
 "Another archive job is still running": "Başka bir arşiv işlemi hâlâ çalışıyor",
 "Another batch action is already running": "Başka bir toplu işlem zaten çalışıyor",
+"Another device was chosen: nothing was sent": "Başka bir cihaz seçildi: hiçbir şey gönderilmedi",
 "Another folder": "Başka bir klasör",
 "Another theme": "Başka bir tema",
 "Answers": "Yanıt veriyor",

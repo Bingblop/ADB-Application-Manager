@@ -24223,6 +24223,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // what runs on the device that is being left: the live log, and a console command (its own cdTermGo clears cd.termRun when the cancelled run returns)
+        const CD_MOVED = 'Another device was chosen: nothing was sent';
         function cdStopWork() { cdLcStop(); if (cd.termRun) cdStop(cd.termRun); }
 
         function cdParseInfo(out, serial) {
@@ -24569,14 +24570,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdDeviceMenu() {
             const d = cdCur(); if (!d) return;
             const net = /^[^\s:]+:\d+$/.test(d.serial);
-            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true }))) return; const out = await cdRun(args); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
+            // a question stays open while the device list may move to another device (the chosen one dropped): what is confirmed goes to the device it was asked about, or nowhere
+            const gone = () => { if (cd.serial === d.serial) return false; showToast(CD_MOVED); return true; };
+            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true })) || gone()) return; const out = await cdRun(args, { serial: d.serial }); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
             const b = [
                 { label: 'Reconnect', fn: () => cdReconnectSerial(d.serial, false) },
                 { label: 'Reload details', fn: () => { cd.lastKey = ''; cdLoadInfo(); showToast('Reading the device...'); } },
                 run('Reboot', ['reboot'], 'The device restarts and the connection drops for a moment.'),
                 run('Reboot to recovery', ['reboot', 'recovery'], 'The device restarts into recovery mode.'),
                 run('Reboot to bootloader', ['reboot', 'bootloader'], 'The device restarts into the bootloader.'),
-                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true }))) return; const out = await cdSh('reboot -p'); showToast(cdFail(out) || 'Power off: sent'); } },
+                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true })) || gone()) return; const out = await cdSh('reboot -p', { serial: d.serial }); showToast(cdFail(out) || 'Power off: sent'); } },
                 { label: 'Copy address', fn: () => copyText(d.serial) }
             ];
             if (net) b.push({ label: 'Disconnect', fn: async () => { cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
@@ -25514,26 +25517,31 @@ Type any command above (e.g. pm list packages -d)</div>
                 (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
         }
         function cdSetEdit(key) {
-            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key];
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial;
             cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
-                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value) },
-                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key) },
+                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value, serial) },
+                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key, serial) },
                     { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) }
                 ] });
         }
-        async function cdSetPut(ns, key, value) {
-            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value));
+        // serial: the device whose setting was opened; the sheet or question stays open while the device list may move to another device
+        async function cdSetPut(ns, key, value, serial) {
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value), { serial: serial });
+            if (cd.serial !== serial) return;                                // the table on screen is another device's now
             const t = String(out).trim();
             if (t && /Exception|Error|error:|denied|not allowed/i.test(t)) { cdSheetOpen({ title: 'That did not work', sub: ns + ' ' + key, body: '<div class="cd-log" translate="no">' + escapeHtml(t) + '</div>' }); return; }
             (cd.set.data[ns] = cd.set.data[ns] || {})[key] = value;
             cdSetRender();
             showToast('Saved ' + key);
         }
-        async function cdSetDelete(ns, key) {
+        async function cdSetDelete(ns, key, serial) {
             if (!(await cdAsk({ title: 'Delete ' + key + '?', text: 'From the ' + ns + ' settings of the device.', ok: 'Delete', danger: true }))) return;
-            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key));
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key), { serial: serial });
+            if (cd.serial !== serial) return;
             const t = String(out).trim();
             if (/Exception|Error|error:|denied/i.test(t)) { showToast(t.split('\n')[0]); return; }
             if (cd.set.data[ns]) delete cd.set.data[ns][key];
@@ -25541,10 +25549,11 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Deleted ' + key);
         }
         async function cdSetNew() {
+            const serial = cd.serial;
             const r = await cdAsk({ title: 'New ' + cd.set.ns + ' setting', text: 'A key and its value.', input: 'Key', input2: 'Value', ok: 'Add' });
             if (!r || !r.a.trim()) return;
             if (!/^[\w.:\-]+$/.test(r.a.trim())) { showToast('A key holds letters, digits and . _ : -'); return; }
-            cdSetPut(cd.set.ns, r.a.trim(), r.b);
+            cdSetPut(cd.set.ns, r.a.trim(), r.b, serial);
         }
 
         // ---- Display ----
