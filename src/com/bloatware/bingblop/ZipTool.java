@@ -716,7 +716,7 @@ public final class ZipTool {
     /** As above; {@code pulse}, when given, is told every MB or so, so a single large entry still moves the progress (and can be cancelled). */
     private static long writeStream(Entry e, InputStream in, File dest, Pulse pulse) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
-        File part = new File(parent, "." + dest.getName() + ".part");
+        File part = FileOps.partFor(dest, ".");
         boolean ok = false;
         try {
             long total = 0;

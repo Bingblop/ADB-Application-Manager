@@ -1635,7 +1635,7 @@ public final class ArchiveIo {
         if (single && (sources.size() != 1 || sources.get(0).file == null || !sources.get(0).file.isFile())) throw new IOException("single-file-format-needs-one-file");
         File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory()) parent.mkdirs();
-        File part = new File(dest.getPath() + ".part");
+        File part = FileOps.partFor(dest, "");
         Meter m = new Meter(cb);
         EntryWriter w = null;
         SyncOut sout = null;
@@ -1721,7 +1721,7 @@ public final class ArchiveIo {
     public static void rewrite(File src, File dst, char[] password, List<Edit> edits, Progress cb) throws IOException {
         String format = detect(src);
         if (!supportsEdit(format)) throw new IOException("unsupported-format" + (format == null ? "" : ":" + format));
-        File part = new File(dst.getPath() + ".part");
+        File part = FileOps.partFor(dst, "");
         File parent = dst.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory()) parent.mkdirs();
         Meter m = new Meter(cb);

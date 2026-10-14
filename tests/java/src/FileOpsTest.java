@@ -20,6 +20,7 @@ public class FileOpsTest {
   static String read(File f) throws IOException { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
   static List<File> l(File... f) { return new ArrayList<File>(Arrays.asList(f)); }
   static void rm(File f) { if (f.isDirectory() && !Files.isSymbolicLink(f.toPath())) { File[] k = f.listFiles(); if (k != null) for (File x : k) rm(x); } f.delete(); }
+  static String rep(char c, int n) { char[] a = new char[n]; Arrays.fill(a, c); return new String(a); }
   static List<String> names(File d) { String[] a = d.list(); List<String> r = a == null ? new ArrayList<String>() : new ArrayList<String>(Arrays.asList(a)); Collections.sort(r); return r; }
 
   public static void main(String[] args) throws Exception {
@@ -288,6 +289,31 @@ public class FileOpsTest {
     check("purge under the limit does nothing", ThumbCache.purge(tc, 10000) == 0);
     check("clear empties the folder", ThumbCache.clear(tc) == 3000 && names(tc).isEmpty());
     check("which files get a picture", ThumbCache.kindOf("IMG_1.JPG").equals("image") && ThumbCache.kindOf("a.mp4").equals("video") && ThumbCache.kindOf("notes.txt").isEmpty() && ThumbCache.kindOf("script.ts").isEmpty() && ThumbCache.kindOf("noext").isEmpty());
+
+    // ---------- 255-byte names: the temporary ".part" file of an extraction or a new archive must still fit ----------
+    File ln = tmp("fo-longname");
+    String n255 = rep('n', 251) + ".txt", a252 = rep('z', 248);
+    check("a 255-byte file name can be created here", new File(ln, n255).createNewFile() && new File(ln, n255).delete());
+    check("partFor keeps the readable name when it fits", FileOps.partFor(new File(ln, "x.txt"), ".").getName().equals(".x.txt.part") && FileOps.partFor(new File(ln, "x.7z"), "").getName().equals("x.7z.part"));
+    File p255 = FileOps.partFor(new File(ln, n255), ".");
+    check("partFor gives a long name a short one in the same folder: " + p255.getName(), p255.getName().length() < 40 && p255.getName().endsWith(".part") && p255.getParentFile().equals(ln.getAbsoluteFile()));
+    File lz = new File(ln, "long.zip");
+    try (java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(lz))) { zo.putNextEntry(new java.util.zip.ZipEntry(n255)); zo.write("long".getBytes(StandardCharsets.UTF_8)); zo.closeEntry(); }
+    List<String> lprob = new ArrayList<String>();
+    long[] lres = ZipTool.extractTree(ZipTool.open(lz), "", new File(ln, "out"), null, lprob);
+    check("an entry with a 255-byte name is extracted: " + lprob, lres[0] == 1 && lprob.isEmpty() && read(new File(ln, "out/" + n255)).equals("long") && names(new File(ln, "out")).equals(Arrays.asList(n255)));
+    File lsrc = new File(ln, "src.txt"); write(lsrc, "content");
+    String why = null;
+    try { ZipWriter.create(new File(ln, a252 + ".zip"), Arrays.asList(new ZipWriter.Item("src.txt", lsrc)), 6, null, ZipWriter.NONE, null); } catch (IOException e) { why = e.getMessage(); }
+    check("a zip with a 252-byte name is created (" + why + ")", why == null && new File(ln, a252 + ".zip").isFile());
+    why = null;
+    try { ArchiveIo.create(new File(ln, a252 + ".tar"), "tar", Arrays.asList(new ArchiveIo.Source("src.txt", lsrc)), null, -1, null); } catch (IOException e) { why = e.getMessage(); }
+    check("a tar with a 252-byte name is created (" + why + ")", why == null && new File(ln, a252 + ".tar").isFile());
+    why = null;
+    try { ArchiveIo.rewrite(new File(ln, a252 + ".tar"), new File(ln, a252 + ".tar"), null, Arrays.asList(ArchiveIo.Edit.add("more.txt", lsrc)), null); } catch (IOException e) { why = e.getMessage(); }
+    check("and edited in place (" + why + ")", why == null && ArchiveIo.list(new File(ln, a252 + ".tar"), null).items.size() == 2);
+    check("no temporary file is left: " + names(ln), names(ln).equals(new ArrayList<String>(new java.util.TreeSet<String>(Arrays.asList("long.zip", "out", "src.txt", a252 + ".tar", a252 + ".zip")))));
+    rm(ln);
 
     for (File f : new File[]{src, dst, cdst, tc, msrc, mdst, ddir, outside, w, sd, ss}) rm(f);
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
