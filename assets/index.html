@@ -19480,12 +19480,28 @@ Type any command above (e.g. pm list packages -d)</div>
             });
         }
 
-        // The arrow at the end of the filter row goes away for good once the row has been scrolled sideways (by hand or by the arrow)
+        // The arrow at the end of the filter row goes away for good once the row has been scrolled sideways (by hand or by the arrow),
+        // and it is not shown while every pill fits (a wide screen, short words): then there is nothing more to scroll to
         let filtersHintDone = false;
         function applyFiltersHint() {
-            const h = document.getElementById('filtersHint');
-            if (h) h.style.display = filtersHintDone ? 'none' : '';
+            const h = document.getElementById('filtersHint'), el = document.getElementById('filterScroll');
+            if (!h) return;
+            let fits = false;
+            if (el && !filtersHintDone) {
+                const own = h.style.display === 'none' ? 0 : h.getBoundingClientRect().width;          // the arrow's own width is part of scrollWidth while it shows
+                fits = el.scrollWidth - own <= el.clientWidth + 1;
+            }
+            h.style.display = filtersHintDone || fits ? 'none' : '';
         }
+        // measured again whenever the row or a pill changes size: the screen turns or resizes, a count grows, the language changes, the font loads
+        (function watchFiltersRow() {
+            const el = document.getElementById('filterScroll');
+            if (!el || typeof ResizeObserver === 'undefined') return;
+            const ro = new ResizeObserver(() => applyFiltersHint());
+            const watch = () => { ro.observe(el); for (const c of el.children) if (c.id !== 'filtersHint') ro.observe(c); };          // not the arrow: showing or hiding it must not ask for another measure
+            watch();
+            new MutationObserver(watch).observe(el, { childList: true });                  // a pill added later is watched too
+        })();
         function dismissFiltersHint() {
             if (filtersHintDone) return;
             filtersHintDone = true;

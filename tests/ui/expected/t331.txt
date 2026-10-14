@@ -16,5 +16,10 @@ ok      the row keeps the menu and all its buttons
 ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":241,"rowH":46,"sideScroll":false,"grid":false}
 ok   6. 360 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":248,"rowH":46,"sideScroll":false,"grid":false}
 ok   6. 360 px in German: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":248,"rowH":46,"sideScroll":false,"grid":false} Installiert (9)
+ok   7. at 1200 px the page column stays 600 px wide, so the twelve pills still overflow their 568 px row and the arrow shows: {"shown":true,"overflows":true,"rowW":568}
+ok      when every pill fits, the arrow is not shown: {"shown":false,"overflows":false}
+ok      a count that grows past the row brings it back, and it goes when the count is short again: [true,false]
+ok      turned to a 360 px screen the row overflows and the arrow shows; back at 1200 px it fits and the arrow goes: [true,false]
+ok      at a width where the English pills fit and the longer German ones do not, the arrow comes with German and goes with English: {"wider":true,"en":false,"de":true,"back":false}
 ok   no page errors:
 ALL PASSED

@@ -1,6 +1,6 @@
 // The Apps tab is less crowded: the seven stat boxes (Installed, Running, Bloatware, Enabled / Frozen, 3rd Party / System) are no longer a grid of their own
 // above the filters; each count is merged into its filter pill (one scrolling row, every pill with its count, the counted ones in their own colour and buttons
-// with a pressed state), the "scroll the filters sideways" tip is an arrow at the end of that row (its text is the arrow's name and tooltip), and the sort menu
+// with a pressed state), the "scroll the filters sideways" tip is an arrow at the end of that row (its text is the arrow's name and tooltip; it shows only while the row overflows), and the sort menu
 // is as wide as what it shows. The first app row starts well under 300 px at 400 x 860 (it was at 420), at 320 and 360 px and in German too, and every count,
 // filter and sort is still there and does the same thing.
 const { chromium, PAGE } = require('./lib/pw');
@@ -130,6 +130,51 @@ const initMock = () => {
     const label = lang ? await p.evaluate(() => document.querySelector('.stat-card[data-filter="installed"]').innerText) : '';
     check('6. ' + w + ' px' + (lang ? ' in German' : '') + ': the first app row starts under 280 px, the filters are one row, the page does not scroll sideways', m.firstRow > 0 && m.firstRow < 280 && m.rowH < 50 && !m.sideScroll, JSON.stringify(m) + (lang ? ' ' + label : ''));
     await p.screenshot({ path: 'apps_' + w + (lang ? '_' + lang : '') + '.png', clip: { x: 0, y: 0, width: w, height: 420 } });
+    await p.close();
+  }
+
+  // 7) the arrow shows only while the row has more to scroll to: measured again when the screen resizes, a pill's count grows or the language changes
+  {
+    const p = await open(1200, 860);
+    const st = () => p.evaluate(() => { const el = document.getElementById('filterScroll'), h = document.getElementById('filtersHint'), hw = h.style.display === 'none' ? 0 : h.getBoundingClientRect().width;
+      const vis = Array.from(el.children).filter(c => c !== h && c.getClientRects().length), cs = getComputedStyle(el);
+      const pills = Math.ceil(vis[vis.length - 1].getBoundingClientRect().right - vis[0].getBoundingClientRect().left + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight));          // what the pills need
+      return { shown: h.style.display !== 'none' && h.getClientRects().length > 0, overflows: el.scrollWidth - hw > el.clientWidth + 1, rowW: el.clientWidth, pills }; });
+    const settle = () => p.waitForTimeout(150);
+    const s0 = await st();
+    check('7. at 1200 px the page column stays 600 px wide, so the twelve pills still overflow their 568 px row and the arrow shows', s0.rowW === 568 && s0.overflows && s0.shown, JSON.stringify({ shown: s0.shown, overflows: s0.overflows, rowW: s0.rowW }));          // no pixel widths of text in the output: fonts differ a little between machines
+    // a shorter row (as short words would make it): only All Apps, Installed and the Enabled / Frozen pair
+    await p.evaluate(() => { for (const c of document.getElementById('filterScroll').children) if (!c.matches('[data-filter="all"], [data-filter="installed"], .stat-split:has([data-filter="enabled"]), #filtersHint')) c.style.display = 'none'; });
+    await settle();
+    const s1 = await st();
+    check('   when every pill fits, the arrow is not shown', !s1.overflows && !s1.shown, JSON.stringify({ shown: s1.shown, overflows: s1.overflows }));
+    const n = await p.evaluate(() => { const e = document.getElementById('statTotal'), old = e.textContent; e.textContent = '1'.repeat(40); return old; });
+    await settle();
+    const s2 = await st();
+    await p.evaluate(old => { document.getElementById('statTotal').textContent = old; }, n);
+    await settle();
+    const s3 = await st();
+    check('   a count that grows past the row brings it back, and it goes when the count is short again', s2.overflows && s2.shown && !s3.overflows && !s3.shown, JSON.stringify([s2.shown, s3.shown]));
+    await p.setViewportSize({ width: 360, height: 760 }); await settle();
+    const s4 = await st();
+    const edge = await p.evaluate(() => innerWidth - document.getElementById('filterScroll').clientWidth);          // the page's side padding at a phone width
+    await p.setViewportSize({ width: 1200, height: 860 }); await settle();
+    const s5 = await st();
+    check('   turned to a 360 px screen the row overflows and the arrow shows; back at 1200 px it fits and the arrow goes', s4.overflows && s4.shown && !s5.overflows && !s5.shown, JSON.stringify([s4.shown, s5.shown]));
+    // a width at which the English pills fit and the German ones do not
+    const en = s5.pills;
+    await p.evaluate(() => LANG_ENGINE.set('de')); await settle();
+    const de = (await st()).pills;
+    await p.evaluate(() => LANG_ENGINE.set('en')); await settle();
+    const w = edge + Math.round((en + de) / 2);
+    await p.setViewportSize({ width: w, height: 760 }); await settle();
+    const s6 = await st();
+    await p.evaluate(() => LANG_ENGINE.set('de')); await settle();
+    const s7 = await st();
+    await p.evaluate(() => LANG_ENGINE.set('en')); await settle();
+    const s8 = await st();
+    check('   at a width where the English pills fit and the longer German ones do not, the arrow comes with German and goes with English', de > en + 10 && !s6.shown && s7.overflows && s7.shown && !s8.shown,
+      JSON.stringify({ wider: de > en + 10, en: s6.shown, de: s7.shown, back: s8.shown }));
     await p.close();
   }
 
