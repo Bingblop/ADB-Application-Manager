@@ -58,7 +58,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
       actions: card.querySelector('.app-actions').getBoundingClientRect(),
     }));
     console.log(tag + '   the freed room goes to the text (meta is ' + Math.round(geo.meta.width) + 'px wide):', geo.meta.width > 150);
-    console.log(tag + '   the row\'s own buttons and then the checkbox sit together on the right, text starts flush left:', geo.meta.left < geo.actions.left && geo.actions.right <= geo.left.left && (geo.left.left - geo.actions.right) < 20);
+    console.log(tag + '   the checkbox is the icon on the left, the text after it, the row\'s own buttons together on the right:', geo.left.right <= geo.meta.left && geo.meta.right <= geo.actions.left + 1 && geo.actions.left - geo.meta.right < 20);
 
     // 3) Selecting apps shows the checkmark FAB; a normal tap opens the panel and keeps the selection.
     await page.evaluate(() => { toggleSelectPkg('com.facebook.katana'); toggleSelectPkg('com.spotify.music'); toggleSelectPkg('com.example.fifth'); }); await sleep(350);

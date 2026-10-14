@@ -1,13 +1,13 @@
 // Touch targets: the shared buttons and chips (.mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, the ? of a card,
-// the File Manager and Morphe option checkboxes) are drawn at least 36px tall, and every one of them, the app-row checkbox too, answers a tap over at
+// the File Manager and Morphe option checkboxes) are drawn at least 36px tall, and every one of them, the app-row checkbox (its icon) too, answers a tap over at
 // least 44x44px: a clear ::after centred on the control reaches past the edges of a smaller one. Measured with elementFromPoint at the middle of each
 // edge of that 44px box, so a neighbour that steals the tap or a scrolling row that clips it fails. The rows that scroll sideways do not start to
 // scroll up and down because of it, the Apps tab's sort row stays one aligned row, the ? does not cover the line under a card's title, the two
-// switches (Saved lists backup, Pure black) are a whole row tall, and a tap just beside an app-row checkbox selects the app while the ⋯ button keeps its
-// own taps. At 400 and 320px, without horizontal page scroll.
+// switches (Saved lists backup, Pure black) are a whole row tall, and a tap just beside an app row's icon (the row's checkbox) selects the app while the ⋯
+// button keeps its own taps. At 400 and 320px, without horizontal page scroll.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock'), fm = require('./lib/fm_mock');
-const SEL = '.mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check, .app-checkbox';
+const SEL = '.mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check, .app-checkbox, .app-sel';
 const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings', 'morphe', 'about', 'prefs'];
 (async () => {
   const b = await chromium.launch();
@@ -85,19 +85,19 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
     const row = await ev(() => [...document.querySelectorAll('#view-apps .apps-sort-row > *')].filter(e => e.getClientRects().length && getComputedStyle(e).position !== 'absolute')
       .map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.height), Math.round(r.top + r.height / 2)]; }));
     check('apps ' + width + ': the sort row is one line of 36px controls', row.length >= 3 && row.every(([h, c]) => h === 36 && Math.abs(c - row[0][1]) <= 1), JSON.stringify(row));
-    // a tap just beside an app-row checkbox selects the app; the ⋯ button keeps its taps
+    // a tap just beside an app row's icon (the row's checkbox: 40px, answering over 44px) selects the app; the ⋯ button keeps its taps
     const pick = await ev(() => {
       const card = document.querySelector('#view-apps .app-card');
-      const cb = card.querySelector('.app-checkbox'), more = card.querySelector('.app-actions .btn-mini:last-child');
+      const cb = card.querySelector('.app-sel'), more = card.querySelector('.app-actions .btn-mini:last-child');
       card.scrollIntoView({ block: 'center' });
       const r = cb.getBoundingClientRect(), m = more.getBoundingClientRect();
-      const beside = document.elementFromPoint(r.left - 8, r.top + r.height / 2), under = document.elementFromPoint(r.left + r.width / 2, r.bottom + 9);
+      const beside = document.elementFromPoint(r.left - 1.5, r.top + r.height / 2), under = document.elementFromPoint(r.left + r.width / 2, r.bottom + 1.5);
       const moreHit = document.elementFromPoint(m.left + m.width / 2, m.top + m.height / 2), moreEdge = document.elementFromPoint(m.right - 2, m.top + m.height / 2);
-      return { beside: beside === cb, under: under === cb, more: moreHit === more || more.contains(moreHit), moreEdge: moreEdge === more || more.contains(moreEdge), cb: Math.round(r.width) + 'x' + Math.round(r.height), x: Math.round(r.left - 8), y: Math.round(r.top + r.height / 2), pkg: card.dataset.pkg };
+      return { beside: beside === cb, under: under === cb, more: moreHit === more || more.contains(moreHit), moreEdge: moreEdge === more || more.contains(moreEdge), cb: Math.round(r.width) + 'x' + Math.round(r.height), x: r.left - 1.5, y: Math.round(r.top + r.height / 2), pkg: card.dataset.pkg };
     });
     await page.mouse.click(pick.x, pick.y); await page.waitForTimeout(150);
     const sel = await ev(pkg => document.getElementById('card_' + pkg).classList.contains('selected'), pick.pkg);
-    check('apps ' + width + ': the 22px row checkbox answers 8px to its left and 9px below it, and selects the app', pick.cb === '22x22' && pick.beside && pick.under && sel, JSON.stringify(pick) + ' selected=' + sel);
+    check('apps ' + width + ': the 40px icon checkbox of a row answers 1.5px to its left and below it, and selects the app', pick.cb === '40x40' && pick.beside && pick.under && sel, JSON.stringify(pick) + ' selected=' + sel);
     check('apps ' + width + ': the ⋯ button beside it keeps its middle and its edge', pick.more && pick.moreEdge, JSON.stringify(pick));
     await ev(pkg => toggleSelectPkg(pkg), pick.pkg);
     // what is inside a control keeps its own taps: the hit area lies under it (the File Manager's tick boxes, a preset chip's name and its ×)

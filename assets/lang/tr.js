@@ -5972,6 +5972,7 @@ p: [
 ["Could not change the brightness bias: {0}","Parlaklık kayması değiştirilemedi: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Uygulandı ama telefon {1} yerine {0} bildiriyor. One UI ve bazı başka telefonlar bu değeri sıfırlar veya yok sayar."],
 ["{0} of {1}","{0} / {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","{0} uygulamasını seç"]
 ]
 };
