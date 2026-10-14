@@ -18,4 +18,12 @@ final class RestorePlan {
     static boolean bringBackSystemApp(boolean found, int appInfoFlags) {
         return found && (appInfoFlags & FLAG_SYSTEM) != 0;
     }
+
+    /**
+     * Whether a restore of the version that is already installed (so nothing is installed) still needs its own native question: it does when it
+     * replaces the app's data as root, unless bringing a system app back has asked already. The install branch asks every time it installs.
+     */
+    static boolean askBeforeSameVersionRestore(boolean broughtBackSystemApp, boolean wantData) {
+        return wantData && !broughtBackSystemApp;
+    }
 }
