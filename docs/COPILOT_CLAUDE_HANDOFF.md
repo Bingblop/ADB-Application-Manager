@@ -194,6 +194,21 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.13.2 (cut from `main`; written 2026-10-14)
+
+A fix release: the nine serious and wrong-result findings of the second review pass (the Connected Devices sub-tabs, Backups, the real-terminal page code, the Morphe runner), the update check's out-of-order progress count (#185), a robust UI script t104, and the SD Maid AppCleaner change the owner asked for (it starts the accessibility service itself; this app and Android System WebView are never force-stopped). Nothing else is new.
+
+| PR | What | Merge | Tests | Checklist |
+|---|---|---|---|---|
+| #200 | Sixteen commits, one per finding: A1 picker request code, A2/A3/A4 device pinning and partial pulls, B1 keep-data restore, C1/C2 terminal start, D1/D2 Morphe runner, #185 queue, t104, SD Maid auto-start and exclusions | 2480b18 (merge commit; sixteen commits kept) | t272, t273, t119 extended, t104 fixed; Java `requestcodes`, `restoreplan`, `morpheinstall`, `morpheshared`, `sdmacsstart`; `updatechecker`, `morpherunner`, `sdmappcleaner`, `sdmengine`, `sdmexclusions` extended | 29 |
+| bump | Version 7.13.2 (856), changelog, README, guides, this page, `docs/RELEASE-CHECKLIST-v7.13.2.md`, `docs/PHONE-SCRIPT-v7.13.2.md` | (see the release) | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Still open:** the thirteen smaller findings of the second pass, one issue each (#187 to #199). The SD Maid change rests on guesses that only a phone can settle: whether writing `enabled_accessibility_services` makes One UI bind the service and how long it takes (the wait is 8 s), whether the remove / 500 ms / add rebinds a service Android left unconnected, whether Android 13+ "restricted settings" still blocks a sideloaded service when the shell writes the setting, and whether `getCurrentWebViewPackage()` names the right package on every ROM.
+- **Known flaky CI scripts:** t137, t261, t53/t54, t157 and t104 under load (each passes alone; t104 was a script race and is fixed in this release, and stays listed until it has run clean on CI for a while). Java `extractspace`, `sdmengine`, `archivecancel`, `ziptool` and `morphehelper` fail under disk load and pass alone.
+- **Request codes:** every `REQ_*` constant in `MainActivity` must be distinct; the Java suite `requestcodes` checks it, so a new picker needs a new number.
+
 ## Definition of done for implementation PRs
 
 - Link the relevant finding or user requirement and explain scope.

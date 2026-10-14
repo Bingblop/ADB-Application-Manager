@@ -1,5 +1,39 @@
 # Changelog
 
+## v7.13.2-Pro (versionCode 856)
+
+A fix release on top of v7.13.1, cut from `main`. It carries the serious and wrong-result findings of a second, narrower review pass over the areas the first one did not reach (the Connected Devices sub-tabs, Backups, the real-terminal page code and the Morphe patcher runner), the update check's out-of-order progress count that v7.13.1 left open (#185), and one change you asked for: the SD Maid AppCleaner now starts its accessibility service on its own and never force-stops this app or Android System WebView. Nothing else is new: no feature, no wording change, no CSS. The thirteen smaller findings of the same pass stay open as #187 to #199. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 29 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, and `docs/PHONE-SCRIPT-v7.13.2.md` is the one-page version.
+
+**SD Maid AppCleaner (the accessibility cleaner)**
+
+- **The accessibility cleaner starts on its own.** When AppCleaner needs the accessibility service and it is off, or on but not running, and you have already given the consent and a working mode (ADB, Wireless Debugging, Shizuku or Root) exists, the app writes the setting itself (or takes the service out and puts it back so Android binds it again), waits up to eight seconds for it to connect, and runs. It never gives the consent for you and does nothing in Read-Only mode or without a working mode; then the old "turn it on" message stays, with one more clause saying what was tried. Whether One UI binds the service this way, and how long it takes, can only be seen on a phone.
+- **This app and Android System WebView are never force-stopped by the cleaner.** The app and the WebView packages (`com.google.android.webview` with its beta, dev and canary variants, and `com.android.webview`) are stock AppCleaner exclusions, removable and back with Restore default exclusions. A guard that does not depend on the list also keeps this app and the WebView provider found at run time out of the force-stop step and out of the list handed to the automation; they show as excluded, not failed. Force-stopping this app ended the accessibility service (Android removes it) and cut the cleaning short.
+
+**Connected Devices**
+
+- **Choose package files and Files "Send a file here" deliver again.** Both used the same request code as the Saved lists backup-folder picker, so the chosen file went to the wrong handler: the queue stayed empty, and a picked APK could repoint the backup folder. The picker has its own code now and a test checks that all request codes differ.
+- **Files Delete, Rename and New folder act on the device you asked about.** The question could stay open while the device list moved on; confirming then ran the command on the other device and said Deleted. The device is fixed before the question and the action is refused if it changed.
+- **A multi-file push and the APK pull stop when the device changes** and say the push or pull did not finish, instead of continuing on the other device and reporting success.
+- **Pulling a folder with skipped files no longer says "Saved".** Every output line is checked: an `adb: error:` line or a non-zero skipped count is shown instead.
+
+**Backups**
+
+- **Restoring an app you removed with "keep data" installs it.** The restore treated it as a removed system app and refused with "signed with a different key" (on a phone with several users it also asked twice). That branch is now taken only for a real system app.
+
+**Terminal**
+
+- **Keys and the terminal size are no longer lost while the real terminal starts.** What you typed before the shell was up, and the size sent for the soft keyboard, were dropped, so vim and top drew with the wrong number of rows. They are held, sent in order, and the size is sent again when the shell reports it started.
+- **Opening the real terminal no longer relabels a running session.** The dropdown said Termux over the app's own shell. The running shell is kept; a different shell you ask for restarts the terminal like the dropdown does.
+
+**Morphe Patcher**
+
+- **"Install when finished" with "Delete the APK" no longer deletes the patched APK when the system installer was only opened.** Without a working mode the app can only hand the file to the system installer and cannot know the outcome: nothing is marked installed or deleted, and the page shows the real text instead of "Installed."
+- **A patch keeps being shown and followed after you leave the app and open it again.** The page used to show nothing running, a new patch was refused with the out-of-memory text, and a catalog time-out could cancel the patch that was running. A second patch started while one runs now says the patcher is busy at once and does not touch the first; a cancel acts only on the job it names.
+
+**Updates**
+
+- **The "N of M" count in the update check only goes forward (#185).** Progress reports are queued in the order the counters changed and delivered one at a time; the final report is last and nothing follows it.
+
 ## v7.13.1-Pro (versionCode 855)
 
 A fix release on top of v7.13.0, cut from `main`. It carries the fifty-four findings of the whole-codebase review of 2026-10-13 (ten reviewers read the page and the Java in parallel; every finding was traced from a real input to a wrong outcome and twelve were reproduced by running the code; #183 fixed the eleven serious ones, #184 the rest) and nothing new: no feature, no wording change, no CSS. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 28 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, the eleven serious ones first. The one race found and not fixed is #185 (the update check's progress count can step back by one).

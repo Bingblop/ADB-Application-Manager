@@ -520,7 +520,7 @@ Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183
 
 ## 29. Fixes of the second review pass and the SD Maid accessibility cleaner (v7.13.2)
 
-Eleven fixes; the steps below exercise them. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); the steps below exercise them. `docs/PHONE-SCRIPT-v7.13.2.md` is the same list on one page. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
 
 **Connected Devices** (needs two devices, for example a phone and a watch, both listed in the tab)
 
