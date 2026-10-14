@@ -73,7 +73,7 @@ public class MorpheService extends Service {
             if (!MorpheServiceRules.cancelApplies(running, ev, intent.getStringExtra("events"))) { if (!running) stopSelf(); return START_NOT_STICKY; }
             cancelled = true;
             if (ev != null && running) {
-                append(ev, "LOG WARN Cancelled.\nRESULT {\"success\":false,\"cancelled\":true,\"error\":\"Cancelled\"}\n");
+                MorpheServiceRules.append(ev, MorpheServiceRules.CANCELLED_LINES);
             }
             // The engine cannot be stopped from outside politely; ending the process is what Cancel means here
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() { @Override public void run() { android.os.Process.killProcess(android.os.Process.myPid()); } }, 300);
@@ -111,7 +111,7 @@ public class MorpheService extends Service {
         int code = 1;
         try {
             // A fresh file for a patch; a list is read once and its file is removed by the app
-            OutputStream fos = new FileOutputStream(events, false);
+            OutputStream fos = MorpheServiceRules.openEvents(events);
             sink = new PrintStream(new Tee(fos), true, "UTF-8");
             Class<?> engine = Class.forName(ENGINE_CLASS);
             Method run = engine.getMethod("runCommand", String.class, String.class, PrintStream.class);
@@ -139,7 +139,7 @@ public class MorpheService extends Service {
     /** Passes the bytes on to the file and keeps the notification's text current from the lines that go by. */
     private final class Tee extends OutputStream {
         private final OutputStream out;
-        private final StringBuilder line = new StringBuilder();
+        private final MorpheServiceRules.LineDecoder line = new MorpheServiceRules.LineDecoder();
         private long lastNotify;
 
         Tee(OutputStream out) { this.out = out; }
@@ -150,29 +150,20 @@ public class MorpheService extends Service {
         @Override public void close() throws IOException { out.close(); }
 
         private void feed(byte b) {
-            if (b == '\n') { handle(line.toString()); line.setLength(0); }
-            else if (line.length() < 400) line.append((char) (b & 0xff));
+            String l = line.feed(b);
+            if (l != null) handle(l);
         }
 
         private void handle(String l) {
-            String t = null;
-            if (l.startsWith("STEP ")) t = l.substring(5);
-            else if (l.startsWith("PATCH ")) t = l.substring(6);
+            String t = MorpheServiceRules.noteText(l);
             if (t == null) return;
-            text = t.replace("OK ", "Applied: ").replace("FAIL ", "Failed: ");
+            text = t;
             long now = System.currentTimeMillis();
             if (now - lastNotify < 400) return;
             lastNotify = now;
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) try { nm.notify(ID, build()); } catch (RuntimeException ignored) {}
         }
-    }
-
-    private static void append(File f, String s) {
-        try {
-            FileOutputStream o = new FileOutputStream(f, true);
-            try { o.write(s.getBytes("UTF-8")); } finally { o.close(); }
-        } catch (IOException ignored) {}
     }
 
     private Notification build() {
