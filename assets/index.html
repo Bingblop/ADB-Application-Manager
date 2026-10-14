@@ -95,6 +95,10 @@
             --radius-xl: 24px;                       /* top corners of modal sheets, toasts */
             --radius-pill: 999px;                    /* switch track and fully round buttons (a circle is 50%) */
 
+            /* ---- Touch targets [fixed] ---- */
+            --ctl-h: 36px;                           /* the least a button or chip is drawn tall */
+            --tap: 44px;                             /* the least area a finger can hit: a smaller control reaches it with a clear ::after */
+
             /* ---- Type [fixed]: sizes by role, weights by step ---- */
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;   /* --ui-font (Settings > Font) goes first */
             --fs-overline: 9px;                      /* uppercase badge and stat labels */
@@ -186,8 +190,20 @@
         }
 
         .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
+
+        /* Touch targets: the shared buttons and chips are drawn at least --ctl-h tall, and every one of these controls answers a finger over
+           at least --tap square. A clear ::after, centred on the control, reaches past the edges of one that is drawn smaller (a checkbox,
+           a 36px chip) by at most 4-11px, less than the gap to its neighbours, so a tap still lands on the control it is nearest to.
+           A control placed with position: absolute (the ? of a card) keeps it: its own rule comes later. */
+        .mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check { min-height: var(--ctl-h); }
+        /* the ::after lies under the control's own content (z-index -1 in the control's own stacking context), so a box, a × or a name inside it keeps its taps */
+        .mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check, .app-checkbox { position: relative; isolation: isolate; }
+        .mode-action-btn::after, .filter-pill::after, .filter-chip::after, .copy-chip::after, .agent-btn::after, .batch-tool-link::after, .help-q::after,
+        .fm-opt::after, .mp-check::after, .app-checkbox::after {
+            content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
+        }
         .apps-tool-btn.term-pin { border-color: var(--accent); color: var(--accent); }          /* a pinned command next to the built-in buttons */
-        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); margin-top: var(--space-3); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); margin: var(--space-1) 0 calc(-1 * var(--space-1)); padding-block: var(--space-1); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .copy-row::-webkit-scrollbar { display: none; }
         .copy-chip {
             border: 1px solid var(--border-glass); background: var(--bg-card, transparent); color: var(--text-main);
@@ -653,7 +669,7 @@
         .filter-pill.stat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
         /* a pair that splits the apps in two (3rd Party / System, Enabled / Frozen): two pills in one frame, the frame in the colour of the side that is on */
         .stat-split { flex: 0 0 auto; display: inline-flex; border: 1px solid var(--border-glass); border-radius: var(--radius-chip); overflow: hidden; }
-        .stat-split .filter-pill.stat-card { border: 0; border-radius: 0; }
+        .stat-split .filter-pill.stat-card { border: 0; border-radius: 0; min-height: calc(var(--ctl-h) - 2px); }          /* the frame's border makes up the rest of the height */
         .stat-split .filter-pill.stat-card + .filter-pill.stat-card { border-inline-start: 1px solid var(--border-glass); }
         .stat-split .filter-pill.stat-card.active { border-color: var(--tone); }
         .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--apps-enabled); }
@@ -805,8 +821,8 @@
             gap: var(--space-3);
             overflow-x: auto;
             scrollbar-width: none;
-            padding-bottom: var(--space-2);
-            margin-bottom: var(--space-4);
+            padding: var(--space-1) 0 var(--space-2);          /* room above and below for the pills' hit area, so the row does not scroll up and down */
+            margin: calc(-1 * var(--space-1)) 0 var(--space-4);
             -webkit-overflow-scrolling: touch;
             touch-action: pan-x;
         }
@@ -829,6 +845,8 @@
             transition: all 0.15s ease;
             white-space: nowrap;
         }
+
+        .filter-pill { line-height: calc(var(--ctl-h) - 2 * var(--space-2) - 2px); }          /* one line, 36px with its padding and border (a pill's count is a <span> in its text, so it stays a block, not a flex box) */
 
         .filter-pill.active,
         .toggle-pill.active {
@@ -1102,7 +1120,7 @@
             border: 1px solid var(--accent);
             border-radius: var(--radius-md);
             padding: var(--space-2) var(--space-4);
-            min-height: 34px;
+            min-height: var(--ctl-h);
             transition: background 0.15s, transform 0.12s;
         }
         #view-files .batch-tool-link:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
@@ -1161,7 +1179,7 @@
             border: 1px solid var(--accent);
             border-radius: var(--radius-md);
             padding: var(--space-2) var(--space-4);
-            min-height: 34px;
+            min-height: var(--ctl-h);
             font-size: var(--fs-body);
             transition: background 0.15s, transform 0.12s;
         }
@@ -1488,6 +1506,32 @@
             margin-bottom: var(--space-4);
         }
 
+        /* The close (✕) of every sheet: one round 44 x 44 px button. The negative margins let the bigger target reach into the sheet's padding
+           and the gap under the header, so a header keeps its height and the glyph stays near the corner where the old 20 px glyph was. */
+        .sheet-close {
+            flex: 0 0 auto;
+            width: 44px;
+            height: 44px;
+            margin-block: calc(-1 * var(--space-3h));
+            margin-inline: 0 calc(-1 * var(--space-3h));
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--text-muted);
+            font: inherit;
+            font-size: var(--fs-title);
+            font-weight: var(--fw-regular);
+            line-height: 1;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sheet-close:active { background: var(--fill-3); color: var(--text-main); }
+        .sheet-close:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
         .sheet-app-hero {
             display: flex;
             align-items: center;
@@ -1502,8 +1546,20 @@
             align-self: flex-start;
         }
 
-        #inspectorModal .sheet-header-actions { flex-direction: column; align-items: flex-end; gap: var(--space-3h); }
-        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: 46px; }
+        /* The app menu's header: icon, name, package and version on the left (the icon at the top of the block, not floating beside it), Share and
+           close on the right. The tags and the copy chips, dates and sizes go under it across the whole sheet, so on a 320-360 px phone the text
+           column is not squeezed beside a column of chips (that broke "Updated" and "Cache" in the middle and cut "Copy name" off). */
+        #inspectorModal .sheet-header { align-items: flex-start; gap: var(--space-4); margin-bottom: 0; }
+        #inspectorModal .sheet-app-hero { align-items: flex-start; flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-app-hero .sheet-title { flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-title h3 { overflow-wrap: anywhere; }
+        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; }          /* the close's round target brings its own room */
+        #inspectorModal .sheet-header-actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: 0; }
+        #inspectorModal .sheet-header-actions > .uad-chip { margin-top: var(--space-3); }
+        #inspectorModal .sheet-meta { margin-bottom: var(--space-4); }
+        #inspectorModal .sheet-meta .copy-row { flex-wrap: wrap; overflow: visible; }
+        #inspectorModal .sheet-meta p.sheet-dates { margin-top: var(--space-2); overflow-wrap: break-word; }
+        #inspectorModal .sheet-meta p.sheet-dates + p.sheet-dates { margin-top: 1px; }
         /* the UAD-NG classification of the app, under Share: tap for the project's full description */
         .uad-chip { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--fs-pill); font-weight:var(--fw-heavy); padding: var(--space-1) var(--space-3h); border-radius: var(--radius-pill);
             border: 1px solid currentColor; background: var(--fill-2); cursor: pointer; max-width: 100%; }
@@ -1548,7 +1604,7 @@
         .sheet-title p {
             font-size: var(--fs-pkg);
             color: var(--text-muted);
-            word-break: break-all;
+            overflow-wrap: anywhere;        /* a long package name or path still wraps, but words such as "Updated" are not cut in the middle */
         }
 
         .sheet-title p.sheet-version {
@@ -1660,12 +1716,15 @@
         .chip-row {
             display: flex;
             flex-wrap: wrap;
-            gap: var(--space-2);
+            gap: var(--space-3) var(--space-2);          /* rows a hit area apart: a chip's 44px target meets the next row's, it does not cover it */
             margin-bottom: var(--space-3);
             align-items: center;
         }
 
         .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font-size: var(--fs-body);
             font-weight:var(--fw-heavy);
             padding: var(--space-1) var(--space-3h);
@@ -1734,8 +1793,9 @@
 
         /* A small ? on the first card of each tab: opens the Help Guide at that tab's topic */
         .color-card.has-help { position: relative; }
-        .color-card.has-help > .color-card-title { padding-right: 34px; }
-        .help-q { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2);
+        /* the title leaves room beside the ? and reaches below it, so the line under the title starts clear of the button */
+        .color-card.has-help > .color-card-title { padding-right: calc(var(--ctl-h) + var(--space-3)); min-height: calc(var(--space-2) + var(--ctl-h) - var(--space-5) - var(--space-1)); }
+        .help-q { position: absolute; top: var(--space-2); right: var(--space-2); width: var(--ctl-h); height: var(--ctl-h); padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2);
             color: var(--accent); font-size: var(--fs-item); font-weight:var(--fw-heavy); line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
         .help-q:active { transform: scale(0.92); }
 
@@ -2445,8 +2505,10 @@
             background: var(--fill-1);
         }
 
-        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-heavy); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid var(--accent); background: transparent; color: var(--accent); color: color-mix(in srgb, var(--accent) 80%, var(--text-main)); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; }
-        .agent-btn:active { background: var(--accent); color: var(--on-accent); }
+        /* "Ask agent" sits on every Hidden Settings, overlay and debloater row: a quiet ghost button (muted text on a faint fill, a clear border), so
+           the rows' own names and values lead; the accent comes only while it is pressed or has keyboard focus */
+        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-bold); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid transparent; background: var(--fill-2); color: var(--text-muted); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+        .agent-btn:active, .agent-btn:focus-visible { background: var(--tint-accent); border-color: var(--line-accent); color: var(--accent); }
         .agent-ask-sent { margin-top: var(--space-2); padding: var(--space-3) var(--space-3h); border: 1px dashed var(--border-glass); border-radius: var(--radius-md); font: var(--fs-pill)/1.45 ui-monospace, monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 22vh; overflow: auto; }
         .row-tint-slider { padding: var(--space-1) 2px 0; }
         .row-tint-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -3067,7 +3129,7 @@
             display: inline-flex;
             align-items: center;
             gap: var(--space-2);
-            transition: all 0.15s ease;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;          /* not min-height: a button that is made taller (a dialog's Done, 36 -> 44px) is that tall at once */
         }
 
         .mode-action-btn.primary {
@@ -3487,7 +3549,7 @@
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
-            padding-bottom: 2px;
+            padding-block: var(--space-1);          /* room for the chips' hit area, so the row does not scroll up and down */
         }
 
         .uad-brand-row::-webkit-scrollbar {
@@ -3613,7 +3675,7 @@
             color: var(--status-running);
         }
 
-        .sheet-title p.sheet-dates {
+        .sheet-title p.sheet-dates, .sheet-meta p.sheet-dates {
             font-size: var(--fs-pkg);
             color: var(--text-muted);
             margin-top: 1px;
@@ -3641,7 +3703,8 @@
             display: flex;
             align-items: center;
             gap: var(--space-1);
-            margin: -4px 0 10px;
+            margin: -8px 0 6px;
+            padding-block: var(--space-1);          /* room for the buttons' hit area, so the row does not scroll up and down */
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
@@ -3670,7 +3733,7 @@
             align-items: center;
             justify-content: flex-end;
             width: 48px;
-            min-height: 36px;
+            min-height: var(--ctl-h);
             margin-inline-start: -40px;
             padding: 0 var(--space-3);
             border: 0;
@@ -3688,6 +3751,7 @@
         .apps-sort-select {
             flex: 0 0 auto;
             min-width: 60px;
+            min-height: var(--ctl-h);          /* as tall as the buttons beside it */
             font-size: var(--fs-caption);
         }
         /* the sort menu is as wide as the choice it shows (where the WebView knows field-sizing; elsewhere as wide as its longest choice) */
@@ -4279,7 +4343,7 @@
                 .us-app .us-name { font-size:var(--fs-label); font-weight:var(--fw-heavy); color:var(--text-main); overflow-wrap:anywhere; }
                 .us-app .us-pkg { font-size:var(--fs-pill); color:var(--text-muted); overflow-wrap:anywhere; }
                 .us-app .us-acts { display:flex; gap:var(--space-2); flex-wrap:wrap; margin-top:var(--space-3); }
-                .us-app .us-acts .mode-action-btn { flex:0 0 auto; min-height:34px; padding:var(--space-2) var(--space-4); font-size:var(--fs-code); }
+                .us-app .us-acts .mode-action-btn { flex:0 0 auto; min-height:var(--ctl-h); padding:var(--space-2) var(--space-4); font-size:var(--fs-code); }
                 .us-vers { display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3); }
                 .us-ver-row { display:flex; gap:var(--space-3); align-items:center; padding:var(--space-2) var(--space-3); border-radius:var(--radius-md); background:var(--fill-2); font-size:var(--fs-body); }
                 .us-ver-row > span { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
@@ -5010,7 +5074,7 @@
                 .sdb-searchwrap { position:relative; flex:1 1 auto; min-width:0; }
                 .sdb-searchwrap .list-search { width:100%; padding-right:30px; height:38px; font-size:var(--fs-item); }
                 .sdb-searchwrap .search-clear { right:9px; }
-                .sdb-filters { display:flex; gap:var(--space-2); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-2); }
+                .sdb-filters { display:flex; gap:var(--space-3) var(--space-2); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3); }          /* 8px between rows: the chips' 44px hit areas meet, they do not overlap */
                 .sdb-filters .filter-chip { font-size:var(--fs-pill); padding:var(--space-1) var(--space-3h); background:transparent; font-family:inherit; }
                 .sdb-status { font-size:var(--fs-pill); color:var(--text-muted); margin:2px 2px 0; line-height:1.4; display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap; }
                 .sdb-spin { display:inline-block; width:11px; height:11px; border-radius:50%; border:2px solid var(--border-glass); border-top-color:var(--accent); animation:sdbSpin .8s linear infinite; vertical-align:-2px; }
@@ -7175,9 +7239,9 @@
                 .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
-                .cn-tabs .help-q { top: 11px; right: auto; inset-inline-end: var(--space-2); }
+                .cn-tabs .help-q { top: calc((48px - var(--ctl-h)) / 2); right: auto; inset-inline-end: var(--space-2); }
                 /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
-                .cn-tabs.has-help { --cn-help-w: calc(26px + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
+                .cn-tabs.has-help { --cn-help-w: calc(var(--ctl-h) + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
                 .cn-tabs.has-help .cn-ind { width: calc((100% - var(--cn-help-w)) / 2); }
                 .cn-seg { margin-top: var(--space-4); }
                 .cn-seg[hidden] { display: none; }
@@ -7216,6 +7280,7 @@
                 /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
                 .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
                 .cn-tools.cn-scroll::-webkit-scrollbar, #cnSegLog .lc-key::-webkit-scrollbar { display: none; }
+                .cn-tools.cn-scroll { padding-block: var(--space-2); margin-block: calc(var(--space-3h) - var(--space-2)) calc(-1 * var(--space-2)); }          /* room for the 44px hit area of the 32px buttons, so the row does not scroll up and down */
                 #cnSegLog .lc-chip { flex: 0 0 auto; }
                 .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 var(--space-4); display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: 1; width: auto; box-shadow: none; }
                 .cn-tools .op-select { color: var(--text-main); padding: 0 var(--space-3); max-width: 46vw; }
@@ -7580,7 +7645,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="batch-sheet-tools">
                 <button class="batch-tool-link bs-btn" onclick="selectAllFiltered()">Select All</button>
                 <button class="batch-tool-link bs-btn bs-muted" onclick="clearBatchSelection()">Clear All</button>
-                <div style="font-size:20px; cursor:pointer; margin-left:6px;" role="button" tabindex="0" aria-label="Close the batch menu" onclick="collapseBatchPanel()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close the batch menu" onclick="collapseBatchPanel()">✕</button>
             </div>
         </div>
         <div class="batch-save-row">
@@ -7618,7 +7683,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="sheet-title">
                     <h3 id="bnavMoreTitle">More tabs</h3>
                 </div>
-                <button type="button" class="fl-move" aria-label="Close" onclick="bnavMoreClose()">✕</button>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="bnavMoreClose()">✕</button>
             </div>
             <div class="bn-grid" id="bnavMoreGrid"></div>
             <button type="button" class="bn-custom" onclick="bnavCustomize()">Customize tabs</button>
@@ -7632,7 +7697,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <h3>Batch Ops (App Ops)</h3>
                     <p id="bopsSub"></p>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchOps()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeBatchOps()">✕</button>
             </div>
             <div class="batch-help">
                 <b>How it works:</b> tick every app op you want to change and choose the value for each one.
@@ -7667,7 +7732,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <h3>Selected apps</h3>
                     <p id="saSub"></p>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeShowApps()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeShowApps()">✕</button>
             </div>
             <div class="batch-help">Tap <b>Remove</b> to take an app out of the selection. The batch actions only run on the apps listed here.</div>
             <div class="batch-sheet-tools" style="margin:0 0 8px;">
@@ -7687,7 +7752,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <h3>Command on selected apps</h3>
                     <p id="bcSub"></p>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchCmd()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeBatchCmd()">✕</button>
             </div>
             <div class="batch-help">
                 <b>How it works</b>
@@ -7736,7 +7801,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="historySubtitle">Every uninstall, disable and restore, with one-tap undo</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeHistoryModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeHistoryModal()">✕</button>
             </div>
             <div id="historyList" style="max-height:60vh; overflow-y:auto;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
@@ -7756,7 +7821,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>APK, permissions and app ops in any privileged mode. App data needs Root.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeBackups()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeBackups()">✕</button>
             </div>
             <div id="backupTarget" class="backup-item" style="display:none;"></div>
             <div id="backupProgress" style="display:none;">
@@ -7782,7 +7847,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="whatsNewSubtitle"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeWhatsNew()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeWhatsNew()">✕</button>
             </div>
             <div id="whatsNewBody" class="whatsnew-body" style="max-height:62vh; overflow-y:auto;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
@@ -7802,7 +7867,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="cheatSheetSub">Tap a command to drop it in the input. These run in the on-device shell — no <code>adb shell</code> prefix needed.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeCheatSheet()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeCheatSheet()">✕</button>
             </div>
             <input type="text" class="list-search" id="cheatSearch" placeholder="Search commands…" oninput="renderCheatSheet(this.value)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="margin-bottom:10px;">
             <div id="cheatSheetBody" style="max-height:48vh; overflow-y:auto;"></div>
@@ -7826,7 +7891,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="txConnectSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseConnect()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseConnect()">✕</button>
             </div>
             <div id="txConnectBody" style="max-height:68vh; overflow-y:auto;"></div>
         </div>
@@ -7842,7 +7907,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Keys, default agent and model, shells, and what agents may do without asking</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseSettings()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseSettings()">✕</button>
             </div>
             <div id="txSettingsBody" style="max-height:70vh; overflow-y:auto;"></div>
         </div>
@@ -7858,7 +7923,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>A custom connector, or one of these presets, added to any of the agents that sign in through Termux</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseMcp()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseMcp()">✕</button>
             </div>
             <div id="txMcpBody" style="max-height:70vh; overflow-y:auto;"></div>
         </div>
@@ -7875,7 +7940,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Choose what to install and which starter files to write</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseTools()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseTools()">&#10005;</button>
             </div>
             <div id="txToolsBody" style="max-height:70vh; overflow-y:auto;"></div>
         </div>
@@ -7890,7 +7955,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Use your own Termux (bash and everything installed with pkg) as the Terminal's shell</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseTermux()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseTermux()">✕</button>
             </div>
             <div id="txTermuxBody" style="max-height:70vh; overflow-y:auto;"></div>
         </div>
@@ -7906,7 +7971,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="txAlertSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseAlert()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseAlert()">✕</button>
             </div>
             <div id="txAlertBody" class="tx-err-body"></div>
             <div id="txAlertDetail" class="tx-err-detail" translate="no" style="display:none;"></div>
@@ -7924,7 +7989,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Shells, keys, coding agents, sign-in and safety</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="txCloseHelp()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="txCloseHelp()">✕</button>
             </div>
             <div class="tx-help" id="txHelpBody" style="max-height:70vh; overflow-y:auto;">
                 <h4>Overview</h4>
@@ -8052,7 +8117,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="storeDetailSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeStoreModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeStoreModal()">✕</button>
             </div>
             <div id="storeDetailBody" style="max-height:52vh; overflow-y:auto;">Loading…</div>
             <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
@@ -8094,7 +8159,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Save which apps are disabled, suspended or uninstalled, and re-apply it later or on another phone</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeProfiles()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeProfiles()">✕</button>
             </div>
             <div class="find-bar">
                 <input type="text" class="list-search" id="profileName" placeholder="Profile name (e.g. Lean Samsung)" autocomplete="off">
@@ -8149,7 +8214,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <p id="abSheetSub"></p>
                 </div>
                 <div class="sheet-header-actions">
-                    <div style="font-size:20px; cursor:pointer;" onclick="closeAbSheet()">✕</div>
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="closeAbSheet()">✕</button>
                 </div>
             </div>
             <div id="abSheetList" class="ab-sheet-list"></div>
@@ -8165,7 +8230,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <p id="choiceDesc" style="white-space:normal;"></p>
                 </div>
                 <div class="sheet-header-actions">
-                    <div style="font-size:20px; cursor:pointer;" onclick="closeChoiceSheet()">✕</div>
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="closeChoiceSheet()">✕</button>
                 </div>
             </div>
             <div id="choiceList" class="ab-sheet-list"></div>
@@ -8181,7 +8246,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <p id="alsSub"></p>
                 </div>
                 <div class="sheet-header-actions">
-                    <div style="font-size:20px; cursor:pointer;" onclick="closeAppListSheet()">✕</div>
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="closeAppListSheet()">✕</button>
                 </div>
             </div>
             <div class="list-toolbar">
@@ -8215,7 +8280,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <h3 id="cpTitle">Color</h3>
                     <p id="cpSub"></p>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeColorPicker()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeColorPicker()">&#10005;</button>
             </div>
             <div class="cp-preview" id="cpPreview"><span id="cpPreviewHex" translate="no"></span></div>
             <div class="cp-tabs" role="tablist">
@@ -8242,6 +8307,8 @@ Type any command above (e.g. pm list packages -d)</div>
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
+            <!-- the app's name, package and version beside its icon, Share and close on the right; under them, across the whole sheet, the
+                 tags (UAD-NG level or Ask agent, trackers), the copy chips, the dates and sizes: on a narrow phone nothing is squeezed into a column -->
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-avatar" id="sheetAvatar"></div>
@@ -8249,25 +8316,27 @@ Type any command above (e.g. pm list packages -d)</div>
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
-                        <div class="copy-row">
-                            <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
-                            <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
-                        </div>
-                        <p id="sheetDates" class="sheet-dates"></p>
-                        <p id="sheetSizes" class="sheet-dates"></p>
-                        <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
-                        <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
-                <div class="sheet-header-actions">
-                    <div class="sheet-header-top">
-                        <span class="copy-chip" onclick="shareAppInfo()">Share</span>
-                        <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
-                    </div>
-                    <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
-                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
-                    <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
+                <div class="sheet-header-top">
+                    <span class="copy-chip" onclick="shareAppInfo()">Share</span>
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="closeInspector()">✕</button>
                 </div>
+            </div>
+            <div class="sheet-header-actions">
+                <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
+                <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
+                <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
+            </div>
+            <div class="sheet-meta">
+                <div class="copy-row">
+                    <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
+                    <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
+                </div>
+                <p id="sheetDates" class="sheet-dates"></p>
+                <p id="sheetSizes" class="sheet-dates"></p>
+                <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
+                <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
             </div>
 
             <!-- Action Grid -->
@@ -8484,7 +8553,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Name the list and edit package names one per line.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeListEditorModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeListEditorModal()">✕</button>
             </div>
             <input type="hidden" id="listEditorId">
             <input class="modal-text-input" id="listEditorName" placeholder="List name">
@@ -8507,7 +8576,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="saveListSelectedCount">0 apps selected</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeSaveSelectedModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeSaveSelectedModal()">✕</button>
             </div>
             <input class="modal-text-input" id="saveListName" placeholder="List name">
             <input class="modal-text-input" id="saveListDesc" placeholder="Optional description">
@@ -8528,7 +8597,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="commandResultsSubtitle">Per-app command output</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeCommandResultsModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeCommandResultsModal()">✕</button>
             </div>
             <div class="result-list" id="commandResultsList"></div>
             <div class="result-actions" id="commandResultsActions" style="display:none;"></div>
@@ -8548,7 +8617,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="apkDeleteSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeApkDelete()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeApkDelete()">✕</button>
             </div>
             <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
             <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.</div>
@@ -8569,7 +8638,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="permSubtitle"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closePermSheet()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closePermSheet()">✕</button>
             </div>
             <div id="permLangRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
                 <label for="permLangSelect" style="font-size:13px; font-weight:800;">Language</label>
@@ -8594,7 +8663,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="batchConfirmSubtitle">Review selected apps before continuing</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchConfirmModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeBatchConfirmModal()">✕</button>
             </div>
             <div id="batchConfirmBody">
                 <div class="modal-helper">These apps are currently selected for this action:</div>
@@ -8623,7 +8692,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="optimizeSubtitle">Recompile the app's code for faster runtime.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeOptimizeModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeOptimizeModal()">✕</button>
             </div>
             <label class="switch-row" style="margin-top:4px;">
                 <div><div class="switch-title">Compile mode</div><div class="switch-sub">pm compile -m</div></div>
@@ -8657,7 +8726,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="standbySubtitle" translate="no"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeStandbyModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeStandbyModal()">✕</button>
             </div>
             <label class="switch-row" style="margin-top:4px;">
                 <div><div class="switch-title">Standby bucket</div><div class="switch-sub">am set-standby-bucket</div></div>
@@ -8686,7 +8755,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="fontPvFile" translate="no" style="font-family:monospace; word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="fontPreviewClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="fontPreviewClose()">✕</button>
             </div>
             <div class="font-sample" id="fontPvSample" translate="no" aria-label="Sample text in this font">
                 <div class="fs-big">Aa Bb 123</div>
@@ -8710,7 +8779,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="fmActionPath" style="font-family:monospace; word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeFmAction()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeFmAction()">✕</button>
             </div>
             <div class="batch-actions-grid" id="fmActionBtns"></div>
             <div id="fmDestRow" style="display:none; margin-top:10px;">
@@ -8730,7 +8799,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="fmEditPath" style="font-family:monospace; word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="fmEditClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="fmEditClose()">✕</button>
             </div>
             <div class="fm-opts" style="margin:0 0 8px;">
                 <button class="batch-tool-link" id="fmEditSave" onclick="fmEditSave()">Save</button>
@@ -8755,7 +8824,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="fmMediaMeta"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="fmMediaClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="fmMediaClose()">✕</button>
             </div>
             <div class="fm-opts" style="margin:0 0 8px;" id="fmMediaBar"></div>
             <div class="fm-media-stage" id="fmMediaStage"></div>
@@ -8771,7 +8840,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p><span id="exWhat"></span><span id="exNames" translate="no"></span></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="exClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="exClose()">✕</button>
             </div>
             <div class="switch-sub" style="margin-bottom:4px;">Extract into</div>
             <label class="ex-opt"><input type="radio" name="exWhere" value="here" onchange="exWhereChange()"><span>This folder<small id="exHerePath" translate="no"></small></span></label>
@@ -8797,7 +8866,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="pwName" translate="no" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="pwCancel()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="pwCancel()">✕</button>
             </div>
             <div class="sdb-problem" id="pwWrong" style="display:none;">That password did not work. Try again.</div>
             <input class="modal-text-input" id="pwInput" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" aria-label="Password" onkeydown="if(event.key==='Enter') pwOk()">
@@ -8816,7 +8885,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p><span id="czWhat"></span><span id="czNames" translate="no"></span></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="czClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="czClose()">✕</button>
             </div>
             <div class="switch-sub" style="margin-bottom:4px;">Name of the archive</div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -8884,7 +8953,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p><span id="fmConflictCnt"></span> <span id="fmConflictNames" translate="no"></span></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="fmConflictCancel()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="fmConflictCancel()">✕</button>
             </div>
             <div class="batch-actions-grid">
                 <button class="batch-grid-btn danger" onclick="fmConflictChoose('replace')">Replace</button>
@@ -8904,7 +8973,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="termModalSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="termCloseModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="termCloseModal()">✕</button>
             </div>
             <div id="termModalBody"></div>
         </div>
@@ -8920,7 +8989,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="arcModalPath" style="font-family:monospace; word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="arcCloseModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="arcCloseModal()">✕</button>
             </div>
             <div class="batch-actions-grid" id="arcModalBtns"></div>
             <div id="arcInputRow" style="display:none; margin-top:10px;">
@@ -8954,7 +9023,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Only the lines written by the app you pick</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="lcAppClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="lcAppClose()">✕</button>
             </div>
             <input class="modal-text-input" id="lcAppSearch" placeholder="Search apps…" oninput="lcAppRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
             <div id="lcAppList" style="max-height:50vh; overflow:auto; margin-top:8px;"></div>
@@ -8971,7 +9040,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>A bug, a question, an idea</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="contactClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="contactClose()">✕</button>
             </div>
             <div class="switch-sub" style="margin:0 0 8px;">Write your message and tap <b>Send</b>: your email app opens with it ready, addressed to a contact alias (<b id="contactTo"></b>) that forwards to the developer. The subject is <b>ADB App Manager</b>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.</div>
             <textarea class="modal-text-input" id="contactText" rows="6" placeholder="Your message" autocomplete="off" spellcheck="true" style="width:100%; resize:vertical;" aria-label="Message" oninput="contactPreview()"></textarea>
@@ -9001,7 +9070,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>One more place to find apps</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="storeAddClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="storeAddClose()">✕</button>
             </div>
             <div class="switch-sub" style="margin:0 0 8px;">Paste the address of an <b>F-Droid style repository</b> (for example <span translate="no">https://apt.izzysoft.de/fdroid/repo</span>), or of a <b>GitHub</b> or <b>Codeberg</b> user, organization or project. The app reads what it publishes and lists the apps.</div>
             <input class="modal-text-input" id="storeAddUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Address" oninput="storeAddHint()">
@@ -9024,7 +9093,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Logs written to a file. Tap one to look at it as a still picture.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="lcRecListClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="lcRecListClose()">✕</button>
             </div>
             <div id="lcRecList"></div>
         </div>
@@ -9038,7 +9107,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="lcvSub">&nbsp;</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="lcvClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="lcvClose()">✕</button>
             </div>
             <input type="text" class="list-search" id="lcvFilter" placeholder="search the recording" style="width:100%; box-sizing:border-box;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="lcvFilterInput()">
             <div class="lc-key" id="lcvKey" aria-label="Log level color key"></div>
@@ -9063,7 +9132,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="lcEntLevel">&nbsp;</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="lcEntryClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="lcEntryClose()">✕</button>
             </div>
             <div class="lc-ent-top lvl-V" id="lcEntTop"><div class="lc-badge" id="lcEntBadge">I</div><div style="min-width:0;"><div class="lc-ent-tag" id="lcEntTag" translate="no"></div><div class="lc-ent-meta" id="lcEntMeta" translate="no"></div></div></div>
             <div class="lc-ent-msg" id="lcEntMsg" translate="no"></div>
@@ -9092,7 +9161,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="sdbEditSub" style="word-break:normal;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdbEditClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdbEditClose()">✕</button>
             </div>
             <div class="sdb-about" id="sdbEditAbout" style="display:none;"></div>
             <div class="sdb-risk" id="sdbEditRisk" style="display:none;"></div>
@@ -9132,7 +9201,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p style="word-break:normal;">What the rows, the values and the three tables mean</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdbCloseHelp()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdbCloseHelp()">✕</button>
             </div>
             <div class="sdb-help">
                 <h4>The three tables</h4>
@@ -9183,7 +9252,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p style="word-break:normal;">Adds a name and a value to one of the settings tables</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdbNewClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdbNewClose()">✕</button>
             </div>
             <div class="sdb-seg" id="sdbNewSeg" role="tablist" aria-label="Table"></div>
             <div class="sdb-label"><span>Name</span></div>
@@ -9212,7 +9281,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="sdbMenuSub" style="word-break:normal;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdbMenuClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdbMenuClose()">✕</button>
             </div>
             <div class="sdb-label" style="margin-top:2px;"><span>Sort by</span></div>
             <div class="sdb-seg" id="sdbSortSeg" role="tablist" aria-label="Sort"></div>
@@ -9242,7 +9311,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p style="word-break:normal;">Made with this app, newest first. Revert puts the old value back.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdbJournalClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdbJournalClose()">✕</button>
             </div>
             <div id="sdbJournalList" style="max-height:52vh; overflow:auto;"></div>
             <div style="display:flex; gap:10px; margin-top:8px;">
@@ -9268,7 +9337,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="ovlDetailSub" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="ovlCloseDetail()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="ovlCloseDetail()">✕</button>
             </div>
             <div class="sdb-note" id="ovlDetailNote" style="margin:0 0 12px;"></div>
             <div style="display:flex; gap:10px;">
@@ -9292,7 +9361,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="signName" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="signClose()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="signClose()">✕</button>
             </div>
             <div id="signRows"></div>
             <div id="signStatus" class="uad-status" style="display:none;"></div>
@@ -9310,7 +9379,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="deleteListSubtitle">This action cannot be undone.</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeDeleteListModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeDeleteListModal()">✕</button>
             </div>
             <div class="modal-helper">Are you sure you want to delete this saved list?</div>
             <div style="display:flex; gap:10px; margin-top:8px;">
@@ -9335,7 +9404,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="modalActiveModeDesc">Active: Read-Only (Unprivileged)</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeWorkingModesModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeWorkingModesModal()">✕</button>
             </div>
             <div class="modal-helper" style="margin-bottom:10px;">New to this? The <a href="#" style="color:var(--accent); font-weight:800;" onclick="closeWorkingModesModal(); openHelpGuide('modes-overview'); return false;">Help Guide</a> explains each mode and how to set it up, step by step.</div>
 
@@ -9549,8 +9618,6 @@ Type any command above (e.g. pm list packages -d)</div>
         .hg-bar-title { flex: 1 1 auto; font-size: 18px; font-weight:var(--fw-black); letter-spacing: -0.3px; }
         .hg-bar-btn { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-body); font-weight:var(--fw-heavy); cursor: pointer; }
         .hg-bar-btn:active { background: var(--accent); color: var(--on-accent); }
-        .hg-x { flex: 0 0 auto; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; border-radius: 50%; }
-        .hg-x:active { background: var(--fill-4); }
         #hgSearch { width: 100%; }
         .hg-status { font-size: var(--fs-pill); color: var(--text-muted); margin-top: var(--space-2); min-height: 14px; }
         .hg-body { font-size: var(--fs-label); line-height: 1.65; padding-top: var(--space-3); overflow-wrap: break-word; }
@@ -9617,7 +9684,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="hg-bar-row">
                     <div class="hg-bar-title" id="hgTitle">Help Guide</div>
                     <button class="hg-bar-btn" id="hgContentsBtn" type="button" onclick="hgContents()" style="display:none;">Contents</button>
-                    <div class="hg-x" role="button" tabindex="0" onclick="closeHelpGuide()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeHelpGuide();}" aria-label="Close">&#10005;</div>
+                    <button type="button" class="hg-x sheet-close" aria-label="Close" onclick="closeHelpGuide()">&#10005;</button>
                 </div>
                 <input type="search" class="list-search" id="hgSearch" placeholder="Search the guide (try: freeze, pairing code, density)" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="hgSearchInput()">
                 <div class="hg-status" id="hgStatus"></div>
@@ -9638,7 +9705,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="cdSheetSub" translate="no" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="cdSheetClose()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="cdSheetClose()">&#10005;</button>
             </div>
             <div id="cdSheetBody"></div>
             <div class="batch-actions-grid cd-sheet-grid" id="cdSheetBtns" style="margin-top:10px;"></div>
@@ -9654,7 +9721,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Pair and connect over Wi-Fi, or link a watch over Bluetooth</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="cdAddClose()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="cdAddClose()">&#10005;</button>
             </div>
             <div class="cd-add-tabs" id="cdAddTabs">
                 <button class="cd-tab" data-t="wifi" onclick="cdAddTab('wifi')">Wi-Fi</button>
@@ -9706,7 +9773,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>Choose the ones to send to the device</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="cdPhoneClose()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="cdPhoneClose()">&#10005;</button>
             </div>
             <input type="text" class="list-search" id="cdPhoneSearch" placeholder="Search" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdPhoneRender()" style="width:100%; margin-bottom:8px;">
             <div class="chip-row" id="cdPhoneFilters"></div>
@@ -9726,7 +9793,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <h3 id="cdAskTitle"></h3>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="cdAskDone(false)" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="cdAskDone(false)">&#10005;</button>
             </div>
             <div id="cdAskText" style="font-size:13px; line-height:1.55; overflow-wrap:anywhere;"></div>
             <input class="modal-text-input" id="cdAskInput" style="display:none; margin-top:10px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
@@ -9748,7 +9815,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="trackersApp"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeTrackersInfo()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeTrackersInfo()">✕</button>
             </div>
             <div id="trackersBody" style="font-size:13px; line-height:1.55;"></div>
             <div class="uad-credit" id="trackersCredit" style="margin-top:12px;"></div>
@@ -9769,7 +9836,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="uadInfoApp"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeUadInfo()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeUadInfo()">✕</button>
             </div>
             <div id="uadInfoBody" style="font-size:13px; line-height:1.55;"></div>
             <div class="uad-credit" style="margin-top:12px;">Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.</div>
@@ -9791,7 +9858,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="agentAskSubject" translate="no"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="agentAskClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="agentAskClose()">✕</button>
             </div>
             <div class="agent-ask-sent" id="agentAskSent" translate="no"></div>
             <div class="lc-ent-ai" id="agentAskAi"></div>
@@ -9818,7 +9885,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="uninstDataSub"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="uninstDataClose()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="uninstDataClose()">✕</button>
             </div>
             <div class="batch-help" id="uninstDataNote"></div>
             <div class="batch-sheet-tools" style="margin:6px 0;">
@@ -9843,7 +9910,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p>What Recommended, Advanced, Expert and Unsafe mean</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeUadLevels()" role="button" aria-label="Close">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeUadLevels()">✕</button>
             </div>
             <div class="uad-levels" id="uadLevelsBody" style="display:flex;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
@@ -9861,7 +9928,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="privilegeModalActionText">Privileged command requires elevated access</p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closePrivilegeModal()">✕</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closePrivilegeModal()">✕</button>
             </div>
             <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:18px;">
                 You are currently running in <b>Read-Only Mode</b>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <b>ADB TCP (5555)</b>, <b>Wireless Debugging</b>, <b>Shizuku</b>, or <b>Root</b>.
@@ -9888,7 +9955,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="mpSheetSub" translate="no" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="mpSheetClose()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="mpSheetClose()">&#10005;</button>
             </div>
             <div id="mpSheetBody" style="max-height:62vh; overflow:auto;"></div>
             <div class="mode-btn-row" id="mpSheetBtns" style="margin-top:12px;"></div>
@@ -9898,7 +9965,7 @@ Type any command above (e.g. pm list packages -d)</div>
         <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="mpAskTitle">
             <div class="sheet-header">
                 <div class="sheet-app-hero"><div class="sheet-title"><h3 id="mpAskTitle"></h3></div></div>
-                <div style="font-size:20px; cursor:pointer;" onclick="mpAskDone(false)" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="mpAskDone(false)">&#10005;</button>
             </div>
             <div id="mpAskText" style="font-size:13px; line-height:1.55; overflow-wrap:anywhere; white-space:pre-line;"></div>
             <input class="modal-text-input" id="mpAskInput" style="display:none; margin-top:10px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') mpAskDone(true)">
@@ -9922,7 +9989,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <p id="sdSheetSub" translate="no" style="word-break:break-all;"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="sdSheetClose()" role="button" aria-label="Close">&#10005;</div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sdSheetClose()">&#10005;</button>
             </div>
             <div id="sdSheetBody" style="max-height:60vh; overflow:auto;"></div>
             <div class="mode-btn-row" id="sdSheetBtns" style="margin-top:12px;"></div>
@@ -16144,7 +16211,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ov.addEventListener('click', e => { if (e.target === ov) xqSheetClose(); });
             ov.innerHTML = '<div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="xqSheetTitle" aria-describedby="xqSheetText">'
                 + '<div class="sheet-header"><div class="sheet-app-hero"><span class="xq-ico" id="xqSheetIco" aria-hidden="true"></span><div class="sheet-title"><h3 id="xqSheetTitle"></h3><p id="xqSheetSub"></p></div></div>'
-                + '<div style="font-size:20px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;" id="xqSheetX" role="button" tabindex="0" aria-label="' + escapeHtml(txT('Close')) + '" onclick="xqSheetClose()">&#10005;</div></div>'
+                + '<button type="button" class="sheet-close" id="xqSheetX" aria-label="' + escapeHtml(txT('Close')) + '" onclick="xqSheetClose()">&#10005;</button></div>'
                 + '<div class="xq-text" id="xqSheetText"></div>'
                 + '<div class="xq-cmd"><span class="xq-cmd-k" id="xqSheetCmdK"></span><code id="xqSheetCmd" translate="no"></code><span class="xq-cmd-m" id="xqSheetMode"></span></div>'
                 + '<div class="xq-expect" id="xqSheetExpect"></div>'
@@ -16161,7 +16228,6 @@ Type any command above (e.g. pm list packages -d)</div>
             hold.addEventListener('blur', () => xqHoldCancel());
             hold.addEventListener('contextmenu', e => e.preventDefault());
             hold.addEventListener('click', e => e.preventDefault());                 // a short tap does nothing: only a full hold confirms
-            ov.querySelector('#xqSheetX').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); xqSheetClose(); } });
             xqSheet = ov;
             return ov;
         }

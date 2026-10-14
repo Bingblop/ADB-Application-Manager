@@ -1,0 +1,19 @@
+ok   dark: at rest the text is the muted grey, not the accent
+ok   dark: on the faint --fill-2 fill with a clear border
+ok   dark: still a pill with a pointer, 36px tall
+ok   dark: its text has at least 4.5:1 against what is under it
+ok   dark: :active turns the text and the border to the accent
+ok   dark: :focus-visible turns the text and the border to the accent
+ok   dark: and keyboard focus draws a ring
+ok   dark: and back to muted after
+ok   dark: a tap still opens the Ask Agent window
+ok   light: at rest the text is the muted grey, not the accent
+ok   light: on the faint --fill-2 fill with a clear border
+ok   light: still a pill with a pointer, 36px tall
+ok   light: its text has at least 4.5:1 against what is under it
+ok   light: :active turns the text and the border to the accent
+ok   light: :focus-visible turns the text and the border to the accent
+ok   light: and keyboard focus draws a ring
+ok   light: and back to muted after
+ok   light: a tap still opens the Ask Agent window
+errors: []
