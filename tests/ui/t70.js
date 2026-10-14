@@ -1,5 +1,6 @@
 // v6.1 Application Manager tab top: the header button (the colors palette in v6.1, the settings gear since v7.0) is bigger, the big stat buttons (Installed, Running, ...) light up for the filter the list shows,
-// and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been).
+// and a tip says the filters scroll sideways (and goes once they have been). Since the Apps tab was made less crowded the stat buttons are pills in the filter
+// row and the tip is an arrow at the right end of that row (it scrolls the row; its name and tooltip are the tip's text).
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
 let bad = 0;
@@ -63,7 +64,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await page.keyboard.press(' ');
   check('   …and Space', (await active(page)) === 'running:true', await active(page));
   check('   each card is a button with a pressed state for a screen reader', await ev(page, () => Array.from(document.querySelectorAll('.stat-card')).every(c => c.getAttribute('role') === 'button' && c.hasAttribute('aria-pressed') && c.tabIndex === 0)));
-  check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const w = k => Math.round(document.querySelector('.stat-card[data-filter="' + k + '"]').getBoundingClientRect().width); return w('installed') === w('running') && w('running') === w('uninstalled') && w('enabled') === w('frozen') && w('user') === w('system'); }));
+  check('   the highlight does not change the size of a card or move the others', await ev(page, () => { const w = () => Array.from(document.querySelectorAll('.stat-card')).map(c => Math.round(c.getBoundingClientRect().width) + '@' + Math.round(c.offsetLeft)).join(); const lit = w(); setFilter('all'); const off = w(); setFilter('running'); return document.querySelector('.stat-card.active') && lit === off; }));
   await page.close();
 
   // 3) a filter left on last time is not brought back: the app always opens on All Apps
@@ -85,16 +86,17 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   check('   with the setting off (the default), a saved filter set is ignored', (await active(page)) === 'none' && await ev(page, () => !document.getElementById('rememberFiltersToggle').checked), await active(page));
   await page.close();
 
-  // 4) the tip under Export / Share CSV
+  // 4) the tip: an arrow at the right end of the filter row
   page = await open();
   const t = await ev(page, () => { const h = document.getElementById('filtersHint'), r = x => document.querySelector(x).getBoundingClientRect();
     const btns = Array.from(document.querySelectorAll('.apps-sort-row .mode-action-btn')); const lastBtn = btns[btns.length - 1].getBoundingClientRect();
     const exp = btns.find(x => /Profiles/.test(x.innerText)).getBoundingClientRect(), csv = btns.find(x => /Share CSV/.test(x.innerText)).getBoundingClientRect();
     const hr = h.getBoundingClientRect(), fr = r('#filterScroll');
-    return { shown: getComputedStyle(h).display !== 'none', text: h.innerText.replace(/\s+/g, ' ').trim(), belowButtons: hr.top >= Math.max(exp.bottom, csv.bottom, lastBtn.bottom) - 1, aboveFilters: hr.bottom <= fr.top + 1, width: Math.round(hr.width), sticky: getComputedStyle(h).position };
+    return { shown: getComputedStyle(h).display !== 'none', text: h.getAttribute('aria-label'), title: h.getAttribute('title'), arrow: h.innerText.trim(), belowButtons: hr.top >= Math.max(exp.bottom, csv.bottom, lastBtn.bottom) - 1,
+      inRow: h.parentElement === document.getElementById('filterScroll') && hr.top >= fr.top - 1 && hr.bottom <= fr.bottom + 1 && Math.abs(hr.right - fr.right) <= 1, width: Math.round(hr.width), height: Math.round(hr.height), sticky: getComputedStyle(h).position };
   });
-  check('4. a tip sits under the Share CSV / Profiles buttons and above the filters', t.shown && t.belowButtons && t.aboveFilters, JSON.stringify(t));
-  check('   it tells to scroll the filters sideways for more', /scroll/i.test(t.text) && /sideways/i.test(t.text) && /more filters/i.test(t.text), t.text);
+  check('4. a tip arrow sits under the Share CSV / Profiles buttons, held at the right end of the filter row', t.shown && t.belowButtons && t.inRow && t.sticky === 'sticky' && t.arrow === '›', JSON.stringify(t));
+  check('   its name and tooltip tell to scroll the filters sideways for more', /scroll/i.test(t.text) && /sideways/i.test(t.text) && /more filters/i.test(t.text) && t.title === t.text, t.text);
   check('   the filters really do scroll sideways (more pills than fit)', await ev(page, () => { const f = document.getElementById('filterScroll'); return f.scrollWidth > f.clientWidth + 20; }));
   await ev(page, () => { document.getElementById('filterScroll').scrollLeft = 200; });
   await page.waitForFunction(() => getComputedStyle(document.getElementById('filtersHint')).display === 'none');
@@ -103,10 +105,11 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await page.close();
   // keyboard and screen readers
   page = await open();
-  check('   its ✕ is a button for a screen reader, reachable with Tab, and big enough to hit', await ev(page, () => { const x = document.querySelector('.filters-hint-x'), r = x.getBoundingClientRect(); return x.getAttribute('role') === 'button' && x.tabIndex === 0 && r.width >= 28 && r.height >= 28; }));
-  await ev(page, () => document.querySelector('.filters-hint-x').focus());
+  check('   the arrow is a button for a screen reader, reachable with Tab, and big enough to hit', await ev(page, () => { const x = document.getElementById('filtersHint'), r = x.getBoundingClientRect(); return x.tagName === 'BUTTON' && x.tabIndex === 0 && r.width >= 36 && r.height >= 36; }));
+  await ev(page, () => document.getElementById('filtersHint').focus());
   await page.keyboard.press('Enter');
-  check('   …and Enter on it closes the tip', (await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display)) === 'none');
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('filtersHint')).display === 'none', null, { timeout: 3000 }).catch(() => {});
+  check('   …and Enter on it scrolls the filters on, which puts the tip away', (await ev(page, () => [getComputedStyle(document.getElementById('filtersHint')).display, document.getElementById('filterScroll').scrollLeft > 24].join())) === 'none,true');
   check('   the settings button is a button too: focusable and named', await ev(page, () => { const c = document.getElementById('prefsHeaderBtn'); return c.getAttribute('role') === 'button' && c.tabIndex === 0 && /Settings/.test(c.getAttribute('aria-label')); }));
   await ev(page, () => document.getElementById('prefsHeaderBtn').focus());
   await page.keyboard.press('Enter');
@@ -116,8 +119,9 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   check('   on the next start it is not shown', await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display) === 'none');
   await page.close();
   page = await open();
-  await page.click('.filters-hint-x');
-  check('   its ✕ closes it too (and remembers)', (await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display)) === 'none' && JSON.parse(await ev(page, () => window.__store.ui_state)).filtersHintDone === true);
+  await page.click('#filtersHint');
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('filtersHint')).display === 'none', null, { timeout: 3000 }).catch(() => {});
+  check('   tapping the arrow does the same (and remembers)', (await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display)) === 'none' && JSON.parse(await ev(page, () => window.__store.ui_state)).filtersHintDone === true);
   await page.close();
   // narrow phone: nothing overflows sideways
   page = await open({}, { width: 320, height: 640 });
