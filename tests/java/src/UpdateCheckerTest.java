@@ -37,7 +37,10 @@ public class UpdateCheckerTest {
 
   static final class FakeClock implements UpdateChecker.Clock {
     final AtomicLong t = new AtomicLong(1_800_000_000_000L);
-    public long now() { return t.get(); }
+    final AtomicLong wallStep = new AtomicLong();              // a jump of the wall clock alone (the phone synced its time): now() moves, monotonicMs() does not
+    volatile long nowStep;                                     // each now() call moves the wall clock on by this much (0: it stands still); the monotonic time is untouched
+    public long now() { return t.get() + wallStep.addAndGet(nowStep); }
+    @Override public long monotonicMs() { return t.get(); }
     void advance(long ms) { t.addAndGet(ms); }
   }
 
@@ -56,6 +59,7 @@ public class UpdateCheckerTest {
     final List<String> log = Collections.synchronizedList(new ArrayList<String>());
     final AtomicLong cost = new AtomicLong();
     final CountDownLatch release = new CountDownLatch(1);
+    volatile Runnable onRequest;                    // run on every GET, after it is logged (a test can step the clock mid-run)
     volatile boolean offline;
     volatile boolean allDead;                       // every host times out at connect, also one reached only on a fallback (the per-app catalog files, the release pages)
     volatile long deadRealMs;                       // a dead host also takes this long in real time (the workers overlap)
@@ -90,6 +94,8 @@ public class UpdateCheckerTest {
     public byte[] get(String url, String accept, String bearer, int maxBytes) throws Exception {
       String host = UpdateChecker.hostOf(url);
       log.add(url);
+      Runnable hook = onRequest;
+      if (hook != null) hook.run();
       AtomicInteger c = perHost.get(host);
       if (c == null) { perHost.putIfAbsent(host, new AtomicInteger()); c = perHost.get(host); }
       int nth = c.incrementAndGet();
@@ -307,10 +313,13 @@ public class UpdateCheckerTest {
   public static void main(String[] args) throws Exception {
     indexTests();
     firstRunTests();
+    progressOrderTests();
     cacheTests();
     persistTests();
     breakerTests();
     deadlineCancelOfflineTests();
+    clockStepTests();
+    compareVersionsTests();
     githubLimitTests();
     catalogFallbackTests();
     retryTests();
@@ -357,6 +366,65 @@ public class UpdateCheckerTest {
     w3.net.pages.put(UpdateManager.OBTAINIUM_INDEX + "2", new JSONObject().put("apps", p2).put("pagination", new JSONObject().put("totalPages", 2)).toString());
     JSONObject all = UpdateManager.obtainiumIndex(w3.net);
     is("catalog list: every page is read (80 apps from 2 pages, 2 requests)", all.length() == 80 && w3.net.requests() == 2);
+  }
+
+
+  /** A listener that is slow (5 ms per progress report), counts how many threads are inside it at once and keeps every report in the order it came. */
+  static final class SlowOrderedListener implements UpdateChecker.Listener {
+    final List<JSONObject> progress = Collections.synchronizedList(new ArrayList<JSONObject>());
+    final AtomicInteger inside = new AtomicInteger(), maxInside = new AtomicInteger();
+    final Set<String> threads = Collections.synchronizedSet(new HashSet<String>());
+    public void onUpdate(JSONObject row) {}
+    public void onProgress(JSONObject p) {
+      int now = inside.incrementAndGet();
+      synchronized (maxInside) { if (now > maxInside.get()) maxInside.set(now); }
+      threads.add(Thread.currentThread().getName());
+      try { Thread.sleep(5); } catch (InterruptedException ignored) {}
+      progress.add(p);
+      inside.decrementAndGet();
+    }
+  }
+
+  static void progressOrderTests() throws Exception {
+    int overlapped = 0, backwards = 0, afterDone = 0, badDone = 0, runs = 5, events = 0;
+    for (int r = 0; r < runs; r++) {
+      World w = new World(5000);
+      w.clock.nowStep = 200;                                   // every report passes the 150 ms throttle, so the workers really do report at the same time
+      SlowOrderedListener l = new SlowOrderedListener();
+      JSONObject s = run(w, new UpdateCache(tempDir(), w.clock), w.options(), l);
+      if (l.maxInside.get() > 1) overlapped++;
+      boolean back = false, doneSeen = false, late = false;
+      int prev = 0, dones = 0;
+      synchronized (l.progress) {
+        events += l.progress.size();
+        for (JSONObject p : l.progress) {
+          if (p.optInt("done") < prev) back = true;
+          prev = p.optInt("done");
+          if (doneSeen && "checking".equals(p.optString("phase"))) late = true;
+          if ("done".equals(p.optString("phase"))) { dones++; doneSeen = true; }
+        }
+        if (dones != 1 || !"done".equals(l.progress.get(l.progress.size() - 1).optString("phase"))) badDone++;
+      }
+      if (back) backwards++;
+      if (late) afterDone++;
+      if (s.optInt("total") != 120) badDone++;
+    }
+    is("progress order: the listener is never inside onProgress on two threads at once (" + overlapped + " of " + runs + " runs overlapped)", overlapped == 0);
+    is("progress order: done (the count) never goes back across all reports (" + backwards + " of " + runs + " runs went back)", backwards == 0);
+    is("progress order: no 'checking' report arrives after the 'done' one (" + afterDone + " of " + runs + " runs)", afterDone == 0);
+    is("progress order: exactly one 'done' report per run and it is the last (" + badDone + " of " + runs + " runs wrong)", badDone == 0);
+    is("progress order: the reports were many (" + events + " over " + runs + " runs), so the checks above looked at something", events > runs * 100);
+
+    // a listener that throws does not stop the reports, and a listener that is slow does not make the run wait for ever
+    World wt = new World(5000);
+    wt.clock.nowStep = 200;
+    final AtomicInteger thrown = new AtomicInteger();
+    final List<String> phases = Collections.synchronizedList(new ArrayList<String>());
+    JSONObject st = run(wt, new UpdateCache(tempDir(), wt.clock), wt.options(), new UpdateChecker.Listener() {
+      public void onUpdate(JSONObject row) {}
+      public void onProgress(JSONObject p) { phases.add(p.optString("phase")); if (thrown.incrementAndGet() % 3 == 0) throw new IllegalStateException("listener failed"); }
+    });
+    is("progress order: a listener that throws is swallowed; every report still comes, 'done' last and once", st.optInt("total") == 120 && phases.size() > 100 && phases.get(phases.size() - 1).equals("done") && Collections.frequency(phases, "done") == 1);
   }
 
   static void firstRunTests() throws Exception {
@@ -634,6 +702,36 @@ public class UpdateCheckerTest {
     w5.net.statuses.put("apt.izzysoft.de", 500);
     JSONObject s5 = run(w5, new UpdateCache(tempDir(), w5.clock), w5.options(), new Events());
     is("breaker: a host that answers with HTTP 500 is not 'unreachable' (it answered): its apps fail with the status, the host is not given up on", s5.optJSONArray("hostsDown").length() == 0 && s5.optJSONArray("failed").length() > 0 && s5.optJSONArray("failed").optJSONObject(0).optString("code").equals("http"));
+  }
+
+  /** The phone syncs its time an hour forward in the middle of a run: the deadline runs on the monotonic time, so nothing is 'timed out'. */
+  static void clockStepTests() throws Exception {
+    final World w = new World(5000);
+    w.net.onRequest = new Runnable() { public void run() {
+      if (w.net.log.size() == 5) w.clock.wallStep.set(3_600_000L);
+      try { Thread.sleep(10); } catch (InterruptedException ignored) {}      // a little real time per request, so the run is still going once the clock has stepped
+    } };
+    long wall0 = w.clock.now();
+    JSONObject s = run(w, new UpdateCache(tempDir(), w.clock), w.options(), new Events());
+    is("clock step: the wall clock did jump an hour during the run (" + w.net.log.size() + " requests)", w.clock.now() - wall0 >= 3_600_000L && w.net.log.size() > 5);
+    is("clock step: the run was not expired by it: nothing timed out, nothing failed, every update found (" + s.optInt("timedOut") + " timed out, " + s.optJSONArray("failed").length() + " failed)",
+        s.optInt("timedOut") == 0 && s.optJSONArray("failed").length() == 0 && updatesWithoutSelf(s) == w.expectedUpdates() && !s.optBoolean("cancelled"));
+    long m1 = UpdateChecker.SYSTEM_CLOCK.monotonicMs(), m2 = UpdateChecker.SYSTEM_CLOCK.monotonicMs();
+    is("clock step: the system clock's monotonic time only moves forward and is not the wall clock", m2 >= m1 && Math.abs(UpdateChecker.SYSTEM_CLOCK.now() - m1) > 86_400_000L);
+  }
+
+  /** The order of versions the check decides 'up to date' by: numbers first; on a tie a pre-release is older than the release, a trailing number is a newer build. */
+  static void compareVersionsTests() {
+    is("compareVersions: a pre-release is older than the release (2.0-beta1 < 2.0)", UpdateManager.compareVersions("2.0-beta1", "2.0") < 0 && UpdateManager.compareVersions("2.0", "2.0-beta1") > 0);
+    is("compareVersions: a trailing number is a newer build (v1.2.3-4 > 1.2.3)", UpdateManager.compareVersions("v1.2.3-4", "1.2.3") > 0 && UpdateManager.compareVersions("1.2.3", "v1.2.3-4") < 0);
+    is("compareVersions: trailing numbers compare as numbers (1.2.3-1 < 1.2.3-2, -9 < -10)", UpdateManager.compareVersions("1.2.3-1", "1.2.3-2") < 0 && UpdateManager.compareVersions("1.2.3-9", "1.2.3-10") < 0 && UpdateManager.compareVersions("1.2.3-2", "1.2.3-2") == 0);
+    is("compareVersions: the pre-release words, any case, in order (2.0-Alpha < 2.0-beta < 2.0-RC1 < 2.0-rc2 < 2.0), and a pre-release is older than a build number",
+        UpdateManager.compareVersions("2.0-Alpha", "2.0-beta") < 0 && UpdateManager.compareVersions("2.0-beta", "2.0-RC1") < 0 && UpdateManager.compareVersions("2.0-RC1", "2.0-rc2") < 0
+        && UpdateManager.compareVersions("2.0-rc2", "2.0") < 0 && UpdateManager.compareVersions("2.0-PRE", "2.0") < 0 && UpdateManager.compareVersions("2.0-beta1", "2.0-1") < 0);
+    is("compareVersions: the numbers still decide first and any other suffix is ignored (3.10-Pro > 3.9, 2.0-beta1 > 1.9, 3.10-Pro == 3.10, v1.0.0 == 1.0.0, release-1.2.3 == 1.2.3)",
+        UpdateManager.compareVersions("3.10-Pro", "3.9") > 0 && UpdateManager.compareVersions("2.0-beta1", "1.9") > 0 && UpdateManager.compareVersions("2.0.1", "2.0-1") > 0
+        && UpdateManager.compareVersions("3.10-Pro", "3.10") == 0 && UpdateManager.compareVersions("v1.0.0", "1.0.0") == 0 && UpdateManager.compareVersions("release-1.2.3", "1.2.3") == 0
+        && UpdateManager.compareVersions("", "1.0") < 0 && UpdateManager.compareVersions(null, "") == 0);
   }
 
   static void deadlineCancelOfflineTests() throws Exception {

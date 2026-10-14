@@ -68,6 +68,7 @@ final class SdmHost implements SdmBridge.Host {
         SdmAreas.Config cfg = new SdmAreas.Config();
         cfg.sdkInt = Build.VERSION.SDK_INT;
         cfg.ownPackage = ctx.getPackageName();
+        cfg.userId = android.os.Process.myUid() / 100000;        // the user this app runs as: its app data areas are that user's, not user 0's
         List<String> roots = SdmAreas.discoverPublicRoots(javaFs, "/storage/emulated/0");
         if (roots != null && !roots.isEmpty()) cfg.publicRoots = roots;
         this.areas = new SdmAreas(shell, javaFs, cfg, new SdmAreas.Access() { @Override public boolean storage() { return hooks.storage(); } });
@@ -116,7 +117,7 @@ final class SdmHost implements SdmBridge.Host {
             if (active && !notifying) { notifying = true; JobService.begin(ctx, "SD Maid SE", cancelAll); }
             else if (!active && notifying) {
                 notifying = false;
-                JobService.end(ctx, cancelAll, "done".equals(kind) ? ev.optJSONObject("d") != null ? doneText(ev.optJSONObject("d")) : "" : "");
+                JobService.end(ctx, cancelAll, "SD Maid SE", "done".equals(kind) ? ev.optJSONObject("d") != null ? doneText(ev.optJSONObject("d")) : "" : "");
             }
         }
     }
@@ -166,16 +167,8 @@ final class SdmHost implements SdmBridge.Host {
         if (!SdmAutomation.hasConsent(ctx)) return "Give consent first.";
         if (!SdmShell.isPrivilegedMode(hooks.mode())) return "Needs a working mode (ADB, Wireless Debugging, Shizuku or Root).";
         try {
-            String me = SdmAutomation.componentName(ctx);
-            String cur = shell.run("settings get secure enabled_accessibility_services", 8000).trim();
-            if (cur.contains("Error") || cur.contains("Exception")) return "The phone refused to read the list of services.";
-            if (cur.equals("null") || cur.isEmpty()) cur = "";
-            for (String s : cur.split(":")) if (s.equalsIgnoreCase(me)) cur = null;
-            if (cur != null) {
-                String list = cur.isEmpty() ? me : cur + ":" + me;
-                String out = shell.run("settings put secure enabled_accessibility_services " + BackupScripts.quote(list) + "; settings put secure accessibility_enabled 1", 8000);
-                if (out.contains("Exception") || out.contains("denied")) return "The phone refused: " + out.trim();
-            }
+            String refused = SdmAutomation.setServiceListed(shell, ctx, true);
+            if (!refused.isEmpty()) return refused;
             return SdmAutomation.isEnabledInSettings(ctx) ? "" : "Done. If the service does not start, turn it on in the accessibility settings (on Android 13 and newer, allow restricted settings for this app first).";
         } catch (IOException e) {
             return "That did not work: " + e.getMessage();

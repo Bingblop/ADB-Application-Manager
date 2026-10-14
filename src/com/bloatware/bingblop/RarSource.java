@@ -21,6 +21,7 @@ final class RarSource implements ZipTool.Source {
     static ZipTool.Archive open(File f, char[] password) throws IOException {
         try {
             RarReader.Info info = RarReader.list(f, password);
+            if (info.truncated) throw new IOException("This archive has too many entries (more than " + RarReader.MAX_ITEMS + " files), so it is not opened");
             List<ZipTool.Entry> entries = new ArrayList<ZipTool.Entry>(info.items.size());
             for (RarReader.Item it : info.items) entries.add(toEntry(it));
             ZipTool.Archive a = new ZipTool.Archive(f, f.length(), f.lastModified(), entries, info.format, new RarSource(f), password);

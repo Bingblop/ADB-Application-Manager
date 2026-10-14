@@ -1,0 +1,28 @@
+ok   1. the first device (A) is chosen and its folder is listed
+ok      control: Delete runs on A: 192.168.1.20:5555 rm '/sdcard/notes.txt' Deleted
+ok      control: Rename runs on A: 192.168.1.20:5555 mv '/sdcard/notes.txt' '/sdcard/other.txt' Renamed
+ok      control: New folder runs on A: 192.168.1.20:5555 mkdir -p '/sdcard/Pics' Folder made
+ok      Delete: while its question is open the list moved to B
+ok      Delete confirmed after that: no command reached any device:
+ok      Delete does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+ok      Rename: while its question is open the list moved to B
+ok      Rename confirmed after that: no command reached any device:
+ok      Rename does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+ok      New folder: while its question is open the list moved to B
+ok      New folder confirmed after that: no command reached any device:
+ok      New folder does not claim it was done; the toast is the one about the lost connection: Lost the connection to Watch
+ok   2. push, no change of device: the three files go to A and the summary counts them: 192.168.1.20:5555 push /cache/cd_pick/1/f1.bin /sdcard/|192.168.1.20:5555 push /cache/cd_pick/1/f2.bin /sdcard/|192.168.1.20:5555 push /cache/cd_pick/1/f3.bin /sdcard/ 3 files sent to /sdcard
+ok      push, A drops after the first file and B is picked: nothing is pushed to B: 192.168.1.20:5555 push /cache/cd_pick/1/f1.bin /sdcard/
+ok      and it does not say all three were sent: The push did not finish
+ok   3. APK pull, no change of device: the three files come from A and are saved: 192.168.1.20:5555 pull /data/app/x/base.apk /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/com.example.app.apk|192.168.1.20:5555 pull /data/app/x/split_a.apk /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/com.example.app_split_a.apk|192.168.1.20:5555 pull /data/app/x/split_b.apk /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/com.example.app_split_b.apk Saved to Download/ADB App Manager/Devices/192.168.1.20_5555
+ok      APK pull, A drops after the first file and B is picked: nothing is pulled from B: 192.168.1.20:5555 pull /data/app/x/base.apk /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/com.example.app.apk
+ok      and it does not say "Saved": The pull did not finish
+ok      APK pull, A drops while the device is still asked for the APK path: no pull at all:  The pull did not finish
+ok   4. a folder pull with nothing skipped says Saved: Saved to Download/ADB App Manager/Devices/192.168.1.20_5555
+ok      a folder pull with an error line and a skipped file does not say Saved, it shows the error: failed to copy '/sdcard/Folder/secret.db' to '/dl/Folder/secret.db': remote open failed: Permission denied
+ok      a folder pull that only reports a skipped file does not say Saved either: /sdcard/Folder/: 3 files pulled, 1 skipped. 1.2 MB/s (4096 bytes in 0.003s)
+ok      the APK pull with nothing skipped says Saved: Saved to Download/ADB App Manager/Devices/192.168.1.20_5555
+ok      the APK pull that skipped a file does not say Saved: failed to copy '/data/app/x/base.apk' to '/dl/a.apk': Permission denied
+ok      a push that skipped the file does not say it was sent: /cache/cd_pick/1/f1.bin: 0 files pushed, 1 skipped.
+errors: []
+ALL OK

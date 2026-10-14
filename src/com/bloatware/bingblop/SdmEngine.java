@@ -411,7 +411,10 @@ public final class SdmEngine {
         try {
             Sdm.Automation a = env.automation();
             if (a != null && a.ready()) ctx.automation = a;
-            else if (a != null && !"scan".equals(task.kind)) ctx.automationNotReady = a.notReadyReason();     // a deletion and a one-click (scan, then delete) both delete
+            else if (a != null && !"scan".equals(task.kind)) {                   // a deletion and a one-click (scan, then delete) both delete
+                ctx.automationNotReady = a.notReadyReason();
+                ctx.automationIdle = a;                                           // AppCleaner may ask it to start (see Automation.ensureReady) before it gives up
+            }
         } catch (RuntimeException ignored) {}
         ps.update("Loading", "", 0, -1, 0);
         fireState(tool);
@@ -477,6 +480,14 @@ public final class SdmEngine {
         out.setLast = true;
     }
 
+    /** An automation that is not ready but may be started now: the consent is given and a working mode's shell exists (see {@link SdmAcsStart#decide}). */
+    private static boolean canStart(Sdm.Ctx ctx) {
+        if (ctx.automationIdle == null) return false;
+        boolean hasShell = false;
+        try { hasShell = ctx.shell != null && ctx.shell.uid() >= 0; } catch (RuntimeException ignored) {}
+        return SdmAcsStart.decide(ctx.automationNotReady, hasShell) != SdmAcsStart.Step.NONE;
+    }
+
     private Sdm.Selection prepare(Task task, Sdm.Selection in, ToolState ts, Sdm.Ctx ctx) {
         Sdm.Selection s = new Sdm.Selection();
         s.dropGroups.addAll(in.dropGroups);
@@ -485,7 +496,7 @@ public final class SdmEngine {
         try {
             if (task.tool == Sdm.Tool.APPCLEANER) {
                 if (!s.options.has("includeInaccessible")) s.options.put("includeInaccessible", ctx.bool("include.inaccessible.enabled", true));
-                if (!s.options.has("useAutomation")) s.options.put("useAutomation", ctx.automation != null);
+                if (!s.options.has("useAutomation")) s.options.put("useAutomation", ctx.automation != null || canStart(ctx));
             }
         } catch (JSONException ignored) {}
         View v = ts.view;

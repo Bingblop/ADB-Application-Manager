@@ -76,11 +76,12 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
               const item = { id: 'p1', pkg: a.pkg, appName: a.name, versionName: a.version, fileName: a.pkg + '_' + a.version + '-patched.apk', size: 130000000, keptIn: ['the app folder', 'Downloads/Morphe Patcher'], patchedAt: 1791000000000, patches: a.bundles[0].patches, installed: false };
               M.patched = [item];
               t(260, { t: 'saved', item }); t(270, { t: 'step', name: 'Saving', state: 'OK' });
-              if (a.installAfter) { t(290, { t: 'step', name: 'Installing', state: 'RUNNING' }); t(310, { t: 'install', ok: true, output: 'Success' }); t(315, { t: 'step', name: 'Installing', state: 'OK' }); if (a.deleteAfter) t(320, { t: 'deleted' }); }
+              if (a.installAfter) { t(290, { t: 'step', name: 'Installing', state: 'RUNNING' }); t(310, M.sysInstall ? { t: 'install', ok: true, system: true, handedOff: true, output: 'The system installer was opened. Confirm the install there. (Set up a working mode to install through ADB, Shizuku or Root.)' } : { t: 'install', ok: true, output: 'Success' }); t(315, { t: 'step', name: 'Installing', state: 'OK' }); if (a.deleteAfter && !M.sysInstall) t(320, { t: 'deleted' }); }
               t(340, { t: 'result', result: { success: true, applied: a.bundles[0].patches, failed: [], package: a.pkg, item: item } });
             }
             return;
           }
+          case 'jobStatus': return ok(M.status || { running: false });
           case 'cancel': return ok({});
           case 'patchedList': return ok({ items: M.patched });
           case 'install': if (M.installRetry && !a.uninstallFirst) { M.installRetry = false; return ok({ ok: false, retry: 'uninstall', output: 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' }); } return ok({ ok: true, output: 'Success' });
@@ -236,6 +237,8 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   const chain = await ev(() => ({ t: document.getElementById('mpResult').innerText, shown: Array.from(document.querySelectorAll('#mpResult .mp-trace')).filter(e => getComputedStyle(e).display !== 'none').map(e => e.innerText) }));
   check('a chain of failures leads with the first error and counts the others', /Gboard extension/i.test(chain.t) && /NoSuchMethodException/.test(chain.shown[0] || '') && /2 more failed only because a patch they need failed/i.test(chain.t) && /different Morphe version/.test(chain.t) && chain.shown.length === 1, JSON.stringify(chain));
   check('the dependent ones are named only after Show, with the advice to fix the first', await ev(() => { const e = document.getElementById('mpTraceDeps'); const hidden = getComputedStyle(e).display === 'none'; mpToggleTrace('Deps'); return hidden && getComputedStyle(e).display !== 'none' && /Hide ads, Dark theme/.test(e.innerText) && /Fix the first failure/.test(e.innerText); }));
+  await ev(() => mpResultRender({ success: false, busy: true, error: 'The patcher is busy with another job.' }));
+  check('a start that met a running job says the patcher is busy, without the hint about patches', await ev(() => { const t = document.getElementById('mpResult').innerText; return /The patcher is busy with another job\./.test(t) && !/A patch could not be applied/.test(t); }), await text('#mpResult'));
   await ev(() => mpResultRender({ success: false, error: 'x', failed: [{ name: 'A', error: 'boom' }, { name: 'B', error: 'boom too' }] }));
   check('independent failures are all listed as before', await ev(() => !/only because/.test(document.getElementById('mpResult').innerText) && /boom too/.test(document.getElementById('mpResult').innerHTML)));
 
@@ -263,7 +266,30 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await page.click('#mpGo');
   await page.waitForFunction(() => /is patched/.test(document.getElementById('mpResult').innerText), null, { timeout: 15000 });
   check('with delete on the log says the APK was deleted after the install', await ev(() => /deleted after the install/.test(document.getElementById('mpLog').innerText)));
-  await ev(() => { mpBackToPatches(); mpPageBack(); const d = document.getElementById('mpDeleteAfter'); mp.cfg.deleteAfter = false; mpCfgSave(); });
+  // no working mode: the installer was only opened, so the page must not say "Installed." (and Java keeps the APK)
+  await ev(() => { mpBackToPatches(); window.__mp.sysInstall = true; });
+  await page.click('#mpGo');
+  await page.waitForFunction(() => /is patched/.test(document.getElementById('mpResult').innerText), null, { timeout: 15000 });
+  const sysRes = await text('#mpResult');
+  check('with only the system installer opened the result does not say Installed.', !/Installed\./.test(sysRes), sysRes);
+  check('it shows the words Java gave: the system installer was opened', /The system installer was opened\. Confirm the install there\./.test(sysRes), sysRes);
+  check('the Install button stays, and the log does not claim the APK was deleted', await ev(() => !!document.querySelector('#mpResult .mode-action-btn.primary') && /Install/.test(document.querySelector('#mpResult .mode-action-btn.primary').innerText) && !/deleted after the install/.test(document.getElementById('mpLog').innerText)));
+  await ev(() => { window.__mp.sysInstall = false; mpBackToPatches(); mpPageBack(); const d = document.getElementById('mpDeleteAfter'); mp.cfg.deleteAfter = false; mpCfgSave(); });
+
+  // ---- a patch the app is still running when this page opens (the window was closed and opened again) ----
+  check('showing the tab asks the app whether a patch is going', await ev(() => /mpAdopt\(\)/.test(String(onMorpheShown))));
+  await ev(() => { window.__mp.status = { running: true, job: 'jx', request: { job: 'jx', pkg: 'com.google.android.youtube', name: 'YouTube', version: '20.21.37', versionCode: '1', from: 'installed', installAfter: false, bundles: [{ id: 'morphe-official', patches: ['Hide ads', 'SponsorBlock', 'Dark theme'] }] },
+    events: [{ t: 'step', name: 'Preparing', state: 'RUNNING', job: 'jx', seq: 1 }, { t: 'step', name: 'Preparing', state: 'OK', job: 'jx', seq: 2 }, { t: 'step', name: 'Patching', state: 'RUNNING', job: 'jx', seq: 3 },
+      { t: 'patch', ok: true, name: 'Hide ads', job: 'jx', seq: 4 }, { t: 'log', level: 'INFO', text: 'Loading patches from patches-1.46.0.mpp', job: 'jx', seq: 5 }] }; });
+  await ev(() => { mp.run = null; mpShowPage(false); mpAdopt(); }); await wait(200);
+  check('the page re-enters the run view of the patch that is going, with Stop', (await show('#mpRun')) && !(await show('#mpPrep')) && (await show('#mpStop')) && /Patching YouTube/.test(await text('#mpRunTitle')) && await ev(() => mp.page === true && mp.run.active && mp.run.job === 'jx'));
+  check('what has happened so far is played back: the steps, the applied patch, the log', await ev(() => document.querySelector('#mpSteps .mp-step.ok') !== null && document.querySelector('#mpSteps .mp-step.run').innerText === 'Patching' && mp.run.applied.join() === 'Hide ads' && /Applied: Hide ads/.test(document.getElementById('mpLog').innerText) && /Loading patches from patches-1\.46\.0\.mpp/.test(document.getElementById('mpLog').innerText)), await text('#mpLog'));
+  await ev(() => { window.onMorpheEvent({ t: 'patch', ok: true, name: 'Hide ads', job: 'jx', seq: 4 }); window.onMorpheEvent({ t: 'patch', ok: true, name: 'SponsorBlock', job: 'jx', seq: 6 }); });
+  check('an event that was in the playback is not counted twice, a newer one is', await ev(() => mp.run.applied.join() === 'Hide ads,SponsorBlock'), await ev(() => mp.run.applied.join()));
+  await ev(() => { window.onMorpheEvent({ t: 'result', job: 'jx', seq: 7, result: { success: false, error: 'Boom' } }); });
+  check('the result of the patch reaches the page that opened late', (await text('#mpResult')).includes('Boom') && !(await show('#mpStop')) && await ev(() => mp.run.active === false), await text('#mpResult'));
+  await ev(() => { window.__mp.status = null; mpBackToPatches(); mpPageBack(); mp.run = null; mpAdopt(); }); await wait(150);
+  check('nothing going: the page is left alone', !(await ev(() => !!mp.run)) && !(await show('#mpRun')));
 
   // ---- Community ----
   await page.click('#mpTabs .mp-tab[data-sub="community"]'); await wait(500);

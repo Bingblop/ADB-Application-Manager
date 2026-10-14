@@ -67,7 +67,7 @@ public class PtyShellTest {
         is("a size of 0 becomes 1", PtyShell.command("h", 0, -4, Arrays.asList("x")).subList(1, 3).equals(Arrays.asList("1", "1")));
         String sc = PtyShell.launchScript("/data/app/x y/lib/libptyexec.so", "/data/local/tmp/.cp", 24, 80, "/system/bin/sh");
         is("script: tries the helper where it is, copies it when it cannot run, then execs it with the size and the program",
-                sc.contains("H='/data/app/x y/lib/libptyexec.so'") && sc.contains("1 1 -- /system/bin/true") && sc.contains("cp -f \"$H\" \"$C\"") && sc.contains("C=/data/local/tmp/.cp")
+                sc.contains("H='/data/app/x y/lib/libptyexec.so'") && sc.contains("1 1 -- /system/bin/true </dev/null >/dev/null") && sc.contains("cp -f \"$H\" \"$C\"") && sc.contains("C=/data/local/tmp/.cp")
                 && sc.trim().endsWith("exec \"$P\" 24 80 -- /system/bin/sh"), sc);
         is("script without a copy path has no copy step", !PtyShell.launchScript("/h", "", 24, 80, "sh").contains("cp -f"));
         String ts = TermuxLink.ptyScript("/lib/libptyexec.so", 40, 120, "/data/data/com.termux/files/usr/bin/bash", 4321, "tok123", "");
@@ -233,6 +233,42 @@ public class PtyShellTest {
         int a0 = o.text().indexOf("seq-0\r\n"), a19 = o.text().lastIndexOf("seq-19\r\n");
         is("the first line comes before the last", a0 >= 0 && a19 > a0, o.text());
         o.sh.close();
+
+        // ---- close() never waits for a blocked write ----
+        // A big paste (newline-terminated lines) into a program that does not read its terminal: the pty's input buffer fills, the helper blocks
+        // writing to it, the pipe to the helper fills and the writer thread blocks inside the stream's lock. close() used to close that stream on the
+        // caller's thread, before starting the killer thread: it never returned (an ANR when the app closed its sessions) and the helper, the shell
+        // and the program outlived the app.
+        String bmark = "sleep " + (40000 + new java.util.Random().nextInt(20000));
+        ProcessBuilder bpb = new ProcessBuilder(PtyShell.command(h, 24, 80, Arrays.asList("/bin/sh", "-c", "echo ready; " + bmark)));
+        bpb.redirectErrorStream(true);
+        final Process bproc = bpb.start();
+        Rec b = new Rec();
+        b.sh = new PtyShell(bproc, b);
+        int bPid = -1;
+        long bs = System.currentTimeMillis();
+        while (bPid < 0 && System.currentTimeMillis() - bs < 3000) { bPid = pidOf(bmark); if (bPid < 0) Thread.sleep(20); }
+        is("a program that takes no input is running on the terminal", b.waitFor("ready", 3000) && bPid > 0, b.text());
+        byte[] bline = ("x".repeat(71) + "\n").getBytes(StandardCharsets.UTF_8);
+        byte[] bchunk = new byte[bline.length * 1000];
+        for (int i = 0; i < 1000; i++) System.arraycopy(bline, 0, bchunk, i * bline.length, bline.length);
+        for (int i = 0; i < 4; i++) b.sh.write(bchunk, 0, bchunk.length);        // 288 KB of typed lines: the pty takes a few KB, the pipe 64 KB, the writer blocks on the rest
+        Thread.sleep(1500);
+        final PtyShell bsh = b.sh;
+        final CountDownLatch bclosed = new CountDownLatch(1);
+        final long bt0 = System.currentTimeMillis();
+        Thread bct = new Thread(new Runnable() { public void run() { bsh.close(); bclosed.countDown(); } }, "closer");
+        bct.setDaemon(true);
+        bct.start();
+        boolean bReturned = bclosed.await(2, TimeUnit.SECONDS);
+        is("close() returns at once although the writer is blocked in a write the program never takes", bReturned, bReturned ? "" : "close() still running after " + (System.currentTimeMillis() - bt0) + " ms");
+        is("the helper is gone within a moment of close()", b.done.await(4, TimeUnit.SECONDS) && !bproc.isAlive(), "code " + b.code + " alive " + bproc.isAlive());
+        long bt1 = System.currentTimeMillis();
+        while (pidOf(bmark) > 0 && System.currentTimeMillis() - bt1 < 3000) Thread.sleep(20);
+        boolean bGone = pidOf(bmark) < 0;
+        is("and so is the program on its terminal", bGone, bGone ? "" : "still running: pid " + pidOf(bmark));
+        if (!bGone) new ProcessBuilder("kill", "-9", String.valueOf(pidOf(bmark))).start().waitFor();
+        if (!bReturned) bproc.destroyForcibly();
 
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " FAILED");
         System.exit(fails == 0 ? 0 : 1);
