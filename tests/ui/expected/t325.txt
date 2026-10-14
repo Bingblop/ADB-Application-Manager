@@ -9,7 +9,7 @@ ok   debloater 400: 22 controls, the buttons and chips drawn at least 36px tall
 ok   debloater 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   debloater 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   debloater 400: the ? is 36x36 and no text of its card lies under it
-ok   files 400: 15 controls, the buttons and chips drawn at least 36px tall
+ok   files 400: 5 controls, the buttons and chips drawn at least 36px tall
 ok   files 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   files 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   files 400: the ? is 36x36 and no text of its card lies under it
@@ -49,7 +49,7 @@ ok   debloater 320: 22 controls, the buttons and chips drawn at least 36px tall
 ok   debloater 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   debloater 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   debloater 320: the ? is 36x36 and no text of its card lies under it
-ok   files 320: 15 controls, the buttons and chips drawn at least 36px tall
+ok   files 320: 5 controls, the buttons and chips drawn at least 36px tall
 ok   files 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   files 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   files 320: the ? is 36x36 and no text of its card lies under it

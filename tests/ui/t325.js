@@ -102,6 +102,7 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
     await ev(pkg => toggleSelectPkg(pkg), pick.pkg);
     // what is inside a control keeps its own taps: the hit area lies under it (the File Manager's tick boxes, a preset chip's name and its ×)
     await ev(() => switchView('files')); await page.waitForTimeout(400);
+    await ev(() => fmMoreOpen()); await page.waitForTimeout(450);                     // the tick boxes are in the ⋯ More sheet
     const inner = await ev(() => {
       const at = el => { el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el; };
       const box = at(document.getElementById('fmHiddenChk'));
@@ -112,6 +113,7 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
       return { box, name, x };
     });
     check('files ' + width + ': a tick box inside its option label, and the name and × inside a chip, keep their own taps', inner.box && inner.name && inner.x, JSON.stringify(inner));
+    await ev(() => fmMoreClose());
     // the two switches are whole rows: the label row is the target, at least 44px tall, and the track hands its tap to the row (Pure black flips)
     for (const [view, id] of [['saved-lists', 'lbAuto'], ['prefs', 'pureBlackToggle']]) {
       await ev(v => switchView(v), view); await page.waitForTimeout(400);

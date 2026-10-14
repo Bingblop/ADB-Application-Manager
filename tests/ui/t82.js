@@ -42,6 +42,8 @@ const FILES = {
   const toast = page => ev(page, () => document.getElementById('toastMsg').innerText);
   const shown = (page, sel) => ev(page, s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.classList.contains('show') !== false; }, sel);
   const modalOpen = (page, id) => ev(page, id => document.getElementById(id).classList.contains('show'), id);
+  // Show hidden files and Show thumbnails are in the ⋯ More sheet: open it the way a person does (a no-op when it is open)
+  const openMore = async page => { if (!(await modalOpen(page, 'fmMoreModal'))) { await page.click('#fmMoreBtn'); await sleep(350); } };
 
   // ---------------------------------------------------------------- 1) the ".." row
   let page = await open();
@@ -72,6 +74,7 @@ const FILES = {
   n = await names(page);
   check('2. hidden files are not shown at the start (names that begin with a dot), and the list says how many', !n.some(x => x.startsWith('.') && x !== '..') && /2 hidden items not shown/.test(await ev(page, () => document.getElementById('fmList').innerText)), JSON.stringify(n));
   check('   the box "Show hidden files" is there and not ticked', (await ev(page, () => document.getElementById('fmHiddenChk').checked)) === false);
+  await openMore(page);
   await page.click('#fmHiddenChk'); await sleep(80);
   n = await names(page);
   check('   ticking it shows them at once (no new listing), dimmed', n.includes('.hidden_dir/') && n.includes('.nomedia') && (await ev(page, () => document.querySelectorAll('#fmList .fm-hidden-row').length)) === 2 && !/hidden items? not shown/.test(await ev(page, () => document.getElementById('fmList').innerText)), JSON.stringify(n));
@@ -287,6 +290,7 @@ const FILES = {
   await ev(page, () => { window.onFmThumb('/storage/emulated/0/Pictures/clip.mp4', 'data:image/jpeg;base64,AAAA" onerror="window.__pwned=1" x="'); window.onFmThumb('/storage/emulated/0/Pictures/cat.jpg', 'javascript:alert(1)'); window.onFmThumb('/storage/emulated/0/Pictures/notes.txt', 'data:image/jpeg;base64,AAAA'); });
   await sleep(60);
   check('   an answer that is not a plain picture address is ignored (a quote that would break out of the tag, a script address): no script, no extra picture, the good ones untouched', (await ev(page, () => window.__pwned === undefined)) && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) === 3 && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img[onerror]').length)) === 0);
+  await openMore(page);
   await page.click('#fmThumbChk'); await sleep(100);
   const before = await ev(page, () => window.__fm.thumbReqs.length);
   check('   "Show thumbnails" off: the drawn pages come back and the app is not asked', (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) === 0 && (await ev(page, () => window.__fm.thumbReqs.length)) === before);
@@ -332,7 +336,9 @@ const FILES = {
   await ev(page, () => { fmGo('/storage/emulated/0'); document.getElementById('fmHiddenChk').click(); }); await sleep(60);
   await ev(page, () => { fmSelEnter(null); fmSelectAll(); });
   const picked1 = await ev(page, () => fmSel.size);
+  await openMore(page);
   await page.click('#fmHiddenChk'); await sleep(60);
+  await ev(page, () => fmMoreClose());
   const after = await ev(page, () => ({ n: fmSel.size, shown: fmRows.length, hiddenPicked: Array.from(fmSel).some(p => p.split('/').pop().charAt(0) === '.'), text: document.getElementById('fmSelCount').innerText }));
   check('   hiding the hidden files drops them from the selection (what Delete, Copy and Move act on is what is listed)', picked1 > after.n && after.n === after.shown && !after.hiddenPicked && after.text === after.n + ' selected', JSON.stringify(after));
   await ev(page, () => fmSelExit());
