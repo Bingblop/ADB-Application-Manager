@@ -78,6 +78,23 @@ final class FileRules {
                 || c.equals("/data/dalvik-cache") || c.equals("/data/property");
     }
 
+    /** Whether a plain path is part of the app's own private data (the app answers it from PrivatePaths; a test can answer it from a list). */
+    interface PrivateTest { boolean isPrivate(String path); }
+
+    /**
+     * Why item {@code q} of a cp / mv / rm batch (into {@code dest}; ignored for rm) is refused before anything runs, or null: a system location
+     * {@link #isProtected} names, or {@code privateWhy} when {@code q}, or for a copy or move {@code dest}, is the app's private data. Added storage (a
+     * content:// document) is neither, but the plain path on the other side of a batch that crosses into or out of it is judged here just as in an
+     * all-plain batch, so the route a batch takes cannot skip the guard.
+     */
+    static String batchRefusal(String op, String q, String dest, PrivateTest priv, String privateWhy) {
+        boolean qSaf = q.startsWith("content://");
+        boolean toDest = !"rm".equals(op) && dest != null && !dest.isEmpty() && !dest.startsWith("content://");
+        if (!qSaf && isProtected(q)) return "System location: not touched";
+        if ((!qSaf && priv.isPrivate(q)) || (toDest && priv.isPrivate(dest))) return privateWhy;
+        return null;
+    }
+
     private static final Pattern ALREADY_SIGNED = Pattern.compile("^(.*-signed)(?:-(\\d{1,6}))?$");
 
     /**
