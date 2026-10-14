@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "Kablosuz hata ayıklamayı aç",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "Bir bağlantının neden çalıştığı veya çalışmadığı: Wi-Fi, Kablosuz hata ayıklama, kayıtlı bağlantı noktası, Shizuku ve bu uygulamanın kendine verebildiği tek izin.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "Kablosuz hata ayıklama açık. Yeni porta bağlanmak için “Portları otomatik algıla”ya dokunun.",
-"Wireless Debugging switch": "Kablosuz hata ayıklama anahtarı"
+"Wireless Debugging switch": "Kablosuz hata ayıklama anahtarı",
+"A screenshot or recording is already running.": "Bir ekran görüntüsü veya kayıt zaten sürüyor.",
+"Nothing is recording.": "Hiçbir şey kaydedilmiyor.",
+"Record screen": "Ekranı kaydet",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Kayıt sürüyor. Geri dönüp Kaydı durdur’a dokunun; 3 dakika sonra kendiliğinden durur.",
+"Records the screen for up to 3 minutes": "Ekranı en fazla 3 dakika kaydeder",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Ekran kaydı için bir çalışma modu gerekir: ADB, kablosuz hata ayıklama, Shizuku veya Root.",
+"Screen recording works in the app on a phone, not in a browser.": "Ekran kaydı tarayıcıda değil, bir telefondaki uygulamada çalışır.",
+"Screenshot": "Ekran görüntüsü",
+"Screenshot in 3 seconds. Open the screen you want.": "3 saniye sonra ekran görüntüsü. İstediğiniz ekranı açın.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Ekran görüntüleri için bir çalışma modu gerekir: ADB, kablosuz hata ayıklama, Shizuku veya Root.",
+"Screenshots work in the app on a phone, not in a browser.": "Ekran görüntüleri tarayıcıda değil, bir telefondaki uygulamada çalışır.",
+"Stop recording": "Kaydı durdur",
+"Stopping the recording…": "Kayıt durduruluyor…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3 saniye sonra telefonun ekran görüntüsünü alır; böylece istediğiniz ekranı açabilirsiniz",
+"The phone did not save it.": "Telefon kaydetmedi.",
+"The recording could not be started.": "Kayıt başlatılamadı.",
+"The screenshot could not be started.": "Ekran görüntüsü başlatılamadı.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Bunun için bir çalışma modu gerekir: ADB, kablosuz hata ayıklama, Shizuku veya Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","Parlaklık kayması değiştirilemedi: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Uygulandı ama telefon {1} yerine {0} bildiriyor. One UI ve bazı başka telefonlar bu değeri sıfırlar veya yok sayar."],
 ["{0} of {1}","{0} / {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "Kaydedildi: {0} ({1})."],
+["The phone did not save it: {0}", "Telefon kaydetmedi: {0}"]
 ]
 };

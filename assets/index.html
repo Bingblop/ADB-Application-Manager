@@ -7435,6 +7435,8 @@
                     <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
                     <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
                     <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
+                    <button class="apps-tool-btn" id="screenShotBtn" onclick="screenShotUI()" title="Takes a screenshot of the phone after 3 seconds, so you can open the screen you want">Screenshot</button>
+                    <button class="apps-tool-btn" id="screenRecBtn" onclick="screenRecUI()" title="Records the screen for up to 3 minutes">Record screen</button>
                 </div>
                 <div class="find-bar cn-find">
                     <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -14410,6 +14412,52 @@ Type any command above (e.g. pm list packages -d)</div>
                 card.style.display = '';
                 connCheckRender(connCheckRows(d, f));
             } catch (e) { card.style.display = 'none'; }
+        }
+
+        // ---- Screenshot and screen recording (Console tab) ----
+        // The phone side runs screencap / screenrecord through the working mode; a file counts as saved only when the phone reports it above 0 bytes.
+        let screenRecActive = false;
+        function screenSetRecLabel() {
+            const b = document.getElementById('screenRecBtn');
+            if (b) { b.textContent = screenRecActive ? txT('Stop recording') : txT('Record screen'); b.setAttribute('aria-pressed', screenRecActive ? 'true' : 'false'); }
+        }
+        function screenShotUI() {
+            haptic();
+            const br = window.AndroidBridge;
+            if (!br || !br.captureScreenshot) { showToast(txT('Screenshots work in the app on a phone, not in a browser.')); return; }
+            let got = '';
+            try { got = String(br.captureScreenshot(3) || ''); } catch (e) {}
+            if (got === 'started') showToast(txT('Screenshot in 3 seconds. Open the screen you want.'));
+            else if (got === 'busy') showToast(txT('A screenshot or recording is already running.'));
+            else if (got === 'no_access') showToast(txT('Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.'));
+            else showToast(txT('The screenshot could not be started.'));
+        }
+        function screenRecUI() {
+            haptic();
+            const br = window.AndroidBridge;
+            if (!br || !br.startScreenRecord) { showToast(txT('Screen recording works in the app on a phone, not in a browser.')); return; }
+            if (screenRecActive) {
+                let r = '';
+                try { r = String(br.stopScreenRecord() || ''); } catch (e) {}
+                showToast(r === 'stopping' ? txT('Stopping the recording…') : txT('Nothing is recording.'));
+                return;
+            }
+            let got = '';
+            try { got = String(br.startScreenRecord(180) || ''); } catch (e) {}
+            if (got === 'started') { screenRecActive = true; screenSetRecLabel(); showToast(txT('Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.')); }
+            else if (got === 'busy') showToast(txT('A screenshot or recording is already running.'));
+            else if (got === 'no_access') showToast(txT('Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.'));
+            else showToast(txT('The recording could not be started.'));
+        }
+        // The answer of the phone side: kind shot|record, status ok|failed|no_access, path, bytes, text.
+        function onScreenCaptureResult(json) {
+            let r = {};
+            try { r = JSON.parse(json); } catch (e) { return; }
+            if (r.kind === 'record') { screenRecActive = false; screenSetRecLabel(); }
+            const name = String(r.path || '').replace(/^\/sdcard\//, '');
+            if (r.status === 'ok') showToast(txF('Saved {0} ({1}).', name, formatBytes(r.bytes)));
+            else if (r.status === 'no_access') showToast(txT('This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.'));
+            else showToast(r.text ? txF('The phone did not save it: {0}', String(r.text).split('\n').slice(-1)[0]) : txT('The phone did not save it.'));
         }
 
         function copyAdbKeyFingerprint() {

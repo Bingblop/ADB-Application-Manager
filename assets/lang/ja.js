@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "ワイヤレスデバッグをオンにする",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "接続が動作する、または動作しない理由：Wi-Fi、ワイヤレスデバッグ、保存されたポート、Shizuku、そしてこのアプリが自分に付与できる1つの権限。",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "ワイヤレスデバッグがオンになりました。「ポートを自動検出」をタップして新しいポートに接続します。",
-"Wireless Debugging switch": "ワイヤレスデバッグのスイッチ"
+"Wireless Debugging switch": "ワイヤレスデバッグのスイッチ",
+"A screenshot or recording is already running.": "スクリーンショットまたは録画がすでに実行中です。",
+"Nothing is recording.": "録画していません。",
+"Record screen": "画面を録画",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "録画中です。戻って「録画を停止」をタップしてください。3分後に自動で停止します。",
+"Records the screen for up to 3 minutes": "画面を最長3分間録画します",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "画面の録画には動作モードが必要です：ADB、ワイヤレスデバッグ、ShizukuまたはRoot。",
+"Screen recording works in the app on a phone, not in a browser.": "画面の録画はブラウザではなく、スマートフォン上のアプリで使えます。",
+"Screenshot": "スクリーンショット",
+"Screenshot in 3 seconds. Open the screen you want.": "3秒後にスクリーンショットを撮ります。撮りたい画面を開いてください。",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "スクリーンショットには動作モードが必要です：ADB、ワイヤレスデバッグ、ShizukuまたはRoot。",
+"Screenshots work in the app on a phone, not in a browser.": "スクリーンショットはブラウザではなく、スマートフォン上のアプリで使えます。",
+"Stop recording": "録画を停止",
+"Stopping the recording…": "録画を停止しています…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3秒後にスマートフォンのスクリーンショットを撮ります。撮りたい画面を開く時間があります",
+"The phone did not save it.": "スマートフォンが保存しませんでした。",
+"The recording could not be started.": "録画を開始できませんでした。",
+"The screenshot could not be started.": "スクリーンショットを開始できませんでした。",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "これには動作モードが必要です：ADB、ワイヤレスデバッグ、ShizukuまたはRoot。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","明るさの補正を変更できませんでした：{0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","適用しましたが、スマートフォンは {1} ではなく {0} を報告しています。One UI や一部のスマートフォンはこの値をリセットまたは無視します。"],
 ["{0} of {1}","{1} 中 {0}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "{0} を保存しました（{1}）。"],
+["The phone did not save it: {0}", "スマートフォンが保存しませんでした：{0}"]
 ]
 };

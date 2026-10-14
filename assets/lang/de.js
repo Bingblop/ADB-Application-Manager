@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "Kabelloses Debugging einschalten",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "Warum eine Verbindung funktioniert oder nicht: Wi-Fi, Kabelloses Debugging, der gespeicherte Port, Shizuku und die eine Berechtigung, die sich diese App selbst geben kann.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "Kabelloses Debugging ist an. Tippe auf „Ports automatisch erkennen“, um dich mit dem neuen Port zu verbinden.",
-"Wireless Debugging switch": "Schalter für Kabelloses Debugging"
+"Wireless Debugging switch": "Schalter für Kabelloses Debugging",
+"A screenshot or recording is already running.": "Es läuft bereits ein Screenshot oder eine Aufnahme.",
+"Nothing is recording.": "Es wird nichts aufgenommen.",
+"Record screen": "Bildschirm aufnehmen",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Aufnahme läuft. Komm zurück und tippe auf „Aufnahme beenden“; nach 3 Minuten endet sie von selbst.",
+"Records the screen for up to 3 minutes": "Nimmt den Bildschirm bis zu 3 Minuten lang auf",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Die Bildschirmaufnahme braucht einen Arbeitsmodus: ADB, Kabelloses Debugging, Shizuku oder Root.",
+"Screen recording works in the app on a phone, not in a browser.": "Die Bildschirmaufnahme funktioniert in der App auf einem Telefon, nicht in einem Browser.",
+"Screenshot": "Screenshot",
+"Screenshot in 3 seconds. Open the screen you want.": "Screenshot in 3 Sekunden. Öffne den gewünschten Bildschirm.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Screenshots brauchen einen Arbeitsmodus: ADB, Kabelloses Debugging, Shizuku oder Root.",
+"Screenshots work in the app on a phone, not in a browser.": "Screenshots funktionieren in der App auf einem Telefon, nicht in einem Browser.",
+"Stop recording": "Aufnahme beenden",
+"Stopping the recording…": "Aufnahme wird beendet…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "Macht nach 3 Sekunden einen Screenshot des Telefons, damit du den gewünschten Bildschirm öffnen kannst",
+"The phone did not save it.": "Das Telefon hat es nicht gespeichert.",
+"The recording could not be started.": "Die Aufnahme konnte nicht gestartet werden.",
+"The screenshot could not be started.": "Der Screenshot konnte nicht gestartet werden.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Das braucht einen Arbeitsmodus: ADB, Kabelloses Debugging, Shizuku oder Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","Der Helligkeitsversatz konnte nicht geändert werden: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Angewendet, aber das Telefon meldet {0} statt {1}. One UI und einige andere Telefone setzen diesen Wert zurück oder ignorieren ihn."],
 ["{0} of {1}","{0} von {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "{0} gespeichert ({1})."],
+["The phone did not save it: {0}", "Das Telefon hat es nicht gespeichert: {0}"]
 ]
 };

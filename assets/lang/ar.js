@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "تشغيل التصحيح اللاسلكي",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "لماذا يعمل اتصال أو لا يعمل: Wi-Fi، وتصحيح الأخطاء اللاسلكي، والمنفذ المحفوظ، وShizuku، والإذن الوحيد الذي يستطيع هذا التطبيق منحه لنفسه.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "التصحيح اللاسلكي قيد التشغيل. اضغط على «اكتشاف المنافذ تلقائيًا» للاتصال بالمنفذ الجديد.",
-"Wireless Debugging switch": "مفتاح تصحيح الأخطاء اللاسلكي"
+"Wireless Debugging switch": "مفتاح تصحيح الأخطاء اللاسلكي",
+"A screenshot or recording is already running.": "هناك لقطة شاشة أو تسجيل قيد التشغيل بالفعل.",
+"Nothing is recording.": "لا يوجد تسجيل قيد التشغيل.",
+"Record screen": "تسجيل الشاشة",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "جارٍ التسجيل. ارجع واضغط على «إيقاف التسجيل»؛ يتوقف من تلقاء نفسه بعد 3 دقائق.",
+"Records the screen for up to 3 minutes": "يسجّل الشاشة حتى 3 دقائق",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "يحتاج تسجيل الشاشة إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root.",
+"Screen recording works in the app on a phone, not in a browser.": "يعمل تسجيل الشاشة في التطبيق على الهاتف لا في المتصفح.",
+"Screenshot": "لقطة شاشة",
+"Screenshot in 3 seconds. Open the screen you want.": "لقطة شاشة بعد 3 ثوانٍ. افتح الشاشة التي تريدها.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "تحتاج لقطات الشاشة إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root.",
+"Screenshots work in the app on a phone, not in a browser.": "تعمل لقطات الشاشة في التطبيق على الهاتف لا في المتصفح.",
+"Stop recording": "إيقاف التسجيل",
+"Stopping the recording…": "جارٍ إيقاف التسجيل…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "تلتقط لقطة شاشة للهاتف بعد 3 ثوانٍ لتتمكن من فتح الشاشة التي تريدها",
+"The phone did not save it.": "لم يحفظه الهاتف.",
+"The recording could not be started.": "تعذّر بدء التسجيل.",
+"The screenshot could not be started.": "تعذّر بدء لقطة الشاشة.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "يحتاج هذا إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","تعذّر تغيير انحياز السطوع: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","تم التطبيق، لكن الهاتف يبلّغ عن {0} بدلاً من {1}. تعيد One UI وبعض الهواتف الأخرى ضبط هذه القيمة أو تتجاهلها."],
 ["{0} of {1}","{0} من {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "تم حفظ {0} ({1})."],
+["The phone did not save it: {0}", "لم يحفظه الهاتف: {0}"]
 ]
 };

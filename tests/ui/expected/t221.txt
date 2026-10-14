@@ -1,0 +1,22 @@
+ok   1. both buttons are in the Console tools row
+ok      one press: captureScreenshot(3) and a toast that says to open the screen
+ok      an ok answer names the saved file (without /sdcard) and its size
+ok      a failed answer shows the phone's last line
+ok      a failed answer with no text still says so
+ok      no_access says a working mode is needed
+ok      no page errors
+ok   2. answer "busy": screenshot and recording each say so
+ok      a refused recording leaves the button as Record screen
+ok   2. answer "no_access": screenshot and recording each say so
+ok      a refused recording leaves the button as Record screen
+ok   2. answer "(nothing)": screenshot and recording each say so
+ok      a refused recording leaves the button as Record screen
+ok   3. start: startScreenRecord(180), the button reads Stop recording and is marked pressed
+ok      the toast says it stops by itself after 3 minutes
+ok      the second press asks to stop (stopScreenRecord), not to start again
+ok      the finished file resets the button and is named with its size
+ok      after that a press starts a new recording
+ok      a recording that failed also resets the button
+ok   4. stop answered "idle": the toast says nothing is recording
+ok   5. without the app both buttons say it works on a phone, no errors
+all ok

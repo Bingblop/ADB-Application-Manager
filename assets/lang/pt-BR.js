@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "Ativar a depuração sem fio",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "Por que uma conexão funciona ou não: Wi-Fi, depuração sem fio, a porta salva, Shizuku e a única permissão que este app pode dar a si mesmo.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "A depuração sem fio está ativada. Toque em “Detectar portas” para conectar à nova porta.",
-"Wireless Debugging switch": "Chave da depuração sem fio"
+"Wireless Debugging switch": "Chave da depuração sem fio",
+"A screenshot or recording is already running.": "Uma captura ou gravação já está em andamento.",
+"Nothing is recording.": "Nada está sendo gravado.",
+"Record screen": "Gravar tela",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Gravando. Volte e toque em Parar gravação; ela para sozinha após 3 minutos.",
+"Records the screen for up to 3 minutes": "Grava a tela por até 3 minutos",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "A gravação de tela precisa de um modo de trabalho: ADB, depuração sem fio, Shizuku ou Root.",
+"Screen recording works in the app on a phone, not in a browser.": "A gravação de tela funciona no app, em um telefone, não em um navegador.",
+"Screenshot": "Captura de tela",
+"Screenshot in 3 seconds. Open the screen you want.": "Captura de tela em 3 segundos. Abra a tela que quiser.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "As capturas de tela precisam de um modo de trabalho: ADB, depuração sem fio, Shizuku ou Root.",
+"Screenshots work in the app on a phone, not in a browser.": "As capturas de tela funcionam no app, em um telefone, não em um navegador.",
+"Stop recording": "Parar gravação",
+"Stopping the recording…": "Parando a gravação…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "Tira uma captura de tela do telefone após 3 segundos, para você abrir a tela que quiser",
+"The phone did not save it.": "O telefone não salvou.",
+"The recording could not be started.": "Não foi possível iniciar a gravação.",
+"The screenshot could not be started.": "Não foi possível iniciar a captura de tela.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Isto precisa de um modo de trabalho: ADB, depuração sem fio, Shizuku ou Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","Não foi possível mudar o ajuste de brilho: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Aplicado, mas o telefone informa {0} em vez de {1}. O One UI e alguns outros telefones redefinem ou ignoram este valor."],
 ["{0} of {1}","{0} de {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "Salvo {0} ({1})."],
+["The phone did not save it: {0}", "O telefone não salvou: {0}"]
 ]
 };

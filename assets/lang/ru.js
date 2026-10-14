@@ -4894,7 +4894,25 @@ x: {
 "Turn on Wireless Debugging": "Включить отладку по Wi-Fi",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "Почему подключение работает или нет: Wi-Fi, отладка по Wi-Fi, сохранённый порт, Shizuku и единственное разрешение, которое приложение может выдать себе само.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "Отладка по Wi-Fi включена. Нажмите «Автоопределение портов», чтобы подключиться к новому порту.",
-"Wireless Debugging switch": "Переключатель отладки по Wi-Fi"
+"Wireless Debugging switch": "Переключатель отладки по Wi-Fi",
+"A screenshot or recording is already running.": "Снимок экрана или запись уже выполняется.",
+"Nothing is recording.": "Сейчас ничего не записывается.",
+"Record screen": "Запись экрана",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Идёт запись. Вернитесь и нажмите «Остановить запись»; через 3 минуты она остановится сама.",
+"Records the screen for up to 3 minutes": "Записывает экран до 3 минут",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Для записи экрана нужен рабочий режим: ADB, отладка по Wi-Fi, Shizuku или Root.",
+"Screen recording works in the app on a phone, not in a browser.": "Запись экрана работает в приложении на телефоне, а не в браузере.",
+"Screenshot": "Скриншот",
+"Screenshot in 3 seconds. Open the screen you want.": "Скриншот через 3 секунды. Откройте нужный экран.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Для скриншотов нужен рабочий режим: ADB, отладка по Wi-Fi, Shizuku или Root.",
+"Screenshots work in the app on a phone, not in a browser.": "Скриншоты работают в приложении на телефоне, а не в браузере.",
+"Stop recording": "Остановить запись",
+"Stopping the recording…": "Остановка записи…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "Делает скриншот телефона через 3 секунды, чтобы вы успели открыть нужный экран",
+"The phone did not save it.": "Телефон не сохранил его.",
+"The recording could not be started.": "Не удалось начать запись.",
+"The screenshot could not be started.": "Не удалось сделать скриншот.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Для этого нужен рабочий режим: ADB, отладка по Wi-Fi, Shizuku или Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -6011,6 +6029,8 @@ p: [
 ["Could not change the brightness bias: {0}","Не удалось изменить смещение яркости: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Применено, но телефон сообщает {0} вместо {1}. One UI и некоторые другие телефоны сбрасывают или игнорируют это значение."],
 ["{0} of {1}","{0} из {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Saved {0} ({1}).", "Сохранено: {0} ({1})."],
+["The phone did not save it: {0}", "Телефон не сохранил: {0}"]
 ]
 };
