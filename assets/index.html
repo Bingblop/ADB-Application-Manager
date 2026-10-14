@@ -24177,7 +24177,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (sig !== cd.sig) { cd.sig = sig; cdRenderDevices(); }
             if (key !== cd.lastKey) {
                 cd.lastKey = key;
-                if (moved) cdResetDevice();
+                if (moved) { cdStopWork(); cdResetDevice(); }
                 cdRenderInfo();
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }
@@ -24215,7 +24215,6 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.info = null; cd.apps = null; cd.sel.clear(); cd.filters.clear(); cd.lcText = ''; cd.lcEntries = [];
             cd.fm = { path: '/sdcard', entries: null, busy: false };
             cd.set = { ns: cd.set.ns, data: {}, loaded: {}, busy: false };
-            cd.termRun = '';
             cdBatchBar();
             const l = document.getElementById('cdAppList'); if (l) l.innerHTML = '';
             const o = document.getElementById('cdLcOut'); if (o) o.innerHTML = '<div class="lc-meta">Press Play, or Refresh, to read the log.</div>';
@@ -24223,7 +24222,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const s = document.getElementById('cdSetList'); if (s) s.innerHTML = '';
         }
 
-        function cdStopWork() { cdLcStop(); }
+        // what runs on the device that is being left: the live log, and a console command (its own cdTermGo clears cd.termRun when the cancelled run returns)
+        const CD_MOVED = 'Another device was chosen: nothing was sent';
+        function cdStopWork() { cdLcStop(); if (cd.termRun) cdStop(cd.termRun); }
 
         function cdParseInfo(out, serial) {
             const kv = {};
@@ -24569,14 +24570,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdDeviceMenu() {
             const d = cdCur(); if (!d) return;
             const net = /^[^\s:]+:\d+$/.test(d.serial);
-            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true }))) return; const out = await cdRun(args); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
+            // a question stays open while the device list may move to another device (the chosen one dropped): what is confirmed goes to the device it was asked about, or nowhere
+            const gone = () => { if (cd.serial === d.serial) return false; showToast(CD_MOVED); return true; };
+            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true })) || gone()) return; const out = await cdRun(args, { serial: d.serial }); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
             const b = [
                 { label: 'Reconnect', fn: () => cdReconnectSerial(d.serial, false) },
                 { label: 'Reload details', fn: () => { cd.lastKey = ''; cdLoadInfo(); showToast('Reading the device...'); } },
                 run('Reboot', ['reboot'], 'The device restarts and the connection drops for a moment.'),
                 run('Reboot to recovery', ['reboot', 'recovery'], 'The device restarts into recovery mode.'),
                 run('Reboot to bootloader', ['reboot', 'bootloader'], 'The device restarts into the bootloader.'),
-                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true }))) return; const out = await cdSh('reboot -p'); showToast(cdFail(out) || 'Power off: sent'); } },
+                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true })) || gone()) return; const out = await cdSh('reboot -p', { serial: d.serial }); showToast(cdFail(out) || 'Power off: sent'); } },
                 { label: 'Copy address', fn: () => copyText(d.serial) }
             ];
             if (net) b.push({ label: 'Disconnect', fn: async () => { cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
@@ -24726,7 +24729,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdAppCount').innerText = 'Reading the apps of the device...';
             const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
             cd.appsBusy = false;
-            if (serial !== cd.serial) return;
+            if (serial !== cd.serial) { if (cd.sub === 'apps' && !cd.apps && cdReady()) cdAppsLoad(); return; }      // another device was chosen meanwhile: its own list was not read (this read held the busy flag)
             const f = cdFail(out);
             if (f) { document.getElementById('cdAppCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
             cd.apps = cdParseApps(out);
@@ -25031,7 +25034,14 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Send ----
         function cdPickFiles() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('send');
+            window.AndroidBridge.cdPickPackages('send', cdPickInUse());
+        }
+        // the files of earlier picks that are still needed (the Send queue, a push in progress): the app keeps them when it clears old picks from its cache
+        function cdPickInUse() {
+            const out = [];
+            cd.queue.forEach(q => { if (q.archive) out.push(q.archive); (q.paths || []).forEach(p => out.push(p)); (q.sendFiles || []).forEach(f => out.push(f.path)); });
+            (cd.pushing || []).forEach(p => out.push(p));
+            return JSON.stringify(out.filter((p, i) => p && out.indexOf(p) === i));
         }
         function cdPicked(r) {
             const files = r.files || [];
@@ -25280,7 +25290,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (live) n = Math.min(n, 300);
             const out = await cdSh('logcat -d -v threadtime -t ' + n + ' \'*:' + lvl + '\'', { timeout: 40000 });
             cd.lcBusy = false;
-            if (serial !== cd.serial || cd.sub !== 'logcat') return;
+            if (serial !== cd.serial) { if (cd.sub === 'logcat' && !cd.lcText && cdReady()) cdLcFetch(false); return; }   // the same for the log of the device chosen meanwhile
+            if (cd.sub !== 'logcat') return;
             const f = cdFail(out);
             if (f) { cdLcNote(f); cdLcStop(); return; }
             if (out === cd.lcText && cd.lcEntries.length) return;
@@ -25441,18 +25452,23 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdFmPush() {
             if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
-            window.AndroidBridge.cdPickPackages('push');
+            window.AndroidBridge.cdPickPackages('push', cdPickInUse());
         }
         async function cdFmPushPicked(files) {
             const dest = cd.fm.path, good = files.filter(f => !f.error), serial = cd.serial;
             if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
             let okN = 0, last = '';
-            for (const f of good) {
-                if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
-                showToast('Sending ' + f.name + '...');
-                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
-                last = out;
-                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+            cd.pushing = (cd.pushing || []).concat(good.map(f => f.path));
+            try {
+                for (const f of good) {
+                    if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
+                    showToast('Sending ' + f.name + '...');
+                    const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
+                    last = out;
+                    if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
+                }
+            } finally {
+                cd.pushing = (cd.pushing || []).filter(p => !good.some(f => f.path === p));
             }
             showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();
@@ -25501,26 +25517,31 @@ Type any command above (e.g. pm list packages -d)</div>
                 (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
         }
         function cdSetEdit(key) {
-            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key];
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial;
             cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
-                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value) },
-                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key) },
+                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value, serial) },
+                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key, serial) },
                     { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) }
                 ] });
         }
-        async function cdSetPut(ns, key, value) {
-            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value));
+        // serial: the device whose setting was opened; the sheet or question stays open while the device list may move to another device
+        async function cdSetPut(ns, key, value, serial) {
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value), { serial: serial });
+            if (cd.serial !== serial) return;                                // the table on screen is another device's now
             const t = String(out).trim();
             if (t && /Exception|Error|error:|denied|not allowed/i.test(t)) { cdSheetOpen({ title: 'That did not work', sub: ns + ' ' + key, body: '<div class="cd-log" translate="no">' + escapeHtml(t) + '</div>' }); return; }
             (cd.set.data[ns] = cd.set.data[ns] || {})[key] = value;
             cdSetRender();
             showToast('Saved ' + key);
         }
-        async function cdSetDelete(ns, key) {
+        async function cdSetDelete(ns, key, serial) {
             if (!(await cdAsk({ title: 'Delete ' + key + '?', text: 'From the ' + ns + ' settings of the device.', ok: 'Delete', danger: true }))) return;
-            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key));
+            if (cd.serial !== serial) { showToast(CD_MOVED); return; }
+            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key), { serial: serial });
+            if (cd.serial !== serial) return;
             const t = String(out).trim();
             if (/Exception|Error|error:|denied/i.test(t)) { showToast(t.split('\n')[0]); return; }
             if (cd.set.data[ns]) delete cd.set.data[ns][key];
@@ -25528,10 +25549,11 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Deleted ' + key);
         }
         async function cdSetNew() {
+            const serial = cd.serial;
             const r = await cdAsk({ title: 'New ' + cd.set.ns + ' setting', text: 'A key and its value.', input: 'Key', input2: 'Value', ok: 'Add' });
             if (!r || !r.a.trim()) return;
             if (!/^[\w.:\-]+$/.test(r.a.trim())) { showToast('A key holds letters, digits and . _ : -'); return; }
-            cdSetPut(cd.set.ns, r.a.trim(), r.b);
+            cdSetPut(cd.set.ns, r.a.trim(), r.b, serial);
         }
 
         // ---- Display ----

@@ -5948,6 +5948,7 @@ public class MainActivity extends Activity {
     private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
     private final java.util.Set<String> cdCancelled = java.util.Collections.synchronizedSet(new HashSet<String>());
     private volatile String cdPickTag = "";
+    private volatile List<String> cdPickInUse = new ArrayList<String>();   // files of earlier picks the page still holds (Send queue, a push): kept by the clean-up of old picks
 
     /** Runs the app's adb with these arguments; the process is kept under the tag so Stop can end it. Answer: what it printed (stdout and stderr). */
     private String cdExec(String tag, List<String> args, int timeoutMs) {
@@ -6898,9 +6899,7 @@ public class MainActivity extends Activity {
                         res.put("tag", tag);
                         File root = new File(getCacheDir(), "cd_pick");
                         root.mkdirs();
-                        long old = System.currentTimeMillis() - 60 * 60 * 1000L;
-                        File[] dirs = root.listFiles();
-                        if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                        DeviceLink.clearOldPicks(root, System.currentTimeMillis(), 60 * 60 * 1000L, cdPickInUse);
                         for (Uri u : uris) {
                             try {
                                 String name = cdSafeName(cdDisplayName(u));
@@ -10739,6 +10738,10 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < a.length(); i++) given.add(a.getString(i));
                 String refused = AdbArgs.check(given);
                 if (refused != null) throw new IllegalArgumentException(refused);
+                // push, install, sideload ... read files on this phone and pull writes them: never the app's own private data (the adb key, the sealed secrets)
+                for (String local : AdbArgs.localFileArgs(given)) {
+                    if (isPrivateData(new File(local))) throw new IllegalArgumentException(PRIVATE_WHY);
+                }
                 if (serial != null && !serial.isEmpty()) {
                     if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
                     args.add("-s");
@@ -10792,6 +10795,15 @@ public class MainActivity extends Activity {
         public void cdInstall(final String tag, final String serial, final String itemsJson, final String optsJson, final String profileJson) {
             final String t = tag == null ? "" : tag;
             if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            // the files sent are read and streamed to the other device: never the app's own private data (the adb key, the sealed secrets)
+            try {
+                for (String f : DeviceLink.localFiles(new JSONArray(itemsJson))) {
+                    if (isPrivateData(new File(f))) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: " + PRIVATE_WHY) + ")"); return; }
+                }
+            } catch (Exception e) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: " + e.getMessage()) + ")");
+                return;
+            }
             cdCancelled.remove(t);
             try {
                 cdExecutor.submit(new Runnable() {
@@ -10899,10 +10911,19 @@ public class MainActivity extends Activity {
             });
         }
 
-        /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */
+        /**
+         * Lets the user choose package files (APK, APKS, APKM, XAPK) to send. inUseJson: ["path", ...] of earlier picks the page still holds, which the
+         * clean-up of old picks keeps. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}).
+         */
         @JavascriptInterface
-        public void cdPickPackages(final String tag) {
+        public void cdPickPackages(final String tag, final String inUseJson) {
             cdPickTag = tag == null ? "" : tag;
+            List<String> keep = new ArrayList<String>();
+            try {
+                JSONArray a = new JSONArray(inUseJson == null ? "[]" : inUseJson);
+                for (int i = 0; i < a.length(); i++) keep.add(new File(a.getString(i)).getAbsolutePath());
+            } catch (Exception ignored) {}
+            cdPickInUse = keep;
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

@@ -39,6 +39,27 @@ public class AdbArgsTest {
     is("more than 80 arguments are refused", AdbArgs.check(l(many)) != null);
     is("a subcommand word far into a shell command is only text", AdbArgs.check(l("shell", "ls", "/sdcard", "-l", "kill-server")) == null);
 
+    // #190: the arguments that may name a file on this phone, so the bridge can refuse the app's own private files
+    String key = "/data/user/0/com.bloatware.bingblop/files/adb_home/.android/adbkey";
+    is("push: the local file is among them", AdbArgs.localFileArgs(l("push", key, "/sdcard/")).contains(key));
+    is("push after -s and wait-for-device too", AdbArgs.localFileArgs(l("-s", "x", "wait-for-device", "push", "--sync", key, "/sdcard/")).contains(key));
+    is("pull: the local destination is among them", AdbArgs.localFileArgs(l("pull", "/sdcard/a", key)).contains(key));
+    is("install / install-multiple / sideload / backup -f / restore", AdbArgs.localFileArgs(l("install", "-r", key)).contains(key) && AdbArgs.localFileArgs(l("install-multiple", "a.apk", key)).contains(key)
+        && AdbArgs.localFileArgs(l("sideload", key)).contains(key) && AdbArgs.localFileArgs(l("backup", "-f", key, "-all")).contains(key) && AdbArgs.localFileArgs(l("restore", key)).contains(key));
+    is("an --option=value names a file too", AdbArgs.localFileArgs(l("install", "--apex=" + key)).contains(key));
+    is("a relative name is read from the root, where adb runs", AdbArgs.localFileArgs(l("push", "data/user/0/x", "/sdcard/")).contains("/data/user/0/x"));
+    is("shell, logcat and others name no local file", AdbArgs.localFileArgs(l("shell", "cat", key)).isEmpty() && AdbArgs.localFileArgs(l("logcat", "-f", key)).isEmpty() && AdbArgs.localFileArgs(l("-s", "push", "shell", key)).isEmpty());
+    // ... and the bridge refuses them (a source check: isPrivateData needs Android)
+    try {
+      java.io.File src = null;
+      for (java.io.File d = new java.io.File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { java.io.File f = new java.io.File(d, "src/com/bloatware/bingblop/MainActivity.java"); if (f.isFile()) src = f; }
+      String m = new String(java.nio.file.Files.readAllBytes(src.toPath()), "UTF-8");
+      int a = m.indexOf("public void cdAdb("), b = m.indexOf("cdExecutor.submit", a);
+      is("cdAdb checks every local file argument with isPrivateData before it runs", a > 0 && b > a && m.substring(a, b).contains("AdbArgs.localFileArgs(given)") && m.substring(a, b).contains("isPrivateData(new File(local))"));
+      a = m.indexOf("public void cdInstall("); b = m.indexOf("cdExecutor.submit", a);
+      is("cdInstall checks every file it would send with isPrivateData before it runs", a > 0 && b > a && m.substring(a, b).contains("DeviceLink.localFiles(") && m.substring(a, b).contains("isPrivateData(new File(f))"));
+    } catch (Exception e) { is("MainActivity.java was read: " + e, false); }
+
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
   }

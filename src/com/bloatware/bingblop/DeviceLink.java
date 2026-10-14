@@ -1,6 +1,7 @@
 package com.bloatware.bingblop;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -8,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
@@ -92,6 +94,38 @@ public final class DeviceLink {
         File[] kids = f.listFiles();
         if (kids != null) for (File k : kids) deleteTree(k);
         f.delete();
+    }
+
+    /** Every file on this phone that {@link #install} would read for {@code items}: each item's archive or its paths. */
+    public static List<String> localFiles(JSONArray items) throws JSONException {
+        List<String> out = new ArrayList<String>();
+        if (items == null) return out;
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject it = items.getJSONObject(i);
+            if (it.has("archive")) out.add(it.getString("archive"));
+            else out.addAll(listOf(it.optJSONArray("paths")));
+        }
+        return out;
+    }
+
+    /**
+     * Clears old picks from {@code root} (cache/cd_pick, one folder per chosen file): a folder older than {@code maxAgeMs} goes, unless it holds a file
+     * in {@code inUse} (what the page still has in its Send queue or is pushing). Answer: the folders removed.
+     */
+    public static List<File> clearOldPicks(File root, long now, long maxAgeMs, Collection<String> inUse) {
+        List<File> gone = new ArrayList<File>();
+        File[] dirs = root == null ? null : root.listFiles();
+        if (dirs == null) return gone;
+        for (File d : dirs) {
+            if (!d.isDirectory() || d.lastModified() >= now - maxAgeMs) continue;
+            File[] fs = d.listFiles();
+            boolean used = false;
+            if (fs != null && inUse != null) for (File f : fs) if (inUse.contains(f.getAbsolutePath())) used = true;
+            if (used) continue;
+            if (fs != null) for (File f : fs) f.delete();
+            if (d.delete()) gone.add(d);
+        }
+        return gone;
     }
 
     /**

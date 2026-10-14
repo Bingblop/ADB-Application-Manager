@@ -1,0 +1,9 @@
+ok   1. the first pick passes an empty list of files to keep: {"tag":"send","inUse":[]}
+ok      the two files are in the Send queue
+ok   2. a later pick asks the app to keep the queued files (once each): ["/cache/cd_pick/1/face.apk","/cache/cd_pick/2/game.xapk"]
+ok   3. a file taken off the queue is no longer kept: ["/cache/cd_pick/2/game.xapk"]
+ok   4. the push has started
+ok      a pick while it runs keeps the file being pushed: ["/cache/cd_pick/3/big.zip"]
+ok   5. after the push the file is let go: []
+errors: []
+ALL OK

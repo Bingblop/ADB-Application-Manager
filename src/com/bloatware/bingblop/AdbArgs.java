@@ -1,5 +1,6 @@
 package com.bloatware.bingblop;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -28,6 +29,37 @@ final class AdbArgs {
      * @param args the arguments after {@code adb} (and after the {@code -s serial} the app adds itself)
      * @return null when they may be run, otherwise what to tell the user
      */
+    /** Subcommands that read or write files on this phone (push, pull, install, sideload, backup, restore): their arguments may name local files. */
+    private static final Pattern LOCAL_FILE_COMMAND = Pattern.compile("push|pull|install|install-multiple|install-multi-package|sideload|backup|restore");
+
+    /**
+     * The arguments of a command that may name a file on this phone, so the caller can refuse one that is part of the app's own private data (the adb key,
+     * the sealed secrets): every argument after a subcommand that reads or writes local files, the value of an {@code --option=value} included. It takes
+     * more than only the local ones (a remote path of push or pull, an option's value); that is on purpose: the caller only refuses names that lead into
+     * the app's private folder. Relative names are given as adb would read them from its working folder, which is the root of the file system here.
+     */
+    static List<String> localFileArgs(List<String> args) {
+        List<String> out = new ArrayList<String>();
+        if (args == null) return out;
+        int i = 0;
+        while (i < args.size() && args.get(i) != null && args.get(i).startsWith("-") && args.get(i).length() > 1) {
+            i += VALUE_OPTION.matcher(args.get(i)).matches() ? 2 : 1;
+        }
+        while (i < args.size() && args.get(i) != null && WAIT_COMMAND.matcher(args.get(i)).matches()) i++;
+        if (i >= args.size() || args.get(i) == null || !LOCAL_FILE_COMMAND.matcher(args.get(i)).matches()) return out;
+        for (int k = i + 1; k < args.size(); k++) {
+            String a = args.get(k);
+            if (a == null || a.isEmpty()) continue;
+            if (a.startsWith("-")) {
+                int eq = a.indexOf('=');
+                if (eq < 0 || eq == a.length() - 1) continue;
+                a = a.substring(eq + 1);
+            }
+            out.add(a.startsWith("/") ? a : "/" + a);
+        }
+        return out;
+    }
+
     static String check(List<String> args) {
         if (args == null || args.isEmpty() || args.size() > 80) return "no command";
         for (String a : args) {
