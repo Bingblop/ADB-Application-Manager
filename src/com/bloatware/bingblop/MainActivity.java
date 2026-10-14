@@ -7637,7 +7637,7 @@ public class MainActivity extends Activity {
                     try {
                         OutputStream out = getContentResolver().openOutputStream(target, "wt");
                         if (out == null) throw new IllegalStateException("the folder would not open the file");
-                        try { copyFile(file, out); } finally { out.close(); }
+                        try { copyFileChecked(file, out); } finally { out.close(); }        // judged once open: the app's private data (the signing key) never leaves
                         whole = true;
                     } finally {
                         // a copy that stopped half way must not stay behind looking like the app file
