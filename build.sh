@@ -113,8 +113,13 @@ if command -v javac >/dev/null 2>&1; then
     else
         JAVAC_CP=(--release 8 -cp "$BOOTCLASSPATH:$LIBS_CP")
     fi
+    # javac's own exit status decides: it still writes the classes that did compile (MainActivity among them) when another file has
+    # errors, so neither the class check below nor a pipe through grep may stand in for it. The log is shown without the [options] noise.
+    JAVAC_STATUS=0
     javac -nowarn -encoding UTF-8 "${JAVAC_CP[@]}" \
-        -d "$WORK_DIR/obj/classes" $SOURCES 2>&1 | grep -v "^warning: \[options\]" || true
+        -d "$WORK_DIR/obj/classes" $SOURCES > "$WORK_DIR/obj/javac.log" 2>&1 || JAVAC_STATUS=$?
+    grep -v "^warning: \[options\]" "$WORK_DIR/obj/javac.log" || true
+    [ "$JAVAC_STATUS" -eq 0 ] || fail "Java compilation failed (javac exit status $JAVAC_STATUS)"
 elif command -v ecj >/dev/null 2>&1; then
     ecj -nowarn -source 1.8 -target 1.8 -encoding UTF-8 \
         -bootclasspath "$BOOTCLASSPATH" -cp "$LIBS_CP" \

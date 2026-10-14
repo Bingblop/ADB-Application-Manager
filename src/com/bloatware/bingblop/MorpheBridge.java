@@ -284,14 +284,7 @@ public final class MorpheBridge {
     }
 
     private List<File> allowedRoots() {
-        List<File> r = new ArrayList<File>();
-        Context c = host.context();
-        r.add(new File(c.getCacheDir(), "morphe_pick"));
-        r.add(base);
-        r.add(new File(host.downloadsDir(), "Morphe Patcher"));
-        r.add(new File(host.downloadsDir(), "Helper for Morphe"));
-        r.add(new File(host.downloadsDir(), "App Updater"));
-        return r;
+        return MorpheJobs.pageRoots(base, new File(host.context().getCacheDir(), "morphe_pick"), host.downloadsDir());   // not base itself: it holds the signing key
     }
 
     private File helperDir(String save) {
@@ -593,9 +586,9 @@ public final class MorpheBridge {
                 }
             }, keystore, keyInfo, MorpheJobs.abiName(Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""));
             step(jobId, "Preparing", "OK");
-            final JSONObject engineResult = runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
+            final JSONObject engineResult = MorpheJobs.checkApplied(runEngine("patch", job, dir, "Patching " + a.optString("name", a.optString("pkg")), jobId, new MorpheRunner.EventSink() {
                 @Override public void accept(JSONObject e) { ev(jobId, e); }
-            }, 45L * 60 * 1000);
+            }, 45L * 60 * 1000));                                                              // nothing applied is a failure: the APK is the unpatched app
             result = engineResult;
             if (engineResult.optBoolean("success") && output.isFile()) {
                 step(jobId, "Saving", "RUNNING");

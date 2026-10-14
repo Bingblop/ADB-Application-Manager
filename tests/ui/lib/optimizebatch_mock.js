@@ -16,9 +16,10 @@ exports.installOptimizeBatchMock = function () {
         const step = () => {
             if (window.__optimizeBatchCancel || i >= total) {
                 window.__optimizeBatchBusy = false;
-                window.onOptimizeBatchDone && window.onOptimizeBatchDone(JSON.stringify({
+                // an object literal, as MainActivity evaluates window.onOptimizeBatchDone(<res.toString()>)
+                window.onOptimizeBatchDone && window.onOptimizeBatchDone({
                     total: total, done: done, cancelled: window.__optimizeBatchCancel && i < total, rows: rows, ok: true
-                }));
+                });
                 return;
             }
             const pkg = pkgs[i];

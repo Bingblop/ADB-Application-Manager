@@ -684,6 +684,7 @@ public class RarReaderTest {
       testRar5SolidStartFailure();
       testRar5SolidStartFailureChain();
       testRar5UnknownSizeRoom();
+      testRar5DataPasswordAsks(r);
       testRar4(r);
       testSfxAndMagic(r);
       testFixtures();
@@ -1657,6 +1658,40 @@ public class RarReaderTest {
     try { ZipTool.extractTo(a, e, out2); } catch (IOException ex) { msg = ex.getMessage(); } finally { ZipTool.freeSpaceReserve = saved; }
     check("with no room left it stops with a free-space message (" + msg + ")", msg != null && msg.contains("Not enough free space"));
     check("and leaves no partial file behind", !out2.exists() && !new File(tmp, ".unknown-size-2.out.part").exists());
+  }
+
+  /**
+   * File data encrypted, names readable (rar a -p, no -hp): the archive opens without a password, so the password error comes while an entry is
+   * read. Extracting must stop with ZipTool.NeedPassword (the page then asks), not skip the file with a "password-required" note.
+   */
+  static void testRar5DataPasswordAsks(Random r) throws Exception {
+    char[] pw = "secret".toCharArray();
+    W5 w = new W5(); w.main(false);
+    w.file(new F5("plain.txt").stored(utf8("not secret")));
+    w.file(new F5("secret.txt").stored(utf8("secret text\n")).encrypt(pw, 6, true, false, r));
+    w.end();
+    File f = new File(tmp, "enc-data.rar");
+    Files.write(f.toPath(), w.bytes());
+    for (char[] given : new char[][]{null, "wrong".toCharArray()}) {
+      String label = given == null ? "no password" : "a wrong password";
+      ZipTool.Archive ar = RarSource.open(f, given);
+      List<String> problems = new ArrayList<String>();
+      Throwable t = null;
+      try { ZipTool.extractTree(ar, "", new File(tmp, "enc-data-out-" + (given == null ? "none" : "wrong")), null, problems); } catch (Throwable x) { t = x; }
+      check("extracting encrypted file data with " + label + " stops and asks for the password (" + t + ", problems " + problems + ")",
+          t instanceof ZipTool.NeedPassword && ((ZipTool.NeedPassword) t).wrong == (given != null));
+      ZipTool.Entry sec = null;
+      for (ZipTool.Entry e : ar.entries) if (e.name.equals("secret.txt")) sec = e;
+      t = null;
+      try { ZipTool.extractTo(ar, sec, new File(tmp, "enc-data-one.txt")); } catch (Throwable x) { t = x; }
+      check("extracting that one file with " + label + " asks for the password too (" + t + ")", t instanceof ZipTool.NeedPassword && ((ZipTool.NeedPassword) t).wrong == (given != null));
+    }
+    ZipTool.Archive ar = RarSource.open(f, pw);
+    File out = new File(tmp, "enc-data-out-good");
+    List<String> problems = new ArrayList<String>();
+    long[] res = ZipTool.extractTree(ar, "", out, null, problems);
+    check("with the right password both files are extracted (" + problems + ")", res[0] == 2 && problems.isEmpty()
+        && new String(Files.readAllBytes(new File(out, "secret.txt").toPath()), StandardCharsets.UTF_8).equals("secret text\n"));
   }
 
   /** The .exp files of the rarfile project: "File: name" lines, or plain lists of names; every name must appear in the listing. */

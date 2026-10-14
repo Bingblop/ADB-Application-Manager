@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "एनिमेटर अवधि का स्केल (1 = सामान्य, 0 = बंद)",
 "Another archive job is still running": "आर्काइव का एक और काम अभी चल रहा है",
 "Another batch action is already running": "कोई और बैच कार्रवाई पहले से चल रही है",
+"Another device was chosen: nothing was sent": "दूसरा डिवाइस चुना गया: कुछ नहीं भेजा गया",
 "Another folder": "दूसरा फ़ोल्डर",
 "Another theme": "दूसरी थीम",
 "Answers": "जवाब देता है",

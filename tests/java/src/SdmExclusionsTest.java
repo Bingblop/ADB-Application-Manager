@@ -245,6 +245,42 @@ public class SdmExclusionsTest {
         JSONObject dflt = SdmExclusions.toPage(new SdmExclusions(tmp()).get("PathExclusion-/data/rootfs"), null);
         is("a default is flagged for the page", dflt.getBoolean("isDefault") && dflt.has("reason"), true);
 
+        // ---------- SDM-2: a path typed in another spelling of the same folder protects it
+        String target = "/storage/emulated/0/Download/keep/report.tmp";
+        for (String typed : new String[] { "/storage/emulated/0/Download/keep", "/sdcard/Download/keep", "/sdcard/Download/keep/", "/mnt/sdcard/Download/keep",
+                "/storage/self/primary/Download/keep", "/storage/emulated/0/download/keep", "/storage/emulated/0/DOWNLOAD/Keep", "/storage/emulated/0//Download/keep",
+                "/storage/emulated/0/./Download//keep/", "/storage/emulated/0/Music/../Download/keep", "/data/media/0/Download/keep" }) {
+            SdmExclusions sp = new SdmExclusions(tmp());
+            sp.save(SdmExclusions.fromPage(new JSONObject().put("kind", "path").put("path", typed).put("tags", new JSONArray())));
+            is("typed as " + typed + ": the file is excluded", sp.excludesPath(SC, target), true);
+            is("typed as " + typed + ": deleting the file is blocked", sp.blocksDelete(SC, target), true);
+            is("typed as " + typed + ": deleting the folder above is blocked", sp.blocksDelete(AC, "/storage/emulated/0/Download"), true);
+            eq("typed as " + typed + ": the nested rule keeps the folder above", sp.excludeNested(DD, l("/storage/emulated/0/Download", "/storage/emulated/0/Other")), l("/storage/emulated/0/Other"));
+            is("typed as " + typed + ": a sibling is not excluded", sp.excludesPath(SC, "/storage/emulated/0/Download/keeper/x"), false);
+        }
+        SdmExclusions sp = new SdmExclusions(tmp());
+        sp.save(SdmExclusions.fromPage(new JSONObject().put("kind", "path").put("path", "/storage/emulated/0//Download/./keep/").put("tags", new JSONArray())));
+        is("the stored path is the clean one", sp.get("PathExclusion-/storage/emulated/0/Download/keep") != null, true);
+        sp.save(SdmExclusions.Exclusion.path("/sdcard/Pictures/Mine", Arrays.asList("deduplicator")));
+        eq("paths() for pruning a walk: the alias resolved, the case kept", sp.paths(DD).contains("/storage/emulated/0/Pictures/Mine"), true);
+        is("a scan as root through /data/media is matched as well", sp.excludesPath(DD, "/data/media/0/Pictures/Mine/a.jpg"), true);
+        SdmExclusions dl = new SdmExclusions(null);
+        dl.save(SdmExclusions.Exclusion.path("/data/local/Keep", Arrays.asList("systemcleaner")));
+        is("letter case is only ignored below /storage", dl.excludesPath(SC, "/data/local/keep/x"), false);
+        is("…the same case below /data still matches", dl.excludesPath(SC, "/data/local/Keep/x"), true);
+        SdmExclusions u10 = new SdmExclusions(tmp(), 10);
+        u10.save(SdmExclusions.Exclusion.path("/sdcard/Download/keep", Arrays.asList("systemcleaner")));
+        is("a second user: /sdcard is that user's storage", u10.excludesPath(SC, "/storage/emulated/10/Download/keep/a"), true);
+        is("…not user 0's", u10.excludesPath(SC, "/storage/emulated/0/Download/keep/a"), false);
+        threw = false;
+        try { SdmExclusions.Exclusion.path("/../etc", Arrays.asList("systemcleaner")); } catch (IllegalArgumentException e) { threw = true; }
+        is("a path that goes above / is refused", threw, true);
+        File reload = tmp();
+        new SdmExclusions(reload).save(SdmExclusions.Exclusion.path("/storage/emulated/0/Download/keep", Arrays.asList("systemcleaner")));
+        java.nio.file.Path storedFile = new File(reload, "exclusions.json").toPath();
+        Files.write(storedFile, new String(Files.readAllBytes(storedFile), "UTF-8").replace("/storage/emulated/0/Download/keep", "/storage/emulated/0//Download/keep/").getBytes("UTF-8"));
+        is("a stored path in another spelling is cleaned when it is read", new SdmExclusions(reload).excludesPath(SC, target), true);
+
         // ---------- speed: 20,000 exclusions, 200,000 lookups
         SdmExclusions big = new SdmExclusions(null);
         List<String> many = new ArrayList<String>();

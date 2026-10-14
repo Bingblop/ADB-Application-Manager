@@ -2,7 +2,7 @@
 // given packages, calling the bridge's own executeAppAction once per step with a next-tick yield between steps
 // (so a test can observe progress between apps and interrupt with appBatchCancel the same way the real batch
 // loop can be stopped after whichever app it is already on), then reports window.onAppBatchProgress before each
-// step and window.onAppBatchDone at the end. Call this AFTER the test's own addInitScript has set
+// step and window.onAppBatchDone({...}) at the end (an object, as MainActivity sends it). Call this AFTER the test's own addInitScript has set
 // window.AndroidBridge with its own executeAppAction - this only adds the two batch-runner methods on top.
 exports.installAppBatchMock = function () {
     if (!window.AndroidBridge) return;
@@ -17,10 +17,11 @@ exports.installAppBatchMock = function () {
         const step = () => {
             if (window.__appBatchCancel || i >= total) {
                 window.__appBatchBusy = false;
-                window.onAppBatchDone && window.onAppBatchDone(JSON.stringify({
+                // MainActivity evaluates window.onAppBatchDone(<res.toString()>): an object literal, not a quoted JSON text
+                window.onAppBatchDone && window.onAppBatchDone({
                     action: action, total: total, done: done,
                     cancelled: window.__appBatchCancel && i < total, rows: rows, ok: true
-                }));
+                });
                 return;
             }
             const pkg = pkgs[i];

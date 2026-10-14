@@ -24,7 +24,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
           return { pkg: p, success: gone, label: gone ? 'Uninstalled' : 'Still installed', verified: true, commandOk: false,
             output: gone ? 'Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked.\n\nFailure [x]' : 'Checked afterwards: still installed.\n\nFailure [x]' };
         });
-        setTimeout(() => window.onAppBatchDone(JSON.stringify({ ok: true, action, total: pk.length, done: rows.filter(r => r.success).length, cancelled: false, rows })), 30);
+        setTimeout(() => window.onAppBatchDone({ ok: true, action, total: pk.length, done: rows.filter(r => r.success).length, cancelled: false, rows }), 30);
         return 'started';
       },
     };

@@ -230,6 +230,7 @@ public class SdmDedupTest {
             concurrency();
             deleting();
             deleteSafety();
+            deadShell();
             resultApi();
         } finally {
             new SdmFsJava().delete(root.getPath());
@@ -687,6 +688,35 @@ public class SdmDedupTest {
     static boolean containsPath(List<Sdm.Deleted> l, String path) { for (Sdm.Deleted d : l) if (d.path.equals(path)) return true; return false; }
 
     static String keeperOf(Sdm.Result r, Sdm.DeleteReport rep, String hash) { return "sd/Download/photo1 (1).jpg"; }
+
+    /** A shell whose every command fails, as when the ADB connection drops or Shizuku is killed. */
+    static class DeadShell implements Sdm.Shell {
+        @Override public int uid() { return 2000; }
+        @Override public String run(String script, int timeoutMs) throws IOException { throw new IOException("device offline"); }
+        @Override public void stream(String script, int timeoutMs, Sdm.LineSink sink, Sdm.Cancel cancel) throws IOException { throw new IOException("device offline"); }
+    }
+
+    /** SDM-1: Android/data is read through the working mode and the mode is lost before the delete: a stat that fails is "cannot tell", never "gone". */
+    static void deadShell() throws Exception {
+        String hA = sha(A), hB = sha(B);
+        Env e = new Env();
+        Sdm.Result r = new SdmDedup().scan(e.ctx());
+        String inData = "sd/Android/data/com.x/dup.jpg";
+        is("dead shell: the copy in Android/data is in the set", files(r, hA).contains(inData), true);
+        is("dead shell: …and is not the one that stays", inData.equals(keeper(r, hA)), false);
+        FakeAreas sa = new FakeAreas();
+        for (Sdm.AreaInfo i : e.areas.list) sa.list.add(i.area == Sdm.Area.PUBLIC_DATA ? new Sdm.AreaInfo(i.area, i.root, true, "shell", "") : i);
+        Sdm.Ctx ctx = new Sdm.Ctx(new SdmFs(sa, new SdmFsJava(), new SdmFsShell(new DeadShell())), sa, new NoPkgs(), e.ex, new DeadShell(), e.settings, e.rec, null, 1700000000L);
+        Sdm.Selection sel = new Sdm.Selection();
+        sel.dropGroups.add(hB);
+        Sdm.DeleteReport rep = new SdmDedup().delete(r, sel, ctx);
+        is("dead shell: the copy is still on disk", exists(inData), true);
+        is("dead shell: …is not reported deleted", containsPath(rep.deleted, root + "/" + inData), false);
+        is("dead shell: …is reported as failed", rep.failed.contains(root + "/" + inData), true);
+        is("dead shell: …stays in the result", files(r, hA).contains(inData), true);
+        is("dead shell: the copies read with Java did go", !rep.deleted.isEmpty(), true);
+        rebuild();
+    }
 
     static void deleteSafety() throws Exception {
         String hA = sha(A), hB = sha(B);
