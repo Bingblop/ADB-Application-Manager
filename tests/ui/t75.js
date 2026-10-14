@@ -345,7 +345,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
 
   // ---------------------------------------------------------------------------------------------------------------------------------------------
   // 3) every way of closing the first-launch sheet remembers it
-  for (const [how, close] of [['"Not now"', p => p.click('#permCloseBtn')], ['the ✕ at the top', p => p.click('#permModal .sheet-header > div:last-child')],
+  for (const [how, close] of [['"Not now"', p => p.click('#permCloseBtn')], ['the ✕ at the top', p => p.click('#permModal .sheet-header > .sheet-close')],
     ['a tap beside the sheet', p => p.click('#permModal', { position: { x: 4, y: 4 } })], ['the Back button', p => ev(p, () => handleAndroidBack())]]) {
     await scenario({ kv: {} }, async page => {
       await intro(page);

@@ -21,7 +21,7 @@ const { chromium, PAGE } = require('./lib/pw');
       };
     }, dark);
     await page.goto(PAGE); await page.waitForTimeout(300);
-    const show = async pkg => { await page.evaluate(p => openInspector(p), pkg); await page.waitForTimeout(80); return (await page.locator('#inspectorModal .sheet-title').innerText()).replace(/\n/g, ' | '); };
+    const show = async pkg => { await page.evaluate(p => openInspector(p), pkg); await page.waitForTimeout(80); return (await page.locator('#inspectorModal .sheet-title, #inspectorModal .sheet-meta').allInnerTexts()).join('\n\n').replace(/\n/g, ' | '); };
     console.log(dark ? 'DARK' : 'LIGHT');
     console.log('  normal:     ', await show('com.sec.android.app.sbrowser'));
     if (dark) {
