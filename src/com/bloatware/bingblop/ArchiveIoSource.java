@@ -1,6 +1,7 @@
 package com.bloatware.bingblop;
 
 import java.io.File;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +46,18 @@ final class ArchiveIoSource implements ZipTool.Source {
         return new ZipTool.NeedPassword(pe.wrong, pe.wrong ? "That password did not work" : "This archive needs a password to open");
     }
 
+    /**
+     * The data of an entry, with a password error while it is read turned into {@link ZipTool.NeedPassword}: the names of an archive can be
+     * readable while its file data is encrypted, and an extraction must then stop and ask for the password instead of skipping each file.
+     */
+    private static InputStream asking(InputStream in) {
+        return new FilterInputStream(in) {
+            @Override public int read() throws IOException { try { return super.read(); } catch (ArchiveIo.PasswordException pe) { throw needPassword(pe); } }
+            @Override public int read(byte[] b, int off, int len) throws IOException { try { return super.read(b, off, len); } catch (ArchiveIo.PasswordException pe) { throw needPassword(pe); } }
+            @Override public long skip(long n) throws IOException { try { return super.skip(n); } catch (ArchiveIo.PasswordException pe) { throw needPassword(pe); } }
+        };
+    }
+
     private static ZipTool.Entry toEntry(ArchiveIo.Item it) {
         ZipTool.Entry e = new ZipTool.Entry(it.name, it.dir, it.size, it.csize, it.mtime, it.mode, it.encrypted, it.linkTarget);
         e.hardLink = it.hardLink;
@@ -54,7 +67,7 @@ final class ArchiveIoSource implements ZipTool.Source {
     @Override
     public InputStream open(ZipTool.Archive a, ZipTool.Entry e, char[] password) throws IOException {
         try {
-            return ArchiveIo.open(file, format, e.name, password);
+            return asking(ArchiveIo.open(file, format, e.name, password));
         } catch (ArchiveIo.PasswordException pe) {
             throw needPassword(pe);
         }
@@ -66,7 +79,7 @@ final class ArchiveIoSource implements ZipTool.Source {
             ArchiveIo.walk(file, format, password, new ArchiveIo.Visitor() {
                 @Override
                 public boolean entry(ArchiveIo.Item it, InputStream data) throws IOException {
-                    return w.entry(toEntry(it), data);
+                    return w.entry(toEntry(it), asking(data));
                 }
             });
         } catch (ArchiveIo.PasswordException pe) {

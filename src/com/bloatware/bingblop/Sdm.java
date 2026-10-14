@@ -97,6 +97,7 @@ public final class Sdm {
         Entry stat(String path) throws IOException;
         /** Walks root depth-first and gives every child (files and directories, links not followed) to sink; root itself is not given. Errors in one directory are skipped. */
         void walk(String root, EntrySink sink, Cancel cancel) throws IOException;
+        /** False also when it cannot be told (the working mode does not answer): never proof that a path is gone; a delete asks {@link #stat} for that. */
         boolean exists(String path);
         /** Deletes path recursively; true when nothing is left at path afterwards (the rule of SD Maid: gone is deleted). */
         boolean delete(String path);

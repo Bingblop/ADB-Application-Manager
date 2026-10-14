@@ -43,7 +43,20 @@ public final class SdmFs implements Sdm.Fs, SdmEngine.PruningFs {
 
     @Override public String[] list(String dir) throws IOException { return pick(dir).list(dir); }
 
-    @Override public Sdm.Entry stat(String path) throws IOException { return pick(path).stat(path); }
+    /**
+     * A path in a data area this file system cannot read as the area says (an unavailable area, or a shell area while there is no shell) is answered by
+     * Java, which says "nothing there" for a folder it may not look into: that is not believed. Such a null throws, so a caller that asks "is it gone?"
+     * hears "cannot tell", never "gone".
+     */
+    @Override public Sdm.Entry stat(String path) throws IOException {
+        Sdm.Fs fs = pick(path);
+        Sdm.Entry e = fs.stat(path);
+        if (e == null && fs != shell) {
+            Sdm.AreaInfo a = areas.areaOf(path);
+            if (a != null && !"java".equals(a.via)) throw new IOException("stat " + path + ": the data area cannot be read" + (a.reason.isEmpty() ? "" : " (" + a.reason + ")"));
+        }
+        return e;
+    }
 
     @Override public boolean exists(String path) { return pick(path).exists(path); }
 

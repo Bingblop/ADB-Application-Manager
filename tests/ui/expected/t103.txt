@@ -1,5 +1,5 @@
 batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Share List","Command"]}
-batch menu X (top right, no arrow): [ '✕', true, true, 0, '20px' ]
+batch menu X (top right, no arrow): [ '✕', true, true, 0, '17px' ]
 sheet fits the screen: true
 Show Apps lists the selection: [ '3 apps selected', [ 'Alpha', 'Bravo', 'Charlie' ] ]
 Remove takes one out: [

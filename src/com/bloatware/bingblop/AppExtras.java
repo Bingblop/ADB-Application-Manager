@@ -155,8 +155,8 @@ public final class AppExtras {
             else if (pk instanceof ECPublicKey) bits = ((ECPublicKey) pk).getParams().getOrder().bitLength();
             else if (pk instanceof DSAPublicKey) bits = ((DSAPublicKey) pk).getParams().getP().bitLength();
             o.put("keyBits", bits);
-            o.put("md5", hex(MessageDigest.getInstance("MD5").digest(der), true));
-            o.put("sha1", hex(MessageDigest.getInstance("SHA-1").digest(der), true));
+            o.put("md5", hex(MessageDigest.getInstance("MD5").digest(der), true));  // informational certificate fingerprint, shown next to SHA-256. nosemgrep: java.lang.security.audit.crypto.use-of-md5.use-of-md5
+            o.put("sha1", hex(MessageDigest.getInstance("SHA-1").digest(der), true));  // informational certificate fingerprint, shown next to SHA-256. nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
             o.put("sha256", hex(MessageDigest.getInstance("SHA-256").digest(der), true));
         } catch (Exception e) {
             try { o.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}

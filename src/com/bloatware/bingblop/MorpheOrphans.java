@@ -49,7 +49,7 @@ public final class MorpheOrphans {
             if (!d.isDirectory() || !MorpheJobs.validJobId(d.getName()) || d.getName().equals(runningJob) || d.getName().equals(CATALOG)) continue;
             File events = new File(d, "events.log");
             File apk = new File(d, "patched.apk");
-            JSONObject result = lastResult(events);
+            JSONObject result = MorpheJobs.checkApplied(lastResult(events));                       // a run with nothing applied is not filed
             if (result != null) {
                 if (result.optBoolean("success") && apk.isFile()) out.finished.add(new Orphan(d, apk, request(d, result), result));
                 else out.debris.add(d);                                                              // a failed run, or a success whose APK is gone: nothing to file

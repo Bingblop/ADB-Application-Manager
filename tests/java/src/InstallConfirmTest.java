@@ -228,7 +228,7 @@ public class InstallConfirmTest {
         is("the Installer asks with the local-file question", asked > 0);
         is("...after the authorizer is settled and before anything is removed or installed", asked > sel.indexOf("resolveAuthorizerMode(") && asked < sel.indexOf("uninstallInstalledCopy(") && asked < sel.indexOf("installApksOptions(") && asked < sel.indexOf("signedCopies("));
         is("...and a No installs nothing (it ends the install with a message)", sel.indexOf("throw new InstallCancelled()") > asked && sel.indexOf("throw new InstallCancelled()") < sel.indexOf("installApksOptions("));
-        is("...and the system installer path (no privilege) is the one that does not ask itself", sel.indexOf("installNoPrivilege(files, opts)") > 0 && sel.indexOf("installNoPrivilege(files, opts)") < asked);
+        is("...and the system installer path (no privilege) is the one that does not ask itself", sel.indexOf("installNoPrivilege(files, opts, snap)") > 0 && sel.indexOf("installNoPrivilege(files, opts, snap)") < asked);
         is("...with the options checked first, so a refused option set is not asked about", sel.indexOf("ShellArgs.installFlags(flags)") > 0 && sel.indexOf("ShellArgs.installFlags(flags)") < asked);
 
         String auth = methodBody(src, "private String resolveAuthorizerMode(");

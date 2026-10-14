@@ -1,0 +1,6 @@
+ok   1. a success with nothing applied (an older app): "Patching failed", not "is patched"
+ok      it says no patch could be applied and names the failed patches
+ok      no Install or Share button for the unpatched APK
+ok   2. the app's own answer for it (a failure) reads the same
+ok   3. one applied, one failed: still "YouTube is patched", 1 applied, 1 failed, "The rest was applied."
+ok   no page errors

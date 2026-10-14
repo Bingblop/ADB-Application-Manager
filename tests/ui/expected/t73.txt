@@ -39,6 +39,7 @@
    Done closes the dialog: true
    and a second successful install shows the buttons again: true
 7. an install is started for the open package (Example App): true
-   the package that is open now is another one (Other App), yet the dialog is about the one installed: true Install com.example.app
-   Launch Application and Application Settings act on the installed one, not on the one that was opened since: true ["launch:com.example.app","app_settings:com.example.app"]
+   opening Other App during the install is refused and Example App stays open: true Example App
+   the dialog is about the one installed: true Install com.example.app
+   Launch Application and Application Settings act on the installed one: true ["launch:com.example.app","app_settings:com.example.app"]
 all checks passed

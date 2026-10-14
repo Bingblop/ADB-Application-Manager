@@ -10,15 +10,12 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Search for files by name, ending, size, date and kind, by what is inside a file ({@code content:}) and by the names of entries inside archives
@@ -530,20 +527,18 @@ public final class FileSearch {
 
     private static void searchZip(File f, long size, long mtime, Run r) {
         Query q = r.q;
-        ZipFile z = null;
         try {
-            z = new ZipFile(f);
+            // ZipTool reads the names the way the archive viewer shows them: UTF-8 when they are, Latin-1 otherwise (a zip from Windows Explorer
+            // with non-English names). java.util.zip.ZipFile rejects such a name, which dropped every entry of the archive from the results.
+            ZipTool.Archive z = ZipTool.open(f);
             r.lim.archivesRead++;
-            Enumeration<? extends ZipEntry> en = z.entries();
             int n = 0;
-            while (en.hasMoreElements()) {
+            for (ZipTool.Entry e : z.entries) {
                 if (r.stop()) return;
-                ZipEntry e = en.nextElement();
                 if (++n > r.lim.maxArchiveEntries) { r.lim.hitLimit = true; return; }
-                String full = e.getName();
-                String base = full.endsWith("/") ? full.substring(0, full.length() - 1) : full;
-                base = base.substring(base.lastIndexOf('/') + 1);
-                boolean dir = e.isDirectory();
+                String full = e.name;
+                String base = e.baseName();
+                boolean dir = e.dir;
                 String low = full.toLowerCase(Locale.US);
                 boolean ok = true;
                 // the terms of archive: are looked for in the whole entry path
@@ -553,14 +548,14 @@ public final class FileSearch {
                     else if (q.isEmpty()) ok = false;
                 }
                 if (ok) {
-                    long es = e.getSize(), et = e.getTime();
+                    long es = e.size, et = e.mtime() > 0 ? e.mtime() : -1;          // no valid DOS date: the archive's own time
                     if (q.archive.isEmpty() && !metaOk(q, es, et < 0 ? mtime : et, dir)) ok = false;
                     if (ok && !q.archive.isEmpty()) { if (!typeOk(q, base, dir) || !nameOk(q, base) && (!q.names.isEmpty() || !q.exts.isEmpty())) ok = false; }
                     if (ok && !q.archive.isEmpty() && !metaOk(q, es, et < 0 ? mtime : et, dir)) ok = false;
                     if (ok && !q.content.isEmpty()) {
                         if (dir || es < 0 || es > r.lim.entryContentMaxBytes || es == 0) ok = false;
                         else {
-                            InputStream in = z.getInputStream(e);
+                            InputStream in = z.open(e);
                             try {
                                 Object[] m = findInText(in, q.content, r.lim.entryContentMaxBytes);
                                 if (m == null) ok = false;
@@ -576,14 +571,12 @@ public final class FileSearch {
                 }
                 if (ok) {
                     Hit h = new Hit();
-                    h.path = f.getPath(); h.entry = full; h.dir = dir; h.size = Math.max(0, e.getSize()); h.mtime = e.getTime() < 0 ? mtime : e.getTime(); h.why = "archive";
+                    h.path = f.getPath(); h.entry = full; h.dir = dir; h.size = Math.max(0, e.size); h.mtime = e.mtime() > 0 ? e.mtime() : mtime; h.why = "archive";
                     r.hits.add(h);
                 }
             }
         } catch (IOException | RuntimeException | OutOfMemoryError e) {
             // a damaged or unreadable archive is simply skipped
-        } finally {
-            if (z != null) try { z.close(); } catch (IOException ignored) {}
         }
     }
 

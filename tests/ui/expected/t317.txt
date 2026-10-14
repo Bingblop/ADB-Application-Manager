@@ -1,0 +1,10 @@
+ok   1. Gemini added, Codex failed: only Gemini is saved: ["memory:gemini"]
+ok      and listed: ["memory Gemini CLI"]
+ok      the screen says the Codex step failed
+ok   2. a server whose every setup failed is not saved: ["memory:gemini"]
+ok      adding a saved one again, failing, leaves its record alone: ["memory:gemini"]
+ok   3. added to Codex later: Gemini (from before) and Codex: ["memory:gemini,codex"]
+ok   4. while another command runs nothing is sent
+ok      and nothing is saved: ["memory:gemini,codex"]
+ok   no page errors
+all passed
