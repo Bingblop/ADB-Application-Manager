@@ -1143,6 +1143,28 @@
         #view-files .batch-tool-link:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
         #view-files .batch-tool-link:disabled { opacity: 0.45; }
         #view-files .fm-selbar, #view-files .fm-opts { gap: var(--space-3); }
+        /* The File Manager's top card: the path bar, the search bar and one row of the actions used most, so the list starts high on a phone;
+           the search, list and place options are in the ⋯ More sheet (#fmMoreModal), which keeps the same controls */
+        #fmTopCard .fm-bar { margin: var(--space-3) 0 0; }
+        #fmTopCard .fm-actions { flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
+        #view-files #fmTopCard .batch-tool-link { padding: var(--space-2) var(--space-3); }
+        /* the top card and the list read as one card: the list hangs from the toolbar with a hairline between them (positioned like the top card,
+           which is for its ?, so the list is painted over the top card's shadow, and its own shadow is cut at its top edge) */
+        #fmTopCard { margin-bottom: 0; padding-bottom: var(--space-3); border-bottom: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+        #fmListCard { position: relative; padding-top: var(--space-3); border-top: 1px solid var(--border-glass); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            clip-path: inset(0 calc(-1 * var(--space-6)) calc(-1 * var(--space-6)));  /* its own shadow stays off the toolbar above */ }
+        /* the title row holds ⋯ More, centred on the card's ? (top: --space-2), with room for the ? on its right */
+        #fmTopCard .fm-head { display: flex; align-items: center; gap: var(--space-3); min-height: var(--ctl-h); margin-top: calc(var(--space-2) - var(--space-5)); padding-right: var(--ctl-h); }
+        #fmTopCard .fm-head .color-card-title { flex: 1 1 auto; min-width: 0; margin: 0; }
+        #fmTopCard .fm-more-btn { flex: none; }
+        /* closed, the sheet is not just see-through but hidden, so its controls take no taps and are not read out */
+        #fmMoreModal { visibility: hidden; transition: opacity 0.25s ease, visibility 0s linear 0.25s; }
+        #fmMoreModal.show { visibility: visible; transition: opacity 0.25s ease; }
+        #fmMoreModal .fm-more-sec { margin-top: var(--space-5); }
+        #fmMoreModal .fm-more-opts { margin-top: 0; }
+        #fmMoreModal .fm-more-row { flex-wrap: wrap; gap: var(--space-3); }
+        #fmMoreModal #fmRootsRow { margin-top: var(--space-3); }
+        #fmMoreModal .fm-more-note { margin-top: var(--space-4); }
 
         /* The Apps list's top bar and row buttons get the same outline and pressed state; its taps give haptic feedback too */
         #view-apps .apps-sort-row .mode-action-btn {
@@ -4525,45 +4547,65 @@
         <!-- VIEW: FILE MANAGER -->
         <section id="view-files" class="view-content">
             <div class="color-card" id="fmTopCard">
-                <div class="color-card-title">File Manager</div>
-                <div class="color-card-subtitle">Storage browses with All-files access; system folders need ADB / Shizuku / Root.</div>
+                <div class="fm-head">
+                    <div class="color-card-title">File Manager</div>
+                    <button class="batch-tool-link fm-more-btn" id="fmMoreBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="fmMoreModal" onclick="fmMoreOpen()">⋯ More</button>
+                </div>
                 <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:var(--radius-md); background:var(--tint-user);">
                     <div class="switch-sub" style="margin-bottom:6px;">Storage looks inaccessible. Grant All-files access to browse /sdcard without a privileged mode.</div>
                     <button class="batch-grid-btn accent" style="height:38px;" onclick="fmGrantAccess()">Grant storage access</button>
                 </div>
-                <div class="list-toolbar" style="margin-top:8px;">
+                <div class="list-toolbar fm-bar">
                     <input type="text" class="list-search" id="fmPathInput" placeholder="/storage/emulated/0" value="/storage/emulated/0" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
                     <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
                 </div>
-                <div class="list-toolbar" style="margin-top:8px;">
+                <div class="list-toolbar fm-bar">
                     <input type="text" class="list-search" id="fmSearchInput" placeholder="Search files and folders" aria-label="Search files" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmSearchGo()">
                     <button class="term-run-btn" id="fmSearchBtn" onclick="fmSearchGo()">Search</button>
                 </div>
-                <div class="fm-opts">
-                    <select class="lang-select" id="fmSearchScope" style="width:auto; max-width:100%; margin-top:0; font-size:13px;" aria-label="Where to search"></select>
-                    <label class="fm-opt"><input type="checkbox" id="fmSearchNested" checked onchange="fmSearchOpt()"> Include subfolders</label>
-                    <label class="fm-opt"><input type="checkbox" id="fmSearchArc" onchange="fmSearchOpt()"> Search inside archives</label>
-                    <button class="batch-tool-link" onclick="fmSearchHelpToggle()">Search help</button>
-                </div>
-                <div id="fmSearchHelp" class="switch-sub" style="display:none; margin-top:6px; line-height:1.55;">
-                    Words in a name: <b>photo</b> (all must match; <b>*</b> and <b>?</b> are wildcards; <b>-word</b> leaves a name out; "two words" in quotes).<br>
-                    <b>ext:jpg,png</b> or <b>.pdf</b> · <b>type:image</b> (image, video, audio, text, doc, archive, apk, font, folder, file) · <b>size:&gt;10mb</b>, <b>size:1k..5m</b> · <b>date:today</b>, <b>date:7d</b>, <b>date:2025-03-01..2025-03-31</b>, <b>date:&lt;2024-01-01</b><br>
-                    <b>content:word</b> looks inside text files (up to 4 MB). <b>archive:name</b> looks at the names of the entries inside zip, apk, jar and similar archives.
-                </div>
-                <div class="fm-opts">
-                    <label class="fm-opt"><input type="checkbox" id="fmHiddenChk" onchange="fmSetOpt('hidden', this.checked)"> Show hidden files</label>
-                    <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
-                    <button class="batch-tool-link" id="fmThumbClearBtn" onclick="fmThumbClear()">Clear thumbnail cache</button>
-                </div>
-                <div class="batch-sheet-tools" id="fmRootsRow" style="margin:8px 0 0; gap:12px; flex-wrap:wrap;"></div>
-                <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
-                    <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
-                    <button class="batch-tool-link" translate="no" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
-                    <button class="batch-tool-link" translate="no" onclick="fmGo('/system')">/system</button>
+                <!-- the actions used most stay one tap away; the rest is in the ⋯ More sheet (the button beside the title) -->
+                <div class="batch-sheet-tools fm-actions">
+                    <button class="batch-tool-link" id="fmSelectBtn" onclick="fmToggleSelectMode()">Select</button>
                     <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
                     <button class="batch-tool-link" onclick="fmNewFile()">＋ File</button>
-                    <button class="batch-tool-link" onclick="fmRefresh()">Refresh</button>
-                    <button class="batch-tool-link" id="fmSelectBtn" onclick="fmToggleSelectMode()">Select</button>
+                </div>
+            </div>
+            <!-- ⋯ More: the search, list and place options that are not needed on every visit (kept in the page, shown as a sheet) -->
+            <div class="modal-overlay" id="fmMoreModal" onclick="if(event.target===this) fmMoreClose()">
+                <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="fmMoreTitle">
+                    <div class="sheet-header">
+                        <div class="sheet-title">
+                            <h3 id="fmMoreTitle">File Manager options</h3>
+                        </div>
+                        <button type="button" class="sheet-close" aria-label="Close" onclick="fmMoreClose()">✕</button>
+                    </div>
+                    <div class="mode-section-label">Search options</div>
+                    <div class="fm-opts fm-more-opts">
+                        <select class="lang-select" id="fmSearchScope" style="width:auto; max-width:100%; margin-top:0; font-size:13px;" aria-label="Where to search"></select>
+                        <label class="fm-opt"><input type="checkbox" id="fmSearchNested" checked onchange="fmSearchOpt()"> Include subfolders</label>
+                        <label class="fm-opt"><input type="checkbox" id="fmSearchArc" onchange="fmSearchOpt()"> Search inside archives</label>
+                        <button class="batch-tool-link" onclick="fmSearchHelpToggle()">Search help</button>
+                    </div>
+                    <div id="fmSearchHelp" class="switch-sub" style="display:none; margin-top:6px; line-height:1.55;">
+                        Words in a name: <b>photo</b> (all must match; <b>*</b> and <b>?</b> are wildcards; <b>-word</b> leaves a name out; "two words" in quotes).<br>
+                        <b>ext:jpg,png</b> or <b>.pdf</b> · <b>type:image</b> (image, video, audio, text, doc, archive, apk, font, folder, file) · <b>size:&gt;10mb</b>, <b>size:1k..5m</b> · <b>date:today</b>, <b>date:7d</b>, <b>date:2025-03-01..2025-03-31</b>, <b>date:&lt;2024-01-01</b><br>
+                        <b>content:word</b> looks inside text files (up to 4 MB). <b>archive:name</b> looks at the names of the entries inside zip, apk, jar and similar archives.
+                    </div>
+                    <div class="mode-section-label fm-more-sec">In the list</div>
+                    <div class="fm-opts fm-more-opts">
+                        <label class="fm-opt"><input type="checkbox" id="fmHiddenChk" onchange="fmSetOpt('hidden', this.checked)"> Show hidden files</label>
+                        <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
+                        <button class="batch-tool-link" id="fmRefreshBtn" onclick="fmMoreClose(); fmRefresh()">Refresh</button>
+                        <button class="batch-tool-link" id="fmThumbClearBtn" onclick="fmThumbClear()">Clear thumbnail cache</button>
+                    </div>
+                    <div class="mode-section-label fm-more-sec">Go to</div>
+                    <div class="batch-sheet-tools fm-more-row" id="fmPlacesRow">
+                        <button class="batch-tool-link" onclick="fmMoreClose(); fmGo('/storage/emulated/0')">Storage</button>
+                        <button class="batch-tool-link" translate="no" onclick="fmMoreClose(); fmGo('/data/local/tmp')">/data/local/tmp</button>
+                        <button class="batch-tool-link" translate="no" onclick="fmMoreClose(); fmGo('/system')">/system</button>
+                    </div>
+                    <div class="batch-sheet-tools fm-more-row" id="fmRootsRow"></div>
+                    <div class="modal-helper fm-more-note">Storage browses with All-files access; system folders need ADB / Shizuku / Root.</div>
                 </div>
             </div>
             <div class="color-card" id="fmListCard">
@@ -4590,7 +4632,7 @@
                 <div class="filter-scroll" id="fmSearchFilterRow" style="display:none;"></div>
                 <div class="switch-sub" id="fmSearchFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
                 <div id="fmSearchList" style="display:none;"></div>
-                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
+                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:var(--space-1);">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
             </div>
 
@@ -21400,12 +21442,14 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             renderFmRoots();
             fmSafStack = [];
+            fmMoreClose();
             fmGo(uri);
         };
         function fmGoRoot(i) {
             const r = fmSafRoots[i];
             if (!r) return;
             haptic();
+            fmMoreClose();
             fmSafStack = [];
             fmGo(r.uri);
         }
@@ -21419,6 +21463,22 @@ Type any command above (e.g. pm list packages -d)</div>
             saveStoreJson('fm_saf_roots', fmSafRoots);
             renderFmRoots();
             if (fmPath === r.uri || fmSafStack.includes(r.uri)) { fmSafStack = []; fmGo('/storage/emulated/0'); }
+        }
+
+        // ⋯ More: the sheet with the search, list and place options (the controls live in it all the time, so their ids and handlers stay as they were)
+        function fmMoreOpen() {
+            document.getElementById('fmMoreModal').classList.add('show');
+            const b = document.getElementById('fmMoreBtn');
+            if (b) b.setAttribute('aria-expanded', 'true');
+            const first = document.querySelector('#fmMoreModal .sheet-close');
+            if (first) first.focus({ preventScroll: true });
+        }
+        function fmMoreClose(quiet) {                   // quiet: closed because the tab opens again, so the focus is not moved
+            const m = document.getElementById('fmMoreModal');
+            if (!m || !m.classList.contains('show')) return;
+            m.classList.remove('show');
+            const b = document.getElementById('fmMoreBtn');
+            if (b) { b.setAttribute('aria-expanded', 'false'); if (!quiet && currentViewName() === 'files') b.focus({ preventScroll: true }); }
         }
 
         let fmLast = { entries: [] };                    // the listing on screen, so an option can redraw it without asking again
@@ -21441,7 +21501,7 @@ Type any command above (e.g. pm list packages -d)</div>
             fmSelRender();
         }
         function fmShowHidden() { const c = document.getElementById('fmHiddenChk'); if (c) c.checked = true; fmSetOpt('hidden', true); }
-        function onFilesShown() { fmOptsLoad(); fmSafRootsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
+        function onFilesShown() { fmMoreClose(true); fmOptsLoad(); fmSafRootsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
         function fmGo(path, auto, keepSearch) {
             path = (path || '/').trim() || '/';

@@ -1,5 +1,5 @@
 ok   1. every sheet closes with a .sheet-close button (type=button, aria-label "Close...", an onclick, the ✕ glyph), none with the old 20 px div
-   close buttons in the page: 70
+   close buttons in the page: 71
 ok   2. a pressed state with a fill token and a focus ring in the accent colour
 ok   3. the app menu's close: 44 x 44, round, muted, title-size glyph, no fill until pressed, inside the screen
 ok      a tap closes the app menu
