@@ -7406,7 +7406,7 @@
                     <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
                     <button class="apps-tool-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
                     <button class="apps-tool-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
-                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">UID (id)</button>
+                    <button class="apps-tool-btn" onclick="runTerminalCmd('id')">UID (id)</button>
                     <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
                     <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
                     <button class="apps-tool-btn" onclick="openDevOptionsUI()">Dev Options</button>
@@ -11140,6 +11140,16 @@ Type any command above (e.g. pm list packages -d)</div>
             '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
             '#hgBody', '.cd-dev-name', '.cd-dev-sub', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
         ].join(', '));
+        // The same inside a sentence: in these templates the changing part is the name of the app, file, folder or saved item the action is about. Other templates
+        // translate a changing part that is a word of the dictionary (a filter, a mode, a stream); a folder called Download must not become "Descargar" in "Delete Download?"
+        if (LANG_ENGINE.names) LANG_ENGINE.names([
+            'Uninstall {0}?', 'Clear the data of {0}?', 'Delete the data {0} left behind{1}?', 'Launching {0}...', 'Opening {0}…',
+            'Delete {0}?', 'Delete {0} after it was extracted?', 'Delete {0} item ({1})? Folders go with everything in them. This can not be undone.',
+            'Delete {0} items ({1})? Folders go with everything in them. This can not be undone.', 'Delete “{0}” from the archive?', 'Delete “{0}”?',
+            'Delete {0} from the saved devices?', 'Delete "{0}"? This action cannot be undone.', 'Delete the preset {0}?', 'Delete the saved command {0}?',
+            'Delete the theme {0}?', 'Replace the theme {0} with the look in use now?', 'Remove the store "{0}"? Apps you installed from it stay installed.',
+            'Remove "{0}" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.'
+        ]);
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
             if (!sel) return;
@@ -19379,7 +19389,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const marker = '__RC' + Date.now() + Math.random().toString(36).slice(2) + '__';
             const raw = String(window.AndroidBridge.executeShell(cmd + '; echo "' + marker + ':$?"') || '');
             const idx = raw.lastIndexOf(marker + ':');
-            if (idx < 0) return { ok: true, output: raw }; // no real shell to parse from - nothing to contradict success
+            // no marker: the command never ran or never finished (the mode is gone, su refused, the adb device dropped - executeShell answers with an
+            // error text then). Every shell the app uses echoes the marker after a command that ran, so this is a failure, not an unknown
+            if (idx < 0) return { ok: false, output: raw || 'No answer from the device' };
             let output = raw.slice(0, idx);
             while (output.endsWith('\n')) output = output.slice(0, -1);
             const rc = parseInt(raw.slice(idx + marker.length + 1).trim(), 10);
@@ -24070,7 +24082,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         const cd = {
             ready: false, devices: [], selfDevs: [], self: [], serial: '', sub: 'apps', info: null, names: {}, sig: '', lastKey: '', poll: null, refreshing: false,
-            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false,
+            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false, pairing: false,
             queue: [], sending: null,
             mode: 'shell', hist: [], histAt: -1, term: [], termRun: '',
             lcTimer: null, lcBusy: false, lcText: '', lcEntries: [],
@@ -25683,10 +25695,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const addr = document.getElementById('cdPairAddr').value.trim(), code = document.getElementById('cdPairCode').value.trim();
             if (!cdValidAddr(addr) || !/:\d{2,5}$/.test(addr)) { showToast('Type the address and port, like 192.168.1.20:37215'); return; }
             if (!/^\d{6}$/.test(code)) { showToast('The pairing code has 6 digits'); return; }
+            if (cd.pairing) return;                                  // Enter in the code field while one runs: a pairing code works once, a second adb pair only muddles the log
             const btn = document.getElementById('cdPairBtn');
-            btn.disabled = true; cdAddLog('Pairing...');
-            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });
-            btn.disabled = false;
+            cd.pairing = true; btn.disabled = true; cdAddLog('Pairing...');
+            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });     // (cdRun always resolves)
+            cd.pairing = false; btn.disabled = false;
             cdAddLog(out);
             if (/Successfully paired/i.test(out)) {
                 showToast('Paired. Now connect.');

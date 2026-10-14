@@ -1,0 +1,13 @@
+ok   the page runs in Spanish
+ok   a name in "Delete Download?" stays as it is
+ok   a name in "Delete Music after it was extracted?" stays as it is
+ok   a name in "Uninstall Settings?" stays as it is
+ok   a name in "Launching Settings..." stays as it is
+ok   a name in "Delete 1 items (Download)? Folders go with everything in them. This can not be undone." stays as it is
+ok   a word of the page in "Showing apps that are Frozen." is still translated
+ok   a word of the page in "Following your phone's setting (currently Dark)" is still translated
+ok   a word of the page in "Music volume (3 of 15)" is still translated
+ok   a confirm keeps the name
+ok   text written into the page keeps the name
+ok   and still translates a word of the page there
+errors: []
