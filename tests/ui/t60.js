@@ -95,9 +95,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { const i = document.getElementById('sdbSearch'); i.value = 'ADB  Enabled'; sdbSearchInput(); }); await sleep(300);
   check('   several words must all match, in any case', (await hasRow('adb_enabled')) && (await hasRow('adb_wifi_enabled')) && !(await hasRow('device_name')) && (await ev(() => Array.from(document.querySelectorAll('.sdb-row')).every(r => /adb/i.test(r.innerText) && /enabled/i.test(r.innerText)))));
   await ev(() => { const i = document.getElementById('sdbSearch'); i.value = 'zzz_nothing_like_this'; sdbSearchInput(); }); await sleep(300);
-  const empty = await ev(() => document.querySelector('.sdb-empty') ? document.querySelector('.sdb-empty').innerText : '');
+  const empty = await ev(() => document.querySelector('#sdbList .empty-state') ? document.querySelector('#sdbList .empty-state').innerText : '');
   check('   no match: says so and offers to create that name', /Nothing matches/.test(empty) && /Create/.test(empty) && /Show everything/.test(empty), JSON.stringify(empty));
-  await page.locator('.sdb-empty .mode-action-btn', { hasText: 'Create' }).click(); await sleep(150);
+  await page.locator('#sdbList .empty-state .mode-action-btn', { hasText: 'Create' }).click(); await sleep(150);
   check('   the offer opens the create sheet with the name filled in', (await ev(() => document.getElementById('sdbNewModal').classList.contains('show'))) && (await ev(() => document.getElementById('sdbNewKey').value)) === 'zzz_nothing_like_this');
   await closeAll();
   await page.locator('#sdbSearchClear').click(); await sleep(250);
@@ -109,7 +109,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.locator('#sdbFilters .filter-chip[data-f="known"]').click(); await sleep(200);
   check('   "Described" keeps the ones with a description', await ev(() => { const r = Array.from(document.querySelectorAll('.sdb-row')); return r.length > 10 && r.every(x => x.querySelector('.sdb-hint')); }));
   await page.locator('#sdbFilters .filter-chip[data-f="edited"]').click(); await sleep(200);
-  check('   "Edited" is empty before anything was changed, and says so', /Nothing here was changed/.test(await ev(() => document.querySelector('.sdb-empty').innerText)));
+  check('   "Edited" is empty before anything was changed, and says so', /Nothing here was changed/.test(await ev(() => document.querySelector('#sdbList .empty-state').innerText)));
   await page.locator('#sdbFilters .filter-chip[data-f="all"]').click(); await sleep(200);
 
   // 7) sort

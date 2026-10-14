@@ -71,10 +71,13 @@ const { chromium, PAGE } = require('./lib/pw');
   const toastText = () => page.locator('#toastMsg').innerText();
   const rowNames = async () => (await page.locator('#fmList .perm-row:not(.fm-up-row) .perm-name').allInnerTexts()).map(s => s.replace(/\/$/, ''));
   const rootBtns = () => page.locator('#fmRootsRow button').allInnerTexts();
+  // the roots row is in the ⋯ More sheet: open it the way a person does (a no-op when it is open)
+  const openMore = async () => { if (!(await page.evaluate(() => document.getElementById('fmMoreModal').classList.contains('show')))) { await page.click('#fmMoreBtn'); await sleep(350); } };
 
   await page.evaluate(() => switchView('files')); await sleep(200);
 
   // 1) No roots yet: just the Add storage button.
+  await openMore();
   console.log('1. roots row starts with only "Add storage":', JSON.stringify(await rootBtns()) === JSON.stringify(['＋ Add storage']));
 
   // 2) Tapping it calls the native picker; the test then plays the picker's result itself (as the real app's
@@ -82,7 +85,10 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('#fmRootsRow button'); await sleep(50);
   console.log('2. Add storage calls the native picker:', (await page.evaluate(() => window.__calls.pickAddStorage)) === 1);
   await page.evaluate(() => window.onStorageRootPicked('content://mock/root1/root', 'SD Card')); await sleep(150);
+  console.log('   picking a root closes the ⋯ More sheet:', !(await page.evaluate(() => document.getElementById('fmMoreModal').classList.contains('show'))));
+  await openMore();
   const afterPick = await rootBtns();
+  await page.evaluate(() => fmMoreClose()); await sleep(50);
   console.log('   picking a root adds it to the row and navigates into it:', afterPick[0] === 'SD Card' && afterPick[2] === '＋ Add storage', JSON.stringify(afterPick));
   console.log('   root listing shows its entries:', JSON.stringify((await rowNames()).sort()) === JSON.stringify(['Documents', 'photo.jpg']));
   const persisted = await page.evaluate(() => JSON.parse(window.AndroidBridge.loadStore('fm_saf_roots')));
@@ -180,6 +186,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { fmSearchRunning = false; fmSearchExit(); });
 
   // 9) Removing a root releases it natively, drops it from the row and the persisted list, and backs out to storage.
+  await openMore();
   await page.click('#fmRootsRow button:has-text("✕")'); await sleep(150);
   const removed = await page.evaluate(() => window.__calls.removeStorageRoot.slice());
   console.log('9. removing the root calls removeStorageRoot(uri):', removed.length === 1 && removed[0] === 'content://mock/root1/root', JSON.stringify(removed));

@@ -1,0 +1,65 @@
+360x800: the ".." row starts at most 340px down, the first file at most 400px: true
+360x800: the first file is whole above the bottom bar: true
+360x800: path bar with Go, search bar, Select, ⋯ More, the folder line and ".." are on screen: true
+360x800: Select, ＋ Folder and ＋ File stay one row: true
+360x800: the moved options are kept in the page, hidden until ⋯ More: true
+360x800: no sideways scroll: true
+360x800: the open sheet has no sideways scroll and nothing in it runs past its edges: true
+360x800 de: the ".." row starts at most 340px down, the first file at most 400px: true
+360x800 de: the first file is whole above the bottom bar: true
+360x800 de: path bar with Go, search bar, Select, ⋯ More, the folder line and ".." are on screen: true
+360x800 de: Select, ＋ Folder and ＋ File stay one row: true
+360x800 de: the moved options are kept in the page, hidden until ⋯ More: true
+360x800 de: no sideways scroll: true
+360x800 de: the open sheet has no sideways scroll and nothing in it runs past its edges: true
+320x640: the ".." row starts at most 340px down, the first file at most 400px: true
+320x640: the first file is whole above the bottom bar: true
+320x640: path bar with Go, search bar, Select, ⋯ More, the folder line and ".." are on screen: true
+320x640: Select, ＋ Folder and ＋ File stay one row: true
+320x640: the moved options are kept in the page, hidden until ⋯ More: true
+320x640: no sideways scroll: true
+320x640: the open sheet has no sideways scroll and nothing in it runs past its edges: true
+320x640 de light: the ".." row starts at most 340px down, the first file at most 400px: true
+320x640 de light: the first file is whole above the bottom bar: true
+320x640 de light: path bar with Go, search bar, Select, ⋯ More, the folder line and ".." are on screen: true
+320x640 de light: Select, ＋ Folder and ＋ File stay one row: true
+320x640 de light: the moved options are kept in the page, hidden until ⋯ More: true
+320x640 de light: no sideways scroll: true
+320x640 de light: the open sheet has no sideways scroll and nothing in it runs past its edges: true
+412x915: the ".." row starts at most 340px down, the first file at most 400px: true
+412x915: the first file is whole above the bottom bar: true
+412x915: path bar with Go, search bar, Select, ⋯ More, the folder line and ".." are on screen: true
+412x915: Select, ＋ Folder and ＋ File stay one row: true
+412x915: the moved options are kept in the page, hidden until ⋯ More: true
+412x915: no sideways scroll: true
+412x915: the open sheet has no sideways scroll and nothing in it runs past its edges: true
+2. "⋯ More" is a labelled button beside the title, in the File Manager button style, that says it opens a dialog: true
+   every id of the old card is still in the page: true
+   tapping it opens the sheet "File Manager options" (a modal dialog, focus inside) with Search options, In the list and Go to: true
+   the card's old note about access is at the foot of the sheet: true
+   360px: each of the 12 controls in the sheet is at least 36px tall and answers a 44x44 tap: true
+   320px: each of the 12 controls in the sheet is at least 36px tall and answers a 44x44 tap: true
+   ✕ closes it, the button says so and gets the focus back: true
+   closed, its controls take no tap and are not shown (hidden, not only see-through): true
+   a tap on the backdrop closes it: true
+   Android Back closes it and stays in the tab: true
+3. Show hidden files: ticked in the sheet, the hidden file is listed behind it at once and the choice is kept: true
+   Show thumbnails: unticked, the option is off and kept: true
+   Clear thumbnail cache: the app empties the cache and says how much was freed: true
+   the two search boxes are kept (subfolders off, archives on): true
+   Search help unfolds the help in the sheet: true
+   a search then uses what the sheet set: Downloads, no subfolders, inside archives, hidden files: true
+   Go to /system: opens that folder and closes the sheet: true
+   Go to /data/local/tmp: opens that folder and closes the sheet: true
+   Go to Storage: opens that folder and closes the sheet: true
+   Refresh: reads the folder again and closes the sheet: true
+   ＋ Add storage asks the app for its folder picker: true
+   the picked storage is opened and the sheet is closed: true
+   the sheet then lists it next to ＋ Add storage: true
+   tapping it opens it again and closes the sheet: true
+4. Select (on the card) starts selecting in one tap: true
+   ＋ Folder asks for a name in one tap: true
+   ＋ File asks for a name in one tap: true
+   the path bar and Go open a folder: true
+   leaving the tab with the sheet open and coming back shows the list, not the sheet: true
+all passed

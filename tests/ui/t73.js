@@ -54,7 +54,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     if (vp.height === 800) await page.screenshot({ path: 'install_result_actions.png' });
     // a short output: the box is as small as its text, with and without the buttons
     await close(page);
-    await result(page, false, 'Failure [INSTALL_FAILED_VERSION_DOWNGRADE]');
+    await result(page, false, 'Failure [INSTALL_FAILED_OLDER_SDK]');          // one line at 360 px, like 'Success' (with the type scale's 13.5 px the longer DOWNGRADE line took two)
     await shown(page);
     const shortFail = await geo(page);
     await close(page);
