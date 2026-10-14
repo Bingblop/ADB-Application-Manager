@@ -2,7 +2,7 @@
 
 ## v7.13.2-Pro (versionCode 856)
 
-A fix release on top of v7.13.1, cut from `main`. It carries the serious and wrong-result findings of a second, narrower review pass over the areas the first one did not reach (the Connected Devices sub-tabs, Backups, the real-terminal page code and the Morphe patcher runner), the update check's out-of-order progress count that v7.13.1 left open (#185), and one change you asked for: the SD Maid AppCleaner now starts its accessibility service on its own and never force-stops this app or Android System WebView. Nothing else is new: no feature, no wording change, no CSS. The thirteen smaller findings of the same pass stay open as #187 to #199. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 29 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, and `docs/PHONE-SCRIPT-v7.13.2.md` is the one-page version.
+A fix release on top of v7.13.1, cut from `main`. It carries the serious and wrong-result findings of a second, narrower review pass over the areas the first one did not reach (the Connected Devices sub-tabs, Backups, the real-terminal page code and the Morphe patcher runner), the update check's out-of-order progress count that v7.13.1 left open (#185), and one change you asked for: the SD Maid AppCleaner now starts its accessibility service on its own and never force-stops this app or Android System WebView. It also carries the full code review of 2026-10-14 (#206 to #215), a small spacing and toast polish (#216) and the Semgrep hardening (#217, #218). Nothing else is new: no feature, no wording change. The thirteen smaller findings of the same pass (#187 to #199) are fixed below. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 29 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, and `docs/PHONE-SCRIPT-v7.13.2.md` is the one-page version.
 
 **SD Maid AppCleaner (the accessibility cleaner)**
 
@@ -42,6 +42,31 @@ A fix release on top of v7.13.1, cut from `main`. It carries the serious and wro
 **Updates**
 
 - **The "N of M" count in the update check only goes forward (#185).** Progress reports are queued in the order the counters changed and delivered one at a time; the final report is last and nothing follows it.
+
+**Full code review of 2026-10-14 (#206 to #215)**
+
+A review of the whole repository on its merged state found more wrong-result bugs; each is fixed with a test where the code can be tested without Android.
+
+- **Connected Devices follows the device you chose.** A device change stops the console command and the live log of the old device; Settings, Reboot and Power off never go to a device chosen after the question opened; the Apps and Logcat sub-tabs read the new device when it is chosen during a read; queued Send files and a running push are kept when old picks are cleared; the app's own private files (adb key, sealed secrets) are never sent or overwritten.
+- **File pickers no longer end the app when the phone has no picker** (Install, Backups, font, text import, Connected Devices).
+- **Downloads:** two Helper downloads with the same file name no longer mix their bytes.
+- **File Manager:** the app's private data is never copied to or from added storage or into an archive; after Share or Open with on an added-storage file the sheet's Edit, Delete and Rename act on that file again; the thumbnail thread stops when the window closes; Compare no longer calls files "the same" when only their sizes match (tar, 7z, RAR and AES zips); a translated confirmation keeps the name of the file or app.
+- **Archives:** a RAR or 7z whose file data is encrypted asks for the password; a `.gz` of several members (or a multi-frame `.zst` / `.lz4`) extracts; files with 250-255 byte names extract; "New folder" in a zip makes a folder unzip can open; file search finds entries in zips with non-UTF-8 names.
+- **Installer:** opening another package while one installs no longer breaks either install; a re-created window no longer opens an old "Open with" package again.
+- **SD Maid:** a delete no longer reports files as deleted when the working mode cannot answer; a path exclusion typed as `/sdcard/...`, in another letter case or with `//` protects the folder; History no longer overwrites the open "Affected paths" list.
+- **Morphe:** a run in which no patch was applied fails instead of installing the unpatched app; file calls from the page can no longer reach the signing key; the source "Pre-releases" toast says what was just set; dated and underscore release tags (2024-11-15, v1_2_4) show as updates.
+- **Page and shell:** Stop Service and the renderer switch say they failed when the shell never ran the command; components with a `$` in the name can be enabled and disabled; Task Manager labels per-core load with the right core after a core goes offline; Console "UID (id)" keeps the typed command and does not ask the AI agent; Enter in the pairing-code field no longer starts a second `adb pair`.
+- **Batch actions, profiles and Dex optimization** report what ran instead of "failed to run"; adding a remote MCP server to Codex again saves the new token, and a server whose setup failed is not listed under "Already added".
+- **build.sh fails when javac reports an error in any class,** not only when MainActivity is missing.
+
+**Appearance (#216)**
+
+- Batch sheet spacing, Debloater buttons switched off while nothing is selected, the Console "?" in its own room and an inverse toast. Tokens only; no new colour.
+
+**Security hardening (#217, #218)**
+
+- Every GitHub Action in the workflows is pinned to a commit SHA (Dependabot keeps them current).
+- Wireless Debugging pairing only accepts a `host:port` address and a six-digit code before they reach the shell; thumbnail cache keys use SHA-256.
 
 ## v7.13.1-Pro (versionCode 855)
 

@@ -29,6 +29,16 @@ The same checks as section 29 of [DEVICE-TEST-CHECKLIST.md](DEVICE-TEST-CHECKLIS
 15. Start a patch, press Back to leave the app, open it again. **Pass:** the Morphe tab shows the patch still going with its steps and Stop, and the result appears when it ends. Start a second patch while the first runs: **Pass:** it says the patcher is busy at once and the first one carries on.
 16. **Updater:** Installer > Application Updater > **Check for Updates** on a phone with many apps. **Pass:** the "N of M" count and the bar only go forward and nothing returns to "checking" after the summary.
 
+## D. The full code review and the pairing check (10 minutes)
+
+17. **Pairing (hardening):** turn on Wireless debugging > Pair device with pairing code. In the app, pair with the notification's reply (type the code alone, then once more as `ip:port code`). **Pass:** both forms pair; a code with letters or a wrong-looking address is refused with a message and nothing is run.
+18. **Wrong device (2 devices):** run `sleep 600` in the Connected Devices console on A and unplug A. **Pass:** the command on A is cancelled, Run shows again, and the next command goes to B. Play live Logcat on A, unplug A: **Pass:** it stops (Play) instead of showing B's log.
+19. **Downloads:** start two Helper downloads with the same file name. **Pass:** both finish intact.
+20. **Installer:** start installing a large XAPK, then open another APK. **Pass:** "An install is already running" and the first install finishes.
+21. **Morphe:** with "Stop when a patch fails" off, patch with a patch that fails on that app. **Pass:** "Patching failed", no new file in Patched APKs, no install prompt.
+22. **SD Maid:** scan AppCleaner with ADB or Shizuku, turn Wireless debugging off, delete an Android/data item. **Pass:** it stays listed with "could not be deleted" and History shows nothing deleted.
+23. **Archives:** extract a `rar a -p` archive. **Pass:** the password prompt appears and the right password extracts.
+
 ## Report
 
 Reply on the release with the step numbers that **passed** and the ones that **failed**, and the phone details above. A short "steps 1-6 pass on Pixel 8, Android 15, Shizuku" is enough.
