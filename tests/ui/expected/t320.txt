@@ -1,0 +1,67 @@
+ok   320 px, WhatsApp: the dates and sizes wrap only between words
+ok   320 px, WhatsApp: Copy package and Copy name are whole and inside the sheet
+ok   320 px, WhatsApp: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   320 px, WhatsApp: the icon is at the top of the name block
+ok   320 px, WhatsApp: the package name wraps inside the text column
+ok   320 px, WhatsApp: the close and Share are inside the sheet, Share left of the close
+ok   320 px, long name and package: the dates and sizes wrap only between words
+ok   320 px, long name and package: Copy package and Copy name are whole and inside the sheet
+ok   320 px, long name and package: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   320 px, long name and package: the icon is at the top of the name block
+ok   320 px, long name and package: the package name wraps inside the text column
+ok   320 px, long name and package: the close and Share are inside the sheet, Share left of the close
+   the long package name takes more than one line at 320 px: true
+ok   320 px: no page errors
+ok   360 px, WhatsApp: the dates and sizes wrap only between words
+ok   360 px, WhatsApp: Copy package and Copy name are whole and inside the sheet
+ok   360 px, WhatsApp: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   360 px, WhatsApp: the icon is at the top of the name block
+ok   360 px, WhatsApp: the package name wraps inside the text column
+ok   360 px, WhatsApp: the close and Share are inside the sheet, Share left of the close
+ok   360 px, long name and package: the dates and sizes wrap only between words
+ok   360 px, long name and package: Copy package and Copy name are whole and inside the sheet
+ok   360 px, long name and package: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   360 px, long name and package: the icon is at the top of the name block
+ok   360 px, long name and package: the package name wraps inside the text column
+ok   360 px, long name and package: the close and Share are inside the sheet, Share left of the close
+ok   360 px: no page errors
+ok   400 px, WhatsApp: the dates and sizes wrap only between words
+ok   400 px, WhatsApp: Copy package and Copy name are whole and inside the sheet
+ok   400 px, WhatsApp: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   400 px, WhatsApp: the icon is at the top of the name block
+ok   400 px, WhatsApp: the package name wraps inside the text column
+ok   400 px, WhatsApp: the close and Share are inside the sheet, Share left of the close
+ok   400 px, long name and package: the dates and sizes wrap only between words
+ok   400 px, long name and package: Copy package and Copy name are whole and inside the sheet
+ok   400 px, long name and package: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   400 px, long name and package: the icon is at the top of the name block
+ok   400 px, long name and package: the package name wraps inside the text column
+ok   400 px, long name and package: the close and Share are inside the sheet, Share left of the close
+ok   400 px: no page errors
+ok   360 px de, WhatsApp: the dates and sizes wrap only between words
+ok   360 px de, WhatsApp: Copy package and Copy name are whole and inside the sheet
+ok   360 px de, WhatsApp: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   360 px de, WhatsApp: the icon is at the top of the name block
+ok   360 px de, WhatsApp: the package name wraps inside the text column
+ok   360 px de, WhatsApp: the close and Share are inside the sheet, Share left of the close
+ok   360 px de, long name and package: the dates and sizes wrap only between words
+ok   360 px de, long name and package: Copy package and Copy name are whole and inside the sheet
+ok   360 px de, long name and package: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   360 px de, long name and package: the icon is at the top of the name block
+ok   360 px de, long name and package: the package name wraps inside the text column
+ok   360 px de, long name and package: the close and Share are inside the sheet, Share left of the close
+ok   360 px de: no page errors
+ok   320 px es, WhatsApp: the dates and sizes wrap only between words
+ok   320 px es, WhatsApp: Copy package and Copy name are whole and inside the sheet
+ok   320 px es, WhatsApp: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   320 px es, WhatsApp: the icon is at the top of the name block
+ok   320 px es, WhatsApp: the package name wraps inside the text column
+ok   320 px es, WhatsApp: the close and Share are inside the sheet, Share left of the close
+ok   320 px es, long name and package: the dates and sizes wrap only between words
+ok   320 px es, long name and package: Copy package and Copy name are whole and inside the sheet
+ok   320 px es, long name and package: nothing in the header (Ask agent shown too) runs past the sheet's padding
+ok   320 px es, long name and package: the icon is at the top of the name block
+ok   320 px es, long name and package: the package name wraps inside the text column
+ok   320 px es, long name and package: the close and Share are inside the sheet, Share left of the close
+ok   320 px es: no page errors
+all passed

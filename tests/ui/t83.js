@@ -41,8 +41,8 @@ const ZIPFILES = { [ROOT + '/pack.zip']: [{ name: 'one.txt', text: 'NEW1' }, { n
   let page = await open();
   const bar = await ev(page, () => ({ ph: document.getElementById('fmSearchInput').placeholder, scope: Array.from(document.getElementById('fmSearchScope').options).map(o => o.text), nested: document.getElementById('fmSearchNested').checked, arc: document.getElementById('fmSearchArc').checked, help: getComputedStyle(document.getElementById('fmSearchHelp')).display }));
   check('1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off)', /Search/.test(bar.ph) && bar.scope.join('|') === 'This folder|Internal storage|Downloads|SD card or drive (1234-ABCD)|Whole phone' && bar.nested === true && bar.arc === false, JSON.stringify(bar));
-  check('   the help is folded away until "Search help" is tapped', bar.help === 'none' && (await ev(page, () => { fmSearchHelpToggle(); return getComputedStyle(document.getElementById('fmSearchHelp')).display !== 'none' && /content:word/.test(document.getElementById('fmSearchHelp').innerText); })));
-  await ev(page, () => fmSearchHelpToggle());
+  check('   the help is folded away until "Search help" is tapped', bar.help === 'none' && (await ev(page, () => { fmMoreOpen(); fmSearchHelpToggle(); return getComputedStyle(document.getElementById('fmSearchHelp')).display !== 'none' && /content:word/.test(document.getElementById('fmSearchHelp').innerText); })));
+  await ev(page, () => { fmSearchHelpToggle(); fmMoreClose(); });      // the help is in the ⋯ More sheet
   await search(page, '   ', 50);
   check('   an empty query asks for something to search for and sends nothing', /Type what to search for/.test(await toast(page)) && !(await ev(page, () => !!window.__fm.searches)));
 

@@ -49,7 +49,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => document.querySelector('.filter-pill[data-filter="trackers"]').click()); await sleep(80);
   check('2. the first tap starts one scan of the installed apps only (the uninstalled one is left out) and says so', (await ev(() => JSON.stringify(window.__scans))) === '[["com.example.alpha","com.example.bravo","com.example.charlie"]]' && /Looking for trackers in 3 apps/.test(await ev(() => document.getElementById('toastMsg').innerText)));
   const mid = await ev(() => document.getElementById('countTrackers').innerText);
-  check('   while it runs the pill counts the apps done', /^\d\/3$/.test(mid), mid);
+  check('   while it runs the pill counts the apps done', /^\d\/3$/.test(mid), mid.replace(/^\d/, 'n'));  // how many are done by now depends on timing
   await sleep(500);
   const end = await ev(() => ({ n: document.getElementById('countTrackers').innerText, rows: Array.from(document.querySelectorAll('.app-card')).map(c => c.dataset.pkg), active: document.querySelector('.filter-pill[data-filter="trackers"]').classList.contains('active') }));
   check('3. after it the count is the apps with at least one tracker, and the list shows just those', end.n === '1' && end.rows.join() === 'com.example.alpha' && end.active, JSON.stringify(end));

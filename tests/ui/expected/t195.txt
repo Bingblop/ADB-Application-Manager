@@ -24,7 +24,7 @@ ok   Run is idle again after the answer
 ok   newest first: the latest command is the top card
 ok   a failure says Looks like a failure, in the failure style, with the reason line
 ok   no card of a normal command shows an exit number or says success (the page gets no exit code from the shell)
-ok   the Kotlin look: `$ command` bold 12 px in the accent colour, outcome 10 px, output 11 px monospace, cards 16 px round
+ok   the Kotlin look: `$ command` bold 12 px in the accent colour, outcome 12 px (--fs-pkg, it was 10), output 11 px monospace, cards 16 px round
 ok   Copy on a card puts its command and output on the clipboard
 ok   Run again sends the same command again and makes a new card at the top
 ok   a second command while one runs is refused, and what was typed stays
@@ -52,13 +52,13 @@ ok   [360 px dark] the command box is 56 px tall, Run 58 px wide, the box row st
 ok   [360 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
 ok   [360 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
 ok   [360 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
-ok   [360 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/7/7.6, 5.6, 8.1)
+ok   [360 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/8.4/8.7, 5.6, 8.1)
 ok   [412 px dark] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
 ok   [412 px dark] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
 ok   [412 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
 ok   [412 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
 ok   [412 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
-ok   [412 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/7/7.6, 5.6, 8.1)
+ok   [412 px light] the outcome text, the command and the output read at 3:1 or better on the card (5.6/8.4/8.7, 5.6, 8.1)
 ok   palette amoled: the card text follows the theme (no sideways scroll, outcome colours differ)
 ok   palette cyberpunk: the card text follows the theme (no sideways scroll, outcome colours differ)
 ok   palette emerald: the card text follows the theme (no sideways scroll, outcome colours differ)

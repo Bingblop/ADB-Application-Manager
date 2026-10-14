@@ -345,7 +345,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
 
   // ---------------------------------------------------------------------------------------------------------------------------------------------
   // 3) every way of closing the first-launch sheet remembers it
-  for (const [how, close] of [['"Not now"', p => p.click('#permCloseBtn')], ['the ✕ at the top', p => p.click('#permModal .sheet-header > div:last-child')],
+  for (const [how, close] of [['"Not now"', p => p.click('#permCloseBtn')], ['the ✕ at the top', p => p.click('#permModal .sheet-header > .sheet-close')],
     ['a tap beside the sheet', p => p.click('#permModal', { position: { x: 4, y: 4 } })], ['the Back button', p => ev(p, () => handleAndroidBack())]]) {
     await scenario({ kv: {} }, async page => {
       await intro(page);
@@ -594,7 +594,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
           return { subWholeWords: getComputedStyle(sub).wordBreak !== 'break-all', inside: sr.left >= 0 && sr.right <= innerWidth && sr.top >= 0 && sr.bottom <= innerHeight + 0.5, scrolls: sh.scrollHeight > sh.clientHeight + 1, wide: sh.scrollWidth > sh.clientWidth + 1,
             rowsIn: rows.every(x => r(x).left >= sr.left - 0.5 && r(x).right <= sr.right + 0.5), textIn: Array.from(document.querySelectorAll('#permRows .pm-txt')).every(e => e.scrollWidth <= e.clientWidth + 1),
             allowMin: Math.round(Math.min(...btns.map(x => r(x).height))), allowW: Math.round(Math.min(...btns.map(x => r(x).width))), btnsIn: btns.every(x => r(x).right <= sr.right - 8),
-            bottomMin: Math.round(Math.min(r(document.getElementById('permCloseBtn')).height, vis('permAllBtn') ? r(document.getElementById('permAllBtn')).height : 99)), rows: rows.length, h: Math.round(sr.height),
+            bottomMin: Math.round(Math.min(r(document.getElementById('permCloseBtn')).height, vis('permAllBtn') ? r(document.getElementById('permAllBtn')).height : 99)), rows: rows.length, h: sh.offsetHeight,
             closeW: Math.round(r(document.getElementById('permCloseBtn')).width), rowsW: Math.round(r(document.getElementById('permRows')).width) };
         });
         check(tag + mode + ': the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways', g.inside && !g.wide && g.rowsIn && g.textIn && g.btnsIn, JSON.stringify(g));

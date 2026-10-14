@@ -1,5 +1,5 @@
-// v7.0: no emoji anywhere in the app. The only ones that stay are the settings gears: the one in the header (the app's settings),
-// the one on every app in the list (that app's settings), and (v7.8, asked for with the Terminal) the Terminal's own settings button. Checked in the sources (page, changelog shown by What's new, widget layout, Java)
+// v7.0: no emoji anywhere in the app. The only one that stays is the settings gear of the Terminal (v7.8, asked for with the Terminal); the header's
+// gear (the app's settings) is a monochrome SVG in the theme's text colour now, like the App Settings icon on every app in the list. Checked in the sources (page, changelog shown by What's new, widget layout, Java)
 // and in the page as it is drawn: every text, title, label and placeholder on every tab and in the main sheets.
 const fs = require('fs');
 const path = require('path');
@@ -33,9 +33,9 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   const page_src = fs.readFileSync(fileURLToPath(PAGE), 'utf8');                       // the page under test (assets/index.html unless PAGE_URL says otherwise)
   const withoutGears = decode(page_src).replace(GEAR, '').replace(LOCK, '');
   check('1. the page has no emoji but the gears (© is not an emoji and is left)', found(withoutGears.replace(/©/g, '')).length === 0, JSON.stringify(found(withoutGears.replace(/©/g, ''))));
-  check('   exactly two gears are written in it: the header button and the Terminal settings button (the app row button is an SVG icon now)', (decode(page_src).match(GEAR) || []).length === 2);
+  check('   exactly one gear is written in it: the Terminal settings button (the header button and the app row button are SVG icons now)', (decode(page_src).match(GEAR) || []).length === 1);
   check('   exactly one lock is written in it (LOCK_ICON, used by every button that cannot change anything in the current state: permissions, app ops, activities, services, receivers, providers)', (decode(page_src).match(LOCK) || []).length === 1 && /const LOCK_ICON = '\u{1F512}';/u.test(page_src));
-  check('   the header gear is the first, the Terminal\'s the second', /id="prefsHeaderBtn"[^>]*>⚙️<\/div>/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
+  check('   it is the Terminal\'s; the header button holds an SVG gear', /id="prefsHeaderBtn"[^>]*><svg class="hdr-gear"/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
   check('   the changelog the What\'s new screen shows has none', found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')).length === 0, JSON.stringify(found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8'))));
   const res = walk(path.join(REPO, 'res'), []).filter(f => /\.(xml|txt)$/.test(f)).filter(f => found(fs.readFileSync(f, 'utf8')).length);
   check('   the layouts and resources (home-screen widget, tiles) have none', res.length === 0, res.join(' '));
@@ -70,9 +70,9 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
     document.querySelectorAll('[title],[aria-label],[placeholder],[alt]').forEach(e => ['title', 'aria-label', 'placeholder', 'alt'].forEach(a => { const v = e.getAttribute(a); if (v && re.test(v)) hits.push(a + ': ' + v.slice(0, 40)); }));
     return hits;
   });
-  const gears = () => ev(() => ({ header: document.getElementById('prefsHeaderBtn').innerText.replace(/️/g, ''), rows: document.querySelectorAll('.app-card .ab-btn[data-ab="settings"] svg').length, cards: document.querySelectorAll('.app-card').length }));
+  const gears = () => ev(() => ({ header: document.querySelector('#prefsHeaderBtn > svg.hdr-gear') && document.getElementById('prefsHeaderBtn').innerText.trim() === '' ? 'svg' : document.getElementById('prefsHeaderBtn').innerText, rows: document.querySelectorAll('.app-card .ab-btn[data-ab="settings"] svg').length, cards: document.querySelectorAll('.app-card').length }));
   let g = await gears();
-  check('2. the header shows the gear and every app in the list has its Action Button icon (App Settings by default)', g.header === '⚙' && g.rows === g.cards && g.cards === 12, JSON.stringify(g));
+  check('2. the header shows the gear (an SVG, no text) and every app in the list has its Action Button icon (App Settings by default)', g.header === 'svg' && g.rows === g.cards && g.cards === 12, JSON.stringify(g));
   const tabs = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'updates', 'store', 'console', 'about', 'prefs'];
   for (const t of tabs) {
     await ev(k => switchView(k), t);

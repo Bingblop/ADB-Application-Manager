@@ -37,12 +37,12 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.screenshot({ path: 'list_versions.png', clip: { x: 0, y: 340, width: 400, height: 260 } });
   // App menu: dates + update hint
   await page.evaluate(() => openInspector('com.sec.android.app.sbrowser')); await page.waitForTimeout(100);
-  console.log('menu sbrowser:', (await page.locator('#inspectorModal .sheet-title').innerText()).replace(/\n+/g, ' | '));
+  console.log('menu sbrowser:', (await page.locator('#inspectorModal .sheet-title, #inspectorModal .sheet-meta').allInnerTexts()).join('\n\n').replace(/\n+/g, ' | '));
   await page.screenshot({ path: 'menu_hint.png', clip: { x: 0, y: 380, width: 400, height: 230 } });
   await page.click('#sheetUpdateHint >> button:has-text("Update")'); await page.waitForTimeout(200);
   console.log('after Update tap → active tab:', await page.locator('.tab-btn.active').innerText(), '| calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   await page.evaluate(() => { switchView('apps'); openInspector('com.duckduckgo.mobile.android'); }); await page.waitForTimeout(100);
-  console.log('menu ddg (no apk, same-day install):', (await page.locator('#inspectorModal .sheet-title').innerText()).replace(/\n+/g, ' | '));
+  console.log('menu ddg (no apk, same-day install):', (await page.locator('#inspectorModal .sheet-title, #inspectorModal .sheet-meta').allInnerTexts()).join('\n\n').replace(/\n+/g, ' | '));
   await page.click('#sheetUpdateHint >> button:has-text("Release")');
   await page.evaluate(() => { closeInspector(); openInspector('org.fdroid.fdroid'); }); await page.waitForTimeout(100);
   console.log('hint shown for fdroid (no update):', await page.isVisible('#sheetUpdateHint'));
