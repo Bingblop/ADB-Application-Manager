@@ -1,11 +1,10 @@
-1. Install on game A starts (with its OBB data): true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-2. a package handed in while A installs is not read: A stays loaded and the page says why: true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-3. the file picker does not open while A installs: true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-4. tapping a found package does not read it while A installs: true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-5. a found package only the shell can read is not even staged while A installs: true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-6. an "Open with" package does not replace A while it installs: true {"running":true,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-7. the file manager's Install is refused before it stages anything: true
-   and nothing is marked as coming from the file manager: true
-8. A's result ends the install: true {"running":false,"inspected":1,"shown":"com.game.a","opened":0,"fromFiles":false}
-9. once the result is in, another package opens as before: true {"running":false,"inspected":2,"shown":"com.app.b","opened":0,"fromFiles":false}
-ALL PASS
+ok   the start failed: state exited, the note shows the reason
+ok   the reason is also written into the terminal
+ok   opening the screen again after a failed start tries to start again
+ok   and the screen is a running attempt, not a dead one
+ok   keys reach the new session
+ok   a shell that ended is not restarted by opening the screen (it waits for Enter)
+ok   its banner is still on the screen
+ok   a start the phone refuses at once also shows its reason in the terminal
+ok   and opening the screen again tries again
+errors: []

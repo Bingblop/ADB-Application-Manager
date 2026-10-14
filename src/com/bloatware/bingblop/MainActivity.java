@@ -6674,6 +6674,17 @@ public class MainActivity extends Activity {
                     }
 
                     if (installed && sameVersion) {
+                        // Nothing is installed here, but "Also restore app data" still replaces the app's data as root from a file the page named:
+                        // the same dialog as the install branch below (a system app just brought back has asked already).
+                        if (RestorePlan.askBeforeSameVersionRestore(installNote != null, wantData)) {
+                            List<String> dataActs = new ArrayList<String>();
+                            dataActs.add(InstallConfirm.RESTORES_DATA);
+                            final String dataMode = resolveExecMode();
+                            if (!confirmInMode(dataMode, null, InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                    installedVersionOrNull(pkg), 1, dataMode, "", dataActs))) {
+                                throw new InstallCancelled();
+                            }
+                        }
                         res.put("install", installNote != null ? installNote : "already installed (same version)");
                     } else {
                         // The backup is a file the page named (or the person picked) and it is installed without the system installer's question:
@@ -6696,8 +6707,10 @@ public class MainActivity extends Activity {
                     backupEvent("restore", "settings", 65, "Restoring permissions...");
                     AndroidBridge bridge = new AndroidBridge();
                     JSONArray perms = meta.optJSONArray("permissions");
-                    int granted = 0, total = perms == null ? 0 : perms.length();
-                    for (int i = 0; i < total; i++) {
+                    // total counts the permissions that are tried, not the ones skipped below (a backup made on a newer Android lists some that are
+                    // not dangerous here), so "X of Y granted" does not read a good restore as failed grants.
+                    int granted = 0, total = 0, listed = perms == null ? 0 : perms.length();
+                    for (int i = 0; i < listed; i++) {
                         String perm = perms.optString(i);
                         // backup.json is untrusted, so restore must accept nothing wider than what backup
                         // creation itself ever writes: a syntactically valid, dangerous runtime permission.
@@ -6706,6 +6719,7 @@ public class MainActivity extends Activity {
                         // permission - including signature/development-level ones this format never
                         // produces - and have the privileged backend asked to grant it.
                         if (!BackupScripts.isPermission(perm) || !isDangerousPermission(pm, perm)) continue;
+                        total++;
                         String o = bridge.setPermission(pkg, perm, true).toLowerCase();
                         if (!o.contains("exception") && !o.contains("error") && !o.contains("not a changeable")) granted++;
                     }
@@ -15674,8 +15688,7 @@ public class MainActivity extends Activity {
             byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
             Object[] target = null;
             try {
-                String mime = safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain";
-                target = openDownloadOutput(safeName, mime, null);
+                target = openDownloadOutput(safeName, BackupScripts.textMimeType(safeName), null);
                 OutputStream out = (OutputStream) target[0];
                 try {
                     out.write(bytes);

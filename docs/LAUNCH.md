@@ -13,12 +13,12 @@ The plan for distributing and announcing ADB Application Manager Pro, starting w
 | **GitHub Discussions** | Draft ready: `docs/ANNOUNCEMENT-v7.13.0.md`. | Paste it as an Announcement. |
 | **Reddit, XDA, Mastodon/Bluesky** | Drafts below. | Post from the owner's accounts. Each community has its own self-promotion rule; read the sidebar first. |
 | **IzzyOnDroid** | **Out.** Their inclusion policy rejects apps that integrate with LLM services (the Coding Agents and Ask-agent features) and apps whose code was written with AI tools, and asks for a FOSS licence. Submitting would be rejected and would cost the maintainers' time. | Nothing. Do not submit. |
-| **F-Droid (main repository)** | **Out for now.** F-Droid builds from source on its own servers; the build uses prebuilt jars in `libs/` and a prebuilt engine in `engine/dist/`, and the repository has no licence file. The same AI-integration objection applies in their community. | Would need a licence, a source-only build and a `fdroiddata` metadata file. Not planned. |
+| **F-Droid (main repository)** | **Out for now.** F-Droid builds from source on its own servers; the build uses prebuilt jars in `libs/` and a prebuilt engine in `engine/dist/`, and the repository is GPL-3.0 (see `LICENSE`). The same AI-integration objection applies in their community. | Would need a source-only build and a `fdroiddata` metadata file. Not planned. |
 | **Google Play** | **Out.** The app's working modes (ADB over TCP, Shizuku, root, system-app uninstall) and its in-app updater are outside Play's policies. | Nothing. |
 
-### What is missing before the "open source" word can be used
+### Licence
 
-The repository has **no LICENSE file**. Until it has one, the code is "source available": people can read it, but nobody has the right to redistribute it, fork it or ship it in a repository, and the GPL-3.0 components built into the APK (morphe-patcher, the SD Maid SE port) require the whole app to be distributed under GPL-3.0. A prepared `LICENSE` (the unmodified GNU GPL v3 text) and a README paragraph are ready for the owner to add; the quickest way is GitHub's **Add file → Create new file → `LICENSE` → Choose a license template → GNU GPLv3**. Until it is merged, the posts below say "the source is on GitHub", not "open source".
+The repository is **GPL-3.0**: `LICENSE` is the unmodified GNU GPL v3 text. The GPL-3.0 components built into the APK (morphe-patcher, the SD Maid SE port) require the whole app to be distributed under GPL-3.0, so the posts below say "open source, GPL-3.0". `NOTICE` names every third-party component and its licence.
 
 ### GitHub settings the owner has to set (not possible from a pull request)
 
@@ -117,7 +117,7 @@ https://github.com/Bingblop/ADB-Application-Manager
 
 ### Answers to the questions that will come
 
-- **Is it open source?** The source is on GitHub. A licence file is being added (GPL-3.0, which the bundled Morphe and SD Maid components require). Until it is merged, say "source on GitHub".
+- **Is it open source?** Yes, GPL-3.0 (the bundled Morphe and SD Maid components require it). The text is in `LICENSE`.
 - **Why not F-Droid or IzzyOnDroid?** Their policies exclude apps that integrate with AI services and apps written with AI tools. Both apply here (optional coding agents; much of the code was written with AI assistance, reviewed and tested by its UI and Java suites). The app does not phone home and has no trackers, but that is not the objection.
 - **Is it safe to give an app ADB or root?** The app runs the commands it shows; every destructive action asks first and reads the phone back afterwards instead of trusting the command's exit status. The source is readable, the release workflow refuses to publish an APK that is not signed with the published certificate, and the certificate is in the README. Nobody should take that on trust; read the code or sandbox it.
 - **Was it written by AI?** Largely, with a human owner directing, testing on a phone and deciding what ships. Say so when asked; it is in the commit history anyway.
@@ -127,5 +127,4 @@ https://github.com/Bingblop/ADB-Application-Manager
 
 - Watch Issues and the Discussion for the first week and answer within a day; a first impression of an unanswered bug report is worse than no post.
 - Each report that names a checklist step is a line in `docs/PHONE-CHECK-RESULTS-v7.13.0.md` (create it when the first one comes).
-- When the licence is merged: change "source on GitHub" to "open source, GPL-3.0" in the README badges and in later posts.
 - When the repository passes 35 stars and 2027-01-30: the Obtainium directory pull request above.
