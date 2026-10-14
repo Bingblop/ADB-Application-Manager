@@ -15638,8 +15638,7 @@ public class MainActivity extends Activity {
             byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
             Object[] target = null;
             try {
-                String mime = safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain";
-                target = openDownloadOutput(safeName, mime, null);
+                target = openDownloadOutput(safeName, BackupScripts.textMimeType(safeName), null);
                 OutputStream out = (OutputStream) target[0];
                 try {
                     out.write(bytes);

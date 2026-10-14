@@ -23,6 +23,30 @@ public class RestorePlanTest {
     return s.replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("//[^\\n]*", " ");
   }
 
+  /** MediaProvider keeps a requested extension only when it maps to the requested MIME type (or is that type's default); a .json asked as text/plain
+   *  was stored as .json.txt while the page reported .json. */
+  static void checkDownloadMime() throws Exception {
+    check("a .json export is saved as application/json", "application/json".equals(BackupScripts.textMimeType("saved-lists-20261003-0400.json")));
+    check("a .xml export stays text/xml", "text/xml".equals(BackupScripts.textMimeType("com.example_AndroidManifest.xml")));
+    check("a .csv export stays text/csv", "text/csv".equals(BackupScripts.textMimeType("report.csv")));
+    check("a .txt export stays text/plain", "text/plain".equals(BackupScripts.textMimeType("logcat_1.txt")));
+    check("an unknown extension stays text/plain", "text/plain".equals(BackupScripts.textMimeType("export")));
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    File f = null;
+    for (int i = 0; d != null && i < 8 && f == null; i++, d = d.getParentFile()) {
+      File c = new File(d, "src/com/bloatware/bingblop/MainActivity.java");
+      if (c.isFile()) f = c;
+    }
+    check("MainActivity.java found (mime)", f != null);
+    if (f != null) {
+      String src = blank(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+      int s = src.indexOf("public String saveTextToDownloads(");
+      String body = s < 0 ? "" : src.substring(s, Math.min(src.length(), s + 1200));
+      check("saveTextToDownloads asks BackupScripts.textMimeType for the type", body.contains("BackupScripts.textMimeType(safeName)"));
+      check("saveTextToDownloads has no local text/plain fallback chain", !body.contains("\"text/plain\""));
+    }
+  }
+
   public static void main(String[] args) throws Exception {
     check("a system app removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_HAS_CODE));
     check("a system app that had an update removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_UPDATED_SYSTEM_APP));
@@ -50,6 +74,7 @@ public class RestorePlanTest {
       check("the system-app branch of runRestore is taken only when RestorePlan.bringBackSystemApp says so", m.find());
       check("no other way into that branch (a bare 'if (sysInfo != null)')", !Pattern.compile("if\\s*\\(\\s*sysInfo\\s*!=\\s*null\\s*\\)").matcher(after).find());
     }
+    checkDownloadMime();
     System.out.println((fails == 0 ? "OK " : "FAILED ") + n + " checks, " + fails + " failed");
     System.exit(fails == 0 ? 0 : 1);
   }
