@@ -116,6 +116,34 @@ public class CpuStatsTest {
         double[] perCoreSwapped = CpuStats.percentBusyPerCore(afterR, beforeR);
         eq("core-mismatch (swapped): still sized to the smaller (2)", perCoreSwapped.length, 2);
 
+        // ---- CPU hotplug (review SYS-1): /proc/stat lists only online cores, so cpu2 offline leaves cpu0 cpu1 cpu3. Each value must come
+        //      from the same core's own counters and carry its real number, never cpu3 against cpu2's old counters under "Core 2". ----
+        String all4 = "cpu  0 0 0 0 0 0 0 0\n"
+            + "cpu0 0 0 0 1000 0 0 0 0\n"
+            + "cpu1 0 0 0 1000 0 0 0 0\n"
+            + "cpu2 0 0 0 1000 0 0 0 0\n"
+            + "cpu3 500 0 0 500 0 0 0 0\n";
+        String cpu2Off = "cpu  0 0 0 0 0 0 0 0\n"
+            + "cpu0 100 0 0 1100 0 0 0 0\n"       // 50% busy
+            + "cpu1 50 0 0 1150 0 0 0 0\n"        // 25% busy
+            + "cpu3 650 0 0 550 0 0 0 0\n";       // +150 busy, +50 idle: 75% busy
+        CpuStats.Reading h0 = CpuStats.parse(all4), h1 = CpuStats.parse(cpu2Off);
+        eq("hotplug: the core numbers come from the labels", h1.perCore.get(2).id, 3);
+        eq("hotplug: the aggregate has no core number", h1.aggregate.id, -1);
+        eq("hotplug: values for the cores online in both readings only", java.util.Arrays.toString(CpuStats.percentBusyPerCore(h0, h1)), "[50.0, 25.0, 75.0]");
+        eq("hotplug: ... named cpu0, cpu1, cpu3 (no value for the offline cpu2)", java.util.Arrays.toString(CpuStats.perCoreIds(h0, h1)), "[0, 1, 3]");
+        eq("hotplug: still 4 cores with cpu2 offline", CpuStats.coreCount(h1), 4);
+        String cpu2Back = "cpu  0 0 0 0 0 0 0 0\n"
+            + "cpu0 200 0 0 1200 0 0 0 0\n"
+            + "cpu1 100 0 0 1300 0 0 0 0\n"
+            + "cpu2 10 0 0 1090 0 0 0 0\n"
+            + "cpu3 650 0 0 750 0 0 0 0\n";
+        CpuStats.Reading h2 = CpuStats.parse(cpu2Back);
+        eq("hotplug: a core that came back has nothing to compare with yet and is left out", java.util.Arrays.toString(CpuStats.perCoreIds(h1, h2)), "[0, 1, 3]");
+        eq("hotplug: ... and cpu3 is compared with its own counters (0% busy)", java.util.Arrays.toString(CpuStats.percentBusyPerCore(h1, h2)), "[50.0, 25.0, 0.0]");
+        eq("hotplug: on the next sample all four are back, in order", java.util.Arrays.toString(CpuStats.perCoreIds(h2, h2)), "[0, 1, 2, 3]");
+        eq("perCoreIds(null, x) length", CpuStats.perCoreIds(null, h1).length, 0);
+
         // ---- percentBusyPerCore: defensive against null readings ----
         eq("percentBusyPerCore(null, x) length", CpuStats.percentBusyPerCore(null, afterR).length, 0);
         eq("percentBusyPerCore(x, null) length", CpuStats.percentBusyPerCore(beforeR, null).length, 0);

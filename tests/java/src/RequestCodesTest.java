@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * The request codes of MainActivity (REQ_...). Two screens that use one code cannot both get their answer: onActivityResult takes the first
  * branch that matches, so the other branch is dead (this happened with the saved-lists backup folder and "Choose package files" on the
  * Connected Devices tab, both 4291). MainActivity needs Android classes, so this is a source scan: every private static final int REQ_...
- * constant has a value no other REQ_ constant has, and every constant a screen starts with startActivityForResult is tested in a
+ * constant has a value no other REQ_ constant has, and every constant a screen starts with startActivityForResult (or startPicker) is tested in a
  * requestCode == REQ_X branch of onActivityResult (every one asked with requestPermissions in onRequestPermissionsResult, except the listed
  * ones that the closing "permissions changed" line answers). The failure names the offending pair or constant.
  *
@@ -89,7 +89,8 @@ public class RequestCodesTest {
     if (perm == null) out.add("onRequestPermissionsResult not found (the scan is out of date)");
     if (act == null || perm == null) return out;
     for (String name : names) {
-      boolean forResult = Pattern.compile("\\bstartActivityForResult\\s*\\([^;]*\\b" + name + "\\b").matcher(t).find();
+      // startPicker(intent, REQ_X) is MainActivity's guarded startActivityForResult for file pickers
+      boolean forResult = Pattern.compile("\\b(?:startActivityForResult|startPicker)\\s*\\([^;]*\\b" + name + "\\b").matcher(t).find();
       boolean forPerm = Pattern.compile("\\brequestPermissions\\s*\\([^;]*\\b" + name + "\\b").matcher(t).find();
       Pattern tested = Pattern.compile("\\brequestCode\\s*[=!]=\\s*" + name + "\\b");
       if (!forResult && !forPerm) out.add(name + " is declared but no screen asks with it");
@@ -128,6 +129,8 @@ public class RequestCodesTest {
         && !has(problems(ok.replace("if (requestCode == REQ_ONE) { return; }", "")), "REQ_TWO"));
     check("a permission constant with no branch is refused unless it is listed", has(problems(ok.replace("if (requestCode == REQ_P) { }", "")), "REQ_P asks for a permission")
         && problems(ok.replace("REQ_P", "REQ_BT_CONNECT").replace("if (requestCode == REQ_BT_CONNECT) { }", "")).isEmpty());
+    check("a picker started through startPicker counts as asked for a result", has(problems(ok.replace("startActivityForResult(i, REQ_TWO);", "startPicker(i, REQ_TWO);").replace("if (requestCode != REQ_TWO) return;", "")), "REQ_TWO starts an activity for a result")
+        && problems(ok.replace("startActivityForResult(i, REQ_TWO);", "startPicker(i, REQ_TWO);")).isEmpty());
     check("a constant nobody asks with is named", has(problems(ok.replace("startActivityForResult(i, REQ_TWO);", "")), "REQ_TWO is declared but no screen asks"));
     check("a branch that is only in a comment or a string does not count",
         has(problems(ok.replace("if (requestCode == REQ_ONE) { return; }", "// if (requestCode == REQ_ONE) { return; }\n String s = \"requestCode == REQ_ONE\";")), "REQ_ONE starts an activity"));

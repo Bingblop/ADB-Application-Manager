@@ -6817,6 +6817,18 @@ public class MainActivity extends Activity {
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
     private static final int REQ_PICK_STORAGE_TREE = 4205;
 
+    /** Opens a system picker on the UI thread. False (and a toast) when the phone has none, for example with the Files app frozen:
+     *  startActivityForResult throws ActivityNotFoundException then, and uncaught on the UI thread it would end the app. */
+    private boolean startPicker(Intent i, int request) {
+        try {
+            startActivityForResult(i, request);
+            return true;
+        } catch (Exception e) {
+            Toast.makeText(this, "No file picker available", Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -7860,6 +7872,10 @@ public class MainActivity extends Activity {
     // The log recorder is held by the app, not by an activity or its bridge: a recording goes on across a recreate() (a theme change,
     // Back and reopen), the new activity sees it in the status and can stop it, and it cannot start a second one beside it.
     private static volatile LogRecorder logRec;
+
+    // File Manager thumbnails, one picture at a time (a long list must not decode ten at once). A field of the activity, not of the bridge,
+    // so onDestroy can stop it: every recreate() makes a new bridge, and each pool's idle thread would otherwise live on.
+    private final ExecutorService thumbExec = Executors.newSingleThreadExecutor();
 
     private class AndroidBridge {
 
@@ -10938,7 +10954,7 @@ public class MainActivity extends Activity {
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
                     i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                    startActivityForResult(i, REQ_PICK_CD);
+                    if (!startPicker(i, REQ_PICK_CD)) notifyJs("window.onCdPicked && window.onCdPicked({\"tag\":" + JSONObject.quote(cdPickTag) + ",\"files\":[]})");
                 }
             });
         }
@@ -11256,7 +11272,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_BACKUP);
+                    startPicker(i, REQ_PICK_BACKUP);
                 }
             });
         }
@@ -11289,7 +11305,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_TEXT);
+                    startPicker(i, REQ_PICK_TEXT);
                 }
             });
         }
@@ -11452,7 +11468,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_FONT);
+                    startPicker(i, REQ_PICK_FONT);
                 }
             });
         }
@@ -11614,7 +11630,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_INSTALL);
+                    startPicker(i, REQ_PICK_INSTALL);
                 }
             });
         }
@@ -11875,14 +11891,14 @@ public class MainActivity extends Activity {
         public String setComponentEnabled(String pkg, String component, boolean enable) {
             JSONObject r = new JSONObject();
             try {
-                if (pkg == null || component == null || !pkg.matches("[A-Za-z0-9._]+") || !component.matches("[A-Za-z0-9._$]+")) {
+                String cmd = ShellArgs.componentCommand(pkg, component, enable);
+                if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
                 if ("standard".equals(resolveExecMode())) {
                     r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
                 }
-                String full = component.startsWith(".") ? pkg + component : component;
-                String out = executeShell("pm " + (enable ? "enable" : "disable") + " " + pkg + "/" + full);
+                String out = executeShell(cmd);
                 String low = out == null ? "" : out.toLowerCase();
                 r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
                 r.put("output", out != null ? out.trim() : "");
@@ -12171,12 +12187,16 @@ public class MainActivity extends Activity {
                     if (tmLastCpu != null) {
                         cpuJson.put("overall", CpuStats.percentBusy(tmLastCpu.aggregate, cpu.aggregate));
                         double[] perCore = CpuStats.percentBusyPerCore(tmLastCpu, cpu);
-                        JSONArray coreArr = new JSONArray();
+                        int[] ids = CpuStats.perCoreIds(tmLastCpu, cpu);       // the core number of each value: offline cores are left out, so position is not the number
+                        JSONArray coreArr = new JSONArray(), idArr = new JSONArray();
                         for (double v : perCore) coreArr.put(v);
+                        for (int id : ids) idArr.put(id);
                         cpuJson.put("perCore", coreArr);
+                        cpuJson.put("coreIds", idArr);
                     } else {
                         cpuJson.put("overall", 0.0);
                         cpuJson.put("perCore", new JSONArray());
+                        cpuJson.put("coreIds", new JSONArray());
                     }
                     tmLastCpu = cpu;
                 }
@@ -13405,8 +13425,6 @@ public class MainActivity extends Activity {
                 return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
             } catch (Throwable t) { return ""; }
         }
-
-        private final java.util.concurrent.ExecutorService thumbExec = java.util.concurrent.Executors.newSingleThreadExecutor();      // one picture at a time: a long list must not decode ten at once
 
         private File thumbDir() { File d = new File(getCacheDir(), "fm_thumbs"); if (!d.isDirectory()) d.mkdirs(); return d; }
 
@@ -16027,6 +16045,7 @@ public class MainActivity extends Activity {
             if (sdm != null) sdm.bridge().shutdown();
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
