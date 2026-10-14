@@ -8,8 +8,11 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Process;
 import android.os.storage.StorageManager;
+import android.webkit.WebView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -87,6 +90,24 @@ public final class SdmPackagesAndroid implements Sdm.Packages {
     @Override
     public Set<String> running() {
         return SdmShell.runningPackages(shell);
+    }
+
+    /** The WebView provider the phone runs now (this app's own screen is a WebView): force-stopping or clearing it would end a cleaning. */
+    @Override
+    public Set<String> neverDrive() {
+        try {
+            PackageInfo wv = WebView.getCurrentWebViewPackage();            // API 26+; null when there is no provider
+            if (wv != null && wv.packageName != null) {
+                Set<String> out = new HashSet<String>();
+                out.add(wv.packageName);
+                return out;
+            }
+        } catch (RuntimeException e) {
+            // cannot be told: nothing extra is protected (the stock exclusions still name the usual providers)
+        } catch (LinkageError e) {
+            // same
+        }
+        return Collections.<String>emptySet();
     }
 
     @Override

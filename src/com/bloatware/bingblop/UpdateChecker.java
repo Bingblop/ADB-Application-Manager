@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,12 +46,22 @@ public final class UpdateChecker {
 
     public interface Clock {
         long now();
+
+        /** A time that only moves forward, for the run's deadline: the wall clock steps when the phone syncs its time. The default is now(). */
+        default long monotonicMs() {
+            return now();
+        }
     }
 
     public static final Clock SYSTEM_CLOCK = new Clock() {
         @Override
         public long now() {
             return System.currentTimeMillis();
+        }
+
+        @Override
+        public long monotonicMs() {
+            return System.nanoTime() / 1_000_000L;
         }
     };
 
@@ -153,6 +164,7 @@ public final class UpdateChecker {
     private volatile boolean offline;
     private volatile boolean closed;                         // the run is over: late answers are thrown away
     private final Object lock = new Object();
+    private final Object deviceLock = new Object();          // the device probe runs process calls: never under `lock`, which the commits and the progress reports need
 
     // per run
     private Options opts;
@@ -171,6 +183,9 @@ public final class UpdateChecker {
     private String lastError = "";
     private String selfStatus = "";
     private long lastProgressAt;
+    private final ArrayDeque<JSONObject> progressQueue = new ArrayDeque<JSONObject>();   // the reports in the order they were taken; guarded by lock
+    private boolean progressDraining;                        // a thread is telling the listener the queued reports; guarded by lock
+    private boolean progressDone;                            // the "done" report is queued: no later report is taken; guarded by lock
     private JSONObject catalog;                              // null: not loaded (the per-app files are used)
     private boolean catalogFromIndex;
     private UpdateManager.Device deviceMemo;
@@ -516,8 +531,13 @@ public final class UpdateChecker {
         this.opts = options;
         this.listener = l;
         this.guard = new Guard(net);
+        synchronized (lock) {
+            progressQueue.clear();
+            progressDraining = false;
+            progressDone = false;
+        }
         this.myGeneration = options.generation == null ? 0 : options.generation.begin();
-        long t0 = clock.now();
+        long t0 = clock.monotonicMs();                       // the deadline runs on the monotonic time: a step of the wall clock must not expire the run
         long deadlineAt = t0 + options.deadlineMs;
 
         List<Job> jobs = new ArrayList<Job>();
@@ -595,7 +615,7 @@ public final class UpdateChecker {
                     if (finished.size() >= total && selfDone()) break;      // all results are in; the barrier below waits for their side effects
                 }
                 if (cancelled || offline) break;
-                if (clock.now() >= deadlineAt) {
+                if (clock.monotonicMs() >= deadlineAt) {
                     expired = true;
                     break;
                 }
@@ -643,7 +663,7 @@ public final class UpdateChecker {
                 String lane = (j.app.openSource ? LANE_OS : "") + (j.app.openSource && j.app.galaxy ? "+" : "") + (j.app.galaxy ? LANE_GX : "");
                 addFailure(j.app, offline ? new Failure("offline", "no internet", "", lane) : new Failure("deadline", "timed out", "", lane));
             }
-            summary = buildSummary(jobs, clock.now() - t0);
+            summary = buildSummary(jobs, clock.monotonicMs() - t0);
         }
         cache.save();
         progress("done");
@@ -784,15 +804,22 @@ public final class UpdateChecker {
         return u;
     }
 
+    /**
+     * Takes a report of the run (under the lock, in the order the counters changed) and gets it to the listener in that same order, one at a time and never
+     * under the lock: the thread that finds nobody delivering tells the listener everything that is queued, the others only queue theirs and go back to
+     * their jobs. "done" is queued like the rest and, once it is, no later "checking" report is taken; the run's thread waits (up to the barrier's limit)
+     * until the queue is empty, so "done" is the last report and has been heard when {@link #check} returns.
+     */
     private void progress(String phase) {
         if (listener == null || abandoned || !isCurrentRun()) return;
-        JSONObject p = new JSONObject();
-        boolean last;
+        boolean isDone = "done".equals(phase);
         synchronized (lock) {
+            if (progressDone) return;                                  // nothing after "done"
             long now = clock.now();
-            last = "start".equals(phase) || "done".equals(phase) || completed >= total;
+            boolean last = "start".equals(phase) || isDone || completed >= total;
             if (!last && now - lastProgressAt < 150 && (completed % 10) != 0) return;
             lastProgressAt = now;
+            JSONObject p = new JSONObject();
             try {
                 p.put("done", completed);
                 p.put("total", total);
@@ -800,10 +827,58 @@ public final class UpdateChecker {
                 p.put("updates", updates.size() - (opts.self != null && updates.containsKey(opts.self.pkg) ? 1 : 0));
                 p.put("fromCache", fromCache);
             } catch (Exception ignored) {}
+            progressQueue.add(p);
+            if (isDone) progressDone = true;
+            if (progressDraining) {
+                if (isDone) awaitProgressDrained();
+                return;
+            }
+            progressDraining = true;
         }
+        boolean released = false;
         try {
-            listener.onProgress(p);
-        } catch (Throwable ignored) {}
+            while (true) {
+                JSONObject next;
+                synchronized (lock) {
+                    next = progressQueue.poll();
+                    if (next == null || abandoned || !isCurrentRun()) {
+                        progressQueue.clear();
+                        progressDraining = false;
+                        released = true;
+                        lock.notifyAll();
+                        return;
+                    }
+                }
+                try {
+                    listener.onProgress(next);
+                } catch (Throwable ignored) {}
+            }
+        } finally {
+            if (!released) {                                           // however the loop was left, the next report must find a free drainer
+                synchronized (lock) {
+                    progressDraining = false;
+                    lock.notifyAll();
+                }
+            }
+        }
+    }
+
+    /** The "done" report is queued behind a delivery in progress on another thread: wait (caller holds the lock) until that thread has told the listener. */
+    private void awaitProgressDrained() {
+        long until = System.nanoTime() + BARRIER_MAX_NANOS;
+        while (progressDraining) {
+            long left = until - System.nanoTime();
+            if (left <= 0) {
+                abandoned = true;                                      // a listener that never returns must not hold the check for ever
+                return;
+            }
+            try {
+                lock.wait(Math.max(1, Math.min(50, left / 1_000_000)));
+            } catch (InterruptedException e) {
+                abandoned = true;
+                return;
+            }
+        }
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -1107,7 +1182,7 @@ public final class UpdateChecker {
     // ------------------------------------------------------------------------------------------------
 
     private UpdateManager.Device device() throws Exception {
-        synchronized (lock) {
+        synchronized (deviceLock) {
             if (deviceMemo == null) {
                 if (opts.device == null) throw new IllegalStateException("no device identity for the Galaxy Store");
                 deviceMemo = opts.device.get();

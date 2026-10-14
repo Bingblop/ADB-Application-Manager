@@ -31,7 +31,9 @@ public class SdmCorpseFinderTest {
 
     static class FakeAreas implements Sdm.Areas {
         final List<Sdm.AreaInfo> list = new ArrayList<Sdm.AreaInfo>();
+        int userId = 0;
         @Override public List<Sdm.AreaInfo> all() { return list; }
+        @Override public int userId() { return userId; }
         @Override public Sdm.AreaInfo get(Sdm.Area a) { for (Sdm.AreaInfo i : list) if (i.area == a) return i; return null; }
         @Override public Sdm.AreaInfo areaOf(String path) { Sdm.AreaInfo best = null; for (Sdm.AreaInfo i : list) if (Sdm.isInside(path, i.root) && (best == null || i.root.length() > best.root.length())) best = i; return best; }
     }
@@ -553,6 +555,27 @@ public class SdmCorpseFinderTest {
         e4.settings.put("filter.sdcard.enabled", false).put("filter.publicdata.enabled", false).put("filter.publicmedia.enabled", false);
         is("a marked folder whose uid belongs to an installed app is owned", paths(tool().scan(e4.ctx())).contains("priv/legacy_dir"), false);
         new SdmFsJava().delete(priv + "/legacy_dir");
+
+        // a secondary Android user with root: the app data filters do not run (the package list is that user's; the folders of user 0's
+        // apps would look like remnants), the result says so, the other filters still run
+        Env e5 = new Env();
+        e5.areas = areas(true);
+        e5.areas.userId = 10;
+        e5.shell = new FakeShell(0);
+        e5.settings.put("filter.publicmedia.enabled", false);
+        Sdm.Result r5 = tool().scan(e5.ctx());
+        Set<String> got5 = paths(r5);
+        is("off the system user: no private data remnants", !got5.contains("priv/com.dead.priv.dir") && !got5.contains("priv/com.root.owned.dir"), true);
+        is("off the system user: no public data remnants", !got5.contains("sd/Android/data/com.dead.app") && !got5.contains("sd/Android/data/_com.hidden.dead"), true);
+        is("the SD card filter still runs", got5.contains("sd/DeadApp"), true);
+        is("…and no private data progress was reported", e5.rec.has("Private app data|Processing Private app data"), false);
+        JSONArray sk5 = r5.summary().getJSONArray("skippedFilters");
+        eq("the result says which filters were left out and why", sk5.getString(0) + "," + sk5.getString(1), "Public app data (not on Android user 10),Private app data (not on Android user 10)");
+        Env e6 = new Env();
+        e6.areas = areas(true);
+        e6.shell = new FakeShell(0);
+        e6.settings.put("filter.publicmedia.enabled", false);
+        is("on the system user both run as before", paths(tool().scan(e6.ctx())).contains("sd/Android/data/com.dead.app") && !tool().scan(e6.ctx()).summary().has("skippedFilters"), true);
     }
 
     static void deferred() throws Exception {

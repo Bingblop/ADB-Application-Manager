@@ -61,7 +61,7 @@ public final class PtyShell {
         StringBuilder s = new StringBuilder();
         s.append("H=").append(h).append("; P=\"$H\"\n");
         if (copyTo != null && !copyTo.isEmpty()) {
-            s.append("if ! \"$H\" 1 1 -- /system/bin/true >/dev/null 2>&1; then\n");
+            s.append("if ! \"$H\" 1 1 -- /system/bin/true </dev/null >/dev/null 2>&1; then\n");       // </dev/null: the probe's throwaway pty must not eat keys typed early
             s.append("  C=").append(copyTo).append("\n");
             s.append("  mkdir -p \"$(dirname \"$C\")\" 2>/dev/null\n");
             s.append("  if cp -f \"$H\" \"$C\" 2>/dev/null && chmod 755 \"$C\" 2>/dev/null; then P=\"$C\"; fi\n");
@@ -221,7 +221,12 @@ public final class PtyShell {
         }
     }
 
-    /** Hangs up (the helper sends the program SIGHUP when its input ends), and ends the process if it is still there a moment later. */
+    /**
+     * Hangs up (the helper sends the program SIGHUP when its input ends), and ends the process if it is still there a moment later. Never waits:
+     * the writer thread may be blocked inside the stream's lock, writing input a program does not take (the pty and the pipe full), so the input
+     * is closed on a thread of its own, after the killer thread is started: the helper ends 800 ms later whatever the writer is doing, and that
+     * frees the writer and the close.
+     */
     public void close() {
         closed = true;
         synchronized (flow) {
@@ -229,10 +234,6 @@ public final class PtyShell {
         }
         synchronized (queueLock) {
             queueLock.notifyAll();
-        }
-        try {
-            in.close();
-        } catch (IOException ignored) {
         }
         final Process p = process;
         Thread killer = new Thread(new Runnable() {
@@ -247,5 +248,17 @@ public final class PtyShell {
         }, "pty-killer");
         killer.setDaemon(true);
         killer.start();
+        final OutputStream input = in;
+        Thread closer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    input.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }, "pty-closer");
+        closer.setDaemon(true);
+        closer.start();
     }
 }

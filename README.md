@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.13.0-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.13.1-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -70,6 +70,21 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 3. Pick a [working mode](docs/FULL-GUIDE.md#working-modes). Easiest: **ADB over TCP** (run `adb tcpip 5555` once) or **Wireless Debugging** on Android 11+ with the in-app pairing flow.
 
 Updating? Just install the new APK over the old one, or let the app tell you when a release is out.
+
+### Get it with Obtainium
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs the app straight from this repository's Releases page and tells you when a new version is out. Tap the badge on your phone (it opens Obtainium, or offers to install it first); the configuration it adds picks the `-arm64-v8a` file of each release.
+
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.bloatware.bingblop%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FBingblop%2FADB-Application-Manager%22%2C%22author%22%3A%22Bingblop%22%2C%22name%22%3A%22ADB%20Application%20Manager%20Pro%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22arm64-v8a%5C%22%7D%22%7D"><img src="docs/screenshots/badge_obtainium.png" height="56" alt="Get it on Obtainium"></a>
+
+Adding it by hand instead: in Obtainium tap **+**, paste `https://github.com/Bingblop/ADB-Application-Manager`, and under *Filter APKs by regular expression* enter `arm64-v8a` (or `universal` for the file that holds both CPU types).
+
+Verification info, for Obtainium's and other installers' signature checks:
+
+| | |
+| --- | --- |
+| Package ID | `com.bloatware.bingblop` |
+| Signing certificate SHA-256 | `94:61:87:0F:7C:D2:40:64:06:A1:19:F4:D3:75:33:C2:3B:B7:D1:ED:85:05:06:BA:D7:EA:3E:6B:4B:D2:6D:17` |
 
 ### Signing certificate
 
@@ -129,13 +144,14 @@ The complete reference lives in the **[Full Guide](docs/FULL-GUIDE.md)**:
 [Testing](docs/FULL-GUIDE.md#testing).
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
-## What's new in v7.10
+## What's new
 
 - **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias (bingblop.coral666@simplelogin.fr) so the developer's own address stays private.
 - **Honest results**: after an uninstall, reinstall, freeze, unfreeze, suspend or unsuspend (one app or a batch, on this phone or on a connected device), and after Clear data in Root mode, the app asks what became of each app, says *Checking the phone…* (or *the device…*) while it does, and shows *Uninstalled / Still installed*, *Data cleared* and so on instead of trusting the command's exit status. **Settings → Progress messages** turns the "Working on it…" / "Checking…" messages off.
 - **Read-back everywhere**: Force stop (is the process gone?) and Clear data (files counted, also in ADB/Shizuku mode, with a check for files the app writes again); a **spinner on the row** while an app is changed and checked; **Removal Levels** in the Debloater list; Morphe Helper sends you to the right APKMirror bundle page when the browser check stands in the way.
 - **SD Maid → Clear Data from Uninstalled Apps** clears the leftover data of apps removed with the keep-data flag. **Batch menu**: a pull handle, outlined Select All / Clear All, Show Applications, Keep selecting always on. **One VirusTotal key** in Settings for the Installer and Morphe Helper.
 - **v7.10.18**: outlined Select All / Clear All on the Selected apps list and the leftover-data sheet; a **bin button on a row of the Uninstalled filter** clears that one app's leftover data; the **VirusTotal card shows how many lookups are left today**.
+- **v7.13.1**: a fix release, nothing new. The fifty-four findings of the code review of 2026-10-13: the SD Maid **Deduplicator keeps the copy marked Kept**, a **Connected Devices batch stays on the device it started on**, a **failed privileged command is never counted as success** (a refused `su` is reported), the **terminal closes without freezing the app**, File Manager **rename, copy and extract never overwrite silently** (and an added storage honours Skip and Keep both), a **Hidden Settings restore keeps the real old value**, the Morphe tab loads once, a second Update All keeps the queue, beta versions compare right, Hidden Settings and Overlays act on the running user, and forty more leaks, stale states and hardening items. See the [changelog](CHANGELOG.md); section 28 of the [device checklist](docs/DEVICE-TEST-CHECKLIST.md) is one phone step per fix.
 - **v7.13.0**: a feature release. A new **Extra Settings** tab: **Private DNS** with fifteen services and a **speed test** (the card moved here from the gear Settings page), **animation speed**, **brightness bias**, **device telemetry**, **power & reboot**, **Doze & power governor** and **zram & memory**, each reading the phone back before it says anything. A **bottom navigation bar** with four pinned tabs, a More sheet and **long-press shortcuts** (Settings > Navigation chooses bottom bar, top bar or both). A **Console** tab (ADB Shell and Live Logcat) with the **Terminal** as its own tab. The **Application Updater check is rebuilt** (every source at once, cancel, retry, a host that is down named once, saved results). An **Install button on every ShizuStore row**, a **DUMP** row and **Copy grant commands** in the permission sheet, an SD Maid fix for One UI's App info page, and Morphe sources labelled Official and Custom. See the [changelog](CHANGELOG.md).
 - **v7.12.11**: a feature and fix release. **Settings has a Private DNS card** (AdGuard DNS, Cloudflare, Quad9, Automatic, Off or your own host name; it reads the phone back to show what it really holds); the **ADB Console ends each command with a result line** ("Finished" or "Looks like a failure" with the reason; Rish mode keeps its own `[exit N]` note instead); **installs through ADB, Shizuku or Root from the Installer, the Updater (and Update All), a restore and the Morphe Patcher now ask first** (updating the app itself does not), and **Read-Only mode no longer installs through a still-connected ADB**; the text on the App Stores install buttons and letter tiles is black or white, whichever reads better. See the [changelog](CHANGELOG.md).
 - **v7.12.10**: a patch release. In adb, Shizuku and root mode the app now **asks before it installs a downloaded app**, in a dialog of its own that names the host the file came from; an archive can no longer fill the phone's storage (an entry may only use what is free less a 64 MB reserve) and **tar hard links** extract as copies; a signing key imported into the Morphe Patcher is checked before it replaces the current one; the Morphe Patcher no longer starts two patches at once, loses a finished patch when Downloads is not writable, or lets two source reads cut each other's files, **asks before a custom patch bundle is first loaded**, and **shares its signing key through the Android share sheet** instead of copying it to Downloads; opening a big compressed tar in the File Manager runs in the background and **can be cancelled**, and an archive with more than 500,000 entries is refused in words; the Apps tab gets a **Refresh button** at the end of the search bar. See the [changelog](CHANGELOG.md).

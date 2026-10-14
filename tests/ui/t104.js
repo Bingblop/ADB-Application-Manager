@@ -18,6 +18,11 @@ const { chromium, PAGE } = require('./lib/pw');
   }, apps);
   await page.goto(PAGE); await page.waitForTimeout(900);
   console.log('pills:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(p => p.innerText.replace(/\s+/g, ' ').trim()))));
+  // The Enabled pill is off screen at this width, so the click first scrolls the pill row; that scroll dismisses the one-time filters hint (the page
+  // shifts up a row, by design) a frame later, which under load is after the mouse went down: the mouse then comes up over the search box and the
+  // pill never gets its click. Scroll first and wait until the hint is gone (or the row did not move far enough to dismiss it), then click.
+  await page.locator('#filterScroll .filter-pill[data-filter="enabled"]').scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.getElementById('filterScroll').scrollLeft <= 24 || getComputedStyle(document.getElementById('filtersHint')).display === 'none', null, { timeout: 5000 });
   await page.locator('#filterScroll .filter-pill[data-filter="enabled"]').click(); await page.waitForTimeout(250);
   console.log('Enabled shows installed apps that are not disabled (a suspended one counts):', JSON.stringify(await page.evaluate(() => [Array.from(activeFilters), document.querySelector('#filterScroll .filter-pill.active').getAttribute('data-filter'), Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(e => e.innerText).sort()])));
   await page.locator('#filterScroll .filter-pill[data-filter="frozen"]').click(); await page.waitForTimeout(250);

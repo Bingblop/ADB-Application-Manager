@@ -45,7 +45,8 @@ final class TrackerUpdate {
             for (Iterator<String> it = in.keys(); it.hasNext(); ) {
                 String key = it.next();
                 JSONObject t = in.optJSONObject(key);
-                if (t == null || !t.has("id")) continue;
+                int id = t == null ? Integer.MIN_VALUE : t.optInt("id", Integer.MIN_VALUE);
+                if (id == Integer.MIN_VALUE) continue;                   // no id, or one that is not a number: that entry is left out, the rest of the list is still used
                 String sig = t.optString("code_signature", "");
                 for (int i = 0; i < sig.length(); i++) {
                     char c = sig.charAt(i);
@@ -53,7 +54,7 @@ final class TrackerUpdate {
                 }
                 if (sig.length() > 3) usable++;
                 JSONArray cats = t.optJSONArray("categories");
-                out.put(String.valueOf(t.getInt("id")), new JSONObject().put("id", t.getInt("id")).put("name", t.optString("name", "?")).put("code_signature", sig)
+                out.put(String.valueOf(id), new JSONObject().put("id", id).put("name", t.optString("name", "?")).put("code_signature", sig)
                         .put("categories", cats == null ? new JSONArray() : cats).put("website", t.optString("website", "")));
             }
             if (out.length() < MIN_TRACKERS || usable < MIN_TRACKERS - 50) throw new IOException("The answer holds only " + out.length() + " trackers (" + usable + " with code names): not used");

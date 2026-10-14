@@ -17,6 +17,7 @@ public class AdbArgsTest {
       {"shell", "echo", "kill-server"}, {"pull", "/sdcard/a.txt", "/tmp/a.txt"}, {"push", "a.apk", "/data/local/tmp/"}, {"install", "-r", "a.apk"},
       {"logcat", "-d"}, {"-d", "shell", "id"}, {"-s", "shell", "devices"}, {"-s", "SER123", "-d", "shell", "id"}, {"-t", "2", "shell", "kill-server"}, {"--version"},
       {"wait-for-device"}, {"wait-for-device", "shell", "echo", "kill-server"}, {"wait-for-usb-device", "install", "-r", "a.apk"}, {"-s", "x", "wait-for-device", "shell", "id"}, {"-e", "shell", "id"}, {"version"}, {"keys"},
+      {"shell", "raw"}, {"shell", "echo", "raw", "host:kill"},
     };
     for (String[] f : fine) is("allowed: adb " + String.join(" ", f), AdbArgs.check(l(f)) == null);
 
@@ -27,6 +28,7 @@ public class AdbArgsTest {
       {"-d", "-L", "tcp:5037", "devices"}, {"-d", "-a", "devices"}, {"-s", "x", "-P5037", "devices"}, {"-q", "devices"}, {"-s", "x"}, {"-d"}, {"-s", "x", "-d", "server"},
       {"wait-for-device", "kill-server"}, {"wait-for-usb-device", "start-server"}, {"wait-for-device", "wait-for-any-device", "server"}, {"-d", "wait-for-device", "nodaemon", "server"},
       {"-s", "x", "wait-for-local-device", "reconnect-server"},
+      {"raw", "host:kill"}, {"raw", "host:features"}, {"raw"}, {"-d", "raw", "host:kill"}, {"-s", "x", "raw", "host:kill"}, {"wait-for-device", "raw", "host:kill"},
       {"-P", "5037", "devices"}, {"-P5037", "devices"}, {"-H", "example.com", "devices"}, {"-Hexample.com", "devices"}, {"-L", "tcp:5037", "devices"}, {"-a", "nodaemon", "server"}, {"-a", "start-server"},
     };
     for (String[] b : bad) is("refused: adb " + String.join(" ", b), AdbArgs.check(l(b)) != null);

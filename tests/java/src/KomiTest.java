@@ -1,4 +1,5 @@
 import com.bloatware.bingblop.KomiApi;
+import com.bloatware.bingblop.Stores;
 import org.json.*;
 import java.nio.file.*;
 import java.util.*;
@@ -70,6 +71,33 @@ public class KomiTest {
     check("bare-array shape (categories/topics endpoints) accepted", KomiApi.mapItems(new JSONArray("[{\"fullName\":\"x/y\",\"name\":\"y\",\"owner\":{\"login\":\"x\"}}]"), null).length() == 1);
     check("pretty names", "Libre Tube".equals(KomiApi.categories(null,null,1).isEmpty() ? "" : KomiApi.item(new JSONObject("{\"fullName\":\"a/libre-tube\",\"name\":\"libre-tube\",\"owner\":{\"login\":\"a\"}}")).optString("name"))
       && "NewPipe".equals(KomiApi.item(new JSONObject("{\"fullName\":\"a/NewPipe\",\"name\":\"NewPipe\",\"owner\":{\"login\":\"a\"}}")).optString("name")));
+
+    // Orion catalog (Stores.orionItems): the githubRepo field. "owner/", "/" and a full address used to throw or give "https:" as the owner, and
+    // one such entry failed the whole catalog. Now: exactly two non-empty parts (a full github.com address stripped), anything else is skipped.
+    check("githubOwnerRepo: owner/repo", Arrays.equals(Stores.githubOwnerRepo("own/repo"), new String[]{"own", "repo"}) && Arrays.equals(Stores.githubOwnerRepo(" own/repo "), new String[]{"own", "repo"}));
+    check("githubOwnerRepo: a full address is stripped", Arrays.equals(Stores.githubOwnerRepo("https://github.com/own/repo"), new String[]{"own", "repo"}) && Arrays.equals(Stores.githubOwnerRepo("https://www.github.com/own/repo.git"), new String[]{"own", "repo"}));
+    check("githubOwnerRepo: \"owner/\", \"/\", \"/repo\", three parts, empty and null are refused",
+      Stores.githubOwnerRepo("owner/") == null && Stores.githubOwnerRepo("/") == null && Stores.githubOwnerRepo("/repo") == null && Stores.githubOwnerRepo("a/b/c") == null
+      && Stores.githubOwnerRepo("own//repo") == null && Stores.githubOwnerRepo("") == null && Stores.githubOwnerRepo(null) == null && Stores.githubOwnerRepo("https://github.com/") == null);
+    JSONObject bomb = new JSONObject() { @Override public String optString(String k, String d) { if ("description".equals(k)) throw new IllegalStateException("boom"); return super.optString(k, d); } };
+    bomb.put("id", "bomb").put("name", "Bomb").put("platform", "android").put("githubRepo", "own/bomb").put("description", "reading this throws");
+    JSONArray orion = new JSONArray()
+      .put(new JSONObject().put("id", "a").put("name", "A").put("platform", "android").put("githubRepo", "owner/"))
+      .put(new JSONObject().put("id", "b").put("name", "B").put("platform", "android").put("githubRepo", "/"))
+      .put(new JSONObject().put("id", "c").put("name", "C").put("platform", "android").put("githubRepo", "https://github.com/own/repo"))
+      .put(bomb)
+      .put(new JSONObject().put("id", "d").put("name", "D").put("platform", "android").put("githubRepo", "own/good"))
+      .put(new JSONObject().put("id", "e").put("name", "E").put("platform", "android").put("githubRepo", JSONObject.NULL).put("repoUrl", "https://codeberg.org/cb/app"))
+      .put(new JSONObject().put("id", "f").put("name", "F").put("platform", "android").put("githubRepo", "own/repo/extra"))
+      .put(new JSONObject().put("id", "g").put("name", "G").put("platform", "windows").put("githubRepo", "own/g"));
+    JSONArray oi = Stores.orionItems(orion, 100).getJSONArray("items");
+    List<String> ids = new ArrayList<>();
+    for (int i = 0; i < oi.length(); i++) ids.add(oi.getJSONObject(i).getString("id"));
+    check("orionItems: \"owner/\", \"/\" and a 3-part githubRepo are skipped, the rest of the catalog survives (" + ids + ")", ids.equals(Arrays.asList("c", "d", "e")));
+    check("orionItems: a full github.com address gives the owner and the repo, not \"https:\"", oi.getJSONObject(0).getString("owner").equals("own") && oi.getJSONObject(0).getString("repo").equals("repo") && oi.getJSONObject(0).getString("resolveKind").equals("github"));
+    check("orionItems: the codeberg entry still resolves through repoUrl", oi.getJSONObject(2).getString("resolveKind").equals("codeberg") && oi.getJSONObject(2).getString("owner").equals("cb"));
+    check("orionItems: an entry that throws while it is mapped is dropped alone, the catalog is still returned", !ids.contains("bomb"));
+
     System.out.println(fails == 0 ? "ALL PASS" : (fails + " FAILED"));
     System.exit(fails == 0 ? 0 : 1);
   }

@@ -1012,9 +1012,18 @@ public class MorpheVirusTotalTest {
         q = MorpheVirusTotal.accountQuota(KEY, st);
         check("accountQuota: with a user and a group counter the user's own wins; a used-up day has 0 left", q.getLong("dayAllowed") == 500 && q.getLong("dayLeft") == 0, q.toString());
         s.reset();
-        s.forceStatus("GET /api/v3/users/" + KEY + "/overall_quotas", 200, "{\"data\":{\"api_requests_daily\":{\"user\":{\"allowed\":500,\"used\":40}}}}");
+        s.forceStatus("GET /api/v3/users/someone/overall_quotas", 200, "{\"data\":{\"api_requests_daily\":{\"user\":{\"allowed\":500,\"used\":40}}}}");
         q = MorpheVirusTotal.accountQuota(KEY, st);
-        check("accountQuota: a user object without quotas is followed by overall_quotas", s.log.equals(Arrays.asList("GET /api/v3/users/current", "GET /api/v3/users/" + KEY + "/overall_quotas")) && q.getLong("dayLeft") == 460 && "virustotal".equals(q.getString("source")), q.toString() + s.log);
+        check("accountQuota: a user object without quotas is followed by overall_quotas, addressed by the id the user object gave (never the key)",
+                s.log.equals(Arrays.asList("GET /api/v3/users/current", "GET /api/v3/users/someone/overall_quotas")) && q.getLong("dayLeft") == 460 && "virustotal".equals(q.getString("source")) && !s.log.toString().contains(KEY), q.toString() + s.log);
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 200, "{\"data\":{\"type\":\"user\"}}");
+        q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: a user object without an id gets no overall_quotas call (the key is not an address): the app's own count is used", s.log.equals(Arrays.asList("GET /api/v3/users/current")) && "local".equals(q.getString("source")), q.toString() + s.log);
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 200, "{\"data\":{\"id\":\"../files/x\",\"type\":\"user\"}}");
+        q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: an id that is not a plain name is not put into an address", s.log.equals(Arrays.asList("GET /api/v3/users/current")) && "local".equals(q.getString("source")), q.toString() + s.log);
         s.reset();
         q = MorpheVirusTotal.accountQuota(KEY, st);
         check("accountQuota: when VirusTotal gives no counter the app's own count of the day is used and says so", "local".equals(q.getString("source")) && q.getLong("dayAllowed") == MorpheVirusTotal.PER_DAY && q.getLong("dayLeft") <= MorpheVirusTotal.PER_DAY, q.toString());

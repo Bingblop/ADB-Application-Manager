@@ -47,6 +47,14 @@ public class TrackerUpdateTest {
             Trackers tr = Trackers.load(json);
             check("the app can load it and finds a tracker by a class name in it", tr.db.n == 420 && tr.dbVersion().equals("2026-11-01:420"), tr.dbVersion());
 
+            // one entry whose id is not a number (and one without an id) is left out; the rest of the list is still used
+            JSONObject odd = new JSONObject(feed(420, true));
+            odd.getJSONObject("trackers").put("999", new JSONObject().put("id", "not-a-number").put("name", "Odd").put("code_signature", "com.odd.").put("categories", new org.json.JSONArray()));
+            odd.getJSONObject("trackers").put("998", new JSONObject().put("name", "No id").put("code_signature", "com.noid.").put("categories", new org.json.JSONArray()));
+            body = odd.toString();
+            JSONObject o2 = new JSONObject(TrackerUpdate.fetch("2026-11-01"));
+            check("an id that is not a number (or none) skips that entry, not the whole list", o2.getJSONObject("trackers").length() == 420 && !o2.getJSONObject("trackers").has("999") && o2.getJSONObject("trackers").has("7"), String.valueOf(o2.getJSONObject("trackers").length()));
+
             body = feed(100, true);
             try { TrackerUpdate.fetch("2026-11-01"); check("a feed with too few trackers is refused", false); } catch (java.io.IOException e) { check("a feed with too few trackers is refused, with the number in the message", e.getMessage().contains("100 trackers"), e.getMessage()); }
             body = feed(420, false);

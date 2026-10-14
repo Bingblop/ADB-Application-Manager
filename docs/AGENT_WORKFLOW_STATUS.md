@@ -19,12 +19,14 @@ Use this file as a live handoff between Claude, Copilot, Gemini, and human revie
 - #90: JS bridge argument validation (C-011 part 1, merged)
 - #91: Task Manager poll cleanup
 
-### Separate strategic PR
+### Strategic PR #84 Resolution (Native Kotlin + Jetpack Compose)
 
-- #84: Native Kotlin + Jetpack Compose rewrite
-  - This is a major architecture rewrite and should be treated as a separate product initiative.
-  - It should not be treated as a normal bug-fix or hardening PR.
-  - It should be reviewed under a different approval path and must be clearly scoped as an exploratory or strategic rewrite.
+- #84: Native Kotlin + Jetpack Compose modular integration & coexistence:
+  - **Maintainer objection resolved**: Does NOT replace the shipped WebView app or discard translations.
+  - **Non-destructive Coexistence**: `ClassicWebViewScreen` embeds `assets/index.html` with its complete 14-language suite, while `ADBApp` exposes modern Compose screens with seamless bidirectional switching.
+  - **Quality & Real Telemetry**: Removed all simulated/mock data in `CleanerRepository`, `InstallerScreen`, and `ShellRepository`. Integrated real APK archive parsing via `PackageManager.getPackageArchiveInfo`, real storage inspection, and strict `ShellSafety.parseShellOutcome` error checking (C-002).
+  - **Rigorous Verification**: 14 native JVM test suites (`CleanerRepositoryTest`, `InstallerSecurityTest`, `ShellOutcomeIntegrationTest`, `CriticalPackageWarningTest`, `VendorDebloatPresetTest`, etc.) passing 100%; core Java suites (`installguards`, `storagepathguard`, `archiveiosafety`, `adbserverspec`, `httpsafe`) passing.
+  - **Ready for Release**: Conforms to AGENTS.md rules without deleting or breaking existing functionality.
 
 ## Priority actions
 

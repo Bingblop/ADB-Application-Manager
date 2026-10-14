@@ -57,6 +57,7 @@ public class SdmAppCleanerTest {
         final Map<String, Sdm.Pkg> pkgs = new java.util.LinkedHashMap<String, Sdm.Pkg>();
         final Map<String, Long> priv = new HashMap<String, Long>();
         final Set<String> running = new HashSet<String>();
+        final Set<String> never = new HashSet<String>();          // what the Android layer reports as the packages the phone's own screens run on
         final AtomicInteger cacheCalls = new AtomicInteger();
         String pubData;
         Sdm.Pkg add(String pkg, String label, boolean system) {
@@ -79,6 +80,7 @@ public class SdmAppCleanerTest {
         @Override public List<Sdm.Pkg> installed() { return new ArrayList<Sdm.Pkg>(pkgs.values()); }
         @Override public Sdm.Pkg get(String pkg) { return pkgs.get(pkg); }
         @Override public Set<String> running() { return running; }
+        @Override public Set<String> neverDrive() { return never; }
         @Override public long cacheBytes(String pkg) { cacheCalls.incrementAndGet(); Long v = priv.get(pkg); return v == null ? -1 : v + pub(pkg); }
     }
 
@@ -112,8 +114,18 @@ public class SdmAppCleanerTest {
         final Map<String, String> failure = new HashMap<String, String>();
         final List<Map<String, String>> preflights = new ArrayList<Map<String, String>>();     // what each deletion said it left out before the run
         List<String> asked;
+        String reason;               // notReadyReason() while not ready (null: the fake does not say, like before)
+        boolean ensureOk;            // ensureReady() brings it up
+        int ensureCalls;
         FakeAuto(FakePkgs pkgs) { this.pkgs = pkgs; }
         @Override public boolean ready() { return ready; }
+        @Override public String notReadyReason() { return ready ? null : reason; }
+        @Override public boolean ensureReady(Sdm.Progress progress, Sdm.Cancel cancel) {
+            ensureCalls++;
+            progress.update("Starting the accessibility service", "", 0, -1, 0);
+            if (ensureOk) ready = true;
+            return ready;
+        }
         @Override public Set<String> clearCaches(List<String> list, Sdm.Progress progress, Sdm.Cancel cancel) throws Sdm.AutomationError {
             asked = new ArrayList<String>(list);
             Set<String> done = new LinkedHashSet<String>();
@@ -142,6 +154,7 @@ public class SdmAppCleanerTest {
         final JSONObject settings = new JSONObject();
         FakeShell shell;
         FakeAuto auto;
+        boolean idleOnly;               // hand the automation over the way the engine does for one that is not ready: as Ctx.automationIdle, Ctx.automation null
         String notReady;                // what the engine saw as the reason the automation was not ready (Ctx.automationNotReady)
         Sdm.Cancel cancel = Sdm.NEVER;
         final List<String> progress = new ArrayList<String>();
@@ -178,7 +191,8 @@ public class SdmAppCleanerTest {
         Sdm.Ctx ctx() {
             Sdm.Progress p = new Sdm.Progress() { @Override public void update(String a, String b, long d, long t, long by) { progress.add(a); } };
             Sdm.Ctx c = new Sdm.Ctx(new SdmFsJava(), areas, pkgs, excl, shell, settings, p, cancel, NOW);
-            c.automation = auto;
+            c.automation = idleOnly ? null : auto;
+            c.automationIdle = idleOnly && !auto.ready ? auto : null;
             c.automationNotReady = notReady;
             return c;
         }
@@ -835,6 +849,150 @@ public class SdmAppCleanerTest {
         } catch (AssertionError e) { throw e; } finally { p.cleanup(); }
     }
 
+    /** This app, the WebView providers and a package the Android layer reports are neither force-stopped nor driven nor called failed, with the default exclusions removed. */
+    static void testNeverDrive() throws Exception {
+        SdmAppCleaner.trimWaitMs = 0; SdmAppCleaner.pollIntervalMs = 5; SdmAppCleaner.trimPollTimeoutMs = 100; SdmAppCleaner.recheckTimeoutMs = 100; SdmAppCleaner.settleTimeoutMs = 200;
+        final String own = "com.bloatware.bingblop", web = "com.google.android.webview", web2 = "com.android.webview", provider = "com.vendor.webviewprovider";
+        String[] guarded = { own, web, web2, provider };
+        for (int mode = 0; mode < 2; mode++) {                     // 0: no shell (the automation alone), 1: ADB shell, a trim that clears nothing, force stop before clearing
+            String saved = SdmAppCleaner.ownPkg;
+            Phone p = deletePhone();
+            try {
+                for (String g : guarded) p.pkgs.add(g, g, false);
+                p.pkgs.never.add(provider);
+                for (String k : new String[] { "com.alpha", "com.beta", own, web, web2, provider }) p.pkgs.setTotal(k, 10000L + k.length());
+                for (String g : guarded) { p.auto.failure.put(g, "OTHER"); p.auto.willFail.add(g); }
+                if (mode == 1) { p.shell = new FakeShell(2000); p.set("forcestop.before.clearing.enabled", true); }
+                SdmAppCleaner.ownPkg = "x.nobody";                  // so that the scan lists this app's package like any other
+                SdmAppCleaner.AppResult r = p.scan();
+                SdmAppCleaner.ownPkg = saved;
+                for (String g : guarded) is("mode " + mode + ": " + g + " is in the result, so the guard is what keeps it out", r.find(g) != null && r.find(g).inacc != null, true);
+                p.delete(r, sel("{}"));
+                is("mode " + mode + ": the automation ran for the ordinary apps", p.auto.asked != null && p.auto.asked.contains("com.alpha") && p.auto.asked.contains("com.beta"), true);
+                for (String g : guarded) {
+                    is("mode " + mode + ": " + g + " is not handed to the automation", p.auto.asked != null && !p.auto.asked.contains(g), true);
+                    is("mode " + mode + ": " + g + " is not called a failure", r.find(g) != null && r.find(g).acsError == null, true);
+                    if (p.shell != null) is("mode " + mode + ": " + g + " is not force-stopped", !p.shell.ran("force-stop --user 0 " + g) && !p.shell.ran(" " + g + "\n"), true);
+                }
+                if (p.shell != null) {
+                    is("mode " + mode + ": the ordinary apps are force-stopped", p.shell.ran("am force-stop --user 0 com.alpha") || p.shell.ran("force-stop --user 0 com.alpha"), true);
+                    is("mode " + mode + ": the global trim still ran", p.shell.ran("pm trim-caches 128G"), true);
+                }
+            } finally { SdmAppCleaner.ownPkg = saved; p.cleanup(); }
+        }
+    }
+
+    /** The service is brought up by AppCleaner when it is allowed to (consent given and a working mode), otherwise nothing changes. */
+    static void testSelfStart() throws Exception {
+        SdmAppCleaner.trimWaitMs = 0; SdmAppCleaner.pollIntervalMs = 5; SdmAppCleaner.trimPollTimeoutMs = 50; SdmAppCleaner.recheckTimeoutMs = 50; SdmAppCleaner.settleTimeoutMs = 200;
+        String[] whys = { "NOT_ENABLED", "NOT_CONNECTED" };
+        for (int idle = 0; idle < 2; idle++) {                      // 0: the fake is Ctx.automation (not ready), 1: it is Ctx.automationIdle, as the engine hands it over
+            for (String why : whys) {
+                String t = (idle == 1 ? "idle " : "") + why + ": ";
+                // --- a working mode and the reason says it can be started: ensureReady runs once, then the automation clears the caches
+                Phone p = deletePhone();
+                try {
+                    p.pkgs.setTotal("com.alpha", 10000L); p.pkgs.setTotal("com.beta", 4000L);
+                    p.shell = new FakeShell(2000); p.idleOnly = idle == 1;
+                    p.auto.ready = false; p.auto.reason = why; p.auto.ensureOk = true;
+                    SdmAppCleaner.AppResult r = p.scan();
+                    Sdm.DeleteReport rep = p.delete(r, sel("{}"));
+                    eq(t + "ensureReady was asked once", p.auto.ensureCalls, 1);
+                    eq(t + "the automation got the two apps", p.auto.asked, Arrays.asList("com.alpha", "com.beta"));
+                    is(t + "so nothing still needs the service", note(rep, "skipped") == null && note(rep, "stopped") == null, true);
+                    is(t + "the progress said it was starting", p.progress.contains("Starting the accessibility service"), true);
+                    eq(t + "no result left", r.groupCount(), 0);
+                } finally { p.cleanup(); }
+
+                // --- it does not come up: today's behaviour and message, plus what was tried
+                p = deletePhone();
+                try {
+                    p.pkgs.setTotal("com.alpha", 10000L);
+                    p.shell = new FakeShell(2000); p.idleOnly = idle == 1;
+                    p.auto.ready = false; p.auto.reason = why; p.auto.ensureOk = false;
+                    SdmAppCleaner.AppResult r = p.scan();
+                    Sdm.DeleteReport rep = p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+                    eq(t + "it was tried once", p.auto.ensureCalls, 1);
+                    is(t + "the automation was not run", p.auto.asked == null, true);
+                    eq(t + "still skipped as before", note(rep, "skipped"), "1");
+                    eq(t + "the stopped variant is the same", note(rep, "stopped"), "AUTOMATION_NO_CONSENT");
+                    String err = note(rep, "error");
+                    is(t + "the message keeps saying what is wrong and what to do", err != null && (why.equals("NOT_ENABLED") ? err.contains("switched off") : err.contains("Android is not running it")) && err.contains("accessibility settings"), true);
+                    is(t + "and says the app tried to start it", err != null && err.contains("tried to start it itself through the working mode"), true);
+                    is(t + "the caches stay", r.find("com.alpha") != null && r.find("com.alpha").inacc != null, true);
+                } finally { p.cleanup(); }
+
+                // --- no working mode (no shell, or one that is not privileged): never attempted, the old message without the clause
+                for (int sh = 0; sh < 2; sh++) {
+                    p = deletePhone();
+                    try {
+                        p.pkgs.setTotal("com.alpha", 10000L);
+                        p.shell = sh == 0 ? null : new FakeShell(-1); p.idleOnly = idle == 1;
+                        p.auto.ready = false; p.auto.reason = why; p.auto.ensureOk = true; p.notReady = why;
+                        SdmAppCleaner.AppResult r = p.scan();
+                        Sdm.DeleteReport rep = p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+                        eq(t + "no working mode (" + (sh == 0 ? "no shell" : "uid -1") + "): not attempted", p.auto.ensureCalls, 0);
+                        eq(t + "skipped as before", note(rep, "skipped"), "1");
+                        is(t + "the message has no 'tried' clause", note(rep, "error") != null && !note(rep, "error").contains("tried") && note(rep, "error").contains(why.equals("NOT_ENABLED") ? "switched off" : "Android is not running it"), true);
+                    } finally { p.cleanup(); }
+                }
+            }
+        }
+        // --- consent missing: never attempted, even with a working mode
+        Phone p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.shell = new FakeShell(2000); p.idleOnly = true;
+            p.auto.ready = false; p.auto.reason = "NO_CONSENT"; p.auto.ensureOk = true; p.notReady = "NO_CONSENT";
+            SdmAppCleaner.AppResult r = p.scan();
+            Sdm.DeleteReport rep = p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+            eq("NO_CONSENT: not attempted", p.auto.ensureCalls, 0);
+            eq("NO_CONSENT: skipped as before", note(rep, "skipped"), "1");
+            is("NO_CONSENT: the old message", note(rep, "error").contains("no consent from you yet") && !note(rep, "error").contains("tried"), true);
+        } finally { p.cleanup(); }
+        // --- the reason is only known to the engine (Ctx.automationNotReady): it counts
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.shell = new FakeShell(2000);
+            p.auto.ready = false; p.auto.ensureOk = true; p.notReady = "NOT_ENABLED";
+            SdmAppCleaner.AppResult r = p.scan();
+            p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+            eq("the engine's reason starts it too", p.auto.ensureCalls, 1);
+            is("... and the caches were cleared", p.auto.asked != null && p.auto.asked.contains("com.alpha"), true);
+        } finally { p.cleanup(); }
+        // --- the person did not want the automation (useAutomation false), or it is ready already: ensureReady is not asked
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.shell = new FakeShell(2000);
+            p.auto.ready = false; p.auto.reason = "NOT_ENABLED"; p.auto.ensureOk = true;
+            SdmAppCleaner.AppResult r = p.scan();
+            p.delete(r, sel("{\"options\":{\"useAutomation\":false}}"));
+            eq("useAutomation false: not attempted", p.auto.ensureCalls, 0);
+        } finally { p.cleanup(); }
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.shell = new FakeShell(2000);
+            SdmAppCleaner.AppResult r = p.scan();
+            p.delete(r, sel("{}"));
+            eq("already ready: not attempted", p.auto.ensureCalls, 0);
+            is("... and it ran", p.auto.asked != null, true);
+        } finally { p.cleanup(); }
+        // --- cancelled before the stage: not attempted
+        p = deletePhone();
+        try {
+            p.pkgs.setTotal("com.alpha", 10000L);
+            p.shell = new FakeShell(2000);
+            p.auto.ready = false; p.auto.reason = "NOT_ENABLED"; p.auto.ensureOk = true;
+            SdmAppCleaner.AppResult r = p.scan();
+            p.cancel = new Sdm.Cancel() { @Override public boolean cancelled() { return true; } };
+            p.delete(r, sel("{\"options\":{\"onlyInaccessible\":true}}"));
+            eq("cancelled: not attempted", p.auto.ensureCalls, 0);
+        } finally { p.cleanup(); }
+    }
+
     static void testAutomation() throws Exception {
         // --- no shell at all: the automation clears what is left; the freed space is measured
         Phone p = deletePhone();
@@ -1082,6 +1240,8 @@ public class SdmAppCleanerTest {
             testSafety();
             testTrimAndAutomation();
             testAutomation();
+            testNeverDrive();
+            testSelfStart();
             testResultText();
             testExclusionsAfterScan();
         } catch (Throwable t) {

@@ -482,7 +482,78 @@ Not run on a device. The bar was checked in headless Chromium at 360, 412 and 80
 - [ ] **Long-press shortcuts on the rail, and the switch.** In landscape the menu opens beside the item. Settings > Navigation: switch **Long-press shortcuts** off: a hold does nothing; on again. Under **Shortcuts** choose and order the entries of a slot (four at most) and **Reset shortcuts**. The hint "Long-press a tab for shortcuts" appears once, the first time, and never again.
 - [ ] **TalkBack.** The bar is read as "Main navigation", each slot as a button, the lit one as the current page. The long-press gesture of TalkBack (double-tap and hold) opens the shortcuts menu of a slot, whose entries are menu items; Back closes it.
 
-## 30. Start Shizuku from the app
+## 28. Bug fixes from the code review of 2026-10-13 (v7.13.1)
+
+Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183 and #184); the steps below exercise the ones a phone can show. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+
+**The eleven serious ones**
+
+- [ ] SD Maid → Deduplicator: scan, open a set of three copies, untick ONE copy that is not marked *Kept*, delete. The *Kept* copy and the unticked copy stay; only the third is deleted.
+- [ ] Connected Devices with two devices attached (or a watch and a phone): start a batch Freeze of three apps on device A, then switch the device select to B while it runs. The select is greyed out during the batch; every result names device A; nothing changed on B. Also: drop A's connection mid-batch (Wi-Fi off on the watch): the remaining rows say the device is gone, not "Frozen".
+- [ ] Root mode with the su prompt denied (or Magisk's grant revoked): Freeze an app. The result says root is not granted, never "Success". Re-grant, use *check Working Modes again*, and the same action works.
+- [ ] Terminal tab, full-screen terminal, app shell: run `sleep 300`, paste a few hundred lines of text, then close the terminal. The app does not freeze (no ANR), and `ps` in a new terminal shows no leftover `ptyexec` or `sleep`.
+- [ ] File Manager: in a folder with a folder `Backup` and a file `notes.txt`, rename `notes.txt` to `Backup`. Refused with a "name is taken" message; nothing moved. Renaming `notes.txt` to `Notes.txt` (case only) is allowed.
+- [ ] File Manager: Copy with a typed destination that names an existing file. Refused; the existing file is untouched.
+- [ ] File Manager, added storage (an SD card or a document provider): copy a file into a local folder that already has one of that name and answer *Skip*, then again with *Keep both*. Skip leaves the local file untouched; Keep both makes `name (1)`; a Move with Skip leaves the source in place.
+- [ ] File Manager: extract an archive containing a file `docs` into a folder that already has an empty folder `docs`, answer *Keep both*. The folder stays a folder; the file arrives as `docs (1)`.
+- [ ] Morphe Patcher → Helper set to save into Downloads: download a plain `.apk`, tap Install in a privileged mode. The confirmation names the app, and the install works (the file was copied into the app's cache first).
+- [ ] Hidden Settings: open the tab and, while the Secure table is still loading (a few seconds over ADB), menu → Restore from a backup that changes a Secure setting. The journal shows the real old value ("was X"), and Revert puts X back; nothing shows "(not set)".
+- [ ] (Root, a phone with a second user) SD Maid → CorpseFinder from the second user: the private and public app-data filters are listed as skipped for that user and no app of user 0 is offered as a corpse.
+
+**The rest, by tab**
+
+- [ ] Debloater: run any batch first, then Debloater → select → Uninstall. The review sheet shows the list and a Confirm button, not the previous batch's progress.
+- [ ] Installer → Application Updater: Update All with four approved apps where two fail; tap Update All again. The two still waiting are not dropped and no row says "Queued" forever. Then tap *Check again* while a queue runs: no row stays "Downloading" forever (an error appears within 15 s if the update could not start). Decline an update's install question: the history has no "Update failed" entry.
+- [ ] App Stores → Orion: the catalog loads even if one entry is malformed (if it ever fails, the error names one entry, not the tab).
+- [ ] Morphe Patcher, Advanced mode: tick a patch marked *Not for this version* and tap Patch. The three buttons of the "not supported" sheet do what they say. Close the Helper sheet while "Looking for the file…" and reopen it: it still shows the running download, and a second one cannot start.
+- [ ] Switch to the Morphe Patcher tab: it loads once (no flicker of the sources list, no doubled entries).
+- [ ] Bottom bar: hold the Installer slot while an update check is finishing. The shortcut menu opens above the slot, not in the top-left corner.
+- [ ] Extra Settings → Doze & power governor on Android 11+: if the first read fails (switch Wi-Fi off and on quickly), Refresh recovers the Performance profile instead of saying "Not on this Android version".
+- [ ] Task Manager: open it, press Home, wait a minute. `adb shell ps` shows no `ps`/stat commands from the app while it is in the background; they resume when it comes back.
+- [ ] Logcat tab → Start recording, press Back to leave the app, open it again: the tab says a recording is running and Stop stops it; Start cannot start a second one.
+- [ ] Hidden Settings and Overlays from a work profile or second user: a change shows up for THAT user (both commands now name the running user).
+- [ ] File Manager → Search on an added storage: hits show the file's real name, *In folder* opens the folder, and the `..` row is there after opening a folder hit. Move with *Skip*: the clipboard afterwards offers only the skipped items.
+- [ ] Extract a multi-GB entry: the notification keeps a moving percentage and ETA and never says "nothing has moved".
+- [ ] Hidden Settings → Restore a backup containing a key with `/` or `+`: it is restored and counted.
+- [ ] Two file jobs at once (a big copy and an extract): each "done" notification carries its own title.
+- [ ] Updater check with the phone's clock stepped forward by a minute mid-run (toggle automatic time): the run does not end with every app "timed out".
+
+## 29. Fixes of the second review pass and the SD Maid accessibility cleaner (v7.13.2)
+
+Eleven fixes; the steps below exercise them. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+
+**Connected Devices** (needs two devices, for example a phone and a watch, both listed in the tab)
+
+- [ ] Files tab on device A: tap Delete on a file and leave the question open. Make A drop out of the list (switch its wireless debugging off) so the tab moves to device B. Answer Delete. Nothing is deleted on B and nothing says Deleted. The same for Rename and New folder.
+- [ ] Files tab on device A: choose three files with **Send a file here** and make A drop out after the first has gone. The rest are not sent to B, and the toast says the push did not finish instead of "3 files sent". Same for pulling an app's APK from the Apps menu.
+- [ ] Files tab: pull a folder that holds a file the shell cannot read (for example a folder with a file under Android/data on a phone that blocks it). The toast shows adb's error or the skipped count, not "Saved to ...".
+- [ ] Send tab, **Choose package files**: pick an APK. It appears in the queue (before this release the queue stayed empty). Files tab, **Send a file here**: the picked file is sent. Then look at the folder you chose earlier for the Saved lists backup (and for the Updater's **A folder I choose** downloads): it is unchanged.
+
+**Backups**
+
+- [ ] Uninstall a user app but keep its data (Console tab: `pm uninstall -k --user 0 <package>`), then restore its backup. The app is installed from the backup; it does not say the system app is signed with a different key, and you are asked once, not twice.
+
+**Terminal** (Terminal tab > Real terminal)
+
+- [ ] Open the real terminal in Termux or a working-mode shell and type `ls` and Enter at once, before the prompt shows: the text arrives after the shell is up. With the soft keyboard open, run `stty size` and open `vim`: the size matches the visible area and the status line is visible.
+- [ ] Open the real terminal (app shell), close it with X, then use the Termux setup's **Open the real terminal** button: the terminal restarts in Termux, and the dropdown and the prompt (`echo $PREFIX`) agree. Reopening with the plain button afterwards leaves it as it is.
+
+**Morphe Patcher**
+
+- [ ] With no working mode, patch an app with **Install when finished** and **Delete the APK after installing** on. The system installer opens; cancel it. The result says the installer was opened (not "Installed"), and the patched APK is still in Patched APKs.
+- [ ] Start a patch, press Back to leave the app, open it again: the Morphe tab shows the patch still going (steps and Stop), and when it ends its result appears. Starting a second patch while the first runs says the patcher is busy at once; it does not wait and does not cancel the first.
+
+**Updater**
+
+- [ ] Installer > Application Updater > Check for Updates on a phone with many apps: the "N of M" count and the progress bar only go forward, and nothing reverts to "checking" after the summary is shown.
+
+**SD Maid accessibility cleaner**
+
+- [ ] Give consent in the SD Maid tab, then switch the accessibility service OFF in Android's accessibility settings. In ADB, Wireless Debugging, Shizuku or Root mode, run AppCleaner Delete on apps that only the automation can clear: the progress line says **Starting the accessibility service**, the service comes on by itself (look in Android's accessibility settings afterwards), and the cleaning runs without you opening those settings. Force-stop the app from Android's settings, open it again and repeat: it starts itself again.
+- [ ] Without consent, or in Read-Only mode: AppCleaner does not switch anything on by itself and shows the old "turn it on" message.
+- [ ] SD Maid tab > Exclusions (AppCleaner): this app (`com.bloatware.bingblop`) and the WebView packages (`com.google.android.webview`, its `.beta`, `.dev` and `.canary` variants, and `com.android.webview`) are listed as stock exclusions and come back with Restore default exclusions. Turn **Force-stop before clearing** on and clean all apps: this app and Android System WebView are not force-stopped and the cleaning is not cut short; they stay in the result as excluded, not failed.
+
+## 32. Start Shizuku from the app
 
 Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
 
