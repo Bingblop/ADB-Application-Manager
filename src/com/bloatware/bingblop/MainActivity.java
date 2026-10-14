@@ -6638,6 +6638,17 @@ public class MainActivity extends Activity {
                     }
 
                     if (installed && sameVersion) {
+                        // Nothing is installed here, but "Also restore app data" still replaces the app's data as root from a file the page named:
+                        // the same dialog as the install branch below (a system app just brought back has asked already).
+                        if (RestorePlan.askBeforeSameVersionRestore(installNote != null, wantData)) {
+                            List<String> dataActs = new ArrayList<String>();
+                            dataActs.add(InstallConfirm.RESTORES_DATA);
+                            final String dataMode = resolveExecMode();
+                            if (!confirmInMode(dataMode, null, InstallConfirm.messageLocalFile(sourceNameOf(ref), pkg, archiveInfo.versionName,
+                                    installedVersionOrNull(pkg), 1, dataMode, "", dataActs))) {
+                                throw new InstallCancelled();
+                            }
+                        }
                         res.put("install", installNote != null ? installNote : "already installed (same version)");
                     } else {
                         // The backup is a file the page named (or the person picked) and it is installed without the system installer's question:

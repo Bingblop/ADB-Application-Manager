@@ -47,6 +47,30 @@ public class RestorePlanTest {
     }
   }
 
+  /** A restore of the version that is already installed installs nothing, but with "Also restore app data" it still replaces the app's data as root:
+   *  that needs the same native question the install branch asks (once: bringing a system app back has asked it already). */
+  static void checkSameVersionConfirm() throws Exception {
+    check("same version, data restore, nothing asked yet: ask", RestorePlan.askBeforeSameVersionRestore(false, true));
+    check("same version, data restore, system app just brought back (already asked): do not ask twice", !RestorePlan.askBeforeSameVersionRestore(true, true));
+    check("same version, no data restore: the install branch's question does not apply", !RestorePlan.askBeforeSameVersionRestore(false, false));
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    File f = null;
+    for (int i = 0; d != null && i < 8 && f == null; i++, d = d.getParentFile()) {
+      File c = new File(d, "src/com/bloatware/bingblop/MainActivity.java");
+      if (c.isFile()) f = c;
+    }
+    check("MainActivity.java found (same version)", f != null);
+    if (f != null) {
+      String src = blank(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+      int a = src.indexOf("if (installed && sameVersion) {");
+      int z = a < 0 ? -1 : src.indexOf("} else {", a);
+      String branch = a < 0 || z < 0 ? "" : src.substring(a, z);
+      check("runRestore has the same-version branch", !branch.isEmpty());
+      check("the same-version branch asks RestorePlan.askBeforeSameVersionRestore", branch.contains("RestorePlan.askBeforeSameVersionRestore("));
+      check("and asks in the native dialog (confirmInMode) with the data line (RESTORES_DATA)", branch.contains("confirmInMode(") && branch.contains("InstallConfirm.RESTORES_DATA") && branch.contains("throw new InstallCancelled()"));
+    }
+  }
+
   public static void main(String[] args) throws Exception {
     check("a system app removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_HAS_CODE));
     check("a system app that had an update removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_UPDATED_SYSTEM_APP));
@@ -75,6 +99,7 @@ public class RestorePlanTest {
       check("no other way into that branch (a bare 'if (sysInfo != null)')", !Pattern.compile("if\\s*\\(\\s*sysInfo\\s*!=\\s*null\\s*\\)").matcher(after).find());
     }
     checkDownloadMime();
+    checkSameVersionConfirm();
     System.out.println((fails == 0 ? "OK " : "FAILED ") + n + " checks, " + fails + " failed");
     System.exit(fails == 0 ? 0 : 1);
   }
