@@ -666,6 +666,12 @@
             border-radius: var(--radius-pill); padding: var(--space-1) var(--space-4); font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; }
         .filter-clear-chip:active { transform: scale(0.96); }
 
+        /* A long intro paragraph (SD Maid, Saved lists, Hidden settings, the stores, the Default Ask Agent, the Morphe and SD Maid credits): two lines,
+           ending in "…"; the text itself opens and closes it (script: clampIntro). One that fits in two lines is left as it is. */
+        .clamp-2:not(.open) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+        .clamp-2.is-clamped { cursor: pointer; border-radius: var(--radius-sm); }
+        .clamp-2.is-clamped:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
         /* Search Bar */
         .search-box {
             position: relative;
@@ -5070,7 +5076,7 @@
 
             <div class="color-card" id="sdbTop">
                 <div class="color-card-title">Android’s hidden settings</div>
-                <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it. Under each name: what it does and which values it takes.</div>
+                <div class="color-card-subtitle clamp-2">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it. Under each name: what it does and which values it takes.</div>
                 <div style="margin:4px 0 0;"><button class="batch-tool-link" onclick="sdbOpenHelp()" style="padding:2px 0;">How to read this list</button></div>
                 <div class="sdb-note" id="sdbPrivateDnsPointer">Looking for Private DNS? It is not in this tab. <button class="batch-tool-link" onclick="switchView('extrasettings')" style="padding:2px 0;">Open the Extra Settings tab</button></div>
 
@@ -5316,7 +5322,7 @@
             <div class="substore" id="substore-shizu">
                 <div class="color-card">
                     <div class="color-card-title">ShizuStore</div>
-                    <div class="color-card-subtitle">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
+                    <div class="color-card-subtitle clamp-2">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
                     <div class="store-toolbar">
                         <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="storeShown = 60; renderStoreList()">
                         <select class="op-select" id="storeCat" onchange="storeShown = 60; renderStoreList()" aria-label="Category"><option value="">All categories</option></select>
@@ -5343,7 +5349,7 @@
             <div class="substore" id="substore-github" style="display:none;">
                 <div class="color-card">
                     <div class="color-card-title">GitHub apps</div>
-                    <div class="color-card-subtitle">Android apps that publish an APK on <b>GitHub Releases</b> — the whole Komi Store catalog, filled in as it loads. Each app is resolved to the right build for your device and installed through your active mode. Type <b>owner/repo</b> to install any GitHub project directly.</div>
+                    <div class="color-card-subtitle clamp-2">Android apps that publish an APK on <b>GitHub Releases</b> — the whole Komi Store catalog, filled in as it loads. Each app is resolved to the right build for your device and installed through your active mode. Type <b>owner/repo</b> to install any GitHub project directly.</div>
                     <div class="store-toolbar">
                         <input type="text" class="list-search" id="githubSearch" placeholder="Search apps, or owner/repo…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('github', this.value)" onkeydown="if(event.key==='Enter') githubSearchLive()">
                         <select class="op-select" id="githubCat" onchange="setSrcCat('github', this.value)" aria-label="Category"><option value="">All categories</option></select>
@@ -5370,7 +5376,7 @@
             <div class="substore" id="substore-fdroid" style="display:none;">
                 <div class="color-card">
                     <div class="color-card-title">F-Droid</div>
-                    <div class="color-card-subtitle">Every app in the F-Droid catalog, or in any of the known third-party repositories. Pick a repository, browse by category and install directly — downloads are checked against the repository's published SHA-256.</div>
+                    <div class="color-card-subtitle clamp-2">Every app in the F-Droid catalog, or in any of the known third-party repositories. Pick a repository, browse by category and install directly — downloads are checked against the repository's published SHA-256.</div>
                     <div class="store-toolbar">
                         <select class="op-select" id="fdroidRepo" onchange="fdroidSelectRepo(this.value)" aria-label="Repository" style="flex:3 1 180px;"></select>
                         <button class="batch-tool-link" id="fdroidReposBtn" onclick="fdroidToggleRepoList()">Repos</button>
@@ -5400,7 +5406,7 @@
             <div class="substore" id="substore-orion" style="display:none;">
                 <div class="color-card">
                     <div class="color-card-title">Orion Store</div>
-                    <div class="color-card-subtitle">The public Orion catalog (<b>RookieEnough/Orion-Data</b>) — Android apps resolved from GitHub, Codeberg and direct links, including Morphe-built apps. Only entries that resolve to an installable APK are shown.</div>
+                    <div class="color-card-subtitle clamp-2">The public Orion catalog (<b>RookieEnough/Orion-Data</b>) — Android apps resolved from GitHub, Codeberg and direct links, including Morphe-built apps. Only entries that resolve to an installable APK are shown.</div>
                     <div class="store-toolbar">
                         <input type="text" class="list-search" id="orionSearch" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('orion', this.value)">
                         <select class="op-select" id="orionCat" onchange="setSrcCat('orion', this.value)" aria-label="Category"><option value="">All categories</option></select>
@@ -5432,7 +5438,7 @@
         <section id="view-saved-lists" class="view-content">
             <div class="color-card" id="quickActionsHelp">
                 <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB App Manager. They run without opening the app.</div>
+                <div class="color-card-subtitle clamp-2">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB App Manager. They run without opening the app.</div>
             </div>
 
             <div style="margin-bottom:14px;">
@@ -5491,7 +5497,7 @@
 
             <div class="color-card" id="agentCard">
                 <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
+                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
@@ -6773,7 +6779,7 @@
                     <button class="mode-action-btn" onclick="mpSettingsOpen()">Settings</button>
                 </div>
                 <div class="mp-engine-warn" id="mpEngineWarn" style="display:none;"></div>
-                <div class="mp-credit">Powered by the <a href="#" onclick="mpLink('https://morphe.software');return false;">Morphe</a> project by MorpheApp: the patcher engine is <a href="#" onclick="mpLink('https://github.com/MorpheApp/morphe-patcher');return false;">morphe-patcher</a>, the workflow follows <a href="#" onclick="mpLink('https://github.com/MorpheApp/morphe-manager');return false;">Morphe Manager</a>, and the APK downloads come from <a href="#" onclick="mpLink('https://github.com/rushiranpise/helper-for-morphe');return false;">Helper for Morphe</a> by rushiranpise (all GPL-3.0). Patches belong to their authors.</div>
+                <div class="mp-credit clamp-2">Powered by the <a href="#" onclick="mpLink('https://morphe.software');return false;">Morphe</a> project by MorpheApp: the patcher engine is <a href="#" onclick="mpLink('https://github.com/MorpheApp/morphe-patcher');return false;">morphe-patcher</a>, the workflow follows <a href="#" onclick="mpLink('https://github.com/MorpheApp/morphe-manager');return false;">Morphe Manager</a>, and the APK downloads come from <a href="#" onclick="mpLink('https://github.com/rushiranpise/helper-for-morphe');return false;">Helper for Morphe</a> by rushiranpise (all GPL-3.0). Patches belong to their authors.</div>
             </div>
 
             <div id="mpHome">
@@ -6980,7 +6986,7 @@
 
             <div class="color-card" id="sdTop">
                 <div class="color-card-title">SD Maid</div>
-                <div class="color-card-subtitle">Clean up what is not needed any more: superfluous files, the expendable data of apps, the leftovers of apps that are gone, and files that exist twice. Scan first, look at the list, take out what you want to keep, then delete. The four tools use the working mode of this app for the folders a normal app cannot read.</div>
+                <div class="color-card-subtitle clamp-2">Clean up what is not needed any more: superfluous files, the expendable data of apps, the leftovers of apps that are gone, and files that exist twice. Scan first, look at the list, take out what you want to keep, then delete. The four tools use the working mode of this app for the folders a normal app cannot read.</div>
                 <div class="sd-status" id="sdStatus"></div>
                 <div class="sd-chips" id="sdAreas"></div>
                 <div class="sd-btns">
@@ -6993,7 +6999,7 @@
                     <button class="mode-action-btn" onclick="sdExclOpen()">Exclusions</button>
                     <button class="mode-action-btn" onclick="sdSettingsOpen('general')">Settings</button>
                 </div>
-                <div class="sd-credit">Ported from <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se');return false;">SD Maid SE</a> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do:
+                <div class="sd-credit clamp-2">Ported from <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se');return false;">SD Maid SE</a> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do:
                     <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se');return false;">SD Maid SE on GitHub</a> &middot;
                     <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse');return false;">SD Maid SE on Google Play</a></div>
             </div>
@@ -39649,6 +39655,44 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (t.classList && t.classList.contains('batch-bottom-sheet') && !t.classList.contains('show') && t.classList.contains('sheet-expanded')) t.classList.remove('sheet-expanded');          // (only when it is there: removing a class that is not there would still write the attribute and loop)
                 }
             }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        })();
+
+        // A long intro paragraph (.clamp-2) shows two lines; a tap on the text opens it and another closes it. It is a button (aria-expanded) only when
+        // there is more to show; a paragraph with links in it is not made a button (a link inside a button), a tap outside its links still opens it,
+        // and moving into one of its links with the keyboard opens it. Measured whenever its size changes: shown, the width, the language.
+        (function clampIntro() {
+            const els = Array.from(document.querySelectorAll('.clamp-2'));
+            if (!els.length) return;
+            const hasLinks = el => !!el.querySelector('a, button');
+            const setOpen = (el, open) => {
+                el.classList.toggle('open', open);
+                if (!hasLinks(el)) el.setAttribute('aria-expanded', open ? 'true' : 'false');
+            };
+            const measure = el => {
+                if (el.classList.contains('open') || !el.offsetParent) return;          // open, or not on screen: nothing to measure
+                const more = el.scrollHeight > el.clientHeight + 1;
+                el.classList.toggle('is-clamped', more);
+                if (more && !hasLinks(el)) { el.setAttribute('role', 'button'); el.tabIndex = 0; el.setAttribute('aria-expanded', 'false'); }
+                else if (!more) { el.removeAttribute('role'); el.removeAttribute('tabindex'); el.removeAttribute('aria-expanded'); }
+            };
+            els.forEach(el => {
+                el.addEventListener('click', e => {
+                    if (!el.classList.contains('is-clamped') || e.target.closest('a, button, input, select')) return;
+                    if (window.getSelection && String(window.getSelection()).length) return;      // selecting text is not a tap
+                    setOpen(el, !el.classList.contains('open'));
+                });
+                el.addEventListener('keydown', e => {
+                    if (e.target !== el || !el.classList.contains('is-clamped') || (e.key !== 'Enter' && e.key !== ' ')) return;
+                    e.preventDefault(); setOpen(el, !el.classList.contains('open'));
+                });
+                el.addEventListener('focusin', e => {                                   // a link reached with the keyboard (not one that was tapped)
+                    let kb = true; try { kb = e.target.matches(':focus-visible'); } catch (x) {}
+                    if (kb && e.target !== el && el.classList.contains('is-clamped') && !el.classList.contains('open')) setOpen(el, true);
+                });
+            });
+            if (window.ResizeObserver) { const ro = new ResizeObserver(list => list.forEach(r => measure(r.target))); els.forEach(el => ro.observe(el)); }
+            if (window.MutationObserver) { const mo = new MutationObserver(list => list.forEach(m => { const el = (m.target.nodeType === 1 ? m.target : m.target.parentElement).closest('.clamp-2'); if (el) measure(el); })); els.forEach(el => mo.observe(el, { childList: true, characterData: true, subtree: true })); }      // a new language can change the text without changing the height
+            else { const all = () => els.forEach(measure); window.addEventListener('resize', all); document.addEventListener('click', () => setTimeout(all, 50)); all(); }
         })();
     </script>
 </body>
