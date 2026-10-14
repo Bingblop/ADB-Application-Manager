@@ -47,7 +47,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('2. a batch marks every selected row "Working…"', (await chip('com.example.alpha')).text === 'Working…' && (await chip('com.example.bravo')).text === 'Working…');
   await ev(() => window.onAppBatchChecking(2)); await sleep(40);
   check('   and "Checking…" for the look at the phone', (await chip('com.example.bravo')).text === 'Checking…');
-  await ev(() => window.onAppBatchDone(JSON.stringify({ ok: true, action: 'freeze', total: 2, done: 2, cancelled: false, rows: [{ pkg: 'com.example.alpha', success: true, output: 'ok' }, { pkg: 'com.example.bravo', success: true, output: 'ok' }] }))); await sleep(80);
+  await ev(() => window.onAppBatchDone({ ok: true, action: 'freeze', total: 2, done: 2, cancelled: false, rows: [{ pkg: 'com.example.alpha', success: true, output: 'ok' }, { pkg: 'com.example.bravo', success: true, output: 'ok' }] })); await sleep(80);
   check('   all gone when the results open', (await chip('com.example.alpha')) === null && (await chip('com.example.bravo')) === null);
   await ev(() => { document.getElementById('commandResultsModal').classList.remove('show'); });
 

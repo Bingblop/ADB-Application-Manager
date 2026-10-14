@@ -74,6 +74,42 @@ public final class MorpheJobs {
         return new JSONObject().put("out", out.getAbsolutePath()).put("bundles", a);
     }
 
+    /**
+     * The folders the page may name a file in (the bridge's allowedRoots): the cache folder for picked files, the Helper's downloads and the patched
+     * APKs inside the Morphe folder, and the app's three folders in Downloads. Not the Morphe folder itself: it holds the signing key
+     * (morphe.keystore) and its password (morphe_key.json), the VirusTotal counters and the run folders, which no page call (vtScan, copyToTree,
+     * shareFile, install ...) may reach.
+     */
+    public static List<File> pageRoots(File base, File pickDir, File downloads) {
+        List<File> r = new java.util.ArrayList<File>();
+        r.add(pickDir);
+        r.add(new File(base, "helper"));
+        r.add(new File(base, "patched"));
+        r.add(new File(downloads, "Morphe Patcher"));
+        r.add(new File(downloads, "Helper for Morphe"));
+        r.add(new File(downloads, "App Updater"));
+        return r;
+    }
+
+    /**
+     * The engine's answer, except that a success with an empty "applied" list becomes a failure (a copy; null stays null). With "Stop when a patch
+     * fails" off, an engine without its own check ran on when every selected patch failed and signed the unchanged app; filing or installing that
+     * would replace the app with its unpatched self.
+     */
+    public static JSONObject checkApplied(JSONObject r) {
+        if (r == null || !r.optBoolean("success")) return r;
+        JSONArray applied = r.optJSONArray("applied");
+        if (applied == null || applied.length() > 0) return r;
+        try {
+            JSONObject c = new JSONObject(r.toString());
+            c.put("success", false);
+            c.put("error", "No patch could be applied");
+            return c;
+        } catch (JSONException e) {
+            return r;
+        }
+    }
+
     /** True when path is inside one of the roots (after resolving links and ..). The page may only name files in these folders. */
     public static boolean inside(File path, List<File> roots) {
         try {

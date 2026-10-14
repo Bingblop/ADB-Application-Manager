@@ -179,7 +179,7 @@ const ROOT = '/storage/emulated/0';
   check('6. a profile over a running batch is refused without touching the modal', /Another batch action is already running/.test(await toast(page)) && await page.evaluate(() => !!profilePending && !profileRunActive), await toast(page));
   await page.evaluate(() => { batchRunActive = false; profilePending = null; });
   // A4: a batch whose native run reports a failure leaves no label for the next one
-  await page.evaluate(() => { batchRunLabel = 'Old label'; batchRunHist = 'custom'; window.onAppBatchDone(JSON.stringify({ ok: false })); });
+  await page.evaluate(() => { batchRunLabel = 'Old label'; batchRunHist = 'custom'; window.onAppBatchDone({ ok: false }); });
   check('7. a batch that failed to run clears its label and history kind', await page.evaluate(() => batchRunLabel === '' && batchRunHist === '') && /failed to run/.test(await toast(page)), await toast(page));
   await page.close();
 

@@ -18,7 +18,7 @@ const { chromium, PAGE } = require('./lib/pw');
       shareTextFile(name, text, mime) { window.__share.push([name, text, mime]); return ''; },
       appActionBatch(action, pkgsJson) {
         const pk = JSON.parse(pkgsJson); window.__batch.push([action, pk]);
-        setTimeout(() => window.onAppBatchDone(JSON.stringify({ ok: true, action, total: pk.length, done: pk.length, cancelled: false, rows: pk.map(p => ({ pkg: p, output: 'ran for ' + p, success: !(action.includes('failing') && p === 'com.example.charlie') })) })), 30);
+        setTimeout(() => window.onAppBatchDone({ ok: true, action, total: pk.length, done: pk.length, cancelled: false, rows: pk.map(p => ({ pkg: p, output: 'ran for ' + p, success: !(action.includes('failing') && p === 'com.example.charlie') })) }), 30);
         return 'started';
       },
     };

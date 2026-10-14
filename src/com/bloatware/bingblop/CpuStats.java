@@ -25,12 +25,16 @@ final class CpuStats {
      *  these eight; they are read (so the line still parses) and then dropped, since nothing here needs them. */
     static final class Snapshot {
         public long user, nice, system, idle, iowait, irq, softirq, steal;
+        /** The core's number from its label ({@code cpu3} is 3); -1 for the aggregate {@code cpu} line. */
+        public int id = -1;
 
         /** The sum of all eight fields: every tick the kernel accounted for this CPU over the time this snapshot covers. */
         public long total() { return user + nice + system + idle + iowait + irq + softirq + steal; }
     }
 
-    /** The {@code cpu} line's snapshot, and the {@code cpu0}, {@code cpu1}, ... snapshots in the order the kernel printed them. */
+    /** The {@code cpu} line's snapshot, and the {@code cpu0}, {@code cpu1}, ... snapshots in the order the kernel printed them.
+     *  The kernel prints only the cores that are online, so with cpu2 offline the list is cpu0, cpu1, cpu3: a position in it is not
+     *  a core number, {@link Snapshot#id} is. */
     static final class Reading {
         public Snapshot aggregate = new Snapshot();
         public List<Snapshot> perCore = new ArrayList<Snapshot>();
@@ -67,7 +71,10 @@ final class CpuStats {
             s.steal = field(f, 7);
             // f[8]/f[9] (guest/guest_nice), if present, are intentionally not read into Snapshot
             if (label.equals("cpu")) r.aggregate = s;
-            else r.perCore.add(s);
+            else {
+                try { s.id = Integer.parseInt(label.substring(3)); } catch (NumberFormatException e) { continue; }   // too many digits: not a core
+                r.perCore.add(s);
+            }
         }
         return r;
     }
@@ -100,20 +107,45 @@ final class CpuStats {
     }
 
     /**
-     * {@link #percentBusy} for each core, core 0 against core 0 and so on by index. When the two readings do not have the same
-     * number of cores — one came online or offline between them (CPU hotplug), or the two readings are simply unrelated — the
-     * result is sized to the smaller of the two core counts rather than throwing; cores past that are left out.
+     * {@link #percentBusy} for each core of {@code after} that {@code before} also has, matched by core number (cpu3 against cpu3),
+     * in {@code after}'s order. A core that came online between the two readings has nothing to compare with and is left out; one
+     * that went offline is not in {@code after}. {@link #perCoreIds} names the core of each value. With CPU hotplug the kernel
+     * leaves offline cores out of /proc/stat, so matching by position would compare one core's counters with another's.
      */
     static double[] percentBusyPerCore(Reading before, Reading after) {
-        if (before == null || after == null || before.perCore == null || after.perCore == null) return new double[0];
-        int n = Math.min(before.perCore.size(), after.perCore.size());
-        double[] out = new double[n];
-        for (int i = 0; i < n; i++) out[i] = percentBusy(before.perCore.get(i), after.perCore.get(i));
+        List<Snapshot[]> pairs = pairs(before, after);
+        double[] out = new double[pairs.size()];
+        for (int i = 0; i < out.length; i++) out[i] = percentBusy(pairs.get(i)[0], pairs.get(i)[1]);
         return out;
     }
 
-    /** How many per-core lines a reading has; 0 for a null reading or one with no per-core lines at all. */
-    static int coreCount(Reading r) { return r == null || r.perCore == null ? 0 : r.perCore.size(); }
+    /** The core numbers of {@link #percentBusyPerCore}'s values, in the same order. */
+    static int[] perCoreIds(Reading before, Reading after) {
+        List<Snapshot[]> pairs = pairs(before, after);
+        int[] out = new int[pairs.size()];
+        for (int i = 0; i < out.length; i++) out[i] = pairs.get(i)[1].id;
+        return out;
+    }
+
+    private static List<Snapshot[]> pairs(Reading before, Reading after) {
+        List<Snapshot[]> out = new ArrayList<Snapshot[]>();
+        if (before == null || after == null || before.perCore == null || after.perCore == null) return out;
+        for (Snapshot a : after.perCore) {
+            for (Snapshot b : before.perCore) {
+                if (b.id == a.id) { out.add(new Snapshot[] {b, a}); break; }
+            }
+        }
+        return out;
+    }
+
+    /** How many cores a reading shows: the highest core number + 1 (so an offline core in the middle still counts), and at least
+     *  the number of per-core lines; 0 for a null reading or one with no per-core lines at all. */
+    static int coreCount(Reading r) {
+        if (r == null || r.perCore == null) return 0;
+        int n = r.perCore.size();
+        for (Snapshot s : r.perCore) if (s.id + 1 > n) n = s.id + 1;
+        return n;
+    }
 
     /** One run of adjacent cores that share a clock domain (a big.LITTLE/tri-cluster "cluster"): how many cores,
      *  and that shared domain's lowest, current and highest frequency in Hz. {@code curHz} is core 0 of the run's

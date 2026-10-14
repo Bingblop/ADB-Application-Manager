@@ -83,7 +83,7 @@ public class SdmFsJava implements Sdm.Fs {
         try {
             deleteTree(Paths.get(path));
         } catch (IOException ignored) {}
-        return !exists(path);
+        return Files.notExists(Paths.get(path), LinkOption.NOFOLLOW_LINKS);      // not exists(): a path whose existence cannot be told is not gone
     }
 
     private static void deleteTree(Path p) throws IOException {

@@ -43,6 +43,19 @@ final class ShellArgs {
         return "pm compile -m " + m + (force ? " -f " : " ") + pkg;
     }
 
+    private static final Pattern COMPONENT = Pattern.compile("[A-Za-z0-9._$]+");
+
+    /**
+     * The command that enables or disables one component of an app: {@code pm enable|disable '<pkg>/<class>'}. A class that starts with a
+     * dot is relative to the package. The name is single-quoted, so the {@code $} of an inner class ({@code Outer$Inner}) reaches pm as
+     * written instead of being expanded by the shell. Null when the package or the class name is not valid.
+     */
+    static String componentCommand(String pkg, String component, boolean enable) {
+        if (!BackupScripts.isPackageName(pkg) || component == null || !COMPONENT.matcher(component).matches()) return null;
+        String full = component.startsWith(".") ? pkg + component : component;
+        return "pm " + (enable ? "enable" : "disable") + " " + BackupScripts.quote(pkg + "/" + full);
+    }
+
     static boolean isAppOp(String s) { return s != null && APP_OP.matcher(s).matches(); }
 
     static boolean isAppOpMode(String s) { return s != null && APP_OP_MODE.matcher(s).matches(); }
