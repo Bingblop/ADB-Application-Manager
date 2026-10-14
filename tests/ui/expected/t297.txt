@@ -1,0 +1,8 @@
+ok   Pair starts one adb pair and turns its button off
+ok   Enter in the code field while it runs starts no second adb pair
+ok   nor does another call of cdPair
+ok   the answer turns the button back on
+ok   and the log shows that one answer
+ok   after the answer, Enter in the code field pairs again
+ok   and its answer frees it again
+errors: []

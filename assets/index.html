@@ -24068,7 +24068,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         const cd = {
             ready: false, devices: [], selfDevs: [], self: [], serial: '', sub: 'apps', info: null, names: {}, sig: '', lastKey: '', poll: null, refreshing: false,
-            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false,
+            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false, pairing: false,
             queue: [], sending: null,
             mode: 'shell', hist: [], histAt: -1, term: [], termRun: '',
             lcTimer: null, lcBusy: false, lcText: '', lcEntries: [],
@@ -25659,10 +25659,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const addr = document.getElementById('cdPairAddr').value.trim(), code = document.getElementById('cdPairCode').value.trim();
             if (!cdValidAddr(addr) || !/:\d{2,5}$/.test(addr)) { showToast('Type the address and port, like 192.168.1.20:37215'); return; }
             if (!/^\d{6}$/.test(code)) { showToast('The pairing code has 6 digits'); return; }
+            if (cd.pairing) return;                                  // Enter in the code field while one runs: a pairing code works once, a second adb pair only muddles the log
             const btn = document.getElementById('cdPairBtn');
-            btn.disabled = true; cdAddLog('Pairing...');
-            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });
-            btn.disabled = false;
+            cd.pairing = true; btn.disabled = true; cdAddLog('Pairing...');
+            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });     // (cdRun always resolves)
+            cd.pairing = false; btn.disabled = false;
             cdAddLog(out);
             if (/Successfully paired/i.test(out)) {
                 showToast('Paired. Now connect.');
