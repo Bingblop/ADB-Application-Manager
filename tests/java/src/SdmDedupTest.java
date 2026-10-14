@@ -630,19 +630,22 @@ public class SdmDedupTest {
         eq("…as it was", r5.items(hA, 0, 10).length(), 4);
         rebuild();
 
-        // per file: a protected file stays, and then it is the kept copy
+        // per file: a protected file stays, and so does the kept copy (the page shows it as "Kept" with no checkbox, so nobody can protect
+        // it by hand: unticking one other copy must never take the kept one with it)
         Env e6 = new Env();
         Sdm.Result r6 = new SdmDedup().scan(e6.ctx());
         String keep6 = keeper(r6, hA);
+        eq("the kept copy of set A", keep6, "sd/Download/photo1 (1).jpg");
         Sdm.Selection sel6 = new Sdm.Selection();
         sel6.dropItems.add(sd + "/Backup/deep/er/photo1.jpg");
         sel6.dropGroups.add(hB);
         Sdm.DeleteReport rep6 = new SdmDedup().delete(r6, sel6, e6.ctx());
         is("a protected file stays", exists("sd/Backup/deep/er/photo1.jpg"), true);
-        is("…and is then the one copy that is left", !exists("sd/Pictures/photo1.jpg") && !exists("sd/Download/photo1 (1).jpg") && !exists("sd/Android/data/com.x/dup.jpg"), true);
-        eq("3 deleted", rep6.deleted.size(), 3);
-        eq("a set left with one file vanishes from the result", r6.items(hA, 0, 10).length(), 0);
-        is("the other set was dropped", r6.groupCount() == 1 && exists("sd/Music/song.mp3") && exists("sd/Music2/song.mp3"), true);
+        is("…and the kept copy survives the untick of one other copy", exists(keep6), true);
+        is("…the two unprotected copies went", !exists("sd/Pictures/photo1.jpg") && !exists("sd/Android/data/com.x/dup.jpg"), true);
+        eq("2 deleted", rep6.deleted.size(), 2);
+        eq("the set (protected file + kept copy) is still a set", r6.items(hA, 0, 10).length(), 2);
+        is("the other set was dropped (both sets are still in the result)", r6.groupCount() == 2 && exists("sd/Music/song.mp3") && exists("sd/Music2/song.mp3"), true);
         rebuild();
 
         // two protected files: both stay
@@ -654,8 +657,8 @@ public class SdmDedupTest {
         sel7.dropGroups.add(hB);
         new SdmDedup().delete(r7, sel7, e7.ctx());
         is("both protected files stay", exists("sd/Backup/deep/er/photo1.jpg") && exists("sd/Pictures/photo1.jpg"), true);
-        is("the others went", !exists("sd/Download/photo1 (1).jpg") && !exists("sd/Android/data/com.x/dup.jpg"), true);
-        eq("the set (2 files) is still a set", r7.items(hA, 0, 10).length(), 2);
+        is("the kept copy stays too; the one unprotected copy went", exists("sd/Download/photo1 (1).jpg") && !exists("sd/Android/data/com.x/dup.jpg"), true);
+        eq("the set (3 files) is still a set", r7.items(hA, 0, 10).length(), 3);
         rebuild();
 
         // protecting the keeper changes nothing
@@ -666,6 +669,7 @@ public class SdmDedupTest {
         sel8.dropGroups.add(hB);
         new SdmDedup().delete(r8, sel8, e8.ctx());
         is("protecting the keeper = keep-one", exists(keeper(r8, hA) == null ? "sd/Download/photo1 (1).jpg" : "sd/Download/photo1 (1).jpg") && !exists("sd/Pictures/photo1.jpg"), true);
+        eq("a set left with one file vanishes from the result", r8.items(hA, 0, 10).length(), 0);
         rebuild();
 
         // protected file + delete all allowed: the protected file is the only one that stays

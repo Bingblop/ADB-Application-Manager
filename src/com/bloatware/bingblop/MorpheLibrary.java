@@ -214,6 +214,16 @@ public final class MorpheLibrary {
         return read(new File(folder(id), "meta.json"));
     }
 
+    /** Records in the entry's meta that the patched APK was installed. A missing or damaged entry changes nothing. */
+    public synchronized void markInstalled(String id) {
+        try {
+            JSONObject m = get(id);
+            if (m == null) return;
+            m.put("installed", true);
+            write(new File(folder(id), "meta.json"), m);
+        } catch (Exception ignored) {}
+    }
+
     /** Deletes the patched APK (and its log and meta) of one run, also when the APK is kept outside, in Downloads. */
     public synchronized boolean delete(String id) throws IOException {
         File f = folder(id);

@@ -21,8 +21,8 @@ final class AdbArgs {
     private static final Pattern INFO_OPTION = Pattern.compile("--version|--help|-h");
     /** adb's commands that wait for a device and then carry on with the next word as the command. */
     private static final Pattern WAIT_COMMAND = Pattern.compile("wait-for(?:-[a-z]+)+");
-    /** Subcommands that stop, start or detach the adb server this app depends on. */
-    private static final Pattern SERVER_COMMAND = Pattern.compile("kill-server|start-server|server|nodaemon|fork-server|reconnect-server");
+    /** Subcommands that stop, start or detach the adb server this app depends on; {@code raw} talks to the server's own host services ({@code adb raw host:kill}). */
+    private static final Pattern SERVER_COMMAND = Pattern.compile("kill-server|start-server|server|nodaemon|fork-server|reconnect-server|raw");
 
     /**
      * @param args the arguments after {@code adb} (and after the {@code -s serial} the app adds itself)

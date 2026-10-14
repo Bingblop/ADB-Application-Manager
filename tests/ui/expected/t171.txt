@@ -1,0 +1,11 @@
+1. every var(--name) without a fallback is declared somewhere: true
+2a. border-radius uses --radius-* (0-4px, 50% and 2px tabs aside): true
+2b. font-size uses --fs-* below 18px (icons and the big glyphs stay literal): true
+2c. font-weight uses --fw-*: true
+2d. padding, margin and gap use --space-* between 3px and 17px: true
+2e. no hand-written rgba() of a status colour (use --tint-* / --line-*): true
+3a. a pink accent gives the active filter pill a pink wash, not the old fixed cyan: true color(srgb 1 0 0.333333 / 0.12)
+3b. and a cyan accent still gives cyan: true
+3c. --fill-2 is a white veil in dark and a black veil in light: true rgba(255, 255, 255, 0.06) / rgba(0, 0, 0, 0.06)
+4. no page errors: true
+all passed

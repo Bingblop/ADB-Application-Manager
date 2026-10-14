@@ -266,7 +266,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
             if (cancel != null && cancel.cancelled()) break;
             StringBuilder sb = new StringBuilder("for p in");
             for (String p : batch) sb.append(' ').append(q(p));
-            sb.append("; do rm -rf -- \"$p\" 2>/dev/null; if [ -e \"$p\" ] || [ -L \"$p\" ]; then echo \"F:$p\"; else echo \"D:$p\"; fi; done; echo ").append(END);
+            // printf, not echo: the echo of mksh (and of other shells) reads \c and \n inside the name, which cuts or splits the answer line
+            sb.append("; do rm -rf -- \"$p\" 2>/dev/null; if [ -e \"$p\" ] || [ -L \"$p\" ]; then printf '%s\\n' \"F:$p\"; else printf '%s\\n' \"D:$p\"; fi; done; echo ").append(END);
             Set<String> asked = new HashSet<String>(batch);
             Set<String> answered = new HashSet<String>();
             try {
@@ -303,7 +304,7 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
         for (List<String> batch : batches(paths)) {
             StringBuilder sb = new StringBuilder("for p in");
             for (String p : batch) sb.append(' ').append(q(p));
-            sb.append("; do if [ -e \"$p\" ] || [ -L \"$p\" ]; then :; else echo \"G:$p\"; fi; done; echo ").append(END);
+            sb.append("; do if [ -e \"$p\" ] || [ -L \"$p\" ]; then :; else printf '%s\\n' \"G:$p\"; fi; done; echo ").append(END);
             try {
                 for (String s : lines(sb.toString(), T_BATCH, null, "verify")) if (s.startsWith("G:")) gone.add(s.substring(2));
             } catch (IOException ignored) {

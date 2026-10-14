@@ -70,6 +70,8 @@ public final class SdmAreas implements Sdm.Areas {
         this.access = access;
     }
 
+    @Override public int userId() { return cfg.userId; }
+
     /** The mounted public volumes of this phone: the primary one, then every {@code /storage/XXXX-XXXX}. */
     public static List<String> discoverPublicRoots(Sdm.Fs fs, String primary) {
         List<String> out = new ArrayList<String>();

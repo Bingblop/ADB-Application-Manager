@@ -1,0 +1,38 @@
+ok   1. the watch is the device chosen, its apps are listed
+ok      while the batch runs the device select is disabled
+ok      and choosing another device is refused
+ok      the device list does not re-pick another device meanwhile: 192.168.1.20:5555
+ok      every uninstall went to the watch: [{"serial":"192.168.1.20:5555","cmd":"pm uninstall --user 0 'com.one"},{"serial":"192.168.1.20:5555","cmd":"pm uninstall --user 0 'com.two"},{"serial":"192.168.1.20:5555","cmd":"pm uninstall --user 0 'com.thr"}]
+ok      and the read-back afterwards too: [{"serial":"192.168.1.20:5555","cmd":"echo '#ALL'; pm list packages "}]
+ok      the batch ends well: "Uninstalled 3 apps", the select is free again: Uninstalled 3 apps
+ok      after it the list may move to the tablet
+ok   2. a single action keeps the device it was started on: [{"serial":"192.168.1.20:5555","cmd":"cmd package install-existing '"}]
+ok   3. a rename onto an existing folder is refused (it would move the file inside and replace what is there): That name is already used here
+ok      so is one onto an existing file, whatever the case: That name is already used here
+ok      a copy typed onto an existing file too: That name is already used here
+ok      a copy to a new name runs: fmOp:cp:/storage/emulated/0/notes.txt->/storage/emulated/0/copy.txt
+ok      a change of case only is a rename: fmOp:mv:/storage/emulated/0/notes.txt->/storage/emulated/0/Notes.txt
+ok   4. the Settings tab opened with the Secure table unread: global,secure,system
+ok      the restore reads the Secure table first: secure
+ok      then asks and puts both values: ["Put 2 hidden settings back from the backup?\n\n  ui_night_mode → “1”\n  zen_mode → “1”\n\nEvery change goes into the history, so it can be reverted."]
+ok      the history holds the value the setting had before (Revert puts it back, it does not delete): [["secure","2","1"]]
+ok      and the toast counts both: Restored 2 of 2
+ok   5. a plain batch ran and its modal closed on the progress body: {"shown":false,"confirmBody":false,"progressBody":true,"title":"Force-stopped 2 apps","rows":0}
+ok      the Debloater review sheet shows its list, not the stale progress: {"shown":true,"confirmBody":true,"progressBody":false,"title":"Review: Uninstall Packages","rows":2}
+ok   6. a profile over a running batch is refused without touching the modal: Another batch action is already running
+ok   7. a batch that failed to run clears its label and history kind: Batch action failed to run
+ok   8. pasting the move asks about the taken name
+ok      Skip: one moved, one skipped: Moved 1 of 2 • 1 skipped
+ok      the clipboard keeps only the skipped path: {"op":"mv","paths":["/storage/emulated/0/a.txt"]}
+ok      a second paste elsewhere moves only that one and empties the clipboard: Moved 1 of 1
+ok   9. a hit in added storage is listed by its name, under its parent: [["notes.txt","content://com.android.externalstorage.documents/tree/1234-5678%3A/document/1234-5678%3ADocs"],["Docs/","content://com.android.externalstorage.documents/tree/1234-5678%3A"]]
+ok      opening the file hit names it by its display name
+ok      "In folder" goes to the parent document with a way back to the storage: content://com.android.externalstorage.documents/tree/1234-5678%3A/document/1234-5678%3ADocs ["content://com.android.externalstorage.documents/tree/1234-5678%3A"]
+ok      opening the folder hit goes into it with ".." back to the storage: content://com.android.externalstorage.documents/tree/1234-5678%3A/document/1234-5678%3ADocs ["content://com.android.externalstorage.documents/tree/1234-5678%3A"]
+ok   10. opening the tab starts the poll: {"start":[3000],"stop":0}
+ok      the app going to the background stops it: {"start":[3000],"stop":1}
+ok      coming back starts it again: {"start":[3000,3000],"stop":1}
+ok      on another tab the background does nothing to it: {"start":[3000,3000],"stop":2}
+ok   11. keys with / + , $ are restored; a space or a leading dash is still refused: a,b$c=1|weird.key:with-chars/and+more=w2 | Restored 2 of 2
+errors: []
+ALL OK

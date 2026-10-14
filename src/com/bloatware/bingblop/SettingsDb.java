@@ -82,29 +82,33 @@ final class SettingsDb {
         return BackupScripts.quote(s);
     }
 
-    /** The listing, then a marker line: a table is only complete when the marker is the last line (see {@link #readList}). */
+    /**
+     * The listing, then a marker line: a table is only complete when the marker is the last line (see {@link #readList}). Every command
+     * names the user: {@code --user current} is the user this app runs as, whose tables are shown and changed (without it the shell acts on
+     * user 0, so in a work profile or a secondary user the tab would read and write another user's settings).
+     */
     static String listCommand(String ns) {
         requireNamespace(ns);
-        return "settings list " + ns + "; echo " + END_MARK;
+        return "settings --user current list " + ns + "; echo " + END_MARK;
     }
 
     static String getCommand(String ns, String key) {
         requireNamespace(ns);
         requireKey(key);
-        return "settings get " + ns + " " + quote(key);
+        return "settings --user current get " + ns + " " + quote(key);
     }
 
     static String putCommand(String ns, String key, String value) {
         requireNamespace(ns);
         requireKey(key);
         requireValue(value);
-        return "settings put " + ns + " " + quote(key) + " " + quote(value);
+        return "settings --user current put " + ns + " " + quote(key) + " " + quote(value);
     }
 
     static String deleteCommand(String ns, String key) {
         requireNamespace(ns);
         requireKey(key);
-        return "settings delete " + ns + " " + quote(key);
+        return "settings --user current delete " + ns + " " + quote(key);
     }
 
     /**
@@ -130,7 +134,7 @@ final class SettingsDb {
         }
         StringBuilder sb = new StringBuilder(change);
         sb.append("; echo ").append(GET_MARK).append("$?; ").append(read);
-        if (probe) sb.append("; echo ").append(LIST_MARK).append("$?; settings list ").append(ns);
+        if (probe) sb.append("; echo ").append(LIST_MARK).append("$?; settings --user current list ").append(ns);
         sb.append("; echo ").append(END_MARK).append("$?");
         return sb.toString();
     }

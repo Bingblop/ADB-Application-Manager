@@ -179,6 +179,9 @@ public class SdmAreasTest {
         Runner ar = new Runner();
         ar.mode = "standard";
         SdmAreas areas = new SdmAreas(new SdmShell(ar), jfs, cfg, new SdmAreas.Access() { @Override public boolean storage() { return storage[0]; } });
+        eq("the user id is the host's (0 unless it says otherwise)", areas.userId(), 0);
+        SdmAreas.Config cu = new SdmAreas.Config(); cu.userId = 10;
+        eq("a secondary user is reported as such", new SdmAreas(new SdmShell(new Runner() {{ mode = "standard"; }}), jfs, cu, null).userId(), 10);
 
         // no privilege, All-files access
         List<Sdm.AreaInfo> l = areas.all();
@@ -518,6 +521,21 @@ public class SdmAreasTest {
             mk(R, "evil/semi;colon", "s");
             Set<String> g2 = fsh.deleteAll(Arrays.asList(evil.getPath(), R.getPath() + "/evil/semi;colon"), null);
             is("deleteAll: shell metacharacters in names are only names", g2.size() == 2 && !evil.exists() && !new File(R, "pwned").exists() && !new File(R, "pwned2").exists() && !new File("pwned").exists(), true);
+            // a name with \c or \n in it: the echo of mksh (and of dash) reads them, which used to cut or split the D:/F: answer lines so the whole
+            // batch was reported as failed though it was deleted; the answers are printed with printf now. Under the sh of this machine and, when
+            // it is installed, under mksh (the shell of Android).
+            List<String> shells = new ArrayList<String>(Arrays.asList("/bin/sh"));
+            for (String c : new String[] { "/usr/bin/mksh", "/bin/mksh", "/usr/local/bin/mksh" }) if (new File(c).canExecute()) { shells.add(c); break; }
+            if (shells.size() == 1) System.out.println("note: mksh is not installed, the \\c / \\n file-name check ran under /bin/sh only");
+            for (final String shBin : shells) {
+                SdmFsShell esh = new SdmFsShell(new SdmShell(new Runner() {
+                    @Override public Process open(String script) throws IOException { opened++; return new ProcessBuilder(shBin, "-c", script).redirectErrorStream(true).start(); }
+                }));
+                File bs1 = mk(R, "bs/stop\\cnow.txt", "1"), bs2 = mk(R, "bs/line\\nbreak.txt", "2"), bs3 = mk(R, "bs/plain.txt", "3");
+                Set<String> gm = esh.deleteAll(Arrays.asList(bs1.getPath(), bs2.getPath(), bs3.getPath()), null);
+                eq("names with \\c and \\n are deleted and reported as deleted (" + shBin + ")", new java.util.TreeSet<String>(gm).toString() + " " + (bs1.exists() || bs2.exists() || bs3.exists()),
+                        new java.util.TreeSet<String>(Arrays.asList(bs1.getPath(), bs2.getPath(), bs3.getPath())).toString() + " false");
+            }
             // batching: 400 paths, some missing
             List<String> many = new ArrayList<String>();
             for (int i = 0; i < 400; i++) { if (i % 4 != 0) mk(R, "many/f" + i, "m"); many.add(R.getPath() + "/many/f" + i); }
@@ -535,7 +553,7 @@ public class SdmAreasTest {
             Sdm.Shell flaky = new Sdm.Shell() {
                 @Override public int uid() { return 0; }
                 @Override public String run(String s, int t) { return ""; }
-                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) { if (s.startsWith("for p in") && s.contains("rm -rf")) k.line("D:" + gonePath); else if (s.contains("echo \"G:$p\"")) k.line("G:" + R.getPath() + "/v2"); k.line(SdmFsShell.END); }
+                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) { if (s.startsWith("for p in") && s.contains("rm -rf")) k.line("D:" + gonePath); else if (s.contains("printf '%s\\n' \"G:$p\"")) k.line("G:" + R.getPath() + "/v2"); k.line(SdmFsShell.END); }
             };
             Set<String> g6 = new SdmFsShell(flaky).deleteAll(Arrays.asList(gonePath, R.getPath() + "/v2", R.getPath() + "/v3"), null);
             eq("a path without an answer is checked again", new java.util.TreeSet<String>(g6).toString(), "[" + gonePath + ", " + R.getPath() + "/v2]");

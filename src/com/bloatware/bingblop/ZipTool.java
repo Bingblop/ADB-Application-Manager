@@ -664,13 +664,32 @@ public final class ZipTool {
 
     /** As {@link #extractTo(Archive, Entry, File)}; {@code protect} is another file that must not be overwritten (the real file of a staged copy). */
     public static long extractTo(Archive a, Entry e, File dest, File protect) throws IOException {
+        return extractTo(a, e, dest, protect, null);
+    }
+
+    private static long extractTo(Archive a, Entry e, File dest, File protect, Pulse pulse) throws IOException {
         checkTarget(a, dest, protect);
         if (e.hardLink != null) throw new IOException("\"" + e.name + "\" is a hard link to \"" + e.hardLink + "\" and holds no data of its own: extract that one");
         InputStream in = a.open(e);
         try {
-            return writeStream(e, in, dest);
+            return writeStream(e, in, dest, pulse);
         } finally {
             in.close();
+        }
+    }
+
+    /** A progress report while one entry is written (about every MB): the bytes and files finished before it, and its name. */
+    private static final class Pulse {
+        final Progress cb;
+        final long base;
+        final int files;
+        final String name;
+
+        Pulse(Progress cb, long base, int files, String name) {
+            this.cb = cb;
+            this.base = base;
+            this.files = files;
+            this.name = name;
         }
     }
 
@@ -691,6 +710,11 @@ public final class ZipTool {
     static long freeSpaceReserve = 64L << 20;
 
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
+        return writeStream(e, in, dest, null);
+    }
+
+    /** As above; {@code pulse}, when given, is told every MB or so, so a single large entry still moves the progress (and can be cancelled). */
+    private static long writeStream(Entry e, InputStream in, File dest, Pulse pulse) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
         File part = new File(parent, "." + dest.getName() + ".part");
         boolean ok = false;
@@ -706,6 +730,7 @@ public final class ZipTool {
             try {
                 byte[] buf = new byte[65536];
                 int n;
+                long lastPulse = 0;
                 while ((n = in.read(buf)) > 0) {
                     // never write past the size the entry declares: a small zip must not be able to fill the phone's storage
                     if (e.size >= 0 && total + n > e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
@@ -713,12 +738,18 @@ public final class ZipTool {
                     out.write(buf, 0, n);
                     crc.update(buf, 0, n);
                     total += n;
+                    if (pulse != null && total - lastPulse >= (1 << 20)) {
+                        lastPulse = total;
+                        if (!pulse.cb.onProgress(pulse.base + total, pulse.files, pulse.name)) throw new IOException("Cancelled");
+                    }
                 }
             } finally {
                 out.close();
             }
             if (e.size >= 0 && total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
             if (!e.foreign && !isAe2(e) && crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
+            // a folder in the way is never removed to make room for a file (an empty one would otherwise go with delete())
+            if (dest.isDirectory()) throw new IOException("\"" + e.name + "\": a folder named " + dest.getName() + " is in the way");
             if (!part.renameTo(dest)) {
                 dest.delete();
                 if (!part.renameTo(dest)) throw new IOException("Couldn't write " + dest);
@@ -796,16 +827,18 @@ public final class ZipTool {
             if (cb != null && !cb.onProgress(bytes, files, e.name)) throw new IOException("Cancelled");
             if (FileOps.exists(out)) {
                 if (policy == FileOps.SKIP) { kept++; continue; }
-                if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+                if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
             }
             try {
-                bytes += extractTo(a, e, out, protect);
+                bytes += extractTo(a, e, out, protect, cb == null ? null : new Pulse(cb, bytes, files, e.name));
                 files++;
             } catch (NeedPassword np) {
                 throw np;
             } catch (IOException ex) {
+                String m = ex.getMessage() == null ? "failed" : ex.getMessage();
+                if (m.startsWith("Cancelled")) throw ex;
                 skipped++;
-                note(problems, e.name + ": " + (ex.getMessage() == null ? "failed" : ex.getMessage()));
+                note(problems, e.name + ": " + m);
             }
         }
         if (cb != null) cb.onProgress(bytes, files, "");
@@ -837,7 +870,7 @@ public final class ZipTool {
                 if (e.linkTarget != null) { st[2]++; note(problems, e.name + ": symbolic link (not extracted)"); return true; }
                 if (FileOps.exists(out)) {
                     if (policy == FileOps.SKIP) { st[3]++; return true; }
-                    if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+                    if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
                 }
                 try {
                     checkTarget(a, out, protect);
@@ -851,9 +884,9 @@ public final class ZipTool {
                         }
                         Entry copy = new Entry(e.name, false, from.length(), from.length(), e.mtime(), e.mode, false, null);
                         java.io.FileInputStream fin = new java.io.FileInputStream(from);
-                        try { st[0] += writeStream(copy, fin, out); } finally { fin.close(); }
+                        try { st[0] += writeStream(copy, fin, out, cb == null ? null : new Pulse(cb, st[0], (int) st[1], e.name)); } finally { fin.close(); }
                     } else {
-                        st[0] += writeStream(e, data, out);
+                        st[0] += writeStream(e, data, out, cb == null ? null : new Pulse(cb, st[0], (int) st[1], e.name));
                     }
                     extracted.put(linkKey(e.name), out);
                     st[1]++;
@@ -894,7 +927,8 @@ public final class ZipTool {
             if (e.method == ZipCrypt.METHOD_AES) {
                 int[] ax = ZipCrypt.parseAesExtra(e.extra);
                 if (ax == null) throw new IOException("Unsupported encryption (no AES record)");
-                return decompress(ZipCrypt.decryptAes(raw, e.csize, pw, ax[1]), ax[2]);
+                InputStream aes = ZipCrypt.decryptAes(raw, e.csize, pw, ax[1]);
+                return new VerifyAtEnd(decompress(aes, ax[2]), aes);
             }
             int check = (e.flags & 0x0008) != 0 ? ZipCrypt.checkByteFromDosTime(e.dosTime) : ZipCrypt.checkByteFromCrc(e.crc);
             return decompress(ZipCrypt.decryptTraditional(raw, pw, check), e.method);
@@ -904,6 +938,41 @@ public final class ZipTool {
         } catch (IOException | RuntimeException ex) {
             raf.close();
             throw ex;
+        }
+    }
+
+    /**
+     * Reads the AES stream to its end once the data it decompresses to has ended, so the authentication code is always checked: a deflate stream
+     * can end before the ciphertext does (a padded or tampered tail), and an AE-2 entry has no CRC-32 to catch that otherwise.
+     */
+    private static final class VerifyAtEnd extends java.io.FilterInputStream {
+        private final InputStream aes;
+        private boolean drained;
+
+        VerifyAtEnd(InputStream data, InputStream aes) {
+            super(data);
+            this.aes = aes;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b < 0) drain();
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int n = super.read(b, off, len);
+            if (n < 0) drain();
+            return n;
+        }
+
+        private void drain() throws IOException {
+            if (drained) return;
+            drained = true;
+            byte[] buf = new byte[8192];
+            while (aes.read(buf) >= 0) { }
         }
     }
 

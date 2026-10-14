@@ -127,11 +127,18 @@ public final class SdmExclusions implements Sdm.Exclusions {
 
     // ---------------------------------------------------------------------------------------------------------- the stock defaults
 
+    /** The stock WebView provider packages (Android System WebView and its channels, the AOSP one). AppCleaner never force-stops or drives them, with or without the default exclusions. */
+    static final String[] WEBVIEW_PROVIDERS = { "com.google.android.webview", "com.google.android.webview.beta", "com.google.android.webview.dev", "com.google.android.webview.canary", "com.android.webview" };
+
     private static final List<Exclusion> DEFAULTS = new ArrayList<Exclusion>();
     static {
         DEFAULTS.add(Exclusion.pkg("com.starfinanz.mobile.android.pushtan", Arrays.asList("appcleaner")).asDefault("https://github.com/d4rken-org/sdmaid-se/issues/618"));
         DEFAULTS.add(Exclusion.pkg("de.zollsoft.impfapp", Arrays.asList("appcleaner")).asDefault("https://github.com/d4rken-org/sdmaid-se/issues/618"));
         DEFAULTS.add(Exclusion.path("/data/rootfs", Arrays.asList("systemcleaner")).asDefault("https://github.com/d4rken-org/sdmaid-se/issues/1331"));
+        // this app and the WebView its screen runs on: clearing or force-stopping them would end the cleaning that is running
+        DEFAULTS.add(Exclusion.pkg("com.bloatware.bingblop", Arrays.asList("appcleaner")).asDefault("Clearing it ends the cleaning: this app's own screen is what shows it."));
+        for (String wv : WEBVIEW_PROVIDERS)
+            DEFAULTS.add(Exclusion.pkg(wv, Arrays.asList("appcleaner")).asDefault("Clearing it ends the cleaning: the app's own screen runs on it."));
     }
 
     // ---------------------------------------------------------------------------------------------------------- state

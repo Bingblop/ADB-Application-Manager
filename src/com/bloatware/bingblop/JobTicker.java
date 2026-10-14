@@ -21,6 +21,8 @@ public final class JobTicker {
     private final Listener listener;
     private ScheduledExecutorService ex;
     private ScheduledFuture<?> task;
+    private volatile boolean stopped;
+    private final Object tickLock = new Object();     // held while a report is made: stop() waits for the one under way and no later one starts
 
     public JobTicker(ProgressMeter meter, String verb, long periodMs, long stallAfterMs, Listener listener) {
         this.meter = meter; this.verb = verb; this.periodMs = periodMs; this.stallAfterMs = stallAfterMs; this.listener = listener;
@@ -28,30 +30,39 @@ public final class JobTicker {
 
     public synchronized void start() {
         if (ex != null) return;
+        stopped = false;
         ex = Executors.newSingleThreadScheduledExecutor(new java.util.concurrent.ThreadFactory() {
             @Override public Thread newThread(Runnable r) { Thread t = new Thread(r, "job-ticker"); t.setDaemon(true); return t; }
         });
         task = ex.scheduleWithFixedDelay(new Runnable() { @Override public void run() { tick(); } }, 0, periodMs, TimeUnit.MILLISECONDS);
     }
 
-    public synchronized void stop() {
-        if (task != null) task.cancel(false);
-        if (ex != null) ex.shutdownNow();
-        task = null; ex = null;
+    /** Ends the reports: when this returns no report is under way and none follows, so the result that comes next is not written over by a stale one. */
+    public void stop() {
+        synchronized (this) {
+            stopped = true;
+            if (task != null) task.cancel(false);
+            if (ex != null) ex.shutdownNow();
+            task = null; ex = null;
+        }
+        synchronized (tickLock) { }                   // a report that had already started finishes first (reentrant: harmless from the listener itself)
     }
 
-    /** One report (also called by the thread). */
+    /** One report (also called by the thread); nothing after stop(). */
     public void tick() {
-        long now = System.currentTimeMillis();
-        String text;
-        int pct;
-        long stalled;
-        synchronized (meter) {
-            text = meter.line(verb, now);
-            pct = meter.percent();
-            stalled = meter.stalled(now, stallAfterMs) ? meter.stalledMs(now) : 0;
+        synchronized (tickLock) {
+            if (stopped) return;
+            long now = System.currentTimeMillis();
+            String text;
+            int pct;
+            long stalled;
+            synchronized (meter) {
+                text = meter.line(verb, now);
+                pct = meter.percent();
+                stalled = meter.stalled(now, stallAfterMs) ? meter.stalledMs(now) : 0;
+            }
+            if (stalled > 0) text += " — nothing has moved for " + ProgressMeter.duration(stalled / 1000) + ". Cancel stops it.";
+            try { listener.onTick(text, pct, stalled); } catch (RuntimeException ignored) {}
         }
-        if (stalled > 0) text += " — nothing has moved for " + ProgressMeter.duration(stalled / 1000) + ". Cancel stops it.";
-        try { listener.onTick(text, pct, stalled); } catch (RuntimeException ignored) {}
     }
 }

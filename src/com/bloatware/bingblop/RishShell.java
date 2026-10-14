@@ -22,9 +22,12 @@ import java.util.regex.Pattern;
  * shell process every time, {@code cd}, {@code export} and shell variables persist between commands,
  * like in {@code adb shell} or the real rish.
  *
- * <p>Framing: every command goes out as ONE stdin line,
- * <pre>  { sh -n -c '&lt;command&gt;' &amp;&amp; command eval '&lt;command&gt;'; } &lt;/dev/null 2&gt;&amp;1; /path/to/printf '\036@@RISH:&lt;nonce&gt;:%s|%s\036' "$?" "$PWD" &gt;&amp;3</pre>
- * The command text is single-quoted here, so an unbalanced quote or a syntax error in what the user typed
+ * <p>Framing: every command goes out as ONE stdin line, followed by the command again as the here-document the syntax check reads,
+ * <pre>  { sh -n &lt;&lt;'RISH_EOF_&lt;nonce&gt;' &amp;&amp; command eval '&lt;command&gt;'; } &lt;/dev/null 2&gt;&amp;1; /path/to/printf '\036@@RISH:&lt;nonce&gt;:%s|%s\036' "$?" "$PWD" &gt;&amp;3
+ *   &lt;command&gt;
+ *   RISH_EOF_&lt;nonce&gt;</pre>
+ * The command text is single-quoted here (and read by the check from a here-document, so that a secret in it is never in a process's
+ * argument list), so an unbalanced quote or a syntax error in what the user typed
  * can never swallow the framing line (a failed {@code sh -n} syntax check skips the eval, which in some shells
  * would otherwise end the session), and {@code </dev/null} stops a command such as {@code cat} from reading
  * the next frame. The trailer starts and ends with the ASCII record separator, so it needs no newline (and a
@@ -131,7 +134,7 @@ public final class RishShell {
     }
 
     /**
-     * {@code syntaxShell}: the shell that syntax-checks each command first ({@code <syntaxShell> -n -c '<command>'}). It has to
+     * {@code syntaxShell}: the shell that syntax-checks each command first ({@code <syntaxShell> -n} reading the command). It has to
      * be the same kind of shell as the session: a bash session (Termux) checked by a plain sh would refuse bash syntax such as
      * arrays or {@code [[ ]]}.
      */
@@ -373,9 +376,13 @@ public final class RishShell {
         try {
             // `sh -n` rejects bad syntax first and `command eval` keeps the shell alive even if some shell
             // treats an eval error as fatal (eval is a POSIX special builtin, `command` lifts that).
+            // The syntax check reads the command from a quoted here-document, never from its argument list: a command may carry a secret
+            // (an API key exported for an agent), and a child's arguments are readable by every process of the same user (/proc/PID/cmdline).
+            // The delimiter carries the session's nonce, so no line of the command is mistaken for the end of the document.
             String q = quote(cmd);
-            write("{ " + syntaxShell + " -n -c " + q + " && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
-                    + ":%s|%s\\036' \"$?\" \"${PWD:-$(pwd)}\" >&3\n");
+            String end = "RISH_EOF_" + nonce;
+            write("{ " + syntaxShell + " -n <<'" + end + "' && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
+                    + ":%s|%s\\036' \"$?\" \"${PWD:-$(pwd)}\" >&3\n" + cmd + "\n" + end + "\n");
         } catch (IOException e) {
             synchronized (lock) {
                 current = null;

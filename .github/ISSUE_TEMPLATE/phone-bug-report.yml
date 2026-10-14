@@ -1,0 +1,76 @@
+name: Phone bug report
+description: Something went wrong on a phone. The form asks for what is needed to reproduce it.
+title: "[Phone] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing on a real phone. The app is tested on a computer by its test suites; reports from devices are what catch the rest. Fill in what you can; the first four fields are the ones that decide whether the bug can be reproduced.
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Working mode
+      description: The mode badge at the top of the app (next to the gear) says which one is active.
+      options:
+        - ADB over TCP (adb tcpip 5555)
+        - Wireless Debugging (Android 11+, paired in the app)
+        - Shizuku
+        - Root
+        - Read-Only (no working mode)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: About tab, at the top (for example 7.13.0).
+      placeholder: "7.13.0"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone and Android version
+      description: Model, Android version and, on a Samsung, the One UI version (Settings → About phone → Software information). The app's About tab → Device Specs has all three; Copy report pastes them.
+      placeholder: "Samsung SM-S928B, Android 15, One UI 7.0"
+    validations:
+      required: true
+  - type: input
+    id: step
+    attributes:
+      label: Checklist section and step
+      description: If you were following docs/DEVICE-TEST-CHECKLIST.md, the section number and the step (for example "21, Test speed" or "27, hold the Installer slot"). Otherwise the tab and the button you used.
+      placeholder: "21 · Private DNS · Test speed"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what the app said, and what the phone actually did. The app's read-back lines ("The phone holds…", "Still installed", "Checking the phone…") are worth quoting word for word.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: output
+    attributes:
+      label: Command output, logcat or a screen report
+      description: Anything the app offers to copy (Console → Copy, SD Maid → Copy screen report, Device telemetry → Copy report), or the output of the adb command named in the dialog, pasted here. It is put in a code block automatically.
+      render: text
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshots
+      description: Drag images here. A screenshot of the dialog or the read-back line saves a round of questions.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before sending
+      options:
+        - label: I searched the open issues and this is not already reported.
+        - label: The app was installed from the Releases page or Obtainium (not a copy from elsewhere).

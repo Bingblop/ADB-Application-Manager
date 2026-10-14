@@ -64,8 +64,9 @@ final class OverlayRules {
 
     // ---- commands ----
 
+    /** Every command names the user ({@code --user current}: the user this app runs as); without it the shell acts on user 0, which in a work profile or a secondary user is another user's overlays and theme. */
     static String listCommand() {
-        return "cmd overlay list";
+        return "cmd overlay list --user current";
     }
 
     /** The listing, then a marker line: a list is only complete when the marker is its last line (see {@link #readList}). */
@@ -77,7 +78,7 @@ final class OverlayRules {
         if (!isOp(op)) throw new IllegalArgumentException("unknown operation");
         String p = idProblem(id);
         if (p != null) throw new IllegalArgumentException(p);
-        return "cmd overlay " + op + " " + BackupScripts.quote(id);
+        return "cmd overlay " + op + " --user current " + BackupScripts.quote(id);
     }
 
     /** The change, then the whole list again between the markers: the list says what state the overlay is really in. */
@@ -439,7 +440,7 @@ final class OverlayRules {
 
     /** Reads the theme setting on its own (for the merge): a marker, what it holds, the closing marker. Anything printed before the first marker is not the value. */
     static String themeReadScript() {
-        return "echo " + GET_MARK + "; settings get secure " + THEME_KEY + "; echo " + END_MARK;
+        return "echo " + GET_MARK + "; settings --user current get secure " + THEME_KEY + "; echo " + END_MARK;
     }
 
     /** What the setting holds ("null" when it is not there), or null when the answer was cut short. */
@@ -555,13 +556,13 @@ final class OverlayRules {
         for (int i = 0; plan != null && i < FLAG_TABLES.length && i < plan.length; i++) {
             if (plan[i] < 0 || plan[i] > 999) continue;
             String t = FLAG_TABLES[i];
-            String get = "settings get " + t + " " + FLAG_KEY + " 2>/dev/null";
-            sb.append("v=$(").append(get).append("); case \"$v\" in [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) settings put ")
+            String get = "settings --user current get " + t + " " + FLAG_KEY + " 2>/dev/null";
+            sb.append("v=$(").append(get).append("); case \"$v\" in [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) settings --user current put ")
                     .append(t).append(' ').append(FLAG_KEY).append(' ').append(plan[i]).append("; n=$(").append(get).append("); echo \"")
                     .append(FLAG_MARK).append(' ').append(t).append(" $v $n\";; esac; ");
         }
-        sb.append("settings put secure ").append(THEME_KEY).append(' ').append(BackupScripts.quote(value));
-        sb.append("; echo ").append(GET_MARK).append("; settings get secure ").append(THEME_KEY).append("; echo ").append(END_MARK);
+        sb.append("settings --user current put secure ").append(THEME_KEY).append(' ').append(BackupScripts.quote(value));
+        sb.append("; echo ").append(GET_MARK).append("; settings --user current get secure ").append(THEME_KEY).append("; echo ").append(END_MARK);
         return sb.toString();
     }
 
@@ -570,7 +571,7 @@ final class OverlayRules {
         StringBuilder sb = new StringBuilder();
         for (FlagChange c : moved) {
             if (tableIndex(c.table) < 0 || !flagValueOk(c.was)) continue;
-            sb.append("settings put ").append(c.table).append(' ').append(FLAG_KEY).append(' ').append(c.was).append("; n=$(settings get ")
+            sb.append("settings --user current put ").append(c.table).append(' ').append(FLAG_KEY).append(' ').append(c.was).append("; n=$(settings --user current get ")
                     .append(c.table).append(' ').append(FLAG_KEY).append(" 2>/dev/null); echo \"").append(FLAG_MARK).append(' ').append(c.table)
                     .append(' ').append(c.was).append(" $n\"; ");
         }

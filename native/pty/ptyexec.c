@@ -24,6 +24,7 @@
 #define POLLHUP 16
 #define SIGHUP 1
 #define SIGKILL 9
+#define SIGPIPE 13
 #define SIGCHLD 17
 #define EINTR 4
 #define WNOHANG 1
@@ -37,6 +38,10 @@
 struct pollfd { int fd; short events; short revents; };
 struct winsize { u16 row, col, xpixel, ypixel; };
 struct timespec { long sec, nsec; };    /* the kernel's old layout: ppoll and clock_gettime take it on 32-bit ARM too */
+struct ksigaction { void *handler; unsigned long flags; void *restorer; unsigned long mask[2]; };    /* the kernel's sigaction on all three architectures (the mask is 8 bytes) */
+#define SIG_DFL ((void *)0)
+#define SIG_IGN ((void *)1)
+#define NSIG_BYTES 8
 
 void *memcpy(void *d, const void *s, unsigned long n) { u8 *a = d; const u8 *b = s; while (n--) *a++ = *b++; return d; }
 void *memset(void *d, int c, unsigned long n) { u8 *a = d; while (n--) *a++ = (u8)c; return d; }
@@ -85,8 +90,14 @@ static int feed(int master, const u8 *p, long n) {
     return 0;
 }
 
+/* SIGPIPE: ignored here, so that a write to an output nobody reads any more (the app went away, Termux closed the connection) comes back as an
+   error and the main loop hangs up on the program and ends it after the grace period, instead of this helper dying at once and leaving the program
+   behind (a program that ignores SIGHUP would live on). The program itself gets the default back before it runs. */
+static void sigpipe(void *handler) { struct ksigaction sa; memset(&sa, 0, sizeof sa); sa.handler = handler; sc(SYS_rt_sigaction, SIGPIPE, (long)&sa, 0, NSIG_BYTES, 0); }
+
 __attribute__((used)) void c_start(long *sp) {
     long argc = sp[0]; char **argv = (char **)(sp + 1); char **envp = argv + argc + 1;
+    sigpipe(SIG_IGN);
     if (argc < 5 || argv[3][0] != '-' || argv[3][1] != '-') { put_err("usage: ptyexec ROWS COLS -- PROGRAM [ARGUMENTS...]\n"); die(2); }
     int rows = num(argv[1]), cols = num(argv[2]);
     if (rows < 1) rows = 24;
@@ -110,6 +121,7 @@ __attribute__((used)) void c_start(long *sp) {
 #endif
     if (pid < 0) { put_err("ptyexec: cannot start the program\n"); die(3); }
     if (pid == 0) {
+        sigpipe(SIG_DFL);                                    /* an ignored signal would stay ignored across execve: the program gets the default */
         sc(SYS_close, master, 0, 0, 0, 0);
         sc(SYS_setsid, 0, 0, 0, 0, 0);
         sc(SYS_ioctl, slave, TIOCSCTTY, 0, 0, 0);

@@ -1,0 +1,13 @@
+1. a plain hold on the Installer slot opens the shortcut menu above it: true
+   a badge update 200 ms into the hold redraws the bar, and the menu still opens above the slot (not at the top-left corner): true
+2. after two failures the third app downloads, the fourth waits, the first two can be retried: true
+   Update All offers the two that failed: true
+   the second Update All adds them behind the app still waiting; nothing is dropped: true
+   every app was started once per approval, in queue order, and all four end Updated: true
+   a new check leaves no row Queued: true
+3. a single Update starts as Downloading: true
+   with no answer from the app it becomes an error that can be retried, not a row stuck at Downloading: true
+   a cancelled update shows its message with a plain Update button, and is not a failure in the history: true
+4. switchView(morphe) calls onMorpheShown once: one info and one sources request: true
+5. "Patch anyway" resolves 1 and closes the sheet, the first button 0, and closing the sheet without a choice -1: true
+errors: true

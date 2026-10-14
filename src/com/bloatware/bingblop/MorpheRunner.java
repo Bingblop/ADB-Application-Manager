@@ -23,8 +23,8 @@ public final class MorpheRunner {
     public interface Launcher {
         /** Starts the engine command in the service. False when the system refused. */
         boolean start(String cmd, File job, File events, String title);
-        /** Stops the service (and the engine in it). */
-        void cancel();
+        /** Stops the engine command whose events file is {@code events} (the service ignores it when it is running another one). */
+        void cancel(File events);
         /** Whether the service process is still there. */
         boolean alive();
     }
@@ -45,6 +45,7 @@ public final class MorpheRunner {
     private final Semaphore engine = new Semaphore(1);
     private final Map<String, Boolean> cancelled = new ConcurrentHashMap<String, Boolean>();
     private volatile String serviceJob = "";                                           // the job whose engine command the service has been started for
+    private volatile File serviceEvents;                                               // ... and the events file of that command
     private volatile String stopSentFor = "";                                          // the job the service was already told to stop
 
     public MorpheRunner(Launcher launcher) { this(launcher, DEFAULT); }
@@ -75,7 +76,7 @@ public final class MorpheRunner {
             if (job.equals(stopSentFor)) return;
             stopSentFor = job;
         }
-        launcher.cancel();
+        launcher.cancel(serviceEvents);
     }
 
     public void clearCancelled(String job) { if (job != null) cancelled.remove(job); }
@@ -99,6 +100,7 @@ public final class MorpheRunner {
             events.delete();
             waitForQuiet();
             if (!launcher.start(cmd, jobFile, events, title)) throw new IOException("Android would not start the patcher service. Open the app and try again.");
+            serviceEvents = events;
             serviceJob = jobId == null ? "" : jobId;
             if (jobId != null && cancelled.containsKey(jobId)) stopService(jobId);            // Stop came in while the service was being started
             MorpheEvents.Tail tail = new MorpheEvents.Tail(events);
@@ -123,7 +125,7 @@ public final class MorpheRunner {
                     return new JSONObject().put("success", false).put("error", MorpheJobs.diedMessage(lastLog.toString()));
                 }
                 if (now - started > timeoutMs) {
-                    launcher.cancel();
+                    launcher.cancel(events);                                               // names this run's events file: a service busy with another job leaves that job alone
                     return new JSONObject().put("success", false).put("error", "The patcher took too long and was stopped.");
                 }
                 Thread.sleep(timing.poll);

@@ -1669,6 +1669,14 @@ public final class ArchiveIo {
                 }
             }
         }
+        /** The name the file {@code name} has after the edits (the same decide() as for its own entry, with this plan's current answer kept): what a hard link to it has to say. */
+        String renamed(String name) {
+            int a = act; String n = newName; File f = file; boolean[] u = used.clone();
+            decide(name, false);
+            String t = act == RENAME ? newName : name;
+            act = a; newName = n; file = f; System.arraycopy(u, 0, used, 0, u.length);
+            return t;
+        }
     }
 
     /**
@@ -1703,6 +1711,7 @@ public final class ArchiveIo {
                     writeSource(w, it.name, plan.file, m);
                 } else {
                     claim(names, plan.newName, plan.act == Plan.RENAME);
+                    if (it.hardLink != null) it.hardLink = plan.renamed(it.hardLink);     // the file it shares may have been renamed too
                     w.copy(r, plan.newName, m);
                 }
             }

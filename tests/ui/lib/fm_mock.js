@@ -85,12 +85,12 @@ exports.initScript = function (opts) {
       if (fm.busy) return 'busy';
       fm.busy = true;
       const finish = () => {
-        const res = { op, ok: true, total: paths.length, done: 0, skipped: 0, cancelled: false, failed: [] };
+        const res = { op, ok: true, total: paths.length, done: 0, skipped: 0, kept: [], cancelled: false, failed: [] };
         paths.forEach(p => {
           if (fm.cancelled) { res.cancelled = true; return; }
           if (op === 'rm') { if (exists(p)) { removeTree(p); res.done++; } else res.failed.push({ p, error: 'No such file or folder' }); return; }
           const st = {}; const r = transfer(p, norm(dest), policyOf(policy), op === 'mv', st);
-          if (r === 'done' && !st.err) res.done++; else if (r === 'skip') res.skipped++; else res.failed.push({ p, error: st.err || r });
+          if (r === 'done' && !st.err) res.done++; else if (r === 'skip') { res.skipped++; res.kept.push(p); } else res.failed.push({ p, error: st.err || r });
         });
         res.ok = !res.failed.length && !res.cancelled;
         fm.busy = false; fm.cancelled = false;

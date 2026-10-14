@@ -47,16 +47,21 @@ public class SettingsDbTest {
         for (String v : new String[] {null, "a\u0000b", "x".repeat(20001), "bell\u0007", "esc\u001b[0m"}) is("bad value", SettingsDb.valueProblem(v) != null);
 
         // ---- exact commands ----
-        eq("list", SettingsDb.listCommand("global"), "settings list global; echo @@SDB-END@@");
-        eq("get", SettingsDb.getCommand("secure", "ui_night_mode"), "settings get secure 'ui_night_mode'");
-        eq("put", SettingsDb.putCommand("system", "screen_brightness", "128"), "settings put system 'screen_brightness' '128'");
-        eq("put empty", SettingsDb.putCommand("global", "k", ""), "settings put global 'k' ''");
-        eq("put quote", SettingsDb.putCommand("global", "k", "it's"), "settings put global 'k' 'it'\\''s'");
-        eq("delete", SettingsDb.deleteCommand("global", "k"), "settings delete global 'k'");
-        eq("script put", SettingsDb.writeScript("put", "global", "k", "v"), "settings put global 'k' 'v'; echo @@SDB-GET@@$?; settings get global 'k'; echo @@SDB-END@@$?");
-        eq("script put null asks for a listing", SettingsDb.writeScript("put", "global", "k", "null"), "settings put global 'k' 'null'; echo @@SDB-GET@@$?; settings get global 'k'; echo @@SDB-LIST@@$?; settings list global; echo @@SDB-END@@$?");
-        eq("script delete", SettingsDb.writeScript("delete", "global", "k", null), "settings delete global 'k'; echo @@SDB-GET@@$?; settings get global 'k'; echo @@SDB-LIST@@$?; settings list global; echo @@SDB-END@@$?");
-        eq("script get", SettingsDb.writeScript("get", "secure", "k", null), "echo @@SDB-GET@@; settings get secure 'k'; echo @@SDB-END@@$?");
+        eq("list", SettingsDb.listCommand("global"), "settings --user current list global; echo @@SDB-END@@");
+        eq("get", SettingsDb.getCommand("secure", "ui_night_mode"), "settings --user current get secure 'ui_night_mode'");
+        eq("put", SettingsDb.putCommand("system", "screen_brightness", "128"), "settings --user current put system 'screen_brightness' '128'");
+        eq("put empty", SettingsDb.putCommand("global", "k", ""), "settings --user current put global 'k' ''");
+        eq("put quote", SettingsDb.putCommand("global", "k", "it's"), "settings --user current put global 'k' 'it'\\''s'");
+        eq("delete", SettingsDb.deleteCommand("global", "k"), "settings --user current delete global 'k'");
+        eq("script put", SettingsDb.writeScript("put", "global", "k", "v"), "settings --user current put global 'k' 'v'; echo @@SDB-GET@@$?; settings --user current get global 'k'; echo @@SDB-END@@$?");
+        eq("script put null asks for a listing", SettingsDb.writeScript("put", "global", "k", "null"), "settings --user current put global 'k' 'null'; echo @@SDB-GET@@$?; settings --user current get global 'k'; echo @@SDB-LIST@@$?; settings --user current list global; echo @@SDB-END@@$?");
+        eq("script delete", SettingsDb.writeScript("delete", "global", "k", null), "settings --user current delete global 'k'; echo @@SDB-GET@@$?; settings --user current get global 'k'; echo @@SDB-LIST@@$?; settings --user current list global; echo @@SDB-END@@$?");
+        eq("script get", SettingsDb.writeScript("get", "secure", "k", null), "echo @@SDB-GET@@; settings --user current get secure 'k'; echo @@SDB-END@@$?");
+        // every command names the user this app runs as: without --user the shell acts on user 0, another user's tables in a work profile or a secondary user
+        for (String c : new String[] { SettingsDb.listCommand("global"), SettingsDb.getCommand("secure", "k"), SettingsDb.putCommand("system", "k", "v"), SettingsDb.deleteCommand("global", "k"),
+                SettingsDb.writeScript("put", "global", "k", "null"), SettingsDb.writeScript("delete", "global", "k", null), SettingsDb.writeScript("get", "secure", "k", null) }) {
+            is("names the running user: " + c, c.replace("settings --user current ", "").indexOf("settings ") < 0);
+        }
         throwsIae("script bad op", () -> SettingsDb.writeScript("reset", "global", "k", "v"));
         throwsIae("list bad ns", () -> SettingsDb.listCommand("nope"));
         throwsIae("put bad key", () -> SettingsDb.putCommand("global", "a b", "v"));
@@ -148,6 +153,7 @@ public class SettingsDbTest {
         fakeBin = Files.createTempDirectory("sdbbin"); fakeDb = Files.createTempDirectory("sdbdb");
         Path script = fakeBin.resolve("settings");
         Files.write(script, ("#!/bin/sh\n"
+            + "if [ \"$1\" = --user ]; then shift 2; fi\n"                      // the real one takes --user <id>|current before the verb
             + "cmd=\"$1\"; ns=\"$2\"; dir=\"$SDB_FAKE/$ns\"; mkdir -p \"$dir\"\n"
             + "case \"$3\" in refused*) case \"$cmd\" in put|delete) echo \"Exception occurred while executing '$cmd':\"; echo 'java.lang.SecurityException: Permission denial: writing to settings requires:android.permission.WRITE_SECURE_SETTINGS'; exit 255;; esac;; esac\n"
             + "case \"$cmd\" in\n"
