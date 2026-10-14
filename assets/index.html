@@ -7504,7 +7504,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 #txPaneTerminal.tx-full .tx-tools { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); padding: var(--space-1) 0 0; }
                 #txPaneTerminal.tx-full .tx-tools .term-icon-btn { flex: 0 0 auto; }
                 body.tx-full-on { overflow: hidden; }
-                .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-md); padding: var(--space-3h) var(--space-3h) var(--space-4); height: 50vh; min-height: 240px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
+                /* --tx-screen-h (txFitScreen) makes the screen as tall as the window allows with the input line and the extra keys above the bottom bar; 160 px is the floor */
+                .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-md); padding: var(--space-3h) var(--space-3h) var(--space-4); height: var(--tx-screen-h, 50vh); min-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
                 .tx-screen * { font-family: inherit; }
                 .tx-screen .tx-pp { color: #23d18b; }
                 .tx-screen .tx-ps { color: #ffffff; }
@@ -29778,7 +29779,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
         // The Terminal tab is the real terminal and the Coding Agents only (the ADB console and the log are in the Console tab).
-        function onTerminalShown() { txOnShown(); }
+        function onTerminalShown() { txOnShown(); txFitQueue(); }
 
         // ---------------------------------------------------------------- shells
         function txCurShell() { return TX_SHELLS[txState.shell] ? txState.shell : txDefaultShell(); }
@@ -29822,6 +29823,33 @@ Type any command above (e.g. pm list packages -d)</div>
             txNote('', b);
         }
 
+        // ---- The screen's height (not full screen) ----
+        // The screen is as tall as the window allows with the input line and the extra keys still above the bottom navigation bar: at 50vh they sat under
+        // the bar until the page was scrolled. Measured from where the screen starts on the page (with the page at the top), so the header, the tab bar, the
+        // pickers above it and how the language wraps them all count. A short window gets the CSS floor (160 px) and scrolls as before; while the keyboard is
+        // up the size stays (the bar is away then), and full screen has its own layout.
+        function txFitScreen() {
+            const pane = document.getElementById('txPaneTerminal'), box = document.getElementById('txScreens'), keys = document.getElementById('txKeys');
+            if (!pane || !box || !keys || txFullOn || !pane.offsetParent) return;
+            if (typeof bnavTextFocus === 'function' && bnavTextFocus()) return;
+            const nav = document.querySelector('.bnav');
+            const navH = nav && getComputedStyle(nav).display !== 'none' && !(typeof bnavWide === 'function' && bnavWide()) ? nav.offsetHeight : 0;
+            const br = box.getBoundingClientRect();
+            const below = keys.getBoundingClientRect().bottom - br.bottom;              // the input line and the extra keys, with their margins
+            const h = Math.floor(window.innerHeight - navH - (br.top + window.scrollY) - below - 8);
+            pane.style.setProperty('--tx-screen-h', h + 'px');
+        }
+        let txFitQueued = false;
+        function txFitQueue() { if (txFitQueued) return; txFitQueued = true; requestAnimationFrame(() => { txFitQueued = false; txFitScreen(); }); }
+        (function () {
+            window.addEventListener('resize', txFitQueue);
+            const pane = document.getElementById('txPaneTerminal');
+            if (pane) pane.addEventListener('focusout', () => setTimeout(txFitQueue, 150));          // the keyboard went down: the input line may have grown meanwhile
+            if (!window.ResizeObserver) return;
+            const ro = new ResizeObserver(txFitQueue);                                // what sits above or below the screen changed size (a wrap, the language, the nav bar)
+            ['.app-header', '#tabBar', '.bnav', '#txPaneTerminal .tx-bar', '#txPaneTerminal .tx-sub', '#txPaneTerminal .tx-inputline', '#txKeys'].forEach(sel => { const e = document.querySelector(sel); if (e) ro.observe(e); });
+        })();
+
         // ---- Full screen ----
         let txFullOn = false;
         function txFullSize() {
@@ -29840,7 +29868,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const b = document.getElementById('txFullBtn');
             if (b) { b.textContent = on ? 'Exit full screen' : 'Full screen'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
             if (on) { txFullSize(); if (window.visualViewport) window.visualViewport.addEventListener('resize', txFullSize); window.addEventListener('resize', txFullSize); }
-            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); }
+            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); txFitQueue(); }
             const sc = pane.querySelector('.tx-screen:not([style*="display: none"])');
             if (sc) sc.scrollTop = sc.scrollHeight;
         }
