@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Animator再生時間スケール（1 = 標準、0 = オフ）",
 "Another archive job is still running": "別のアーカイブ処理を実行中です",
 "Another batch action is already running": "別の一括操作がすでに実行中です",
+"Another device was chosen: nothing was sent": "別のデバイスが選択されました：何も送信されていません",
 "Another folder": "別のフォルダ",
 "Another theme": "別のテーマ",
 "Answers": "応答あり",

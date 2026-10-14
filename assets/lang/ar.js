@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "مقياس مدة الرسوم المتحركة (1 = عادي، 0 = إيقاف)",
 "Another archive job is still running": "هناك عملية أرشفة أخرى لا تزال قيد التنفيذ",
 "Another batch action is already running": "هناك إجراء جماعي آخر قيد التنفيذ بالفعل",
+"Another device was chosen: nothing was sent": "تم اختيار جهاز آخر: لم يُرسَل شيء",
 "Another folder": "مجلد آخر",
 "Another theme": "سمة أخرى",
 "Answers": "تستجيب",

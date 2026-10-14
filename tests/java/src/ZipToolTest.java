@@ -218,6 +218,9 @@ public class ZipToolTest {
     check("add file (streamed deflate), bytes, already-compressed (stored) and a folder", validExternally(o5, null)
         && Arrays.equals(content(ad, "new/deep/added.bin"), addBytes) && ad.find("new/deep/added.bin").method == 8 && ad.find("new/deep/added.bin").csize < addBytes.length / 2
         && text(ad, "notes.txt").equals("added text\n") && ad.find("pics/new.png").method == 0 && ad.find("emptydir/").dir && ad.entries.size() == a.entries.size() + 4 && allCrcOk(ad));
+    long dirMode = ad.find("emptydir/").externalAttrs >>> 16, fileMode = ad.find("notes.txt").externalAttrs >>> 16;
+    check("an added folder is a Unix folder that can be opened (" + Long.toOctalString(dirMode) + "), an added file is 0644 (" + Long.toOctalString(fileMode) + ")",
+        (dirMode & 0170000) == 040000 && (dirMode & 0111) == 0111 && (ad.find("emptydir/").externalAttrs & 0x10) != 0 && fileMode == 0100644);
     boolean dup = false; try { ZipTool.rewrite(a, out("dup.zip"), Arrays.asList(Edit.add("readme.txt", new byte[1])), false, null); } catch (IOException e) { dup = e.getMessage().contains("already exists"); }
     check("adding an existing name is refused", dup);
     boolean badAdd = false; try { ZipTool.rewrite(a, out("bad.zip"), Arrays.asList(Edit.add("../../x", new byte[1])), false, null); } catch (IOException e) { badAdd = true; }

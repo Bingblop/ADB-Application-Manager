@@ -6,7 +6,9 @@
    A dictionary is   window.__LANGS['es'] = { x: { "English": "Translation" }, p: [ ["Freeze {0} apps", "Congelar {0} apps"] ] }
    x: a string as the page shows it (white space collapsed). p: a string with a changing part ({0}, {1} ... in order of appearance).
    A sentence with bold text or a link inside is written with numbered tags in place of the elements: "Tap <1>Install</1> to continue".
-   An element or a part of the page with translate="no", or one that I18N.skip(selectors) names, is left alone (names of apps and files, command output, logs ...). */
+   An element or a part of the page with translate="no", or one that I18N.skip(selectors) names, is left alone (names of apps and files, command output, logs ...).
+   A changing part that is itself a word of the dictionary is translated too ("Showing apps that are {0}." with "Frozen"), except in the templates that
+   I18N.names(templates) lists: their changing parts are names (an app, a file, a folder), and a folder called Download stays Download. */
 (function () {
   'use strict';
 
@@ -31,7 +33,7 @@
   var OBSERVE = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
   var BLOCK_MAX = 60;                                        // an element with more children than this is a list, not a sentence
 
-  var I = window.I18N = { code: 'en', name: 'English', dir: 'ltr', locale: undefined, langs: LANGS, active: false, t: t, set: set, skip: skip };
+  var I = window.I18N = { code: 'en', name: 'English', dir: 'ltr', locale: undefined, langs: LANGS, active: false, t: t, set: set, skip: skip, names: names };
   window.__LANGS = window.__LANGS || {};
 
   var exact = null, tpls = null, observer = null, started = false, titleSrc = null;
@@ -39,6 +41,7 @@
   var attrSrc = new WeakMap();   // element -> { attribute: { src, out } }
   var blockSrc = new WeakMap();  // element -> { src: English sentence, out: what the page holds now, els: its elements in the English order }
   var misses = Object.create(null), missCount = 0;
+  var nameTpls = Object.create(null);                        // templates (English keys) whose changing parts are names, see names()
 
   function find(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i].code === code) return LANGS[i]; return null; }
   function collapse(s) { return s.replace(/\s+/g, ' ').trim(); }
@@ -48,13 +51,13 @@
 
   // ---------- dictionary ----------
   function build(d) {
-    exact = Object.assign(Object.create(null), d.x || {});
+    exact = Object.assign(Object.create(null), d.x || {});  // d is the bundled dictionary of one known language. nosemgrep: javascript.lang.security.insecure-object-assign.insecure-object-assign
     var list = [];
     (d.p || []).forEach(function (e) {
       var key = e[0], parts = key.split(/\{\d+\}/);
       if (parts.length < 2) { exact[key] = e[1]; return; }
       var lit = 0; parts.forEach(function (p) { lit += p.length; });
-      list.push({ re: new RegExp('^' + parts.map(esc).join('([\\s\\S]*?)') + '$'), to: e[1], w: lit, first: parts[0].charAt(0) });
+      list.push({ key: key, re: new RegExp('^' + parts.map(esc).join('([\\s\\S]*?)') + '$'), to: e[1], w: lit, first: parts[0].charAt(0) });  // every fixed part is escaped by esc(). nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
     });
     list.sort(function (a, b) { return b.w - a.w; });         // the template with the most fixed text wins
     tpls = list;
@@ -74,7 +77,7 @@
       return T.to.replace(/\{(\d+)\}/g, function (all, n) {
         var g = m[+n + 1];
         if (g === undefined) return all;
-        var inner = exact[g];                                 // a changing part that is itself a known word ("System", "Enabled") is translated too
+        var inner = nameTpls[T.key] ? undefined : exact[g];   // a changing part that is itself a known word ("System", "Enabled") is translated too, a name is not
         return inner !== undefined ? inner : g;
       });
     }
@@ -115,6 +118,8 @@
       (document.head || document.documentElement).appendChild(st);
     } catch (e) {}
   }
+  // names(['Delete {0}?', ...]): in these templates the changing parts are names of apps, files and the like, never translated even when one is a word
+  function names(list) { (list || []).forEach(function (k) { nameTpls[k] = 1; }); }
   function isNo(el) {
     if (!el.getAttribute) return false;
     if (el.getAttribute('translate') === 'no' || (el.classList && el.classList.contains('notranslate'))) return true;

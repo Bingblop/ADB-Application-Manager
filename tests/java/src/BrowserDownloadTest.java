@@ -62,7 +62,7 @@ public class BrowserDownloadTest {
             is("saved under the server's name, byte for byte", r.file.getName().equals("example_1.0.apkm") && Arrays.equals(Files.readAllBytes(r.file.toPath()), body) && r.size == body.length, r.file.getName());
             is("the browser's user agent, cookies and referer were sent", seen.get("ua").contains("Chrome/121") && seen.get("cookie").equals("cf_clearance=abc; sid=1") && seen.get("referer").endsWith("/page-it-came-from"), String.valueOf(seen));
             is("progress ends at the whole size", last[0] == body.length && last[1] == body.length, last[0] + "/" + last[1]);
-            is("no .part file is left", new File(dir, "example_1.0.apkm.part").exists() == false);
+            is("no .part file is left", Arrays.stream(dir.list()).noneMatch(f -> f.endsWith(".part")), Arrays.toString(dir.list()));
             BrowserDownload.Result r2 = BrowserDownload.download(base + "/redirect", "UA", ck, null, dir, null);
             is("a redirect is followed (the cookies are asked for each address) and a second copy gets a free name", r2.file.getName().equals("example_1.0 (1).apkm") && asked.toString().contains("/redirect") && asked.toString().contains("/file"), r2.file.getName() + " " + asked);
             Throwable t = err(() -> BrowserDownload.download(base + "/forbidden", "UA", null, null, dir, null));
@@ -98,6 +98,7 @@ public class BrowserDownloadTest {
             t = err(() -> BrowserDownload.download(base + "/file", "UA", null, null, dir, cancel));
             is("cancelling stops and removes the part", t != null && t.getMessage().contains("cancelled") && dir.list().length == 2, String.valueOf(t) + Arrays.toString(dir.list()));
             resumeTests(srv, base);
+            sameNameTests();
         } finally {
             srv.stop(0);
             for (File f : dir.listFiles()) f.delete();
@@ -168,13 +169,13 @@ public class BrowserDownloadTest {
             BrowserDownload.Job j = new BrowserDownload.Job("a", base + "/ranged", "UA", "http://ref/", dir);
             BrowserDownload.Cookies ck = u -> "sid=9";
             BrowserDownload.run(j, ck, null);
-            is("resume: a broken connection is FAILED with words and the part is kept", j.state == BrowserDownload.State.FAILED && (j.error.contains("connection broke") || j.error.contains("ended early")) && j.error.contains("Retry") && new File(dir, "big.apkm.part").length() > 0 && new File(dir, "big.apkm.part").length() < body.length, j.state + " " + j.error);
-            long kept = new File(dir, "big.apkm.part").length();
+            is("resume: a broken connection is FAILED with words and the part is kept", j.state == BrowserDownload.State.FAILED && (j.error.contains("connection broke") || j.error.contains("ended early")) && j.error.contains("Retry") && j.part().length() > 0 && j.part().length() < body.length, j.state + " " + j.error);
+            long kept = j.part().length();
             is("resume: the job knows the name, size and validator", j.name.equals("big.apkm") && j.total == body.length && j.etag.equals("\"v1\"") && j.done == kept, j.name + " " + j.total + " " + j.etag + " " + j.done + "/" + kept);
             BrowserDownload.run(j, ck, null);
             is("resume: Retry asks for the rest only (Range from the bytes on disk, If-Range with the ETag, the cookies again)", reqs.size() == 2 && reqs.get(1).equals("range=bytes=" + kept + "- if-range=\"v1\" cookie=sid=9"), String.valueOf(reqs));
             is("resume: the finished file is the whole file, byte for byte", j.state == BrowserDownload.State.DONE && j.file.getName().equals("big.apkm") && Arrays.equals(Files.readAllBytes(j.file.toPath()), body), j.state + " " + j.error);
-            is("resume: no .part is left", !new File(dir, "big.apkm.part").exists());
+            is("resume: no .part is left", !j.part().exists() && dir.list().length == 1, Arrays.toString(dir.list()));
             j.file.delete();
 
             // pause keeps the part, resume completes
@@ -184,7 +185,7 @@ public class BrowserDownloadTest {
             BrowserDownload.Listener pauseAt = jj -> { if (!paused[0] && jj.done >= 100000) { paused[0] = true; jj.pause(); } };
             BrowserDownload.run(p, null, pauseAt);
             is("pause: stops with the bytes in hand, state PAUSED, no error", p.state == BrowserDownload.State.PAUSED && p.error.isEmpty() && p.done >= 100000 && p.done < body.length, p.state + " " + p.done);
-            is("pause: the part holds exactly what was read", new File(dir, "big.apkm.part").length() == p.done, new File(dir, "big.apkm.part").length() + " vs " + p.done);
+            is("pause: the part holds exactly what was read", p.part().length() == p.done, p.part().length() + " vs " + p.done);
             slowMs = 0;
             final long pausedAt = p.done;
             BrowserDownload.run(p, null, null);
@@ -195,7 +196,7 @@ public class BrowserDownloadTest {
             slowMs = 25; reqs.clear();
             final BrowserDownload.Job c = new BrowserDownload.Job("c", base + "/ranged", "UA", null, dir);
             BrowserDownload.run(c, null, jj -> { if (jj.done >= 50000) jj.cancel(); });
-            is("cancel: state CANCELLED and the part is gone", c.state == BrowserDownload.State.CANCELLED && !new File(dir, "big.apkm.part").exists() && dir.list().length == 0, c.state + Arrays.toString(dir.list()));
+            is("cancel: state CANCELLED and the part is gone", c.state == BrowserDownload.State.CANCELLED && !c.part().exists() && dir.list().length == 0, c.state + Arrays.toString(dir.list()));
             slowMs = 0;
 
             // the file changed on the server (the validator no longer matches): the answer is the whole new file, the old part is not mixed in
@@ -212,25 +213,25 @@ public class BrowserDownloadTest {
             cutAt = 90000; reqs.clear();
             BrowserDownload.Job nr = new BrowserDownload.Job("e", base + "/noranges", "UA", null, dir);
             BrowserDownload.run(nr, null, null);
-            is("noranges: the break is FAILED, part kept", nr.state == BrowserDownload.State.FAILED && new File(dir, "plain.apks.part").exists());
+            is("noranges: the break is FAILED, part kept", nr.state == BrowserDownload.State.FAILED && nr.part().exists());
             BrowserDownload.run(nr, null, null);
             is("noranges: Retry asked for a range, got the whole file, and the result is whole and not doubled", nr.state == BrowserDownload.State.DONE && nr.file.length() == body.length && Arrays.equals(Files.readAllBytes(nr.file.toPath()), body) && reqs.get(1).contains("range=bytes="), nr.state + " " + nr.file.length() + " " + reqs);
             nr.file.delete();
 
             // a part without a validator is not trusted
-            File lone = new File(dir, "big.apkm.part");
-            Files.write(lone.toPath(), new byte[5000]);
             BrowserDownload.Job nv = new BrowserDownload.Job("f", base + "/ranged", "UA", null, dir);
             nv.name = "big.apkm";
+            File lone = nv.part();
+            Files.write(lone.toPath(), new byte[5000]);
             reqs.clear(); cutAt = -1;
             BrowserDownload.run(nv, null, null);
             is("a leftover part with no validator is not trusted: the file starts over", nv.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(nv.file.toPath()), body) && reqs.get(0).startsWith("range=null"), nv.state + " " + reqs);
             nv.file.delete();
 
             // 416: the part is longer than the file
-            Files.write(lone.toPath(), new byte[body.length + 10]);
             BrowserDownload.Job big = new BrowserDownload.Job("g", base + "/ranged", "UA", null, dir);
             big.name = "big.apkm"; big.etag = "\"v2\""; etagNow = "\"v2\""; reqs.clear();
+            Files.write(big.part().toPath(), new byte[body.length + 10]);
             BrowserDownload.run(big, null, null);
             is("416: a part longer than the file starts over once and succeeds", big.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(big.file.toPath()), body), big.state + " " + big.error + " " + reqs);
             big.file.delete();
@@ -249,9 +250,9 @@ public class BrowserDownloadTest {
             cutAt = 60000; reqs.clear(); etagNow = "\"v1\"";
             BrowserDownload.Job rf = new BrowserDownload.Job("i", base + "/ranged", "UA", null, dir);
             BrowserDownload.run(rf, null, null);
-            File keep = new File(dir, "big.apkm.part");
+            File keep = rf.part();
             is("refusal: setup (part kept)", rf.state == BrowserDownload.State.FAILED && keep.exists());
-            BrowserDownload.Job ghost = new BrowserDownload.Job("j", base + "/forbidden", "UA", null, dir);
+            BrowserDownload.Job ghost = new BrowserDownload.Job("i", base + "/forbidden", "UA", null, dir);      // the same job, its link now refused
             ghost.name = "big.apkm"; ghost.etag = "\"v1\"";
             BrowserDownload.run(ghost, null, null);
             is("refusal: 403 on a resume is FAILED with the browser-check advice and the part is kept for another try", ghost.state == BrowserDownload.State.FAILED && ghost.error.contains("browser check") && keep.exists(), ghost.state + " " + ghost.error);
@@ -267,6 +268,85 @@ public class BrowserDownloadTest {
             for (File f : dir.listFiles()) f.delete();
             dir.delete();
         }
+    }
+
+    // ---------------------------------------------------------------- two jobs, one name (NET-1)
+    /** Two jobs whose server names their file the same ("app.apk": a fresh signed link to the same file, or two different "download.apk"s) each keep their own part file. */
+    static void sameNameTests() throws Exception {
+        final int size = 400000;
+        HttpServer srv = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        srv.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());     // both answers at the same time
+        srv.createContext("/same", ex -> {
+            String key = String.valueOf(ex.getRequestURI().getQuery()).replace("key=", "");
+            byte fill = (byte) ("1".equals(key) ? 'A' : 'B');
+            String range = ex.getRequestHeaders().getFirst("Range"), ifr = ex.getRequestHeaders().getFirst("If-Range");
+            String etag = "\"k" + key + "\"";
+            ex.getResponseHeaders().add("Content-Type", "application/octet-stream");
+            ex.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"app.apk\"");
+            ex.getResponseHeaders().add("ETag", etag);
+            int from = 0;
+            if (range != null && range.startsWith("bytes=") && (ifr == null || ifr.equals(etag))) {
+                from = Integer.parseInt(range.substring(6, range.indexOf('-')));
+                if (from >= size) { ex.sendResponseHeaders(416, -1); ex.close(); return; }
+                ex.getResponseHeaders().add("Content-Range", "bytes " + from + "-" + (size - 1) + "/" + size);
+            }
+            int len = size - from;
+            ex.sendResponseHeaders(from > 0 ? 206 : 200, len);
+            java.io.OutputStream o = ex.getResponseBody();
+            byte[] chunk = new byte[20000];
+            Arrays.fill(chunk, fill);
+            try {
+                for (int p = 0; p < len; p += chunk.length) {
+                    o.write(chunk, 0, Math.min(chunk.length, len - p));
+                    o.flush();
+                    try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                }
+            } catch (IOException gone) {        // the client paused: it hung up
+            }
+            ex.close();
+        });
+        srv.start();
+        String base = "http://127.0.0.1:" + srv.getAddress().getPort();
+        File dir = Files.createTempDirectory("bds").toFile();
+        try {
+            BrowserDownload.Job x = new BrowserDownload.Job("s1", base + "/same?key=1", "UA", null, dir), y = new BrowserDownload.Job("s2", base + "/same?key=2", "UA", null, dir);
+            x.name = "app.apk"; y.name = "app.apk";
+            is("same name: two jobs get two part files", !x.part().equals(y.part()) && x.part().getParentFile().equals(dir), x.part() + " " + y.part());
+            BrowserDownload.Job evil = new BrowserDownload.Job("../../x", base + "/same?key=1", "UA", null, dir);
+            evil.name = "app.apk";
+            is("same name: an id from a journal cannot lead the part file out of the folder", evil.part().getParentFile().equals(dir) && !evil.part().getName().contains("/"), evil.part().getPath());
+            x.name = ""; y.name = "";
+
+            // at the same time
+            Thread tx = new Thread(() -> BrowserDownload.run(x, null, null)), ty = new Thread(() -> BrowserDownload.run(y, null, null));
+            tx.start(); ty.start(); tx.join(30000); ty.join(30000);
+            is("same name, at the same time: both finish", x.state == BrowserDownload.State.DONE && y.state == BrowserDownload.State.DONE, x.state + " " + x.error + " / " + y.state + " " + y.error);
+            is("same name, at the same time: two files, each holds only its own bytes", x.file != null && y.file != null && !x.file.equals(y.file) && only(x.file, 'A', size) && only(y.file, 'B', size), x.file + " " + y.file);
+            is("same name, at the same time: no part is left", dir.list().length == 2 && Arrays.stream(dir.list()).noneMatch(f -> f.endsWith(".part")), Arrays.toString(dir.list()));
+            for (File f : dir.listFiles()) f.delete();
+
+            // one paused, another of that name started and paused, the first resumed: it goes on from its own bytes, not the other's
+            BrowserDownload.Job a = new BrowserDownload.Job("p1", base + "/same?key=1", "UA", null, dir), b = new BrowserDownload.Job("p2", base + "/same?key=2", "UA", null, dir);
+            BrowserDownload.run(a, null, jj -> { if (jj.done >= 100000) jj.pause(); });
+            BrowserDownload.run(b, null, jj -> { if (jj.done >= 200000) jj.pause(); });
+            is("same name, paused: both are PAUSED with their bytes", a.state == BrowserDownload.State.PAUSED && b.state == BrowserDownload.State.PAUSED && a.part().length() == a.done && b.part().length() == b.done, a.state + " " + a.done + " / " + b.state + " " + b.done);
+            BrowserDownload.run(a, null, null);
+            is("same name, paused: the first resumes into a whole file of its own bytes", a.state == BrowserDownload.State.DONE && only(a.file, 'A', size), a.state + " " + a.error + " " + (a.file == null ? "" : a.file.length()));
+            BrowserDownload.run(b, null, null);
+            is("same name, paused: the second too, under a free name", b.state == BrowserDownload.State.DONE && only(b.file, 'B', size) && !b.file.equals(a.file), b.state + " " + b.error + " " + b.file);
+        } finally {
+            srv.stop(0);
+            for (File f : dir.listFiles()) f.delete();
+            dir.delete();
+        }
+    }
+
+    static boolean only(File f, char c, int size) throws IOException {
+        if (f == null || !f.isFile()) return false;
+        byte[] b = Files.readAllBytes(f.toPath());
+        if (b.length != size) return false;
+        for (byte x : b) if (x != (byte) c) return false;
+        return true;
     }
 
     interface Call { void run() throws Exception; }

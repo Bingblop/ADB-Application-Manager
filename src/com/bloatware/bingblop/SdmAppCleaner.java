@@ -1273,7 +1273,8 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
                 String root = rootOf(m.path, rootSet);
                 if (root == null) continue;
                 if (gone.contains(root)) { removed.add(m); continue; }
-                try { if (!ctx.fs.exists(m.path)) removed.add(m); } catch (RuntimeException e) { /* still there as far as we know */ }
+                // stat, not exists(): exists() says false when the working mode cannot answer, and that is "cannot tell", not "gone"
+                try { if (ctx.fs.stat(m.path) == null) removed.add(m); } catch (IOException e) { /* still there as far as we know */ } catch (RuntimeException e) { /* the same */ }
             }
             removeMatches(j, removed, true);
         }

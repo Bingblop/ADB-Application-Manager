@@ -1,0 +1,14 @@
+ok   the page believes a privileged mode is active
+ok   no exit status (Error: Shizuku is not authorized for thi) is a failure, and the error is kept as the output
+ok   no exit status (error: device '192.168.1.5:37000' not fo) is a failure, and the error is kept as the output
+ok   no exit status (Error: root access is not granted to thi) is a failure, and the error is kept as the output
+ok   no exit status (Error: Wireless Debugging is not configu) is a failure, and the error is kept as the output
+ok   an empty answer is a failure with a reason
+ok   status 0 is a success, the marker is cut from the output
+ok   status 1 is a failure
+ok   Stop Service with the shell gone says it could not stop the service
+ok   and the command it tried was the stop
+ok   Stop Service that ran says the service stopped
+ok   the renderer switch with the shell gone says it could not switch
+ok   the renderer switch that ran says it was set
+errors: []

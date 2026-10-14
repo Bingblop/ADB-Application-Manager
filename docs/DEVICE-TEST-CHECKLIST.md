@@ -520,7 +520,7 @@ Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183
 
 ## 29. Fixes of the second review pass and the SD Maid accessibility cleaner (v7.13.2)
 
-Eleven fixes; the steps below exercise them. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
+Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); the steps below exercise them. `docs/PHONE-SCRIPT-v7.13.2.md` is the same list on one page. Each needs a privileged working mode unless it says otherwise. None of them has been run on a device by the people and tools that wrote them.
 
 **Connected Devices** (needs two devices, for example a phone and a watch, both listed in the tab)
 
@@ -570,3 +570,13 @@ None of this has been run on a phone yet. Open the working-mode badge at the top
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
 at https://github.com/Bingblop/ADB-Application-Manager/issues.
+
+**Full code review of 2026-10-14 and the pairing hardening** (the same steps as part D of the phone script)
+
+- [ ] Wireless debugging > Pair device with pairing code. Pair through the app's notification reply, once with the six-digit code alone and once as `ip:port code`: both pair; a code with letters or an odd-looking address is refused with a message and nothing is run.
+- [ ] Connected Devices console on device A: `sleep 600`, then unplug A. The command is cancelled, Run shows again, the next command goes to B. Live Logcat on A, unplug A: it stops (Play) and does not show B's log.
+- [ ] Start two Helper downloads with the same file name: both finish intact.
+- [ ] Start installing a large XAPK, then open another APK: "An install is already running", and the first install finishes.
+- [ ] Morphe with "Stop when a patch fails" off and a patch that fails on that app: "Patching failed", nothing new in Patched APKs, no install prompt.
+- [ ] SD Maid AppCleaner scan with ADB or Shizuku, then turn Wireless debugging off and delete an Android/data item: it stays listed with "could not be deleted" and History shows nothing deleted.
+- [ ] Extract a `rar a -p` archive: the password prompt appears and the right password extracts.

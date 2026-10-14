@@ -12,8 +12,8 @@ const noTip = (page) => page.evaluate(() => { for (const el of document.querySel
 (async () => {
   const b = await chromium.launch();
   const rec = (name) => { const frames = []; let n = 0; return {
-    frame: async (page, delayCs) => { const f = path.join(OUT, name + '-' + String(n++).padStart(3, '0') + '.png'); await page.screenshot({ path: f }); frames.push({ f, d: delayCs }); },
-    done: () => fs.writeFileSync(path.join(OUT, name + '.list'), frames.map(x => '-delay ' + x.d + ' ' + x.f).join('\n')) }; };
+    frame: async (page, delayCs) => { const f = path.join(OUT, name + '-' + String(n++).padStart(3, '0') + '.png'); await page.screenshot({ path: f }); frames.push({ f, d: delayCs }); },  // developer tool; name is one of a few fixed labels. nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
+    done: () => fs.writeFileSync(path.join(OUT, name + '.list'), frames.map(x => '-delay ' + x.d + ' ' + x.f).join('\n')) }; };  // developer tool; name is one of a few fixed labels. nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
   // ---- 1. bottom bar: tap through the tabs, hold a slot for the shortcut menu, open More ----
   let page = await b.newPage({ viewport: VP }); page.bottomNav = true;
   const updates = [1, 2].map(i => ({ pkg: 'org.example.app' + i, name: 'App ' + i, installedVersion: '1.0', availableVersion: '1.1', source: 'github', downloadUrl: 'https://github.com/x/y/a' + i + '.apk' }));

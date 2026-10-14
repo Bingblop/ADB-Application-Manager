@@ -837,7 +837,7 @@ public final class SdmCorpseFinder implements Sdm.ToolImpl {
         Set<String> alreadyGone = new HashSet<String>();
         for (Target t : batch) {
             Sdm.Entry now;
-            try { now = ctx.fs.stat(t.path); } catch (IOException e) { now = null; }
+            try { now = ctx.fs.stat(t.path); } catch (IOException e) { continue; }   // cannot tell (the working mode is gone): not deleted, looked at again below
             if (now == null) alreadyGone.add(t.path); else todo.add(t.path);      // a path that is already gone counts as deleted
         }
         Set<String> gone = todo.isEmpty() ? new HashSet<String>() : ctx.fs.deleteAll(todo, ctx.cancel);

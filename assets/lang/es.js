@@ -364,6 +364,7 @@ x: {
 "Animator duration scale (1 = normal, 0 = off)": "Escala de duración del animador (1 = normal, 0 = desactivado)",
 "Another archive job is still running": "Otra tarea de archivo comprimido sigue en curso",
 "Another batch action is already running": "Ya hay otra acción por lotes en curso",
+"Another device was chosen: nothing was sent": "Se eligió otro dispositivo: no se envió nada",
 "Another folder": "Otra carpeta",
 "Another theme": "Otro tema",
 "Answers": "Responde",

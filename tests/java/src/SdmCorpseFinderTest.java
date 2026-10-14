@@ -222,6 +222,7 @@ public class SdmCorpseFinderTest {
             deferred();
             safetyScan();
             deleting();
+            deadShell();
             resultApi();
         } finally {
             new SdmFsJava().delete(root.getPath());
@@ -603,6 +604,35 @@ public class SdmCorpseFinderTest {
     }
 
     // ---------------------------------------------------------------------------------------------------------- delete
+
+    /** A shell whose every command fails, as when the ADB connection drops or Shizuku is killed. */
+    static class DeadShell implements Sdm.Shell {
+        @Override public int uid() { return 2000; }
+        @Override public String run(String script, int timeoutMs) throws IOException { throw new IOException("device offline"); }
+        @Override public void stream(String script, int timeoutMs, Sdm.LineSink sink, Sdm.Cancel cancel) throws IOException { throw new IOException("device offline"); }
+    }
+
+    /** SDM-1: Android/data is read through the working mode and the mode is lost before the delete: a stat that fails is "cannot tell", never "gone". */
+    static void deadShell() throws Exception {
+        Env e = new Env();
+        Sdm.Result r = tool().scan(e.ctx());
+        is("dead shell: the data remnant is in the result", paths(r).contains("sd/Android/data/com.dead.app"), true);
+        FakeAreas sa = new FakeAreas();
+        for (Sdm.AreaInfo i : e.areas.list) sa.list.add(i.area == Sdm.Area.PUBLIC_DATA ? new Sdm.AreaInfo(i.area, i.root, true, "shell", "") : i);
+        SdmFs fs = new SdmFs(sa, new SdmFsJava(), new SdmFsShell(new DeadShell()));
+        Sdm.Ctx ctx = new Sdm.Ctx(fs, sa, e.pkgs, e.ex, new DeadShell(), e.settings, e.rec, null, 1700000000L);
+        Sdm.Selection sel = new Sdm.Selection();
+        for (String p : defaultCorpses()) if (!p.startsWith("sd/Android/data/")) sel.dropGroups.add(root.getPath() + "/" + p);
+        Sdm.DeleteReport rep = tool().delete(r, sel, ctx);
+        is("dead shell: the remnant is still on disk", exists("sd/Android/data/com.dead.app/files/big.bin"), true);
+        is("dead shell: the other remnant is still on disk", exists("sd/Android/data/_com.hidden.dead/a"), true);
+        eq("dead shell: nothing is reported deleted", rep.deleted.size(), 0);
+        eq("dead shell: no bytes freed", rep.bytes(), 0L);
+        is("dead shell: the remnant is reported as failed", rep.failed.contains(data + "/com.dead.app"), true);
+        is("dead shell: the other remnant is reported as failed", rep.failed.contains(data + "/_com.hidden.dead"), true);
+        is("dead shell: the remnant stays in the result", paths(r).contains("sd/Android/data/com.dead.app"), true);
+        is("dead shell: the other remnant stays in the result", paths(r).contains("sd/Android/data/_com.hidden.dead"), true);
+    }
 
     static void deleting() throws Exception {
         // 1. everything

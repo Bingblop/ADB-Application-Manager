@@ -10,6 +10,17 @@ public class ShellArgsTest {
   static boolean is(String flags, String... want) { List<String> r = ShellArgs.installFlags(flags); return r != null && r.equals(Arrays.asList(want)); }
   static boolean bad(String flags) { return ShellArgs.installFlags(flags) == null; }
 
+  /** The arguments a real sh hands to pm when it runs the command (pm is a shell function that prints them, one per line). */
+  static List<String> pmArgs(String cmd) {
+    if (cmd == null) return null;
+    try {
+      Process p = new ProcessBuilder("sh", "-c", "pm() { for a in \"$@\"; do printf '%s\\n' \"$a\"; done; }; " + cmd).redirectErrorStream(true).start();
+      String out = new String(p.getInputStream().readAllBytes(), "UTF-8");
+      p.waitFor();
+      return Arrays.asList(out.split("\n"));
+    } catch (Exception e) { return null; }
+  }
+
   public static void main(String[] args) {
     check("empty and null mean the default -r", is("", "-r") && is(null, "-r") && is("   ", "-r"));
     check("what the Installer page builds at most", is("-r -g -d -t --user all --bypass-low-target-sdk-block --update-ownership -i com.android.vending --originating-uri https://example.org/a?b=1&c=2 --install-reason 4 --package-source 2",
@@ -35,6 +46,14 @@ public class ShellArgsTest {
     check("compile command: mode and force", "pm compile -m speed -f com.x.y".equals(ShellArgs.compileCommand("com.x.y", "speed", true)) && "pm compile -m space com.x.y".equals(ShellArgs.compileCommand("com.x.y", "space", false)) && "pm compile -m speed com.x.y".equals(ShellArgs.compileCommand("com.x.y", null, false)) && "pm compile -m speed com.x.y".equals(ShellArgs.compileCommand("com.x.y", "", false)));
     check("compile command: reset uses its own command and ignores force", "pm compile --reset com.x.y".equals(ShellArgs.compileCommand("com.x.y", "reset", true)) && "pm compile --reset com.x.y".equals(ShellArgs.compileCommand("com.x.y", "reset", false)));
     check("compile command: a bad mode or package gives nothing", ShellArgs.compileCommand("com.x.y", "fast", false) == null && ShellArgs.compileCommand("com.x.y", "speed;reboot", false) == null && ShellArgs.compileCommand("com.x.y; reboot", "speed", false) == null && ShellArgs.compileCommand(null, "speed", false) == null && ShellArgs.compileCommand("", "speed", false) == null);
+    String inner = "androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy";
+    check("component command: an inner class name is single-quoted", ("pm disable 'com.example/" + inner + "'").equals(ShellArgs.componentCommand("com.example", inner, false))
+        && "pm enable 'com.example/com.example.Rx'".equals(ShellArgs.componentCommand("com.example", ".Rx", true)));
+    check("component command: a real sh hands pm the name with its $ part (MA2-1)", Arrays.asList("disable", "com.example/" + inner).equals(pmArgs(ShellArgs.componentCommand("com.example", inner, false)))
+        && Arrays.asList("enable", "com.example/com.example.A$1$B").equals(pmArgs(ShellArgs.componentCommand("com.example", ".A$1$B", true))));
+    check("component command: a bad package or class name gives nothing", ShellArgs.componentCommand("com.x", "a;reboot", false) == null && ShellArgs.componentCommand("com.x", "a b", false) == null
+        && ShellArgs.componentCommand("com.x", "a'b", false) == null && ShellArgs.componentCommand("com.x", "$(id)", false) == null && ShellArgs.componentCommand("com.x; id", "a.B", false) == null
+        && ShellArgs.componentCommand(null, "a.B", false) == null && ShellArgs.componentCommand("com.x", null, false) == null && ShellArgs.componentCommand("com.x", "", false) == null);
     System.out.println(fails == 0 ? "PASS ShellArgsTest: " + n + " checks" : "FAILED ShellArgsTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);
   }
