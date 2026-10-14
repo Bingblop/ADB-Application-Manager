@@ -33167,6 +33167,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function deleteBackupUI(ref) {
             haptic();
+            const rec = backupList().find(r => r.ref === ref);
+            if (!confirm('Delete “' + (rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref) + '”?')) return;
             const err = window.AndroidBridge.deleteBackup(ref);
             if (err) showToast(err);
             renderBackups();
@@ -34279,24 +34281,28 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const all = parsed.filter(x => !!sdbData[x.ns]);
             if (!all.length) { showToast('Could not read the settings'); return; }
+            // entries of a table that could not be read are not put back, but they are counted and named in the result, not dropped silently
+            const skipped = parsed.filter(x => !sdbData[x.ns]).map(x => x.key);
             const cur = (ns, k) => sdbData[ns].has(k) ? sdbData[ns].get(k) : null;
             const todo = all.filter(x => cur(x.ns, x.key) !== x.value);
             const same = all.length - todo.length;
+            if (!todo.length && skipped.length) { sdbRestoreRun([], skipped); return; }
             if (!todo.length) { showToast('All ' + all.length + ' settings are already as in the backup'); return; }
             const risky = todo.filter(x => { const h = sdbHint(x.ns, x.key); return h && h.r; });
             const names = todo.slice(0, 6).map(x => '  ' + x.key + ' → ' + (x.value === null ? '(removed)' : '“' + sdbClip(x.value, 24) + '”')).join('\n') + (todo.length > 6 ? '\n  … and ' + (todo.length - 6) + ' more' : '');
             if (!confirm('Put ' + todo.length + ' hidden setting' + (todo.length === 1 ? '' : 's') + ' back from the backup?' + (same ? '\n(' + same + ' already match.)' : '') + '\n\n' + names
                 + (risky.length ? '\n\n' + risky.length + ' of them ' + (risky.length === 1 ? 'is' : 'are') + ' marked risky (' + risky.slice(0, 4).map(x => x.key).join(', ') + (risky.length > 4 ? ', …' : '') + '). A wrong value can break calls, Wi-Fi or the screen.' : '')
                 + '\n\nEvery change goes into the history, so it can be reverted.')) return;
-            sdbRestoreRun(todo);
+            sdbRestoreRun(todo, skipped);
         }
-        function sdbRestoreRun(items) {
+        function sdbRestoreRun(items, skipped) {
             let i = 0, ok = 0;
-            const bad = [];
+            const bad = (skipped || []).slice();
+            const total = items.length + bad.length;
             const next = () => {
                 if (i >= items.length) {
                     sdbRender();
-                    showToast('Restored ' + ok + ' of ' + items.length + (bad.length ? '; could not change ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? ' and ' + (bad.length - 3) + ' more' : '') : ''));
+                    showToast('Restored ' + ok + ' of ' + total + (bad.length ? '; could not change ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? ' and ' + (bad.length - 3) + ' more' : '') : ''));
                     return;
                 }
                 const it = items[i++];
