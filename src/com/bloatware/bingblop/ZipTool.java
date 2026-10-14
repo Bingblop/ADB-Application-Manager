@@ -1523,7 +1523,8 @@ public final class ZipTool {
         r.time = dosTime;
         r.date = dosDate;
         r.internal = 0;
-        r.external = external != 0 ? external : ((0100644L << 16));
+        // a new folder gets drwxr-xr-x (and the DOS folder bit): with the Unix "made by" above, unzip applies these bits, and 0644 would leave a folder nobody can open
+        r.external = external != 0 ? external : name.endsWith("/") ? (040755L << 16) | 0x10 : (0100644L << 16);
         r.lho = out.pos;
         if (store) {
             CRC32 crc = new CRC32();
