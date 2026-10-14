@@ -6795,6 +6795,18 @@ public class MainActivity extends Activity {
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
     private static final int REQ_PICK_STORAGE_TREE = 4205;
 
+    /** Opens a system picker on the UI thread. False (and a toast) when the phone has none, for example with the Files app frozen:
+     *  startActivityForResult throws ActivityNotFoundException then, and uncaught on the UI thread it would end the app. */
+    private boolean startPicker(Intent i, int request) {
+        try {
+            startActivityForResult(i, request);
+            return true;
+        } catch (Exception e) {
+            Toast.makeText(this, "No file picker available", Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -10896,7 +10908,7 @@ public class MainActivity extends Activity {
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
                     i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                    startActivityForResult(i, REQ_PICK_CD);
+                    if (!startPicker(i, REQ_PICK_CD)) notifyJs("window.onCdPicked && window.onCdPicked({\"tag\":" + JSONObject.quote(cdPickTag) + ",\"files\":[]})");
                 }
             });
         }
@@ -11214,7 +11226,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_BACKUP);
+                    startPicker(i, REQ_PICK_BACKUP);
                 }
             });
         }
@@ -11247,7 +11259,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_TEXT);
+                    startPicker(i, REQ_PICK_TEXT);
                 }
             });
         }
@@ -11410,7 +11422,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_FONT);
+                    startPicker(i, REQ_PICK_FONT);
                 }
             });
         }
@@ -11572,7 +11584,7 @@ public class MainActivity extends Activity {
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
-                    startActivityForResult(i, REQ_PICK_INSTALL);
+                    startPicker(i, REQ_PICK_INSTALL);
                 }
             });
         }
