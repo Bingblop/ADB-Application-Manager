@@ -39,13 +39,13 @@ const mock = require('./lib/console_mock');
   check('Console opens on ADB Shell: the shell part shows, the log part is hidden, the tab is marked selected', s.shell && !s.log && s.seg === 'shell' && s.tabs.join() === 'ADB Shell:true,Live Logcat:false' && s.role === 'tablist', JSON.stringify(s));
   check('the log is not read while ADB Shell shows (no poll, no bridge call)', !s.timer && (await ev(page, () => window.__calls.logcat.length)) === 0);
   check('the command box says "Enter shell command..."', s.ph === 'Enter shell command...');
-  const ind0 = await ev(page, () => { const i = document.querySelector('.cn-ind').getBoundingClientRect(), t = document.getElementById('cnTabs').getBoundingClientRect(); return { left: Math.round(i.left - t.left), w: Math.round(i.width), tw: Math.round(t.width) }; });
-  check('the underline is under the first tab (half the row wide)', ind0.left <= 1 && Math.abs(ind0.w - ind0.tw / 2) <= 2, JSON.stringify(ind0));
+  const ind0 = await ev(page, () => { const i = document.querySelector('.cn-ind').getBoundingClientRect(), t = document.getElementById('cnTabs').getBoundingClientRect(), f = document.getElementById('cnTabShell').getBoundingClientRect(); return { left: Math.round(i.left - t.left), w: Math.round(i.width), fw: Math.round(f.width) }; });
+  check('the underline is under the first tab (as wide as the tab; the "?" keeps its own room at the end of the row)', ind0.left <= 1 && Math.abs(ind0.w - ind0.fw) <= 2, JSON.stringify(ind0));
 
   await page.click('#cnTabLog'); await sleep(900);
   s = await ev(page, () => ({ shell: !document.getElementById('cnSegShell').hidden, log: !document.getElementById('cnSegLog').hidden, kv: window.__kv.console_seg, timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length,
     ph: document.getElementById('logcatFilter').placeholder, tabs: [...document.querySelectorAll('#cnTabs .cn-tab')].map(t => t.getAttribute('aria-selected')).join(),
-    rows: document.querySelectorAll('#logcatOutput .lc-row').length, ind: Math.round(document.querySelector('.cn-ind').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left), half: Math.round(document.getElementById('cnTabs').getBoundingClientRect().width / 2) }));
+    rows: document.querySelectorAll('#logcatOutput .lc-row').length, ind: Math.round(document.querySelector('.cn-ind').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left), half: Math.round(document.getElementById('cnTabLog').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left) }));
   check('Live Logcat shows, is remembered, and starts reading at once (Pause shown, polling, the lines drawn)', s.log && !s.shell && s.kv === '"log"' && s.timer && s.play === 'Pause' && s.n >= 1 && s.rows === 2 && s.tabs === 'false,true', JSON.stringify(s));
   check('the underline moved under the second tab', Math.abs(s.ind - s.half) <= 3, JSON.stringify({ ind: s.ind, half: s.half }));
   check('the filter box has the Kotlin console\'s hint, with "text" (the filter is plain text, not a regex)', s.ph === 'Filter tag / text...');
