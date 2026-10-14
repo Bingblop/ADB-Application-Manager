@@ -1,0 +1,19 @@
+ok   plain Left is unchanged
+ok   CTRL then Left sends CTRL+Left and CTRL is used up
+ok   CTRL then Left, then a letter: the letter stays a letter
+ok   ALT then Left sends ALT+Left
+ok   CTRL and ALT then Right
+ok   CTRL then Home and End
+ok   CTRL then Page up
+ok   ALT then Page down
+ok   CTRL then F1 and F5
+ok   in application cursor mode CTRL+Left is the same
+ok   ...CTRL then Left with application cursor keys on
+ok   ...and plain Left is then ESC O D
+ok   an arrow from a hardware keyboard with CTRL armed
+ok   pasted or composed text is not turned into a control character, and CTRL is used up
+ok   a locked CTRL stays on after an arrow
+ok   one-letter keys: CTRL+c is 0x03
+ok   one-letter keys: ALT+x is ESC x
+ok   Esc and Tab with ALT are as before
+errors: []
