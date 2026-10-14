@@ -24177,7 +24177,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (sig !== cd.sig) { cd.sig = sig; cdRenderDevices(); }
             if (key !== cd.lastKey) {
                 cd.lastKey = key;
-                if (moved) cdResetDevice();
+                if (moved) { cdStopWork(); cdResetDevice(); }
                 cdRenderInfo();
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }
@@ -24215,7 +24215,6 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.info = null; cd.apps = null; cd.sel.clear(); cd.filters.clear(); cd.lcText = ''; cd.lcEntries = [];
             cd.fm = { path: '/sdcard', entries: null, busy: false };
             cd.set = { ns: cd.set.ns, data: {}, loaded: {}, busy: false };
-            cd.termRun = '';
             cdBatchBar();
             const l = document.getElementById('cdAppList'); if (l) l.innerHTML = '';
             const o = document.getElementById('cdLcOut'); if (o) o.innerHTML = '<div class="lc-meta">Press Play, or Refresh, to read the log.</div>';
@@ -24223,7 +24222,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const s = document.getElementById('cdSetList'); if (s) s.innerHTML = '';
         }
 
-        function cdStopWork() { cdLcStop(); }
+        // what runs on the device that is being left: the live log, and a console command (its own cdTermGo clears cd.termRun when the cancelled run returns)
+        function cdStopWork() { cdLcStop(); if (cd.termRun) cdStop(cd.termRun); }
 
         function cdParseInfo(out, serial) {
             const kv = {};
