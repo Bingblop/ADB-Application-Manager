@@ -60,6 +60,22 @@ final class AdbArgs {
         return out;
     }
 
+    /** host:port of a pairing address (name, IPv4 or bracketed IPv6; port 1-65535). It never starts with "-", so adb cannot read it as an option. */
+    private static final Pattern PAIR_ENDPOINT = Pattern.compile("(?:\\[[0-9A-Fa-f:.]{2,45}\\]|[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?):(\\d{1,5})");
+
+    static boolean validPairEndpoint(String s) {
+        if (s == null) return false;
+        java.util.regex.Matcher m = PAIR_ENDPOINT.matcher(s);
+        if (!m.matches()) return false;
+        int port = Integer.parseInt(m.group(1));
+        return port >= 1 && port <= 65535;
+    }
+
+    /** The code Android shows for Wireless debugging pairing: six digits. */
+    static boolean validPairCode(String s) {
+        return s != null && s.matches("\\d{6}");
+    }
+
     static String check(List<String> args) {
         if (args == null || args.isEmpty() || args.size() > 80) return "no command";
         for (String a : args) {
