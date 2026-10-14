@@ -5126,6 +5126,8 @@ p: [
 ["Install {0}", "{0}をインストール"],
 ["Install: {0}", "インストール：{0}"],
 ["Installed {0}", "インストール日：{0}"],
+["Installed {0} • Updated {1}", "インストール日：{0} • 更新日：{1}"],
+["Last updated {0}", "最終更新：{0}"],
 ["Installed {0} · couldn’t check ({1}).", "インストール済み：{0} · 確認できませんでした（{1}）。"],
 ["Installed {0} · couldn’t check.", "インストール済み：{0} · 確認できませんでした。"],
 ["Installed {0} · no GitHub releases found yet.", "インストール済み：{0} · GitHubのリリースはまだ見つかっていません。"],

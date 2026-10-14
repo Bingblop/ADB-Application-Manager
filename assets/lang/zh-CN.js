@@ -5126,6 +5126,8 @@ p: [
 ["Install {0}", "安装 {0}"],
 ["Install: {0}", "安装：{0}"],
 ["Installed {0}", "安装于 {0}"],
+["Installed {0} • Updated {1}", "安装于 {0} • 更新于 {1}"],
+["Last updated {0}", "最后更新于 {0}"],
 ["Installed {0} · couldn’t check ({1}).", "已安装 {0} · 无法检查（{1}）。"],
 ["Installed {0} · couldn’t check.", "已安装 {0} · 无法检查。"],
 ["Installed {0} · no GitHub releases found yet.", "已安装 {0} · 尚未找到 GitHub 发布版本。"],

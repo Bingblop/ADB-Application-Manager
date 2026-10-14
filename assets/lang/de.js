@@ -5126,6 +5126,8 @@ p: [
 ["Install {0}", "{0} installieren"],
 ["Install: {0}", "Installation: {0}"],
 ["Installed {0}", "Installiert: {0}"],
+["Installed {0} • Updated {1}", "Installiert: {0} • Aktualisiert: {1}"],
+["Last updated {0}", "Zuletzt aktualisiert: {0}"],
 ["Installed {0} · couldn’t check ({1}).", "Installiert: {0} · Prüfung nicht möglich ({1})."],
 ["Installed {0} · couldn’t check.", "Installiert: {0} · Prüfung nicht möglich."],
 ["Installed {0} · no GitHub releases found yet.", "Installiert: {0} · noch keine GitHub-Releases gefunden."],

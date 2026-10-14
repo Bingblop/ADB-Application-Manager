@@ -5126,6 +5126,8 @@ p: [
 ["Install {0}", "Instal {0}"],
 ["Install: {0}", "Pemasangan: {0}"],
 ["Installed {0}", "Diinstal {0}"],
+["Installed {0} • Updated {1}", "Diinstal {0} • Diperbarui {1}"],
+["Last updated {0}", "Terakhir diperbarui {0}"],
 ["Installed {0} · couldn’t check ({1}).", "Terinstal {0} · tidak dapat memeriksa ({1})."],
 ["Installed {0} · couldn’t check.", "Terinstal {0} · tidak dapat memeriksa."],
 ["Installed {0} · no GitHub releases found yet.", "Terinstal {0} · belum ada rilis GitHub yang ditemukan."],

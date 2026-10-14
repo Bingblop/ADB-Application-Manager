@@ -43,8 +43,8 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   check('   (also for a tab that was moved)', (await bar(page)).filter(x => x.active).map(x => x.key).join() === 'store');
 
   // 2) the header gear opens Settings
-  const gear = await ev(page, () => { const g = document.getElementById('prefsHeaderBtn'); return { text: g.innerText.replace(/️/g, ''), label: g.getAttribute('aria-label'), role: g.getAttribute('role') }; });
-  check('2. the header button is a gear called Settings (not the colours palette)', gear.text === '⚙' && gear.label === 'Settings' && gear.role === 'button', JSON.stringify(gear));
+  const gear = await ev(page, () => { const g = document.getElementById('prefsHeaderBtn'); return { text: g.innerText.trim(), svg: !!g.querySelector('svg.hdr-gear'), label: g.getAttribute('aria-label'), role: g.getAttribute('role') }; });
+  check('2. the header button is a gear called Settings (not the colours palette; an SVG gear, no emoji)', gear.svg && gear.text === '' && gear.label === 'Settings' && gear.role === 'button', JSON.stringify(gear));
   await page.click('#prefsHeaderBtn');
   const s2 = await ev(page, () => ({ view: currentViewName(), anyTab: !!document.querySelector('.tab-btn.active'), gearOn: document.getElementById('prefsHeaderBtn').classList.contains('active') }));
   check('   it opens Settings, no tab is lit and the gear shows that you are there', s2.view === 'prefs' && !s2.anyTab && s2.gearOn, JSON.stringify(s2));
