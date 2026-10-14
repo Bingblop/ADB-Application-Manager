@@ -63,6 +63,23 @@ public class MorpheJobsTest {
         try { java.nio.file.Files.createSymbolicLink(link.toPath(), outside.toPath()); linked = true; } catch (Exception ignored) {}
         if (linked) check("a link that points out of the root is not allowed", !MorpheJobs.inside(link, roots), null);
 
+        // MOR-2: the folders the page may name do not include the Morphe folder itself, which holds the signing key and its password
+        File mBase = new File(root, "files/morphe"), pick = new File(root, "cache/morphe_pick"), dl = new File(root, "Download");
+        for (String n : new String[] {"morphe.keystore", "morphe_key.json", "vt_state.json", "jobs/j1/patched.apk", "sources/official.mpp", "helper/yt.apk", "patched/p1/yt.apk"}) {
+            File f = new File(mBase, n); f.getParentFile().mkdirs(); new java.io.FileOutputStream(f).close();
+        }
+        List<File> page = MorpheJobs.pageRoots(mBase, pick, dl);
+        check("the signing key, its password file, the VirusTotal counters, a run folder and a bundle are not files the page may name",
+            !MorpheJobs.inside(new File(mBase, "morphe.keystore"), page) && !MorpheJobs.inside(new File(mBase, "morphe_key.json"), page) && !MorpheJobs.inside(new File(mBase, "vt_state.json"), page)
+            && !MorpheJobs.inside(new File(mBase, "jobs/j1/patched.apk"), page) && !MorpheJobs.inside(new File(mBase, "sources/official.mpp"), page) && !MorpheJobs.inside(mBase, page), page.toString());
+        check("a Helper download, a patched APK, a picked file and the three Downloads folders are", MorpheJobs.inside(new File(mBase, "helper/yt.apk"), page) && MorpheJobs.inside(new File(mBase, "patched/p1/yt.apk"), page)
+            && MorpheJobs.inside(new File(pick, "a.apk"), page) && MorpheJobs.inside(new File(dl, "Morphe Patcher/a.apk"), page) && MorpheJobs.inside(new File(dl, "Helper for Morphe/a.apk"), page) && MorpheJobs.inside(new File(dl, "App Updater/a.apk"), page), page.toString());
+        check("helper/../morphe.keystore is not", !MorpheJobs.inside(new File(mBase, "helper/../morphe.keystore"), page), null);
+        File keyLink = new File(mBase, "helper/key.apk");
+        boolean keyLinked = false;
+        try { java.nio.file.Files.createSymbolicLink(keyLink.toPath(), new File(mBase, "morphe.keystore").toPath()); keyLinked = true; } catch (Exception ignored) {}
+        if (keyLinked) check("a link in the Helper folder that points at the key is not", !MorpheJobs.inside(keyLink, page), null);
+
         // MOR-1: a success with nothing applied (every selected patch failed, "Stop when a patch fails" off) is a failure; the bridge and the orphan scan use it
         JSONObject none = MorpheJobs.checkApplied(new JSONObject("{\"success\":true,\"output\":\"/x/p.apk\",\"applied\":[],\"failed\":[{\"name\":\"A\",\"error\":\"boom\"}],\"steps\":[]}"));
         check("nothing applied: the answer becomes a failure with words, the failed list and the rest kept", !none.optBoolean("success") && none.optString("error").equals("No patch could be applied") && none.getJSONArray("failed").length() == 1 && none.optString("output").equals("/x/p.apk"), none.toString());
@@ -101,6 +118,14 @@ public class MorpheJobsTest {
             String patchBody = pa < 0 ? "" : m.substring(pa, Math.min(m.length(), pa + 1200));
             String engineCall = patchBody.length() > 0 ? m.substring(pa, Math.min(m.length(), pa + 4000)) : "";
             check("patch checks the engine's answer for nothing applied before it files or installs anything", engineCall.contains("MorpheJobs.checkApplied(runEngine(\"patch\"") && engineCall.indexOf("checkApplied(") < engineCall.indexOf("save(a, output, dir, engineResult)"), null);
+            int ar = m.indexOf("private List<File> allowedRoots()");
+            String arBody = ar < 0 ? "" : m.substring(ar, Math.min(m.length(), ar + 300));
+            check("the bridge's allowedRoots are pageRoots (vtScan, copyToTree, shareFile, install ... all check against them)", arBody.contains("MorpheJobs.pageRoots(base, ") && !arBody.contains("r.add(base)"), arBody);
+            File act = new File(src.getParentFile(), "MainActivity.java");
+            String ma = act.isFile() ? new String(java.nio.file.Files.readAllBytes(act.toPath()), java.nio.charset.StandardCharsets.UTF_8) : "";
+            int ct = ma.indexOf("@Override public String copyToTree(File file, String treeUri, String name)");
+            String ctBody = ct < 0 ? "" : ma.substring(ct, Math.min(ma.length(), ct + 1600));
+            check("the activity's copyToTree copies with the private-data check (copyFileChecked), not the plain copyFile", ctBody.contains("copyFileChecked(file, out)") && !ctBody.contains(" copyFile(file, out)"), null);
             check("patch refuses a bad id before it empties the job folder", patchBody.indexOf("validJobId(jobId)") > 0 && patchBody.indexOf("validJobId(jobId)") < patchBody.indexOf("deleteTree(dir)"), null);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }

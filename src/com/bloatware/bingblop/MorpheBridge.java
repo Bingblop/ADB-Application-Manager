@@ -284,14 +284,7 @@ public final class MorpheBridge {
     }
 
     private List<File> allowedRoots() {
-        List<File> r = new ArrayList<File>();
-        Context c = host.context();
-        r.add(new File(c.getCacheDir(), "morphe_pick"));
-        r.add(base);
-        r.add(new File(host.downloadsDir(), "Morphe Patcher"));
-        r.add(new File(host.downloadsDir(), "Helper for Morphe"));
-        r.add(new File(host.downloadsDir(), "App Updater"));
-        return r;
+        return MorpheJobs.pageRoots(base, new File(host.context().getCacheDir(), "morphe_pick"), host.downloadsDir());   // not base itself: it holds the signing key
     }
 
     private File helperDir(String save) {
