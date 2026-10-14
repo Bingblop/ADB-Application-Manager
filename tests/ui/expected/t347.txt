@@ -1,0 +1,35 @@
+ok   320 px dark: the gear and ⋯ after the name take less than 100px of the row (now 93px)
+ok   320 px dark: the name and package get the room (132px of a 288px row)
+ok   320 px dark: no checkbox column: the ✓ box sits on the icon
+ok   320 px dark: the gear and ⋯ are 44x44 buttons
+ok   320 px dark: the icon, the gear and the ⋯ each answer a tap over 44x44px
+ok   320 px dark: no horizontal page scroll
+ok   320 px dark: "Amazon Shopping" stays on one line
+ok   360 px light: the gear and ⋯ after the name take less than 100px of the row (now 93px)
+ok   360 px light: the name and package get the room (172px of a 328px row)
+ok   360 px light: no checkbox column: the ✓ box sits on the icon
+ok   360 px light: the gear and ⋯ are 44x44 buttons
+ok   360 px light: the icon, the gear and the ⋯ each answer a tap over 44x44px
+ok   360 px light: no horizontal page scroll
+ok   412 px dark: the gear and ⋯ after the name take less than 100px of the row (now 93px)
+ok   412 px dark: the name and package get the room (224px of a 380px row)
+ok   412 px dark: no checkbox column: the ✓ box sits on the icon
+ok   412 px dark: the gear and ⋯ are 44x44 buttons
+ok   412 px dark: the icon, the gear and the ⋯ each answer a tap over 44x44px
+ok   412 px dark: no horizontal page scroll
+ok   the icon is a button with role="checkbox", aria-checked="false" and the name "Select Amazon Shopping"
+ok      unselected: no badge, count 0
+ok   a tap on the icon selects the app: tinted row, ✓ badge, aria-checked="true", batch count 1
+ok      a second app by its icon: count 2
+ok      a tap on a selected icon deselects it: no badge, aria-checked="false", count back to 1
+ok      a tap on the name still selects, and the icon says so
+ok   Select all checks every icon, shows every badge and counts them
+ok      Clear unchecks them all and hides the batch button
+ok   Space on the focused icon checks and unchecks it
+ok   a hold on the icon saves the icon and does not select the row
+ok   the gear still opens the app's Android settings
+ok      a hold on the gear still opens the sheet of every action
+ok   the ⋯ still opens the app's menu, and does not select the row
+ok   German: the icon checkbox is called "WhatsApp auswählen"
+ok   German 320 px: the gear and ⋯ take less than 100px, 44px hit boxes, no horizontal page scroll
+errors: []

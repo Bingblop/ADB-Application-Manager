@@ -5244,6 +5244,7 @@
 {"k":"Searched the web for “{0}”. Only these words were sent, nothing else.","ctx":"built by the code of: web lookup into"},
 {"k":"Searching {0} · {1} looked at · {2} found","ctx":"built by the code of: on fm search progress"},
 {"k":"Searching · {0} looked at · {1} found","ctx":"built by the code of: on fm search progress"},
+{"k":"Select {0}","ctx":"built by the code of: app card html"},
 {"k":"Selected: {0} • Active: {1}","ctx":"built by the code of: check all working modes"},
 {"k":"Sending {0}...","ctx":"built by the code of: cd fm push picked"},
 {"k":"Sensors ({0})","ctx":"built by the code of: render device specs"},

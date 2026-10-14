@@ -5976,6 +5976,7 @@ p: [
 ["Could not change the brightness bias: {0}","Tidak dapat mengubah geser kecerahan: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Diterapkan, tetapi ponsel melaporkan {0} bukan {1}. One UI dan beberapa ponsel lain menyetel ulang atau mengabaikan nilai ini."],
 ["{0} of {1}","{0} dari {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","Pilih {0}"]
 ]
 };

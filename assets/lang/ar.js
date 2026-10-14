@@ -5976,6 +5976,7 @@ p: [
 ["Could not change the brightness bias: {0}","تعذّر تغيير انحياز السطوع: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","تم التطبيق، لكن الهاتف يبلّغ عن {0} بدلاً من {1}. تعيد One UI وبعض الهواتف الأخرى ضبط هذه القيمة أو تتجاهلها."],
 ["{0} of {1}","{0} من {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","تحديد {0}"]
 ]
 };

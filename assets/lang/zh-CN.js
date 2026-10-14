@@ -5976,6 +5976,7 @@ p: [
 ["Could not change the brightness bias: {0}","无法更改亮度偏移：{0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","已应用，但手机报告的是 {0} 而不是 {1}。One UI 和其他一些手机会重置或忽略这个值。"],
 ["{0} of {1}","{0} / {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","选择 {0}"]
 ]
 };

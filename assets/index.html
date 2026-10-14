@@ -957,6 +957,41 @@
             touch-action: manipulation;
         }
 
+        /* An Apps tab row: its icon is its selection box. A tap on the icon (or on the name) selects the app and a check badge sits on the
+           icon's corner; a hold on the icon still saves it. The button is the icon's own size and answers a finger over --tap: a clear ::after
+           lies under the picture (so a hold on the picture still reaches it) and reaches 2px past it into the row's padding. */
+        .app-card > .app-sel {
+            position: relative;
+            isolation: isolate;
+            flex-shrink: 0;
+            display: block;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            margin: 0 var(--space-3h) 0 0;
+            background: none;
+            border: 0;
+            border-radius: var(--radius-md);
+            color: inherit;
+            cursor: pointer;
+        }
+        .app-card > .app-sel::after { content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; width: var(--tap); height: var(--tap); transform: translate(-50%, -50%); }
+        .app-card > .app-sel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .app-sel .app-icon { display: block; margin-right: 0; }
+        .app-card > .app-sel .app-checkbox {
+            position: absolute;
+            right: -5px;
+            bottom: -5px;
+            width: 20px;
+            height: 20px;
+            border-radius: var(--radius-pill);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, var(--bg-card));          /* a ring of the selected row's own colour parts it from the icon */
+            font-size: var(--fs-overline);
+            visibility: hidden;
+        }
+        .app-card > .app-sel .app-checkbox::after { content: none; }          /* the whole icon is the hit area */
+        .app-card.selected > .app-sel .app-checkbox { visibility: visible; }          /* filled with the accent by .app-card.selected .app-checkbox */
+
         .app-meta {
             overflow: hidden;
             min-width: 0;
@@ -1176,7 +1211,22 @@
             transition: background 0.15s, transform 0.12s;
         }
         #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
-        #view-apps .app-actions .btn-mini { border-color: var(--accent); }
+        /* The buttons at the end of an Apps tab row (the Action Button, ⋯ and, in the Uninstalled filter, Clear leftover data) are drawn as
+           bare icons on a --tap square, side by side with no gap, and the last one reaches into the row's padding: the name and the package
+           get the room an outlined box, the gaps and the old checkbox column took. */
+        #appsListContainer .app-actions { gap: 0; margin-left: 0; margin-right: calc(-1 * var(--space-3)); }
+        #appsListContainer .app-actions .btn-mini {
+            width: var(--tap);
+            height: var(--tap);
+            background: transparent;
+            border-color: transparent;
+            border-radius: var(--radius-pill);
+            color: var(--text-muted);
+        }
+        #appsListContainer .app-actions .row-menu { font-size: var(--fs-title); font-weight: var(--fw-black); }
+        #appsListContainer .app-actions .btn-mini.ab-btn { color: var(--accent); }
+        #appsListContainer .app-actions .btn-mini:active { background: var(--fill-3); color: var(--accent); }
+        #appsListContainer .app-actions .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
         .ab-btn { color: var(--accent); -webkit-touch-callout: none; }
         .uad-row .uad-actions { margin-left: auto; align-self: flex-start; }
@@ -11249,7 +11299,7 @@ Type any command above (e.g. pm list packages -d)</div>
             'Delete {0} items ({1})? Folders go with everything in them. This can not be undone.', 'Delete “{0}” from the archive?', 'Delete “{0}”?',
             'Delete {0} from the saved devices?', 'Delete "{0}"? This action cannot be undone.', 'Delete the preset {0}?', 'Delete the saved command {0}?',
             'Delete the theme {0}?', 'Replace the theme {0} with the look in use now?', 'Remove the store "{0}"? Apps you installed from it stay installed.',
-            'Remove "{0}" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.'
+            'Remove "{0}" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.', 'Select {0}'
         ]);
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
@@ -18338,17 +18388,20 @@ Type any command above (e.g. pm list packages -d)</div>
             if (r && r.ok) showToast('Icon saved to ' + r.path);
             else showToast('Could not save the icon' + (r && r.error ? ': ' + r.error : ''));
         };
+        // (On an Apps tab row the icon is also the selection box: the lift of the finger that ends a hold is not also taken as a tap that selects.)
         (function () {
-            let timer = null, startX = 0, startY = 0;
+            let timer = null, startX = 0, startY = 0, held = false;
             const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
             document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('img.app-icon')) e.preventDefault(); });
             document.addEventListener('pointerdown', e => {
+                held = false;
                 const img = e.target.closest ? e.target.closest('img.app-icon') : null;
                 if (!img) return;
                 startX = e.clientX; startY = e.clientY;
                 clear();
                 timer = setTimeout(() => {
                     timer = null;
+                    held = true;
                     const pkg = img.getAttribute('data-icon');
                     const app = allApps.find(a => a.pkg === pkg);
                     haptic();
@@ -18358,6 +18411,10 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
             ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+            document.addEventListener('click', e => {
+                if (held && e.target.closest && e.target.closest('img.app-icon')) { e.stopPropagation(); e.preventDefault(); }
+                held = false;
+            }, true);
         })();
 
         // ---------- Action Button: the extra button on each row of the Apps list ----------
@@ -19013,7 +19070,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             updateBatchBar();
             const card = document.getElementById('card_' + pkg);
-            if (card) { card.classList.remove('selected'); const cb = card.querySelector('.app-checkbox'); if (cb) cb.innerText = ''; }
+            markCardSelected(card, false);
             if (!selectedPkgs.size) { closeShowApps(); showToast('Nothing selected any more'); return; }
             showAppsRender();
         }
@@ -19211,9 +19268,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (app.mods && app.mods.length) app.mods.forEach(m => badges += `<span class="tag-badge tag-mod">${escapeHtml(m)}</span>`);
 
             const pk = escapeHtml(app.pkg);
+            const selLabel = 'Select ' + app.name;                 // the name of the icon's checkbox, "Select {0}" in the dictionaries
             return `
                 <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''} ${app.isFrozen && !app.isUninstalled ? 'frozen' : ''} ${app.isRunning && !app.isUninstalled ? 'running' : ''} ${app.isUninstalled ? 'uninstalled' : ''}" id="card_${pk}" data-pkg="${pk}">
-                    <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
+                    <button type="button" class="app-left app-sel" role="checkbox" aria-checked="${isSelected}" aria-label="${escapeHtml(selLabel)}" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
+                        <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
+                        <span class="app-checkbox" aria-hidden="true">${isSelected ? '✓' : ''}</span>
+                    </button>
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>
                         <div class="app-pkg">${pk}</div>
@@ -19221,13 +19282,20 @@ Type any command above (e.g. pm list packages -d)</div>
                     </div>
                     <div class="app-actions">
                         ${leftoverBtnHtml(app)}${actionBtnHtml(app)}
-                        <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
-                    </div>
-                    <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
-                        <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
+                        <button class="btn-mini row-menu" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
                     </div>
                 </div>
             `;
+        }
+
+        // Draws a row of a list as selected or not: the tint, the ✓ (the Apps tab's badge on the icon, a box elsewhere) and the checkbox state
+        function markCardSelected(card, on) {
+            if (!card) return;
+            card.classList.toggle('selected', !!on);
+            const cb = card.querySelector('.app-checkbox');
+            if (cb) cb.innerText = on ? '✓' : '';
+            const sel = card.querySelector('.app-sel');
+            if (sel) sel.setAttribute('aria-checked', on ? 'true' : 'false');
         }
 
         // Selection & Batch Operations
@@ -19246,11 +19314,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             haptic();
             updateBatchBar();
-            const card = document.getElementById('card_' + pkg);
-            if (card) {
-                card.classList.toggle('selected', selectedPkgs.has(pkg));
-                card.querySelector('.app-checkbox').innerText = selectedPkgs.has(pkg) ? '✓' : '';
-            }
+            markCardSelected(document.getElementById('card_' + pkg), selectedPkgs.has(pkg));
         }
 
         function selectAllVisible(select) {
@@ -19321,22 +19385,14 @@ Type any command above (e.g. pm list packages -d)</div>
             els.forEach(e => { e.style.transition = 'none'; });
             selectedPkgs.clear();
             updateBatchBar();
-            document.querySelectorAll('.app-card').forEach(c => {
-                c.classList.remove('selected');
-                const cb = c.querySelector('.app-checkbox');
-                if (cb) cb.innerText = '';
-            });
+            document.querySelectorAll('.app-card').forEach(c => markCardSelected(c, false));
             requestAnimationFrame(() => requestAnimationFrame(() => els.forEach(e => { e.style.transition = ''; })));
         }
 
         function clearBatchSelection() {
             selectedPkgs.clear();
             updateBatchBar();
-            document.querySelectorAll('.app-card').forEach(c => {
-                c.classList.remove('selected');
-                const cb = c.querySelector('.app-checkbox');
-                if (cb) cb.innerText = '';
-            });
+            document.querySelectorAll('.app-card').forEach(c => markCardSelected(c, false));
             haptic();
         }
 
