@@ -245,6 +245,13 @@
 <li>In Shizuku, choose the option for rooted phones and approve the root request from your root manager.</li>
 <li>Shizuku has a setting to start by itself when the phone starts, for rooted phones.</li>
 </ol>
+<h5>Method 4: from this app, over a connection you already have</h5>
+<ol class="hg-steps">
+<li>Connect <a href="#mode-tcp">ADB over TCP</a> or <a href="#mode-wireless">Wireless Debugging</a> in this app first (the card must say it is connected).</li>
+<li>Open the Shizuku app once. It writes its own start script (<code>start.sh</code>, in its data folder) the first time; this app does not carry a copy.</li>
+<li>Back here, in the Shizuku card, tap <b>Start Shizuku (ADB)</b>. The app runs that script through your ADB connection and then checks whether Shizuku answers. If it does, tap <b>Authorize &amp; Use Shizuku</b>. If it does not, the card shows what the script printed.</li>
+</ol>
+<p>This is the same command as Method 2, run by the app instead of a computer. It does not survive a restart either: after the phone restarts, start Shizuku again.</p>
 
 <h4>Connecting this app to Shizuku</h4>
 <ol class="hg-steps">

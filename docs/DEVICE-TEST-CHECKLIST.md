@@ -574,6 +574,17 @@ Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-F
 - [ ] **Nothing else changes.** Type a wrong port by hand in the Wireless Debugging card and tap **Connect**: it fails as before and does not jump to another port (a typed port is never replaced). Turn Wireless debugging off completely and select the mode: it says it is not connected; no error loop, no crash.
 - [ ] **A second phone is never picked.** If another phone with Wireless debugging on is on the same Wi-Fi, the app still only reconnects to the address it was saved with (or this phone's own Wi-Fi address when it was saved as 127.0.0.1).
 
+## 32. Start Shizuku from the app
+
+Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
+
+- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then within about ten seconds "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
+- [ ] **No start script.** After clearing the Shizuku app's data (so it has not written start.sh), tap **Start Shizuku (ADB)**: the toast says Shizuku has not written its start script yet, and the Shizuku app opens. Nothing is started and no error text appears.
+- [ ] **No ADB connection.** With ADB TCP and Wireless Debugging both disconnected, tap it: the toast says to connect one of them first.
+- [ ] **Already running.** With Shizuku running, tap it: "Shizuku is already running", nothing is run.
+- [ ] **A failed start.** If Shizuku does not start (for example a Shizuku version whose start script needs another way), the toast says so and the text the script printed appears under the buttons. Please copy that text into the report: it is what we need to adjust the command for that version.
+- [ ] **Double tap.** Tap twice quickly: one start runs; the second tap says it is already being started.
+
 ## 33. Turn on Wireless Debugging (Connection Check)
 
 None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, with a working mode connected (ADB TCP or Shizuku) or the secure-settings permission granted.
