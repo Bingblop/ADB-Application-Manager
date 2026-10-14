@@ -16,15 +16,20 @@ public final class ThumbCache {
 
     public static final long LIMIT_BYTES = 48L * 1024 * 1024;
 
+    private static final char[] HEX = "0123456789abcdef".toCharArray();
+
     public static String key(String path, long mtime, long length, int px) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] h = md.digest((path + "\u0000" + mtime + "\u0000" + length + "\u0000" + px).getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : h) sb.append(String.format("%02x", b & 0xFF));
-            return sb.toString();
-        } catch (Exception e) {
-            return Integer.toHexString((path + mtime + length + px).hashCode());
+            char[] out = new char[h.length * 2];
+            for (int i = 0; i < h.length; i++) {
+                out[i * 2] = HEX[(h[i] >> 4) & 0xF];
+                out[i * 2 + 1] = HEX[h[i] & 0xF];
+            }
+            return new String(out);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("every Java platform has SHA-256", e);      // the JCA requires it
         }
     }
 

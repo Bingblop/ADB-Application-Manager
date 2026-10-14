@@ -280,7 +280,7 @@ public class FileOpsTest {
     // ---------- picture cache ----------
     File tc = tmp("fo-thumbs");
     String k1 = ThumbCache.key("/a/b.jpg", 1000, 2000, 96), k2 = ThumbCache.key("/a/b.jpg", 1001, 2000, 96), k3 = ThumbCache.key("/a/b.jpg", 1000, 2000, 128);
-    check("cache keys: the same file gives the same key, an edited file or another size a new one", k1.equals(ThumbCache.key("/a/b.jpg", 1000, 2000, 96)) && !k1.equals(k2) && !k1.equals(k3) && k1.matches("[0-9a-f]{40}"));
+    check("cache keys: the same file gives the same key, an edited file or another size a new one", k1.equals(ThumbCache.key("/a/b.jpg", 1000, 2000, 96)) && !k1.equals(k2) && !k1.equals(k3) && k1.matches("[0-9a-f]{64}"));
     for (int i = 0; i < 5; i++) { File f = new File(tc, "t" + i + ".jpg"); try (java.io.FileOutputStream fo = new java.io.FileOutputStream(f)) { fo.write(new byte[1000]); } f.setLastModified(1_000_000_000_000L + i * 1000L); }
     ThumbCache.touch(new File(tc, "t0.jpg"));                              // t0 was used last
     check("cache size", ThumbCache.size(tc) == 5000);

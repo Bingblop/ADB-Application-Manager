@@ -51,13 +51,13 @@
 
   // ---------- dictionary ----------
   function build(d) {
-    exact = Object.assign(Object.create(null), d.x || {});
+    exact = Object.assign(Object.create(null), d.x || {});  // d is the bundled dictionary of one known language. nosemgrep: javascript.lang.security.insecure-object-assign.insecure-object-assign
     var list = [];
     (d.p || []).forEach(function (e) {
       var key = e[0], parts = key.split(/\{\d+\}/);
       if (parts.length < 2) { exact[key] = e[1]; return; }
       var lit = 0; parts.forEach(function (p) { lit += p.length; });
-      list.push({ key: key, re: new RegExp('^' + parts.map(esc).join('([\\s\\S]*?)') + '$'), to: e[1], w: lit, first: parts[0].charAt(0) });
+      list.push({ key: key, re: new RegExp('^' + parts.map(esc).join('([\\s\\S]*?)') + '$'), to: e[1], w: lit, first: parts[0].charAt(0) });  // every fixed part is escaped by esc(). nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
     });
     list.sort(function (a, b) { return b.w - a.w; });         // the template with the most fixed text wins
     tpls = list;

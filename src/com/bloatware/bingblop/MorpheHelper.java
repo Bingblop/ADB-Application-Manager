@@ -2678,7 +2678,7 @@ public final class MorpheHelper {
         MessageDigest sha, md5;
         try {
             sha = MessageDigest.getInstance("SHA-256");
-            md5 = MessageDigest.getInstance("MD5");
+            md5 = MessageDigest.getInstance("MD5");  // only compared when a source publishes an MD5; the SHA-256 is compared whenever one is published. nosemgrep: java.lang.security.audit.crypto.use-of-md5.use-of-md5
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new IOException("no SHA-256 on this device");
         }

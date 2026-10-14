@@ -33,6 +33,16 @@ public class AdbArgsTest {
     };
     for (String[] b : bad) is("refused: adb " + String.join(" ", b), AdbArgs.check(l(b)) != null);
 
+    // the pairing address and code that AdbPair passes on
+    String[] okEp = {"192.168.1.5:37000", "127.0.0.1:1", "localhost:65535", "phone.local:41234", "[fe80::1]:37000", "[::1]:5555", "a:1"};
+    for (String e : okEp) is("pairing address accepted: " + e, AdbArgs.validPairEndpoint(e));
+    String[] badEp = {null, "", "-P5037:1", "-s:5555", "--help:1", "192.168.1.5", "192.168.1.5:", "192.168.1.5:0", "192.168.1.5:65536", "192.168.1.5:99999999999",
+      "a b:1", "a;b:1", "$(id):1", "a:1\n", "a:1 ", ":5555", "[]:1", "[g::1]:1", "host.:1", ".host:1", "a:1:2"};
+    for (String e : badEp) is("pairing address refused: " + e, !AdbArgs.validPairEndpoint(e));
+    is("pairing code: six digits", AdbArgs.validPairCode("123456") && AdbArgs.validPairCode("000000"));
+    is("pairing code: nothing else", !AdbArgs.validPairCode(null) && !AdbArgs.validPairCode("") && !AdbArgs.validPairCode("12345") && !AdbArgs.validPairCode("1234567")
+      && !AdbArgs.validPairCode("12345a") && !AdbArgs.validPairCode("-12345") && !AdbArgs.validPairCode("123456\n") && !AdbArgs.validPairCode("\u0663\u0662\u0661\u0660\u0669\u0668"));
+
     is("no arguments is refused", AdbArgs.check(l()) != null && AdbArgs.check(null) != null);
     is("a NUL in an argument is refused", AdbArgs.check(l("shell", "a\u0000b")) != null);
     String[] many = new String[81]; Arrays.fill(many, "devices");

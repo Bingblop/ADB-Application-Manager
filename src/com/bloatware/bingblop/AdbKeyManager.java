@@ -111,7 +111,7 @@ public final class AdbKeyManager {
         try {
             String line = new String(readFile(publicFile), StandardCharsets.US_ASCII).trim();
             String b64 = line.split("\\s+")[0];
-            byte[] digest = MessageDigest.getInstance("MD5").digest(Base64.decode(b64, Base64.DEFAULT));
+            byte[] digest = MessageDigest.getInstance("MD5").digest(Base64.decode(b64, Base64.DEFAULT));  // the fingerprint in Android's "Allow USB debugging?" dialog is MD5; shown to the user, not a security check. nosemgrep: java.lang.security.audit.crypto.use-of-md5.use-of-md5
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < digest.length; i++) {
                 if (i > 0) sb.append(':');
