@@ -39377,7 +39377,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
         // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
         // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
-        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null, pend: [], pendLen: 0 };
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null, pend: [], pendLen: 0, failed: false };
         const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
         function rtLoad(then) {
             if (window.Terminal && window.FitAddon) { then(); return; }
@@ -39417,7 +39417,7 @@ Type any command above (e.g. pm list packages -d)</div>
             rtSize();
             if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
             window.addEventListener('resize', rtSize);
-            rtLoad(() => { rtInit(); rtSize(); if (switching) rtPickShell(want); else if (!rt.started) rtStart(); else rt.term.focus(); });
+            rtLoad(() => { rtInit(); rtSize(); if (switching) rtPickShell(want); else if (!rt.started) rtStart(); else if (rt.failed) rtRestart(); else rt.term.focus(); });
         }
         function rtHide() {
             rt.open = false;
@@ -39446,11 +39446,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function rtStart() {
             if (!rt.term) return;
             try { rt.fit.fit(); } catch (e) {}
-            rt.started = true; rt.state = 'starting'; rtPendDrop();
+            rt.started = true; rt.state = 'starting'; rt.failed = false; rtPendDrop();
             rtNote('');
             let r = '';
             try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtPendDrop(); rtNote(r.replace(/^error:\s*/, '')); }
+            if (r.indexOf('error') === 0) rtStartFailed(r.replace(/^error:\s*/, ''));
             else { rt.token = (/^started:(\d+)$/.exec(r) || [])[1] || null; rt.term.focus(); }
         }
         // The phone tags every start/output/end notice with the token of the start it belongs to. A notice queued before a restart can still run after it
@@ -39466,9 +39466,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 held.forEach(rtSend);
                 return;
             }
-            rt.state = 'exited'; rtPendDrop();
-            rtNote(String((res && res.message) || 'The terminal did not start'));
+            rtStartFailed(String((res && res.message) || 'The terminal did not start'));
         };
+        // A start that failed: the reason goes above the screen and into the terminal (a blank screen that takes no keys looks broken), and opening the screen again starts again.
+        function rtStartFailed(msg) {
+            rt.state = 'exited'; rt.failed = true; rtPendDrop();
+            rtNote(msg);
+            if (rt.term) rt.term.write('\r\n\x1b[2m[' + msg + ']\x1b[0m\r\n');
+        }
         window.onPtyData = function (id, b64, token) {
             if (id !== rt.id || !rt.term || rtStale(token)) return;
             const bin = atob(b64), u = new Uint8Array(bin.length);
