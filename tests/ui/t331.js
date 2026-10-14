@@ -96,7 +96,7 @@ const initMock = () => {
   check('   tapping each one shows just its apps, lights it and presses it; All Apps turns it off', !taps.some(x => /WRONG/.test(x)), taps.join(' '));
   const pair = await ev(() => { const c = document.querySelector('.stat-card[data-filter="frozen"]'), box = c.closest('.stat-split'); setFilter('frozen', c);
     const i = document.createElement('i'); i.style.color = 'var(--apps-frozen)'; document.body.appendChild(i); const want = getComputedStyle(i).color; i.remove();
-    const r = { pair: Array.from(box.querySelectorAll('.stat-card')).map(x => x.dataset.filter).join('/'), frame: getComputedStyle(box).borderTopColor === want, other: document.querySelector('.stat-card[data-filter="user"]').closest('.stat-split') !== box };
+    const r = { pair: Array.from(box.querySelectorAll('.stat-card')).map(x => x.dataset.filter).join('/'), frame: getComputedStyle(box).outlineColor === want, other: document.querySelector('.stat-card[data-filter="user"]').closest('.stat-split') !== box };
     setFilter('all'); return r; });
   check('   Enabled / Frozen and 3rd Party / System are pairs that share a frame, the frame in the colour of the side that is on', pair.pair === 'enabled/frozen' && pair.frame && pair.other, JSON.stringify(pair));
   await ev(() => document.querySelector('.stat-card[data-filter="running"]').focus());

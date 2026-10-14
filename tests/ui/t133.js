@@ -57,7 +57,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the four colours differ from each other', new Set(['enabled', 'frozen', 'user', 'system'].map(k => colors[k].on)).size === 4);
   check('   a pair keeps its frame in the colour of the side that is on', await ev(() => {
     const c = document.querySelector('.stat-card[data-filter="frozen"]'), box = c.closest('.stat-split');
-    c.classList.add('active'); const bc = getComputedStyle(box).borderTopColor; c.classList.remove('active');
+    c.classList.add('active'); const bc = getComputedStyle(box).outlineColor; c.classList.remove('active');
     const probe = document.createElement('i'); probe.style.color = 'var(--apps-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
     return bc === want;
   }));

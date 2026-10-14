@@ -668,14 +668,16 @@
         .filter-pill.stat-card:active { transform: scale(0.96); }
         .filter-pill.stat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
         /* a pair that splits the apps in two (3rd Party / System, Enabled / Frozen): two pills in one frame, the frame in the colour of the side that is on */
-        .stat-split { flex: 0 0 auto; display: inline-flex; border: 1px solid var(--border-glass); border-radius: var(--radius-chip); overflow: hidden; }
-        .stat-split .filter-pill.stat-card { border: 0; border-radius: 0; min-height: calc(var(--ctl-h) - 2px); }          /* the frame's border makes up the rest of the height */
+        .stat-split { flex: 0 0 auto; display: inline-flex; border-radius: var(--radius-chip); outline: 1px solid var(--border-glass); outline-offset: -1px; }          /* an outline, not a border or overflow: hidden, so each pill is a whole 36px chip and its 44px tap area is not cut off */
+        .stat-split .filter-pill.stat-card { border-width: 1px 0; border-color: transparent; border-radius: 0; }          /* the frame's outline lies over the top and bottom border */
+        .stat-split .filter-pill.stat-card:first-child { border-start-start-radius: var(--radius-chip); border-end-start-radius: var(--radius-chip); }
+        .stat-split .filter-pill.stat-card:last-child { border-start-end-radius: var(--radius-chip); border-end-end-radius: var(--radius-chip); }
         .stat-split .filter-pill.stat-card + .filter-pill.stat-card { border-inline-start: 1px solid var(--border-glass); }
         .stat-split .filter-pill.stat-card.active { border-color: var(--tone); }
-        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--apps-enabled); }
-        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--apps-frozen); }
-        .stat-split:has(.stat-card.active[data-filter="user"]) { border-color: var(--status-user); }
-        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--apps-system); }
+        .stat-split:has(.stat-card.active[data-filter="enabled"]) { outline-color: var(--apps-enabled); }
+        .stat-split:has(.stat-card.active[data-filter="frozen"]) { outline-color: var(--apps-frozen); }
+        .stat-split:has(.stat-card.active[data-filter="user"]) { outline-color: var(--status-user); }
+        .stat-split:has(.stat-card.active[data-filter="system"]) { outline-color: var(--apps-system); }
         .filter-summary-row { display: flex; align-items: center; gap: var(--space-3); }
         .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
         .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
@@ -3734,7 +3736,7 @@
             justify-content: flex-end;
             width: 48px;
             min-height: var(--ctl-h);
-            margin-inline-start: -40px;
+            margin-inline-start: 0;                  /* at the end of the row it sits after the last pill, so it never takes that pill's taps */
             padding: 0 var(--space-3);
             border: 0;
             background: linear-gradient(to right, transparent, var(--bg-base) 55%);
