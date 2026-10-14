@@ -49,7 +49,7 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'consol
       const f = s => [...document.querySelectorAll(s)].filter(e => e.getClientRects().length).map(e => parseFloat(getComputedStyle(e).fontSize));
       return { badge: f('#view-apps .tag-badge'), pkg: f('#view-apps .app-pkg'), name: f('#view-apps .app-name'), kinds: [...new Set([...document.querySelectorAll('#view-apps .tag-badge')].map(e => e.className.replace('tag-badge', '').trim()))].sort() };
     });
-    check('the list shows every status badge', row.kinds.join(' ') === 'tag-bloat tag-frozen tag-running tag-suspended tag-system tag-user', row.kinds.join(' '));
+    check('the list shows every status badge', row.kinds.join(' ') === 'tag-bloat tag-frozen tag-mod tag-running tag-suspended tag-system tag-user', row.kinds.join(' '));
     check('status badges are at least 11px', row.badge.length > 5 && Math.min(...row.badge) >= 11, Math.min(...row.badge));
     check('package names in the list are at least 12px', row.pkg.length > 5 && Math.min(...row.pkg) >= 12, Math.min(...row.pkg));
     check('app names in the list are at least 14px', row.name.length > 5 && Math.min(...row.name) >= 14, Math.min(...row.name));

@@ -1,4 +1,4 @@
-// A phone with a short app list that carries every status badge (running, system, user, frozen, suspended, uninstalled), for the
+// A phone with a short app list that carries every status badge (running, system, user, frozen, suspended, uninstalled, a patched app's MOD tag), for the
 // type-scale and badge-contrast scripts. Run it after sdb_mock (and the other tab mocks) so its methods win:
 //   await page.addInitScript(appsMock.initScript, { dark: true, preset: 'material3', lang: 'de', unpriv: false });
 module.exports.initScript = function (opts) {
@@ -11,7 +11,7 @@ module.exports.initScript = function (opts) {
     ['com.samsung.android.bixby.agent', 'Bixby Voice', { isSystem: true, isFrozen: true }],
     ['com.microsoft.skydrive', 'OneDrive', { isUninstalled: true }],
     ['com.amazon.mShop.android.shopping', 'Amazon Shopping', {}],
-    ['org.mozilla.firefox', 'Firefox', {}],
+    ['org.mozilla.firefox', 'Firefox', { mods: ['Morphe'] }],
   ];
   const apps = raw.map(([pkg, name, x], i) => Object.assign({ pkg, name, isSystem: false, isRunning: false, isFrozen: false, isUninstalled: false, isSuspended: false,
     version: (i + 1) + '.0', installedAt: now - (40 + i) * day, updatedAt: now - i * day, apkSize: (5 + i) * 1e6 }, x));

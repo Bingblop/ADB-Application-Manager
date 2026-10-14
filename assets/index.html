@@ -41,6 +41,7 @@
             --status-user: #FF9100;
             --status-bloat: #FF5252;                 /* bloatware and every destructive or danger state */
             --status-suspended: #FFC400;             /* suspended apps and warnings */
+            --status-mod: #19D3C5;                   /* the tag of an app a patch (Morphe, ReVanced) changed */
             --note: #F0C000;                         /* amber text for notes; applyTheme darkens it until it reads on the light page */
             /* The Apps tab's Enabled / Frozen / System boxes and their tags keep their own colours whatever the theme is: vivid green, blue,
                purple (applyTheme darkens them for the light page) */
@@ -69,6 +70,8 @@
             --tint-bloat-strong: color-mix(in srgb, var(--status-bloat) 22%, transparent);
             --line-bloat: color-mix(in srgb, var(--status-bloat) 35%, transparent);
             --tint-suspended: color-mix(in srgb, var(--status-suspended) 14%, transparent);
+            --tint-mod: color-mix(in srgb, var(--status-mod) 14%, transparent);
+            --line-mod: color-mix(in srgb, var(--status-mod) 38%, transparent);
             --line-suspended: color-mix(in srgb, var(--status-suspended) 35%, transparent);
             --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
             --line-accent: color-mix(in srgb, var(--accent) 35%, transparent);
@@ -1034,9 +1037,9 @@
         }
 
         .tag-mod {
-            background: rgba(0, 200, 180, 0.14);
-            color: #19D3C5;
-            border: 1px solid rgba(0, 200, 180, 0.38);
+            background: var(--tint-mod);
+            color: var(--status-mod);
+            border: 1px solid var(--line-mod);
         }
 
         .tag-suspended {
@@ -7040,7 +7043,7 @@
                 .sd-act #sdClearRest { flex: 1 1 100%; order: -1; }
                 .sd-act .mode-action-btn { flex: 1 1 0; justify-content: center; min-width: 0; }
                 .sd-act .mode-action-btn.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .sd-act .mode-action-btn.danger.fill { background: var(--status-bloat); color: #fff; }
+                .sd-act .mode-action-btn.danger.fill { background: var(--danger-solid); color: var(--on-danger); }
                 .sd-act .mode-action-btn.ico { flex: 0 0 auto; padding-left: var(--space-4); padding-right: var(--space-4); }
                 .sd-act .mode-action-btn:disabled { opacity: 0.45; }
                 .sd-sheet-list { display: block; }
@@ -10142,6 +10145,24 @@ Type any command above (e.g. pm list packages -d)</div>
             let c = color;
             for (let i = 0; i < 14 && contrastRatio(c, bg) < target; i++) c = mixColors(c, towards, 0.08);
             return c;
+        }
+
+        // The colour of status text and badges in a scheme: the given colour, darkened (light theme) or lightened (dark theme) in small steps until
+        // it reads at STATUS_INK_MIN against every surface it is drawn on. A badge lays a STATUS_INK_TINT wash of its own colour over the surface
+        // (--tint-*: 12-14%), an app row can carry the Normal row tint (9% of its state colour) or the selection's 12% of the accent: all of those count.
+        const STATUS_INK_MIN = 4.6, STATUS_INK_TINT = 0.16;
+        function statusInk(t, light) {
+            const grounds = [t.bg, t.card, t.sheet, t.surface, mixColors(t.card, t.text, 0.06),
+                mixColors(t.bg, t.accent, 0.12), mixColors(t.card, t.accent, 0.12),
+                mixColors(t.card, '#00E676', 0.09), mixColors(t.card, '#2979FF', 0.09), mixColors(t.card, '#FF5252', 0.09)].filter(c => /^#[0-9a-f]{6}$/i.test(c || ''));
+            const towards = light ? '#000000' : '#FFFFFF';
+            const worst = c => Math.min.apply(null, grounds.map(g => contrastRatio(c, mixColors(g, c, STATUS_INK_TINT))));
+            return color => {
+                if (!/^#[0-9a-f]{6}$/i.test(color || '')) return color;
+                let c = color.toUpperCase();
+                for (let i = 0; i < 120 && worst(c) < STATUS_INK_MIN; i++) c = mixColors(c, towards, 0.02);
+                return c;
+            };
         }
 
         function hexToRgba(hex, alpha) {
@@ -28135,18 +28156,22 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--text-main', t.text);
             css.setProperty('--text-muted', t.muted);
             css.setProperty('--text-dim', mixColors(t.muted, t.bg, 0.35));
-            css.setProperty('--status-running', t.running);
-            css.setProperty('--status-frozen', t.frozen);
-            css.setProperty('--status-system', t.system);
-            css.setProperty('--status-bloat', t.bloat);
+            // The status colours are the text of the badges (RUNNING, SYSTEM, FROZEN...) and of status lines, so each one is made to read at 4.5:1
+            // on what it really sits on: the page, a card, a sheet, a row tinted for its state or for the selection, with the badge's own tint on top
+            const ink = statusInk(t, light);
+            css.setProperty('--status-running', ink(t.running));
+            css.setProperty('--status-frozen', ink(t.frozen));
+            css.setProperty('--status-system', ink(t.system));
+            css.setProperty('--status-bloat', ink(t.bloat));
+            css.setProperty('--status-mod', ink('#19D3C5'));
             css.setProperty('--note', ensureContrast('#F0C000', t.bg, 4.5));                  // amber text that can be read on the light page too
-            css.setProperty('--apps-enabled', light ? ensureContrast('#00F050', '#FFFFFF', 3.5) : '#00F050');
-            css.setProperty('--apps-frozen', light ? ensureContrast('#2979FF', '#FFFFFF', 3.5) : '#2979FF');
-            css.setProperty('--apps-running', light ? ensureContrast('#00E676', '#FFFFFF', 3.5) : '#00E676');
-            css.setProperty('--apps-uninstalled', light ? ensureContrast('#FF5252', '#FFFFFF', 3.5) : '#FF5252');
-            css.setProperty('--apps-system', light ? ensureContrast('#A33CFF', '#FFFFFF', 3.5) : '#A33CFF');
-            css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
-            css.setProperty('--status-suspended', light ? ensureContrast('#FFAB00', '#FFFFFF', 3.5) : '#FFC400');
+            css.setProperty('--apps-enabled', ink('#00F050'));
+            css.setProperty('--apps-frozen', ink('#2979FF'));
+            css.setProperty('--apps-running', ink('#00E676'));
+            css.setProperty('--apps-uninstalled', ink('#FF5252'));
+            css.setProperty('--apps-system', ink('#A33CFF'));
+            css.setProperty('--status-user', ink('#FF9100'));
+            css.setProperty('--status-suspended', ink(light ? '#FFAB00' : '#FFC400'));
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
             css.setProperty('--input-bg', light ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.35)');
