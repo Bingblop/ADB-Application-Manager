@@ -21891,8 +21891,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const target = fmActionTarget;
                 arcOpen(target.full, r => {
                     showToast((r && r.error) || 'Not a readable archive');
-                    fmActionTarget = target;
-                    fmViewText();
+                    fmRunStaged(target, fmViewText);
                 });
                 return;
             }
@@ -22381,9 +22380,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!w || !r || r.uri !== w.target.full) return;
             fmStageWant = null;
             if (!r.ok) { showToast(r.error || 'Could not read this file'); return; }
-            fmActionTarget = { full: r.path, isDir: false, name: w.target.name, safUri: w.target.full };
-            w.fn();
+            fmRunStaged({ full: r.path, isDir: false, name: w.target.name, safUri: w.target.full, origin: w.target }, w.fn);
         };
+        // The cache copy stands in for the file only for the one call that needed it: the sheet can stay open (after Share or Open with), and its
+        // other actions (edit, rename, delete, copy) must still act on the file in added storage, not on the hidden copy.
+        function fmRunStaged(t, fn) {
+            fmActionTarget = t;
+            try { fn(); } finally { if (t.origin && fmActionTarget === t) fmActionTarget = t.origin; }
+        }
         function fmOpenWith() {
             if (fmNeedLocal(fmOpenWith)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
