@@ -366,7 +366,13 @@ public class MainActivity extends Activity {
             }
         });
         registerWallpaperListener();
-        handleIncomingIntent(getIntent());
+        // A package opened from outside is handed over once: recreate(), a restore and Recents bring the same old intent back.
+        if (savedInstanceState != null) {
+            String kept = savedInstanceState.getString(STATE_PENDING_INSTALL);
+            if (kept != null) pendingInstallRef = kept;                // arrived, but the page was not ready to take it yet
+        }
+        Intent launch = getIntent();
+        if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
         maybeRequestFirstLaunchPermissions();
         // A package file deleted with an Undo whose few seconds ran out while the app was closed: it is deleted for good now
         if (prefs != null && prefs.getBoolean("apk_trash_pending", false)) {
@@ -433,6 +439,14 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    private static final String STATE_PENDING_INSTALL = "pending_install_ref";
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (pendingInstallRef != null) outState.putString(STATE_PENDING_INSTALL, pendingInstallRef);
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -443,8 +457,7 @@ public class MainActivity extends Activity {
     /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
     private void handleIncomingIntent(Intent intent) {
         if (intent == null) return;
-        String action = intent.getAction();
-        if (!Intent.ACTION_VIEW.equals(action) && !"android.intent.action.INSTALL_PACKAGE".equals(action)) return;
+        if (!IncomingInstall.handOverAtNewIntent(intent.getAction())) return;
         Uri data = intent.getData();
         if (data == null) return;
         pendingInstallRef = "file".equals(data.getScheme()) ? data.getPath() : data.toString();
