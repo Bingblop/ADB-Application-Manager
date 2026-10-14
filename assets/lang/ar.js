@@ -5128,6 +5128,8 @@ p: [
 ["Install {0}", "تثبيت {0}"],
 ["Install: {0}", "التثبيت: {0}"],
 ["Installed {0}", "تم التثبيت في {0}"],
+["Installed {0} • Updated {1}", "تم التثبيت في {0} • تم التحديث في {1}"],
+["Last updated {0}", "آخر تحديث: {0}"],
 ["Installed {0} · couldn’t check ({1}).", "المثبّت {0} · تعذّر التحقق ({1})."],
 ["Installed {0} · couldn’t check.", "المثبّت {0} · تعذّر التحقق."],
 ["Installed {0} · no GitHub releases found yet.", "المثبّت {0} · لم يتم العثور على إصدارات GitHub بعد."],

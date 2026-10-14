@@ -14071,11 +14071,15 @@ Type any command above (e.g. pm list packages -d)</div>
         function renderInspectorDates(d) {
             const el = document.getElementById('sheetDates');
             if (!el) return;
-            const parts = [];
-            if (d.firstInstallTime) parts.push('Installed ' + formatDate(d.firstInstallTime));
-            if (d.lastUpdateTime && d.lastUpdateTime !== d.firstInstallTime) parts.push('Updated ' + formatDate(d.lastUpdateTime));
-            el.innerText = parts.join(' • ');
-            el.style.display = parts.length ? 'block' : 'none';
+            // one sentence for each case, so the whole line is one string of the dictionary ("Installed {0} • Updated {1}"); two parts joined here left the second in English
+            const inst = d.firstInstallTime ? formatDate(d.firstInstallTime) : '';
+            const upd = d.lastUpdateTime && d.lastUpdateTime !== d.firstInstallTime ? formatDate(d.lastUpdateTime) : '';
+            let line = '';
+            if (inst && upd) line = 'Installed ' + inst + ' • Updated ' + upd;
+            else if (inst) line = 'Installed ' + inst;
+            else if (upd) line = 'Last updated ' + upd;
+            el.innerText = line;
+            el.style.display = line ? 'block' : 'none';
         }
 
         function renderInspectorMods(d) {
