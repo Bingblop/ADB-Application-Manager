@@ -19379,7 +19379,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const marker = '__RC' + Date.now() + Math.random().toString(36).slice(2) + '__';
             const raw = String(window.AndroidBridge.executeShell(cmd + '; echo "' + marker + ':$?"') || '');
             const idx = raw.lastIndexOf(marker + ':');
-            if (idx < 0) return { ok: true, output: raw }; // no real shell to parse from - nothing to contradict success
+            // no marker: the command never ran or never finished (the mode is gone, su refused, the adb device dropped - executeShell answers with an
+            // error text then). Every shell the app uses echoes the marker after a command that ran, so this is a failure, not an unknown
+            if (idx < 0) return { ok: false, output: raw || 'No answer from the device' };
             let output = raw.slice(0, idx);
             while (output.endsWith('\n')) output = output.slice(0, -1);
             const rc = parseInt(raw.slice(idx + marker.length + 1).trim(), 10);
