@@ -1254,6 +1254,9 @@
             padding: var(--space-1);
         }
 
+        /* the Keep selection switch of the batch sheet: its second line keeps a row gap from the button grid below */
+        .switch-row.batch-keep-row { margin: var(--space-3h) 0 var(--space-4); padding-top: var(--space-3h); }
+
         /* 3-Column Responsive Grid: 100% On Screen, No Cut Off! */
         .batch-actions-grid {
             display: grid;
@@ -2940,9 +2943,9 @@
             bottom: calc(24px + var(--bnav-h, 0px));
             left: 50%;
             transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px)));
-            background: var(--bg-card);
-            border: 1px solid var(--accent);
-            color: var(--text-main);
+            background: var(--text-main);            /* the inverse surface: a dark toast on the light page, a light one on the dark page, so it never blends into the cards */
+            border: 1px solid var(--text-main);
+            color: var(--bg-base);
             padding: var(--space-3) 18px;
             border-radius: var(--radius-xl);
             font-size: var(--fs-pill);
@@ -4097,11 +4100,11 @@
                     <button class="mode-action-btn" onclick="selectAllUadVisible()">Select shown</button>
                     <button class="mode-action-btn" onclick="clearUadSelection()">✕ Clear</button>
                 </div>
-                <div class="uad-action-grid">
-                    <button class="batch-grid-btn danger" onclick="uadAction('uninstall')">Uninstall</button>
-                    <button class="batch-grid-btn" onclick="uadAction('freeze')">Disable</button>
-                    <button class="batch-grid-btn accent" onclick="uadAction('restore')">Restore</button>
-                    <button class="batch-grid-btn" onclick="saveUadSelectionToList()">Save to List</button>
+                <div class="uad-action-grid" id="uadActionGrid">
+                    <button class="batch-grid-btn danger" onclick="uadAction('uninstall')" disabled>Uninstall</button>
+                    <button class="batch-grid-btn" onclick="uadAction('freeze')" disabled>Disable</button>
+                    <button class="batch-grid-btn accent" onclick="uadAction('restore')" disabled>Restore</button>
+                    <button class="batch-grid-btn" onclick="saveUadSelectionToList()" disabled>Save to List</button>
                 </div>
             </div>
 
@@ -7271,7 +7274,10 @@
                 .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
-                .cn-tabs .help-q { top: 11px; }
+                .cn-tabs .help-q { top: 11px; right: auto; inset-inline-end: var(--space-2); }
+                /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
+                .cn-tabs.has-help { --cn-help-w: calc(26px + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
+                .cn-tabs.has-help .cn-ind { width: calc((100% - var(--cn-help-w)) / 2); }
                 .cn-seg { margin-top: var(--space-4); }
                 .cn-seg[hidden] { display: none; }
                 .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 var(--space-3h); margin-bottom: 0; }
@@ -7683,7 +7689,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button class="batch-grid-btn" onclick="openShowApps()">Show Applications</button>
             </div>
         </div>
-        <label class="switch-row" style="margin-top:10px; padding-top:10px;">
+        <label class="switch-row batch-keep-row">
             <div><div class="switch-title">Keep selection after running</div><div class="switch-sub">Run another command on these same apps without reselecting them</div></div>
             <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" checked onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
         </label>
@@ -13027,7 +13033,14 @@ Type any command above (e.g. pm list packages -d)</div>
             uadSearchTimer = setTimeout(renderUadList, 130);          // a long list waits for a pause in typing
         }
 
+        // Uninstall, Disable, Restore and Save to List work on the selection: off (dimmed) while nothing is selected
+        function uadSyncActionBtns() {
+            const none = !uadSelected.size;
+            document.querySelectorAll('#uadActionGrid .batch-grid-btn').forEach(b => { b.disabled = none; });
+        }
+
         function renderUadList() {
+            uadSyncActionBtns();
             const container = document.getElementById('uadContainer');
             if (!container) return;
             const bridge = uadBridge();
