@@ -95,6 +95,10 @@
             --radius-xl: 24px;                       /* top corners of modal sheets, toasts */
             --radius-pill: 999px;                    /* switch track and fully round buttons (a circle is 50%) */
 
+            /* ---- Touch targets [fixed] ---- */
+            --ctl-h: 36px;                           /* the least a button or chip is drawn tall */
+            --tap: 44px;                             /* the least area a finger can hit: a smaller control reaches it with a clear ::after */
+
             /* ---- Type [fixed]: sizes by role, weights by step ---- */
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;   /* --ui-font (Settings > Font) goes first */
             --fs-overline: 9px;                      /* uppercase badge and stat labels */
@@ -186,8 +190,20 @@
         }
 
         .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
+
+        /* Touch targets: the shared buttons and chips are drawn at least --ctl-h tall, and every one of these controls answers a finger over
+           at least --tap square. A clear ::after, centred on the control, reaches past the edges of one that is drawn smaller (a checkbox,
+           a 36px chip) by at most 4-11px, less than the gap to its neighbours, so a tap still lands on the control it is nearest to.
+           A control placed with position: absolute (the ? of a card) keeps it: its own rule comes later. */
+        .mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check { min-height: var(--ctl-h); }
+        /* the ::after lies under the control's own content (z-index -1 in the control's own stacking context), so a box, a × or a name inside it keeps its taps */
+        .mode-action-btn, .filter-pill, .filter-chip, .copy-chip, .agent-btn, .batch-tool-link, .help-q, .fm-opt, .mp-check, .app-checkbox { position: relative; isolation: isolate; }
+        .mode-action-btn::after, .filter-pill::after, .filter-chip::after, .copy-chip::after, .agent-btn::after, .batch-tool-link::after, .help-q::after,
+        .fm-opt::after, .mp-check::after, .app-checkbox::after {
+            content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
+        }
         .apps-tool-btn.term-pin { border-color: var(--accent); color: var(--accent); }          /* a pinned command next to the built-in buttons */
-        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); margin-top: var(--space-3); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); margin: var(--space-1) 0 calc(-1 * var(--space-1)); padding-block: var(--space-1); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .copy-row::-webkit-scrollbar { display: none; }
         .copy-chip {
             border: 1px solid var(--border-glass); background: var(--bg-card, transparent); color: var(--text-main);
@@ -848,8 +864,8 @@
             gap: var(--space-3);
             overflow-x: auto;
             scrollbar-width: none;
-            padding-bottom: var(--space-2);
-            margin-bottom: var(--space-4);
+            padding: var(--space-1) 0 var(--space-2);          /* room above and below for the pills' hit area, so the row does not scroll up and down */
+            margin: calc(-1 * var(--space-1)) 0 var(--space-4);
             -webkit-overflow-scrolling: touch;
             touch-action: pan-x;
         }
@@ -872,6 +888,8 @@
             transition: all 0.15s ease;
             white-space: nowrap;
         }
+
+        .filter-pill { line-height: calc(var(--ctl-h) - 2 * var(--space-2) - 2px); }          /* one line, 36px with its padding and border (a pill's count is a <span> in its text, so it stays a block, not a flex box) */
 
         .filter-pill.active,
         .toggle-pill.active {
@@ -1145,7 +1163,7 @@
             border: 1px solid var(--accent);
             border-radius: var(--radius-md);
             padding: var(--space-2) var(--space-4);
-            min-height: 34px;
+            min-height: var(--ctl-h);
             transition: background 0.15s, transform 0.12s;
         }
         #view-files .batch-tool-link:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
@@ -1204,7 +1222,7 @@
             border: 1px solid var(--accent);
             border-radius: var(--radius-md);
             padding: var(--space-2) var(--space-4);
-            min-height: 34px;
+            min-height: var(--ctl-h);
             font-size: var(--fs-body);
             transition: background 0.15s, transform 0.12s;
         }
@@ -1741,12 +1759,15 @@
         .chip-row {
             display: flex;
             flex-wrap: wrap;
-            gap: var(--space-2);
+            gap: var(--space-3) var(--space-2);          /* rows a hit area apart: a chip's 44px target meets the next row's, it does not cover it */
             margin-bottom: var(--space-3);
             align-items: center;
         }
 
         .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font-size: var(--fs-body);
             font-weight:var(--fw-heavy);
             padding: var(--space-1) var(--space-3h);
@@ -1815,8 +1836,9 @@
 
         /* A small ? on the first card of each tab: opens the Help Guide at that tab's topic */
         .color-card.has-help { position: relative; }
-        .color-card.has-help > .color-card-title { padding-right: 34px; }
-        .help-q { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2);
+        /* the title leaves room beside the ? and reaches below it, so the line under the title starts clear of the button */
+        .color-card.has-help > .color-card-title { padding-right: calc(var(--ctl-h) + var(--space-3)); min-height: calc(var(--space-2) + var(--ctl-h) - var(--space-5) - var(--space-1)); }
+        .help-q { position: absolute; top: var(--space-2); right: var(--space-2); width: var(--ctl-h); height: var(--ctl-h); padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2);
             color: var(--accent); font-size: var(--fs-item); font-weight:var(--fw-heavy); line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
         .help-q:active { transform: scale(0.92); }
 
@@ -2526,8 +2548,10 @@
             background: var(--fill-1);
         }
 
-        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-heavy); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid var(--accent); background: transparent; color: var(--accent); color: color-mix(in srgb, var(--accent) 80%, var(--text-main)); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; }
-        .agent-btn:active { background: var(--accent); color: var(--on-accent); }
+        /* "Ask agent" sits on every Hidden Settings, overlay and debloater row: a quiet ghost button (muted text on a faint fill, a clear border), so
+           the rows' own names and values lead; the accent comes only while it is pressed or has keyboard focus */
+        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-bold); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid transparent; background: var(--fill-2); color: var(--text-muted); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+        .agent-btn:active, .agent-btn:focus-visible { background: var(--tint-accent); border-color: var(--line-accent); color: var(--accent); }
         .agent-ask-sent { margin-top: var(--space-2); padding: var(--space-3) var(--space-3h); border: 1px dashed var(--border-glass); border-radius: var(--radius-md); font: var(--fs-pill)/1.45 ui-monospace, monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 22vh; overflow: auto; }
         .row-tint-slider { padding: var(--space-1) 2px 0; }
         .row-tint-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -3148,7 +3172,7 @@
             display: inline-flex;
             align-items: center;
             gap: var(--space-2);
-            transition: all 0.15s ease;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;          /* not min-height: a button that is made taller (a dialog's Done, 36 -> 44px) is that tall at once */
         }
 
         .mode-action-btn.primary {
@@ -3568,7 +3592,7 @@
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
-            padding-bottom: 2px;
+            padding-block: var(--space-1);          /* room for the chips' hit area, so the row does not scroll up and down */
         }
 
         .uad-brand-row::-webkit-scrollbar {
@@ -3722,7 +3746,8 @@
             display: flex;
             align-items: center;
             gap: var(--space-1);
-            margin: -4px 0 10px;
+            margin: -8px 0 6px;
+            padding-block: var(--space-1);          /* room for the buttons' hit area, so the row does not scroll up and down */
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
@@ -3787,6 +3812,7 @@
             flex: 0 1 auto;
             min-width: 60px;
             width: 60px;
+            min-height: var(--ctl-h);          /* as tall as the buttons beside it */
             font-size: var(--fs-caption);
         }
 
@@ -4416,7 +4442,7 @@
                 .us-app .us-name { font-size:var(--fs-label); font-weight:var(--fw-heavy); color:var(--text-main); overflow-wrap:anywhere; }
                 .us-app .us-pkg { font-size:var(--fs-pill); color:var(--text-muted); overflow-wrap:anywhere; }
                 .us-app .us-acts { display:flex; gap:var(--space-2); flex-wrap:wrap; margin-top:var(--space-3); }
-                .us-app .us-acts .mode-action-btn { flex:0 0 auto; min-height:34px; padding:var(--space-2) var(--space-4); font-size:var(--fs-code); }
+                .us-app .us-acts .mode-action-btn { flex:0 0 auto; min-height:var(--ctl-h); padding:var(--space-2) var(--space-4); font-size:var(--fs-code); }
                 .us-vers { display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3); }
                 .us-ver-row { display:flex; gap:var(--space-3); align-items:center; padding:var(--space-2) var(--space-3); border-radius:var(--radius-md); background:var(--fill-2); font-size:var(--fs-body); }
                 .us-ver-row > span { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
@@ -5147,7 +5173,7 @@
                 .sdb-searchwrap { position:relative; flex:1 1 auto; min-width:0; }
                 .sdb-searchwrap .list-search { width:100%; padding-right:30px; height:38px; font-size:var(--fs-item); }
                 .sdb-searchwrap .search-clear { right:9px; }
-                .sdb-filters { display:flex; gap:var(--space-2); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-2); }
+                .sdb-filters { display:flex; gap:var(--space-3) var(--space-2); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3); }          /* 8px between rows: the chips' 44px hit areas meet, they do not overlap */
                 .sdb-filters .filter-chip { font-size:var(--fs-pill); padding:var(--space-1) var(--space-3h); background:transparent; font-family:inherit; }
                 .sdb-status { font-size:var(--fs-pill); color:var(--text-muted); margin:2px 2px 0; line-height:1.4; display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap; }
                 .sdb-spin { display:inline-block; width:11px; height:11px; border-radius:50%; border:2px solid var(--border-glass); border-top-color:var(--accent); animation:sdbSpin .8s linear infinite; vertical-align:-2px; }
@@ -7312,9 +7338,9 @@
                 .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
-                .cn-tabs .help-q { top: 11px; right: auto; inset-inline-end: var(--space-2); }
+                .cn-tabs .help-q { top: calc((48px - var(--ctl-h)) / 2); right: auto; inset-inline-end: var(--space-2); }
                 /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
-                .cn-tabs.has-help { --cn-help-w: calc(26px + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
+                .cn-tabs.has-help { --cn-help-w: calc(var(--ctl-h) + 2 * var(--space-2)); padding-inline-end: var(--cn-help-w); }
                 .cn-tabs.has-help .cn-ind { width: calc((100% - var(--cn-help-w)) / 2); }
                 .cn-seg { margin-top: var(--space-4); }
                 .cn-seg[hidden] { display: none; }
@@ -7353,6 +7379,7 @@
                 /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
                 .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
                 .cn-tools.cn-scroll::-webkit-scrollbar, #cnSegLog .lc-key::-webkit-scrollbar { display: none; }
+                .cn-tools.cn-scroll { padding-block: var(--space-2); margin-block: calc(var(--space-3h) - var(--space-2)) calc(-1 * var(--space-2)); }          /* room for the 44px hit area of the 32px buttons, so the row does not scroll up and down */
                 #cnSegLog .lc-chip { flex: 0 0 auto; }
                 .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 var(--space-4); display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: 1; width: auto; box-shadow: none; }
                 .cn-tools .op-select { color: var(--text-main); padding: 0 var(--space-3); max-width: 46vw; }
