@@ -190,6 +190,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Command-Line Interface** with Grok, Muse, Deepseek, Effort control, a Shift key and per-shell cheat sheets.
 - Systemless uninstall for stubborn system apps, honest exit-status results, a cleaner Apps list.
 
+## License
+
+Open source under the **GNU General Public License v3.0**: the full text is in [LICENSE](LICENSE). The app builds in GPL-3.0 work (morphe-patcher, and a port of the four SD Maid SE tools), which is why the whole app is GPL-3.0. Third-party notices are in [NOTICE](NOTICE).
+
 ## Support & credits
 
 Found a bug? [Open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues), or use **About → Contact the developer** in the app. Like it? ☕ **Buy me a coffee** is in the About tab.
