@@ -5128,6 +5128,8 @@ p: [
 ["Install {0}", "{0} 설치"],
 ["Install: {0}", "설치: {0}"],
 ["Installed {0}", "{0} 설치됨"],
+["Installed {0} • Updated {1}", "{0} 설치됨 • {1} 업데이트됨"],
+["Last updated {0}", "마지막 업데이트: {0}"],
 ["Installed {0} · couldn’t check ({1}).", "설치된 버전 {0} · 확인할 수 없습니다 ({1})."],
 ["Installed {0} · couldn’t check.", "설치된 버전 {0} · 확인할 수 없습니다."],
 ["Installed {0} · no GitHub releases found yet.", "설치된 버전 {0} · GitHub 릴리스를 아직 찾을 수 없습니다."],

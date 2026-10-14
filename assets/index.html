@@ -285,10 +285,17 @@
 
         .brand-text { min-width: 0; }
 
-        /* on a narrow phone the mode badge shares the width: its words wrap onto a second line instead of pushing the title out */
-        #execModeBadge { max-width: 38vw; }
-        @media (max-width: 400px) { #execModeBadge { padding: var(--space-1) var(--space-3); gap: var(--space-1); } }
-        #execModeBadge #execModeText { white-space: normal; line-height: 1.15; }
+        /* on a narrow phone the mode badge shares the width with the title (fitHeaderTitle sizes the title to the room left) and stays on one line: a mode
+           name longer than its share ends in "…" (it used to wrap, and "Read-Only" broke at its hyphen); the full name is still the badge's text for a screen
+           reader, and Working Modes shows it */
+        #execModeBadge { max-width: 38vw; min-width: 0; }
+        @media (max-width: 400px) {          /* a little more of the width for the mode name, tighter padding and gaps around it (the gear keeps its 44 px tap target) */
+            #execModeBadge { max-width: 46vw; padding: var(--space-1) var(--space-2); gap: var(--space-1); }
+            .app-header .hdr-right { gap: var(--space-2); }
+            .app-header .brand-box { padding-right: var(--space-2); }
+        }
+        @media (max-width: 360px) { #execModeBadge { max-width: 47vw; } #execModeBadge #execModeText { font-size: var(--fs-caption); } }          /* "Setup Mode (Read-Only)", the first-run state, whole at 320 px */
+        #execModeBadge #execModeText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; }
         #execModeBadge .status-dot { flex: 0 0 auto; }
 
         /* the title as the logo has it: "Full ADB/Root" over "System Manager", the first word of each line white and the rest a pale-to-bright cyan, heavy and tight */
@@ -353,13 +360,16 @@
             background: color-mix(in srgb, var(--accent) 16%, var(--bg-card));
             border-color: color-mix(in srgb, var(--accent) 45%, transparent);
             color: var(--text-main);
-            min-width: 46px;
+            flex: 0 0 auto;
+            min-width: 44px;
             min-height: 38px;
-            padding: 0 var(--space-3h);
+            padding: 0 var(--space-2);
             justify-content: center;
             font-size: 22px;
             line-height: 1;
         }
+        /* a monochrome outlined gear in the text colour of the theme (it was the colour emoji, the same gear as the Extra Settings tab's filled one) */
+        #prefsHeaderBtn .hdr-gear { display: block; width: 22px; height: 22px; flex: 0 0 auto; }
 
         .status-dot {
             width: 8px;
@@ -3959,7 +3969,7 @@
             </div>
         </div>
         <div class="hdr-right">
-            <div class="status-badge" id="prefsHeaderBtn" role="button" tabindex="0" onclick="switchView('prefs')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchView('prefs');}" title="Settings" aria-label="Settings" style="cursor:pointer;">⚙️</div>
+            <div class="status-badge" id="prefsHeaderBtn" role="button" tabindex="0" onclick="switchView('prefs')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchView('prefs');}" title="Settings" aria-label="Settings" style="cursor:pointer;"><svg class="hdr-gear" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.09-.16-.26-.25-.44-.25-.06 0-.12.01-.17.03l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.06-.02-.12-.03-.18-.03-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.09.16.26.25.44.25.06 0 .12-.01.17-.03l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div>
             <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
                 <div class="status-dot" id="execModeDot"></div>
                 <span id="execModeText">Checking Mode...</span>
@@ -5016,8 +5026,9 @@
         <!-- VIEW: TASK MANAGER (processes, CPU, RAM, GPU, battery, network - a live look with no root needed, best with ADB / Shizuku / Root) -->
         <section id="view-taskmgr" class="view-content">
             <style>
-                .tm-tabs { display: flex; gap: var(--space-2); margin: var(--space-4) 0 var(--space-3h); flex-wrap: wrap; }
-                .tm-tabs .sdb-tab { flex: 1 1 auto; min-width: 72px; padding: var(--space-2) var(--space-1) var(--space-2); }
+                /* six tabs as two even rows of three (they wrapped 4 + 2 with a wider last row); the label steps down to 12 px on a 320 px screen so "Processus" or "Процессор" stays one word (a longer one wraps inside its own cell); two classes, so the shared .sdb-tabs flex row further down does not win */
+                .sdb-tabs.tm-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: var(--space-4) 0 var(--space-3h); }
+                .sdb-tabs.tm-tabs .sdb-tab { min-width: 0; min-height: 36px; justify-content: center; text-align: center; font-size: clamp(var(--fs-body), 3.7vw, var(--fs-label)); hyphens: auto; overflow-wrap: anywhere; padding: var(--space-2) var(--space-1) var(--space-2); }
                 .tm-settings { display: flex; flex-direction: column; gap: var(--space-3); margin: 2px 0 var(--space-4); padding: var(--space-3h) var(--space-4); border: 1px solid var(--border-glass); background: var(--fill-1); border-radius: var(--radius-md); }
                 .tm-settings-row { display: flex; align-items: center; gap: var(--space-3h); flex-wrap: wrap; }
                 .tm-settings-row > span:first-child { flex: 0 0 104px; font-size: var(--fs-pill); color: var(--text-muted); font-weight:var(--fw-bold); }
@@ -7558,7 +7569,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 #txPaneTerminal.tx-full .tx-tools { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--space-2); padding: var(--space-1) 0 0; }
                 #txPaneTerminal.tx-full .tx-tools .term-icon-btn { flex: 0 0 auto; }
                 body.tx-full-on { overflow: hidden; }
-                .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-md); padding: var(--space-3h) var(--space-3h) var(--space-4); height: 50vh; min-height: 240px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
+                /* --tx-screen-h (txFitScreen) makes the screen as tall as the window allows with the input line and the extra keys above the bottom bar; 160 px is the floor */
+                .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-md); padding: var(--space-3h) var(--space-3h) var(--space-4); height: var(--tx-screen-h, 50vh); min-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
                 .tx-screen * { font-family: inherit; }
                 .tx-screen .tx-pp { color: #23d18b; }
                 .tx-screen .tx-ps { color: #ffffff; }
@@ -14138,11 +14150,15 @@ Type any command above (e.g. pm list packages -d)</div>
         function renderInspectorDates(d) {
             const el = document.getElementById('sheetDates');
             if (!el) return;
-            const parts = [];
-            if (d.firstInstallTime) parts.push('Installed ' + formatDate(d.firstInstallTime));
-            if (d.lastUpdateTime && d.lastUpdateTime !== d.firstInstallTime) parts.push('Updated ' + formatDate(d.lastUpdateTime));
-            el.innerText = parts.join(' • ');
-            el.style.display = parts.length ? 'block' : 'none';
+            // one sentence for each case, so the whole line is one string of the dictionary ("Installed {0} • Updated {1}"); two parts joined here left the second in English
+            const inst = d.firstInstallTime ? formatDate(d.firstInstallTime) : '';
+            const upd = d.lastUpdateTime && d.lastUpdateTime !== d.firstInstallTime ? formatDate(d.lastUpdateTime) : '';
+            let line = '';
+            if (inst && upd) line = 'Installed ' + inst + ' • Updated ' + upd;
+            else if (inst) line = 'Installed ' + inst;
+            else if (upd) line = 'Last updated ' + upd;
+            el.innerText = line;
+            el.style.display = line ? 'block' : 'none';
         }
 
         function renderInspectorMods(d) {
@@ -29829,7 +29845,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
         // The Terminal tab is the real terminal and the Coding Agents only (the ADB console and the log are in the Console tab).
-        function onTerminalShown() { txOnShown(); }
+        function onTerminalShown() { txOnShown(); txFitQueue(); }
 
         // ---------------------------------------------------------------- shells
         function txCurShell() { return TX_SHELLS[txState.shell] ? txState.shell : txDefaultShell(); }
@@ -29873,6 +29889,33 @@ Type any command above (e.g. pm list packages -d)</div>
             txNote('', b);
         }
 
+        // ---- The screen's height (not full screen) ----
+        // The screen is as tall as the window allows with the input line and the extra keys still above the bottom navigation bar: at 50vh they sat under
+        // the bar until the page was scrolled. Measured from where the screen starts on the page (with the page at the top), so the header, the tab bar, the
+        // pickers above it and how the language wraps them all count. A short window gets the CSS floor (160 px) and scrolls as before; while the keyboard is
+        // up the size stays (the bar is away then), and full screen has its own layout.
+        function txFitScreen() {
+            const pane = document.getElementById('txPaneTerminal'), box = document.getElementById('txScreens'), keys = document.getElementById('txKeys');
+            if (!pane || !box || !keys || txFullOn || !pane.offsetParent) return;
+            if (typeof bnavTextFocus === 'function' && bnavTextFocus()) return;
+            const nav = document.querySelector('.bnav');
+            const navH = nav && getComputedStyle(nav).display !== 'none' && !(typeof bnavWide === 'function' && bnavWide()) ? nav.offsetHeight : 0;
+            const br = box.getBoundingClientRect();
+            const below = keys.getBoundingClientRect().bottom - br.bottom;              // the input line and the extra keys, with their margins
+            const h = Math.floor(window.innerHeight - navH - (br.top + window.scrollY) - below - 8);
+            pane.style.setProperty('--tx-screen-h', h + 'px');
+        }
+        let txFitQueued = false;
+        function txFitQueue() { if (txFitQueued) return; txFitQueued = true; requestAnimationFrame(() => { txFitQueued = false; txFitScreen(); }); }
+        (function () {
+            window.addEventListener('resize', txFitQueue);
+            const pane = document.getElementById('txPaneTerminal');
+            if (pane) pane.addEventListener('focusout', () => setTimeout(txFitQueue, 150));          // the keyboard went down: the input line may have grown meanwhile
+            if (!window.ResizeObserver) return;
+            const ro = new ResizeObserver(txFitQueue);                                // what sits above or below the screen changed size (a wrap, the language, the nav bar)
+            ['.app-header', '#tabBar', '.bnav', '#txPaneTerminal .tx-bar', '#txPaneTerminal .tx-sub', '#txPaneTerminal .tx-inputline', '#txKeys'].forEach(sel => { const e = document.querySelector(sel); if (e) ro.observe(e); });
+        })();
+
         // ---- Full screen ----
         let txFullOn = false;
         function txFullSize() {
@@ -29891,7 +29934,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const b = document.getElementById('txFullBtn');
             if (b) { b.textContent = on ? 'Exit full screen' : 'Full screen'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
             if (on) { txFullSize(); if (window.visualViewport) window.visualViewport.addEventListener('resize', txFullSize); window.addEventListener('resize', txFullSize); }
-            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); }
+            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); txFitQueue(); }
             const sc = pane.querySelector('.tx-screen:not([style*="display: none"])');
             if (sc) sc.scrollTop = sc.scrollHeight;
         }

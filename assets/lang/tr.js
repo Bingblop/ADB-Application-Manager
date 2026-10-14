@@ -5128,6 +5128,8 @@ p: [
 ["Install {0}", "Yükle: {0}"],
 ["Install: {0}", "Yükleme: {0}"],
 ["Installed {0}", "Yüklendi: {0}"],
+["Installed {0} • Updated {1}", "Yüklendi: {0} • Güncellendi: {1}"],
+["Last updated {0}", "Son güncelleme: {0}"],
 ["Installed {0} · couldn’t check ({1}).", "Yüklü: {0} · denetlenemedi ({1})."],
 ["Installed {0} · couldn’t check.", "Yüklü: {0} · denetlenemedi."],
 ["Installed {0} · no GitHub releases found yet.", "Yüklü: {0} · henüz GitHub sürümü bulunamadı."],
