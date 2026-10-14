@@ -428,9 +428,12 @@ public class ArchiveIoTest {
         supportMatrix();
         tarFixtures(exp);
         singleFixtures();
+        singleSeveralParts();
         sevenFixtures(exp);
         detectCases(exp);
         passwordCases(exp);
+        sevenDataPasswordAsks();
+        diffContent();
         createCases(exp);
         codecVariants();
         sevenEdges();
@@ -509,7 +512,7 @@ public class ArchiveIoTest {
             // bz2 never knows its size, xz knows it from the index, gz from the trailer
             if ("bz2".equals(t[0])) check("bz2 size is unknown (-1)", ArchiveIo.list(outBig, null).items.get(0).size == -1);
             if ("xz".equals(t[0])) check("xz size comes from the index", ArchiveIo.list(outBig, null).items.get(0).size == bigData.length);
-            if ("gz".equals(t[0])) { ArchiveIo.Info i = ArchiveIo.list(outBig, null); check("gz size from the trailer, flagged approximate over 4 MB packed", i.items.get(0).size == bigData.length); }
+            if ("gz".equals(t[0])) { ArchiveIo.Info i = ArchiveIo.list(outBig, null); check("gz size counted by unpacking it (a gz of " + outBig.length() + " bytes)", i.items.get(0).size == bigData.length); }
             // wrong extension
             File odd = new File(d, "odd-" + t[0] + ".dat"); Files.copy(outBig.toPath(), odd.toPath());
             check("detect " + t[0] + " named .dat (got " + ArchiveIo.detect(odd) + ")", t[0].equals(ArchiveIo.detect(odd)));
@@ -546,6 +549,79 @@ public class ArchiveIoTest {
             check("suffix is removed whatever its case", ArchiveIo.list(up, null).items.get(0).name.equals("UPPER.TXT"));
         }
     }
+    /**
+     * A single compressed file made of several gzip members, zstd frames or lz4 frames (concatenated files, BGZF): the reader unpacks all of
+     * them, so the size shown and checked on extraction must be all of them, or unknown (-1). The trailer of a .gz (the last member's size,
+     * modulo 4 GiB) or the first frame's content size made extraction refuse the file as damaged. No CLI tool needed.
+     */
+    static void singleSeveralParts() throws Exception {
+        File d = new File(tmp, "parts"); d.mkdirs();
+        Random rnd = new Random(11);
+        byte[] a = "first member\n".getBytes(StandardCharsets.UTF_8), b = new byte[300000];
+        for (int i = 0; i < b.length; i++) b[i] = (byte) ('a' + i % 23);
+        byte[] big = new byte[4500000];                     // packs to more than 4 MB: not counted when listed
+        rnd.nextBytes(big);
+        Object[][] cases = {
+            { "two.txt.gz", gzMembers(a, b), cat(a, b), (long) (a.length + b.length) },
+            { "one.txt.gz", gzMembers(b), b, (long) b.length },
+            { "bigtwo.bin.gz", gzMembers(big, a), cat(big, a), -1L },
+            { "two.txt.zst", cat(zstFrame(a), zstFrame(b)), cat(a, b), -1L },
+            { "one.txt.zst", zstFrame(b), b, (long) b.length },
+            { "two.txt.lz4", cat(lz4Frame(a), lz4Frame(b)), cat(a, b), -1L },
+            { "one.txt.lz4", lz4Frame(b), b, (long) b.length },
+        };
+        for (Object[] c : cases) {
+            String name = (String) c[0];
+            File f = new File(d, name);
+            write(f, (byte[]) c[1]);
+            ZipTool.Archive ar = ArchiveIoSource.open(f, null, null);
+            long size = ar.entries.get(0).size, want = (Long) c[3];
+            check(name + ": size " + size + " (want " + want + ")", size == want);
+            File out = new File(d, "out-" + name);
+            List<String> problems = new ArrayList<String>();
+            long[] res = ZipTool.extractTree(ar, "", out, null, problems);
+            File got = new File(out, ar.entries.get(0).name);
+            check(name + ": extracts whole (" + problems + ")", res[0] == 1 && problems.isEmpty() && got.isFile() && Arrays.equals(Files.readAllBytes(got.toPath()), (byte[]) c[2]));
+        }
+    }
+
+    static byte[] cat(byte[] x, byte[] y) { byte[] r = Arrays.copyOf(x, x.length + y.length); System.arraycopy(y, 0, r, x.length, y.length); return r; }
+
+    static byte[] gzMembers(byte[]... parts) throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        for (byte[] p : parts) { java.util.zip.GZIPOutputStream g = new java.util.zip.GZIPOutputStream(bo); g.write(p); g.finish(); }
+        return bo.toByteArray();
+    }
+
+    /** One zstd frame that declares its content size (aircompressor's one-shot compressor writes it). */
+    static byte[] zstFrame(byte[] p) {
+        io.airlift.compress.zstd.ZstdCompressor c = new io.airlift.compress.zstd.ZstdCompressor();
+        byte[] o = new byte[c.maxCompressedLength(p.length)];
+        return Arrays.copyOf(o, c.compress(p, 0, p.length, o, 0, o.length));
+    }
+
+    /** One lz4 frame with its content size, stored (uncompressed) 64 KiB blocks, block and content checksums. */
+    static byte[] lz4Frame(byte[] p) throws Exception {
+        java.lang.reflect.Method xx = Class.forName("com.bloatware.bingblop.ArchiveIo$Xxh32").getDeclaredMethod("of", byte[].class, int.class, int.class);
+        xx.setAccessible(true);
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        byte[] desc = new byte[10];
+        desc[0] = 0x7C; desc[1] = 0x40;                     // FLG: version 1, independent blocks, block checksums, content size, content checksum; BD: 64 KiB
+        for (int i = 0; i < 8; i++) desc[2 + i] = (byte) ((long) p.length >>> (8 * i));
+        bo.write(new byte[] { 0x04, 0x22, 0x4D, 0x18 }); bo.write(desc); bo.write(((Integer) xx.invoke(null, desc, 0, desc.length)) >> 8);
+        for (int off = 0; off < p.length; off += 65536) {
+            int n = Math.min(65536, p.length - off);
+            le32(bo, n | 0x80000000);
+            bo.write(p, off, n);
+            le32(bo, (Integer) xx.invoke(null, p, off, n));
+        }
+        le32(bo, 0);
+        le32(bo, (Integer) xx.invoke(null, p, 0, p.length));
+        return bo.toByteArray();
+    }
+
+    static void le32(ByteArrayOutputStream o, int v) { for (int i = 0; i < 4; i++) o.write(v >>> (8 * i)); }
+
     static R runToFile(List<String> cmd, File out) {
         R r = new R();
         try {
@@ -628,6 +704,107 @@ public class ArchiveIoTest {
             ArchiveIo.Info i = ArchiveIo.list(zg, null);
             check("an empty tar.gz lists nothing", i.items.isEmpty());
         }
+    }
+
+    /**
+     * A 7z whose file data is encrypted but whose names are not (the 7-Zip GUI default without "encrypt file names"): it opens without a password,
+     * so the password error comes while an entry is read. Extracting must stop with ZipTool.NeedPassword (the page then asks), not skip the file
+     * with a "password-required" note. The archive is written here by hand (one file, AES-256 then COPY, plain header), so no 7z tool is needed.
+     */
+    static void sevenDataPasswordAsks() throws Exception {
+        byte[] plain = "secret 7z data!\n".getBytes(StandardCharsets.UTF_8);           // one AES block
+        File f = new File(tmp, "data-only-enc.7z");
+        write(f, sevenAesCopy("secret.txt", plain, "pw".toCharArray()));
+        for (char[] given : new char[][] { null, "wrong".toCharArray() }) {
+            String label = given == null ? "no password" : "a wrong password";
+            ZipTool.Archive a = ArchiveIoSource.open(f, "7z", given);
+            check("data-only encrypted 7z lists without a password", a.entries.size() == 1 && !a.headerEncrypted);
+            List<String> problems = new ArrayList<String>();
+            Throwable t = null;
+            try { ZipTool.extractTree(a, "", new File(tmp, "data-only-enc-out"), null, problems); } catch (Throwable x) { t = x; }
+            check("extracting 7z file data with " + label + " stops and asks for the password (" + t + ", problems " + problems + ")",
+                t instanceof ZipTool.NeedPassword && ((ZipTool.NeedPassword) t).wrong == (given != null));
+            t = null;
+            try { ZipTool.extractTo(a, a.entries.get(0), new File(tmp, "data-only-enc-one.txt")); } catch (Throwable x) { t = x; }
+            check("extracting that one 7z file with " + label + " asks for the password too (" + t + ")", t instanceof ZipTool.NeedPassword && ((ZipTool.NeedPassword) t).wrong == (given != null));
+        }
+        ZipTool.Archive a = ArchiveIoSource.open(f, "7z", "pw".toCharArray());
+        File out = new File(tmp, "data-only-enc-good");
+        List<String> problems = new ArrayList<String>();
+        long[] res = ZipTool.extractTree(a, "", out, null, problems);
+        check("with the right password the 7z file is extracted (" + problems + ")", res[0] == 1 && problems.isEmpty() && Arrays.equals(Files.readAllBytes(new File(out, "secret.txt").toPath()), plain));
+    }
+
+    /** A minimal 7z: one file of 16 bytes in one folder (AES-256 with 2^1 key rounds and no salt, then COPY), header in the clear. */
+    static byte[] sevenAesCopy(String name, byte[] data16, char[] pw) throws Exception {
+        byte[] iv = new byte[16];
+        for (int i = 0; i < 16; i++) iv[i] = (byte) (i * 17 + 1);
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] p = new String(pw).getBytes(StandardCharsets.UTF_16LE);
+        for (long round = 0; round < 2; round++) { md.update(p); for (int i = 0; i < 8; i++) md.update((byte) (round >>> (8 * i))); }
+        javax.crypto.Cipher c = javax.crypto.Cipher.getInstance("AES/CBC/NoPadding");
+        c.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(md.digest(), "AES"), new javax.crypto.spec.IvParameterSpec(iv));
+        byte[] packed = c.doFinal(data16);
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32(); crc.update(data16);
+        byte[] nm = (name + "\0").getBytes(StandardCharsets.UTF_16LE);
+        ByteArrayOutputStream h = new ByteArrayOutputStream();
+        h.write(new byte[] { 0x01, 0x04, 0x06, 0x00, 0x01, 0x09, 0x10, 0x00 });          // Header, MainStreamsInfo, PackInfo: pos 0, one stream of 16 bytes
+        h.write(new byte[] { 0x07, 0x0B, 0x01, 0x00, 0x02 });                            // UnpackInfo, Folder: one, not external; two coders
+        h.write(new byte[] { 0x24, 0x06, (byte) 0xF1, 0x07, 0x01, 0x12, 0x41, 0x0F });   //   AES-256 + SHA-256, 18 property bytes: 2^1 rounds, no salt, 16 byte IV
+        h.write(iv);
+        h.write(new byte[] { 0x01, 0x00, 0x01, 0x00 });                                  //   COPY; bind pair: COPY reads what AES writes
+        h.write(new byte[] { 0x0C, 0x10, 0x10, 0x00 });                                  //   CodersUnpackSize 16, 16; end of UnpackInfo
+        h.write(new byte[] { 0x08, 0x0A, 0x01 });                                        // SubStreamsInfo: the file's CRC
+        for (int i = 0; i < 4; i++) h.write((int) (crc.getValue() >>> (8 * i)));
+        h.write(new byte[] { 0x00, 0x00, 0x05, 0x01, 0x11, (byte) (nm.length + 1), 0x00 }); // ends; FilesInfo: one file, its name
+        h.write(nm);
+        h.write(new byte[] { 0x00, 0x00 });                                              // end of FilesInfo, end of Header
+        byte[] hdr = h.toByteArray();
+        java.util.zip.CRC32 hc = new java.util.zip.CRC32(); hc.update(hdr);
+        byte[] start = new byte[32];
+        System.arraycopy(new byte[] { 0x37, 0x7A, (byte) 0xBC, (byte) 0xAF, 0x27, 0x1C, 0, 4 }, 0, start, 0, 8);
+        start[12] = (byte) packed.length;
+        start[20] = (byte) hdr.length;
+        for (int i = 0; i < 4; i++) start[28 + i] = (byte) (hc.getValue() >>> (8 * i));
+        java.util.zip.CRC32 sc = new java.util.zip.CRC32(); sc.update(start, 12, 20);
+        for (int i = 0; i < 4; i++) start[8 + i] = (byte) (sc.getValue() >>> (8 * i));
+        ByteArrayOutputStream all = new ByteArrayOutputStream();
+        all.write(start); all.write(packed); all.write(hdr);
+        return all.toByteArray();
+    }
+
+    /**
+     * Compare: tar, 7z and RAR entries (and WinZip AE-2 entries) carry no CRC in the app's listing (0), so two files of the same name and size
+     * were counted as "same" whatever their content. Their content is now read and compared.
+     */
+    static void diffContent() throws Exception {
+        File d = new File(tmp, "diff"); d.mkdirs();
+        File[] cfg = { new File(d, "a/config.txt"), new File(d, "b/config.txt") }, same = { new File(d, "a/same.txt"), new File(d, "b/same.txt") };
+        write(cfg[0], "debug=false"); write(cfg[1], "debug=true!");
+        for (File f : same) write(f, "identical text\n");
+        for (String fmt : new String[] { "tar", "tar.gz", "7z" }) {
+            ZipTool.Archive[] ar = new ZipTool.Archive[2];
+            for (int i = 0; i < 2; i++) {
+                File out = new File(d, "v" + i + "." + fmt);
+                ArchiveIo.create(out, fmt, Arrays.asList(new ArchiveIo.Source("config.txt", cfg[i]), new ArchiveIo.Source("same.txt", same[i])), null, -1, null);
+                ar[i] = ArchiveIoSource.open(out, fmt, null);
+            }
+            ZipTool.Diff df = ZipTool.diff(ar[0], ar[1], 100);
+            check(fmt + " compare: config.txt (same size, other content) is changed, same.txt is the same (same=" + df.same + " changed=" + df.changed.size() + ")",
+                df.same == 1 && df.changed.size() == 1 && df.changed.get(0).name.equals("config.txt") && df.added.isEmpty() && df.removed.isEmpty());
+        }
+        ZipTool.Archive[] z = new ZipTool.Archive[2];
+        for (int i = 0; i < 2; i++) {
+            File out = new File(d, "v" + i + ".zip");
+            ZipWriter.create(out, Arrays.asList(new ZipWriter.Item("config.txt", cfg[i]), new ZipWriter.Item("same.txt", same[i])), 6, "pw".toCharArray(), ZipWriter.AES256, null);
+            z[i] = ZipTool.open(out);
+        }
+        String why = null;
+        try { ZipTool.diff(z[0], z[1], 100); } catch (Exception e) { why = e.getMessage(); }
+        check("AES zip compare without the password says it cannot read them (" + why + ")", why != null);
+        for (ZipTool.Archive x : z) x.setPassword("pw".toCharArray());
+        ZipTool.Diff dz = ZipTool.diff(z[0], z[1], 100);
+        check("AES zip compare with the password: config.txt is changed, same.txt the same (same=" + dz.same + " changed=" + dz.changed.size() + ")", dz.same == 1 && dz.changed.size() == 1 && dz.changed.get(0).name.equals("config.txt"));
     }
 
     static void passwordCases(Map<String, Got> exp) throws Exception {

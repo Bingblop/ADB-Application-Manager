@@ -38,6 +38,26 @@ public class FileSearchTest {
     query.includeHidden = hidden; query.recursive = rec; query.inArchives = arc;
     return names(FileSearch.run(Collections.singletonList(root), query, new FileSearch.Limits(), null), root);
   }
+  /** A zip of stored entries with the raw name bytes given and no UTF-8 flag, as Windows Explorer writes non-English names. */
+  static void legacyZip(File f, byte[][] names, String[] data) throws IOException {
+    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream(), cd = new java.io.ByteArrayOutputStream();
+    int dosDate = (40 << 9) | (1 << 5) | 1;                                 // 2020-01-01
+    for (int i = 0; i < names.length; i++) {
+      byte[] d = data[i].getBytes(StandardCharsets.UTF_8), n = names[i];
+      java.util.zip.CRC32 crc = new java.util.zip.CRC32(); crc.update(d);
+      long off = bo.size();
+      byte[] h = new byte[30]; le(h, 0, 0x04034b50, 4); le(h, 4, 10, 2); le(h, 12, dosDate, 2); le(h, 14, crc.getValue(), 4); le(h, 18, d.length, 4); le(h, 22, d.length, 4); le(h, 26, n.length, 2);
+      bo.write(h); bo.write(n); bo.write(d);
+      byte[] c = new byte[46]; le(c, 0, 0x02014b50, 4); le(c, 4, 20, 2); le(c, 6, 10, 2); le(c, 14, dosDate, 2); le(c, 16, crc.getValue(), 4); le(c, 20, d.length, 4); le(c, 24, d.length, 4); le(c, 28, n.length, 2); le(c, 42, off, 4);
+      cd.write(c); cd.write(n);
+    }
+    long cdOff = bo.size();
+    bo.write(cd.toByteArray());
+    byte[] e = new byte[22]; le(e, 0, 0x06054b50, 4); le(e, 8, names.length, 2); le(e, 10, names.length, 2); le(e, 12, cd.size(), 4); le(e, 16, cdOff, 4);
+    bo.write(e);
+    Files.write(f.toPath(), bo.toByteArray());
+  }
+  static void le(byte[] b, int o, long v, int n) { for (int i = 0; i < n; i++) b[o + i] = (byte) (v >>> (8 * i)); }
   static void rm(File f) { if (f.isDirectory() && !Files.isSymbolicLink(f.toPath())) { File[] k = f.listFiles(); if (k != null) for (File x : k) rm(x); } f.delete(); }
   static List<String> l(String... a) { return Arrays.asList(a); }
   static long timed(Runnable r) { long t = System.currentTimeMillis(); r.run(); return System.currentTimeMillis() - t; }
@@ -114,6 +134,14 @@ public class FileSearchTest {
     check("archive: in an apk", find(root, "archive:classes", true, true, false).equals(l("pack/app.apk!classes.dex")));
     check("archive: with a kind of the entry", find(root, "archive:logo type:image", true, true, false).equals(l("pack/data.zip!img/logo.png")) && find(root, "archive:logo type:text", true, true, false).isEmpty());
     check("a broken archive is skipped without an error", find(root, "archive:anything", true, true, false).isEmpty());
+    // a zip from Windows Explorer: an entry name in a legacy code page (GBK bytes), no UTF-8 flag. java.util.zip.ZipFile refuses the name, which
+    // dropped every entry of the archive; the names are read as the archive viewer reads them (Latin-1 for the one that is not UTF-8)
+    File legacyRoot = Files.createTempDirectory("fs-legacy").toFile();
+    legacyZip(new File(legacyRoot, "legacy.zip"), new byte[][]{"readme.txt".getBytes(StandardCharsets.US_ASCII), {(byte) 0xC4, (byte) 0xE3, '.', 't', 'x', 't'}}, new String[]{"hello milk", "other"});
+    check("archive: finds an entry of a zip with a non-UTF-8 name in it", find(legacyRoot, "archive:readme", true, true, false).equals(l("legacy.zip!readme.txt")));
+    check("and lists the legacy-named entry under the name the archive viewer shows", find(legacyRoot, "archive:.txt", true, true, false).equals(l("legacy.zip!readme.txt", "legacy.zip!\u00c4\u00e3.txt")));
+    check("content: looks inside its entries as well", find(legacyRoot, "content:milk", true, true, true).equals(l("legacy.zip!readme.txt")));
+    rm(legacyRoot);
     check("without the archive option a plain name does not look inside archives", find(root, "readme", true, true, false).isEmpty());
     check("with it, a plain name matches the entries as well", find(root, "readme", true, true, true).equals(l("pack/data.zip!readme.txt")));
     check("with it, content: looks at text entries as well", find(root, "content:hello", true, true, true).equals(l("pack/data.zip!readme.txt")));
