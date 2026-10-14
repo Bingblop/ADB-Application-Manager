@@ -5972,6 +5972,7 @@ p: [
 ["Could not change the brightness bias: {0}","明るさの補正を変更できませんでした：{0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","適用しましたが、スマートフォンは {1} ではなく {0} を報告しています。One UI や一部のスマートフォンはこの値をリセットまたは無視します。"],
 ["{0} of {1}","{1} 中 {0}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","{0} を選択"]
 ]
 };

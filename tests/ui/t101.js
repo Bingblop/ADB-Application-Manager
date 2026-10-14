@@ -1,4 +1,5 @@
 // App icons in the list: drawn natively and cached (asked for once per app), to the left of the app's info, no letter box, press and hold saves one.
+// The icon is also the row's checkbox (its ✓ badge sits on the icon's corner): a short tap selects the row, a hold saves the icon and does not.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -22,8 +23,8 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('icons asked for once each:', JSON.stringify(await page.evaluate(() => window.__icon.asked.slice().sort())));
   console.log('icons with a picture:', await page.locator('img.app-icon[src]').count(), 'of', await page.locator('img.app-icon').count());
   console.log('no letter box any more:', await page.locator('.app-avatar').count());
-  const geo = await page.locator('#card_com\\.example\\.one').evaluate(c => { const r = s => c.querySelector(s).getBoundingClientRect(); return { iconLeftOfInfo: r('.app-icon').right <= r('.app-meta').left + 1, checkboxRightOfInfo: r('.app-checkbox').left >= r('.app-meta').right - 1, iconW: Math.round(r('.app-icon').width) }; });
-  console.log('icon sits left of the info, checkbox right of it:', JSON.stringify(geo));
+  const geo = await page.locator('#card_com\\.example\\.one').evaluate(c => { const r = s => c.querySelector(s).getBoundingClientRect(); const i = r('.app-icon'), k = r('.app-checkbox'); return { iconLeftOfInfo: i.right <= r('.app-meta').left + 1, checkboxOnIconCorner: k.left > i.left + i.width / 2 && k.top > i.top + i.height / 2 && k.left < i.right && k.top < i.bottom, iconW: Math.round(i.width) }; });
+  console.log('icon sits left of the info, the checkbox on its corner:', JSON.stringify(geo));
   await page.evaluate(() => { renderApps(); });
   await page.waitForTimeout(200);
   console.log('re-render does not ask again:', await page.evaluate(() => window.__icon.asked.length));
@@ -31,7 +32,8 @@ const { chromium, PAGE } = require('./lib/pw');
   const icon = page.locator('#card_com\\.example\\.one img.app-icon');
   const box = await icon.boundingBox();
   await page.mouse.move(box.x + 5, box.y + 5); await page.mouse.down(); await page.waitForTimeout(100); await page.mouse.up(); await page.waitForTimeout(700);
-  console.log('a short tap saves nothing:', await page.evaluate(() => window.__icon.saved.length));
+  console.log('a short tap saves nothing:', await page.evaluate(() => window.__icon.saved.length), '| it selects the row:', await page.locator('#card_com\\.example\\.one.selected').count());
+  await page.evaluate(() => clearBatchSelection());
   await page.mouse.move(box.x + 5, box.y + 5); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up(); await page.waitForTimeout(200);
   console.log('press and hold saves it:', JSON.stringify(await page.evaluate(() => window.__icon.saved)), '|', await page.locator('#toastMsg').innerText());
   console.log('and does not select the row:', await page.locator('#card_com\\.example\\.one.selected').count());

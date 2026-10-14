@@ -5972,6 +5972,7 @@ p: [
 ["Could not change the brightness bias: {0}","चमक का झुकाव बदला नहीं जा सका: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","लागू हुआ, पर फ़ोन {1} की जगह {0} बता रहा है। One UI और कुछ अन्य फ़ोन इस मान को रीसेट या अनदेखा कर देते हैं।"],
 ["{0} of {1}","{1} में से {0}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","{0} चुनें"]
 ]
 };

@@ -5972,6 +5972,7 @@ p: [
 ["Could not change the brightness bias: {0}","Impossibile cambiare lo scostamento luminosità: {0}"],
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Applicato, ma il telefono riporta {0} invece di {1}. One UI e alcuni altri telefoni azzerano o ignorano questo valore."],
 ["{0} of {1}","{0} di {1}"],
-["One UI {0}","One UI {0}"]
+["One UI {0}","One UI {0}"],
+["Select {0}","Seleziona {0}"]
 ]
 };
