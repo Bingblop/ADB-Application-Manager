@@ -1,0 +1,8 @@
+ok   two backups are listed
+ok   Delete asks first, naming the backup
+ok   Cancel: the phone is not asked to delete
+ok   Cancel: both backups are still listed
+ok   OK: that backup is deleted
+ok   OK: one backup is left
+errors: []
+all ok

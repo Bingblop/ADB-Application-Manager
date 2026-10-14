@@ -57,6 +57,7 @@ public final class BrowserDownload {
     }
 
     private static final int MAX_REDIRECTS = 8;
+    private static final Object SAVE_LOCK = new Object();
 
     /** A safe file name for what a server sent: Content-Disposition (filename* or filename), else the last part of the address, else "download" plus an extension from the type. */
     public static String fileName(String url, String contentDisposition, String mime) {
@@ -147,7 +148,7 @@ public final class BrowserDownload {
     public enum State { QUEUED, RUNNING, PAUSED, FAILED, DONE, CANCELLED }
 
     /**
-     * One download that can be paused, resumed and retried. What is already on disk stays in {@code name.part} when it is paused or breaks; a later {@link #run} asks the server
+     * One download that can be paused, resumed and retried. What is already on disk stays in its own part file ({@link #part}) when it is paused or breaks; a later {@link #run} asks the server
      * for the rest (Range, with If-Range so a changed file starts over) and starts over when the server does not do ranges. Fields are written by the downloading thread and read by others.
      */
     public static final class Job {
@@ -177,7 +178,19 @@ public final class BrowserDownload {
             this.dir = dir;
         }
 
+        /**
+         * Where the bytes in hand are kept: {@code name.<id>.part}, one per job, so two jobs that end up with the same name in one folder (a fresh signed link to the
+         * same file, two "download.apk") never write into one file. The id comes from the journal too, so only letters, digits, - and _ of it are used.
+         */
         public File part() {
+            if (name.isEmpty()) return null;
+            String tag = id.replaceAll("[^A-Za-z0-9_-]", "");
+            if (tag.isEmpty()) tag = Integer.toHexString(id.hashCode());
+            return new File(dir, name + "." + tag + ".part");
+        }
+
+        /** The part file older versions used ({@code name.part}, shared by every job of that name): only read to carry a journal's paused job over. */
+        File legacyPart() {
             return name.isEmpty() ? null : new File(dir, name + ".part");
         }
 
@@ -419,8 +432,11 @@ public final class BrowserDownload {
                 }
             }
             if (total >= 0 && done != total) throw new IOException("the download ended early (" + done + " of " + total + " bytes): Retry goes on from there");
-            File dest = freeFile(job.dir, job.name);
-            if (!part.renameTo(dest)) throw new IOException("cannot save " + job.name);
+            File dest;
+            synchronized (SAVE_LOCK) {             // two jobs of one name finishing together must not both pick "x.apk" (a rename replaces what is there)
+                dest = freeFile(job.dir, job.name);
+                if (!part.renameTo(dest)) throw new IOException("cannot save " + job.name);
+            }
             job.file = dest;
             job.done = done;
             job.total = done;
@@ -440,7 +456,7 @@ public final class BrowserDownload {
 
     /** Downloads {@code url} into {@code dir} as the browser would, in one go (no resuming: a part that is left behind is removed). Throws IOException with a sentence for the person when it cannot. */
     public static Result download(String url, String userAgent, Cookies cookies, String referer, File dir, final Progress progress) throws IOException {
-        final Job job = new Job("one-shot", url, userAgent, referer, dir);
+        final Job job = new Job("one-shot-" + java.util.UUID.randomUUID().toString().substring(0, 8), url, userAgent, referer, dir);
         Listener l = new Listener() {
             @Override
             public void onChange(Job j) {

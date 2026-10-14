@@ -1,0 +1,10 @@
+ok   the Settings tab opened with the Secure table unread
+ok   the readable entries are put back: put global/zen_mode=1|put system/screen_brightness=200
+ok   the question counts what it will do: ["Put 2 hidden settings back from the backup?\n\n  zen_mode → “1”\n  screen_brightness → “200”\n\nEvery change goes into the history, so it can be reverted."]
+ok   the result counts the entry that could not be read: Restored 2 of 3; could not change ui_night_mode
+ok   and names it: Restored 2 of 3; could not change ui_night_mode
+ok   a file with only unreadable entries changes nothing:
+ok   and says so: Could not read the settings
+ok   readable entries that already match, next to an unreadable one, still name the unreadable one: Restored 0 of 1; could not change ui_night_mode
+errors: []
+all ok

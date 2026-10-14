@@ -1,0 +1,10 @@
+ok   the start failed: state exited, the note shows the reason
+ok   the reason is also written into the terminal
+ok   opening the screen again after a failed start tries to start again
+ok   and the screen is a running attempt, not a dead one
+ok   keys reach the new session
+ok   a shell that ended is not restarted by opening the screen (it waits for Enter)
+ok   its banner is still on the screen
+ok   a start the phone refuses at once also shows its reason in the terminal
+ok   and opening the screen again tries again
+errors: []
