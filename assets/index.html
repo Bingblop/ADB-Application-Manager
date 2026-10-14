@@ -24177,7 +24177,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (sig !== cd.sig) { cd.sig = sig; cdRenderDevices(); }
             if (key !== cd.lastKey) {
                 cd.lastKey = key;
-                if (moved) cdResetDevice();
+                if (moved) { cdStopWork(); cdResetDevice(); }              // a live log or command of the device that went does not carry on for the new one
                 cdRenderInfo();
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }

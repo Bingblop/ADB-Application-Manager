@@ -1,0 +1,8 @@
+ok   1. the first device (A) is chosen
+ok      Play: the button says Pause and A's log is drawn
+ok      control: with the same device the timer keeps asking A
+ok   2. A dropped and B was picked by itself
+ok      the live log is stopped: the button says Play again
+ok      no logcat request goes to B after the change
+errors: []
+ALL OK
