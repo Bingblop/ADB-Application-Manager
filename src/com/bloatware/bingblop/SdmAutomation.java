@@ -125,6 +125,66 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
         return null;
     }
 
+    // ---------------------------------------------------------------------------------------------------------- starting the service
+
+    /**
+     * Adds this service to Android's list of enabled accessibility services ({@code listed}) or takes it out, through the working mode's shell, keeping the other
+     * services. The one place that writes the list: the SD Maid tab's button ({@link SdmHost}) and {@link #ensureReady} both use it. "" when it is done (or was
+     * already so), otherwise a sentence saying what the phone refused.
+     */
+    static String setServiceListed(Sdm.Shell sh, Context c, boolean listed) throws IOException {
+        String me = componentName(c), short1 = c.getPackageName() + "/." + SdmAccessService.class.getSimpleName();
+        String cur = SdmAcsStart.parseList(sh.run(SdmAcsStart.READ, 8000));
+        if (cur == null) return "The phone refused to read the list of services.";
+        String next = listed ? SdmAcsStart.add(cur, me, short1) : SdmAcsStart.remove(cur, me, short1);
+        if (next == null) return "";
+        String out = sh.run(SdmAcsStart.writeCommand(next, listed), 8000);
+        if (out.contains("Exception") || out.contains("denied")) return "The phone refused: " + out.trim();
+        return "";
+    }
+
+    static final long START_WAIT_MS = 8000, REBIND_PAUSE_MS = 500, START_POLL_MS = 100;
+
+    /**
+     * Brings the service up when it is switched off (NOT_ENABLED: added to the list) or switched on but not running (NOT_CONNECTED: taken out and put back so
+     * that Android binds it again), then waits up to about 8 seconds for it to connect. Only with the consent already given and a working mode's shell; it
+     * never gives the consent and does nothing otherwise. True when the service is ready afterwards.
+     */
+    @Override
+    public boolean ensureReady(Sdm.Progress progress, Sdm.Cancel cancel) {
+        if (ready()) return true;
+        boolean hasShell = shell != null && shell.uid() >= 0;
+        SdmAcsStart.Step step = SdmAcsStart.decide(notReadyReason(), hasShell);
+        if (step == SdmAcsStart.Step.NONE) return false;
+        if (progress != null) progress.update("Starting the accessibility service", "", 0, -1, 0);
+        try {
+            if (step == SdmAcsStart.Step.ENABLE) {
+                if (!setServiceListed(shell, ctx, true).isEmpty()) return false;
+            } else {
+                try {
+                    setServiceListed(shell, ctx, false);
+                    if (!pause(REBIND_PAUSE_MS, cancel)) return false;
+                } finally {
+                    setServiceListed(shell, ctx, true);                      // whatever happened, the service is never left switched off by us
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+        long end = SystemClock.elapsedRealtime() + START_WAIT_MS;
+        while (!isConnected() && SystemClock.elapsedRealtime() < end) {
+            if (!pause(START_POLL_MS, cancel)) break;
+        }
+        return ready();
+    }
+
+    /** Sleeps; false when cancelled or interrupted. */
+    private static boolean pause(long ms, Sdm.Cancel cancel) {
+        if (cancel != null && cancel.cancelled()) return false;
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); return false; }
+        return cancel == null || !cancel.cancelled();
+    }
+
     // ---------------------------------------------------------------------------------------------------------- AutomationInfo
 
     @Override

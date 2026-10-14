@@ -58,6 +58,7 @@ public final class FileSearch {
 
     public static final class Hit {
         public String path;                 // the file or folder; for an archive entry the archive
+        public String name, parent;         // added storage only: the document's display name and its parent (the path is a document URI); null elsewhere
         public String entry;                // the entry inside the archive, or null
         public boolean dir;
         public long size, mtime;

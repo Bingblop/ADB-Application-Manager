@@ -1,0 +1,20 @@
+ok   the session is starting (not published yet)
+ok   the terminal is now smaller than when the session was asked for
+ok   nothing was handed to the phone as a write while it was starting (the phone would have dropped it)
+ok   after the start notice the keys typed meanwhile arrive, in order
+ok   and the current size is sent
+ok   the size goes before the keys
+ok   once running, keys go straight through
+ok   only a few KB of keys are held (a long paste during the start is cut, not queued without end)
+ok   a failed start sends nothing
+ok   and the keys of the failed start are not sent into the next session
+ok   keys held when the screen was closed are not sent into the session started afterwards
+ok   rtOpen() with no backend keeps the running session and its label (the simple terminal switched to priv meanwhile)
+ok   and remembers nothing
+ok   rtOpen("termux") on a running app session restarts it on termux, like the dropdown
+ok   the dropdown and the running backend agree
+ok   and the choice is remembered as the dropdown does
+ok   rtOpen() afterwards leaves the termux session as it is
+ok   asking for the backend that already runs does not restart it
+ok   and asking for another one switches to it
+errors: []

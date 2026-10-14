@@ -320,6 +320,51 @@ public class ZipToolTest {
       check("diff: 70000-entry archives compare quickly and match", mm.same == 70000 && mm.changed.isEmpty());
     }
 
+    // Keep both / replace against a folder that already has the entry's name: a folder is never deleted to make room for a file
+    {
+      File kb = out("keepboth.zip");
+      try (java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(kb))) {
+        zo.putNextEntry(new java.util.zip.ZipEntry("docs")); zo.write("hello".getBytes("UTF-8")); zo.closeEntry();
+      }
+      File kbDest = out("keepboth_dest"); File kbDir = new File(kbDest, "docs"); kbDir.mkdirs();
+      List<String> kbProblems = new ArrayList<>();
+      long[] kbR = ZipTool.extractTree(ZipTool.open(kb), "", kbDest, null, kbProblems, null, com.bloatware.bingblop.FileOps.KEEP_BOTH);
+      File kbCopy = new File(kbDest, "docs (1)");
+      check("keep both: an empty folder of the entry's name stays a folder (" + kbProblems + ")", kbDir.isDirectory() && kbProblems.isEmpty());
+      check("keep both: the file is written next to it as 'docs (1)'", kbCopy.isFile() && new String(Files.readAllBytes(kbCopy.toPath()), "UTF-8").equals("hello") && kbR[0] == 1 && kbR[2] == 0);
+      File rpDest = out("replace_dest"); File rpDir = new File(rpDest, "docs"); rpDir.mkdirs();
+      List<String> rpProblems = new ArrayList<>();
+      long[] rpR = ZipTool.extractTree(ZipTool.open(kb), "", rpDest, null, rpProblems, null, com.bloatware.bingblop.FileOps.REPLACE);
+      check("replace: an empty folder in the way is kept and the entry is skipped in words (" + rpProblems + ")", rpDir.isDirectory() && rpR[0] == 0 && rpR[2] == 1 && rpProblems.size() == 1 && rpProblems.get(0).contains("folder"));
+      check("replace: no stray part file is left", rpDest.list().length == 1);
+    }
+
+    // Progress moves inside one large entry (every MB or so), not only at its end, and Cancel is heard inside it
+    {
+      File bz = out("bigentry.zip");
+      byte[] chunk = new byte[1 << 20];
+      try (java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(bz))) {
+        zo.setLevel(0);
+        zo.putNextEntry(new java.util.zip.ZipEntry("big.bin"));
+        for (int i = 0; i < 5; i++) zo.write(chunk);
+        zo.closeEntry();
+      }
+      final List<Long> bzSeen = new ArrayList<>();
+      File bzDest = out("bigentry_dest");
+      long[] bzR = ZipTool.extractTree(ZipTool.open(bz), "", bzDest, (doneBytes, doneFiles, current) -> { bzSeen.add(doneBytes); return true; }, null, null, com.bloatware.bingblop.FileOps.REPLACE);
+      int inside = 0;
+      for (long bzB : bzSeen) if (bzB > 0 && bzB < 5L << 20) inside++;
+      check("one 5 MB entry reports progress from inside it (" + inside + " reports between 0 and the end)", bzR[0] == 1 && bzR[1] == 5L << 20 && inside >= 3);
+      File bzDest2 = out("bigentry_dest2");
+      final int[] calls = {0};
+      Exception bzCancelled = null;
+      try {
+        ZipTool.extractTree(ZipTool.open(bz), "", bzDest2, (doneBytes, doneFiles, current) -> ++calls[0] < 3, null, null, com.bloatware.bingblop.FileOps.REPLACE);
+      } catch (Exception e) { bzCancelled = e; }
+      check("Cancel from inside the entry ends the extraction with Cancelled (" + bzCancelled + ")", bzCancelled != null && String.valueOf(bzCancelled.getMessage()).startsWith("Cancelled"));
+      check("and leaves neither the file nor its part file behind", !new File(bzDest2, "big.bin").exists() && !new File(bzDest2, ".big.bin.part").exists());
+    }
+
     // Stale detection
     File stale = out("stale.zip"); Files.copy(new File(FIX + "basic.zip").toPath(), stale.toPath());
     Archive sa = ZipTool.open(stale);

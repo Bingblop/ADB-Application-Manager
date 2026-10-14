@@ -10859,8 +10859,10 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavLP = { slot, x: e.clientX, y: e.clientY, fired: false };
             bnavLP.timer = setTimeout(() => {
                 if (!bnavLP) return;
+                const key = slot.dataset.tab, nav = bnavEl();
+                const cur = slot.isConnected ? slot : (nav && nav.querySelector('.bn-item[data-tab="' + key + '"]')) || slot;     // a badge update redraws the bar during the hold: the slot is found again by its tab
                 bnavLP.fired = true;
-                if (!bnavMenuOpen(slot.dataset.tab, slot)) bnavLP.fired = false;
+                if (!bnavMenuOpen(key, cur)) bnavLP.fired = false;
             }, BNAV_HOLD_MS);
             document.addEventListener('pointermove', bnavHoldMove);
             document.addEventListener('pointerup', bnavHoldEnd);
@@ -11064,13 +11066,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'extrasettings') { animShow(); brShow(); telShow(); }
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'terminal' && typeof onTerminalShown === 'function') onTerminalShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
@@ -13147,6 +13143,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
                 `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:10px;">${escapeHtml(x.p.pkg)}</span></div>`).join('');
             pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
+            batchConfirmShowBody('confirm');                 // a batch before this left the modal on its progress body
             document.getElementById('batchConfirmModal').classList.add('show');
         }
 
@@ -13907,6 +13904,7 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[pkg] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(pkg);
+            updStartWatch(pkg);
         }
 
         // One at a time, so downloads don't compete and installs don't overlap.
@@ -13952,8 +13950,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function updStartQueue(pkgs) {
-            updQueue = pkgs.slice();
-            updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
+            pkgs.forEach(p => { if (!updQueue.includes(p)) updQueue.push(p); });          // a second Update All (after failures) joins the apps still waiting; it does not replace them
+            pkgs.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
             renderUpdates();
             startNextQueuedUpdate();
         }
@@ -13969,6 +13967,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onUpdateAllAnswer = onUpdateAllAnswer;
 
+        let UPD_START_WAIT_MS = 15000;          // let: the UI script shortens the wait
+        // The app answers installUpdate with a progress event within moments. If none comes (it did not take the request), the row must not stay "Downloading" forever.
+        function updStartWatch(pkg) {
+            const row = updProgress[pkg];
+            setTimeout(() => { if (row && updProgress[pkg] === row) onUpdateProgress(JSON.stringify({ pkg, stage: 'error', percent: 0, message: 'Could not start the update' })); }, UPD_START_WAIT_MS);
+        }
         function startNextQueuedUpdate() {
             const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing' || p.stage === 'confirming');
             if (busy) return;
@@ -13977,12 +13981,18 @@ Type any command above (e.g. pm list packages -d)</div>
             updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
             renderUpdates();
             updBridge().installUpdate(next);
+            updStartWatch(next);
         }
 
         // Called by MainActivity while an update downloads and installs
         function onUpdateProgress(json) {
             const p = JSON.parse(json || '{}');
             updProgress[p.pkg] = p;
+            if (p.stage === 'cancelled') {                           // a No to the app's question, or no privileged mode: nothing was tried, so not a failure in the history
+                showToast(p.message || 'Updates cancelled');
+                updateUpdatesTabBadge();
+                setTimeout(startNextQueuedUpdate, 300);
+            }
             if (p.stage === 'done' || p.stage === 'error') {
                 const u = updList.find(x => x.pkg === p.pkg);
                 recordHistory('updates', (p.stage === 'done' ? 'Updated ' : 'Update failed: ') + (u ? u.name : p.pkg),
@@ -16668,7 +16678,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!lp.ok) return { profErr: lp.error || txT('The phone did not answer.'), lowPower: null, fixed: null };
             const lowPower = lp.value == null ? null : String(lp.value).trim();
             let help = xdz.help;
-            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output) || { fixed: false, adaptive: false, unknown: true }; }
+            if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output); }       // no answer (a timeout, an empty output) is not kept: the next read asks again
             const fx = await xqRun("dumpsys power | grep -iE 'fixed.?performance' | head -n 3", 8000);
             return { profErr: null, lowPower, help, fixed: xdzParseFixed(fx.output) };
         }
@@ -19330,7 +19340,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lastBatch) rowBusySet(lastBatch.pkgs, '');
             let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
-            if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
+            if (!res || !res.ok) { batchRunLabel = ''; batchRunHist = ''; showToast('Batch action failed to run'); return; }
             const action = res.action, total = res.total, stopped = !!res.cancelled;
             const rows = (res.rows || []).map(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
@@ -19930,6 +19940,7 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Installing...');
             let r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true });
             const d = r.data || {};
+            if (r.ok && d.ok && d.handedOff) { showToast(d.output || ''); return; }
             if (r.ok && d.ok) { showToast('Installed'); return; }
             if (d.retry === 'uninstall' && await mpAsk({ title: 'Uninstall the installed copy first?', text: 'Android refuses to install this over the app that is on the phone, because it is signed with another key. Uninstalling the installed copy removes its data too. Back up what you need first.\n\n' + (d.output || ''), ok: 'Uninstall and install', danger: true })) {
                 r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true, uninstallFirst: true });
@@ -21780,7 +21791,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (failed.length) {
                     showCommandResults('File manager', verb.toLowerCase(), failed.map(f => ({ name: fmBase(f.p), pkg: f.p, output: f.error, success: false })));
                 }
-                if (r.op === 'mv' && fmClip && !failed.length && !r.cancelled && !r.skipped) fmClip = null;
+                if (r.op === 'mv' && fmClip && !r.cancelled && (!r.skipped || Array.isArray(r.kept))) {       // kept: the items left alone, by path
+                    const left = new Set(failed.map(f => f.p).concat(Array.isArray(r.kept) ? r.kept : []));
+                    fmClip.paths = fmClip.paths.filter(p => left.has(p));
+                    if (!fmClip.paths.length) fmClip = null;
+                }
             }
             fmClipRender();
             fmRefresh();
@@ -21887,9 +21902,11 @@ Type any command above (e.g. pm list packages -d)</div>
                     return;
                 }
                 op = 'mv'; b = fmParent(src) + '/' + val;
+                if (fmTakenHere(b, src)) { showToast('That name is already used here'); return; }        // onto a folder it would move inside and replace what is there
             } else if (op === 'cp' || op === 'mv') {
                 if (!val) { showToast('Enter a destination'); return; }
                 b = val;
+                if (fmTakenHere(b, src)) { showToast('That name is already used here'); return; }
             } else if (op === 'rm') {
                 b = null;
             }
@@ -21899,6 +21916,14 @@ Type any command above (e.g. pm list packages -d)</div>
             closeFmAction();
             fmRefresh();
             if (!r.ok) showCommandResults('File op', op, [{ name: fmActionTarget ? fmActionTarget.name : '', pkg: a, output: r.output, success: false }]);
+        }
+        // whether a destination names something listed in the folder shown other than the source itself (a change of case only is not a clash): a file would be
+        // overwritten, a folder would be moved or copied into with what is there replaced. Only the folder shown is known here; elsewhere the native side answers.
+        function fmTakenHere(dest, src) {
+            const d = String(dest || '').replace(/\/+$/, '');
+            if (!d || fmParent(d) !== fmPath) return false;
+            const name = fmBase(d).toLowerCase();
+            return fmListedNames().some(n => n.toLowerCase() === name && (fmParent(src) !== fmPath || n !== fmBase(src)));
         }
         function fmViewFile() {
             if (!fmActionTarget) return;
@@ -22148,8 +22173,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cnt) cnt.innerHTML = fmSearchCountHtml + (fmSearchFilters.size ? ' · <span>' + fmSearchShown.length + ' shown</span>' : '');
             document.getElementById('fmSearchList').innerHTML = fmSearchNotes + (fmSearchShown.length ? fmSearchShown.map(({ h, i }) => {
                 const entry = h.entry ? h.entry.replace(/\/$/, '') : '';
-                const name = entry ? entry.split('/').pop() : h.path.split('/').pop();
-                const where = h.entry ? h.path + ' › ' + h.entry : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
+                const name = entry ? entry.split('/').pop() : (h.name || h.path.split('/').pop());
+                const where = h.entry ? h.path + ' › ' + h.entry : h.parent || h.path.slice(0, h.path.lastIndexOf('/')) || '/';
                 const meta = [h.dir ? '' : fmtInstallSize(h.size), fmWhen(h.mtime)].filter(Boolean).join(' · ');
                 const line = h.line ? '<div class="fm-hit-line">' + (h.lineNo ? escapeHtml(String(h.lineNo)) + ': ' : '') + escapeHtml(h.line) + '</div>' : '';
                 const ico = (h.dir || (h.entry && /\/$/.test(h.entry))) ? '<div class="fm-folder"></div>' : '<div class="fm-page"></div>';
@@ -22164,15 +22189,22 @@ Type any command above (e.g. pm list packages -d)</div>
             const h = fmSearchHits[i];
             if (!h) return;
             if (h.entry) { fmSearchExit(); arcOpen(h.path, r => showToast((r && r.error) || 'Not a readable archive')); const base = h.entry.replace(/\/$/, '').split('/').pop(); setTimeout(() => { const a = document.getElementById('arcSearch'); if (a) { a.value = base; arcSearchInput(); } }, 400); return; }
-            if (h.dir) { fmSearchExit(); fmGo(h.path); return; }
-            fmActions(h.path, false, h.path.split('/').pop());
+            if (h.dir) { fmSearchExit(); if (h.parent) fmSafStack = fmSearchSafTrail(h); fmGo(h.path); return; }
+            fmActions(h.path, false, h.name || h.path.split('/').pop());
         }
         function fmSearchReveal(i) {
             const h = fmSearchHits[i];
             if (!h) return;
+            if (h.parent) { fmSearchExit(); fmSafStack = fmSearchSafTrail(h).slice(0, -1); fmGo(h.parent); return; }       // added storage: the folder is its parent URI
             const parent = h.dir ? h.path : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
             fmSearchExit();
             fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
+        }
+        // the ".." trail for a hit in added storage: the storage it was found in (when the hit is deeper), then its parent
+        function fmSearchSafTrail(h) {
+            fmSafRootsLoad();
+            const root = fmSafRoots.find(r => r.uri && h.path.startsWith(r.uri));
+            return root && root.uri !== h.parent ? [root.uri, h.parent] : [h.parent];
         }
 
         // ---- the password dialog: asked when an archive or an entry needs one; never stored ----
@@ -24132,6 +24164,14 @@ Type any command above (e.g. pm list packages -d)</div>
             return '';
         }
 
+        // adb pull / push: '' when it all went through. adb prints a complaint per file it could not copy and ends with "N files pulled, M skipped.", so every line counts, not only the first
+        function cdXferFail(out) {
+            const f = cdFail(out);
+            if (f) return f;
+            const l = String(out || '').split('\n').map(x => x.trim()).find(x => /^(adb(\.exe)?: )?error: /i.test(x) || /\b[1-9]\d* skipped\b/.test(x));
+            return l ? l.replace(/^(adb(\.exe)?: |error: )+/i, '') : '';
+        }
+
         // ---- devices ----
         function cdTransport(serial) {
             if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'Bluetooth link';
@@ -24172,7 +24212,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.devices = all.filter(d => !cd.self.includes(d.serial));
             if (text) text.innerText = 'Pair and connect a Wear OS watch or any Android device over Wi-Fi or Bluetooth. Then you can manage its apps, send apps to it, read its log, browse its files and change its settings from here.';
             let moved = false;
-            if (!cd.devices.some(d => d.serial === cd.serial)) {
+            if (!cd.batchBusy && !cd.devices.some(d => d.serial === cd.serial)) {              // not while a batch runs: it stays on the device it started on
                 const last = kvGet('cd_ui', {}).serial;
                 const pick = cd.devices.find(d => d.serial === last && d.state === 'device') || cd.devices.find(d => d.state === 'device') || cd.devices[0];
                 cd.serial = pick ? pick.serial : '';
@@ -24196,7 +24236,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sel = document.getElementById('cdDeviceSel');
             if (!sel) return;
             sel.innerHTML = cd.devices.length ? cd.devices.map(d => '<option value="' + escapeHtml(d.serial) + '"' + (d.serial === cd.serial ? ' selected' : '') + '>' + escapeHtml(cdDevLabel(d)) + '</option>').join('') : '<option value="">No device</option>';
-            sel.disabled = !cd.devices.length;
+            sel.disabled = !cd.devices.length || cd.batchBusy;
             const d = cdCur();
             document.getElementById('cdEmpty').style.display = d ? 'none' : '';
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
@@ -24206,6 +24246,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function cdSelect(serial) {
             if (!serial || serial === cd.serial) return;
+            if (cd.batchBusy) { cdRenderDevices(); return; }           // locked while a batch runs on the device chosen
             cdStopWork();
             cd.serial = serial;
             cd.lastKey = '';
@@ -24835,20 +24876,20 @@ Type any command above (e.g. pm list packages -d)</div>
         // Runs one change on the device. Resolves { ok, out }; on success the list is updated in place
         // Removing an app goes through the same steps as on this phone: pm uninstall --user 0 and, when a system app is refused (only root may remove it), the direct Binder
         // helper sent to that device and run there (AndroidBridge.cdUninstall). Resolves { ok, out } like cdSh does, with the answer's own words.
-        function cdUninstallRun(pkg) {
+        function cdUninstallRun(pkg, serial) {
             return new Promise(res => {
                 const b = window.AndroidBridge;
                 const tag = 'cd' + (++cdSeq);
                 cdWait[tag] = r => res({ ok: !!r.ok && !cdFail(r.out), out: String(r.out == null ? '' : r.out) });
-                try { b.cdUninstall(tag, cd.serial, pkg); }
+                try { b.cdUninstall(tag, serial === undefined ? cd.serial : serial, pkg); }
                 catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
             });
         }
         // Read back from the device (like the app does for this phone): after enable / disable / uninstall / reinstall the apps are listed again and the answer is what the
         // device says now, not what the command printed. { uninstalled, disabled } of a package, or null when the device did not give a real list.
         const CD_CHECKED = new Set(['enable', 'disable', 'uninstall', 'reinstall']);
-        async function cdReadStates() {
-            const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
+        async function cdReadStates(serial) {
+            const out = await cdSh(CD_APPS_CMD, { timeout: 90000, serial: serial });
             if (cdFail(out)) return null;
             const apps = cdParseApps(out);
             if (!apps.length) return null;
@@ -24865,13 +24906,14 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         const CD_STATE_WORDS = { uninstall: ['Uninstalled', 'Still installed'], reinstall: ['Installed', 'Not installed'], disable: ['Frozen', 'Not frozen'], enable: ['Enabled', 'Still frozen'] };
         // reads the states (and once more after a moment when something is not yet as wanted), then sets the app records from them. Returns Map pkg -> { ok, label } or null.
-        async function cdCheckStates(act, pkgs) {
-            let m = await cdReadStates();
+        async function cdCheckStates(act, pkgs, serial) {
+            let m = await cdReadStates(serial);
             if (!m) return null;
-            if (pkgs.some(p => !cdStateOk(act, p, m))) { await new Promise(r => setTimeout(r, 900)); m = (await cdReadStates()) || m; }
+            if (pkgs.some(p => !cdStateOk(act, p, m))) { await new Promise(r => setTimeout(r, 900)); m = (await cdReadStates(serial)) || m; }
             const res = new Map();
+            const mine = serial === undefined || serial === cd.serial;          // the records on screen are only touched while that device is still the one shown
             pkgs.forEach(p => {
-                const ok = cdStateOk(act, p, m), a = (cd.apps || []).find(x => x.pkg === p), real = m.get(p);
+                const ok = cdStateOk(act, p, m), a = mine ? (cd.apps || []).find(x => x.pkg === p) : null, real = m.get(p);
                 if (a && real) { a.uninstalled = real.uninstalled; a.disabled = real.disabled; }
                 else if (a && !real && act === 'uninstall') { a.uninstalled = true; a.disabled = false; }
                 res.set(p, { ok, label: (!ok && (act === 'enable' || act === 'disable') && (!real || real.uninstalled)) ? 'Not installed' : CD_STATE_WORDS[act][ok ? 0 : 1] });
@@ -24883,17 +24925,19 @@ Type any command above (e.g. pm list packages -d)</div>
             return c.ok && !cmdOk ? 'Checked afterwards: ' + w + '. The command reported a failure, but the device says it worked.\n\n'
                 : !c.ok && cmdOk ? 'Checked afterwards: ' + w + ', although the command reported success.\n\n' : 'Checked afterwards: ' + w + '.\n\n';
         }
+        // opt.serial: the device the action is for (the one chosen when it started), so a change of device half-way does not send it elsewhere
         async function cdDo(act, pkg, opt) {
             let out, ok;
-            if (act === 'uninstall' && cd.serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
-                const u = await cdUninstallRun(pkg);
+            const serial = (opt && opt.serial) || cd.serial;
+            if (act === 'uninstall' && serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
+                const u = await cdUninstallRun(pkg, serial);
                 out = u.out; ok = u.ok;
             } else {
-                out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000 });
+                out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000, serial: serial });
                 ok = cdActOk(out);
             }
-            if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000 }); ok = cdActOk(out); }
-            if (ok) {
+            if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000, serial: serial }); ok = cdActOk(out); }
+            if (ok && serial === cd.serial) {
                 const a = (cd.apps || []).find(x => x.pkg === pkg);
                 if (a) {
                     if (act === 'enable') a.disabled = false;
@@ -24905,7 +24949,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (CD_CHECKED.has(act) && !(opt && opt.check === false)) {
                 progressToast('Checking the device…');
                 rowBusySet(pkg, 'Checking…', 'd');
-                const c = await cdCheckStates(act, [pkg]);
+                const c = await cdCheckStates(act, [pkg], serial);
                 rowBusySet(pkg, '', 'd');
                 if (c) {
                     const r = c.get(pkg);
@@ -24923,12 +24967,14 @@ Type any command above (e.g. pm list packages -d)</div>
         const CD_ACT_DONE = { enable: 'Enabled', disable: 'Frozen', uninstall: 'Uninstalled', reinstall: 'Reinstalled', stop: 'Stopped', clear: 'Data cleared', launch: 'Opened' };
 
         async function cdAppAct(pkg, act) {
+            const serial = cd.serial;
             const a = cdApp(pkg);
             if (act === 'uninstall' && !(await cdAsk({ title: 'Uninstall ' + a.name + '?', text: pkg + '\n\nIt is removed for the device\'s user. A system app can be put back with Reinstall.', ok: 'Uninstall', danger: true }))) return;
             if (act === 'clear' && !(await cdAsk({ title: 'Clear the data of ' + a.name + '?', text: 'Its settings, accounts and files on the device are deleted.', ok: 'Clear data', danger: true }))) return;
+            if (cd.serial !== serial) return;                    // another device was chosen while the question was open
             progressToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
             rowBusySet(pkg, 'Working…', 'd');
-            const r = await cdDo(act, pkg);
+            const r = await cdDo(act, pkg, { serial: serial });
             rowBusySet(pkg, '', 'd');
             cdAppsRender();
             if (r.ok) showToast(CD_ACT_DONE[act] + ': ' + a.name);
@@ -24937,18 +24983,21 @@ Type any command above (e.g. pm list packages -d)</div>
 
         async function cdBatch(act) {
             if (cd.batchBusy || !cd.sel.size) return;
+            const serial = cd.serial;                                   // the whole batch goes to this device, whatever is chosen meanwhile
             const pkgs = Array.from(cd.sel);
             if ((act === 'uninstall' || (act === 'disable' && pkgs.length > 1)) && !(await cdAsk({
                 title: (act === 'uninstall' ? 'Uninstall ' : 'Freeze ') + pkgs.length + (pkgs.length === 1 ? ' app?' : ' apps?'), text: pkgs.map(p => cdApp(p).name).join(', '),
                 ok: act === 'uninstall' ? 'Uninstall' : 'Freeze', danger: act === 'uninstall' }))) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             cd.batchBusy = true;
+            cdRenderDevices();                                          // the device select is locked for the run
             const failed = [];
             let done = 0;
             const results = [];
             rowBusySet(pkgs, 'Working…', 'd');
             for (const p of pkgs) {
                 document.getElementById('cdBatchCount').innerText = (done + 1) + ' of ' + pkgs.length + '...';
-                const r = await cdDo(act, p, { check: false });
+                const r = await cdDo(act, p, { check: false, serial: serial });
                 results.push([p, r]);
                 done++;
             }
@@ -24958,7 +25007,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 document.getElementById('cdBatchCount').innerText = 'Checking the device…';
                 progressToast('Checking the device…');
                 rowBusySet(pkgs, 'Checking…', 'd');
-                checked = await cdCheckStates(act, pkgs);
+                checked = await cdCheckStates(act, pkgs, serial);
                 rowBusySet(pkgs, '', 'd');
             }
             rowBusySet(pkgs, '', 'd');
@@ -24969,6 +25018,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             cd.batchBusy = false;
             cd.sel.clear();
+            cdRenderDevices();
             cdAppsRender();
             if (!failed.length) showToast(CD_ACT_DONE[act] + ' ' + done + (done === 1 ? ' app' : ' apps'));
             else cdSheetOpen({ title: failed.length + ' of ' + done + ' did not work', body: '<div class="cd-log" translate="no">' + escapeHtml(failed.join('\n')) + '</div>' });
@@ -25000,21 +25050,24 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
         }
         async function cdPullApk(pkg) {
-            const out = await cdSh('pm path ' + cdQ(pkg));
+            const serial = cd.serial;                                   // the APK paths are this device's: every pull is from this device
+            const out = await cdSh('pm path ' + cdQ(pkg), { serial: serial });
             const paths = String(out).split('\n').map(l => l.trim()).filter(l => l.startsWith('package:')).map(l => l.slice(8));
             if (!paths.length) { showToast(cdFail(out) || 'The device did not give the APK path'); return; }
+            if (cd.serial !== serial) { showToast('The pull did not finish'); return; }
             const dir = cdDownloadDir();
             if (!dir) return;
             showToast('Pulling ' + paths.length + (paths.length === 1 ? ' file...' : ' files...'));
             let okCount = 0, last = '';
             for (const p of paths) {
+                if (cd.serial !== serial) { showToast('The pull did not finish'); return; }               // the device list moved to another device: the rest is not pulled from there
                 const base = cdBase(p);
-                const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000 });
+                const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000, serial: serial });
                 last = o;
-                if (/pulled/i.test(o) && !cdFail(o)) okCount++;
+                if (/pulled/i.test(o) && !cdXferFail(o)) okCount++;
             }
             if (okCount === paths.length) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
+            else showToast(cdXferFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
         }
         function cdDownloadDir() {
             const dir = window.AndroidBridge && window.AndroidBridge.cdDownloadDir ? window.AndroidBridge.cdDownloadDir(cd.serial) : '';
@@ -25403,28 +25456,34 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!dir) return;
             showToast('Pulling ' + cdBase(p) + '...');
             const out = await cdRun(['pull', p, dir + '/'], { timeout: 3600000 });
-            if (/pulled/i.test(out) && !cdFail(out)) showToast('Saved to ' + cdShortDir(dir));
-            else showToast(cdFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
+            if (/pulled/i.test(out) && !cdXferFail(out)) showToast('Saved to ' + cdShortDir(dir));
+            else showToast(cdXferFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
         }
         async function cdFmRename(p, e) {
+            const serial = cd.serial;                                   // the path is from this device's listing: it goes to this device only
             const r = await cdAsk({ title: 'Rename', text: p, input: 'New name', value: e.name, ok: 'Rename' });
             if (!r || !r.a.trim() || r.a.trim() === e.name) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()));
+            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Renamed');
             cdFmRefresh();
         }
         async function cdFmDelete(p, e) {
+            const serial = cd.serial;
             if (!(await cdAsk({ title: 'Delete ' + e.name + '?', text: p + (e.isDir ? '\n\nThe folder and everything in it is removed from the device.' : ''), ok: 'Delete', danger: true }))) return;
-            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p));
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
+            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Deleted');
             cdFmRefresh();
         }
         async function cdFmNewFolder() {
-            const r = await cdAsk({ title: 'New folder', text: 'In ' + cd.fm.path, input: 'Folder name', ok: 'Create' });
+            const serial = cd.serial, dir = cd.fm.path;
+            const r = await cdAsk({ title: 'New folder', text: 'In ' + dir, input: 'Folder name', ok: 'Create' });
             if (!r || !r.a.trim()) return;
+            if (cd.serial !== serial) return;                           // another device was chosen while the question was open
             if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
-            const out = await cdSh('mkdir -p ' + cdQ((cd.fm.path === '/' ? '' : cd.fm.path) + '/' + r.a.trim()));
+            const out = await cdSh('mkdir -p ' + cdQ((dir === '/' ? '' : dir) + '/' + r.a.trim()), { serial: serial });
             showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Folder made');
             cdFmRefresh();
         }
@@ -25433,16 +25492,17 @@ Type any command above (e.g. pm list packages -d)</div>
             window.AndroidBridge.cdPickPackages('push');
         }
         async function cdFmPushPicked(files) {
-            const dest = cd.fm.path, good = files.filter(f => !f.error);
+            const dest = cd.fm.path, good = files.filter(f => !f.error), serial = cd.serial;
             if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
             let okN = 0, last = '';
             for (const f of good) {
+                if (cd.serial !== serial) { showToast('The push did not finish'); return; }             // the device list moved to another device: the rest does not go there
                 showToast('Sending ' + f.name + '...');
-                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000 });
+                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000, serial: serial });
                 last = out;
-                if (/pushed/i.test(out) && !cdFail(out)) okN++;
+                if (/pushed/i.test(out) && !cdXferFail(out)) okN++;
             }
-            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
+            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdXferFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
             cdFmRefresh();
         }
 
@@ -26588,6 +26648,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
             if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
         }
+        // the poll runs only while the tab is on screen: the app going to the background stops it, coming back starts it again
+        document.addEventListener('visibilitychange', function () {
+            if (currentViewName() !== 'taskmgr') return;
+            if (document.hidden) tmStop(); else onTaskMgrShown();
+        });
 
         // ---- settings controls ----
         function tmAutoRefreshChange() {
@@ -32443,8 +32508,8 @@ Type any command above (e.g. pm list packages -d)</div>
             txCloseTermux();
             const sel = document.getElementById('txShell');
             if (sel) sel.value = 'termux';
+            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // when it is up: what it took over (set first: a start that fails at once clears it)
             txPickShell('termux');                                   // starts it again, with the Termux environment on
-            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // and when it is up: what it took over
             showToast('Syncing with Termux...');
         }
         function txTermuxStorage() { haptic(); txCloseSettings(); txCloseTermux(); txOpenTermux(TX_STORAGE_CMD); }
@@ -34239,7 +34304,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!d || d.app !== 'adb-app-manager' || d.kind !== 'hidden-settings' || !Array.isArray(d.settings)) return null;
             const out = [], seen = new Set();
             d.settings.slice(0, 2000).forEach(x => {
-                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || !/^[A-Za-z0-9_.:@-]{1,200}$/.test(x.key)) return;
+                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || sdbKeyProblem(x.key)) return;      // the same rule as for a name typed in
                 if (!(x.value === null || (typeof x.value === 'string' && x.value.length <= 2000))) return;
                 const id = x.ns + '/' + x.key;
                 if (seen.has(id)) return;
@@ -34248,11 +34313,21 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             return out;
         }
-        function sdbRestoreFrom(text) {
-            const all = sdbRestoreParse(text);
-            if (all === null) { showToast('That is not a Hidden Settings backup from this app'); return; }
-            if (!all.length) { showToast('Nothing usable in that file'); return; }
-            const cur = (ns, k) => sdbData[ns] ? (sdbData[ns].has(k) ? sdbData[ns].get(k) : null) : undefined;       // undefined: that table is not read yet
+        function sdbRestoreFrom(text, tried) {
+            const parsed = sdbRestoreParse(text);
+            if (parsed === null) { showToast('That is not a Hidden Settings backup from this app'); return; }
+            if (!parsed.length) { showToast('Nothing usable in that file'); return; }
+            // a table not read yet is read first: a value put into it without its "before" known would be journaled as new, and Revert would delete it
+            const unread = SDB_TABLES.filter(ns => !sdbData[ns] && parsed.some(x => x.ns === ns));
+            if (unread.length && !tried) {
+                unread.forEach(ns => sdbReadTable(ns));
+                const wait = () => { if (unread.some(ns => sdbLoading[ns])) setTimeout(wait, 100); else sdbRestoreFrom(text, true); };
+                setTimeout(wait, 100);
+                return;
+            }
+            const all = parsed.filter(x => !!sdbData[x.ns]);
+            if (!all.length) { showToast('Could not read the settings'); return; }
+            const cur = (ns, k) => sdbData[ns].has(k) ? sdbData[ns].get(k) : null;
             const todo = all.filter(x => cur(x.ns, x.key) !== x.value);
             const same = all.length - todo.length;
             if (!todo.length) { showToast('All ' + all.length + ' settings are already as in the backup'); return; }
@@ -36091,6 +36166,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function applyProfile() {
             if (!profilePending) return;
             if (!guardPrivilege('Apply profile')) return;
+            if (batchRunActive || profileRunActive || optimizeRunActive) { showToast('Another batch action is already running'); return; }     // its modal is that run's
             haptic();
             const pr = loadProfiles().find(x => x.id === profilePending.id);
             const plan = profilePending.plan;
@@ -36240,6 +36316,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await mpCall('info', {});
             mp.info = r.ok ? r.data : { engine: false, error: r.error };
             mpEngineNote();
+            mpAdopt();
             await mpSourcesLoad();
             mpPatchedLoad();
             mpAppsRender();
@@ -36771,6 +36848,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         async function mpInstallReport(r, id, pkg) {
             const d = r.data || {};
+            if (r.ok && d.ok && d.handedOff) { showToast(d.output || ''); return false; }       // opened in the system installer: not known to be installed
             if (r.ok && d.ok) { showToast('Installed'); await mpPatchedLoad(); if (mp.patchedOpen) mpPatchedRender(); return true; }
             if (d.retry === 'uninstall') {
                 if (await mpAsk({ title: 'Uninstall the installed copy first?', text: 'Android refuses to install this over the app that is on the phone, because the patched app is signed with another key. Uninstalling the installed copy removes its data too. Back up what you need first.\n\n' + (d.output || ''), ok: 'Uninstall and install', danger: true })) {
@@ -37095,7 +37173,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return new Promise(resolve => {
                 let done = false;
                 mpSheetOpen({ title: o.title, sub: o.sub || '', body: '<div class="mp-note" style="white-space:pre-line;">' + escapeHtml(o.text || '') + '</div>',
-                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', fn: () => { done = true; resolve(i); } })), onClose: () => { if (!done) resolve(-1); } });
+                    buttons: o.buttons.map((b, i) => ({ label: b, cls: i === 0 ? 'primary' : '', keep: true, fn: () => { done = true; resolve(i); mpSheetClose(); } })), onClose: () => { if (!done) resolve(-1); } });
             });
         }
         async function mpStart() {
@@ -37129,15 +37207,35 @@ Type any command above (e.g. pm list packages -d)</div>
             const jobId = 'j' + Date.now().toString(36);
             const job = { job: jobId, pkg: t.pkg, name: t.name, version: t.ver, versionCode: t.code, from: t.from, path: t.path || '', bundles: bundles, installAfter: !!mp.cfg.installAfter, deleteAfter: !!(mp.cfg.installAfter && mp.cfg.deleteAfter),
                 keepIn: mp.cfg.keepIn, stripLibs: !!mp.cfg.stripLibs, failOnError: !!mp.cfg.failOnError, force: force, signer: mp.cfg.signer || 'Morphe', mode: mp.cfg.mode };
-            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: bundles.reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job };
+            mpRunEnter(jobId, job);
+            const r = await mpCall('patch', job);
+            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // The run view for a patch (the one this page starts, or one the app is already running: see mpAdopt)
+        function mpRunEnter(jobId, job) {
+            mp.run = { job: jobId, active: true, steps: {}, log: [], applied: [], failed: [], total: (job.bundles || []).reduce((n, b) => n + b.patches.length, 0), result: null, saved: null, install: null, req: job, seq: 0 };
             document.getElementById('mpPrep').style.display = 'none';
             document.getElementById('mpRun').style.display = '';
             document.getElementById('mpResult').innerHTML = '';
             document.getElementById('mpStop').style.display = '';
-            document.getElementById('mpRunTitle').textContent = 'Patching ' + t.name;
+            document.getElementById('mpRunTitle').textContent = 'Patching ' + mp.t.name;
             mpStepsRender(); mpLogRender(); mpRunStatus('Starting...');
-            const r = await mpCall('patch', job);
-            if (!r.ok) { mpRunLog('ERROR', r.error || 'The patcher could not be started'); mpRunFinish({ success: false, error: r.error || 'The patcher could not be started' }); }
+        }
+        // A patch keeps going when the window that started it is closed or restarted. When this page opens, ask the app whether one is going and, if so, show it
+        // and play back what has happened so far (the events carry numbers, so the ones that arrive meanwhile are not counted twice).
+        async function mpAdopt() {
+            if (mp.run && mp.run.active) return;
+            const r = await mpCall('jobStatus', {});
+            const d = r.ok && r.data;
+            if (!d || !d.running || !d.request || (mp.run && mp.run.active)) return;
+            const q = d.request;
+            mp.t = { pkg: q.pkg, name: q.name || mpAppName(q.pkg), from: q.from, path: q.path || '', ver: q.version || '', code: q.versionCode || '', info: null };
+            mp.sel = {}; mp.opts = {}; mp.srcTab = '';
+            mpRunEnter(d.job, q);
+            mp.run.adopted = true;
+            document.getElementById('mpPageTitle').textContent = mp.t.name;
+            mpShowPage(true);
+            (d.events || []).forEach(mpOnEvent);
         }
         function mpRunStatus(t) { const el = document.getElementById('mpRunStatus'); if (el) el.textContent = t; }
         function mpRunLog(level, text, ts) { if (!mp.run) return; mp.run.log.push({ ts: ts || Date.now(), level: level, text: text }); if (mp.run.log.length > 6000) mp.run.log.splice(0, 1000); mpLogSoon(); }
@@ -37176,6 +37274,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); usOnProgress(e); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
+            if (e.seq) { if (e.seq <= r.seq) return; r.seq = e.seq; }          // numbered by the app: one already seen (it was in the playback) is not counted again
             switch (e.t) {
                 case 'log': mpRunLog(e.level, e.text, e.ts); break;
                 case 'step': r.steps[e.name] = e.state; if (e.state === 'RUNNING') mpRunStatus(e.name + '...'); mpStepsRender(); mpRunLog('INFO', e.name + ' ' + e.state.toLowerCase(), e.ts); break;
@@ -37184,7 +37283,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (e.ok) { r.applied.push(e.name); mpRunLog('OK', 'Applied: ' + e.name, e.ts); } else { r.failed.push({ name: e.name }); mpRunLog('ERROR', 'Failed: ' + e.name, e.ts); }
                     mpRunStatus((e.ok ? 'Applied ' : 'Failed ') + e.name + ' (' + (r.applied.length + r.failed.length) + ' of ' + r.total + ')'); mpStepsRender(); break;
                 case 'saved': r.saved = e.item; mpPatchedLoad(); break;
-                case 'install': r.install = e; mpRunLog(e.ok ? 'OK' : 'ERROR', 'Install: ' + (e.ok ? 'done' : (e.output || 'failed')), e.ts); break;
+                case 'install': r.install = e; mpRunLog(e.ok ? (e.handedOff ? 'INFO' : 'OK') : 'ERROR', 'Install: ' + (e.ok && !e.handedOff ? 'done' : (e.output || 'failed')), e.ts); break;
                 case 'deleted': mpRunLog('INFO', 'The patched APK was deleted after the install.', e.ts); break;
                 case 'result': mpRunFinish(e.result || e); break;      // the app sends this last, after saving and installing
             }
@@ -37216,9 +37315,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 el.innerHTML = '<div class="mp-result ok"><h3>' + escapeHtml(t.name || 'The app') + ' is patched</h3>' +
                     '<div class="mp-note">' + (res.applied || r.applied).length + ' patches applied' + (failed.length ? ', ' + failed.length + ' failed' : '') + '. <span translate="no">' + escapeHtml(it.fileName || '') + '</span>' + (it.size ? ' (' + escapeHtml(formatBytes(it.size)) + ')' : '') + '</div>' +
                     (failed.length ? (() => { const sp = mpSplitFailed(failed); return '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(sp.roots.map(f => f.name).join(', ')) + '</span>' + (sp.deps.length ? ' and ' + sp.deps.length + ' that depend on ' + (sp.roots.length > 1 ? 'them' : 'it') : '') + '. The rest was applied.</div>'; })() : '') +
-                    (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok ? 'Installed.' : 'The install did not work: ') + (ins.ok ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
+                    (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok && !ins.handedOff ? 'Installed.' : ins.ok ? '' : 'The install did not work: ') + (ins.ok && !ins.handedOff ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
                     (it.keptIn && it.keptIn.length ? '<div class="mp-note">Saved in <span translate="no">' + escapeHtml(it.keptIn.join(' and ')) + '</span>.</div>' : '') +
-                    '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(' + jsArg(it.id) + ')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(' + jsArg(it.id) + ')">Save to Downloads</button>' : '') +
+                    '<div class="mp-row">' + (it.id && !(ins && ins.ok && !ins.handedOff) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(' + jsArg(it.id) + ')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(' + jsArg(it.id) + ')">Save to Downloads</button>' : '') +
                     '<button class="mode-action-btn" onclick="mpPatchedOpen()">Patched APKs</button></div></div>';
                 mpRunStatus('Done'); mpPatchedLoad();
                 return;
@@ -37248,6 +37347,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mpToggleTrace(i) { const e = document.getElementById('mpTrace' + i); if (e) e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
         function mpFailHint(res, trace) {
+            if (res.busy) return '';                                          // the patcher is busy with another job: the error says so, a hint about patches would mislead
             const s = (res.error || '') + '\n' + (trace || '') + '\n' + (res.trace || '');
             if (/OutOfMemory|killed|heap/i.test(s)) return 'The patcher ran out of memory. Close other apps and try again, or turn on "Strip unused native libraries" in the patcher settings.';
             if (/No patch is left|incompatible|does not patch|not support/i.test(s)) return 'The patches do not support this version of the app. Get a supported version with Morphe Helper, or turn on "Patch unsupported versions" in the patcher settings.';
@@ -37257,7 +37357,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (/Patch bundle|corrupt|\bdex\b/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
             return 'A patch could not be applied. This usually means the patch does not fit this version of the app. Check the details below and the log.';
         }
-        function mpBackToPatches() { mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
+        function mpBackToPatches() { if (mp.run && mp.run.adopted) { mpSelDefaults(); mpTargetRender(); } mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
         async function mpRetryContinue() { mp.cfg.failOnError = false; mpCfgSave(); mpBackToPatches(); showToast('Failed patches are skipped now. Patch again.'); }
         async function mpRunInstall() {
             const it = mp.run && mp.run.saved;
@@ -37277,7 +37377,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         async function mpHelperOpen(pkg, version) {
             await mpHelperLoad();
-            mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
+            if (mp.h && mp.h.busy) mp.h.tab = 'get';           // a download is running: its state (and its result, when it comes) stays
+            else mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
             mpSheetOpen({ title: 'Morphe Helper', sub: 'Get the original app the patches need (APK, APKM, APKS or XAPK)', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
             mp.helperOpen = true;
             mpHelperRender();
@@ -39324,7 +39425,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
         // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
         // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
-        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null };
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null, pend: [], pendLen: 0 };
         const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
         function rtLoad(then) {
             if (window.Terminal && window.FitAddon) { then(); return; }
@@ -39346,9 +39447,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!window.AndroidBridge || !window.AndroidBridge.ptyStart) { showToast('The full-screen terminal needs the app (not a plain browser)'); return; }
             haptic();
             if (txFullOn) txFullToggle(false);
-            rt.backend = backend || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
-            if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
-            const sel = document.getElementById('rtShell'); if (sel) sel.value = rt.backend;
+            // A session that is running keeps its backend (the dropdown shows it). A backend asked for explicitly (the Termux setup button) that differs from the running one
+            // is picked as the dropdown would pick it (restart on it); either way an explicit choice is remembered like the dropdown does.
+            const want = ['app', 'priv', 'termux'].includes(backend) ? backend : '';
+            const switching = !!(rt.started && want && want !== rt.backend);
+            if (!rt.started) {
+                rt.backend = want || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
+                if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
+            }
+            if (want) kvSet('rt_shell', want);
+            const sel = document.getElementById('rtShell'); if (sel) sel.value = switching ? want : rt.backend;
             rt.font = Math.max(8, Math.min(28, parseInt(kvGet('rt_font', 14), 10) || 14));
             document.getElementById('rtOverlay').classList.add('show');
             document.body.classList.add('rt-open');
@@ -39357,7 +39465,7 @@ Type any command above (e.g. pm list packages -d)</div>
             rtSize();
             if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
             window.addEventListener('resize', rtSize);
-            rtLoad(() => { rtInit(); rtSize(); if (!rt.started) rtStart(); else rt.term.focus(); });
+            rtLoad(() => { rtInit(); rtSize(); if (switching) rtPickShell(want); else if (!rt.started) rtStart(); else rt.term.focus(); });
         }
         function rtHide() {
             rt.open = false;
@@ -39386,11 +39494,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function rtStart() {
             if (!rt.term) return;
             try { rt.fit.fit(); } catch (e) {}
-            rt.started = true; rt.state = 'starting';
+            rt.started = true; rt.state = 'starting'; rtPendDrop();
             rtNote('');
             let r = '';
             try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtNote(r.replace(/^error:\s*/, '')); }
+            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtPendDrop(); rtNote(r.replace(/^error:\s*/, '')); }
             else { rt.token = (/^started:(\d+)$/.exec(r) || [])[1] || null; rt.term.focus(); }
         }
         // The phone tags every start/output/end notice with the token of the start it belongs to. A notice queued before a restart can still run after it
@@ -39398,8 +39506,15 @@ Type any command above (e.g. pm list packages -d)</div>
         function rtStale(token) { return token != null && String(token) !== String(rt.token); }
         window.onPtyStarted = function (id, res, token) {
             if (id !== rt.id || rtStale(token)) return;
-            if (res && res.ok) { rt.state = 'running'; return; }
-            rt.state = 'exited';
+            if (res && res.ok) {
+                rt.state = 'running';
+                // the phone stores the session only after the process is spawned, so a resize and keys sent before this notice were dropped there: send the size now and then the held keys
+                try { if (rt.term && window.AndroidBridge && window.AndroidBridge.ptyResize) window.AndroidBridge.ptyResize(rt.id, rt.term.rows, rt.term.cols); } catch (e) {}
+                const held = rt.pend; rtPendDrop();
+                held.forEach(rtSend);
+                return;
+            }
+            rt.state = 'exited'; rtPendDrop();
             rtNote(String((res && res.message) || 'The terminal did not start'));
         };
         window.onPtyData = function (id, b64, token) {
@@ -39412,11 +39527,14 @@ Type any command above (e.g. pm list packages -d)</div>
         };
         window.onPtyExit = function (id, code, token) {
             if (id !== rt.id || rtStale(token)) return;
-            rt.state = 'exited';
+            rt.state = 'exited'; rtPendDrop();
             if (rt.term) rt.term.write('\r\n\x1b[2m[process ended' + (code >= 0 ? ' (' + code + ')' : '') + ': press Enter to start a new one]\x1b[0m\r\n');
         };
+        function rtPendDrop() { rt.pend = []; rt.pendLen = 0; }
         function rtSend(str) {
             if (!str || !window.AndroidBridge || !window.AndroidBridge.ptyWrite) return;
+            // while the session is starting the phone has nothing to write to yet: hold the keys (a few KB at most) until the start notice
+            if (rt.state === 'starting') { if (rt.pendLen + str.length <= 4096) { rt.pend.push(str); rt.pendLen += str.length; } return; }
             const bytes = new TextEncoder().encode(str);
             let bin = '';
             for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
@@ -39502,7 +39620,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!t) { showToast('The clipboard is empty'); return; }
             if (rt.term) { rt.term.paste(t); rt.term.focus(); }
         }
-        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; rt.token = 'closed'; }
+        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; rt.token = 'closed'; rtPendDrop(); }
         function rtRestart() {
             haptic();
             rtEnd();

@@ -55,16 +55,23 @@ public class MorpheService extends Service {
         }
     }
 
-    public static void cancel(Context c) {
-        try { c.startService(new Intent(c, MorpheService.class).setAction(ACTION_CANCEL)); } catch (RuntimeException ignored) {}
+    /** Stops the engine command that writes {@code events}; the service ignores this when it is running another command. */
+    public static void cancel(Context c, File events) {
+        try {
+            Intent i = new Intent(c, MorpheService.class).setAction(ACTION_CANCEL);
+            if (events != null) i.putExtra("events", events.getAbsolutePath());
+            c.startService(i);
+        } catch (RuntimeException ignored) {}
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) { stopSelf(); return START_NOT_STICKY; }
         if (ACTION_CANCEL.equals(intent.getAction())) {
-            cancelled = true;
             File ev = eventsFile;
+            // A Cancel from a runner names the events file of the command it started: if the service is busy with another one (or none), it is not for this job
+            if (!MorpheServiceRules.cancelApplies(running, ev, intent.getStringExtra("events"))) { if (!running) stopSelf(); return START_NOT_STICKY; }
+            cancelled = true;
             if (ev != null && running) {
                 append(ev, "LOG WARN Cancelled.\nRESULT {\"success\":false,\"cancelled\":true,\"error\":\"Cancelled\"}\n");
             }
@@ -72,7 +79,13 @@ public class MorpheService extends Service {
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() { @Override public void run() { android.os.Process.killProcess(android.os.Process.myPid()); } }, 300);
             return START_NOT_STICKY;
         }
-        if (!ACTION_RUN.equals(intent.getAction()) || running) { if (!running) stopSelf(); return START_NOT_STICKY; }
+        if (!ACTION_RUN.equals(intent.getAction())) { if (!running) stopSelf(); return START_NOT_STICKY; }
+        if (running) {
+            // Another job is going (for example one an earlier window of the app started). Say so in the events file the new caller is waiting on, so it ends at once.
+            String ne = intent.getStringExtra("events");
+            if (ne != null) MorpheServiceRules.answerBusy(new File(ne), eventsFile);
+            return START_NOT_STICKY;
+        }
         final String cmd = intent.getStringExtra("cmd");
         cmdName = cmd == null ? "" : cmd;
         final File job = new File(intent.getStringExtra("job"));

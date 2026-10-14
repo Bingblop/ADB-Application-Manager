@@ -49,6 +49,32 @@ public class JobTickerTest {
     t.start();
     check("it can be started again", waitFor(() -> texts.size() > c));
     t.stop();
+    // a report under way when stop() is called finishes before stop() returns, and none starts after it (a stale one would write over the result)
+    final AtomicInteger late = new AtomicInteger(), slowIn = new AtomicInteger();
+    final boolean[] stoppedFlag = { false };
+    JobTicker slow = new JobTicker(new ProgressMeter(100, 0, System.currentTimeMillis()), "Y", 1, 1000, new JobTicker.Listener() {
+      public void onTick(String text, int pct, long s) {
+        slowIn.incrementAndGet();
+        try { Thread.sleep(30); } catch (InterruptedException ignored) {}
+        if (stoppedFlag[0]) late.incrementAndGet();
+        slowIn.decrementAndGet();
+      }
+    });
+    slow.start();
+    check("the slow listener is being called", waitFor(() -> slowIn.get() > 0));
+    slow.stop();
+    stoppedFlag[0] = true;
+    check("stop() returns only when no report is under way", slowIn.get() == 0);
+    Thread.sleep(200);
+    check("no report runs on after stop() returned", late.get() == 0);
+    JobTicker direct = new JobTicker(new ProgressMeter(100, 0, System.currentTimeMillis()), "Z", 1000, 1000, new JobTicker.Listener() {
+      public void onTick(String text, int pct, long s) { late.incrementAndGet(); }
+    });
+    direct.tick();
+    check("a direct tick() before start() still reports", late.get() == 1);
+    direct.stop();
+    direct.tick();
+    check("a direct tick() after stop() does not", late.get() == 1);
     // a listener that throws does not end the ticker
     final AtomicInteger k = new AtomicInteger();
     JobTicker bad = new JobTicker(new ProgressMeter(0, 0, System.currentTimeMillis()), "x", 30, 1000, new JobTicker.Listener() {

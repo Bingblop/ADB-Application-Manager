@@ -124,6 +124,20 @@ public final class Stores {
         return !(p.contains("pc") || p.contains("windows") || p.contains("mac") || p.contains("linux") || p.contains("web"));
     }
 
+    /**
+     * {owner, repo} of a githubRepo value: "owner/repo", also a full https://github.com/owner/repo address; null unless there are exactly
+     * two non-empty parts ("owner/", "/", "a/b/c" give null, so a bad entry is skipped instead of failing the catalog).
+     */
+    public static String[] githubOwnerRepo(String githubRepo) {
+        if (githubRepo == null) return null;
+        String s = githubRepo.trim().replaceFirst("^(?i)https?://(www\\.)?github\\.com/", "");
+        String[] parts = s.split("/");
+        if (parts.length != 2) return null;
+        String owner = parts[0].trim(), repo = parts[1].trim().replaceAll("\\.git$", "");
+        if (owner.isEmpty() || repo.isEmpty()) return null;
+        return new String[]{owner, repo};
+    }
+
     private static boolean isDirectApk(String url) {
         if (url == null) return false;
         String u = url.trim().toLowerCase(Locale.US);
@@ -141,67 +155,74 @@ public final class Stores {
      */
     public static JSONObject orionCatalog(int maxItems) throws Exception {
         byte[] raw = UpdateManager.httpGet(ORION_APPS_URL, "application/json", 8 * 1024 * 1024);
-        JSONArray arr = new JSONArray(new String(raw, "UTF-8"));
+        return orionItems(new JSONArray(new String(raw, "UTF-8")), maxItems);
+    }
+
+    /** The mapping of {@link #orionCatalog} on the array already read: an entry that cannot be mapped is skipped, never the whole catalog. */
+    public static JSONObject orionItems(JSONArray arr, int maxItems) throws Exception {
         JSONArray items = new JSONArray();
         for (int i = 0; i < arr.length() && items.length() < maxItems; i++) {
             JSONObject e = arr.optJSONObject(i);
             if (e == null) continue;
-            // KomiApi.str: Android's optString() turns a JSON null into the text "null"
-            if (!isAndroid(KomiApi.str(e, "platform"))) continue;
+            try {
+                // KomiApi.str: Android's optString() turns a JSON null into the text "null"
+                if (!isAndroid(KomiApi.str(e, "platform"))) continue;
 
-            String downloadUrl = KomiApi.str(e, "downloadUrl");
-            String githubRepo = KomiApi.str(e, "githubRepo");
-            String repoUrl = KomiApi.str(e, "repoUrl");
-            String keyword = KomiApi.str(e, "releaseKeyword");
+                String downloadUrl = KomiApi.str(e, "downloadUrl");
+                String[] gh = githubOwnerRepo(KomiApi.str(e, "githubRepo"));
+                String repoUrl = KomiApi.str(e, "repoUrl");
+                String keyword = KomiApi.str(e, "releaseKeyword");
 
-            String resolveKind, owner = "", repo = "", apkUrl = "";
-            if (isDirectApk(downloadUrl)) {
-                resolveKind = "direct";
-                apkUrl = downloadUrl.trim();
-            } else if (githubRepo != null && githubRepo.contains("/")) {
-                resolveKind = "github";
-                String[] or = githubRepo.trim().split("/");
-                owner = or[0];
-                repo = or[1];
-            } else {
-                JSONObject parsed = UpdateManager.parseRepoUrl(repoUrl);
-                if (parsed != null && "codeberg.org".equals(parsed.optString("host"))) {
-                    resolveKind = "codeberg";
-                    owner = parsed.optString("owner");
-                    repo = parsed.optString("repo");
-                } else if (parsed != null && "github.com".equals(parsed.optString("host"))) {
+                String resolveKind, owner = "", repo = "", apkUrl = "";
+                if (isDirectApk(downloadUrl)) {
+                    resolveKind = "direct";
+                    apkUrl = downloadUrl.trim();
+                } else if (gh != null) {
                     resolveKind = "github";
-                    owner = parsed.optString("owner");
-                    repo = parsed.optString("repo");
+                    owner = gh[0];
+                    repo = gh[1];
                 } else {
-                    continue; // gitlab / sourceforge / plain website - not resolvable in-app
+                    JSONObject parsed = UpdateManager.parseRepoUrl(repoUrl);
+                    if (parsed != null && "codeberg.org".equals(parsed.optString("host"))) {
+                        resolveKind = "codeberg";
+                        owner = parsed.optString("owner");
+                        repo = parsed.optString("repo");
+                    } else if (parsed != null && "github.com".equals(parsed.optString("host"))) {
+                        resolveKind = "github";
+                        owner = parsed.optString("owner");
+                        repo = parsed.optString("repo");
+                    } else {
+                        continue; // gitlab / sourceforge / plain website - not resolvable in-app
+                    }
                 }
-            }
 
-            String id = KomiApi.str(e, "id");
-            if (id.isEmpty()) id = KomiApi.str(e, "packageName");
-            if (id.isEmpty()) id = "orion-" + i;
-            String nm = KomiApi.str(e, "name");
-            JSONObject o = new JSONObject();
-            o.put("id", id);
-            o.put("key", id);
-            o.put("name", nm.isEmpty() ? "App" : nm);
-            o.put("desc", trim(KomiApi.str(e, "description"), 200));
-            o.put("icon", KomiApi.str(e, "icon"));
-            String ver = KomiApi.str(e, "latestVersion");
-            if (ver.isEmpty()) ver = KomiApi.str(e, "version");
-            o.put("version", ver);
-            o.put("pkg", KomiApi.str(e, "packageName"));
-            o.put("cats", new JSONArray(splitCategories(KomiApi.str(e, "category"))));
-            o.put("author", KomiApi.str(e, "author"));
-            o.put("page", repoUrl);
-            o.put("source", "orion");
-            o.put("resolveKind", resolveKind);
-            o.put("owner", owner);
-            o.put("repo", repo);
-            o.put("assetFilter", keyword == null ? "" : keyword);
-            o.put("apkUrl", apkUrl);
-            items.put(o);
+                String id = KomiApi.str(e, "id");
+                if (id.isEmpty()) id = KomiApi.str(e, "packageName");
+                if (id.isEmpty()) id = "orion-" + i;
+                String nm = KomiApi.str(e, "name");
+                JSONObject o = new JSONObject();
+                o.put("id", id);
+                o.put("key", id);
+                o.put("name", nm.isEmpty() ? "App" : nm);
+                o.put("desc", trim(KomiApi.str(e, "description"), 200));
+                o.put("icon", KomiApi.str(e, "icon"));
+                String ver = KomiApi.str(e, "latestVersion");
+                if (ver.isEmpty()) ver = KomiApi.str(e, "version");
+                o.put("version", ver);
+                o.put("pkg", KomiApi.str(e, "packageName"));
+                o.put("cats", new JSONArray(splitCategories(KomiApi.str(e, "category"))));
+                o.put("author", KomiApi.str(e, "author"));
+                o.put("page", repoUrl);
+                o.put("source", "orion");
+                o.put("resolveKind", resolveKind);
+                o.put("owner", owner);
+                o.put("repo", repo);
+                o.put("assetFilter", keyword == null ? "" : keyword);
+                o.put("apkUrl", apkUrl);
+                items.put(o);
+            } catch (Exception ex) {
+                // one broken entry (a field of the wrong shape, a hostile value) must not take the whole catalog down
+            }
         }
         JSONObject out = new JSONObject();
         out.put("status", "ok");

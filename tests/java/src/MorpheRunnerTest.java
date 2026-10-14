@@ -66,12 +66,50 @@ public class MorpheRunnerTest {
             } }, "fake-service").start();
             return true;
         }
-        @Override public void cancel() { cancels.incrementAndGet(); CountDownLatch h = hold; if (h != null) { stopped = true; h.countDown(); } }
+        @Override public void cancel(File events) { cancels.incrementAndGet(); CountDownLatch h = hold; if (h != null) { stopped = true; h.countDown(); } }
         @Override public boolean alive() {
             if (alive) return true;
             if (aliveForPolls > 0) { aliveForPolls--; return true; }
             return false;
         }
+    }
+
+    /**
+     * The patcher service as one process shared by every runner of the app (the real one is a single service in the :morphe process): it runs one
+     * command at a time, answers a RUN that arrives meanwhile and a Cancel that is not for the running command with the same rules the real service
+     * uses ({@link MorpheServiceRules}). {@code dropBusy} makes it behave like the old service, which ignored the second RUN without a word.
+     */
+    static class SharedService implements MorpheRunner.Launcher {
+        volatile boolean running, dropBusy, cancelledRunning;
+        volatile File runningEvents;
+        volatile CountDownLatch hold = new CountDownLatch(1);
+        final AtomicInteger runs = new AtomicInteger(), cancelsSeen = new AtomicInteger();
+
+        @Override public boolean start(final String cmd, File job, final File events, String title) {
+            if (running) {
+                if (!dropBusy) MorpheServiceRules.answerBusy(events, runningEvents);
+                return true;
+            }
+            running = true; runningEvents = events; runs.incrementAndGet();
+            final CountDownLatch h = hold;
+            new Thread(new Runnable() { @Override public void run() {
+                try {
+                    append(events, "LOG INFO started " + cmd + "\n");
+                    h.await();
+                    if (!cancelledRunning) append(events, "RESULT {\"success\":true,\"cmd\":\"" + cmd + "\"}\n");
+                } catch (Exception ignored) {
+                } finally { running = false; }
+            } }, "shared-service").start();
+            return true;
+        }
+        @Override public void cancel(File events) {
+            cancelsSeen.incrementAndGet();
+            if (!MorpheServiceRules.cancelApplies(running, runningEvents, events == null ? null : events.getAbsolutePath())) return;
+            cancelledRunning = true;
+            try { append(runningEvents, "RESULT {\"success\":false,\"cancelled\":true,\"error\":\"Cancelled\"}\n"); } catch (IOException ignored) {}
+            hold.countDown();
+        }
+        @Override public boolean alive() { return running; }
     }
 
     static final MorpheRunner.Timing FAST = new MorpheRunner.Timing(10, 10, 30, 150, 60, 80);
@@ -194,6 +232,58 @@ public class MorpheRunnerTest {
         JSONObject slow = new MorpheRunner(s7, FAST).run("x", new JSONObject(), new File(root, "h"), "t", null, null, 5000);
         check("a run waits for the service of the earlier one to go away", slow.optBoolean("success") && System.currentTimeMillis() - t0 >= 40, null);
 
+
+        // D1 (1)+(2): a second window of the app has a runner of its own while the first one's job still goes in the service
+        final SharedService svc1 = new SharedService();
+        final MorpheRunner first1 = new MorpheRunner(svc1, FAST), second1 = new MorpheRunner(svc1, FAST);
+        final JSONObject[] firstAns = new JSONObject[1];
+        Thread t1 = new Thread(new Runnable() { @Override public void run() {
+            try { firstAns[0] = first1.run("patch", new JSONObject(), new File(root, "n1"), "t", "old", null, 20000); } catch (Exception e) { firstAns[0] = new JSONObject(); }
+        } });
+        t1.start();
+        long until1 = System.currentTimeMillis() + 3000;
+        while (svc1.runs.get() < 1 && System.currentTimeMillis() < until1) Thread.sleep(5);
+        long t0b = System.currentTimeMillis();
+        JSONObject busy = second1.run("list", new JSONObject(), new File(root, "n2"), "t", null, null, 20000);
+        long busyMs = System.currentTimeMillis() - t0b;
+        check("a command that meets a running job is told so at once, with the service's words", !busy.optBoolean("success") && MorpheServiceRules.BUSY.equals(busy.optString("error")) && busy.optBoolean("busy") && busyMs < 3000, busy.toString() + " in " + busyMs + " ms");
+        check("... and the running job goes on", svc1.running && !svc1.cancelledRunning && svc1.cancelsSeen.get() == 0 && firstAns[0] == null, "running=" + svc1.running + " cancels=" + svc1.cancelsSeen.get());
+        check("... its events file is untouched (no line of the other command in it)", read(new File(root, "n1/events.log")).equals("LOG INFO started patch\n"), read(new File(root, "n1/events.log")));
+        svc1.hold.countDown();
+        t1.join(5000);
+        check("the running job ends with its own answer", firstAns[0] != null && firstAns[0].optBoolean("success") && "patch".equals(firstAns[0].optString("cmd")), String.valueOf(firstAns[0]));
+
+        // the old service dropped the second RUN: that caller waits until its own time-out, and its Stop must not reach the job that is going
+        final SharedService old = new SharedService(); old.dropBusy = true;
+        final MorpheRunner first2 = new MorpheRunner(old, FAST), second2 = new MorpheRunner(old, FAST);
+        final JSONObject[] firstAns2 = new JSONObject[1];
+        Thread t2 = new Thread(new Runnable() { @Override public void run() {
+            try { firstAns2[0] = first2.run("patch", new JSONObject(), new File(root, "n3"), "t", "old2", null, 20000); } catch (Exception e) { firstAns2[0] = new JSONObject(); }
+        } });
+        t2.start();
+        long until2 = System.currentTimeMillis() + 3000;
+        while (old.runs.get() < 1 && System.currentTimeMillis() < until2) Thread.sleep(5);
+        JSONObject slow2 = second2.run("list", new JSONObject(), new File(root, "n4"), "t", null, null, 300);
+        check("a command whose RUN was dropped times out", !slow2.optBoolean("success") && slow2.optString("error").contains("too long"), slow2.toString());
+        check("... its time-out stop names its own events file and leaves the running job alone", old.cancelsSeen.get() == 1 && !old.cancelledRunning && old.running && firstAns2[0] == null, "cancelsSeen=" + old.cancelsSeen.get() + " cancelledRunning=" + old.cancelledRunning);
+        first2.cancel("old2");
+        t2.join(5000);
+        check("a Stop for the running job itself still stops it", firstAns2[0] != null && firstAns2[0].optBoolean("cancelled") && old.cancelledRunning, String.valueOf(firstAns2[0]));
+
+        // the service's own rules
+        File evA = new File(root, "ra/events.log"), evB = new File(root, "rb/events.log");
+        check("a Cancel for the running command applies", MorpheServiceRules.cancelApplies(true, evA, evA.getAbsolutePath()), null);
+        check("a Cancel for another command does not", !MorpheServiceRules.cancelApplies(true, evA, evB.getAbsolutePath()), null);
+        check("a Cancel when nothing runs does not (the service then ends itself)", !MorpheServiceRules.cancelApplies(false, null, evB.getAbsolutePath()) && !MorpheServiceRules.cancelApplies(false, evA, evA.getAbsolutePath()), null);
+        check("the notification's Cancel (no events file) always applies", MorpheServiceRules.cancelApplies(true, evA, null) && MorpheServiceRules.cancelApplies(true, evA, "") && MorpheServiceRules.cancelApplies(false, null, null), null);
+        evB.getParentFile().mkdirs();
+        check("the busy answer is written into the new run's file, as a RESULT line the tail reads", MorpheServiceRules.answerBusy(evB, evA), null);
+        MorpheEvents.Tail bt = new MorpheEvents.Tail(evB); bt.poll();
+        check("... which reads as a failed result with the busy words", bt.sawResult() && !bt.result().optBoolean("success") && MorpheServiceRules.BUSY.equals(bt.result().optString("error")), read(evB));
+        evA.getParentFile().mkdirs();
+        append(evA, "LOG INFO running\n");
+        check("the busy answer is never written into the file of the running job", !MorpheServiceRules.answerBusy(evA, evA) && read(evA).equals("LOG INFO running\n"), read(evA));
+
         // the bridge uses all this
         File src = null;
         for (File d = new File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { File f = new File(d, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
@@ -204,6 +294,10 @@ public class MorpheRunnerTest {
             String cat = c < 0 ? "" : m.substring(c, Math.min(m.length(), c + 400));
             check("catalog reads run one at a time (the second finds the first one's answer in the cache)", cat.contains("synchronized (catalogLock)") && cat.contains("catalogLocked("), cat);
             check("the bridge runs the engine through MorpheRunner and keeps no engine semaphore of its own", m.contains("runner.run(") && !m.contains("engine.acquire()"), null);
+            File svcSrc = new File(src.getParentFile(), "MorpheService.java");
+            String sv = new String(java.nio.file.Files.readAllBytes(svcSrc.toPath()), "UTF-8");
+            int rp = sv.indexOf("if (running) {");
+            check("the service answers a RUN that arrives while it is busy (it no longer drops it) and the runner's Stop names its events file", rp > 0 && sv.substring(rp, Math.min(sv.length(), rp + 400)).contains("MorpheServiceRules.answerBusy(") && sv.contains("MorpheServiceRules.cancelApplies(running, ev, intent.getStringExtra(\"events\"))") && sv.contains("i.putExtra(\"events\", events.getAbsolutePath())"), null);
             int cp = m.indexOf("case \"cancel\":");
             String cb = cp < 0 ? "" : m.substring(cp, Math.min(m.length(), cp + 400));
             check("the cancel call checks the job id and that it is the running job, then goes through runner.cancel", cb.contains("validJobId(job)") && cb.contains("slot.current()") && cb.contains("runner.cancel(job)") && !cb.contains("MorpheService.cancel"), cb);
