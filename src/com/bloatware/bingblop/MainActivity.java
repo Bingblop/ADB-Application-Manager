@@ -11833,14 +11833,14 @@ public class MainActivity extends Activity {
         public String setComponentEnabled(String pkg, String component, boolean enable) {
             JSONObject r = new JSONObject();
             try {
-                if (pkg == null || component == null || !pkg.matches("[A-Za-z0-9._]+") || !component.matches("[A-Za-z0-9._$]+")) {
+                String cmd = ShellArgs.componentCommand(pkg, component, enable);
+                if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
                 if ("standard".equals(resolveExecMode())) {
                     r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
                 }
-                String full = component.startsWith(".") ? pkg + component : component;
-                String out = executeShell("pm " + (enable ? "enable" : "disable") + " " + pkg + "/" + full);
+                String out = executeShell(cmd);
                 String low = out == null ? "" : out.toLowerCase();
                 r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
                 r.put("output", out != null ? out.trim() : "");
