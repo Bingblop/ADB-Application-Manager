@@ -1,5 +1,5 @@
-ok   1. at 400 x 860 the first app row starts well under 300 px (it was at 420): 252 px
-ok      there is no block of stat boxes above the filters any more; the filters are one row: {"firstRow":252,"rowH":46,"sideScroll":false,"grid":false}
+ok   1. at 400 x 860 the first app row starts well under 300 px (it was at 420): 253 px
+ok      there is no block of stat boxes above the filters any more; the filters are one row: {"firstRow":253,"rowH":46,"sideScroll":false,"grid":false}
    the row: ["all=All Apps (10)","installed=Installed (9)","running=Running (2)","user=3rd Party (7)","system=System (2)","enabled=Enabled (7)","frozen=Frozen (2)","recent=Updated 7d (1)","suspended=Suspended (1)","patched=Patched (0)","trackers=Trackers (?)","uninstalled=Uninstalled (1)"]
 ok   2. every filter has its pill, each once: All Apps, the seven counted ones (first, so they show), then Updated 7d, Suspended, Patched, Trackers, Uninstalled last: all,installed,running,user,system,enabled,frozen,recent,suspended,patched,trackers,uninstalled
 ok      each of the seven counts is in its pill and right (Installed 9, Running 2, 3rd Party 7, System 2, Enabled 7, Frozen 2, Uninstalled 1); All Apps counts 10: {"n":{"installed":9,"running":2,"enabled":7,"frozen":2,"user":7,"system":2,"uninstalled":1},"shown":{"installed":9,"running":2,"enabled":7,"frozen":2,"user":7,"system":2,"uninstalled":1},"all":"10","ids":true}
@@ -10,12 +10,12 @@ ok      each count is written in its own colour (the colour its badge has): []
 ok      tapping each one shows just its apps, lights it and presses it; All Apps turns it off: installed:9 running:2 user:7 system:2 enabled:7 frozen:2 uninstalled:1
 ok      Enabled / Frozen and 3rd Party / System are pairs that share a frame, the frame in the colour of the side that is on: {"pair":"enabled/frozen","frame":true,"other":true}
 ok      Enter on a focused count pill uses it
-ok   5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px): [{"v":"name","w":91,"text":57,"fits":true,"sorted":true},{"v":"updated","w":95,"text":61,"fits":true,"sorted":true},{"v":"installed","w":85,"text":51,"fits":true,"sorted":true},{"v":"size","w":60,"text":20,"fits":true,"sorted":true},{"v":"updates","w":93,"text":59,"fits":true,"sorted":true}]
+ok   5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px): [{"v":"name","w":101,"text":67,"fits":true,"sorted":true},{"v":"updated","w":105,"text":71,"fits":true,"sorted":true},{"v":"installed","w":93,"text":59,"fits":true,"sorted":true},{"v":"size","w":60,"text":24,"fits":true,"sorted":true},{"v":"updates","w":103,"text":69,"fits":true,"sorted":true}]
 ok      it follows the choice: "Size" is narrower than "Updates first"
 ok      the row keeps the menu and all its buttons
-ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":235,"rowH":46,"sideScroll":false,"grid":false}
-ok   6. 360 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":242,"rowH":46,"sideScroll":false,"grid":false}
-ok   6. 360 px in German: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":241,"rowH":46,"sideScroll":false,"grid":false} Installiert (9)
+ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":240,"rowH":46,"sideScroll":false,"grid":false}
+ok   6. 360 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":247,"rowH":46,"sideScroll":false,"grid":false}
+ok   6. 360 px in German: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":246,"rowH":46,"sideScroll":false,"grid":false} Installiert (9)
 ok   7. at 1200 px the page column stays 600 px wide, so the twelve pills still overflow their 568 px row and the arrow shows: {"shown":true,"overflows":true,"rowW":568}
 ok      when every pill fits, the arrow is not shown: {"shown":false,"overflows":false}
 ok      a count that grows past the row brings it back, and it goes when the count is short again: [true,false]

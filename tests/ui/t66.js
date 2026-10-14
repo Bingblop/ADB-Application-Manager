@@ -29,7 +29,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await sleep(350);
   };
-  const find = async text => { await ev(t => { const i = document.getElementById('ovlSearch'); i.value = t; ovlSearchInput(); }, text); await sleep(320); };
+  // the found row goes to the middle of the screen, clear of the Undo snackbar at the bottom (the text above it grew with the type scale)
+  const find = async text => { await ev(t => { const i = document.getElementById('ovlSearch'); i.value = t; ovlSearchInput(); }, text); await sleep(320); await ev(t => { const r = document.querySelector('#ovlRows .ovl-row[data-id="' + t + '"]'); if (r) r.scrollIntoView({ block: 'center' }); }, text); await sleep(120); };
 
   await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); switchView('overlays'); ovlSetSub('list'); }); await sleep(700);
 

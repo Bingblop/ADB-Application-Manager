@@ -101,14 +101,14 @@
 
             /* ---- Type [fixed]: sizes by role, weights by step ---- */
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;   /* --ui-font (Settings > Font) goes first */
-            --fs-overline: 9px;                      /* uppercase badge and stat labels */
-            --fs-pkg: 10px;                          /* package names */
-            --fs-caption: 10.5px;                    /* captions and helper lines */
-            --fs-pill: 11px;                         /* filter pills, buttons, chips */
-            --fs-body: 12px;                         /* notes, descriptions, sheet text */
-            --fs-code: 12.5px;                       /* terminal, logcat and field values */
-            --fs-item: 13px;                         /* app name in a row, setting titles */
-            --fs-label: 14px;
+            --fs-overline: 11px;                     /* uppercase badge and stat labels: the smallest text on the page (11px is the floor a phone reads) */
+            --fs-pkg: 12px;                          /* package names and the other secondary lines */
+            --fs-caption: 12.25px;                   /* captions and helper lines */
+            --fs-pill: 12.5px;                       /* filter pills, buttons, chips */
+            --fs-body: 13px;                         /* notes, descriptions, sheet text */
+            --fs-code: 13.5px;                       /* terminal, logcat and field values */
+            --fs-item: 14px;                         /* app name in a row, setting titles */
+            --fs-label: 14.5px;
             --fs-sheet: 15px;                        /* sheet and section headings */
             --fs-lead: 16px;
             --fs-title: 17px;                        /* the app name in the header, the big number on a stat tile */
@@ -294,7 +294,7 @@
             .app-header .hdr-right { gap: var(--space-2); }
             .app-header .brand-box { padding-right: var(--space-2); }
         }
-        @media (max-width: 360px) { #execModeBadge { max-width: 47vw; } #execModeBadge #execModeText { font-size: var(--fs-caption); } }          /* "Setup Mode (Read-Only)", the first-run state, whole at 320 px */
+        @media (max-width: 360px) { #execModeBadge { max-width: 47vw; } #execModeBadge #execModeText { font-size: var(--fs-overline); letter-spacing: -0.2px; } }          /* "Setup Mode (Read-Only)", the first-run state, whole at 320 px (the smallest step of the type scale, a little tighter) */
         #execModeBadge #execModeText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; }
         #execModeBadge .status-dot { flex: 0 0 auto; }
 
@@ -330,6 +330,7 @@
         }
 
         .brand-text p .bt-sub { display: block; white-space: nowrap; }
+        .brand-text p.sub-wrap .bt-sub { white-space: normal; }          /* even at the smallest size the line is wider than the room (320 px): it wraps, nothing is cut */
 
         /* the gear and the mode badge share one height: whichever is taller (the badge when its words wrap) sets it for both */
         .hdr-right { display: flex; align-items: stretch; gap: var(--space-3); }
@@ -571,6 +572,7 @@
         .bn-tile .bn-ico { width: 44px; height: 44px; border-radius: calc(var(--radius-md) + 2px); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
         .bn-tile .bn-ico svg { width: 24px; height: 24px; }
         .bn-tile .bn-tl { white-space: pre-line; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+        @media (max-width: 360px) { .bn-tile { padding-left: var(--space-1); padding-right: var(--space-1); font-size: calc(var(--fs-pill) - 0.5px); } }          /* three tiles to a row on a narrow phone: a long name ("Gespeicherte", "Aplicaciones") still fits whole */
         .bn-tile .bn-badge { top: -5px; right: -5px; }
         .bn-tile .bn-badge.dot { top: -2px; right: 0; }
         .bn-tile.current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
@@ -714,7 +716,7 @@
             border-radius: var(--radius-lg);
             padding: 0 84px 0 var(--space-5);                       /* room for the two round buttons at the end (menu, Refresh); the clear x needs more once there is text */
             color: var(--text-main);
-            font-size: var(--fs-label);
+            font-size: var(--fs-item);                 /* 14px: the whole hint ("Search by name or package") still fits at 320 px */
             font-weight:var(--fw-semibold);
             outline: none;
             transition: border-color 0.2s;
@@ -1169,7 +1171,7 @@
         .hold-ic { color: var(--accent); flex: 0 0 auto; margin-top: 1px; }
         .hold-txt { min-width: 0; }
         .hold-what { font-size: var(--fs-item); }
-        .hold-where { font-size: var(--fs-pkg); font-weight:var(--fw-heavy); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-xs); padding: 1px var(--space-2); margin-left: var(--space-3); white-space: nowrap; }
+        .hold-where { font-size: var(--fs-pkg); font-weight:var(--fw-heavy); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-xs); padding: 1px var(--space-2); margin-left: var(--space-3); white-space: nowrap; display: inline-block; }          /* one piece: a tag too long for the rest of the line goes under the name whole */
         .hold-does { font-size: var(--fs-body); color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
         .als-cb { margin: 2px var(--space-3) 0 0; cursor: pointer; }
         .als-cb.on { background: var(--accent); border-color: var(--accent); }
@@ -1587,7 +1589,6 @@
         .trk-name { font-weight:var(--fw-heavy); }
         .trk-cats { font-size: var(--fs-pill); color: var(--text-muted); }
         .uad-chip.uad-chip-row { font-size: var(--fs-overline); padding: 1px var(--space-2); gap: var(--space-1); margin: 0 var(--space-1) var(--space-1) 0; line-height: 1.5; vertical-align: middle; }
-        .uad-chip.uad-chip-row .uad-chip-src { font-size: 8px; }
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--accent); font-weight:var(--fw-heavy); }
 
@@ -3469,16 +3470,19 @@
             margin-bottom: var(--space-3);
         }
 
+        /* four buttons in a row, as wide as each other; when the names do not fit (German, Russian on a narrow phone) a button moves to a second row whole */
         .uad-action-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            flex-wrap: wrap;
             gap: var(--space-2);
             margin-top: var(--space-3);
         }
 
         .uad-action-grid .batch-grid-btn {
+            flex: 1 1 0;
+            min-width: min-content;          /* the longest word; "Save to List" may take two lines */
             font-size: var(--fs-pkg);
-            padding: var(--space-3) 2px;
+            padding: var(--space-3) var(--space-1);
         }
 
         .uad-row {
@@ -3795,7 +3799,7 @@
         .fl-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--border-glass); }
         .fl-row:first-child { border-top: none; }
         .fl-row.off .fl-name { opacity: 0.55; }
-        .fl-name { flex: 1; min-width: 0; font-size: var(--fs-label); font-weight:var(--fw-heavy); }
+        .fl-name { flex: 1; min-width: 0; font-size: var(--fs-item); font-weight:var(--fw-heavy); }
         .fl-move { flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--fill-2); border: 1px solid var(--border-glass); color: var(--text-main); font-size: var(--fs-body); cursor: pointer; }
         .fl-move:disabled { opacity: 0.3; cursor: default; }
         .fl-move:active:not(:disabled) { background: var(--accent); color: var(--on-accent); }
@@ -5003,7 +5007,7 @@
                     <div class="tm-settings-row ovl-slider" style="margin:0;">
                         <b style="flex:0 0 104px; color:var(--text-muted); font-weight:700; font-size:11px;">Graph speed</b>
                         <input type="range" id="tmGraphDelay" min="150" max="1000" step="10" value="300" oninput="tmGraphDelayInput()" aria-label="Graph speed">
-                        <span id="tmGraphDelayVal" style="font-size:10.5px; color:var(--text-muted); flex:0 0 52px; text-align:right;">300 ms</span>
+                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">300 ms</span>
                     </div>
                     <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
                         <span>Units</span>
@@ -6191,7 +6195,7 @@
                         #animSpeedCard .anim-head { display: flex; align-items: flex-start; gap: var(--space-3); min-width: 0; }
                         #animSpeedCard .anim-name { font-size: var(--fs-item); font-weight: var(--fw-heavy); line-height: 1.3; }
                         #animSpeedCard .anim-what { font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin-top: 1px; }
-                        #animSpeedCard .anim-tag { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 24px; margin-top: var(--space-2); padding: 0 calc(var(--space-3) + 1px); border-radius: var(--radius-pill); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-caption); font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }
+                        #animSpeedCard .anim-tag { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; min-height: 24px; margin-top: var(--space-2); padding: 3px calc(var(--space-3) + 1px); border-radius: var(--radius-md); font-size: var(--fs-overline); line-height: 1.3; font-weight: var(--fw-heavy); font-variant-numeric: tabular-nums; color: var(--text-main); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); }          /* a long warning (German, Russian) takes a second line rather than losing its end */
                         #animSpeedCard .anim-tag.is-warn { color: var(--xs-warn); border-color: color-mix(in srgb, var(--xs-warn) 45%, transparent); background: color-mix(in srgb, var(--xs-warn) 13%, var(--bg-card)); }
                         #animSpeedCard .anim-tag:empty { display: none; }
                         #animSpeedCard .anim-ctl { display: flex; align-items: center; gap: var(--space-3h); margin-top: var(--space-3); min-width: 0; }
@@ -6453,6 +6457,7 @@
                         #xqSheet .xq-btns { display: flex; gap: var(--space-3); margin-top: calc(var(--space-4) + 2px); }
                         #xqSheet .xq-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); flex: 1 1 0; min-width: 0; min-height: 48px; padding: var(--space-3) calc(var(--space-4) + 2px); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: var(--fs-item); font-weight: var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                         #xqSheet .xq-btn > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+                        @media (max-width: 360px) { #xqSheet .xq-btn { font-size: var(--fs-body); padding-left: var(--space-3); padding-right: var(--space-3); } }          /* "Hold to confirm" stays one line beside its ring at 320 px */
                         #xqSheet .xq-btn:disabled { opacity: 0.6; cursor: default; }
                         #xqSheet .xq-btn:active:not(:disabled) { transform: scale(0.97); }
                         #xqSheet .xq-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -6552,8 +6557,15 @@
                         #extraDozeSection .xdz-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--bg-card); background: var(--bg-surface); box-shadow: 0 0 0 1px var(--border-glass); display: inline-flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: var(--fs-pill); font-weight: var(--fw-heavy); }
                         #extraDozeSection .xdz-ph.is-past .xdz-dot { background: color-mix(in srgb, var(--accent) 35%, var(--bg-surface)); color: var(--text-main); }
                         #extraDozeSection .xdz-ph.is-now .xdz-dot { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 0 0 1px var(--accent), 0 4px 12px var(--accent-glow); transform: scale(1.12); }
-                        #extraDozeSection .xdz-lbl { width: 128%; font-size: calc(var(--fs-overline) + 0.5px); line-height: 1.2; font-weight: var(--fw-bold); letter-spacing: -0.1px; color: var(--text-muted); overflow-wrap: normal; }          /* a label may be wider than its column (the columns are narrow at 320 px); a word is never cut */
+                        #extraDozeSection .xdz-lbl { width: 128%; font-size: var(--fs-overline); line-height: 1.2; font-weight: var(--fw-bold); letter-spacing: -0.1px; color: var(--text-muted); overflow-wrap: normal; }          /* a label may be wider than its column (the columns are narrow at 320 px); a word is never cut */
                         #extraDozeSection .xdz-ph.is-now .xdz-lbl { color: var(--text-main); font-weight: var(--fw-heavy); }
+                        /* on a phone the five names take two rows, 1 3 5 over 2 4, so each has room for two columns and none runs into the next (the first and the last keep to the edge) */
+                        @media (max-width: 480px) {
+                            #extraDozeSection .xdz-ph .xdz-lbl { width: 180%; }
+                            #extraDozeSection .xdz-ph[data-ph="0"] .xdz-lbl { width: 150%; align-self: flex-start; text-align: left; }
+                            #extraDozeSection .xdz-ph[data-ph="4"] .xdz-lbl { width: 150%; align-self: flex-end; text-align: right; }
+                            #extraDozeSection .xdz-ph[data-ph="1"] .xdz-lbl, #extraDozeSection .xdz-ph[data-ph="3"] .xdz-lbl { margin-top: 2.4em; }
+                        }
                         #extraDozeSection .xdz-sub { font-size: calc(var(--fs-overline) + 0.5px); color: var(--accent); font-weight: var(--fw-heavy); min-height: 12px; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; }
                         #extraDozeSection .xdz-light { display: flex; flex-wrap: wrap; gap: calc(var(--space-1) + 1px); align-items: center; margin: var(--space-3) 0 2px; }
                         #extraDozeSection .xdz-light-k { font-size: var(--fs-caption); font-weight: var(--fw-heavy); color: var(--text-muted); margin-right: 2px; white-space: nowrap; }
@@ -7512,6 +7524,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: var(--radius-sm); min-height: 38px; font-family: monospace; font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
                 .tx-keys button:active { background: #2a2a2a; }
                 .tx-keys .tx-key-stop { color: #ff8a80; font-size: var(--fs-pill); letter-spacing: -0.6px; }
+                .tx-keys .tx-key-shift { font-size: var(--fs-pill); letter-spacing: -0.6px; }          /* five letters in a seventh of a 320 px row */
                 /* Shift swaps the first row's keys for a second row of symbols a phone keyboard often buries behind
                    its own symbols layer - Shift itself stays in both rows so it always toggles back. */
                 .tx-keys .tx-key-shift.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
@@ -11978,7 +11991,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('batchConfirmExecuteBtn').innerText = labels[1];
             document.getElementById('batchConfirmList').innerHTML = pkgs.map(pkg => {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
-                return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span class="pkg-text" style="font-size:10px;">' + escapeHtml(pkg) + '</span></div>';
+                return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span class="pkg-text" style="font-size:var(--fs-pkg);">' + escapeHtml(pkg) + '</span></div>';
             }).join('');
             batchConfirmShowBody('confirm');
             document.getElementById('batchConfirmModal').classList.add('show');
@@ -13144,7 +13157,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 (risky.length ? `<br><span class="uad-confirm-warn">${risky.length} Expert/Unsafe package${risky.length === 1 ? '' : 's'}: these can break important features${risky.some(x => x.p.removal === 'Unsafe') ? ' or boot-loop the phone' : ''}.</span>` : '');
             document.getElementById('batchConfirmExecuteBtn').innerText = titles[kind][1] + ' ' + plan.length;
             document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
-                `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:10px;">${escapeHtml(x.p.pkg)}</span></div>`).join('');
+                `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:var(--fs-pkg);">${escapeHtml(x.p.pkg)}</span></div>`).join('');
             pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
             batchConfirmShowBody('confirm');                 // a batch before this left the modal on its progress body
             document.getElementById('batchConfirmModal').classList.add('show');
@@ -17748,12 +17761,16 @@ Type any command above (e.g. pm list packages -d)</div>
             for (let i = 0; i < 14 && size > 11 && widest() > box.clientWidth - 10; i++) { size = Math.max(11, size * 0.95); h1.style.fontSize = size.toFixed(1) + 'px'; }
             if (p) {
                 // the subtitle may not be wider than the title: shrink it a little when a long model name would push past the room
-                p.style.fontSize = '10px';
+                // (from its own size, --fs-pkg, down to no less than --fs-overline, the smallest text the page uses; past that the line wraps)
+                p.style.fontSize = '';
+                p.classList.remove('sub-wrap');
+                const base = parseFloat(getComputedStyle(p).fontSize) || 12, floor = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fs-overline')) || 11;
                 const subs = Array.from(p.querySelectorAll('.bt-sub'));
                 subs.forEach(l => { l.style.display = 'inline-block'; });
                 const sw = Math.max.apply(null, subs.map(l => l.getBoundingClientRect().width));
                 subs.forEach(l => { l.style.display = ''; });
-                if (sw > room) p.style.fontSize = Math.max(7.5, 10 * room / sw).toFixed(1) + 'px';
+                if (sw > room) p.style.fontSize = Math.max(floor, base * room / sw).toFixed(1) + 'px';
+                if (sw * floor / base > room + 0.5) p.classList.add('sub-wrap');
             }
             if (typeof syncChromeVars === 'function') syncChromeVars();                   // the sticky bars below follow the header's new height
         }
@@ -24419,7 +24436,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const rc = cd.rc[l.serial] || {};
                 const when = cd.dropped[l.serial] ? 'lost ' + cdAgo(cd.dropped[l.serial]) : 'last connected ' + cdAgo(l.at);
                 const line = rc.busy ? (rc.msg || 'Reconnecting...') : (rc.msg ? rc.msg : cdTransport(l.serial) + ' \u00b7 ' + when);
-                return '<div class="cd-lost" data-serial="' + escapeHtml(l.serial) + '"><div class="cd-lost-main"><span style="margin:0 0 2px;font-size:10px;text-transform:uppercase;letter-spacing:.3px;">Not connected</span><b translate="no">' + escapeHtml(l.name) + '</b><span class="' + (!rc.busy && rc.msg ? 'is-err' : '') + '">' + escapeHtml(line) + '</span></div>' +
+                return '<div class="cd-lost" data-serial="' + escapeHtml(l.serial) + '"><div class="cd-lost-main"><span style="margin:0 0 2px;font-size:var(--fs-overline);text-transform:uppercase;letter-spacing:.3px;">Not connected</span><b translate="no">' + escapeHtml(l.name) + '</b><span class="' + (!rc.busy && rc.msg ? 'is-err' : '') + '">' + escapeHtml(line) + '</span></div>' +
                     '<div class="cd-lost-btns"><button class="cd-row-act" data-s="' + escapeHtml(l.serial) + '" onclick="cdReconnectSerial(this.dataset.s, false)"' + (rc.busy ? ' disabled' : '') + '>' + (rc.busy ? 'Trying...' : 'Reconnect') + '</button>' +
                     '<button class="cd-row-act" style="border-color:var(--border-glass);color:var(--text-muted);" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
             }).join('') + '<div class="cd-lost-auto">Reconnect on its own when a device drops: <button class="batch-tool-link" id="cdAutoBtn" onclick="cdAutoToggle()">' + (cdAutoOn() ? 'On' : 'Off') + '</button></div>';
@@ -29351,7 +29368,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 : 'These apps are uninstalled. Without Root the app cannot see which of them still have data, so clearing all of them is safe but may find nothing for some. The data of the apps you tick is deleted for good.';
             document.getElementById('uninstDataList').innerHTML = u.rows.map(r =>
                 '<label class="confirm-list-row" style="display:flex; gap:10px; align-items:center; cursor:pointer;"><input type="checkbox" class="als-cb-in" data-pkg="' + escapeHtml(r.pkg) + '"' + (u.ticked.has(r.pkg) ? ' checked' : '') + ' onchange="uninstDataTick(this)">'
-                + '<span style="min-width:0; flex:1;"><strong>' + escapeHtml(r.name) + '</strong><br><span class="pkg-text" style="font-size:10px;">' + escapeHtml(r.pkg) + '</span></span>'
+                + '<span style="min-width:0; flex:1;"><strong>' + escapeHtml(r.name) + '</strong><br><span class="pkg-text" style="font-size:var(--fs-pkg);">' + escapeHtml(r.pkg) + '</span></span>'
                 + (r.kb !== undefined ? '<span class="switch-sub" style="white-space:nowrap;">' + formatBytes(r.kb * 1024) + '</span>' : '') + '</label>').join('');
             uninstDataCount();
         }
@@ -37485,7 +37502,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const g = mp.h.got, vt = mp.h.vt;
             const verdict = vt && vt.verdict ? '<span class="mp-chip ' + (vt.verdict === 'clean' ? 'glow' : 'bad') + '">VirusTotal: ' + escapeHtml(vt.verdict) + '</span>' : '';
             return '<div class="mp-result ok"><h3>' + (g.source === 'downloads' ? 'Found in Downloads' : 'Downloaded') + '</h3><div class="mp-note" translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + ' (' + escapeHtml(String(g.versionCode || '')) + ') &middot; ' + escapeHtml(mpHFormat(g)) + ' &middot; ' + escapeHtml(formatBytes(g.size)) + '</div>' +
-                '<div class="mp-note" translate="no" style="font-size:10px;">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div class="mp-badges">' + verdict + '</div>' +
+                '<div class="mp-note" translate="no" style="font-size:var(--fs-pkg);">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div class="mp-badges">' + verdict + '</div>' +
                 (vt && vt.found ? '<div class="mp-note">' + vt.malicious + ' malicious, ' + vt.suspicious + ' suspicious of ' + vt.total + ' engines' + (vt.cached ? ' (cached report)' : '') + '. <a href="#" style="color:var(--accent)" onclick="mpLink(' + jsArg(vt.permalink || '') + ');return false;">Open in VirusTotal</a></div>' : '') +
                 (mp.h.vtBusy ? '<div class="mp-note">Scanning with VirusTotal...</div>' : '') +
                 '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHInstall()">' + (mpHBundle(g) ? 'Install all parts' : 'Install this APK') + '</button><button class="mode-action-btn" onclick="mpHUse()">Patch this file</button>' +

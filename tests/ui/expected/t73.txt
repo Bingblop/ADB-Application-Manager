@@ -3,10 +3,10 @@
 [360x800]    they are above Done, Launch above Settings, in that order: true {"list":615,"launch":{"t":"Launch Application","top":627,"bottom":671,"h":44},"settings":{"t":"Application Settings","top":681,"bottom":725,"h":44},"done":737}
 [360x800]    each is a full-size button (at least 44 px tall), Done too: true [44,44] done 44
 [360x800] 3. the output box has the same height as in the failed install (it was not shrunk to make room): true 440 vs 440
-[360x800]    the dialog is taller instead, by about the height of the buttons: true sheet 567 -> 685
-[360x800]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 685 of 800
+[360x800]    the dialog is taller instead, by about the height of the buttons: true sheet 570 -> 688
+[360x800]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 688 of 800
 [360x800]    on a tall enough screen everything is in view at once, Done included: true {"doneBottom":781,"scrolls":false}
-[360x800] 4. a short output keeps its height too: true 125 vs 125
+[360x800] 4. a short output keeps its height too: true 139 vs 139
 [360x800]    and the dialog grows by the buttons: true
 [360x800] 5. the next dialog of another kind has none of them (they are not left over): true
 [360x640] 1. a failed install shows no extra buttons: true {"actionsShown":false,"has":false}
@@ -14,9 +14,9 @@
 [360x640]    they are above Done, Launch above Settings, in that order: true {"list":455,"launch":{"t":"Launch Application","top":467,"bottom":511,"h":44},"settings":{"t":"Application Settings","top":521,"bottom":565,"h":44},"done":577}
 [360x640]    each is a full-size button (at least 44 px tall), Done too: true [44,44] done 44
 [360x640] 3. the output box has the same height as in the failed install (it was not shrunk to make room): true 352 vs 352
-[360x640]    the dialog is taller instead, by about the height of the buttons: true sheet 479 -> 597
-[360x640]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 597 of 640
-[360x640] 4. a short output keeps its height too: true 125 vs 125
+[360x640]    the dialog is taller instead, by about the height of the buttons: true sheet 482 -> 600
+[360x640]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 600 of 640
+[360x640] 4. a short output keeps its height too: true 139 vs 139
 [360x640]    and the dialog grows by the buttons: true
 [360x640] 5. the next dialog of another kind has none of them (they are not left over): true
 [412x915] 1. a failed install shows no extra buttons: true {"actionsShown":false,"has":false}
@@ -24,10 +24,10 @@
 [412x915]    they are above Done, Launch above Settings, in that order: true {"list":730,"launch":{"t":"Launch Application","top":742,"bottom":786,"h":44},"settings":{"t":"Application Settings","top":796,"bottom":840,"h":44},"done":852}
 [412x915]    each is a full-size button (at least 44 px tall), Done too: true [44,44] done 44
 [412x915] 3. the output box has the same height as in the failed install (it was not shrunk to make room): true 503 vs 503
-[412x915]    the dialog is taller instead, by about the height of the buttons: true sheet 630 -> 748
-[412x915]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 748 of 915
+[412x915]    the dialog is taller instead, by about the height of the buttons: true sheet 633 -> 751
+[412x915]    it is never taller than the screen (the sheet scrolls when the phone is short): true sheet 751 of 915
 [412x915]    on a tall enough screen everything is in view at once, Done included: true {"doneBottom":896,"scrolls":false}
-[412x915] 4. a short output keeps its height too: true 125 vs 125
+[412x915] 4. a short output keeps its height too: true 139 vs 139
 [412x915]    and the dialog grows by the buttons: true
 [412x915] 5. the next dialog of another kind has none of them (they are not left over): true
 6. Launch Application opens the app that was installed through the bridge: true

@@ -34,7 +34,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   check('   Application Manager is active at the start', t[0].active && t.filter(x => x.active).length === 1);
   const geo = await ev(page, () => Array.from(document.querySelectorAll('.tab-btn')).map(b => ({ h: Math.round(b.getBoundingClientRect().height), clipped: b.scrollWidth > b.clientWidth + 1, font: getComputedStyle(b).fontSize, lines: b.innerText.split('\n').length })));
   check('   every tab is at least 44 px tall and no label is cut off', geo.every(g => g.h >= 44 && !g.clipped), JSON.stringify(geo.map(g => g.h + (g.clipped ? '!' : ''))));
-  check('   the text is a little larger than before (14 px, it was 12 px)', geo.every(g => g.font === '14px'), geo[0].font);
+  check('   the text is a little larger than before (14.5 px, the type scale\'s --fs-label; it was 12 px)', geo.every(g => g.font === '14.5px'), geo[0].font);
   check('   the page itself does not scroll sideways', await ev(page, () => document.documentElement.scrollWidth <= window.innerWidth));
   await ev(page, () => switchView('installer'));
   t = await bar(page);

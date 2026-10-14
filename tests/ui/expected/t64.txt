@@ -8,7 +8,7 @@
     and the Save button is usable again: true
     a refused Delete keeps the editor open: true
     an accepted Save closes it: true
-3. 150 characters with no space: nothing sticks out at 320 px: true {"sw":320,"cw":320,"btn":[292,217]}
+3. 150 characters with no space: nothing sticks out at 320 px: true {"sw":320,"cw":320,"btn":[292,223]}
    and the Create note with a long existing name wraps: true {"sw":320,"cw":320,"note":301}
 5. touch hold 520 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
 5. touch hold 600 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
