@@ -596,7 +596,11 @@ public final class UpdateManager {
         return o;
     }
 
-    /** Compares dotted versions numerically ("3.10-Pro" > "3.9"); suffixes are ignored. */
+    /**
+     * Compares dotted versions numerically ("3.10-Pro" > "3.9"). When the numbers tie, what follows them decides: a pre-release suffix
+     * (-alpha, -beta, -pre, -rc, any case: "2.0-beta1") is older than none ("2.0"), a trailing number ("1.2.3-4") is newer than none and
+     * compares as a number ("-1" < "-2"); any other suffix ("-Pro") is ignored.
+     */
     public static int compareVersions(String a, String b) {
         String[] pa = numericParts(a), pb = numericParts(b);
         for (int i = 0; i < Math.max(pa.length, pb.length); i++) {
@@ -604,13 +608,36 @@ public final class UpdateManager {
             long y = i < pb.length ? parseLong(pb[i]) : 0;
             if (x != y) return x < y ? -1 : 1;
         }
+        long[] ka = suffixKey(suffix(a)), kb = suffixKey(suffix(b));
+        for (int i = 0; i < ka.length; i++) if (ka[i] != kb[i]) return ka[i] < kb[i] ? -1 : 1;
         return 0;
     }
 
+    private static final Pattern VERSION_NUMBER = Pattern.compile("([0-9]+(?:\\.[0-9]+)*)");
+    private static final Pattern PRE_RELEASE = Pattern.compile("^[-._ ]?(alpha|beta|pre|rc)(?![a-z])[-._ ]?([0-9]*)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TRAILING_NUMBER = Pattern.compile("^[-._ ]([0-9]+)$");
+    private static final java.util.List<String> PRE_KINDS = java.util.Arrays.asList("alpha", "beta", "pre", "rc");
+
     private static String[] numericParts(String v) {
         // First dotted number anywhere: "v1.2.3", "release-1.2.3", "app_1.2.3-beta"
-        Matcher m = Pattern.compile("([0-9]+(?:\\.[0-9]+)*)").matcher(v == null ? "" : v.trim());
+        Matcher m = VERSION_NUMBER.matcher(v == null ? "" : v.trim());
         return m.find() ? m.group(1).split("\\.") : new String[]{"0"};
+    }
+
+    /** What follows the first dotted number ("-beta1", "-4", "-Pro"); "" when there is none. */
+    private static String suffix(String v) {
+        String s = v == null ? "" : v.trim();
+        Matcher m = VERSION_NUMBER.matcher(s);
+        return m.find() ? s.substring(m.end()) : "";
+    }
+
+    /** {rank, number}: a pre-release ranks below none (alpha < beta < pre < rc), a trailing number above it; the number orders within a rank. */
+    private static long[] suffixKey(String s) {
+        Matcher m = PRE_RELEASE.matcher(s);
+        if (m.find()) return new long[]{PRE_KINDS.indexOf(m.group(1).toLowerCase(java.util.Locale.ROOT)) - PRE_KINDS.size(), parseLong(m.group(2))};
+        m = TRAILING_NUMBER.matcher(s);
+        if (m.find()) return new long[]{1, parseLong(m.group(1))};
+        return new long[]{0, 0};
     }
 
     private static long parseLong(String s) {

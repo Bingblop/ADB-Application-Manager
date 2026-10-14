@@ -1090,6 +1090,29 @@ public class ArchiveIoTest {
         x = run(d, "tar", "-xf", o.getPath(), "-C", new File(d, "x").getPath());
         check("a rewritten tar keeps the hard link (tar -x gives the same inode) " + x.out, x.code == 0 && new String(Files.readAllBytes(new File(d, "x/f2").toPath()), StandardCharsets.UTF_8).equals("linked content\n")
             && Files.getAttribute(new File(d, "x/f1").toPath(), "unix:ino").equals(Files.getAttribute(new File(d, "x/f2").toPath(), "unix:ino")));
+        // the file a hard link points at is renamed with it: after renameTree the link names the new name, so it still resolves
+        File s2 = new File(d, "s2"); new File(s2, "sub").mkdirs();
+        write(new File(s2, "sub/f1"), "linked content\n");
+        Files.createLink(new File(s2, "sub/f2").toPath(), new File(s2, "sub/f1").toPath());
+        File t2 = new File(d, "hl3.tar");
+        r = run(d, "tar", "-cf", t2.getPath(), "-C", s2.getPath(), "sub/f1", "sub/f2");
+        if (r.code != 0) { skip("tar with hard links in a folder"); return; }
+        File o2 = new File(d, "hl4.tar");
+        List<ArchiveIo.Edit> ren = new ArrayList<ArchiveIo.Edit>();
+        ren.add(ArchiveIo.Edit.renameTree("sub", "moved"));
+        ArchiveIo.rewrite(t2, o2, null, ren, null);
+        ArchiveIo.Info i2 = ArchiveIo.list(o2, null);
+        check("after renameTree the hard link names the renamed file (" + (i2.items.size() == 2 ? i2.items.get(1).hardLink : "?") + ")",
+            i2.items.size() == 2 && i2.items.get(0).name.equals("moved/f1") && i2.items.get(1).name.equals("moved/f2") && "moved/f1".equals(i2.items.get(1).hardLink));
+        File x2 = new File(d, "x2"); x2.mkdirs();
+        x = run(d, "tar", "-xf", o2.getPath(), "-C", x2.getPath());
+        check("tar -x resolves the renamed hard link " + x.out, x.code == 0 && new File(x2, "moved/f2").isFile()
+            && new String(Files.readAllBytes(new File(x2, "moved/f2").toPath()), StandardCharsets.UTF_8).equals("linked content\n")
+            && Files.getAttribute(new File(x2, "moved/f1").toPath(), "unix:ino").equals(Files.getAttribute(new File(x2, "moved/f2").toPath(), "unix:ino")));
+        File x3 = new File(d, "x3"); x3.mkdirs();
+        List<String> pb = new ArrayList<String>();
+        long[] ex = ZipTool.extractTree(ArchiveIoSource.open(o2, "tar", null), "", x3, null, pb, null, FileOps.REPLACE);
+        check("and our own extraction of the renamed tar writes the link as a copy (" + pb + ")", ex[0] == 2 && pb.isEmpty() && new File(x3, "moved/f2").isFile());
     }
 
     // ------------------------------------------------------------------------------------------------------------------ damaged files

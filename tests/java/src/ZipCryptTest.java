@@ -197,7 +197,35 @@ public class ZipCryptTest {
     aesFromPyzipper(data, big);
     aesOurs(big);
     aesDamage();
+    ae2Tail();
     streaming();
+  }
+
+  // ------------------------------------------------------------------------------------------------------------ an AE-2 entry's tail through ZipTool
+  /** A deflated AE-2 entry whose ciphertext goes on past the end of the deflate stream (a padded tail): the extraction reads the ciphertext to its end, so the
+   *  authentication code is always checked - a tampered code is refused and nothing is written, an intact one is accepted (an AE-2 entry has no CRC-32 to catch it otherwise). */
+  static void ae2Tail() throws Exception {
+    byte[] data = text(50 * 1000, 7);
+    ByteArrayOutputStream body = new ByteArrayOutputStream();
+    body.write(deflate(data));
+    body.write(new byte[200 * 1024]);                 // well past the 64 KB the inflater takes at a time
+    byte[] raw = aesEncrypt(body.toByteArray(), PW, 3, false);
+    for (int tampered = 0; tampered <= 1; tampered++) {
+      Ent e = new Ent();
+      e.name = "tail.txt"; e.flags = 1; e.method = 99; e.time = 0x6000; e.usize = data.length; e.crc = 0;
+      e.extra = ZipCrypt.aesExtra(3, 8, true);
+      e.raw = raw.clone();
+      if (tampered == 1) e.raw[e.raw.length - 1] ^= 1;
+      File z = new File(tmp, "ae2_tail_" + tampered + ".zip");
+      writeZip(z, Arrays.asList(e));
+      ZipTool.Archive a = ZipTool.open(z);
+      a.setPassword(c(PW));
+      File out = new File(tmp, "ae2_tail_" + tampered + ".out");
+      Exception ex = null;
+      try { ZipTool.extractTo(a, a.find("tail.txt"), out); } catch (Exception x) { ex = x; }
+      if (tampered == 0) check("an AE-2 entry with a padded tail and an intact authentication code extracts (" + ex + ")", ex == null && Arrays.equals(Files.readAllBytes(out.toPath()), data));
+      else check("an AE-2 entry with a padded tail and a tampered authentication code is refused, nothing written (" + ex + ")", authFailed(ex) && !out.exists());
+    }
   }
 
   // ------------------------------------------------------------------------------------------------------------ pure checks

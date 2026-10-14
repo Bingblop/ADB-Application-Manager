@@ -317,15 +317,22 @@ public final class SdmCorpseFinder implements Sdm.ToolImpl {
         Scan s = new Scan(ctx, db);
         List<Corpse> all = new ArrayList<Corpse>();
 
+        List<String> skipped = new ArrayList<String>();
+        int user = ctx.areas == null ? 0 : ctx.areas.userId();
         for (FilterDef f : FILTERS) {
             if (!ctx.bool(f.key, f.def)) continue;
             s.check();
             if (f == F_PRIVATEDATA && !(ctx.shell != null && ctx.shell.uid() == 0)) continue;     // private data needs root
+            if ((f == F_PRIVATEDATA || f == F_PUBLICDATA) && user != 0) {
+                // the package list is the calling user's, while the app data folders belong to whichever user their path names: off the
+                // system user another user's apps would look like remnants, so these filters do not run until ownership is checked per user
+                skipped.add(f.label + " (not on Android user " + user + ")");
+                continue;
+            }
             List<Corpse> found = f == F_SDCARD ? s.sdcard() : s.standard(f);
             all.addAll(found);
         }
 
-        List<String> skipped = new ArrayList<String>();
         for (String[] d : DEFERRED) if (ctx.bool(d[1], false)) skipped.add(d[0]);
 
         // post filters of CorpseFinder.runScan: owner package exclusion, path exclusion, and the nested rule of the exclusions

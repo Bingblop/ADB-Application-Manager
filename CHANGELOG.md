@@ -1,5 +1,60 @@
 # Changelog
 
+## v7.13.1-Pro (versionCode 855)
+
+A fix release on top of v7.13.0, cut from `main`. It carries the fifty-four findings of the whole-codebase review of 2026-10-13 (ten reviewers read the page and the Java in parallel; every finding was traced from a real input to a wrong outcome and twelve were reproduced by running the code; #183 fixed the eleven serious ones, #184 the rest) and nothing new: no feature, no wording change, no CSS. Each fix is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** Section 28 of `docs/DEVICE-TEST-CHECKLIST.md` is one phone step per fix, the eleven serious ones first. The one race found and not fixed is #185 (the update check's progress count can step back by one).
+
+**Data loss, the wrong device, or a failure reported as success (#183)**
+
+- **SD Maid Deduplicator: the copy marked Kept is never deleted.** Unticking one of the other copies used to remove the protection from the keeper, so the keeper and every other copy were deleted and only the unticked one stayed. The keeper is now protected whenever Delete all is off.
+- **A Connected Devices action or batch stays on the device it started on.** Every step used to re-read the selected device; the six-second refresh re-picked another device when the current one dropped, and the device select was never locked, so an Uninstall or Freeze could land on a watch or second phone and the read-back report success. The serial is captured at the start and carried through every step and the read-back; the select is greyed out and the automatic re-pick is skipped while a batch runs; an action whose device changed under its question is refused.
+- **A failed privileged command is never counted as success.** The exit status after the command's marker is read as leading digits only; a status that is missing or unreadable (the app's own time-out note, output cut off) is a failure, and so is a missing marker. In Root mode a refused or denied `su` returned empty output, which read as ok: it is now reported as "root is not granted". This feeds uninstall, freeze, app ops and the batch counts.
+- **Closing the full-screen terminal cannot freeze the app.** With a program that does not read its input and enough queued bytes, close() blocked forever (an ANR from onDestroy) and the helper, the shell and the program outlived the app. The killer thread now starts first and the stream is closed off the caller's thread; the regression test queues 288 KB into a program that does not read and requires close() to return within 2 s.
+- **Rename onto an existing name is refused.** Renaming a file to the name of a folder in the same place used to move the file into that folder and overwrite the file of that name inside it. The rename branch now has the same "name is taken" check as New file; a typed copy or move destination that names an existing file is refused too, and the shell `cp` fallback gets the guard `mv` already had.
+- **Copying or moving from an added storage into a local folder honours Skip and Keep both.** The answer was ignored, the local file overwritten, and on a move the source then deleted.
+- **Extract with Keep both never deletes an existing folder.** A file whose name matched an empty folder deleted the folder and took its place; the file now gets a unique name whenever anything is in its way, and the writer refuses to delete a directory.
+- **A document provider's display name is never used as a path.** A provider returning `../../x` as a name could write outside the destination folder; names with `/`, `.`, `..` or control characters are rejected and the copy's canonical path must stay under the destination.
+- **A privileged Morphe install of a plain APK copies it into the app's cache first.** The file in Downloads was confirmed and then installed from the same shared path, so another app with storage access could swap it in between; the file that is confirmed is now the file that is installed, as the bundle path already did.
+- **Hidden Settings restore reads a table that is still loading before writing.** A restore started while a table was still being read journalled the old value as "was not set", so Revert deleted the setting instead of putting the old value back.
+- **SD Maid on a second user.** The user id now comes from the running uid, and the CorpseFinder's private and public app-data filters do not run off the system user (they are named in the skipped filters) instead of comparing user 0's app data with the second user's package list and offering it as corpses.
+
+**Features that did not work, or wrong results (#184)**
+
+- **The Morphe Patcher tab loaded seven times on every switch** (one line pasted seven times); it loads once, with no flicker or doubled entries.
+- **Morphe "This version is not supported" sheet:** Patch anyway, Skip them and Get the right APK do what they say; the sheet used to close before the button ran, so all three did nothing.
+- **Debloater review sheet** shows its list and a Confirm button after any batch, instead of the previous batch's progress body with no button.
+- **Update All twice:** a second Update All merges into the queue instead of replacing it, so apps still waiting from the first are no longer left on Queued forever.
+- **Check again during a running queue:** a row that never gets a start event becomes an error within 15 s instead of reading Downloading forever (and the rest Queued).
+- **A declined or read-only update is reported as cancelled,** not as Update failed; Java emits a `cancelled` stage for an update that is no longer in the list.
+- **App Stores, Orion:** an entry with a bad `githubRepo` ("owner/", "/", a full URL) is skipped instead of failing the whole tab; each entry is parsed under its own guard.
+- **Version comparison:** "2.0-beta1" is older than "2.0" and "1.2.3-1" older than "1.2.3-2" (they compared equal, so a beta-to-release update read as up to date); the existing "3.10-Pro" cases still hold.
+- **SD Maid shell deletes report with `printf`,** so a file name with `\c` or `\n` no longer makes a whole delete batch read as failed (reproduced under mksh) and keeps it out of History.
+- **File search on an added storage** shows the file's name instead of the encoded document id, In folder works, and the `..` row is there after opening a hit.
+- **Hidden Settings and Overlays act on the running user** (`--user current`), so a work profile or second user edits and reads back its own tables instead of user 0's.
+- **Doze & power governor:** one failed `cmd power help` read no longer locks the Performance profile as "Not on this Android version" until the mode changes.
+- **Bottom bar:** a badge update during a long-press no longer re-renders the bar and opens the shortcut menu in the top-left corner.
+- **Archive extract reports progress from inside a large entry** (every 1 MB), so a multi-GB file no longer trips the "nothing has moved" watchdog or drops the ETA; a cancel from inside the entry leaves no part file.
+- **Renaming a folder inside a tar maps hard-link targets too** (they pointed at the old name).
+- **AES (AE-2) entries are authenticated** even when the deflate stream ends before the ciphertext does.
+- **Hidden Settings restore accepts keys with `/`, `+`, `,` or `$`** (the editor accepted them; the restore dropped them and still said "Restored N of N").
+- **Profile apply over a running batch is refused** without closing the other batch's sheet and reporting "0 succeeded".
+- **A failed batch clears its label;** the move clipboard drops the paths that were moved after a Skip paste; the Morphe Helper sheet reopened during a download keeps the running download instead of losing its result; a Termux start that fails at once no longer leaves a stale sync report to run unasked later; `executeBatchActionDetailed` reads the exit flag and no longer leaks the marker.
+
+**Leaks, stale state and hardening (#184)**
+
+- **Task Manager polling stops while the app is in the background** and resumes when it comes back.
+- **The log recorder is application-scoped:** status and Stop work after Back or a theme change, and a second recorder cannot start.
+- **A finished-job notification carries its own title** when two file jobs overlap.
+- **`JobTicker.stop()` waits for a report under way,** so nothing ticks after stop.
+- **Update check:** the device probe no longer runs under the run lock (progress and Cancel used to stall behind it), and the 90 s deadline runs on a monotonic clock, so the phone syncing its time mid-run no longer ends the run with every app "timed out".
+- **One bad Exodus entry no longer rejects the whole tracker list.**
+- **The VirusTotal key is never in a URL path** (the quota request used `/users/<key>/`; it now uses the id from `/users/current`).
+- **`adb raw host:*` is refused** by the Connected Devices allow-list.
+- **The Rish syntax check reads the command from a heredoc,** so no API key is in a child process's argv.
+- **The pty helper ignores SIGPIPE** (rebuilt for arm64-v8a, armeabi-v7a and x86_64; its nine qemu checks pass), so the grace-then-SIGKILL step runs on a closed output; the launch probe no longer inherits stdin and eats the first keystrokes.
+- **`shizukuPipe` keeps the real error on EPIPE;** a timed-out process no longer leaks its blocked reader thread; `saveTextToDownloads` removes its empty MediaStore row on failure; working-mode strings are checked against the four modes; the Rish and JsStream flushers stop after destroy; `getprop` is waited for and destroyed; the Installer stages each APK to a per-call name that is removed afterwards.
+- **Not run on a device:** none of the above has been run on a phone by the people and tools that wrote it. Section 28 of `docs/DEVICE-TEST-CHECKLIST.md` lists one phone check per fix.
+
 ## v7.13.0-Pro (versionCode 854)
 
 A feature release on top of v7.12.11, built on the branch `release/v7.12.12` (the work was planned as v7.12.12 and grew into a minor version). New: an **Extra Settings** tab (Private DNS with fifteen services and a speed test, animation speed, brightness bias, device telemetry, power and reboot, Doze and the power governor, zram and memory), a **bottom navigation bar** with pinned tabs and long-press shortcuts, a **Console** tab (ADB Shell and Live Logcat) with the Terminal as its own tab, a rebuilt **Application Updater** check, an Install button on every ShizuStore row, a DUMP row and "Copy grant commands" in the permission sheet, an SD Maid accessibility fix for One UI's App info page, the Morphe sources labelled Official and Custom, and three install follow-ups. Everything is tested on a computer. **On a phone, only this was run:** the owner re-ran the three Private DNS checks of section 21 (AdGuard DNS, Off, Automatic) on v7.12.11 on 2026-10-12 and each read back correctly from `settings get global private_dns_mode` / `private_dns_specifier`; the card text, Android's own Private DNS screen and a page load were not verified. Nothing else below has been run on a device by the people and tools that wrote it.
