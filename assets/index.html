@@ -2507,8 +2507,10 @@
             background: var(--fill-1);
         }
 
-        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-heavy); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid var(--accent); background: transparent; color: var(--accent); color: color-mix(in srgb, var(--accent) 80%, var(--text-main)); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; }
-        .agent-btn:active { background: var(--accent); color: var(--on-accent); }
+        /* "Ask agent" sits on every Hidden Settings, overlay and debloater row: a quiet ghost button (muted text on a faint fill, a clear border), so
+           the rows' own names and values lead; the accent comes only while it is pressed or has keyboard focus */
+        .agent-btn { display: inline-flex; align-items: center; gap: var(--space-1); font: inherit; font-size: var(--fs-caption); font-weight:var(--fw-bold); padding: 2px var(--space-3); margin: var(--space-1) 0 0; border-radius: var(--radius-pill); border: 1px solid transparent; background: var(--fill-2); color: var(--text-muted); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+        .agent-btn:active, .agent-btn:focus-visible { background: var(--tint-accent); border-color: var(--line-accent); color: var(--accent); }
         .agent-ask-sent { margin-top: var(--space-2); padding: var(--space-3) var(--space-3h); border: 1px dashed var(--border-glass); border-radius: var(--radius-md); font: var(--fs-pill)/1.45 ui-monospace, monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 22vh; overflow: auto; }
         .row-tint-slider { padding: var(--space-1) 2px 0; }
         .row-tint-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
