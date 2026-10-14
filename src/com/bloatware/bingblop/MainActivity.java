@@ -366,7 +366,13 @@ public class MainActivity extends Activity {
             }
         });
         registerWallpaperListener();
-        handleIncomingIntent(getIntent());
+        // A package opened from outside is handed over once: recreate(), a restore and Recents bring the same old intent back.
+        if (savedInstanceState != null) {
+            String kept = savedInstanceState.getString(STATE_PENDING_INSTALL);
+            if (kept != null) pendingInstallRef = kept;                // arrived, but the page was not ready to take it yet
+        }
+        Intent launch = getIntent();
+        if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
         maybeRequestFirstLaunchPermissions();
         // A package file deleted with an Undo whose few seconds ran out while the app was closed: it is deleted for good now
         if (prefs != null && prefs.getBoolean("apk_trash_pending", false)) {
@@ -433,6 +439,14 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    private static final String STATE_PENDING_INSTALL = "pending_install_ref";
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (pendingInstallRef != null) outState.putString(STATE_PENDING_INSTALL, pendingInstallRef);
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -443,8 +457,7 @@ public class MainActivity extends Activity {
     /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
     private void handleIncomingIntent(Intent intent) {
         if (intent == null) return;
-        String action = intent.getAction();
-        if (!Intent.ACTION_VIEW.equals(action) && !"android.intent.action.INSTALL_PACKAGE".equals(action)) return;
+        if (!IncomingInstall.handOverAtNewIntent(intent.getAction())) return;
         Uri data = intent.getData();
         if (data == null) return;
         pendingInstallRef = "file".equals(data.getScheme()) ? data.getPath() : data.toString();
@@ -3832,11 +3845,18 @@ public class MainActivity extends Activity {
         return new File(getCacheDir(), "installer");
     }
 
-    /** OBB / Android-data files of the XAPK currently loaded in the Installer, and the archive that holds them. */
-    private volatile List<XapkInfo.Extra> installExtras = new ArrayList<XapkInfo.Extra>();
-    private volatile File installSourceZip = null;
-    /** The name of the file the Installer was last given (read here from the file or its provider, for the question before a privileged install); "" when unknown. */
-    private volatile String installSourceName = "";
+    /**
+     * The package loaded in the Installer (its own folder, its OBB / Android-data files, the archive that holds them and the name of the picked
+     * file, read here for the question before a privileged install) and the installs running from it. One per process, like the cache folder.
+     */
+    private static InstallerStage<XapkInfo.Extra> installStage;
+
+    private InstallerStage<XapkInfo.Extra> installStage() throws IOException {
+        synchronized (InstallerStage.class) {       // not installInspectLock: an install must not wait for a long read of another package
+            if (installStage == null) installStage = new InstallerStage<XapkInfo.Extra>(installerWorkDir().getCanonicalFile());
+            return installStage;
+        }
+    }
 
     private static final Object installInspectLock = new Object();
 
@@ -3948,12 +3968,13 @@ public class MainActivity extends Activity {
         return FileRules.isProtected(p);
     }
 
-    private void clearInstallerWorkDir() {
-        installExtras = new ArrayList<XapkInfo.Extra>();
-        installSourceZip = null;
-        installSourceName = "";
-        File[] fs = installerWorkDir().listFiles();
-        if (fs != null) for (File f : fs) { try { f.delete(); } catch (Exception ignored) {} }
+    /** Ends an install's hold on its files and deletes them when they are nobody's any more (see {@link InstallerStage#endInstall}). */
+    private void endInstallStage(InstallerStage.Snapshot<XapkInfo.Extra> snap, boolean finished) {
+        if (snap == null) return;
+        try {
+            File gone = installStage().endInstall(snap, finished);
+            if (gone != null) deleteRecursively(gone);
+        } catch (Exception ignored) {}
     }
 
     /** The split="..." value from an APK's binary manifest, or null for a base APK. Best-effort. */
@@ -3987,10 +4008,13 @@ public class MainActivity extends Activity {
 
     /** Streams a picked .apk/.apks/.apkm into the installer cache and returns its package info + split list. */
     private JSONObject inspectInstallSourceImpl(String ref) throws Exception {
-        clearInstallerWorkDir();
-        File work = installerWorkDir();
+        // A folder of its own: an install still running from the package read before keeps its files (and its own OBB data, see runInstallSelected).
+        InstallerStage<XapkInfo.Extra> stage = installStage();
+        List<File> stale = new ArrayList<File>();
+        File work = stage.beginRead(sourceNameOf(ref), stale);
+        final long gen = stage.generation();
+        for (File f : stale) deleteRecursively(f);
         work.mkdirs();
-        installSourceName = sourceNameOf(ref);
         // A content:// stream is one-shot, so copy it to the cache once (capped like restore, so a crafted
         // archive can't fill storage) and work from concrete files afterwards.
         File raw = new File(work, "source.bin");
@@ -4089,15 +4113,16 @@ public class MainActivity extends Activity {
         // Data files that belong to THIS package (a wrong package folder in the archive is dropped). Keep the
         // archive only when there is something to copy from it later.
         List<XapkInfo.Extra> extras = xinfo != null ? xinfo.forPackage(pkg) : new ArrayList<XapkInfo.Extra>();
+        File sourceZip = null;
         if (xinfo != null) {
             if (extras.isEmpty()) {
                 raw.delete();
             } else {
                 File keep = new File(work, "source.zip");
-                installSourceZip = raw.renameTo(keep) ? keep : raw;
+                sourceZip = raw.renameTo(keep) ? keep : raw;
             }
         }
-        installExtras = extras;
+        stage.loaded(gen, extras, sourceZip);
 
         JSONObject res = new JSONObject();
         res.put("ref", ref);
@@ -4708,25 +4733,25 @@ public class MainActivity extends Activity {
     }
 
     /** Post-install OBB/data copy, dexopt and auto-delete of the source, then reports the outcome to the WebView. */
-    private void finishInstall(final JSONObject res, final JSONObject opts, final String mode) {
+    private void finishInstall(final JSONObject res, final JSONObject opts, final String mode, final InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         // The no-privilege install result arrives on the main thread; copying GB-sized OBB files there would ANR.
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
             executor.submit(new Runnable() {
                 @Override
-                public void run() { finishInstallImpl(res, opts, mode); }
+                public void run() { finishInstallImpl(res, opts, mode, snap); }
             });
             return;
         }
-        finishInstallImpl(res, opts, mode);
+        finishInstallImpl(res, opts, mode, snap);
     }
 
     private void notifyInstallProgress(String msg) {
         notifyJs("window.onInstallProgress && window.onInstallProgress(" + JSONObject.quote(msg) + ")");
     }
 
-    /** Extracts one archive entry to a temp file in the installer cache. */
-    private File extractExtraToTemp(java.util.zip.ZipFile zf, java.util.zip.ZipEntry e) throws Exception {
-        File tmp = new File(installerWorkDir(), "extra.tmp");
+    /** Extracts one archive entry to a temp file in the install's own folder of the installer cache. */
+    private File extractExtraToTemp(File workDir, java.util.zip.ZipFile zf, java.util.zip.ZipEntry e) throws Exception {
+        File tmp = new File(workDir, "extra.tmp");
         InputStream in = zf.getInputStream(e);
         try {
             FileOutputStream out = new FileOutputStream(tmp);
@@ -4740,7 +4765,7 @@ public class MainActivity extends Activity {
     }
 
     /** Writes one data file to {@code dest} (an absolute path on shared storage). Returns null on success, else why not. */
-    private String writeInstallExtra(String mode, java.util.zip.ZipFile zf, java.util.zip.ZipEntry e, String dir, String dest) throws Exception {
+    private String writeInstallExtra(String mode, File workDir, java.util.zip.ZipFile zf, java.util.zip.ZipEntry e, String dir, String dest) throws Exception {
         if ("shizuku".equals(mode)) {
             // Streams straight from the archive through Shizuku's shell: no temp copy of a multi-GB file.
             InputStream in = zf.getInputStream(e);
@@ -4750,7 +4775,7 @@ public class MainActivity extends Activity {
             } finally { in.close(); }
         }
         if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
-            File tmp = extractExtraToTemp(zf, e);
+            File tmp = extractExtraToTemp(workDir, zf, e);
             try {
                 boolean tcp = "adb_tcp".equals(mode);
                 String target = tcp ? tcpTarget() : wirelessTarget();
@@ -4762,7 +4787,7 @@ public class MainActivity extends Activity {
             } finally { tmp.delete(); }
         }
         if ("root".equals(mode)) {
-            File tmp = extractExtraToTemp(zf, e);
+            File tmp = extractExtraToTemp(workDir, zf, e);
             try {
                 tmp.setReadable(true, false);
                 ProcessBuilder pb = new ProcessBuilder("su", "-c", "mkdir -p " + BackupScripts.quote(dir)
@@ -4791,10 +4816,10 @@ public class MainActivity extends Activity {
         return null;
     }
 
-    /** Copies the XAPK's OBB / Android-data files into place after a successful install. Returns a summary. */
-    private String copyInstallExtras(String mode) {
-        final List<XapkInfo.Extra> extras = installExtras;
-        final File zip = installSourceZip;
+    /** Copies the XAPK's OBB / Android-data files into place after a successful install: those of the package it installed (its snapshot). Returns a summary. */
+    private String copyInstallExtras(String mode, InstallerStage.Snapshot<XapkInfo.Extra> snap) {
+        final List<XapkInfo.Extra> extras = snap.extras;
+        final File zip = snap.zip;
         if (extras == null || extras.isEmpty() || zip == null || !zip.exists()) return "";
         String root = fmCanonicalPath("/sdcard");
         StringBuilder problems = new StringBuilder();
@@ -4814,7 +4839,7 @@ public class MainActivity extends Activity {
                 String dir = dest.substring(0, dest.lastIndexOf('/'));
                 String err;
                 try {
-                    err = writeInstallExtra(mode, zf, e, dir, dest);
+                    err = writeInstallExtra(mode, snap.dir, zf, e, dir, dest);
                 } catch (Exception ex) {
                     err = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
                 }
@@ -4831,12 +4856,12 @@ public class MainActivity extends Activity {
         return problems.length() == 0 ? head : head + "\n" + problems.toString().trim();
     }
 
-    private void finishInstallImpl(JSONObject res, JSONObject opts, String mode) {
+    private void finishInstallImpl(JSONObject res, JSONObject opts, String mode, InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         try {
             boolean success = res.optBoolean("ok", false);
-            if (success && opts.optBoolean("copyExtras", false) && installExtras != null && !installExtras.isEmpty()) {
+            if (success && opts.optBoolean("copyExtras", false) && snap != null && !snap.extras.isEmpty()) {
                 try {
-                    res.put("extras", copyInstallExtras(mode));
+                    res.put("extras", copyInstallExtras(mode, snap));
                 } catch (Exception e) {
                     try { res.put("extras", "Error: " + e.getMessage()); } catch (Exception ignored) {}
                 }
@@ -4866,14 +4891,14 @@ public class MainActivity extends Activity {
                 try { res.put("sourceDeleted", deleted); } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
-        clearInstallerWorkDir();
+        endInstallStage(snap, true);           // its own files only: a package read since keeps its folder
         notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
     }
 
     /** Installs via the platform PackageInstaller with user confirmation - no ADB/Shizuku/Root. The
      *  privileged pm flags (grant-all, downgrade, all-users, bypass, update-ownership) are not available
      *  to an ordinary app here, so only install reason / package source are passed through. */
-    private void installNoPrivilege(final List<File> apks, final JSONObject opts) {
+    private void installNoPrivilege(final List<File> apks, final JSONObject opts, final InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         try {
             android.content.pm.PackageInstaller pi = getPackageManager().getPackageInstaller();
             android.content.pm.PackageInstaller.SessionParams params =
@@ -4923,7 +4948,7 @@ public class MainActivity extends Activity {
                                 : ("Install " + (status == android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED ? "cancelled" : "failed")
                                    + (msg != null && !msg.isEmpty() ? ": " + msg : "")));
                     } catch (Exception ignored) {}
-                    finishInstall(r, opts, "none");
+                    finishInstall(r, opts, "none", snap);
                 }
             };
             android.content.IntentFilter filter = new android.content.IntentFilter(action);
@@ -4940,7 +4965,7 @@ public class MainActivity extends Activity {
                 r.put("method", "No privilege");
                 r.put("output", "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
             } catch (Exception ignored) {}
-            finishInstall(r, opts, "none");
+            finishInstall(r, opts, "none", snap);
         }
     }
 
@@ -4953,6 +4978,7 @@ public class MainActivity extends Activity {
                 JSONObject res = new JSONObject();
                 // What was done to the phone along the way; it leads the report, also when a later step fails.
                 StringBuilder notes = new StringBuilder();
+                InstallerStage.Snapshot<XapkInfo.Extra> snap = null;      // the package this install works from, to its end
                 try {
                     JSONObject opts = new JSONObject(optsJson);
                     JSONArray sel = opts.optJSONArray("splits");
@@ -4974,6 +5000,14 @@ public class MainActivity extends Activity {
                     }
                     if (files.isEmpty()) throw new IllegalStateException("no APK selected to install");
                     if (base != null) { files.remove(base); files.add(0, base); }
+                    // The files must be those of the package loaded now; from here on reading another package neither deletes them nor
+                    // swaps its data files (OBB) in for theirs.
+                    File filesDir = files.get(0).getCanonicalFile().getParentFile();
+                    for (File f : files) {
+                        if (!f.getCanonicalFile().getParentFile().equals(filesDir)) throw new IllegalStateException("install files are no longer available - pick the package again");
+                    }
+                    snap = installStage().beginInstall(filesDir);
+                    if (snap == null) throw new IllegalStateException("install files are no longer available - pick the package again");
 
                     // Signature gates, read from the base APK, before anything is installed.
                     PackageManager pm = getPackageManager();
@@ -5010,7 +5044,7 @@ public class MainActivity extends Activity {
                     if ("none".equals(mode)) {
                         // A privileged authorizer the page asked for is not honoured in standard mode: the system installer asks instead.
                         if (!"none".equals(asked)) notifyInstallProgress("Read-Only mode: the system installer asks you, so the ADB, Shizuku and Root options are not used.");
-                        installNoPrivilege(files, opts); // result arrives via the PackageInstaller receiver
+                        installNoPrivilege(files, opts, snap); // result arrives via the PackageInstaller receiver
                         return;
                     }
                     String flags = opts.optString("createFlags", "-r");
@@ -5027,7 +5061,7 @@ public class MainActivity extends Activity {
                         List<String> acts = new ArrayList<String>();
                         if (viaFiles && opts.optBoolean("uninstallFirst", false)) acts.add(InstallConfirm.REMOVES_FIRST);
                         notifyInstallProgress("Waiting for your OK to install...");
-                        if (!confirmInMode(mode, asked, InstallConfirm.messageLocalFile(installSourceName, pkgName, named != null ? named.versionName : null,
+                        if (!confirmInMode(mode, asked, InstallConfirm.messageLocalFile(snap.sourceName, pkgName, named != null ? named.versionName : null,
                                 installedVersionOrNull(pkgName), files.size(), mode, ShellArgs.join(flagArgs), acts))) {
                             throw new InstallCancelled();
                         }
@@ -5068,12 +5102,14 @@ public class MainActivity extends Activity {
                         // staged files stay until it decides.
                         res.put("ok", false);
                         res.put("retry", "uninstall");
+                        endInstallStage(snap, false);
                         notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
                         return;
                     }
                     res.put("ok", ok);
-                    finishInstall(res, opts, mode);
+                    finishInstall(res, opts, mode, snap);
                 } catch (Exception e) {
+                    endInstallStage(snap, false);          // the files stay for another try (unless a package read since made them nobody's)
                     try {
                         res.put("ok", false);
                         res.put("method", "none");

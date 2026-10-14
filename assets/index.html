@@ -19983,8 +19983,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!apkScanDone && !apkScanning) scanApkFiles(true);
         }
 
+        // True (and says so) while an install runs: reading another package then would take the work folder, and the OBB data, from under it.
+        function installBusy() {
+            if (!installRunning) return false;
+            showToast('An install is already running');
+            return true;
+        }
+
         function pickInstallFile(kind) {
             haptic();
+            if (installBusy()) return;
             if (!window.AndroidBridge || !window.AndroidBridge.pickInstallerFile) {
                 showToast('Installer needs the app build');
                 return;
@@ -19996,6 +20004,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function onInstallFilePicked(ref) {
+            if (installBusy()) { installFilesPending = false; return; }       // the package being installed stays loaded; open this one after it
             installFromFiles = installFilesPending; installFilesPending = false;       // only the file manager's hand-over sets this
             document.getElementById('installPickHint').innerText = 'Reading package...';
             const prog = document.getElementById('installProgress');
@@ -20181,6 +20190,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (apkBatchBusy) return;
             if (apkSelMode) { if (apkSel.has(f.path)) apkSel.delete(f.path); else apkSel.add(f.path); apkSelRender(); return; }
             haptic();
+            if (installBusy()) return;                                        // before a shell-only file is staged
             if (f.shell && window.AndroidBridge && window.AndroidBridge.fmInstall) {
                 let r;
                 try { r = JSON.parse(window.AndroidBridge.fmInstall(f.path)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
@@ -20494,6 +20504,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // Checked before anything is copied: true when a privileged backend is ready, else says so and offers Working Modes.
         function installFilesReady() {
+            if (installBusy()) return false;
             if (privilegedInstallBackend()) return true;
             haptic();
             showToast('Needs ADB, Wireless Debugging or Shizuku');
