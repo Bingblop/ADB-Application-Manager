@@ -15017,7 +15017,7 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Compares two archives by size and CRC (nothing is extracted). The second can also be an installed app's
+         * Compares two archives by size and CRC (entries without a CRC of their own are read). The second can also be an installed app's
          * package name. Returns "started" or "busy"; the end arrives as window.onArchiveDiff(json) with ok, a, b,
          * same, truncated and the added / removed / changed lists of {p, a, b}.
          */

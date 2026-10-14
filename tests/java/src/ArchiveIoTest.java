@@ -433,6 +433,7 @@ public class ArchiveIoTest {
         detectCases(exp);
         passwordCases(exp);
         sevenDataPasswordAsks();
+        diffContent();
         createCases(exp);
         codecVariants();
         sevenEdges();
@@ -770,6 +771,40 @@ public class ArchiveIoTest {
         ByteArrayOutputStream all = new ByteArrayOutputStream();
         all.write(start); all.write(packed); all.write(hdr);
         return all.toByteArray();
+    }
+
+    /**
+     * Compare: tar, 7z and RAR entries (and WinZip AE-2 entries) carry no CRC in the app's listing (0), so two files of the same name and size
+     * were counted as "same" whatever their content. Their content is now read and compared.
+     */
+    static void diffContent() throws Exception {
+        File d = new File(tmp, "diff"); d.mkdirs();
+        File[] cfg = { new File(d, "a/config.txt"), new File(d, "b/config.txt") }, same = { new File(d, "a/same.txt"), new File(d, "b/same.txt") };
+        write(cfg[0], "debug=false"); write(cfg[1], "debug=true!");
+        for (File f : same) write(f, "identical text\n");
+        for (String fmt : new String[] { "tar", "tar.gz", "7z" }) {
+            ZipTool.Archive[] ar = new ZipTool.Archive[2];
+            for (int i = 0; i < 2; i++) {
+                File out = new File(d, "v" + i + "." + fmt);
+                ArchiveIo.create(out, fmt, Arrays.asList(new ArchiveIo.Source("config.txt", cfg[i]), new ArchiveIo.Source("same.txt", same[i])), null, -1, null);
+                ar[i] = ArchiveIoSource.open(out, fmt, null);
+            }
+            ZipTool.Diff df = ZipTool.diff(ar[0], ar[1], 100);
+            check(fmt + " compare: config.txt (same size, other content) is changed, same.txt is the same (same=" + df.same + " changed=" + df.changed.size() + ")",
+                df.same == 1 && df.changed.size() == 1 && df.changed.get(0).name.equals("config.txt") && df.added.isEmpty() && df.removed.isEmpty());
+        }
+        ZipTool.Archive[] z = new ZipTool.Archive[2];
+        for (int i = 0; i < 2; i++) {
+            File out = new File(d, "v" + i + ".zip");
+            ZipWriter.create(out, Arrays.asList(new ZipWriter.Item("config.txt", cfg[i]), new ZipWriter.Item("same.txt", same[i])), 6, "pw".toCharArray(), ZipWriter.AES256, null);
+            z[i] = ZipTool.open(out);
+        }
+        String why = null;
+        try { ZipTool.diff(z[0], z[1], 100); } catch (Exception e) { why = e.getMessage(); }
+        check("AES zip compare without the password says it cannot read them (" + why + ")", why != null);
+        for (ZipTool.Archive x : z) x.setPassword("pw".toCharArray());
+        ZipTool.Diff dz = ZipTool.diff(z[0], z[1], 100);
+        check("AES zip compare with the password: config.txt is changed, same.txt the same (same=" + dz.same + " changed=" + dz.changed.size() + ")", dz.same == 1 && dz.changed.size() == 1 && dz.changed.get(0).name.equals("config.txt"));
     }
 
     static void passwordCases(Map<String, Got> exp) throws Exception {
