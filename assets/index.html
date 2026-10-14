@@ -26795,7 +26795,8 @@ Type any command above (e.g. pm list packages -d)</div>
             nowEl.innerText = Math.round(d.cpu.overall) + '%';
             subEl.innerText = d.cpu.cores + ' core' + (d.cpu.cores === 1 ? '' : 's');
             const per = d.cpu.perCore || [];
-            coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
+            const ids = Array.isArray(d.cpu.coreIds) && d.cpu.coreIds.length === per.length ? d.cpu.coreIds : null;     // the real core numbers (an offline core is left out of perCore)
+            coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${ids ? Number(ids[i]) : i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
 
             const c = d.cpu;
             const infoRows = [];

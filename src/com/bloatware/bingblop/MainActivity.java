@@ -12145,12 +12145,16 @@ public class MainActivity extends Activity {
                     if (tmLastCpu != null) {
                         cpuJson.put("overall", CpuStats.percentBusy(tmLastCpu.aggregate, cpu.aggregate));
                         double[] perCore = CpuStats.percentBusyPerCore(tmLastCpu, cpu);
-                        JSONArray coreArr = new JSONArray();
+                        int[] ids = CpuStats.perCoreIds(tmLastCpu, cpu);       // the core number of each value: offline cores are left out, so position is not the number
+                        JSONArray coreArr = new JSONArray(), idArr = new JSONArray();
                         for (double v : perCore) coreArr.put(v);
+                        for (int id : ids) idArr.put(id);
                         cpuJson.put("perCore", coreArr);
+                        cpuJson.put("coreIds", idArr);
                     } else {
                         cpuJson.put("overall", 0.0);
                         cpuJson.put("perCore", new JSONArray());
+                        cpuJson.put("coreIds", new JSONArray());
                     }
                     tmLastCpu = cpu;
                 }
