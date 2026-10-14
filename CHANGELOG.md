@@ -19,16 +19,25 @@ A fix release on top of v7.13.1, cut from `main`. It carries the serious and wro
 **Backups**
 
 - **Restoring an app you removed with "keep data" installs it.** The restore treated it as a removed system app and refused with "signed with a different key" (on a phone with several users it also asked twice). That branch is now taken only for a real system app.
+- **The saved-lists backup in Downloads is saved as `.json`** (it was written as `.json.txt` while the message said `.json`) (#191).
+- **Delete on a backup asks first** and Cancel keeps the backup without calling the phone (#192).
+- **"Also restore app data" on a same-version restore asks the native question** an install asks before replacing the app's data as root (#193).
+- **The Hidden Settings restore says which entries it could not read** instead of dropping the entries of an unreadable table silently (#194).
+- **"Permissions X of Y granted" counts only the permissions that were tried,** so permissions skipped as not dangerous on this Android no longer read as failed grants (#195).
 
 **Terminal**
 
 - **Keys and the terminal size are no longer lost while the real terminal starts.** What you typed before the shell was up, and the size sent for the soft keyboard, were dropped, so vim and top drew with the wrong number of rows. They are held, sent in order, and the size is sent again when the shell reports it started.
 - **Opening the real terminal no longer relabels a running session.** The dropdown said Termux over the app's own shell. The running shell is kept; a different shell you ask for restarts the terminal like the dropdown does.
+- **CTRL and ALT work with arrows, Home, End, PgUp, PgDn and the F-keys.** They send the xterm forms with the modifier (CTRL+Left is `ESC [ 1 ; 5 D`), and a one-shot CTRL or ALT is used up by any key; before, CTRL then an arrow left CTRL armed and the next `d` logged the shell out (#197).
+- **A failed start of the real terminal no longer leaves a blank screen.** The reason is written into the terminal and reopening starts again (#196).
 
 **Morphe Patcher**
 
 - **"Install when finished" with "Delete the APK" no longer deletes the patched APK when the system installer was only opened.** Without a working mode the app can only hand the file to the system installer and cannot know the outcome: nothing is marked installed or deleted, and the page shows the real text instead of "Installed."
 - **A patch keeps being shown and followed after you leave the app and open it again.** The page used to show nothing running, a new patch was refused with the out-of-memory text, and a catalog time-out could cancel the patch that was running. A second patch started while one runs now says the patcher is busy at once and does not touch the first; a cancel acts only on the job it names.
+- **Cancel ends a patch at once with its result line,** which the engine's own output could overwrite; the events file is now emptied and appended to by both (#198).
+- **The patch notification shows patch names with curly quotes or non-Latin letters correctly** (it decoded them as mojibake) (#199).
 
 **Updates**
 
