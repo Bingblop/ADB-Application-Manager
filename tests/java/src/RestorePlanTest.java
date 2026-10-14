@@ -71,6 +71,29 @@ public class RestorePlanTest {
     }
   }
 
+  /** "Permissions X of Y granted": Y counted every entry of backup.json, including the ones deliberately skipped (not a dangerous permission on this phone,
+   *  e.g. POST_NOTIFICATIONS from a newer Android), so a good restore read as failed grants. Y now counts only the entries that were tried. */
+  static void checkPermissionCount() throws Exception {
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    File f = null;
+    for (int i = 0; d != null && i < 8 && f == null; i++, d = d.getParentFile()) {
+      File c = new File(d, "src/com/bloatware/bingblop/MainActivity.java");
+      if (c.isFile()) f = c;
+    }
+    check("MainActivity.java found (permissions)", f != null);
+    if (f == null) return;
+    String src = blank(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+    int a = src.indexOf("JSONArray perms = meta.optJSONArray(\"permissions\");");
+    int z = a < 0 ? -1 : src.indexOf("res.put(\"permissionsTotal\"", a);
+    String loop = a < 0 || z < 0 ? "" : src.substring(a, z);
+    check("runRestore has the permission loop", !loop.isEmpty());
+    check("the total is not the length of the list in backup.json", !Pattern.compile("total\\s*=\\s*perms\\s*==\\s*null\\s*\\?\\s*0\\s*:\\s*perms\\.length\\(\\)").matcher(loop).find());
+    int skip = loop.indexOf("isDangerousPermission(pm, perm)) continue;");
+    int count = loop.indexOf("total++");
+    int grant = loop.indexOf("bridge.setPermission(");
+    check("the total counts an entry only after the skip of the ones that are not tried, and before its grant", skip > 0 && count > skip && grant > count);
+  }
+
   public static void main(String[] args) throws Exception {
     check("a system app removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_HAS_CODE));
     check("a system app that had an update removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_UPDATED_SYSTEM_APP));
@@ -100,6 +123,7 @@ public class RestorePlanTest {
     }
     checkDownloadMime();
     checkSameVersionConfirm();
+    checkPermissionCount();
     System.out.println((fails == 0 ? "OK " : "FAILED ") + n + " checks, " + fails + " failed");
     System.exit(fails == 0 ? 0 : 1);
   }

@@ -6671,8 +6671,10 @@ public class MainActivity extends Activity {
                     backupEvent("restore", "settings", 65, "Restoring permissions...");
                     AndroidBridge bridge = new AndroidBridge();
                     JSONArray perms = meta.optJSONArray("permissions");
-                    int granted = 0, total = perms == null ? 0 : perms.length();
-                    for (int i = 0; i < total; i++) {
+                    // total counts the permissions that are tried, not the ones skipped below (a backup made on a newer Android lists some that are
+                    // not dangerous here), so "X of Y granted" does not read a good restore as failed grants.
+                    int granted = 0, total = 0, listed = perms == null ? 0 : perms.length();
+                    for (int i = 0; i < listed; i++) {
                         String perm = perms.optString(i);
                         // backup.json is untrusted, so restore must accept nothing wider than what backup
                         // creation itself ever writes: a syntactically valid, dangerous runtime permission.
@@ -6681,6 +6683,7 @@ public class MainActivity extends Activity {
                         // permission - including signature/development-level ones this format never
                         // produces - and have the privileged backend asked to grant it.
                         if (!BackupScripts.isPermission(perm) || !isDangerousPermission(pm, perm)) continue;
+                        total++;
                         String o = bridge.setPermission(pkg, perm, true).toLowerCase();
                         if (!o.contains("exception") && !o.contains("error") && !o.contains("not a changeable")) granted++;
                     }
