@@ -1542,8 +1542,20 @@
             align-self: flex-start;
         }
 
-        #inspectorModal .sheet-header-actions { flex-direction: column; align-items: flex-end; gap: var(--space-3h); }
-        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: 46px; }
+        /* The app menu's header: icon, name, package and version on the left (the icon at the top of the block, not floating beside it), Share and
+           close on the right. The tags and the copy chips, dates and sizes go under it across the whole sheet, so on a 320-360 px phone the text
+           column is not squeezed beside a column of chips (that broke "Updated" and "Cache" in the middle and cut "Copy name" off). */
+        #inspectorModal .sheet-header { align-items: flex-start; gap: var(--space-4); margin-bottom: 0; }
+        #inspectorModal .sheet-app-hero { align-items: flex-start; flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-app-hero .sheet-title { flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-title h3 { overflow-wrap: anywhere; }
+        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: var(--space-4); flex: 0 0 auto; }
+        #inspectorModal .sheet-header-actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: 0; }
+        #inspectorModal .sheet-header-actions > .uad-chip { margin-top: var(--space-3); }
+        #inspectorModal .sheet-meta { margin-bottom: var(--space-4); }
+        #inspectorModal .sheet-meta .copy-row { flex-wrap: wrap; overflow: visible; }
+        #inspectorModal .sheet-meta p.sheet-dates { margin-top: var(--space-2); overflow-wrap: break-word; }
+        #inspectorModal .sheet-meta p.sheet-dates + p.sheet-dates { margin-top: 1px; }
         /* the UAD-NG classification of the app, under Share: tap for the project's full description */
         .uad-chip { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--fs-pill); font-weight:var(--fw-heavy); padding: var(--space-1) var(--space-3h); border-radius: var(--radius-pill);
             border: 1px solid currentColor; background: var(--fill-2); cursor: pointer; max-width: 100%; }
@@ -1588,7 +1600,7 @@
         .sheet-title p {
             font-size: var(--fs-pkg);
             color: var(--text-muted);
-            word-break: break-all;
+            overflow-wrap: anywhere;        /* a long package name or path still wraps, but words such as "Updated" are not cut in the middle */
         }
 
         .sheet-title p.sheet-version {
@@ -3653,7 +3665,7 @@
             color: var(--status-running);
         }
 
-        .sheet-title p.sheet-dates {
+        .sheet-title p.sheet-dates, .sheet-meta p.sheet-dates {
             font-size: var(--fs-pkg);
             color: var(--text-muted);
             margin-top: 1px;
@@ -8335,6 +8347,8 @@ Type any command above (e.g. pm list packages -d)</div>
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
+            <!-- the app's name, package and version beside its icon, Share and close on the right; under them, across the whole sheet, the
+                 tags (UAD-NG level or Ask agent, trackers), the copy chips, the dates and sizes: on a narrow phone nothing is squeezed into a column -->
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-avatar" id="sheetAvatar"></div>
@@ -8342,25 +8356,27 @@ Type any command above (e.g. pm list packages -d)</div>
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
-                        <div class="copy-row">
-                            <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
-                            <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
-                        </div>
-                        <p id="sheetDates" class="sheet-dates"></p>
-                        <p id="sheetSizes" class="sheet-dates"></p>
-                        <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
-                        <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
-                <div class="sheet-header-actions">
-                    <div class="sheet-header-top">
-                        <span class="copy-chip" onclick="shareAppInfo()">Share</span>
-                        <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
-                    </div>
-                    <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
-                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
-                    <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
+                <div class="sheet-header-top">
+                    <span class="copy-chip" onclick="shareAppInfo()">Share</span>
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                 </div>
+            </div>
+            <div class="sheet-header-actions">
+                <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
+                <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
+                <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
+            </div>
+            <div class="sheet-meta">
+                <div class="copy-row">
+                    <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
+                    <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
+                </div>
+                <p id="sheetDates" class="sheet-dates"></p>
+                <p id="sheetSizes" class="sheet-dates"></p>
+                <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
+                <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
             </div>
 
             <!-- Action Grid -->
