@@ -39219,13 +39219,20 @@ Type any command above (e.g. pm list packages -d)</div>
         async function sdHistoryOpen() {
             haptic();
             SD.histOpen = true; SD.hist = [];
-            sdSheetOpen({ title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
+            sdSheetOpen({ kind: 'history', title: 'History', sub: '', body: '<div class="sd-note">Loading</div>', onClose: () => { SD.histOpen = false; }, buttons: [{ label: 'Reset all', keep: true, fn: sdHistoryReset }, { label: 'Close' }] });
             await sdHistoryLoad(false);
+        }
+        // The History list goes into the History sheet: the one shown, or the one under "Affected paths" (a deletion that ends while the
+        // paths are open reloads it), where Back shows it. Never into whatever other sheet is on top.
+        function sdHistoryBody(html) {
+            if (SD.sheet && SD.sheet.kind === 'history') { sdSheetBody(html); return; }
+            const h = SD.stack.find(o => o.kind === 'history');
+            if (h) h.body = html;
         }
         async function sdHistoryLoad(more) {
             const r = await sdCall('historyList', { offset: more ? SD.hist.length : 0, limit: more ? 50 : Math.max(50, SD.hist.length) });
             if (!SD.histOpen || !SD.sheet) return;
-            if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
+            if (!r.ok) { sdHistoryBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The history could not be read.') + '</div>'); return; }
             SD.hist = more ? SD.hist.concat(r.reports || []) : (r.reports || []);
             SD.histTotal = r.total || SD.hist.length;
             const st = r.stats || {};
@@ -39239,18 +39246,18 @@ Type any command above (e.g. pm list packages -d)</div>
                     '<div class="sd-sz">' + sdSizeStr(h.bytes) + '</div></div>';
             }).join('');
             const more2 = SD.hist.length < SD.histTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdHistoryLoad(true)">Show more</button></div>' : '';
-            sdSheetBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
+            sdHistoryBody(stat + (rows || '<div class="sd-note">Empty. What the tools delete is listed here.</div>') + more2);
         }
         async function sdHistoryPaths(i) {
             const h = SD.hist[i]; if (!h) return;
             SD.hp = { id: h.id, paths: [], total: 0 };
-            sdSheetOpen({ push: true, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
+            sdSheetOpen({ push: true, kind: 'paths', hp: SD.hp, title: 'Affected paths', sub: sdName(h.tool), body: '<div class="sd-note">Loading</div>', buttons: [] });
             await sdHistoryPathsLoad(false);
         }
         async function sdHistoryPathsLoad(more) {
             const hp = SD.hp; if (!hp) return;
             const r = await sdCall('historyPaths', { id: hp.id, offset: more ? hp.paths.length : 0, limit: 200 });
-            if (SD.hp !== hp || !SD.sheet) return;
+            if (SD.hp !== hp || !SD.sheet || SD.sheet.hp !== hp) return;        // Back was pressed before the paths came: not into the History list
             if (!r.ok) { sdSheetBody('<div class="sd-note is-err">' + escapeHtml(r.error || 'The paths could not be read.') + '</div>'); return; }
             hp.paths = more ? hp.paths.concat(r.paths || []) : (r.paths || []);
             hp.total = r.total || hp.paths.length;
