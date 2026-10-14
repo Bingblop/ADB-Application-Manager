@@ -24726,7 +24726,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdAppCount').innerText = 'Reading the apps of the device...';
             const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
             cd.appsBusy = false;
-            if (serial !== cd.serial) return;
+            if (serial !== cd.serial) { if (cd.sub === 'apps' && !cd.apps && cdReady()) cdAppsLoad(); return; }      // another device was chosen meanwhile: its own list was not read (this read held the busy flag)
             const f = cdFail(out);
             if (f) { document.getElementById('cdAppCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
             cd.apps = cdParseApps(out);
@@ -25287,7 +25287,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (live) n = Math.min(n, 300);
             const out = await cdSh('logcat -d -v threadtime -t ' + n + ' \'*:' + lvl + '\'', { timeout: 40000 });
             cd.lcBusy = false;
-            if (serial !== cd.serial || cd.sub !== 'logcat') return;
+            if (serial !== cd.serial) { if (cd.sub === 'logcat' && !cd.lcText && cdReady()) cdLcFetch(false); return; }   // the same for the log of the device chosen meanwhile
+            if (cd.sub !== 'logcat') return;
             const f = cdFail(out);
             if (f) { cdLcNote(f); cdLcStop(); return; }
             if (out === cd.lcText && cd.lcEntries.length) return;
