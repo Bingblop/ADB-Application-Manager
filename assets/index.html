@@ -76,7 +76,7 @@
             --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
             --line-accent: color-mix(in srgb, var(--accent) 35%, transparent);
             --tint-apps-frozen: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
-            --line-apps-frozen: color-mix(in srgb, var(--apps-frozen) 40%, transparent);
+            --line-apps-frozen: color-mix(in srgb, var(--apps-frozen) 55%, transparent);   /* a stronger outline: Frozen reads bluer than the other states (the owner asked) */
             --tint-apps-system: color-mix(in srgb, var(--apps-system) 14%, transparent);
             --line-apps-system: color-mix(in srgb, var(--apps-system) 40%, transparent);
             --tint-apps-uninstalled: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent);
@@ -29622,7 +29622,7 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--status-mod', ink('#19D3C5'));
             css.setProperty('--note', ensureContrast('#F0C000', t.bg, 4.5));                  // amber text that can be read on the light page too
             css.setProperty('--apps-enabled', ink('#00F050'));
-            css.setProperty('--apps-frozen', ink('#2979FF'));
+            css.setProperty('--apps-frozen', ink(light ? '#1565FF' : '#2EBBFF'));   // a clear, saturated blue (the owner asked for a much bluer Frozen); ink() only adjusts it for contrast
             css.setProperty('--apps-running', ink('#00E676'));
             css.setProperty('--apps-uninstalled', ink('#FF5252'));
             css.setProperty('--apps-system', ink('#A33CFF'));

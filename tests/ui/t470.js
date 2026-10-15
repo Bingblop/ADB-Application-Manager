@@ -59,6 +59,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const accRgb = await ev(a => { const e = document.createElement('i'); e.style.color = a; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; }, acc);
   check('   every filled button is a gradient, Enable\'s from a lighter (or, under white text, darker) accent to the accent', Object.values(s).flat().every(x => x.fills.length >= 2) && s.accent.every(x => 'rgb(' + x.fills[x.fills.length - 1].join(', ') + ')' === accRgb), JSON.stringify(s.accent.map(x => x.fills)) + ' accent ' + accRgb);
 
+  const frz = await ev(() => { const e = document.createElement('i'); e.style.color = 'var(--apps-frozen)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; });
+  const f3 = frz.match(/\d+/g).map(Number);
+  check('   Frozen (the filter, its count and the FROZEN tags) is a clear blue, not the old lavender: blue well above red (#94BCFF, the lavender, is 107 apart)', f3[2] > f3[1] && f3[2] - f3[0] >= 140, frz);
   await ev(() => { themeState.appearance = 'light'; applyTheme(false); }); await page.waitForTimeout(150);
   const isLight = await ev(() => document.documentElement.getAttribute('data-appearance'));
   s = await sample();
