@@ -4747,10 +4747,15 @@ public class MainActivity extends Activity {
     private void finishInstall(final JSONObject res, final JSONObject opts, final String mode, final InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         // The no-privilege install result arrives on the main thread; copying GB-sized OBB files there would ANR.
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
-            executor.submit(new Runnable() {
+            Runnable end = new Runnable() {
                 @Override
                 public void run() { finishInstallImpl(res, opts, mode, snap); }
-            });
+            };
+            try {
+                executor.submit(end);
+            } catch (java.util.concurrent.RejectedExecutionException e) {
+                new Thread(end, "install-end").start();       // the window is gone (its executor stopped): the install's folder is still released
+            }
             return;
         }
         finishInstallImpl(res, opts, mode, snap);
@@ -4946,7 +4951,7 @@ public class MainActivity extends Activity {
                         Intent confirm = (Intent) i.getParcelableExtra(Intent.EXTRA_INTENT);
                         if (confirm != null) {
                             confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            try { startActivity(confirm); } catch (Exception ignored) {}
+                            try { c.startActivity(confirm); } catch (Exception ignored) {}
                         }
                         return; // not terminal - wait for the user to confirm or cancel
                     }
@@ -4965,8 +4970,11 @@ public class MainActivity extends Activity {
                 }
             };
             android.content.IntentFilter filter = new android.content.IntentFilter(action);
-            if (Build.VERSION.SDK_INT >= 33) registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
-            else registerReceiver(rcv, filter);
+            // On the application, not this window: a window re-created (theme change) or closed while the system's install question is open
+            // would take the receiver with it, and the result (the release of the install's work folder, "delete after install") would be lost.
+            Context appCtx = getApplicationContext();
+            if (Build.VERSION.SDK_INT >= 33) appCtx.registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
+            else appCtx.registerReceiver(rcv, filter);
             int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? android.app.PendingIntent.FLAG_MUTABLE : 0);
             android.app.PendingIntent sender = android.app.PendingIntent.getBroadcast(this, sessionId, new Intent(action).setPackage(getPackageName()), piFlags);
             session.commit(sender.getIntentSender());

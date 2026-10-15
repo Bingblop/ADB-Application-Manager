@@ -128,6 +128,10 @@ public class InstallerStageTest {
     check("the end copies the snapshot's data files, not the package loaded now", finish.contains("copyInstallExtras(mode, snap)") && copy.contains("snap.extras") && copy.contains("snap.zip")
         && !m.contains("installExtras") && !m.contains("installSourceZip"));
     check("the end removes only the install's own folder", finish.contains("endInstallStage(snap, true)"));
+    String np = body(m, "private void installNoPrivilege(");
+    String fin = body(m, "private void finishInstall(");
+    check("INS-3: the no-privilege install's result receiver lives on the application (a re-created window keeps the result), and its end runs even after the window's executor stopped",
+        np.contains("appCtx.registerReceiver(rcv, filter") && !np.matches("(?s).*[^.]registerReceiver\\(rcv.*") && fin.contains("RejectedExecutionException"));
     check("delete after install removes only the snapshot's own source file, never a page-named path or the app's private data",
         inspect.contains("beginRead(sourceNameOf(ref), ref, stale)") && finish.contains("snap.sourceRef") && !finish.contains("optString(\"sourceRef\")") && finish.contains("!isPrivateData(new File(ref))"));
 
