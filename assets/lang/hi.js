@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "थीम हटाएं",
 "Delete this file?": "यह फ़ाइल हटाएं?",
 "Delete this patched APK?": "यह पैच किया गया APK हटाएँ?",
-"Delete “”?": "“” हटाएं?",
 "Deleted": "हटाया गया",
 "Deleted saved list": "सहेजी गई सूची हटाई गई",
 "Deleted the recording": "रिकॉर्डिंग हटाई गई",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "कनेक्ट होने पर ADB Stub शुरू करें: बंद",
 "Start ADB Stub on connect: On": "कनेक्ट होने पर ADB Stub शुरू करें: चालू",
 "The ADB Stub no longer starts on its own": "ADB Stub अब अपने आप शुरू नहीं होता",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "घड़ी पर मौजूद ADB Stub किसी दूसरी कुंजी से साइन किया गया है। इसे घड़ी से अनइंस्टॉल करें, फिर इंस्टॉल करें पर टैप करें।",
 "The ADB Stub starts when the watch connects": "घड़ी जुड़ने पर ADB Stub शुरू होता है",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "घड़ी की स्क्रीन चालू और उसका Wi-Fi जुड़ा रहता है। डिस्कनेक्ट करें इसे रोक देता है।",
 "No extra button is shown on the rows.": "पंक्तियों पर कोई अतिरिक्त बटन नहीं दिखता।",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "नाम में शब्द: <1>photo</1> (सभी मेल खाने चाहिए; <2/> और <3/> वाइल्डकार्ड हैं; <4>-word</4> किसी नाम को बाहर रखता है; \"दो शब्द\" उद्धरण चिह्नों में)।<br> <5>ext:jpg,png</5> या <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> टेक्स्ट फ़ाइलों के अंदर खोजता है (4 MB तक)। <15>archive:name</15> zip, apk, jar जैसे आर्काइव के अंदर की प्रविष्टियों के नाम देखता है।",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "अपना संदेश लिखें और <1>भेजें</1> पर टैप करें: आपका ईमेल ऐप संदेश तैयार करके खुलता है, जो एक संपर्क उपनाम (<2/>) को संबोधित है जो उसे डेवलपर तक पहुँचाता है। विषय <3>ADB App Manager</3> है। डेवलपर का अपना पता इस ऐप में नहीं है, और संदेश आपके ईमेल ऐप से भेजा जाता है, इस ऐप से नहीं।",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram RAM का एक हिस्सा है जो संपीड़ित स्वैप की तरह काम करता है: मेमोरी कम होने पर Android निष्क्रिय ऐप्स की मेमोरी को बंद करने के बजाय लगभग एक-तिहाई आकार में दबाकर वहाँ भेज देता है। यह खंड कार्य मोड के ज़रिए <1/> (असंपीड़ित डेटा, संपीड़ित आकार, असल में इस्तेमाल RAM), <2/> और <3/> पढ़ता है। संपीड़न = असंपीड़ित डेटा ÷ संपीड़ित आकार; RAM बचाई = असंपीड़ित डेटा − वह RAM जो संपीड़ित प्रति लेती है।"
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram RAM का एक हिस्सा है जो संपीड़ित स्वैप की तरह काम करता है: मेमोरी कम होने पर Android निष्क्रिय ऐप्स की मेमोरी को बंद करने के बजाय लगभग एक-तिहाई आकार में दबाकर वहाँ भेज देता है। यह खंड कार्य मोड के ज़रिए <1/> (असंपीड़ित डेटा, संपीड़ित आकार, असल में इस्तेमाल RAM), <2/> और <3/> पढ़ता है। संपीड़न = असंपीड़ित डेटा ÷ संपीड़ित आकार; RAM बचाई = असंपीड़ित डेटा − वह RAM जो संपीड़ित प्रति लेती है।",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android से हर ऐप की कैश फ़ाइलें हटाने को कहता है, वही जो सेटिंग > सभी ऐप्स में कैश ट्रिम करें करता है। ऐप्स, उनका डेटा, लॉगिन और आपकी फ़ाइलें बनी रहती हैं। यह स्टोरेज खाली करता है, सीधे RAM नहीं, और इसमें एक मिनट लग सकता है; नतीजा अपनी अलग शीट में खुलता है।",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android का बैटरी सेवर चालू करता है, वही स्विच जो सेटिंग > बैटरी में है: स्क्रीन की चमक घटती है, पृष्ठभूमि काम, सिंक और स्थान सीमित होते हैं और एनिमेशन छोटे हो जाते हैं। फ़ोन अपना बैटरी-सेवर आइकन दिखाता है।",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।"
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "चुने हुए {0} आइटम ({1}) मिटाएँ?"],
 ["Delete {0} selected items?", "चुने हुए {0} आइटम मिटाएँ?"],
 ["Delete {0}?", "{0} हटाएं?"],
-["Delete “ {0}”?", "“ {0}” हटाएं?"],
-["Delete “{0} {1}”?", "“{0} {1}” हटाएं?"],
 ["Delete “{0}” from the archive?", "आर्काइव से “{0}” हटाएं?"],
 ["Delete “{0}”?", "“{0}” हटाएं?"],
 ["Deleted the theme {0}", "थीम {0} मिटाई गई"],

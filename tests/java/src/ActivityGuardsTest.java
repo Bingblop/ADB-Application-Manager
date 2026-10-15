@@ -156,6 +156,31 @@ public class ActivityGuardsTest {
     List<String> loose = executorsNotStopped(main, pools);
     check("MainActivity: every executor field is shut down in onDestroy (found " + pools + "); not stopped: " + loose, pools.size() >= 8 && loose.isEmpty());
 
+    // MA1-2: the activity's own monitor is taken on the UI thread (onDestroy, the Morphe picker) and by the lazy getters, so no method that
+    // holds it may run a shell command (which can wait minutes on a backend that does not answer)
+    List<String> slow = new ArrayList<String>();
+    int syncs = 0;
+    Matcher sm = Pattern.compile("\\n    (?:private|public|protected)? ?synchronized [^\\n(]*\\(").matcher(main);
+    while (sm.find()) {
+      syncs++;
+      String sig = sm.group().substring(1);
+      String body = bodyOf(main, sig);
+      if (body != null && (body.contains("executeShell(") || body.contains("runAdbShell(") || body.contains("restoreSecureSetting("))) slow.add(sig.trim());
+    }
+    check("MainActivity: no synchronized method of the activity runs a shell command while it holds the activity's lock (checked " + syncs + "); found: " + slow, syncs >= 8 && slow.isEmpty());
+
+    // MA2-1: every write of the backups list happens under one lock, after reading the list again under it (a backup finishing during a
+    // slow delete must not be dropped from the list)
+    int writes = 0, locked = 0;
+    Matcher bw = Pattern.compile("putString\\(\"backups_index\"").matcher(main);
+    while (bw.find()) {
+      writes++;
+      int lock = main.lastIndexOf("synchronized (backupIndexLock) {", bw.start());
+      int read = main.lastIndexOf("backupIndex()", bw.start());
+      if (lock >= 0 && read > lock && bw.start() - lock < 1500) locked++;
+    }
+    check("MainActivity: every write of backups_index is under backupIndexLock, after a read under it (" + locked + " of " + writes + ")", writes >= 3 && locked == writes);
+
     System.out.println(fails == 0 ? "PASS ActivityGuardsTest: " + n + " checks" : "FAILED ActivityGuardsTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);
   }

@@ -17,7 +17,7 @@ public class AdbArgsTest {
       {"shell", "echo", "kill-server"}, {"pull", "/sdcard/a.txt", "/tmp/a.txt"}, {"push", "a.apk", "/data/local/tmp/"}, {"install", "-r", "a.apk"},
       {"logcat", "-d"}, {"-d", "shell", "id"}, {"-s", "shell", "devices"}, {"-s", "SER123", "-d", "shell", "id"}, {"-t", "2", "shell", "kill-server"}, {"--version"},
       {"wait-for-device"}, {"wait-for-device", "shell", "echo", "kill-server"}, {"wait-for-usb-device", "install", "-r", "a.apk"}, {"-s", "x", "wait-for-device", "shell", "id"}, {"-e", "shell", "id"}, {"version"}, {"keys"},
-      {"shell", "raw"}, {"shell", "echo", "raw", "host:kill"},
+      {"shell", "raw"}, {"shell", "echo", "raw", "host:kill"}, {"bugreport"}, {"bugreport", "/sdcard/Download/"}, {"shell", "echo", "keygen"},
     };
     for (String[] f : fine) is("allowed: adb " + String.join(" ", f), AdbArgs.check(l(f)) == null);
 
@@ -30,6 +30,9 @@ public class AdbArgsTest {
       {"-s", "x", "wait-for-local-device", "reconnect-server"},
       {"raw", "host:kill"}, {"raw", "host:features"}, {"raw"}, {"-d", "raw", "host:kill"}, {"-s", "x", "raw", "host:kill"}, {"wait-for-device", "raw", "host:kill"},
       {"-P", "5037", "devices"}, {"-P5037", "devices"}, {"-H", "example.com", "devices"}, {"-Hexample.com", "devices"}, {"-L", "tcp:5037", "devices"}, {"-a", "nodaemon", "server"}, {"-a", "start-server"},
+      // ADB-2: the app keeps its own adb key; keygen would overwrite a key file, pubkey reads one
+      {"keygen", "/sdcard/k"}, {"keygen", "/data/user/0/com.bloatware.bingblop/files/adb_home/.android/adbkey"}, {"pubkey", "/sdcard/k"}, {"-s", "x", "keygen", "/sdcard/k"},
+      {"wait-for-device", "keygen", "/sdcard/k"}, {"-d", "pubkey", "/data/user/0/com.bloatware.bingblop/files/adb_home/.android/adbkey"},
     };
     for (String[] b : bad) is("refused: adb " + String.join(" ", b), AdbArgs.check(l(b)) != null);
 
@@ -58,6 +61,13 @@ public class AdbArgsTest {
         && AdbArgs.localFileArgs(l("sideload", key)).contains(key) && AdbArgs.localFileArgs(l("backup", "-f", key, "-all")).contains(key) && AdbArgs.localFileArgs(l("restore", key)).contains(key));
     is("an --option=value names a file too", AdbArgs.localFileArgs(l("install", "--apex=" + key)).contains(key));
     is("a relative name is read from the root, where adb runs", AdbArgs.localFileArgs(l("push", "data/user/0/x", "/sdcard/")).contains("/data/user/0/x"));
+    // ADB-2: bugreport writes its zip on this phone, keygen writes FILE and FILE.pub, pubkey reads FILE
+    String prefs = "/data/user/0/com.bloatware.bingblop/shared_prefs/";
+    is("bugreport: the folder or zip it writes is among them", AdbArgs.localFileArgs(l("bugreport", prefs)).contains(prefs)
+        && AdbArgs.localFileArgs(l("-s", "x", "wait-for-device", "bugreport", key + ".zip")).contains(key + ".zip"));
+    is("bugreport without a path names nothing", AdbArgs.localFileArgs(l("bugreport")).isEmpty());
+    is("keygen: the file and its .pub are among them", AdbArgs.localFileArgs(l("keygen", key)).contains(key) && AdbArgs.localFileArgs(l("keygen", "/sdcard/k")).contains("/sdcard/k.pub"));
+    is("pubkey: the key file it reads is among them", AdbArgs.localFileArgs(l("pubkey", key)).contains(key));
     is("shell, logcat and others name no local file", AdbArgs.localFileArgs(l("shell", "cat", key)).isEmpty() && AdbArgs.localFileArgs(l("logcat", "-f", key)).isEmpty() && AdbArgs.localFileArgs(l("-s", "push", "shell", key)).isEmpty());
     // ... and the bridge refuses them (a source check: isPrivateData needs Android)
     try {

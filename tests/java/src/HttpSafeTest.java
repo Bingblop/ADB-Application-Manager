@@ -34,6 +34,11 @@ public class HttpSafeTest {
         HttpSafe.isLoopback("0:0::1") && HttpSafe.isLoopback("::0001") && HttpSafe.isLoopback("::ffff:7f00:1") && HttpSafe.isLoopback("[0::1]"));
     check("numeric forms that are not loopback: 128.1, 1, 0x80.1, 3232235777, 2::1, 300.1, 09.1",
         !HttpSafe.isLoopback("128.1") && !HttpSafe.isLoopback("1") && !HttpSafe.isLoopback("0x80.1") && !HttpSafe.isLoopback("3232235777") && !HttpSafe.isLoopback("2::1") && !HttpSafe.isLoopback("300.1") && !HttpSafe.isLoopback("09.1"));
+    // INS-2: spellings the network stack decodes before it connects (percent escapes, full-width digits) are read the same way
+    check("percent-escaped and full-width loopback hosts are loopback; a redirect from outside to them is refused",
+        HttpSafe.isLoopback("%31%32%37.0.0.1") && HttpSafe.isLoopback("\uff11\uff12\uff17.0.0.1") && HttpSafe.isLoopback("%6c%6f%63%61%6c%68%6f%73%74") && HttpSafe.isLoopback("%2531%2532%2537.0.0.1") && HttpSafe.isLoopback("%3")
+        && !HttpSafe.redirectAllowed("https://example.com/a", "http://%31%32%37.0.0.1:5042/") && !HttpSafe.redirectAllowed("https://example.com/a", "http://\uff11\uff12\uff17.0.0.1/")
+        && !HttpSafe.isLoopback("%65xample.com") && !HttpSafe.isLoopback("b\u00fccher.example") && HttpSafe.redirectAllowed("https://example.com/a", "https://b\u00fccher.example/x"));
     check("outside http to 127.1 and to [0::1] is refused", !HttpSafe.redirectAllowed("http://a.example/x", "http://127.1:8080/y") && !HttpSafe.redirectAllowed("https://a.example/x", "https://[0:0::1]/y"));
     check("ordinary hosts and addresses are not", !HttpSafe.isLoopback("example.com") && !HttpSafe.isLoopback("128.0.0.1") && !HttpSafe.isLoopback("126.255.255.255") && !HttpSafe.isLoopback("localhost.example.com") && !HttpSafe.isLoopback("10.0.0.1") && !HttpSafe.isLoopback("") && !HttpSafe.isLoopback(null));
     check("outside http to 127.0.0.2 is refused", !HttpSafe.redirectAllowed("http://a.example/x", "http://127.0.0.2:8080/y"));

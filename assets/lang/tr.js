@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "Temayı sil",
 "Delete this file?": "Bu dosya silinsin mi?",
 "Delete this patched APK?": "Bu yamalı APK silinsin mi?",
-"Delete “”?": "“” silinsin mi?",
 "Deleted": "Silindi",
 "Deleted saved list": "Kayıtlı liste silindi",
 "Deleted the recording": "Kayıt silindi",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "Bağlanınca ADB Stub'ı başlat: Kapalı",
 "Start ADB Stub on connect: On": "Bağlanınca ADB Stub'ı başlat: Açık",
 "The ADB Stub no longer starts on its own": "ADB Stub artık kendiliğinden başlamıyor",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "Saatteki ADB Stub başka bir anahtarla imzalanmış. Saatten kaldırın, ardından Yükle'ye dokunun.",
 "The ADB Stub starts when the watch connects": "ADB Stub, saat bağlandığında başlar",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Saatin ekranı açık ve Wi-Fi'si bağlı kalır. Bağlantıyı kes onu durdurur.",
 "No extra button is shown on the rows.": "Satırlarda ek düğme gösterilmez.",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Addaki sözcükler: <1>photo</1> (hepsi eşleşmeli; <2/> ve <3/> joker karakterdir; <4>-word</4> bir adı hariç tutar; \"iki sözcük\" tırnak içinde).<br> <5>ext:jpg,png</5> veya <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> metin dosyalarının içine bakar (4 MB'a kadar). <15>archive:name</15> zip, apk, jar ve benzeri arşivlerin içindeki girdilerin adlarına bakar.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "İletinizi yazın ve <1>Gönder</1>’e dokunun: e-posta uygulamanız, iletiyi geliştiriciye yönlendiren bir iletişim takma adına (<2/>) hazır olarak açılır. Konu <3>ADB App Manager</3>’dır. Geliştiricinin kendi adresi bu uygulamada yok ve ileti bu uygulama tarafından değil, e-posta uygulamanız tarafından gönderilir.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram, sıkıştırılmış takas olarak çalışan bir RAM parçasıdır: bellek azaldığında Android, boştaki uygulamaların belleğini kapatmak yerine yaklaşık üçte birine sıkıştırarak oraya taşır. Bölüm, çalışma modu üzerinden <1/> (sıkıştırılmamış veri, sıkıştırılmış boyut, gerçekten kullanılan RAM), <2/> ve <3/> okur. Sıkıştırma, sıkıştırılmamış verinin sıkıştırılmış boyuta bölümüdür; kazanılan RAM, sıkıştırılmamış veri eksi sıkıştırılmış kopyanın kapladığı RAM'dir."
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram, sıkıştırılmış takas olarak çalışan bir RAM parçasıdır: bellek azaldığında Android, boştaki uygulamaların belleğini kapatmak yerine yaklaşık üçte birine sıkıştırarak oraya taşır. Bölüm, çalışma modu üzerinden <1/> (sıkıştırılmamış veri, sıkıştırılmış boyut, gerçekten kullanılan RAM), <2/> ve <3/> okur. Sıkıştırma, sıkıştırılmamış verinin sıkıştırılmış boyuta bölümüdür; kazanılan RAM, sıkıştırılmamış veri eksi sıkıştırılmış kopyanın kapladığı RAM'dir.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android'den her uygulamanın önbellek dosyalarını silmesini ister; Ayarlar > Tüm uygulamalardaki önbellekleri temizle ile aynıdır. Uygulamalar, verileri, oturum açma bilgileri ve dosyalarınız kalır. Doğrudan RAM değil depolama alanı boşaltır ve bir dakika sürebilir; sonuç kendi sayfasında açılır.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android'in pil tasarrufunu açar; Ayarlar > Pil'deki anahtarın aynısıdır: ekran kararır, arka plan işi, eşitleme ve konum sınırlanır, animasyonlar kısalır. Telefon pil tasarrufu simgesini gösterir.",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android 3 dakika sonra hâlâ bitirmedi. Bittiğinde sonuç kendi sayfasında açılır."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "Seçili {0} öğe ({1}) silinsin mi?"],
 ["Delete {0} selected items?", "Seçili {0} öğe silinsin mi?"],
 ["Delete {0}?", "{0} silinsin mi?"],
-["Delete “ {0}”?", "“ {0}” silinsin mi?"],
-["Delete “{0} {1}”?", "“{0} {1}” silinsin mi?"],
 ["Delete “{0}” from the archive?", "“{0}” arşivden silinsin mi?"],
 ["Delete “{0}”?", "“{0}” silinsin mi?"],
 ["Deleted the theme {0}", "{0} teması silindi"],

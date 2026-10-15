@@ -270,7 +270,8 @@ public class InstallConfirmTest {
         is("bringing back a removed system app (pm install-existing) asks first too, and a No stops the restore", existing > 0 && sysAsk > 0 && sysAsk < existing && res.indexOf("throw new InstallCancelled()") > sysAsk && res.indexOf("throw new InstallCancelled()") < existing && res.contains("InstallConfirm.REINSTATES_SYSTEM"));
         is("the Morphe uninstall-first removes the package read from the APK, never the one the page sent", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && !mor.contains("uninstallInstalledCopy(mode, pkg)") && mor.contains("uninstallFirst && insidePkg == null"));
 
-        int mTry = mor.indexOf("        try {\n            if (files.isEmpty())"), mDecl = mor.indexOf("String insidePkg = null;");
+        int mDecl = mor.indexOf("String insidePkg = null;"), mTry = mor.indexOf("        try {\n", Math.max(0, mDecl));
+        if (mTry > mor.indexOf("if (files.isEmpty())")) mTry = -1;                         // the try that holds the copy and the files.isEmpty() check
         int mRetry = mor.indexOf("\"retry\", \"uninstall\"");
         String retryLine = mRetry < 0 ? "" : mor.substring(mor.lastIndexOf("\n", mRetry) + 1, mor.indexOf("\n", mRetry));
         is("the Morphe package read from the APK is kept outside the try block, so the retry decision can use it", mDecl > 0 && mTry > mDecl && mor.contains("            insidePkg = inside != null && inside.packageName != null ? inside.packageName : null;") && count(mor, "String insidePkg") == 1);

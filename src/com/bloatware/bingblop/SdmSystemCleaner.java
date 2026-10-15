@@ -493,7 +493,9 @@ public final class SdmSystemCleaner implements Sdm.ToolImpl {
                 String child = Sdm.join(dir, n);
                 Sdm.Entry ce;
                 try { ce = ctx.fs.stat(child); } catch (IOException e) { return false; }
-                if (ce == null) continue;                                                            // gone meanwhile
+                // listed but stat finds nothing: gone meanwhile, or (through the shell) one half of a name with a line break that ls split in two;
+                // either way this folder cannot be shown to be empty, so it is not (a whole file would otherwise be deleted with it)
+                if (ce == null) return false;
                 if (ce.type != Sdm.DIR) return false;
                 if (ctx.exclusions != null && ctx.exclusions.excludesPath(Sdm.Tool.SYSTEMCLEANER, child)) return false;   // an excluded folder must survive
                 subs.add(child);

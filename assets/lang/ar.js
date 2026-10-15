@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "حذف السمة",
 "Delete this file?": "هل تريد حذف هذا الملف؟",
 "Delete this patched APK?": "حذف ملف APK المصحَّح هذا؟",
-"Delete “”?": "حذف «»؟",
 "Deleted": "تم الحذف",
 "Deleted saved list": "تم حذف القائمة المحفوظة",
 "Deleted the recording": "تم حذف التسجيل",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "تشغيل ADB Stub عند الاتصال: إيقاف",
 "Start ADB Stub on connect: On": "تشغيل ADB Stub عند الاتصال: تشغيل",
 "The ADB Stub no longer starts on its own": "لم يعد ADB Stub يبدأ من تلقاء نفسه",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ADB Stub الموجود على الساعة موقّع بمفتاح آخر. ألغِ تثبيته من الساعة، ثم اضغط تثبيت.",
 "The ADB Stub starts when the watch connects": "يبدأ ADB Stub عند اتصال الساعة",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "تبقى شاشة الساعة مضاءة وشبكة Wi-Fi فيها متصلة. «قطع الاتصال» يوقفه.",
 "No extra button is shown on the rows.": "لا يظهر أي زر إضافي في الصفوف.",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "كلمات في الاسم: <1>photo</1> (يجب أن تتطابق جميعها؛ <2/> و<3/> رمزان بديلان؛ <4>-word</4> يستبعد اسماً؛ \"كلمتان\" بين علامتي تنصيص).<br> <5>ext:jpg,png</5> أو <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> يبحث داخل الملفات النصية (حتى 4 ميغابايت). <15>archive:name</15> يبحث في أسماء العناصر داخل أرشيفات zip وapk وjar وما شابهها.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "اكتب رسالتك واضغط <1>إرسال</1>: يفتح تطبيق البريد لديك والرسالة جاهزة، موجّهة إلى اسم مستعار للتواصل (<2/>) يحوّلها إلى المطوّر. الموضوع هو <3>ADB App Manager</3>. عنوان المطوّر نفسه ليس في هذا التطبيق، وتُرسل الرسالة من تطبيق البريد لديك لا من هذا التطبيق.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>.",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram جزء من الذاكرة يعمل كمبادلة مضغوطة: عندما تشحّ الذاكرة ينقل Android إليه ذاكرة التطبيقات الخاملة، مضغوطةً إلى نحو ثلث حجمها، بدل إغلاقها. يقرأ القسم <1/> (البيانات غير المضغوطة، الحجم المضغوط، الذاكرة المستخدمة فعلًا) و<2/> و<3/> عبر وضع العمل. الضغط هو البيانات غير المضغوطة مقسومة على الحجم المضغوط؛ والذاكرة الموفَّرة هي البيانات غير المضغوطة ناقص الذاكرة التي تشغلها النسخة المضغوطة."
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram جزء من الذاكرة يعمل كمبادلة مضغوطة: عندما تشحّ الذاكرة ينقل Android إليه ذاكرة التطبيقات الخاملة، مضغوطةً إلى نحو ثلث حجمها، بدل إغلاقها. يقرأ القسم <1/> (البيانات غير المضغوطة، الحجم المضغوط، الذاكرة المستخدمة فعلًا) و<2/> و<3/> عبر وضع العمل. الضغط هو البيانات غير المضغوطة مقسومة على الحجم المضغوط؛ والذاكرة الموفَّرة هي البيانات غير المضغوطة ناقص الذاكرة التي تشغلها النسخة المضغوطة.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "يطلب من Android حذف ملفات الذاكرة المؤقتة لكل تطبيق، وهو نفسه الإعدادات > تقليص الذاكرة المؤقتة في كل التطبيقات. تبقى التطبيقات وبياناتها وتسجيلات الدخول وملفاتك. يحرّر مساحة التخزين لا الذاكرة مباشرةً، وقد يستغرق دقيقة؛ وتُفتح النتيجة في لوحتها الخاصة.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "يشغّل توفير البطارية في Android، وهو المفتاح نفسه الموجود في الإعدادات > البطارية: تخفت الشاشة، ويُقيَّد العمل في الخلفية والمزامنة والموقع، وتتقلّص الرسوم المتحركة. يعرض الهاتف أيقونة توفير البطارية.",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "لم ينتهِ Android بعد 3 دقائق. تُفتح النتيجة في لوحتها الخاصة عندما ينتهي."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "هل تحذف العناصر المحدّدة ({0}) ({1})؟"],
 ["Delete {0} selected items?", "هل تحذف العناصر المحدّدة ({0})؟"],
 ["Delete {0}?", "هل تريد حذف {0}؟"],
-["Delete “ {0}”?", "حذف « {0}»؟"],
-["Delete “{0} {1}”?", "حذف «{0} {1}»؟"],
 ["Delete “{0}” from the archive?", "هل تريد حذف «{0}» من الأرشيف؟"],
 ["Delete “{0}”?", "هل تريد حذف «{0}»؟"],
 ["Deleted the theme {0}", "حُذفت السمة {0}"],

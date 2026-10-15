@@ -284,6 +284,21 @@ public class MorpheRunnerTest {
         append(evA, "LOG INFO running\n");
         check("the busy answer is never written into the file of the running job", !MorpheServiceRules.answerBusy(evA, evA) && read(evA).equals("LOG INFO running\n"), read(evA));
 
+        // MOR-3: Stop pressed while the engine writes its answer: the run returns the engine's success, and the Stop is still known to the caller (the bridge
+        // checks it before Saving and before Installing, see the source check below)
+        final MorpheRunner[] lateRunner = new MorpheRunner[1];
+        lateRunner[0] = new MorpheRunner(new MorpheRunner.Launcher() {
+            @Override public boolean start(String cmd, File job, File events, String title) {
+                try { append(events, "RESULT {\"success\":true,\"applied\":[\"x\"]}\n"); } catch (IOException e) { return false; }
+                lateRunner[0].markCancelled("jlate");                                       // the page's Stop, a moment after the engine's last word
+                return true;
+            }
+            @Override public void cancel(File events) {}
+            @Override public boolean alive() { return false; }
+        }, FAST);
+        JSONObject lateRes = lateRunner[0].run("patch", new JSONObject(), new File(root, "late"), "t", "jlate", null, 5000);
+        check("a Stop that comes with the engine's answer: the run returns that answer, and the Stop is still marked for the bridge to see", lateRes.optBoolean("success") && lateRunner[0].isCancelled("jlate"), lateRes.toString());
+
         // the bridge uses all this
         File src = null;
         for (File d = new File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { File f = new File(d, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
@@ -300,6 +315,15 @@ public class MorpheRunnerTest {
             check("the service answers a RUN that arrives while it is busy (it no longer drops it) and the runner's Stop names its events file", rp > 0 && sv.substring(rp, Math.min(sv.length(), rp + 400)).contains("MorpheServiceRules.answerBusy(") && sv.contains("MorpheServiceRules.cancelApplies(running, ev, intent.getStringExtra(\"events\"))") && sv.contains("i.putExtra(\"events\", events.getAbsolutePath())"), null);
             int cp = m.indexOf("case \"cancel\":");
             String cb = cp < 0 ? "" : m.substring(cp, Math.min(m.length(), cp + 400));
+            // MOR-3: a Stop that comes in after the engine's RESULT (while it signs, during Saving) is not ignored
+            int pp = m.indexOf("private void patch(JSONObject a");
+            String pb = pp < 0 ? "" : m.substring(pp, Math.min(m.length(), pp + 7000));
+            int eng = pb.indexOf("runEngine(\"patch\""), stop1 = pb.indexOf("runner.isCancelled(jobId)", eng), sav = pb.indexOf("step(jobId, \"Saving\", \"RUNNING\")");
+            String stopBlock = stop1 < 0 ? "" : pb.substring(stop1, Math.min(pb.length(), stop1 + 500));
+            check("after the engine's answer and before Saving the run checks for a Stop, and then deletes the unsaved APK and reports cancelled (MOR-3)",
+                    eng > 0 && stop1 > eng && stop1 < sav && stopBlock.contains("output.delete()") && stopBlock.contains(".put(\"cancelled\", true)"), "engine=" + eng + " check=" + stop1 + " saving=" + sav);
+            int inst = pb.indexOf("step(jobId, \"Installing\", \"RUNNING\")"), stop2 = pb.indexOf("runner.isCancelled(jobId)", stop1 + 1);
+            check("...and again before Installing: a Stop during Saving installs nothing", stop2 > sav && stop2 < inst && pb.indexOf(".install(new File(saved.optString(\"file\"))") > inst, "check=" + stop2 + " installing=" + inst);
             check("the cancel call checks the job id and that it is the running job, then goes through runner.cancel", cb.contains("validJobId(job)") && cb.contains("slot.current()") && cb.contains("runner.cancel(job)") && !cb.contains("MorpheService.cancel"), cb);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }

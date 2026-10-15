@@ -15,19 +15,25 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
+import android.os.SystemClock;
 
 import java.net.Inet4Address;
 
 /**
  * What the stub is for, held while it runs: the screen on (a bright screen wake lock), Wi-Fi on and at full power (a Wi-Fi lock, and a request for a
  * Wi-Fi network: on Wear OS that is what stops the watch from turning Wi-Fi off and going back to the phone's Bluetooth), shown as a foreground
- * service so the watch does not end it. Everything is let go in {@link #release} (Stop, the phone's Disconnect) and, should that be skipped, when the
- * process ends: the system drops the locks and the network request of a process that is gone, so am force-stop also gives the watch back its normal Wi-Fi.
+ * service so the watch does not end it. Everything is let go in {@link #release} (Stop, the phone's Disconnect, the end of the {@link Lease} when the
+ * phone stops renewing it) and, should that be skipped, when the process ends: the system drops the locks and the network request of a process that is
+ * gone, so am force-stop also gives the watch back its normal Wi-Fi.
  */
 public final class StubService extends Service {
     static final String ACTION_STOP = "com.bloatware.bingblop.adbstub.STOP";
+    /** The phone's renewal of the lease (am broadcast over adb, to the same receiver as Stop). */
+    static final String ACTION_RENEW = "com.bloatware.bingblop.adbstub.RENEW";
     static final String EXTRA_PHONE = "phone";
     private static final String CHANNEL = "stub";
     private static final int NOTE_ID = 1;
@@ -44,12 +50,36 @@ public final class StubService extends Service {
     private PowerManager.WakeLock screen;
     private WifiManager.WifiLock wifiLock, lowLatency;
     private ConnectivityManager.NetworkCallback callback;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Lease lease;
+    /** At the end of the lease: let go, unless the phone renewed it meanwhile (then wait for the new end). */
+    private final Runnable leaseCheck = new Runnable() {
+        @Override
+        public void run() {
+            Lease l = lease;
+            if (l == null || !running) return;
+            long left = l.left(SystemClock.elapsedRealtime());
+            if (left <= 0) stopNow(StubService.this);
+            else handler.postDelayed(this, left);
+        }
+    };
 
     /** Stops the stub from anywhere in the app (the Stop receiver, the status screen). */
     static void stopNow(Context c) {
         StubService s = instance;
         if (s != null) s.release();
         StubActivity.finishIfOpen();
+    }
+
+    /** The phone is still there (the Renew broadcast): the stub keeps holding for another {@link Lease#MS}. Nothing when it is not running. */
+    static void renewNow() {
+        StubService s = instance;
+        if (s != null) s.renew();
+    }
+
+    private void renew() {
+        Lease l = lease;
+        if (running && l != null) l.renew(SystemClock.elapsedRealtime());
     }
 
     @Override
@@ -66,6 +96,7 @@ public final class StubService extends Service {
         }
         if (intent != null && intent.hasExtra(EXTRA_PHONE)) phone = clean(intent.getStringExtra(EXTRA_PHONE));
         startForeground(NOTE_ID, note());
+        renew();
         hold();
         return START_STICKY;
     }
@@ -81,6 +112,9 @@ public final class StubService extends Service {
         if (running) return;
         running = true;
         since = System.currentTimeMillis();
+        lease = new Lease(SystemClock.elapsedRealtime());
+        handler.removeCallbacks(leaseCheck);
+        handler.postDelayed(leaseCheck, Lease.MS);
         try {
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             screen = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "adbstub:screen");
@@ -132,6 +166,8 @@ public final class StubService extends Service {
 
     /** Lets go of everything and ends the service. Safe to call twice. */
     void release() {
+        handler.removeCallbacks(leaseCheck);
+        lease = null;
         try { if (screen != null && screen.isHeld()) screen.release(); } catch (Exception ignored) {}
         try { if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); } catch (Exception ignored) {}
         try { if (lowLatency != null && lowLatency.isHeld()) lowLatency.release(); } catch (Exception ignored) {}

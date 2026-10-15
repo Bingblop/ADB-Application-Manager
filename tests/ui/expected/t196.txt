@@ -1,7 +1,7 @@
 ok   no saved choice: the default bar has Console right before Live Logcat and no Terminal tab
 ok   an old choice (everything on, the old order): Console takes the place of the Command-Line Interface, Live Logcat follows (in Terminal's place), the old Logcat Viewer place is gone
 ok   a moved Command-Line Interface keeps its place for Console (first), Live Logcat right after it
-ok   the Command-Line Interface was off: Console is off and so is Live Logcat
+ok   the Command-Line Interface and the Logcat Viewer were off: Console is off and so is Live Logcat
 ok   the Feature List shows both switched off and has no row for Terminal
 ok   switching Console on again brings it back before the (still off) Live Logcat
 ok   the Logcat Viewer was off (and File Manager): Console is still on, only File Manager stays off, the old logcat state is dropped (Live Logcat takes Terminal's, on)

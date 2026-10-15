@@ -274,6 +274,8 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
+        // the newest window is the one a Morphe patch that is going asks for the installer, also before this page makes a Morphe call (MOR-1)
+        try { MorpheBridge.windowOpened(morpheHost()); } catch (Throwable t) { Log.w(TAG, "Morphe window registration failed: " + t.getMessage()); }
 
         webView.setVerticalScrollBarEnabled(true);
         webView.setHorizontalScrollBarEnabled(false);
@@ -2218,6 +2220,8 @@ public class MainActivity extends Activity {
 
     /** The check that is running now (Cancel and onDestroy reach it here); null when none is. */
     private volatile UpdateChecker updateCheckRun;
+    /** Cancel was pressed (or the window closed) while the run was still listing the apps, before its checker existed. */
+    private volatile boolean updateCancelRequested;
     private final UpdateChecker.Generation updateRunGeneration = new UpdateChecker.Generation();   // a callback of an older check is dropped once a newer one has started
     /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
     private volatile JSONObject updateLastSummary;
@@ -2297,6 +2301,7 @@ public class MainActivity extends Activity {
 
     /** Stops the check that is running, if any: what it found stays, the rest is reported as not checked. */
     private void cancelUpdateCheckRun() {
+        updateCancelRequested = true;              // read by a run that has not made its checker yet
         UpdateChecker c = updateCheckRun;
         if (c != null) c.cancel();
     }
@@ -2348,6 +2353,7 @@ public class MainActivity extends Activity {
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
+        updateCancelRequested = false;
         try {
             executor.submit(new Runnable() {
                 @Override
@@ -2406,6 +2412,7 @@ public class MainActivity extends Activity {
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
+                            if (updateCancelRequested) checker.cancel();   // Cancel pressed while the apps were being listed
                             summary = checker.check(apps, o, new UpdateChecker.Listener() {
                                 @Override
                                 public void onUpdate(JSONObject row) {
@@ -2890,23 +2897,29 @@ public class MainActivity extends Activity {
      * Puts back the assistant settings saved by {@link #launchViaAssistant} and clears the record, but only once a read-back shows
      * the values are really back (if the backend is not connected the record stays for the next try).
      */
-    private synchronized void recoverPendingAssistant() {
-        String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
-        if (old == null) {
-            if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
-            return;
-        }
-        try {
-            AndroidBridge sh = new AndroidBridge();
-            restoreSecureSetting(sh, "assistant", old[0]);
-            restoreSecureSetting(sh, "voice_interaction_service", old[1]);
-            boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
-                    && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
-            if (back) prefs.edit().remove("assistant_restore_pending").commit();
-        } catch (Throwable t) {
-            Log.w(TAG, "assistant restore: " + t.getMessage());
+    private void recoverPendingAssistant() {
+        // A lock of its own, not the activity's: the shell commands below can take minutes on a backend that does not answer, and the
+        // activity's monitor is also taken on the UI thread (onDestroy, the Morphe picker) and by every lazy getter (secrets(), vault() ...).
+        synchronized (assistantLock) {
+            String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
+            if (old == null) {
+                if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
+                return;
+            }
+            try {
+                AndroidBridge sh = new AndroidBridge();
+                restoreSecureSetting(sh, "assistant", old[0]);
+                restoreSecureSetting(sh, "voice_interaction_service", old[1]);
+                boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
+                        && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
+                if (back) prefs.edit().remove("assistant_restore_pending").commit();
+            } catch (Throwable t) {
+                Log.w(TAG, "assistant restore: " + t.getMessage());
+            }
         }
     }
+
+    private final Object assistantLock = new Object();
 
     /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
     private List<String> signerDnList(String pkg) {
@@ -4031,7 +4044,7 @@ public class MainActivity extends Activity {
         // A folder of its own: an install still running from the package read before keeps its files (and its own OBB data, see runInstallSelected).
         InstallerStage<XapkInfo.Extra> stage = installStage();
         List<File> stale = new ArrayList<File>();
-        File work = stage.beginRead(sourceNameOf(ref), stale);
+        File work = stage.beginRead(sourceNameOf(ref), ref, stale);
         final long gen = stage.generation();
         for (File f : stale) deleteRecursively(f);
         work.mkdirs();
@@ -4756,10 +4769,15 @@ public class MainActivity extends Activity {
     private void finishInstall(final JSONObject res, final JSONObject opts, final String mode, final InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         // The no-privilege install result arrives on the main thread; copying GB-sized OBB files there would ANR.
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
-            executor.submit(new Runnable() {
+            Runnable end = new Runnable() {
                 @Override
                 public void run() { finishInstallImpl(res, opts, mode, snap); }
-            });
+            };
+            try {
+                executor.submit(end);
+            } catch (java.util.concurrent.RejectedExecutionException e) {
+                new Thread(end, "install-end").start();       // the window is gone (its executor stopped): the install's folder is still released
+            }
             return;
         }
         finishInstallImpl(res, opts, mode, snap);
@@ -4899,12 +4917,14 @@ public class MainActivity extends Activity {
                 }
             }
             if (success && opts.optBoolean("autoDelete", false)) {
-                String ref = opts.optString("sourceRef");
+                // The file this install was read from, as the Installer recorded it: not a path the page names (which could be any file,
+                // the app's own data among them), and never the app's private data.
+                String ref = snap == null || snap.sourceRef == null ? "" : snap.sourceRef;
                 boolean deleted = false;
                 try {
                     if (ref.startsWith("content://")) {
                         deleted = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
-                    } else if (!ref.isEmpty()) {
+                    } else if (!ref.isEmpty() && !isPrivateData(new File(ref))) {
                         deleted = new File(ref).delete();
                     }
                 } catch (Exception ignored) {}
@@ -4953,7 +4973,7 @@ public class MainActivity extends Activity {
                         Intent confirm = (Intent) i.getParcelableExtra(Intent.EXTRA_INTENT);
                         if (confirm != null) {
                             confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            try { startActivity(confirm); } catch (Exception ignored) {}
+                            try { c.startActivity(confirm); } catch (Exception ignored) {}
                         }
                         return; // not terminal - wait for the user to confirm or cancel
                     }
@@ -4972,8 +4992,11 @@ public class MainActivity extends Activity {
                 }
             };
             android.content.IntentFilter filter = new android.content.IntentFilter(action);
-            if (Build.VERSION.SDK_INT >= 33) registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
-            else registerReceiver(rcv, filter);
+            // On the application, not this window: a window re-created (theme change) or closed while the system's install question is open
+            // would take the receiver with it, and the result (the release of the install's work folder, "delete after install") would be lost.
+            Context appCtx = getApplicationContext();
+            if (Build.VERSION.SDK_INT >= 33) appCtx.registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
+            else appCtx.registerReceiver(rcv, filter);
             int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? android.app.PendingIntent.FLAG_MUTABLE : 0);
             android.app.PendingIntent sender = android.app.PendingIntent.getBroadcast(this, sessionId, new Intent(action).setPackage(getPackageName()), piFlags);
             session.commit(sender.getIntentSender());
@@ -6325,7 +6348,9 @@ public class MainActivity extends Activity {
             if (in == null) throw new java.io.FileNotFoundException("cannot open the backup file");
             return in;
         }
-        return new java.io.FileInputStream(ref);
+        // A path the page (or an "Open with" intent) names: never the app's own private data, which would otherwise be copied into the
+        // Installer's work folder, a folder the share sheet and VirusTotal may read.
+        return openUnlessPrivate(new File(ref));
     }
 
     /**
@@ -6391,6 +6416,9 @@ public class MainActivity extends Activity {
             return false;
         }
     }
+
+    /** Held for every read-modify-write of the backups list (a backup that finishes, a delete, the pruning of missing files). */
+    private final Object backupIndexLock = new Object();
 
     private JSONArray backupIndex() {
         try {
@@ -6570,11 +6598,13 @@ public class MainActivity extends Activity {
                     rec.put("createdAt", meta.getLong("createdAt"));
                     rec.put("bytes", total);
                     rec.put("hasData", withData);
-                    JSONArray index = backupIndex();
-                    JSONArray next = new JSONArray();
-                    next.put(rec);
-                    for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
-                    prefs.edit().putString("backups_index", next.toString()).apply();
+                    synchronized (backupIndexLock) {
+                        JSONArray index = backupIndex();
+                        JSONArray next = new JSONArray();
+                        next.put(rec);
+                        for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
+                        prefs.edit().putString("backups_index", next.toString()).apply();
+                    }
 
                     res.put("ok", true);
                     res.put("label", label);
@@ -7649,6 +7679,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_MORPHE = 4292;
     private volatile String morphePickTag = "";
     private MorpheBridge morpheBridge;
+    private MorpheBridge.Host morpheHostInstance;
 
     private AuthManager authManagerInstance;
 
@@ -7731,7 +7762,16 @@ public class MainActivity extends Activity {
     }
 
     private synchronized MorpheBridge morphe() {
-        if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
+        if (morpheBridge == null) morpheBridge = new MorpheBridge(morpheHost(), new File(getFilesDir(), "morphe"));
+        return morpheBridge;
+    }
+
+    /**
+     * What this window gives the Morphe bridge. Made without the bridge (which reads its files) so onCreate can name this window as the newest one
+     * (MorpheBridge.windowOpened) before its page makes any Morphe call: a patch that is going then asks this window, not a closed one, for the installer.
+     */
+    private synchronized MorpheBridge.Host morpheHost() {
+        if (morpheHostInstance == null) morpheHostInstance = new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
             @Override public void js(String script) { notifyJs(script); }
             @Override public boolean pick(final String tag, String kind) {
@@ -7782,9 +7822,7 @@ public class MainActivity extends Activity {
                     throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");
                 }
             }
-            @Override public BrowserDownload.Cookies cookies() {
-                return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
-            }
+            @Override public BrowserDownload.Cookies cookies() { return new WebViewCookies(); }
             @Override public Runnable openBrowser(final String url, final File dir, final HelperDownloads downloads, final BrowserDownload.Events events) {
                 final HelperBrowser[] box = new HelperBrowser[1];
                 runOnUiThread(new Runnable() {
@@ -7795,8 +7833,13 @@ public class MainActivity extends Activity {
                 });
                 return new Runnable() { @Override public void run() { runOnUiThread(new Runnable() { @Override public void run() { if (box[0] != null) box[0].close(); } }); } };
             }
-        }, new File(getFilesDir(), "morphe"));
-        return morpheBridge;
+        };
+        return morpheHostInstance;
+    }
+
+    /** The in-app browser's cookies for an address. A static class: the Helper's download list is the process's and keeps it, so it must not hold a window. */
+    private static final class WebViewCookies implements BrowserDownload.Cookies {
+        @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } }
     }
 
     private boolean morpheConnectionOk(String conn) {
@@ -7844,23 +7887,22 @@ public class MainActivity extends Activity {
         }
         StringBuilder notes = new StringBuilder();
         List<File> files = new ArrayList<File>();
-        File tmp = null;
         String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
-        if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            files.addAll(MorpheLibrary.unzipApks(apk, tmp));
-        } else {
-            // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
-            // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            tmp.mkdirs();
-            File copy = new File(tmp, apk.getName());
-            copyFile(apk, copy);
-            files.add(copy);
-        }
+        // the folder the APK is copied (or the bundle unpacked) into: filled inside the try below, so a copy that fails half way is removed too
+        File tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
         String out;
         String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
+            if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
+                files.addAll(MorpheLibrary.unzipApks(apk, tmp));
+            } else {
+                // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
+                // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
+                tmp.mkdirs();
+                File copy = new File(tmp, apk.getName());
+                copyFile(apk, copy);
+                files.add(copy);
+            }
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
@@ -7883,7 +7925,7 @@ public class MainActivity extends Activity {
             }
             out = installApksIn(files, mode);          // the mode the question named and the removal above used
         } finally {
-            if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
+            File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete();
         }
         boolean ok = InstallHints.success(out);
         r.put("ok", ok);
@@ -10231,7 +10273,7 @@ public class MainActivity extends Activity {
 
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
-            String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
+            String raw = executeShell(ShellOutcome.withStatus(cmd, marker));
             ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
             // Every backend here runs a shell, so the marker is missing only when the command never ran (su refused or not granted, a
             // backend that did not start, a timeout): that is a failure whatever else was printed, never an "ok" from an empty answer.
@@ -11166,15 +11208,19 @@ public class MainActivity extends Activity {
 
         /**
          * The ADB Stub on a connected watch (see WearStub). action: "status", "install" (the APK this build carries, with its permissions granted),
-         * "start" (phone: the name the stub's screen gives this phone; empty: its model) or "stop". Every action ends with a fresh status.
-         * Answer: window.onCdResult({tag, ok, out, installed, version, running}).
+         * "start" (phone: the name the stub's screen gives this phone; empty: its model), "renew" (the stub's lease, about once a minute while it runs)
+         * or "stop" (phone "quick": the stop before Disconnect, a short wait and no status read, so a watch that does not answer does not hold up
+         * Disconnect). Every other action ends with a fresh status.
+         * Answer: window.onCdResult({tag, ok, out, installed, version, running}); a quick stop, and a status adb could not read, leave out installed,
+         * version and running (a status action that adb could not read is ok: false).
          */
         @JavascriptInterface
         public void cdStub(final String tag, final String serial, final String action, final String phone) {
             final String t = tag == null ? "" : tag;
             final String a = action == null ? "" : action;
+            final boolean quick = a.equals("stop") && "quick".equals(phone);
             if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
-            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("stop")) {
+            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("renew") && !a.equals("stop")) {
                 notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: unknown action") + ")");
                 return;
             }
@@ -11201,18 +11247,27 @@ public class MainActivity extends Activity {
                                 String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
                                 ok = WearStub.started(out);
+                            } else if (a.equals("renew")) {
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
+                                ok = WearStub.renewed(out);
                             } else if (a.equals("stop")) {
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), 20000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), quick ? WearStub.QUICK_STOP_MS : 20000);
                                 ok = out.contains("stopped") && !out.startsWith("Error");
                             }
-                            String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
-                            WearStub.Status s = WearStub.parseStatus(st);
-                            if (a.equals("status") && st.startsWith("Error")) { ok = false; out = st; }
+                            if (!quick) {
+                                String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
+                                if (WearStub.adbFailed(st)) {
+                                    // adb could not ask the watch: the answer leaves out what the stub has, so the page keeps what it knew (and asks again later)
+                                    if (a.equals("status")) { ok = false; out = st; }
+                                } else {
+                                    WearStub.Status s = WearStub.parseStatus(st);
+                                    res.put("installed", s.installed);
+                                    res.put("version", s.version);
+                                    res.put("running", s.running);
+                                }
+                            }
                             res.put("ok", ok);
                             res.put("out", out.trim());
-                            res.put("installed", s.installed);
-                            res.put("version", s.version);
-                            res.put("running", s.running);
                         } catch (Exception e) {
                             try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
                         }
@@ -11542,17 +11597,28 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getBackups() {
             JSONArray index = backupIndex();
-            JSONArray keep = new JSONArray();
             try {
+                // which files are gone is asked without the lock (it can be slow); the list is then pruned of exactly those, re-read under
+                // the lock, so a backup that finished meanwhile is not dropped
+                Set<String> gone = new HashSet<String>();
                 for (int i = 0; i < index.length(); i++) {
-                    JSONObject rec = index.getJSONObject(i);
-                    if (backupExists(rec.optString("ref"))) keep.put(rec);
+                    String ref = index.getJSONObject(i).optString("ref");
+                    if (!backupExists(ref)) gone.add(ref);
                 }
-                if (keep.length() != index.length()) prefs.edit().putString("backups_index", keep.toString()).apply();
+                synchronized (backupIndexLock) {
+                    JSONArray now = backupIndex();
+                    if (gone.isEmpty()) return now.toString();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        JSONObject rec = now.getJSONObject(i);
+                        if (!gone.contains(rec.optString("ref"))) keep.put(rec);
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
+                    return keep.toString();
+                }
             } catch (Exception e) {
                 return index.toString();
             }
-            return keep.toString();
         }
 
         @JavascriptInterface
@@ -11566,11 +11632,14 @@ public class MainActivity extends Activity {
                 if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
                 if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
                 else ok = new File(ref).delete();
-                JSONArray keep = new JSONArray();
-                for (int i = 0; i < index.length(); i++) {
-                    if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
+                synchronized (backupIndexLock) {                 // re-read: a backup may have been added while the file was deleted
+                    JSONArray now = backupIndex();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        if (!now.getJSONObject(i).optString("ref").equals(ref)) keep.put(now.get(i));
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
                 }
-                prefs.edit().putString("backups_index", keep.toString()).apply();
                 return ok ? "" : "Error: could not delete the file (it may already be gone)";
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
@@ -14382,7 +14451,7 @@ public class MainActivity extends Activity {
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
                                 // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
                                 if (FileOps.exists(new File(dest, name))) {
-                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }   // left where it is: it stays on the move clipboard
                                     if ("keep".equals(policyName)) asName = FileOps.uniqueName(new File(dest), name);
                                 }
                             }
@@ -16504,6 +16573,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
         activityDestroyed = true;
         try { MorpheBridge mb = morpheBridge; if (mb != null) mb.release(); } catch (Throwable ignored) {}      // a patch that is going goes on; the next window takes over its events
+        try { MorpheBridge.Host mh = morpheHostInstance; if (mh != null) MorpheBridge.windowClosed(mh); } catch (Throwable ignored) {}   // never asked for the installer again
         cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)

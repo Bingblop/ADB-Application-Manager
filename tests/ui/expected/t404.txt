@@ -1,0 +1,6 @@
+ok   [Bottom bar only] the selection bar, list scrolled: it sits below the header and is not covered
+ok   [Bottom bar only] a bar of the same kind (search) does the same
+ok   [Bottom bar + top bar] the selection bar, list scrolled: it sits below the header and the tab bar and is not covered
+ok   [Bottom bar + top bar] a bar of the same kind (search) does the same
+ok   no page errors
+all passed

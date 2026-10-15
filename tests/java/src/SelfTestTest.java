@@ -52,6 +52,12 @@ public class SelfTestTest {
         is("app uid is not elevated", SelfTest.isAppItself(judge("identity", "uid=10234(u0_a234) gid=10234(u0_a234)")));
         is("an unreadable id is not taken for the app uid", !SelfTest.isAppItself(judge("identity", "Error: adb is not connected")));
         eq("selinux word", judge("selinux", "Enforcing\n").detail, "enforcing");
+        // the log, the settings tables and help text are the phone's own words: "Permission denied" inside them is not a failed command
+        eq("a log line that mentions a denied permission is still a read log", judge("logcat", "--------- beginning of main\n10-15 12:00:00.000  1234  1234 W GmsClient: open failed: EACCES (Permission denied)\n").status, SelfTest.Status.PASS);
+        eq("...and so is one that mentions a Permission Denial", judge("logcat", "--------- beginning of system\n10-15 12:00:00.000  1000  1000 W ActivityManager: Permission Denial: broadcast from android\n").status, SelfTest.Status.PASS);
+        eq("logcat that itself was refused still fails", judge("logcat", "logcat: permission denied\n").status, SelfTest.Status.FAIL);
+        eq("a settings value that says 'not allowed' does not fail the table", judge("settings-global", "a=1\nb=2\nc=3\nd=4\nnote=not allowed here\nf=6\n").status, SelfTest.Status.PASS);
+        eq("a timeout note at the end still fails the log", judge("logcat", "--------- beginning of main\n[process timed out]\n").status, SelfTest.Status.FAIL);
 
         StringBuilder pk = new StringBuilder();
         for (int i = 0; i < 30; i++) pk.append("package:com.x").append(i).append('\n');

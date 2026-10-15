@@ -557,21 +557,28 @@ public class SdmCorpseFinderTest {
         is("a marked folder whose uid belongs to an installed app is owned", paths(tool().scan(e4.ctx())).contains("priv/legacy_dir"), false);
         new SdmFsJava().delete(priv + "/legacy_dir");
 
-        // a secondary Android user with root: the app data filters do not run (the package list is that user's; the folders of user 0's
-        // apps would look like remnants), the result says so, the other filters still run
+        // SDM-3, a secondary Android user (work profile) with root: no filter runs. The package list is that user's, while the app data folders
+        // and the shared storage roots (/storage/emulated/0 and SD cards, as SdmHost finds them) are user 0's: user 0's apps would look like
+        // remnants. The result says so.
         Env e5 = new Env();
         e5.areas = areas(true);
         e5.areas.userId = 10;
         e5.shell = new FakeShell(0);
-        e5.settings.put("filter.publicmedia.enabled", false);
+        e5.settings.put("filter.publicobb.enabled", true);
         Sdm.Result r5 = tool().scan(e5.ctx());
         Set<String> got5 = paths(r5);
         is("off the system user: no private data remnants", !got5.contains("priv/com.dead.priv.dir") && !got5.contains("priv/com.root.owned.dir"), true);
         is("off the system user: no public data remnants", !got5.contains("sd/Android/data/com.dead.app") && !got5.contains("sd/Android/data/_com.hidden.dead"), true);
-        is("the SD card filter still runs", got5.contains("sd/DeadApp"), true);
+        is("off the system user: no shared storage remnants (another user's folders)", !got5.contains("sd/DeadApp") && !got5.contains("sd/RegApp"), true);
+        is("off the system user: no public media remnants", !got5.contains("sd/Android/media/com.dead.app"), true);
+        is("off the system user: no OBB remnants", !got5.contains("sd/Android/obb/com.dead.game") && !got5.contains("sd/Android/obb/obb.marker"), true);
+        eq("off the system user: nothing at all is offered", got5.size(), 0);
         is("…and no private data progress was reported", e5.rec.has("Private app data|Processing Private app data"), false);
         JSONArray sk5 = r5.summary().getJSONArray("skippedFilters");
-        eq("the result says which filters were left out and why", sk5.getString(0) + "," + sk5.getString(1), "Public app data (not on Android user 10),Private app data (not on Android user 10)");
+        List<String> sk5l = new ArrayList<String>();
+        for (int i = 0; i < sk5.length(); i++) sk5l.add(sk5.getString(i));
+        eq("the result says which filters were left out and why", sk5l, Arrays.asList("SD card (not on Android user 10)", "Public media (not on Android user 10)",
+                "Public app data (not on Android user 10)", "OBB resources (not on Android user 10)", "Private app data (not on Android user 10)"));
         Env e6 = new Env();
         e6.areas = areas(true);
         e6.shell = new FakeShell(0);

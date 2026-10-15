@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "Удалить тему",
 "Delete this file?": "Удалить этот файл?",
 "Delete this patched APK?": "Удалить этот пропатченный APK?",
-"Delete “”?": "Удалить «»?",
 "Deleted": "Удалено",
 "Deleted saved list": "Сохранённый список удалён",
 "Deleted the recording": "Запись удалена",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "Запускать ADB Stub при подключении: выкл.",
 "Start ADB Stub on connect: On": "Запускать ADB Stub при подключении: вкл.",
 "The ADB Stub no longer starts on its own": "ADB Stub больше не запускается сам",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ADB Stub на часах подписан другим ключом. Удалите его с часов, затем нажмите «Установить».",
 "The ADB Stub starts when the watch connects": "ADB Stub запускается, когда часы подключаются",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Экран часов остаётся включённым, а Wi-Fi подключённым. «Отключить» останавливает его.",
 "No extra button is shown on the rows.": "Дополнительная кнопка в строках не показывается.",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Слова в имени: <1>фото</1> (должны совпасть все; <2/> и <3/> — подстановочные знаки; <4>-слово</4> исключает имя; \"два слова\" в кавычках).<br> <5>ext:jpg,png</5> или <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:слово</14> ищет внутри текстовых файлов (до 4 МБ). <15>archive:имя</15> ищет по именам записей внутри архивов zip, apk, jar и подобных.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Напишите сообщение и нажмите <1>Отправить</1>: откроется ваше почтовое приложение с готовым письмом на контактный псевдоним (<2/>), который пересылает его разработчику. Тема — <3>ADB App Manager</3>. Собственного адреса разработчика в этом приложении нет, а письмо отправляется вашим почтовым приложением, а не этим.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram — это часть ОЗУ, работающая как сжатый swap: когда памяти не хватает, Android переносит туда память простаивающих приложений, сжатую примерно до трети, вместо того чтобы их закрывать. Раздел читает <1/> (несжатые данные, сжатый размер, реально занятое ОЗУ), <2/> и <3/> через рабочий режим. Сжатие — это несжатые данные, делённые на сжатый размер; сэкономленное ОЗУ — несжатые данные минус ОЗУ, которое занимает сжатая копия."
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram — это часть ОЗУ, работающая как сжатый swap: когда памяти не хватает, Android переносит туда память простаивающих приложений, сжатую примерно до трети, вместо того чтобы их закрывать. Раздел читает <1/> (несжатые данные, сжатый размер, реально занятое ОЗУ), <2/> и <3/> через рабочий режим. Сжатие — это несжатые данные, делённые на сжатый размер; сэкономленное ОЗУ — несжатые данные минус ОЗУ, которое занимает сжатая копия.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Просит Android удалить файлы кэша всех приложений — то же, что «Настройки > Очистка кэшей во всех приложениях». Приложения, их данные, входы в аккаунты и ваши файлы остаются. Освобождает место в хранилище, а не ОЗУ напрямую, и может занять минуту; результат откроется на отдельной панели.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Включает энергосбережение Android — тот же переключатель, что в «Настройки > Батарея»: экран тускнеет, фоновая работа, синхронизация и геолокация ограничиваются, анимации сокращаются. Телефон показывает значок энергосбережения.",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android не закончил за 3 минуты. Результат откроется на отдельной панели, когда он закончит."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "Удалить выбранные элементы: {0} ({1})?"],
 ["Delete {0} selected items?", "Удалить выбранные элементы: {0}?"],
 ["Delete {0}?", "Удалить {0}?"],
-["Delete “ {0}”?", "Удалить « {0}»?"],
-["Delete “{0} {1}”?", "Удалить «{0} {1}»?"],
 ["Delete “{0}” from the archive?", "Удалить «{0}» из архива?"],
 ["Delete “{0}”?", "Удалить «{0}»?"],
 ["Deleted the theme {0}", "Тема {0} удалена"],

@@ -150,6 +150,9 @@ final class SelfTest {
     static Result judge(Probe p, String output) {
         String out = output == null ? "" : output;
         boolean failed = looksFailed(out);
+        // Output that is the phone's own content (log lines, settings values, help text) can contain words like "Permission denied" when the
+        // command worked: there only the first line, where an error from the command itself is printed, or a timeout note decides.
+        boolean failedHead = looksFailed(firstLine(out)) || out.toLowerCase(Locale.ROOT).contains("[process timed out");
         switch (p.kind) {
             case IDENTITY: return judgeIdentity(out);
             case SELINUX: {
@@ -179,7 +182,7 @@ final class SelfTest {
                 return new Result(Status.PASS, "ran");
             }
             case SETTINGS_COUNT: {
-                if (failed) return fail(out);
+                if (failedHead) return fail(out);
                 int n = countLinesWith(out, '=');
                 return n >= 5 ? new Result(Status.PASS, n + " entries") : new Result(Status.FAIL, n + " entries read, expected more");
             }
@@ -205,7 +208,7 @@ final class SelfTest {
                 return failed ? fail(out) : new Result(Status.FAIL, "no number printed");
             }
             case LOGCAT: {
-                if (failed) return fail(out);
+                if (failedHead) return fail(out);
                 return new Result(Status.PASS, "read");
             }
             case READABLE: {
@@ -216,11 +219,11 @@ final class SelfTest {
                 return new Result(Status.INFO, failed ? "not reachable" : "reachable");
             }
             case AVAILABLE: {
-                if (failed || out.trim().isEmpty()) return new Result(Status.INFO, "not available");
+                if (failedHead || out.trim().isEmpty()) return new Result(Status.INFO, "not available");
                 return new Result(Status.INFO, "available");
             }
             case LISTS_COMMAND: {
-                if (failed || out.trim().isEmpty()) return new Result(Status.INFO, "not available");
+                if (failedHead || out.trim().isEmpty()) return new Result(Status.INFO, "not available");
                 return out.contains("set-package-networking-enabled") ? new Result(Status.INFO, "available") : new Result(Status.INFO, "command not listed");
             }
             case FILES_PRESENT: {

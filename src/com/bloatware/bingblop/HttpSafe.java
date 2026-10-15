@@ -24,7 +24,9 @@ final class HttpSafe {
     /** Whether a host name or numeric address means this phone: localhost (and *.localhost) and any numeric form of 127.0.0.0/8, 0.0.0.0, ::1 or ::. No DNS lookup is made. */
     static boolean isLoopback(String host) {
         if (host == null) return false;
-        String h = host.trim().toLowerCase(Locale.ROOT);
+        String h = canonicalHost(host.trim());
+        if (h == null) return true;                                                            // a spelling that cannot be read is not trusted to be outside
+        h = h.toLowerCase(Locale.ROOT);
         if (h.startsWith("[") && h.endsWith("]")) h = h.substring(1, h.length() - 1);
         while (h.endsWith(".")) h = h.substring(0, h.length() - 1);
         if (h.isEmpty()) return false;
@@ -38,6 +40,42 @@ final class HttpSafe {
             }
         }
         return numericV4IsLoopback(h);
+    }
+
+    /**
+     * The host as the network stack will use it: percent escapes decoded and Unicode mapped to ASCII (IDNA, which also turns full-width digits
+     * into plain ones), so "%31%32%37.0.0.1" and "１２７.0.0.1" are read as 127.0.0.1. Null when the host cannot be read that way.
+     */
+    private static String canonicalHost(String host) {
+        String h = host;
+        if (h.indexOf('%') >= 0) {
+            try {
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                for (int i = 0; i < h.length(); i++) {
+                    char c = h.charAt(i);
+                    if (c == '%') {
+                        if (i + 2 >= h.length()) return null;
+                        b.write(Integer.parseInt(h.substring(i + 1, i + 3), 16));
+                        i += 2;
+                    } else {
+                        byte[] u = String.valueOf(c).getBytes("UTF-8");
+                        b.write(u, 0, u.length);
+                    }
+                }
+                h = new String(b.toByteArray(), "UTF-8");
+            } catch (Exception e) {
+                return null;
+            }
+            if (h.indexOf('%') >= 0) return null;                                              // escaped twice: no plain reading
+        }
+        boolean ascii = true;
+        for (int i = 0; i < h.length(); i++) if (h.charAt(i) > 0x7f) { ascii = false; break; }
+        if (ascii) return h;
+        try {
+            return java.net.IDN.toASCII(h, java.net.IDN.ALLOW_UNASSIGNED);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** inet_aton forms (what the system resolver accepts): 1 to 4 parts, each decimal, 0octal or 0xhex; the last part fills the remaining bytes. */

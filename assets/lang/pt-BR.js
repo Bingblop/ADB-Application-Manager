@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "Excluir tema",
 "Delete this file?": "Excluir este arquivo?",
 "Delete this patched APK?": "Excluir este APK modificado?",
-"Delete “”?": "Excluir “”?",
 "Deleted": "Excluído",
 "Deleted saved list": "Lista salva excluída",
 "Deleted the recording": "Gravação excluída",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "Iniciar ADB Stub ao conectar: Não",
 "Start ADB Stub on connect: On": "Iniciar ADB Stub ao conectar: Sim",
 "The ADB Stub no longer starts on its own": "O ADB Stub não inicia mais sozinho",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "O ADB Stub do relógio foi assinado com outra chave. Desinstale-o do relógio e toque em Instalar.",
 "The ADB Stub starts when the watch connects": "O ADB Stub inicia quando o relógio se conecta",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "A tela do relógio fica ligada e o Wi-Fi dele conectado. Desconectar o interrompe.",
 "No extra button is shown on the rows.": "Nenhum botão extra é exibido nas linhas.",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Palavras em um nome: <1>photo</1> (todas devem corresponder; <2/> e <3/> são curingas; <4>-word</4> exclui um nome; \"two words\" entre aspas).<br> <5>ext:jpg,png</5> ou <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> busca dentro de arquivos de texto (até 4 MB). <15>archive:name</15> busca nos nomes das entradas de zip, apk, jar e arquivos compactados semelhantes.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Escreva sua mensagem e toque em <1>Enviar</1>: seu app de e-mail abre com ela pronta, endereçada a um alias de contato (<2/>) que a encaminha ao desenvolvedor. O assunto é <3>ADB App Manager</3>. O endereço do próprio desenvolvedor não está neste app, e a mensagem é enviada pelo seu app de e-mail, não por este.",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "No momento, você está no <1>Modo somente leitura</1>. As operações em pacotes do sistema (como Congelar, Ativar, Forçar parada, Limpar dados ou Desinstalar) exigem permissões elevadas por <2>ADB TCP (5555)</2>, <3>Depuração sem fio</3>, <4>Shizuku</4> ou <5>Root</5>.",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "O zram é um pedaço da RAM que funciona como swap comprimido: quando a memória fica baixa, o Android move para lá a memória dos apps ociosos, espremida a cerca de um terço do tamanho, em vez de fechá-los. A seção lê <1/> (dados não comprimidos, tamanho comprimido, RAM realmente usada), <2/> e <3/> pelo modo de trabalho. A compressão é os dados não comprimidos divididos pelo tamanho comprimido; a RAM economizada é os dados não comprimidos menos a RAM que a cópia comprimida ocupa."
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "O zram é um pedaço da RAM que funciona como swap comprimido: quando a memória fica baixa, o Android move para lá a memória dos apps ociosos, espremida a cerca de um terço do tamanho, em vez de fechá-los. A seção lê <1/> (dados não comprimidos, tamanho comprimido, RAM realmente usada), <2/> e <3/> pelo modo de trabalho. A compressão é os dados não comprimidos divididos pelo tamanho comprimido; a RAM economizada é os dados não comprimidos menos a RAM que a cópia comprimida ocupa.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Pede ao Android que apague os arquivos de cache de todos os apps, o mesmo que Configurações > Limpar caches de todos os aplicativos. Os apps, seus dados, logins e seus arquivos ficam. Libera armazenamento, não RAM diretamente, e pode levar um minuto; o resultado abre em uma folha própria.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Liga a economia de bateria do Android, a mesma chave de Configurações > Bateria: a tela escurece, o trabalho em segundo plano, a sincronização e a localização ficam limitados e as animações encurtam. O telefone mostra o ícone de economia de bateria.",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "O Android não terminou após 3 minutos. O resultado abre em uma folha própria quando terminar."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ainda não está conectado, então um botão de consulta ao agente lê a web para você (grátis, sem chave) até que esteja. Adicione a chave dele em Console → Terminal."],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "Apagar {0} itens selecionados ({1})?"],
 ["Delete {0} selected items?", "Apagar {0} itens selecionados?"],
 ["Delete {0}?", "Excluir {0}?"],
-["Delete “ {0}”?", "Excluir “ {0}”?"],
-["Delete “{0} {1}”?", "Excluir “{0} {1}”?"],
 ["Delete “{0}” from the archive?", "Excluir “{0}” do arquivo compactado?"],
 ["Delete “{0}”?", "Excluir “{0}”?"],
 ["Deleted the theme {0}", "Tema {0} apagado"],

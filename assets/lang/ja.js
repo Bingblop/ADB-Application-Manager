@@ -1157,7 +1157,6 @@ x: {
 "Delete theme": "テーマを削除",
 "Delete this file?": "このファイルを削除しますか？",
 "Delete this patched APK?": "このパッチ適用済み APK を削除しますか？",
-"Delete “”?": "「」を削除しますか？",
 "Deleted": "削除しました",
 "Deleted saved list": "保存リストを削除しました",
 "Deleted the recording": "録画を削除しました",
@@ -2404,6 +2403,7 @@ x: {
 "Start ADB Stub on connect: Off": "接続時に ADB Stub を開始: オフ",
 "Start ADB Stub on connect: On": "接続時に ADB Stub を開始: オン",
 "The ADB Stub no longer starts on its own": "ADB Stub は自動で開始しなくなりました",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ウォッチの ADB Stub は別のキーで署名されています。ウォッチからアンインストールしてから、「インストール」をタップしてください。",
 "The ADB Stub starts when the watch connects": "ウォッチの接続時に ADB Stub が開始します",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "ウォッチの画面はオンのまま、Wi-Fi も接続されたままです。切断すると停止します。",
 "No extra button is shown on the rows.": "行に追加ボタンは表示されません。",
@@ -5062,7 +5062,10 @@ x: {
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "名前に含まれる語：<1>写真</1>（すべて一致が必要。<2/> と <3/> はワイルドカード。<4>-語</4> でその名前を除外。\"2語\" は引用符で囲みます）。<br> <5>ext:jpg,png</5> または <6>.pdf</6> · <7>type:image</7>（image、video、audio、text、doc、archive、apk、font、folder、file）· <8>size:>10mb</8>、<9>size:1k..5m</9> · <10>date:today</10>、<11>date:7d</11>、<12>date:2025-03-01..2025-03-31</12>、<13>date:<2024-01-01</13><br> <14>content:語</14> はテキストファイルの中を検索します（最大 4 MB）。<15>archive:名前</15> は zip、apk、jar などのアーカイブ内のエントリ名を検索します。",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "メッセージを入力して<1>送信</1>をタップすると、メールアプリが準備済みのメッセージとともに開きます。宛先は開発者に転送される連絡用エイリアス（<2/>）です。件名は <3>ADB App Manager</3> です。開発者自身のアドレスはこのアプリにはなく、メッセージはこのアプリではなくメールアプリから送信されます。",
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。",
-"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram は圧縮スワップとして働く RAM の一部です。メモリが不足すると、Android はアイドル状態のアプリのメモリを閉じる代わりにおよそ3分の1に圧縮してそこへ移します。このセクションは動作モード経由で <1/>（非圧縮データ、圧縮後サイズ、実際に使用する RAM）、<2/>、<3/> を読みます。圧縮率は非圧縮データ÷圧縮後サイズ、節約した RAM は非圧縮データから圧縮コピーが占める RAM を引いた値です。"
+"Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram は圧縮スワップとして働く RAM の一部です。メモリが不足すると、Android はアイドル状態のアプリのメモリを閉じる代わりにおよそ3分の1に圧縮してそこへ移します。このセクションは動作モード経由で <1/>（非圧縮データ、圧縮後サイズ、実際に使用する RAM）、<2/>、<3/> を読みます。圧縮率は非圧縮データ÷圧縮後サイズ、節約した RAM は非圧縮データから圧縮コピーが占める RAM を引いた値です。",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "すべてのアプリのキャッシュファイルを削除するよう Android に求めます。設定 > すべてのアプリのキャッシュを整理 と同じです。アプリ、そのデータ、ログイン情報、あなたのファイルはそのまま残ります。空くのはストレージで、RAM が直接空くわけではありません。1 分ほどかかることがあり、結果は別のシートで開きます。",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android のバッテリーセーバーをオンにします。設定 > バッテリー と同じスイッチです。画面が暗くなり、バックグラウンド処理、同期、位置情報が制限され、アニメーションが短くなります。スマートフォンにバッテリーセーバーのアイコンが表示されます。",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。"
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],
@@ -5266,8 +5269,6 @@ p: [
 ["Delete {0} selected items ({1})?", "選択した {0} 件の項目（{1}）を削除しますか？"],
 ["Delete {0} selected items?", "選択した {0} 件の項目を削除しますか？"],
 ["Delete {0}?", "{0}を削除しますか？"],
-["Delete “ {0}”?", "「 {0}」を削除しますか？"],
-["Delete “{0} {1}”?", "「{0} {1}」を削除しますか？"],
 ["Delete “{0}” from the archive?", "アーカイブから「{0}」を削除しますか？"],
 ["Delete “{0}”?", "「{0}」を削除しますか？"],
 ["Deleted the theme {0}", "テーマ {0} を削除しました"],

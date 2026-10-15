@@ -3,6 +3,7 @@
 //
 //   node i18n/extract.js                         from assets/index.html (it is also loaded in Chromium: for the sentences with bold text or links and for where each text is shown)
 //   node i18n/extract.js --seen out/seen.jsonl   also takes in the texts a run of the UI scripts really showed (see capture_hook.js); they are kept in i18n/seen.json
+//   node i18n/extract.js --out <file>            writes the list there instead of keys.json (ui/t406 checks that keys.json is current)
 //
 // x: a string as it appears (white space collapsed). p: a string with changing parts {0} {1} ... (a conditional in a template is expanded into every sentence it can
 // make, so "1 package" and "5 packages" are two entries). b: a sentence with an element inside, the elements numbered <1>..</1>, <2/>, <br> (as assets/i18n.js writes them).
@@ -17,6 +18,7 @@ const REPO = path.resolve(HERE, '..', '..');
 const PAGE_FILE = path.join(REPO, 'assets', 'index.html');
 const argv = process.argv.slice(2);
 const seenArg = argv.indexOf('--seen') >= 0 ? argv[argv.indexOf('--seen') + 1] : null;
+const outArg = argv.indexOf('--out') >= 0 ? argv[argv.indexOf('--out') + 1] : null;          // another file than keys.json (ui/t406 compares the two)
 const html = fs.readFileSync(PAGE_FILE, 'utf8');
 const a = html.indexOf('<script>') + '<script>'.length, b = html.lastIndexOf('</script>');
 const js = html.slice(a, b);
@@ -108,6 +110,8 @@ const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.
 // what the page tells a coding agent about its steps (<result ...>), and web addresses with changing parts: not text either
 const forModel = (v) => /<\/?result\b/.test(v);
 const isUrl = (key) => /^https?:\/\/\S*\{\d+\}\S*$/.test(key);
+// a tag (<b>, </a>, <br>, <1/>) in a txT/txF text: such sentences are keys of their own kind (b) made from the page; a lone '<' or '>' ("Settings > Battery", "A > B") is plain text
+const isTagged = (key) => /<\/?[A-Za-z0-9][^<>]*>/.test(key);
 
 walk.ancestor(ast, {
   CallExpression(node, st, anc) {
@@ -123,7 +127,7 @@ walk.ancestor(ast, {
       const lit = parts.filter(p => typeof p === 'string').join('');
       if ((lit.match(/\p{L}/gu) || []).length < 2) return;                          // ^C
       const key = toKey(parts);
-      if (forModel(key) || isUrl(key) || /[<>]/.test(key) || key.indexOf('\n') >= 0) return;
+      if (forModel(key) || isUrl(key) || isTagged(key) || key.indexOf('\n') >= 0) return;          // markup inside is not a plain key; a '>' as in "Settings > Battery" is
       const kind = /\{\d+\}/.test(key) ? 'p' : 'x', k = add(kind, key, ctx);
       if (k) forced[kind].add(k);
     });
@@ -251,6 +255,6 @@ for (const [k, v] of keys.p) {
     p: found.p.map(e => ({ k: e.k, ctx: hint(e.k, e.fn) })).sort((a, c) => a.k < c.k ? -1 : 1),
     b: blocks.map(k => ({ k, ctx: hint(k, ['html']) })).sort((a, c) => a.k < c.k ? -1 : 1)
   };
-  fs.writeFileSync(path.join(HERE, 'keys.json'), JSON.stringify(out, null, 0).replace(/\},\{/g, '},\n{').replace(/\],"p":\[/, '],\n"p":[').replace(/\],"b":\[/, '],\n"b":['));
+  fs.writeFileSync(outArg ? path.resolve(outArg) : path.join(HERE, 'keys.json'), JSON.stringify(out, null, 0).replace(/\},\{/g, '},\n{').replace(/\],"p":\[/, '],\n"p":[').replace(/\],"b":\[/, '],\n"b":['));
   console.log('i18n/keys.json: x ' + out.x.length + ', p ' + out.p.length + ', b ' + out.b.length + ' (' + (out.x.length + out.p.length + out.b.length) + ' strings)');
 })();
