@@ -1261,11 +1261,12 @@
         #fmMoreModal .fm-more-note { margin-top: var(--space-4); }
 
         /* The Apps list's top bar and row buttons get the same outline and pressed state; its taps give haptic feedback too */
+        /* CSV and Backups are plain buttons, not drawn like a pressed filter (the owner's choice for v7.14) */
         #view-apps .apps-sort-row .mode-action-btn {
-            background: var(--bg-surface);
-            border: 1px solid var(--accent);
+            background: var(--fill-2);
+            border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            color: var(--accent);
+            color: var(--text-main);
             font-weight:var(--fw-heavy);
             transition: background 0.15s, transform 0.12s;
         }
@@ -4004,9 +4005,8 @@
             padding: var(--space-1) var(--space-3h);
             font-size: var(--fs-pkg);
         }
-        /* Sort + Export/Share CSV/Profiles/Backups: one row, scrolling sideways on the rare phone too narrow
-           for all of it at once (same fallback the filter chips use below), rather than wrapping a lone button
-           onto its own near-empty line. */
+        /* Sort, CSV, Backups and the Action Button picker: one row that fits a phone without scrolling: the two menus share what the
+           buttons leave and cut their text short; scrolling sideways stays only as the fallback for a very narrow screen or big font. */
         .apps-sort-row {
             display: flex;
             align-items: center;
@@ -4062,10 +4062,9 @@
             min-height: var(--ctl-h);          /* as tall as the buttons beside it */
             font-size: var(--fs-caption);
         }
-        /* the sort menu is as wide as the choice it shows (where the WebView knows field-sizing; elsewhere as wide as its longest choice) */
-        #appSort { width: auto; field-sizing: content; }
-
-        .apps-sort-select.apps-ab-select { width: 138px; flex: 0 0 auto; }
+        /* the sort menu and the Action Button picker share the room the buttons leave (below) */
+        #appSort { flex: 0 1 auto; width: auto; field-sizing: content; min-width: 84px; text-overflow: ellipsis; }
+        .apps-sort-select.apps-ab-select { flex: 1 1 0; width: auto; min-width: 84px; }
         .ab-pick { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-1); text-align: left; cursor: pointer; }
         .ab-pick #appsActionBtnPickLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
         .ab-pick-chev { color: var(--text-muted); font-size: var(--fs-pkg); flex: 0 0 auto; }
@@ -4287,8 +4286,7 @@
                     <option value="size">Size</option>
                     <option value="updates">Updates first</option>
                 </select>
-                <button class="mode-action-btn" onclick="exportAppList(true)">Share CSV</button>
-                <button class="mode-action-btn" onclick="openProfiles()">Profiles</button>
+                <button class="mode-action-btn" onclick="exportAppList(true)" aria-label="Share the app list as CSV">CSV</button>
                 <button class="mode-action-btn" onclick="openBackups()">Backups</button>
                 <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
             </div>
@@ -8359,6 +8357,8 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="restorePreview" class="backup-note" style="display:none;"></div>
             <div class="mode-btn-row" style="margin-top:10px;">
                 <button class="mode-action-btn" onclick="pickBackupUI()">Choose backup file…</button>
+                <!-- App Profiles lost its own button on the Apps tab in v7.14 (the owner's choice): it opens from here and from the drift banner -->
+                <button class="mode-action-btn" id="backupsProfilesBtn" onclick="closeBackups(); openProfiles();">App Profiles…</button>
             </div>
         </div>
     </div>

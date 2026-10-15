@@ -1,4 +1,4 @@
-ok   apps 400: 19 controls, the buttons and chips drawn at least 36px tall
+ok   apps 400: 18 controls, the buttons and chips drawn at least 36px tall
 ok   apps 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   apps 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   saved-lists 400: 18 controls, the buttons and chips drawn at least 36px tall
@@ -38,7 +38,7 @@ ok   apps 400: the ⋯ button beside it keeps its middle and its edge
 ok   files 400: a tick box inside its option label, and the name and × inside a chip, keep their own taps
 ok   saved-lists 400: the lbAuto switch is a whole label row at least 44px tall that takes the taps on its track
 ok   prefs 400: the pureBlackToggle switch is a whole label row at least 44px tall that takes the taps on its track (and flips)
-ok   apps 320: 19 controls, the buttons and chips drawn at least 36px tall
+ok   apps 320: 18 controls, the buttons and chips drawn at least 36px tall
 ok   apps 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   apps 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   saved-lists 320: 18 controls, the buttons and chips drawn at least 36px tall

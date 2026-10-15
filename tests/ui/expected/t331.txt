@@ -10,7 +10,7 @@ ok      each count is written in its own colour (the colour its badge has): []
 ok      tapping each one shows just its apps, lights it and presses it; All Apps turns it off: installed:9 running:2 user:7 system:2 enabled:7 frozen:2 uninstalled:1
 ok      Enabled / Frozen and 3rd Party / System are pairs that share a frame, the frame in the colour of the side that is on: {"pair":"enabled/frozen","frame":true,"other":true}
 ok      Enter on a focused count pill uses it
-ok   5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px): [{"v":"name","w":101,"text":67,"fits":true,"sorted":true},{"v":"updated","w":105,"text":71,"fits":true,"sorted":true},{"v":"installed","w":93,"text":59,"fits":true,"sorted":true},{"v":"size","w":60,"text":24,"fits":true,"sorted":true},{"v":"updates","w":103,"text":69,"fits":true,"sorted":true}]
+ok   5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px): [{"v":"name","w":101,"text":67,"fits":true,"sorted":true},{"v":"updated","w":105,"text":71,"fits":true,"sorted":true},{"v":"installed","w":93,"text":59,"fits":true,"sorted":true},{"v":"size","w":84,"text":24,"fits":true,"sorted":true},{"v":"updates","w":103,"text":69,"fits":true,"sorted":true}]
 ok      it follows the choice: "Size" is narrower than "Updates first"
 ok      the row keeps the menu and all its buttons
 ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":243,"rowH":46,"sideScroll":false,"grid":false}

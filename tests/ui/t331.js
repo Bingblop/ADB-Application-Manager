@@ -117,7 +117,7 @@ const initMock = () => {
   }
   check('5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px)', sorts.every(s => s.fits && s.sorted && s.w < 170 && s.w >= 60), JSON.stringify(sorts));
   check('   it follows the choice: "Size" is narrower than "Updates first"', sorts.find(s => s.v === 'size').w < sorts.find(s => s.v === 'updates').w);
-  check('   the row keeps the menu and all its buttons', (await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => e.id || e.innerText.trim()).join('|'))) === 'appSort|Share CSV|Profiles|Backups|appsActionBtnPick');
+  check('   the row keeps the menu and all its buttons', (await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => e.id || e.innerText.trim()).join('|'))) === 'appSort|CSV|Backups|appsActionBtnPick');   // v7.14: CSV, Profiles moved into Backups
   await page.selectOption('#appSort', 'name');
 
   await page.screenshot({ path: 'apps_400.png', clip: { x: 0, y: 0, width: 400, height: 420 } });

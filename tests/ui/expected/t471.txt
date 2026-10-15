@@ -1,0 +1,15 @@
+ok   360px the row is Sort, CSV, Backups and the Action Button picker; no Profiles button
+ok   360px CSV is still named for what it does (Share the app list as CSV)
+ok   360px CSV and Backups are plain: text colour, no accent outline
+ok   360px the row fits on one line without scrolling sideways, and the two menus get the room (each at least 96px)
+ok   390px the row is Sort, CSV, Backups and the Action Button picker; no Profiles button
+ok   390px CSV is still named for what it does (Share the app list as CSV)
+ok   390px CSV and Backups are plain: text colour, no accent outline
+ok   390px the row fits on one line without scrolling sideways, and the two menus get the room (each at least 96px)
+ok      the Backups sheet has App Profiles…
+ok      and it opens App Profiles in place of Backups
+ok   412px the row is Sort, CSV, Backups and the Action Button picker; no Profiles button
+ok   412px CSV is still named for what it does (Share the app list as CSV)
+ok   412px CSV and Backups are plain: text colour, no accent outline
+ok   412px the row fits on one line without scrolling sideways, and the two menus get the room (each at least 96px)
+errors: []
