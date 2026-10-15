@@ -26,7 +26,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   the log is not read before the tab is opened', await ev(() => !logcatTimer && window.__calls.logcat.length === 0));
   await page.click('.tab-btn[data-tab="logcat"]'); await sleep(500);
   let r = await ev(() => ({ view: currentViewName(), timer: !!logcatTimer, n: window.__calls.logcat.length, rows: document.querySelectorAll('#logcatOutput .lc-row').length, play: document.getElementById('logcatPlayBtn').innerText, shown: !!document.getElementById('logcatOutput').offsetParent }));
-  check('2. opening the tab starts the log (Play turns into Pause) and shows its lines', r.view === 'logcat' && r.timer && r.n >= 1 && r.rows >= 1 && r.shown && r.play !== 'Play', JSON.stringify(r));
+  check('2. opening the tab starts the log (Play turns into Stop) and shows its lines', r.view === 'logcat' && r.timer && r.n >= 1 && r.rows >= 1 && r.shown && r.play !== 'Play', JSON.stringify(r));
   await ev(() => switchView('console')); await sleep(200);
   r = await ev(() => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText }));
   check('3. leaving the tab (here to Console) stops the log', !r.timer && r.play === 'Play', JSON.stringify(r));

@@ -7,7 +7,7 @@
 3. denied -> shows error text: true
 4. apk size parsed: 24117248 (expect 24117248)
    symlink target parsed: /storage/self/primary
-5. opening the tab already starts playing (a fetch happened, Pause shown): true
+5. opening the tab already starts playing (a fetch happened, Stop shown): true
 6. polling continues on its own (expect >=2): true 4
 7. pausing stops polling (counts equal): true ( 4 == 4 )
    play btn back to Play: Play

@@ -544,7 +544,7 @@
 </table>
 
 <h4>The controls</h4>
-<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Pause</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
+<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Stop</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
 <table class="hg-table">
 <thead><tr><th>Control</th><th>What it does</th></tr></thead>
 <tbody>
@@ -552,7 +552,7 @@
 <tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
 <tr><td>Filter box (<b>Filter tag / text...</b>, at the top)</td><td>Type a word or a tag and press Enter. It matches plain text, not a regular expression. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
 <tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
-<tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
+<tr><td><b>Play</b> / <b>Stop</b></td><td>The button is green while it says Play and red while it says Stop. Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Stop stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
 <tr><td><b>Refresh</b> (the circular arrow at the right of the filter box)</td><td>Reads once, adds what is new and jumps to the newest line.</td></tr>
 <tr><td><b>Record to file</b></td><td>Writes the log to a file while it is on, so you can look at it afterwards. See <i>Record to a file and look at it later</i> below. While it records, the button reads <b>Stop recording</b> with the number of lines written.</td></tr>
 <tr><td><b>Recordings</b></td><td>The list of recordings, newest first. Tap one to open it; the cross at the right deletes it.</td></tr>
@@ -590,7 +590,7 @@
 <li>Set the <b>Level</b> to <b>Warn</b> or <b>Error</b>, and <b>Lines</b> to 2000 so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b> so the log only holds what comes next. This empties the log for every app.</li>
 <li>Use the app until it crashes.</li>
-<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. A crash of an app written in Java or Kotlin has a row <i>FATAL EXCEPTION</i>, and all its lines have the tag <i>AndroidRuntime</i>: type <code>AndroidRuntime</code> in the filter and press Enter to see just the crash. (Filtering for <i>FATAL EXCEPTION</i> itself would hide the lines under it.) A crash of native code shows <i>Fatal signal</i>.</li>
+<li>Tap <b>Stop</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. A crash of an app written in Java or Kotlin has a row <i>FATAL EXCEPTION</i>, and all its lines have the tag <i>AndroidRuntime</i>: type <code>AndroidRuntime</code> in the filter and press Enter to see just the crash. (Filtering for <i>FATAL EXCEPTION</i> itself would hide the lines under it.) A crash of native code shows <i>Fatal signal</i>.</li>
 <li>Read the lines under it: <i>Process:</i> names the app, the next line names the error (for example a null pointer), and <i>Caused by:</i> lines name the real cause. The lines starting with <i>at</i> are where in the code it happened.</li>
 <li>Tap <b>Share</b> or <b>Save</b> and send the file to the app's developer.</li>
 </ol>

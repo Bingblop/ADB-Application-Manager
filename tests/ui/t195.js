@@ -55,7 +55,7 @@ const mock = require('./lib/console_mock');
   // Live Logcat, its own tab: reads only while it is open
   await ev(page, () => switchView('logcat')); await sleep(900);
   s = await ev(page, () => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length, ph: document.getElementById('logcatFilter').placeholder, rows: document.querySelectorAll('#logcatOutput .lc-row').length }));
-  check('Live Logcat starts reading at once (Pause shown, polling, the lines drawn)', s.timer && s.play === 'Pause' && s.n >= 1 && s.rows === 2, JSON.stringify(s));
+  check('Live Logcat starts reading at once (Stop shown, polling, the lines drawn)', s.timer && s.play === 'Stop' && s.n >= 1 && s.rows === 2, JSON.stringify(s));
   check('the filter box has the Kotlin console\'s hint, with "text" (the filter is plain text, not a regex)', s.ph === 'Filter tag / text...');
   const kinds = await ev(page, () => ['logcatLevel', 'logcatLines', 'logcatAppBtn', 'logcatPlayBtn', 'logcatRecBtn', 'logcatRecListBtn', 'logcatKey', 'logcatOutput', 'logcatScope'].map(i => !!document.getElementById(i) && document.querySelector('#view-logcat #cnSegLog').contains(document.getElementById(i))).every(Boolean)
     && ['Copy', 'Save', 'Share'].every(t => [...document.querySelectorAll('#cnSegLog button')].some(x => x.textContent.trim() === t)));

@@ -240,6 +240,10 @@
             flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2;          /* the label in the middle of the chip, both ways (its min-height made it sit high) */
         }
         .copy-chip:active { transform: scale(0.96); }
+        /* Live Logcat's Play / Stop (the owner's choice, v7.14): filled, the Reinstall green to play and the Uninstall red to stop, black text and a black outline in either theme */
+        #cnSegLog .batch-tool-link.lc-play { background: var(--fill-reinstall); color: var(--on-fill); border: 1px solid var(--on-fill); font-weight: var(--fw-heavy); }
+        #cnSegLog .batch-tool-link.lc-play.is-playing { background: var(--fill-uninstall); }
+        #cnSegLog .batch-tool-link.lc-play:active { filter: brightness(0.82); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
         .find-bar .list-search { flex: 1 1 100px; min-width: 100px; margin: 0; }          /* the buttons go on the next line when the box would get narrower than its hint */
         @media (max-width: 340px) { .find-bar .list-search { flex-basis: 100%; } }
@@ -7746,9 +7750,7 @@
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
                 #cnSegLog .lc-badge::after { content: '/'; }
                 #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: var(--fw-bold); font-family: ui-monospace, monospace; font-size: var(--fs-pill); }
-                /* the colours the script sets on Play and Record are kept readable on a light page too */
-                #cnSegLog #logcatPlayBtn { color: color-mix(in srgb, #2EBD6B 72%, var(--text-main)) !important; }
-                #cnSegLog #logcatPlayBtn.is-playing { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
+                /* the colours the script sets on Record are kept readable on a light page too (Play / Stop is filled, see .lc-play) */
                 #cnSegLog #logcatRecBtn { color: color-mix(in srgb, #FF5252 80%, var(--text-main)) !important; }
                 #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
                 #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
@@ -8043,7 +8045,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     </div>
                 </div>
                 <div class="cn-tools cn-scroll">
-                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">Play</button>
+                    <button type="button" class="batch-tool-link lc-play" id="logcatPlayBtn" onclick="logcatTogglePlay()" aria-pressed="false">Play</button>
                     <select class="op-select" id="logcatLevel" onchange="logcatRefresh()" aria-label="Level">
                         <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
                         <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
@@ -27064,9 +27066,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('logcatPlayBtn');
             if (logcatTimer) { logcatStop(); return; }
             if (!guardPrivilege('Logcat')) return;
-            btn.innerText = 'Pause';
+            btn.innerText = 'Stop';
             btn.classList.add('is-playing');
-            btn.style.color = '#FFA726';
+            btn.setAttribute('aria-pressed', 'true');
             lcShowAll = false;
             lcLastText = null;
             logcatFetch(true);
@@ -27076,7 +27078,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
             if (lcPending && lcPending.live) lcPending = null;
             const btn = document.getElementById('logcatPlayBtn');
-            if (btn) { btn.innerText = 'Play'; btn.classList.remove('is-playing'); btn.style.color = '#4ADE80'; }
+            if (btn) { btn.innerText = 'Play'; btn.classList.remove('is-playing'); btn.setAttribute('aria-pressed', 'false'); }
         }
         function logcatClear() {
             if (!guardPrivilege('Logcat')) return;

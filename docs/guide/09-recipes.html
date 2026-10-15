@@ -395,8 +395,8 @@
 <li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. <b>Live Logcat</b> opens showing only that app's lines. (Or open it yourself, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
 <li>Set the level drop-down to <b>Warn</b> or <b>Error</b> (the level is how serious a line must be to show), and the lines drop-down to <b>2000</b>, so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b>, so the log holds only what comes next. This empties the phone's log for every app, and it also pauses the live reading: the screen says "(cleared)" and the button says <b>Play</b> again.</li>
-<li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Pause</b>.</li>
-<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. Type <code>AndroidRuntime</code> in the filter box and press Enter to see just the crash. A crash in native code shows "Fatal signal" instead.</li>
+<li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Stop</b>.</li>
+<li>Tap <b>Stop</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. Type <code>AndroidRuntime</code> in the filter box and press Enter to see just the crash. A crash in native code shows "Fatal signal" instead.</li>
 <li>Read the lines. A row <b>FATAL EXCEPTION</b> starts the report. The line <b>Process:</b> names the app. The next line names the error, for example a null pointer. A <b>Caused by:</b> line gives the real cause. Lines starting with <b>at</b> say where in the code it happened.</li>
 <li>Tap <b>Share</b> and send the text to the developer, or tap <b>Save</b>: the file goes to <code>Download/ADB App Manager</code> as <code>logcat_all_date_time.txt</code> (with the app's package name when one app is picked).</li>
 </ol>

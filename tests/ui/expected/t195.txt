@@ -7,7 +7,7 @@ ok   the underline is under the first tab (as wide as the tab; the "?" keeps its
 ok   Terminal shows and is remembered; the log is still not read
 ok   the underline moved under the second tab
 ok   ADB Shell again: remembered
-ok   Live Logcat starts reading at once (Pause shown, polling, the lines drawn)
+ok   Live Logcat starts reading at once (Stop shown, polling, the lines drawn)
 ok   the filter box has the Kotlin console's hint, with "text" (the filter is plain text, not a regex)
 ok   everything of the old Logcat Viewer is in the tab (level, lines, app picker, Play, Record to file, Recordings, key, Copy, Save, Share)
 ok   leaving it (here for Console) stops the log: no timer, Play is back, and no more reads for a second and a half

@@ -67,7 +67,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- logcat play/pause: opening the tab now starts playing on its own ----
   await page.evaluate(() => { window.__which = 'toybox'; window.__calls.length = 0; switchView('logcat'); }); await page.waitForTimeout(150);
-  console.log('5. opening the tab already starts playing (a fetch happened, Pause shown):', (await page.evaluate(() => window.__calls.length >= 1)) && (await page.locator('#logcatPlayBtn').innerText()) === 'Pause');
+  console.log('5. opening the tab already starts playing (a fetch happened, Stop shown):', (await page.evaluate(() => window.__calls.length >= 1)) && (await page.locator('#logcatPlayBtn').innerText()) === 'Stop');
   await page.waitForTimeout(3300); // ~3 more polls at 1s, with no need to press Play by hand
   const pollCount = await page.evaluate(() => window.__calls.length);
   console.log('6. polling continues on its own (expect >=2):', pollCount >= 2, pollCount);
