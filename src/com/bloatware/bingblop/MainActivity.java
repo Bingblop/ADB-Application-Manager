@@ -2216,6 +2216,8 @@ public class MainActivity extends Activity {
 
     /** The check that is running now (Cancel and onDestroy reach it here); null when none is. */
     private volatile UpdateChecker updateCheckRun;
+    /** Cancel was pressed (or the window closed) while the run was still listing the apps, before its checker existed. */
+    private volatile boolean updateCancelRequested;
     private final UpdateChecker.Generation updateRunGeneration = new UpdateChecker.Generation();   // a callback of an older check is dropped once a newer one has started
     /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
     private volatile JSONObject updateLastSummary;
@@ -2295,6 +2297,7 @@ public class MainActivity extends Activity {
 
     /** Stops the check that is running, if any: what it found stays, the rest is reported as not checked. */
     private void cancelUpdateCheckRun() {
+        updateCancelRequested = true;              // read by a run that has not made its checker yet
         UpdateChecker c = updateCheckRun;
         if (c != null) c.cancel();
     }
@@ -2331,6 +2334,7 @@ public class MainActivity extends Activity {
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
+        updateCancelRequested = false;
         try {
             executor.submit(new Runnable() {
                 @Override
@@ -2389,6 +2393,7 @@ public class MainActivity extends Activity {
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
+                            if (updateCancelRequested) checker.cancel();   // Cancel pressed while the apps were being listed
                             summary = checker.check(apps, o, new UpdateChecker.Listener() {
                                 @Override
                                 public void onUpdate(JSONObject row) {
