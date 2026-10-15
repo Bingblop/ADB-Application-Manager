@@ -9271,7 +9271,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeApkDelete()">✕</button>
             </div>
             <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
-            <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.</div>
+            <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.</div>
             <div style="display:flex; gap:10px; margin-top:12px;">
                 <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:linear-gradient(135deg,#FF5252,#FF8A65);" onclick="confirmApkDelete()">Delete from this device</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeApkDelete()">Cancel</button>
@@ -11426,6 +11426,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // (--undo-lift). A toast goes above an Undo bar that is up (--toast-lift). The back-to-top button stands in the checkmark button's column,
         // above it, above an Undo bar and above a tab's docked bar (Morphe's patch bar, Connected Devices' batch bar). Heights are read from the
         // layout (the bottom offset and the height), not from the screen, so a bar that is still sliding in is measured where it will be.
+        const UNDO_MS = 3000;          // how long an Undo bar stays (#sdbSnack, #sdUndo): no longer than 3 seconds (the owner's wish, v7.14)
         let floatUndoLift = 0, floatToastLift = 0, floatQueued = false;
         function floatTop(el) { return (parseFloat(getComputedStyle(el).bottom) || 0) + el.offsetHeight; }          // its top edge, in px up from the bottom of the screen
         function floatBase() { const p = document.getElementById('floatProbe'); return p ? window.innerHeight - p.getBoundingClientRect().bottom : 0; }
@@ -21398,7 +21399,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!recs.length) { showToast("Couldn't delete the files"); return; }
                 if (currentViewName() !== 'installer') { purgeAll(); return; }
                 const msg = 'Deleted ' + recs.length + ' file' + (recs.length === 1 ? '' : 's') + (failed ? ' · ' + failed + ' failed' : '');
-                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 8000, onExpire: purgeAll });
+                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', onExpire: purgeAll });
             };
             const next = () => {
                 if (i >= files.length) { finish(); return; }
@@ -21494,7 +21495,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const purge = () => apkFileOp('purge', rec.trash, '', () => {});
                 // the answer can come after the person has gone to another tab: there is no bar to put Undo on there, so it is final
                 if (currentViewName() !== 'installer') { purge(); return; }
-                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: purge });
+                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', onExpire: purge });
             });
         }
 
@@ -21503,7 +21504,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!r.ok) {
                     showToast("Couldn't restore " + rec.file.name + (r.error ? ': ' + String(r.error).slice(0, 80) : ''));
                     // the file is still in its hidden folder: offer Undo again (it is removed for good when this bar goes)
-                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
+                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
                     else apkFileOp('purge', rec.trash, '', () => {});
                     return;
                 }
@@ -36274,7 +36275,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('sdbSnackUndo').innerText = (opts && opts.label) || 'Undo';
             el.classList.add('show');
             clearTimeout(sdbSnackTimer);
-            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 5000);          // 5 s (a delete of several files 8 s, of one 6 s): long enough to reach Undo, short enough not to linger
+            sdbSnackTimer = setTimeout(sdbSnackHide, Math.min(UNDO_MS, (opts && opts.ms) || UNDO_MS));          // at most 3 s (the owner's wish, v7.14), whatever a caller asks for
         }
 
         function sdbSnackFinish() {
@@ -41267,7 +41268,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const n = res.count || (res.ids ? res.ids.length : 1);
             document.getElementById('sdUndoText').textContent = n + ' exclusion' + (n === 1 ? '' : 's') + ' created';
             document.getElementById('sdUndo').classList.add('on');
-            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, 7000);
+            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, UNDO_MS);
             const st = await sdCall('state', {}); if (st.ok) sdApplyState(st);
         }
         async function sdUndoDo() {

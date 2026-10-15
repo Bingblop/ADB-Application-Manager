@@ -3863,7 +3863,7 @@ x: {
 "The file": "ファイル",
 "The file and its log are removed. The app on the phone is not touched.": "ファイルとそのログが削除されます。端末上のアプリには影響しません。",
 "The file chooser needs the app build": "ファイル選択にはアプリの正式版が必要です",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "ファイルはリストからだけでなく、この端末のストレージからも削除されます。「元に戻す」バーが数秒間表示され、バーが消えるとファイルは完全に削除されます。",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "ファイルはリストからだけでなく、この端末のストレージからも削除されます。「元に戻す」バーが3 秒間表示され、バーが消えるとファイルは完全に削除されます。",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "ファイルは保存されましたが、アプリのファイルではありません（不明）。ブラウザで別のダウンロードを選んでください。",
 "The fingerprint is shown in the app build": "フィンガープリントはアプリ版で表示されます",
 "The folder": "フォルダ",

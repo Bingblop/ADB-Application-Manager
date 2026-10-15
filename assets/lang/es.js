@@ -3863,7 +3863,7 @@ x: {
 "The file": "El archivo",
 "The file and its log are removed. The app on the phone is not touched.": "Se eliminan el archivo y su registro. La app del teléfono no se toca.",
 "The file chooser needs the app build": "El selector de archivos necesita la versión de la app",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "El archivo se elimina del almacenamiento de este teléfono, no solo de la lista. Una barra Deshacer permanece unos segundos y el archivo solo desaparece definitivamente cuando esa barra se va.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "El archivo se elimina del almacenamiento de este teléfono, no solo de la lista. Una barra Deshacer permanece 3 segundos y el archivo solo desaparece definitivamente cuando esa barra se va.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "El archivo se guardó, pero no es un archivo de app (desconocido). Elige otra descarga en el navegador.",
 "The fingerprint is shown in the app build": "La huella digital se muestra en la app",
 "The folder": "La carpeta",

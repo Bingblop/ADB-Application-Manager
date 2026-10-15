@@ -3863,7 +3863,7 @@ x: {
 "The file": "फ़ाइल",
 "The file and its log are removed. The app on the phone is not touched.": "फ़ाइल और उसका लॉग हटा दिए जाते हैं। फ़ोन पर मौजूद ऐप को छुआ नहीं जाता।",
 "The file chooser needs the app build": "फ़ाइल चुनने के लिए ऐप का आधिकारिक बिल्ड चाहिए",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "फ़ाइल सिर्फ़ सूची से नहीं, इस फ़ोन के स्टोरेज से भी हटाई जाती है। कुछ सेकंड तक एक ‘पहले जैसा करें’ बार रहता है, और वह बार जाने के बाद ही फ़ाइल हमेशा के लिए हटती है।",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "फ़ाइल सिर्फ़ सूची से नहीं, इस फ़ोन के स्टोरेज से भी हटाई जाती है। 3 सेकंड तक एक ‘पहले जैसा करें’ बार रहता है, और वह बार जाने के बाद ही फ़ाइल हमेशा के लिए हटती है।",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "फ़ाइल सहेजी गई, पर वह ऐप फ़ाइल नहीं है (अज्ञात)। ब्राउज़र में कोई और डाउनलोड चुनें।",
 "The fingerprint is shown in the app build": "फ़िंगरप्रिंट ऐप बिल्ड में दिखता है",
 "The folder": "फ़ोल्डर",

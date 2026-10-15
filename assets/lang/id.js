@@ -3863,7 +3863,7 @@ x: {
 "The file": "File",
 "The file and its log are removed. The app on the phone is not touched.": "Berkas dan lognya dihapus. Aplikasi di ponsel tidak disentuh.",
 "The file chooser needs the app build": "Pemilih file memerlukan versi resmi aplikasi",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "File dihapus dari penyimpanan ponsel ini, bukan hanya dari daftar. Bilah Urungkan tetap muncul beberapa detik, dan file baru benar-benar hilang setelah bilah itu menghilang.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "File dihapus dari penyimpanan ponsel ini, bukan hanya dari daftar. Bilah Urungkan tetap muncul 3 detik, dan file baru benar-benar hilang setelah bilah itu menghilang.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "Berkas tersimpan, tetapi bukan berkas aplikasi (tidak diketahui). Pilih unduhan lain di browser.",
 "The fingerprint is shown in the app build": "Fingerprint ditampilkan di build aplikasi",
 "The folder": "Folder",

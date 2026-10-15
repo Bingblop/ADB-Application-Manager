@@ -3860,7 +3860,7 @@
 {"k":"The file","ctx":"built by the code of: us browse done"},
 {"k":"The file and its log are removed. The app on the phone is not touched.","ctx":"built by the code of: mp patched delete"},
 {"k":"The file chooser needs the app build","ctx":"built by the code of: font pick"},
-{"k":"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.","ctx":"in a sheet (apk delete)"},
+{"k":"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.","ctx":"in a sheet (apk delete)"},
 {"k":"The file was saved, but it is not an app file (unknown). Choose another download in the browser.","ctx":"built by the code of: mp hbevent"},
 {"k":"The fingerprint is shown in the app build","ctx":"built by the code of: about copy fingerprint"},
 {"k":"The folder","ctx":"built by the code of: cz open"},

@@ -3863,7 +3863,7 @@ x: {
 "The file": "الملف",
 "The file and its log are removed. The app on the phone is not touched.": "يُزال الملف وسجله. لا يتأثر التطبيق على الهاتف.",
 "The file chooser needs the app build": "يحتاج منتقي الملفات إلى الإصدار الرسمي من التطبيق",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "يُحذف الملف من وحدة تخزين هذا الهاتف، وليس من القائمة فقط. يبقى شريط «تراجع» ظاهرًا لبضع ثوانٍ، ولا يُحذف الملف نهائيًا إلا بعد اختفاء هذا الشريط.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "يُحذف الملف من وحدة تخزين هذا الهاتف، وليس من القائمة فقط. يبقى شريط «تراجع» ظاهرًا لمدة 3 ثوانٍ، ولا يُحذف الملف نهائيًا إلا بعد اختفاء هذا الشريط.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "حُفظ الملف لكنه ليس ملف تطبيق (غير معروف). اختر تنزيلًا آخر في المتصفح.",
 "The fingerprint is shown in the app build": "تُعرض البصمة في نسخة التطبيق",
 "The folder": "المجلد",

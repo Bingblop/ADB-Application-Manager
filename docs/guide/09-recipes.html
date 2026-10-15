@@ -335,12 +335,12 @@
 <li>Type <code>animation</code> in the box <b>Search settings...</b>. The list shrinks to the matches, with the matching letters highlighted.</li>
 <li>Tap the row <code>window_animation_scale</code>. A sheet slides up with its name, table, description and a <b>Value</b> box. First tap <b>Copy value</b>, to keep the old value on the clipboard.</li>
 <li>Replace the text in the <b>Value</b> box with <code>0.5</code>. A line under the box says what kind of value it looks like and what it was before. A red line means it cannot be saved yet.</li>
-<li>Tap <b>Save</b>. The sheet closes, the row shows the new value with a small dot, and an <b>Undo</b> bar appears at the bottom for about 5 seconds. Open an app: its windows should now move quicker. Some phone makers' software ignores some settings.</li>
+<li>Tap <b>Save</b>. The sheet closes, the row shows the new value with a small dot, and an <b>Undo</b> bar appears at the bottom for 3 seconds. Open an app: its windows should now move quicker. Some phone makers' software ignores some settings.</li>
 </ol>
 
 <h4>Undo it</h4>
 <ol class="hg-steps">
-<li>Within about 5 seconds, tap <b>Undo</b> on the bar. A message says "Put back: window_animation_scale".</li>
+<li>Within 3 seconds, tap <b>Undo</b> on the bar. A message says "Put back: window_animation_scale".</li>
 <li>Later: tap <b>...</b> (the three dots next to the search box), then <b>Changes</b>. Each entry shows the old and new value. Tap <b>Revert</b> under the one you want to undo.</li>
 </ol>
 <p>A setting with an orange edge and the word "careful" asks for confirmation. Some of them can cut the connection the app uses (<code>adb_enabled</code>, <code>wifi_on</code>, <code>airplane_mode_on</code>) or lock you out of the keyboard. Leave those alone. A setting that is 1 or 0 can also be flipped by pressing and holding its row.</p>
@@ -367,7 +367,7 @@
 <li>Under <b>Color</b>, tap <b>Custom color</b> (<b>Wallpaper</b> is the default). A box appears with a big square and a code field.</li>
 <li>Pick the colour: type a six-digit code such as <code>6750A4</code>, move the <b>Hue</b>, <b>Saturation</b> and <b>Lightness</b> sliders, tap a recent colour, or open <b>Preset colors</b>, search by name and tap a round swatch.</li>
 <li>Under <b>Style</b>, choose one: <b>Tonal Spot</b> (the default), <b>Vibrant</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> or <b>Spritz</b>.</li>
-<li>Tap <b>Apply theme</b>. It reads "Applying...", then Android repaints within a second or two and may restart apps. An <b>Undo</b> bar saying "Theme applied" waits for about 5 seconds. If Android restarted this app, it comes back to this tab with the bar still waiting. The squares update a few seconds later.</li>
+<li>Tap <b>Apply theme</b>. It reads "Applying...", then Android repaints within a second or two and may restart apps. An <b>Undo</b> bar saying "Theme applied" waits for 3 seconds. If Android restarted this app, it comes back to this tab with the bar still waiting. The squares update a few seconds later.</li>
 </ol>
 
 <h4>Overlays</h4>
@@ -376,7 +376,7 @@
 <li>The list is read again and the row shows what Android reports. The <b>Undo</b> bar says "On: name" or "Off: name". An overlay marked <b>Unavailable</b> cannot be switched.</li>
 </ol>
 
-<div class="hg-warn"><b>Undo.</b> Tap <b>Undo</b> on the bar within about 5 seconds, or tap <b>Default</b> and confirm "Go back to the system default?". Later, <b>Hidden Settings</b>, <b>...</b>, <b>Changes</b> lists <code>theme_customization_overlay_packages</code> with a <b>Revert</b>. A wrong overlay can make the screen harder to use: switch it off again in the <b>Overlays</b> half. If the colours look unchanged, your phone maker's palette wins. This tab does not change the app's own colours: see <a href="#themes">Themes and colours</a>.</div>
+<div class="hg-warn"><b>Undo.</b> Tap <b>Undo</b> on the bar within 3 seconds, or tap <b>Default</b> and confirm "Go back to the system default?". Later, <b>Hidden Settings</b>, <b>...</b>, <b>Changes</b> lists <code>theme_customization_overlay_packages</code> with a <b>Revert</b>. A wrong overlay can make the screen harder to use: switch it off again in the <b>Overlays</b> half. If the colours look unchanged, your phone maker's palette wins. This tab does not change the app's own colours: see <a href="#themes">Themes and colours</a>.</div>
 
 <p><b>Read more:</b> <a href="#tab-overlays">RRO/Monet Customization</a>, <a href="#settings-journal">Undoing settings changes</a>.</p>
 </section>

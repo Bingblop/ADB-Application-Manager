@@ -3863,7 +3863,7 @@ x: {
 "The file": "파일",
 "The file and its log are removed. The app on the phone is not touched.": "파일과 로그가 삭제됩니다. 휴대폰에 있는 앱은 건드리지 않습니다.",
 "The file chooser needs the app build": "파일 선택기는 앱 정식 빌드가 필요합니다",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "목록에서만이 아니라 이 휴대전화 저장 공간에서도 파일이 삭제됩니다. 실행 취소 바가 몇 초간 표시되며, 이 바가 사라져야 파일이 완전히 삭제됩니다.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "목록에서만이 아니라 이 휴대전화 저장 공간에서도 파일이 삭제됩니다. 실행 취소 바가 3초간 표시되며, 이 바가 사라져야 파일이 완전히 삭제됩니다.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "파일은 저장되었지만 앱 파일이 아닙니다(알 수 없음). 브라우저에서 다른 다운로드를 선택하세요.",
 "The fingerprint is shown in the app build": "핑거프린트는 앱 빌드에서 표시됩니다",
 "The folder": "폴더",

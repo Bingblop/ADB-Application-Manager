@@ -3863,7 +3863,7 @@ x: {
 "The file": "Файл",
 "The file and its log are removed. The app on the phone is not touched.": "Файл и его журнал удаляются. Приложение на телефоне не затрагивается.",
 "The file chooser needs the app build": "Для выбора файла нужна сборка приложения",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "Файл удаляется из памяти телефона, а не только из списка. Панель отмены остаётся на несколько секунд, и файл удаляется окончательно только после того, как она исчезнет.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "Файл удаляется из памяти телефона, а не только из списка. Панель отмены остаётся на 3 секунды, и файл удаляется окончательно только после того, как она исчезнет.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "Файл сохранён, но это не файл приложения (неизвестный). Выберите в браузере другую загрузку.",
 "The fingerprint is shown in the app build": "Отпечаток отображается в приложении",
 "The folder": "Папка",

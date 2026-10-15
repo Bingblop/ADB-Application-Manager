@@ -3863,7 +3863,7 @@ x: {
 "The file": "文件",
 "The file and its log are removed. The app on the phone is not touched.": "文件及其日志将被移除。手机上的应用不受影响。",
 "The file chooser needs the app build": "文件选择器需要应用的正式版本",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "该文件会从这部手机的存储中删除，而不仅仅是从列表中移除。“撤销”栏会保留几秒钟，待该栏消失后，文件才会被彻底删除。",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "该文件会从这部手机的存储中删除，而不仅仅是从列表中移除。“撤销”栏会保留3 秒钟，待该栏消失后，文件才会被彻底删除。",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "文件已保存，但它不是应用文件（未知）。请在浏览器中选择其他下载。",
 "The fingerprint is shown in the app build": "指纹显示在应用构建版本中",
 "The folder": "文件夹",

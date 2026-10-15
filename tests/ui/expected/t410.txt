@@ -23,8 +23,8 @@ ok      the full-screen terminal up: it goes
 ok      the bottom bar's More sheet open: it goes
 ok      and then it is back
 ok   4. the Undo bar stands just above the bottom bar (at most 12px over it)
-ok      it lasts 5 seconds (7 before)
-ok      the installer's delete Undo bars last 8 s (several files) and 6 s (one file), SD Maid's 7 s
+ok      it lasts 3 seconds (v7.14, the owner's wish: no longer than 3 s)
+ok      a caller that asks for longer still gets 3 s, and every Undo bar (the installer's, SD Maid's) is timed with that 3 s
 ok      a toast shown with it goes above it, not over it
 ok      the back-to-top button stands above an Undo bar, not on it
 ok      after 5 seconds the bar is gone and the button comes back down

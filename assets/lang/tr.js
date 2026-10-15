@@ -3863,7 +3863,7 @@ x: {
 "The file": "Dosya",
 "The file and its log are removed. The app on the phone is not touched.": "Dosya ve günlüğü kaldırılır. Telefondaki uygulamaya dokunulmaz.",
 "The file chooser needs the app build": "Dosya seçici için uygulamanın resmi sürümü gerekir",
-"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.": "Dosya yalnızca listeden değil, bu telefonun depolamasından da kaldırılır. Birkaç saniye boyunca bir Geri al çubuğu görünür ve dosya ancak bu çubuk kaybolduktan sonra kalıcı olarak gider.",
+"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.": "Dosya yalnızca listeden değil, bu telefonun depolamasından da kaldırılır. 3 saniye boyunca bir Geri al çubuğu görünür ve dosya ancak bu çubuk kaybolduktan sonra kalıcı olarak gider.",
 "The file was saved, but it is not an app file (unknown). Choose another download in the browser.": "Dosya kaydedildi ama bir uygulama dosyası değil (bilinmiyor). Tarayıcıda başka bir indirme seçin.",
 "The fingerprint is shown in the app build": "Parmak izi uygulama sürümünde gösterilir",
 "The folder": "Klasör",

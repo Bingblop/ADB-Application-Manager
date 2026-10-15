@@ -2,7 +2,7 @@
 // half screens and scrolls that screen back to the top: the Apps list, the long screens (Settings, Extra Settings, SD Maid, About) and a
 // list that scrolls in a box of its own. It is a 48px button with a name, at the right edge above the bottom bar, in the checkmark
 // button's column (above it while it is up, above an Undo bar), and it goes while a sheet, the batch sheet, the keyboard (a text field in
-// use) or the full-screen terminal is up. The Undo bars last 2 seconds less than before (5 s, the installer's 8 s and 6 s, SD Maid's 7 s)
+// use) or the full-screen terminal is up. The Undo bars last 3 seconds at most (v7.14, the owner's wish; before: 5 s, the installer's 8 s and 6 s, SD Maid's 7 s)
 // and stand just above the bottom bar (near the screen's edge when the bar is off), above the checkmark button or the batch sheet while
 // those are up; a toast shown with an Undo bar goes above it.
 const fs = require('fs');
@@ -134,8 +134,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const snack = await rect(page, '#sdbSnack');
   s = await st(page);
   check('4. the Undo bar stands just above the bottom bar (at most 12px over it)', snack.bottom <= s.navTop && s.navTop - snack.bottom <= 12, JSON.stringify([snack, s.navTop]));
-  check('   it lasts 5 seconds (7 before)', JSON.stringify(await page.evaluate(() => window.__t410)) === '[5000]', JSON.stringify(await page.evaluate(() => window.__t410)));
-  check('   the installer\'s delete Undo bars last 8 s (several files) and 6 s (one file), SD Maid\'s 7 s', /apkUndoMany\(recs\), \{ view: 'installer', ms: 8000/.test(html) && (html.match(/apkUndoDelete\(rec\), \{ view: 'installer', ms: 6000/g) || []).length === 2 && /classList\.remove\('on'\); \}, 7000\)/.test(html) && !/ms: 10000/.test(html));
+  check('   it lasts 3 seconds (v7.14, the owner\'s wish: no longer than 3 s)', JSON.stringify(await page.evaluate(() => window.__t410)) === '[3000]', JSON.stringify(await page.evaluate(() => window.__t410)));
+  await page.evaluate(() => { window.__t410.length = 0; sdbSnack('Deleted 5 files', () => {}, { ms: 8000 }); sdbSnack('Deleted test_key', () => {}); }); await sleep(450);
+  check('   a caller that asks for longer still gets 3 s, and every Undo bar (the installer\'s, SD Maid\'s) is timed with that 3 s', JSON.stringify(await page.evaluate(() => window.__t410)) === '[3000,3000]' && await page.evaluate(() => UNDO_MS) === 3000
+    && !/view: 'installer', ms: \d/.test(html) && /classList\.remove\('on'\); \}, UNDO_MS\)/.test(html), JSON.stringify(await page.evaluate(() => window.__t410)));
   await page.evaluate(() => showToast('Put back: test_key')); await sleep(500);
   const toast = await rect(page, '#toast');
   check('   a toast shown with it goes above it, not over it', toast.bottom <= snack.top, JSON.stringify([toast, snack]));
