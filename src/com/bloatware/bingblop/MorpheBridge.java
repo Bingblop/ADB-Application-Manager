@@ -590,12 +590,21 @@ public final class MorpheBridge {
                 @Override public void accept(JSONObject e) { ev(jobId, e); }
             }, 45L * 60 * 1000));                                                              // nothing applied is a failure: the APK is the unpatched app
             result = engineResult;
-            if (engineResult.optBoolean("success") && output.isFile()) {
+            if (engineResult.optBoolean("success") && output.isFile() && runner.isCancelled(jobId)) {
+                // Stop came in while the engine was writing its answer: the person was told that nothing is saved, so the APK is not filed
+                output.delete();
+                note(jobId, "INFO", "Stopped: the patched APK was not saved.");
+                result = new JSONObject().put("success", false).put("cancelled", true).put("error", "Cancelled");
+            } else if (engineResult.optBoolean("success") && output.isFile()) {
                 step(jobId, "Saving", "RUNNING");
                 saved = save(a, output, dir, engineResult);
                 ev(jobId, new JSONObject().put("t", "saved").put("item", saved));
                 step(jobId, "Saving", "OK");
-                if (a.optBoolean("installAfter")) {
+                if (a.optBoolean("installAfter") && runner.isCancelled(jobId)) {
+                    // Stop came in while the APK was being saved: it is saved (the result says where, with an Install button), so the run is not
+                    // reported as "nothing saved"; it is only not installed
+                    note(jobId, "WARN", "Stopped before the install: the patched APK is saved in Patched APKs and was not installed.");
+                } else if (a.optBoolean("installAfter")) {
                     step(jobId, "Installing", "RUNNING");
                     JSONObject ir;
                     try { ir = (latest != null ? latest : this).host.install(new File(saved.optString("file")), a.optString("pkg"), false); }   // the newest window asks for the installer
