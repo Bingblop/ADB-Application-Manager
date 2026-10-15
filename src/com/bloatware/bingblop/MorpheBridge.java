@@ -80,7 +80,7 @@ public final class MorpheBridge {
     private final MorpheRunner runner;                                                  // the one engine lock of the process (see MorpheShared)
     private final MorpheRunner.EventSink sink;                                          // this window's side of the patch's events
     private final MorpheSlot slot;                                                      // the one patch run at a time (an atomic take, see MorpheSlot)
-    private static volatile MorpheBridge latest;                                        // the bridge of the newest window: the one a patch that is going must ask for the installer
+    private static final MorpheShared.Windows<Host> windows = new MorpheShared.Windows<Host>();   // the open windows: the newest is the one a patch that is going asks for the installer
     private final BundleApprovals approvals;                                            // which custom bundles the person has allowed to run (see BundleApprovals)
     private final BundleApprovals.Asker asker = new BundleApprovals.Asker() {
         @Override public BundleApprovals.Answer ask(String title, String text) { return host.confirmBundle(title, text); }
@@ -102,16 +102,29 @@ public final class MorpheBridge {
         this.slot = shared.slot;
         this.sink = new MorpheRunner.EventSink() { @Override public void accept(JSONObject e) { event(e); } };
         this.shared.bind(sink);
-        latest = this;
+        windows.opened(host);
     }
 
     /**
-     * The window of this bridge is going away. The process-wide holder stops pointing at it (it would keep the destroyed window alive); a patch that is
+     * A window of the app was created. It is the one a patch that is going asks for the installer from now on (until a newer one opens), also when its
+     * page has not used the Morphe tab yet (its bridge is only made on the first call). The activity calls this from onCreate.
+     */
+    public static void windowOpened(Host h) { windows.opened(h); }
+
+    /** The window of {@code h} is destroyed: it is never asked again; the newest window still open is. The activity calls this from onDestroy. */
+    public static void windowClosed(Host h) { windows.closed(h); }
+
+    /**
+     * The window of this bridge is going away. The process-wide holders stop pointing at it (they would keep the destroyed window alive); a patch that is
      * going goes on, and the next window's bridge takes over its events.
      */
     public void release() {
         shared.unbind(sink);
-        if (latest == this) latest = null;
+        windows.closed(host);
+        synchronized (this) {                                                            // the download list is the process's: this page is no longer told about it
+            if (downloadList != null && pagePush != null) downloadList.removeListener(pagePush);
+            pagePush = null;
+        }
     }
 
     /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */
@@ -590,19 +603,29 @@ public final class MorpheBridge {
                 @Override public void accept(JSONObject e) { ev(jobId, e); }
             }, 45L * 60 * 1000));                                                              // nothing applied is a failure: the APK is the unpatched app
             result = engineResult;
-            if (engineResult.optBoolean("success") && output.isFile()) {
+            if (engineResult.optBoolean("success") && output.isFile() && runner.isCancelled(jobId)) {
+                // Stop came in while the engine was writing its answer: the person was told that nothing is saved, so the APK is not filed
+                output.delete();
+                note(jobId, "INFO", "Stopped: the patched APK was not saved.");
+                result = new JSONObject().put("success", false).put("cancelled", true).put("error", "Cancelled");
+            } else if (engineResult.optBoolean("success") && output.isFile()) {
                 step(jobId, "Saving", "RUNNING");
                 saved = save(a, output, dir, engineResult);
                 ev(jobId, new JSONObject().put("t", "saved").put("item", saved));
                 step(jobId, "Saving", "OK");
-                if (a.optBoolean("installAfter")) {
+                if (a.optBoolean("installAfter") && runner.isCancelled(jobId)) {
+                    // Stop came in while the APK was being saved: it is saved (the result says where, with an Install button), so the run is not
+                    // reported as "nothing saved"; it is only not installed
+                    note(jobId, "WARN", "Stopped before the install: the patched APK is saved in Patched APKs and was not installed.");
+                } else if (a.optBoolean("installAfter")) {
                     step(jobId, "Installing", "RUNNING");
                     JSONObject ir;
-                    try { ir = (latest != null ? latest : this).host.install(new File(saved.optString("file")), a.optString("pkg"), false); }   // the newest window asks for the installer
+                    Host asks = windows.newest();                                         // the newest open window asks for the installer, never one that is gone (MOR-1)
+                    try { ir = (asks != null ? asks : host).install(new File(saved.optString("file")), a.optString("pkg"), false); }
                     catch (Exception e) { ir = new JSONObject().put("ok", false).put("output", "Error: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage())); }
                     ir.put("t", "install");
                     ev(jobId, ir);
-                    step(jobId, "Installing", ir.optBoolean("ok") ? "OK" : "FAIL");
+                    step(jobId, "Installing", MorpheInstallStep.stepState(ir));                    // only handed to the system installer: not marked done
                     if (MorpheInstallStep.settle(library, saved.optString("id"), ir, a.optBoolean("deleteAfter"))) ev(jobId, new JSONObject().put("t", "deleted"));
                 }
                 result.put("item", saved);
@@ -843,11 +866,40 @@ public final class MorpheBridge {
     }
 
     private volatile Runnable browserCloser;
-    private HelperDownloads downloadList;
+    private HelperDownloads downloadList;                                               // the process's list (HelperDownloads.shared): every window sees the same jobs
+    private HelperDownloads.Listener pagePush;                                          // tells this window's page about the list; taken off in release()
     private final Map<String, long[]> lastPush = new ConcurrentHashMap<String, long[]>();
 
     /** Downloads go on in the background, with a notification (a foreground service), unless the person switched that off: a marker file says so. */
-    private boolean backgroundOn() { return !new File(base, "hd_background_off").exists(); }
+    private boolean backgroundOn() { return backgroundOn(base); }
+
+    private static boolean backgroundOn(File base) { return !new File(base, "hd_background_off").exists(); }
+
+    /** Which folders a journal entry may name: the Helper's own. Holds only the folders (the list is the process's and must not keep a window alive). */
+    private static final class HelperFolders implements java.util.function.Predicate<File> {
+        private final File[] dirs;
+        HelperFolders(File... dirs) { this.dirs = dirs; }
+        @Override public boolean test(File f) {
+            try {
+                File c = f.getCanonicalFile();
+                for (File d : dirs) if (c.equals(d.getCanonicalFile())) return true;
+            } catch (IOException e) { return false; }
+            return false;
+        }
+    }
+
+    /** Keeps the downloads' notification service in step with the list. Added once, when the process's list is made; the application context only. */
+    private static final class ServiceSync implements HelperDownloads.Listener {
+        private final Context app;
+        private final File base;
+        private final HelperDownloads list;
+        private final Map<String, Integer> lastState = new ConcurrentHashMap<String, Integer>();
+        ServiceSync(Context app, File base, HelperDownloads list) { this.app = app; this.base = base; this.list = list; }
+        @Override public void onChange(BrowserDownload.Job j) {
+            Integer before = lastState.put(j.id, j.state.ordinal());
+            try { DownloadService.sync(app, list, before == null || before != j.state.ordinal(), backgroundOn(base)); } catch (RuntimeException ignored) {}
+        }
+    }
 
     private void setBackground(boolean on) {
         File f = new File(base, "hd_background_off");
@@ -859,23 +911,25 @@ public final class MorpheBridge {
     /** The Helper's download list (it outlives the browser window, and the journal outlives the app). */
     private synchronized HelperDownloads downloads() {
         if (downloadList == null) {
-            downloadList = new HelperDownloads(new File(base, "helper_downloads.json"), host.cookies(), new java.util.function.Predicate<File>() {
-                @Override public boolean test(File f) {
-                    try { return f.getCanonicalFile().equals(helperDir("cache").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("downloads").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("updater").getCanonicalFile()); }
-                    catch (IOException e) { return false; }
-                }
-            });
-            downloadList.addListener(new HelperDownloads.Listener() {
+            // One list for the process, not one per window (MOR-2): a second window's own list would read a running job from the journal as Paused,
+            // and its Resume would start a second writer on the same part file
+            final Context app = host.context().getApplicationContext();
+            final File baseDir = base;
+            downloadList = HelperDownloads.shared(new File(base, "helper_downloads.json"), host.cookies(),
+                    new HelperFolders(helperDir("cache"), helperDir("downloads"), helperDir("updater")), new java.util.function.Consumer<HelperDownloads>() {
+                        @Override public void accept(HelperDownloads made) { made.addListener(new ServiceSync(app, baseDir, made)); }
+                    });
+            pagePush = new HelperDownloads.Listener() {
                 @Override public void onChange(BrowserDownload.Job j) {
                     long now = System.currentTimeMillis();
                     long[] last = lastPush.get(j.id);
                     long st = j.state.ordinal();
-                    try { DownloadService.sync(host.context(), downloadList, last == null || last[1] != st, backgroundOn()); } catch (RuntimeException ignored) {}
                     if (last != null && last[1] == st && now - last[0] < 400) return;      // progress is passed on a few times a second, a change of state at once
                     lastPush.put(j.id, new long[]{now, st});
                     try { event(new JSONObject().put("t", "hd").put("job", HelperDownloads.forPage(j))); } catch (JSONException ignored) {}
                 }
-            });
+            };
+            downloadList.addListener(pagePush);
         }
         return downloadList;
     }

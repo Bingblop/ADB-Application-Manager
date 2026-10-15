@@ -1255,7 +1255,8 @@ public final class UpdateChecker {
                 failedArr.put(f);
             }
             int notChecked = 0;
-            if (cancelled) for (Job j : jobs) if (!finished.contains(j.app.pkg)) notChecked++;
+            JSONArray notCheckedPkgs = new JSONArray();
+            if (cancelled) for (Job j : jobs) if (!finished.contains(j.app.pkg)) { notChecked++; notCheckedPkgs.put(j.app.pkg); }
             s.put("updates", new JSONArray(up));
             s.put("untracked", new JSONArray(untracked));
             s.put("external", new JSONArray(external));
@@ -1266,6 +1267,7 @@ public final class UpdateChecker {
             s.put("timedOut", timedOut);
             s.put("fromCache", fromCache);
             s.put("notChecked", notChecked);
+            s.put("notCheckedPkgs", notCheckedPkgs);                    // a cancelled retry keeps what the run before knew about these (merge)
             s.put("total", total);
             s.put("checked", Math.max(0, gxTotal - gxFailed - (cancelled ? countUnfinished(jobs, true) : 0)));
             s.put("openSourceChecked", Math.max(0, osTotal - osFailed - (cancelled ? countUnfinished(jobs, false) : 0)));
@@ -1293,10 +1295,14 @@ public final class UpdateChecker {
 
     /**
      * The result of a run that re-checked only some apps ({@code retried}), folded into the result before it: what the earlier run found for the
-     * other apps stays, what is known about the retried ones comes from the new run.
+     * other apps stays, what is known about the retried ones comes from the new run. A retried app the new run never reached (it was cancelled
+     * first) keeps what the run before said about it, so a cancelled retry does not drop it from every list.
      */
-    public static JSONObject merge(JSONObject prev, JSONObject retry, Set<String> retried) {
+    public static JSONObject merge(JSONObject prev, JSONObject retry, Set<String> retriedIn) {
         try {
+            Set<String> retried = new HashSet<String>(retriedIn);
+            JSONArray nc = retry.optJSONArray("notCheckedPkgs");
+            for (int i = 0; nc != null && i < nc.length(); i++) retried.remove(nc.optString(i));
             JSONObject m = new JSONObject(prev.toString());
             for (String key : new String[]{"updates", "untracked", "external", "failed"}) {
                 JSONArray out = new JSONArray();

@@ -89,7 +89,7 @@ public final class MorpheOrphans {
             } catch (Exception ignored) { /* fall through to what the engine said */ }
         }
         try {
-            String pkg = result.optString("pkg");
+            String pkg = result.optString("package");                                       // the key EngineMain.finish() writes (not "pkg")
             return new JSONObject().put("pkg", pkg).put("name", pkg).put("version", result.optString("versionName")).put("versionCode", result.optString("versionCode"))
                     .put("keepIn", "app").put("job", dir.getName());
         } catch (JSONException e) {

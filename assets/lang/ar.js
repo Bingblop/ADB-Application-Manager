@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "تشغيل ADB Stub عند الاتصال: إيقاف",
 "Start ADB Stub on connect: On": "تشغيل ADB Stub عند الاتصال: تشغيل",
 "The ADB Stub no longer starts on its own": "لم يعد ADB Stub يبدأ من تلقاء نفسه",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ADB Stub الموجود على الساعة موقّع بمفتاح آخر. ألغِ تثبيته من الساعة، ثم اضغط تثبيت.",
 "The ADB Stub starts when the watch connects": "يبدأ ADB Stub عند اتصال الساعة",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "تبقى شاشة الساعة مضاءة وشبكة Wi-Fi فيها متصلة. «قطع الاتصال» يوقفه.",
 "Use the + button to create one, or exclude items from any tool's results.": "استخدم الزر + لإنشاء واحد، أو استثنِ عناصر من نتائج أي أداة.",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "ملف الحزمة",
 "Package installer (Android)": "مثبّت الحزم (Android)",
 "Package installer (Google)": "مثبّت الحزم (Google)",
-"Package list": "قائمة الحزم",
 "Package source": "مصدر الحزمة",
 "Packages": "الحزم",
 "Packing": "الضغط",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "الاختبار الذاتي",
 "The self-test could not run.": "تعذّر تشغيل الاختبار الذاتي.",
 "The self-test is already running.": "الاختبار الذاتي قيد التشغيل بالفعل.",
-"The self-test needs the app build.": "يتطلب الاختبار الذاتي نسخة التطبيق."
+"The self-test needs the app build.": "يتطلب الاختبار الذاتي نسخة التطبيق.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "يطلب من Android حذف ملفات الذاكرة المؤقتة لكل تطبيق، وهو نفسه الإعدادات > تقليص الذاكرة المؤقتة في كل التطبيقات. تبقى التطبيقات وبياناتها وتسجيلات الدخول وملفاتك. يحرّر مساحة التخزين لا الذاكرة مباشرةً، وقد يستغرق دقيقة؛ وتُفتح النتيجة في لوحتها الخاصة.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "يشغّل توفير البطارية في Android، وهو المفتاح نفسه الموجود في الإعدادات > البطارية: تخفت الشاشة، ويُقيَّد العمل في الخلفية والمزامنة والموقع، وتتقلّص الرسوم المتحركة. يعرض الهاتف أيقونة توفير البطارية.",
+"No patch could be applied": "تعذّر تطبيق أي تصحيح",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "لم ينتهِ Android بعد 3 دقائق. تُفتح النتيجة في لوحتها الخاصة عندما ينتهي."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],

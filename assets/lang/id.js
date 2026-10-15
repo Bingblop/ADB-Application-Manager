@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "Mulai ADB Stub saat terhubung: Mati",
 "Start ADB Stub on connect: On": "Mulai ADB Stub saat terhubung: Nyala",
 "The ADB Stub no longer starts on its own": "ADB Stub tidak lagi mulai sendiri",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ADB Stub di jam tangan ditandatangani dengan kunci lain. Uninstal dari jam tangan, lalu ketuk Instal.",
 "The ADB Stub starts when the watch connects": "ADB Stub dimulai saat jam tangan terhubung",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Layar jam tangan tetap menyala dan Wi-Fi-nya tetap terhubung. Putuskan akan menghentikannya.",
 "Use the + button to create one, or exclude items from any tool's results.": "Gunakan tombol + untuk membuatnya, atau kecualikan item dari hasil alat mana pun.",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "File paket",
 "Package installer (Android)": "Penginstal paket (Android)",
 "Package installer (Google)": "Penginstal paket (Google)",
-"Package list": "Daftar paket",
 "Package source": "Sumber paket",
 "Packages": "Paket",
 "Packing": "Kompresi",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "Uji mandiri",
 "The self-test could not run.": "Uji mandiri tidak dapat dijalankan.",
 "The self-test is already running.": "Uji mandiri sedang berjalan.",
-"The self-test needs the app build.": "Uji mandiri memerlukan build aplikasi."
+"The self-test needs the app build.": "Uji mandiri memerlukan build aplikasi.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Meminta Android menghapus file cache setiap aplikasi, sama dengan Pengaturan > Pangkas Cache di Semua Aplikasi. Aplikasi, datanya, info masuk, dan file Anda tetap ada. Ini membebaskan penyimpanan, bukan RAM secara langsung, dan bisa memakan waktu semenit; hasilnya terbuka di lembarnya sendiri.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Menyalakan penghemat baterai Android, sakelar yang sama seperti di Pengaturan > Baterai: layar meredup, kerja latar belakang, sinkronisasi, dan lokasi dibatasi, dan animasi dipersingkat. Ponsel menampilkan ikon penghemat baterainya.",
+"No patch could be applied": "Tidak ada patch yang dapat diterapkan",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android belum selesai setelah 3 menit. Hasilnya terbuka di lembarnya sendiri saat selesai."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],

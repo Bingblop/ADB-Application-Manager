@@ -642,6 +642,7 @@
                 justify-content: flex-start;
                 gap: var(--space-1);
                 overflow-y: auto;
+                touch-action: pan-y;                /* a short screen (a phone on its side) scrolls the rail to its last slots with a finger; a hold that has opened its menu still slides (bnavShortcutsInit) */
                 scrollbar-width: none;
                 border-top: 0;
                 border-right: 1px solid var(--border-glass);
@@ -2778,7 +2779,7 @@
         }
 
         /* file manager: select several, then copy / move / delete together */
-        .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-3h); margin-bottom: var(--space-3); border: 1px solid var(--accent); border-radius: var(--radius-md); background: var(--fill-2); position: sticky; top: 0; z-index: 4; backdrop-filter: blur(6px); }
+        .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-3h); margin-bottom: var(--space-3); border: 1px solid var(--accent); border-radius: var(--radius-md); background: var(--fill-2); position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 4; backdrop-filter: blur(6px); }          /* below the sticky header and tab bar, as the other sticky bars */
         .fm-selbar .fm-count { font-size: var(--fs-body); font-weight:var(--fw-heavy); margin-right: auto; }
         #fmList .fm-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-inline-end: var(--space-3h); border: 2px solid var(--text-muted); border-radius: var(--radius-xs); align-items: center; justify-content: center; font-size: var(--fs-item); font-weight:var(--fw-black); color: transparent; }
         #fmList.fm-selecting .fm-chk { display: flex; }
@@ -10605,8 +10606,18 @@ Type any command above (e.g. pm list packages -d)</div>
             const pinned = Array.isArray(saved.pinned) ? saved.pinned.map(k => k === 'terminal' ? 'console' : k) : saved.pinned;
             return Object.assign({}, saved, { order, off, pinned });
         }
+        // The App Updater ('updates', v7.12.8) became a box of the APK Installer/Updater tab and the Logcat Viewer ('logcat', v7.12.12) a segment of Console.
+        // A record saved before that may have the tab that took one in switched off while the old tab was on: that tab stays on, or the updater or the log would
+        // disappear with it (APK Installer off and App Updater on; Command-Line Interface off and Logcat Viewer on). Records saved since have neither key.
+        function tabMigrateMerged(saved) {
+            const m = tabMigrateConsole(saved);
+            if (!m || !Array.isArray(m.order) || !Array.isArray(m.off)) return m;
+            const on = k => m.order.includes(k) && !m.off.includes(k);
+            const keep = (on('updates') ? ['installer'] : []).concat(on('logcat') ? ['console'] : []);
+            return keep.length ? Object.assign({}, m, { off: m.off.filter(k => !keep.includes(k)) }) : m;
+        }
         function tabLoadConfig() {
-            const saved = tabMigrateConsole(kvGet('tab_config', null));
+            const saved = tabMigrateMerged(kvGet('tab_config', null));
             let order = saved && Array.isArray(saved.order) ? saved.order.filter((k, i, a) => TAB_MOVABLE.includes(k) && a.indexOf(k) === i) : [];
             TAB_MOVABLE.forEach((k, i) => {
                 if (order.includes(k)) return;
@@ -11066,6 +11077,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bnavShortcutsInit() {
             const nav = bnavEl();
             nav.addEventListener('pointerdown', bnavHoldStart);
+            nav.addEventListener('touchmove', e => { if (bnavLP && bnavLP.fired && e.cancelable) e.preventDefault(); }, { passive: false });          // the rail scrolls (pan-y): once a hold has opened the menu the finger slides onto an entry, the rail does not scroll
             nav.addEventListener('contextmenu', e => {                // a mouse's right button, the accessibility long-press gesture, a keyboard's menu key
                 const slot = e.target.closest && e.target.closest('.bn-item[data-tab]');
                 if (!slot) return;
@@ -11311,7 +11323,7 @@ Type any command above (e.g. pm list packages -d)</div>
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
             '.tm-row-name', '.tm-row-sub', '.tm-stat-raw',
             '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
-            '#hgBody', '.cd-dev-name', '.cd-dev-sub', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
+            '#hgBody', '.cd-dev-name', '.cd-dev-sub:not(.cd-stub-state)', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
         ].join(', '));
         // The same inside a sentence: in these templates the changing part is the name of the app, file, folder or saved item the action is about. Other templates
         // translate a changing part that is a word of the dictionary (a filter, a mode, a stream); a folder called Download must not become "Descargar" in "Delete Download?"
@@ -13207,9 +13219,9 @@ Type any command above (e.g. pm list packages -d)</div>
             fill.style.width = det ? Math.max(3, Math.min(100, Math.round(frac * 100))) + '%' : '';
             t.textContent = label || '';
         }
-        let askRun = null;                // the answer being fetched: { ui, stopped, ids, stop() }
-        function askStopRun(key) {        // the Stop button of a window, or that window closing
-            if (askRun && (!key || askRun.ui === key)) askRun.stop();
+        const askRuns = {};               // the answer each window is fetching, by window key: { ui, stopped, ids, stop() }
+        function askStopRun(key) {        // the Stop button of a window, or that window closing (no key: every window)
+            Object.keys(askRuns).forEach(k => { if (!key || k === key) askRuns[k].stop(); });
         }
         function agentAskStop() { haptic(); askStopRun('agentAsk'); }
         // The app menu's chip for an app the UAD-NG list does not know
@@ -13916,7 +13928,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // The apps the check could not look at, so "no update" is never claimed for them: a host that is down is named once, the others one by one
         function updFailureHtml() {
             if (updRunning || (!updFailed.length && !updInfo.offline)) return '';
-            let html = `<div class="color-card-title" style="margin:14px 0 8px;">${escapeHtml(txF('Couldn’t check ({0})', updFailed.length))}</div>
+            // the count and "These apps …" only with apps to list: offline with an earlier result kept, there are none, and the no-internet line says it all
+            let html = !updFailed.length ? '' : `<div class="color-card-title" style="margin:14px 0 8px;">${escapeHtml(txF('Couldn’t check ({0})', updFailed.length))}</div>
                 <div class="uad-credit" style="border:none; padding:0 0 8px;">${escapeHtml(txT('These apps were not checked, so an update for them may be waiting.'))}</div>`;
             if (updInfo.offline) {
                 html += `<div class="upd-row"><div class="upd-msg error" style="margin:0;">${escapeHtml(txT('No internet connection'))}</div><div class="upd-msg">${escapeHtml(txT('Check your Wi-Fi or mobile data, then try again.'))}</div></div>`;
@@ -17124,9 +17137,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (a.via === 'trim') {
                 say(txT('Trimming the app caches… the result opens in its own sheet when Android is done.'));
                 if (typeof trimCachesStart === 'function' && trimCachesStart()) {
-                    const t0 = Date.now();
-                    while (typeof trimRun !== 'undefined' && trimRun && Date.now() - t0 < 180000) { await new Promise(done => setTimeout(done, 500)); if (gen !== xqGen) return null; }
-                    r = { ok: typeof trimRun === 'undefined' || !trimRun ? null : false, output: '' };
+                    const tid = 'trim' + trimSeq, t0 = Date.now();          // this trim (trimDone may already have ended it: a command that could not start)
+                    while (trimRun && trimRun.id === tid && Date.now() - t0 < 180000) { await new Promise(done => setTimeout(done, 500)); if (gen !== xqGen) return null; }
+                    const v = trimLast && trimLast.id === tid ? trimLast : null;          // what trimDone made of Android's answer
+                    if (trimRun && trimRun.id === tid) r = { ok: false, output: '', note: txT('Android has not finished after 3 minutes. The result opens in its own sheet when it is done.') };
+                    else if (!v || v.failed) r = { ok: false, output: v ? v.said : '' };
+                    else r = { ok: null, output: '' };
                 } else r = { ok: false, output: '', error: txT('The command could not be started.') };
             } else r = await xqRun(a.cmd);
             if (gen !== xqGen) return null;
@@ -17137,7 +17153,8 @@ Type any command above (e.g. pm list packages -d)</div>
             xzrRender();
             const said = (r.output || '').trim();
             let res;
-            if (r.ok === false) res = { ok: false, text: txF('It did not work: {0}', r.error || said || txT('the command reported an error.')), out: r.error ? '' : said };
+            if (r.note) res = { ok: false, text: r.note, out: '' };          // the trim is still running: not done, and not known to have failed
+            else if (r.ok === false) res = { ok: false, text: txF('It did not work: {0}', r.error || said || txT('the command reported an error.')), out: r.error ? '' : said };
             else if (after.err) res = { ok: false, text: txF('Could not read the numbers back: {0}', after.err), out: said };
             else {
                 const b = xzrBefore && xzrBefore.sum, s = after.sum;
@@ -23174,7 +23191,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function arcOpen(path, onFail) {
-            if (arcBusy) { showToast('Another archive job is still running'); return; }
+            // a File Manager extraction or compression owns the status line and its Cancel button, as a file job does: an open (a compressed tar waits in that line) would take them over
+            if (arcBusy || exRunning || czRunning) { showToast('Another archive job is still running'); return; }
+            if (fmBatchRunning) { showToast('A file job is still running'); return; }
             const name = path.split('/').pop();
             showToast('Opening ' + name + '…');
             // let the toast paint first: the bridge call is synchronous
@@ -24384,7 +24403,7 @@ Type any command above (e.g. pm list packages -d)</div>
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
             phone: { sel: new Set(), filter: 'user' },
             up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {},
-            stub: {}
+            stub: {}, stubRenew: null, stubRenewing: false
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -24914,20 +24933,43 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdStubAutoOn() { return kvGet('cd_stub_auto', true) !== false; }
         // one call: { ok, out, installed, version, running }
-        function cdStubCall(action, serial) {
+        function cdStubCall(action, serial, arg) {
             return new Promise(res => {
                 const b = window.AndroidBridge;
                 if (!b || !b.cdStub) { res({ ok: false, out: 'Error: Connected Devices works in the app, not in a plain browser.' }); return; }
                 const tag = 'cd' + (++cdSeq);
                 cdWait[tag] = r => res(r || {});
-                try { b.cdStub(tag, serial, action, ''); } catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
+                try { b.cdStub(tag, serial, action, arg || ''); } catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
             });
         }
         function cdStubKeep(serial, r) {
             const st = cd.stub[serial] = cd.stub[serial] || {};
             if (r && typeof r.installed === 'boolean') { st.installed = r.installed; st.version = r.version || 0; st.running = !!r.running; }
             if (cd.serial === serial) cdRenderInfo();
+            cdStubRenewTimer();
             return st;
+        }
+        // the stub lets go of the watch by itself when this phone has not renewed it for 5 minutes (the app was closed, Wi-Fi or adb went away), so
+        // while it runs on a connected watch it is renewed once a minute, whichever view is open
+        const CD_STUB_RENEW_MS = 60000;
+        function cdStubRenewTimer() {
+            const any = Object.keys(cd.stub).some(k => (cd.stub[k] || {}).running);
+            if (any && !cd.stubRenew) cd.stubRenew = setInterval(cdStubRenew, CD_STUB_RENEW_MS);
+            else if (!any && cd.stubRenew) { clearInterval(cd.stubRenew); cd.stubRenew = null; }
+        }
+        async function cdStubRenew() {
+            if (cd.stubRenewing) return;
+            cd.stubRenewing = true;
+            try {
+                for (const serial of Object.keys(cd.stub)) {
+                    const st = cd.stub[serial];
+                    if (!st || !st.running || st.busy || !cdIsUp(serial)) continue;
+                    const r = await cdStubCall('renew', serial);
+                    // the answer ends with a fresh status: the stub was stopped on the watch, or its lease ran out while the phone was away
+                    if (r && typeof r.installed === 'boolean' && cd.stub[serial] === st && (r.installed !== st.installed || (r.version || 0) !== st.version || !!r.running !== st.running)) cdStubKeep(serial, r);
+                }
+            } finally { cd.stubRenewing = false; }
+            cdStubRenewTimer();
         }
         // once per connection: what the watch has, and start the stub when it is installed (and up to date) but not running
         async function cdStubOnConnect(serial) {
@@ -24936,6 +24978,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (st.checked) return;
             st.checked = true;
             const r = await cdStubCall('status', serial);
+            if (!r.ok) st.checked = false;              // adb could not ask the watch: asked again on the next load of its details
             cdStubKeep(serial, r);
             if (r.installed && !r.running && (r.version || 0) >= cdStubBundled() && cdStubAutoOn() && cdIsUp(serial)) cdStubDo('start', serial, true);
         }
@@ -24948,18 +24991,29 @@ Type any command above (e.g. pm list packages -d)</div>
             let r;
             try { r = await cdStubCall(action, serial); } finally { st.busy = ''; }
             cdStubKeep(serial, r);
-            if (!r.ok) { showToast(cdFail(r.out) || String(r.out || 'No answer from the watch').trim().split('\n')[0]); return; }
+            if (!r.ok) { showToast(cdStubFail(r.out)); return; }
             if (action === 'install') {
                 if (cdStubAutoOn()) { await cdStubDo('start', serial, true); return; }
                 showToast('ADB Stub installed');
             } else if (action === 'start') showToast(auto ? 'ADB Stub started on the watch' : 'ADB Stub started');
             else showToast('ADB Stub stopped');
         }
-        // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal
+        // what a failed stub call says: adb install prints "Performing Streamed Install" first and the reason after it, so the line that names the failure
+        // (Failure [...], adb's or the shell's error), else the last line
+        function cdStubFail(out) {
+            const t = String(out || '').trim();
+            if (/INSTALL_FAILED_UPDATE_INCOMPATIBLE/.test(t)) return 'The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.';
+            const lines = t.split('\n').map(x => x.trim()).filter(Boolean);
+            const fl = lines.map(x => /Failure \[.*/.exec(x)).find(Boolean);
+            if (fl) return fl[0];
+            return cdFail(t) || lines.find(x => /fail|error/i.test(x)) || lines[lines.length - 1] || 'No answer from the watch';
+        }
+        // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal. A quick stop (a few seconds at most, no status
+        // read): a watch that does not answer must not hold up Disconnect, and the stub lets go by itself when its lease is not renewed
         async function cdStubStopFor(serial) {
             const st = cd.stub[serial];
             if (!st || !st.installed || !cdIsUp(serial)) return;
-            const r = await cdStubCall('stop', serial);
+            const r = await cdStubCall('stop', serial, 'quick');
             cdStubKeep(serial, r);
         }
         function cdStubRow(serial) {
@@ -24973,7 +25027,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else if ((st.version || 0) < top) { state = 'A newer version comes with this app.'; btn = ['install', 'Update', true]; }
             else if (st.running) { state = 'The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.'; btn = ['stop', 'Stop', false]; badge = '<span class="tag-badge tag-running">Running</span>'; }
             else { state = 'Installed, not running.'; btn = ['start', 'Start', true]; }
-            return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub">' + escapeHtml(state) + '</div>' +
+            return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub cd-stub-state">' + escapeHtml(state) + '</div>' +
                 (badge ? '<div class="cd-dev-badges">' + badge + '</div>' : '') + '</div>' +
                 (btn ? '<button class="mode-action-btn' + (btn[2] ? ' primary' : '') + '" id="cdStubBtn" onclick="cdStubDo(\'' + btn[0] + '\', cd.serial, false)">' + btn[1] + '</button>' : '') + '</div>';
         }
@@ -26710,7 +26764,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // It does what a crawler does, in a small way: searches the web for the item's name, reads the first page that has something about it into plain text and shows
         // the passages that mention it, with the sources. Nothing is written for you and nothing is guessed; only the search words leave the phone.
         const WL_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
-        function wlGet(url, ms) { return txAiCall({ url: url, method: 'GET', headers: { 'User-Agent': WL_UA, 'Accept-Language': 'en-US,en;q=0.8' }, readTimeoutMs: ms || 15000 }, null, true); }
+        function wlGet(url, ms, run) { return txAiCall({ url: url, method: 'GET', headers: { 'User-Agent': WL_UA, 'Accept-Language': 'en-US,en;q=0.8' }, readTimeoutMs: ms || 15000 }, null, true, run); }
         function wlHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
         // a result's address: Bing may wrap it (bing.com/ck/a?...&u=a1<base64 of the address>)
         function wlRealUrl(href) {
@@ -26741,13 +26795,13 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             return out;
         }
-        async function wlSearch(q) {
+        async function wlSearch(q, run) {
             try {
-                const r = await wlGet('https://www.bing.com/search?q=' + encodeURIComponent(q) + '&setlang=en&count=8', 15000);
+                const r = await wlGet('https://www.bing.com/search?q=' + encodeURIComponent(q) + '&setlang=en&count=8', 15000, run);
                 const l = wlParseBing(r.body);
                 if (l.length) return l;
             } catch (e) {}
-            const r2 = await wlGet('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srsearch=' + encodeURIComponent(q), 15000);
+            const r2 = await wlGet('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srsearch=' + encodeURIComponent(q), 15000, run);
             const j = JSON.parse(r2.body);
             return ((j.query && j.query.search) || []).map(x => ({ title: x.title, url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(String(x.title).replace(/ /g, '_')),
                 snippet: String(x.snippet || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#039;/g, "'") }));
@@ -26780,7 +26834,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const lines = String(text || '').split('\n').slice(1).map(l => l.replace(/^(Table|Setting|Permission|Package|Process|Overlay|Item|App name|Value now):\s*/i, '').trim()).filter(Boolean);
             return ('android ' + lines.slice(0, 2).join(' ')).replace(/\s+/g, ' ').trim().slice(0, 150);
         }
-        async function webLookupInto(box, query, isCurrent) {
+        async function webLookupInto(box, query, isCurrent, run) {          // run: the Ask window's run whose Stop cancels these requests
             box.classList.remove('is-err');
             box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out" translate="no"></span>';
             box.firstChild.textContent = txF('Searched the web for “{0}”. Only these words were sent, nothing else.', query);
@@ -26788,7 +26842,7 @@ Type any command above (e.g. pm list packages -d)</div>
             out.removeAttribute('translate');
             out.textContent = txT('Looking it up on the web…');
             let hits = [];
-            try { hits = await wlSearch(query); } catch (e) {
+            try { hits = await wlSearch(query, run); } catch (e) {
                 if (isCurrent()) { box.classList.add('is-err'); box.textContent = txF('Something went wrong: {0}', (e && (e.msg || e.error || e.message)) || ''); }
                 return '';
             }
@@ -26797,7 +26851,7 @@ Type any command above (e.g. pm list packages -d)</div>
             let ex = [];
             for (const h of hits.slice(0, 3)) {
                 if (!/^https:/.test(h.url)) continue;
-                try { ex = wlExcerpts((await wlGet(h.url, 15000)).body, words); } catch (e) { ex = []; }
+                try { ex = wlExcerpts((await wlGet(h.url, 15000, run)).body, words); } catch (e) { ex = []; }
                 if (!isCurrent()) return '';
                 if (ex.length) break;
             }
@@ -26832,7 +26886,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui, agOverride) {
             box.classList.remove('is-err');
-            const run = askRun = { ui: ui || '', stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
+            const key = ui || '';
+            const run = askRuns[key] = { ui: key, stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of this Ask window ends (only its own requests)
                 if (this.stopped) return;
                 this.stopped = true;
                 this.ids.forEach(i => { try { window.AndroidBridge.aiCancel(i); } catch (e) {} });
@@ -26843,7 +26898,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try {
                 const ag = agOverride || askAgentDef();
                 if (!ag || !txAgentReady(ag)) {
-                    const r = await webLookupInto(box, webQuery || wlQueryFromText(text), live);
+                    const r = await webLookupInto(box, webQuery || wlQueryFromText(text), live, run);
                     if (run.stopped && isCurrent()) { box.classList.remove('is-err'); box.textContent = txT('Stopped.'); }
                     return r;
                 }
@@ -26854,6 +26909,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 let shown = '';
                 const cb = (t, replace) => { shown = replace ? t : shown + t; if (live()) out.textContent = shown; };
                 cb.alive = live;
+                cb.run = run;                     // txTurnApi registers its requests with this run, not with any other window's
                 cb.progress = (frac, label) => { if (live() && ui) askProgressSet(ui, frac, label); };
                 const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], cb);
                 const answer = r.text.trim();
@@ -26863,7 +26919,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (isCurrent()) { box.classList.toggle('is-err', !run.stopped); box.textContent = run.stopped ? txT('Stopped.') : txErrText(e); }
                 return '';
             } finally {
-                if (askRun === run) askRun = null;
+                if (askRuns[key] === run) delete askRuns[key];
                 if (ui) askProgressShow(ui, false);
             }
         }
@@ -29592,6 +29648,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // Runs off the page's thread (executeShellAsync); the free space of /data is read before and after so the report can say what was freed.
         const TRIM_CMD = 'pm trim-caches 128G';
         let trimRun = null;       // { id, before } while it runs
+        let trimLast = null;      // the verdict of the last trim that ended: { id, failed, said } (Extra Settings > Zram reports it)
         let trimSeq = 0;
 
         function trimSyncLock() {
@@ -29655,6 +29712,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const after = ri >= 0 && ri + 1 < lines.length ? trimFreeKb(lines.slice(ri + 1).filter(l => l.trim()).pop()) : null;
             const said = (bi >= 0 && ri > bi ? lines.slice(bi + 1, ri) : (bi < 0 ? lines : [])).join('\n').trim();
             const failed = (rc !== null && rc !== 0) || (rc === null && !said) || /\b(error|exception|failure|invalid|unknown|denied|not allowed|inaccessible|not configured)\b/i.test(said);
+            trimLast = { id, failed, said };
             let freed = '';
             if (before !== null && after !== null) {
                 freed = after >= before ? 'Free space on the phone: ' + trimFmt(before) + ' before, ' + trimFmt(after) + ' after (' + (after > before ? trimFmt(after - before) + ' freed' : 'nothing more could be freed') + ').'
@@ -31202,12 +31260,13 @@ Type any command above (e.g. pm list packages -d)</div>
         const txAiPending = {};
         let txAiSeq = 0;
         // onEvent: called for each server-sent event ({event, data, id}); null for a whole answer (resolves with its body).
-        function txAiCall(spec, onEvent, background) {
+        // run: the Ask window run (aiExplainInto) this request belongs to, so that window's Stop cancels it; none for Terminal/Console.
+        function txAiCall(spec, onEvent, background, run) {
             return new Promise((resolve, reject) => {
                 const id = 'ai' + (++txAiSeq);
                 txAiPending[id] = { id, onEvent, buf: '', resolve, reject, failed: null };
                 if (!background) txChat.reqId = id;
-                if (askRun && !askRun.stopped) askRun.ids.add(id);
+                if (run && !run.stopped) run.ids.add(id);
                 let st = '';
                 try { st = String(window.AndroidBridge.aiRequest(id, JSON.stringify(spec)) || ''); } catch (e) { st = 'error: ' + (e && e.message || e); }
                 if (st !== 'started') {
@@ -31414,6 +31473,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txBuTask(system, text) { return (system + '\n\n' + text + '\n\nLook this up on the web with a search engine and answer in plain words. Do not sign in anywhere and do not change anything.').slice(0, 6000); }
         let txBuPollMs = 3000;           // how often a Browser Use task is asked about
         async function txTurnApi(ag, model, effort, system, msgs, onText) {
+            const run = onText && onText.run;          // an Ask window's run (aiExplainInto): its Stop cancels these requests; none for the Terminal and Console
             const usage = { in: 0, out: 0 };
             let text = '';
             const add = t => { if (!t) return; text += t; onText(t); };
@@ -31432,7 +31492,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     else if (d.type === 'message_start' && d.message && d.message.usage) usage.in += d.message.usage.input_tokens || 0;
                     else if (d.type === 'message_delta' && d.usage) usage.out += d.usage.output_tokens || 0;
                     else if (d.type === 'error') throw txMkErr(d.error && d.error.type === 'overloaded_error' ? 529 : 500, '', JSON.stringify(d), {});
-                });
+                }, false, run);
             } else if (ag.api === 'openai' || ag.api === 'openai-compat' || ag.api === 'perplexity' || ag.api === 'grok' || ag.api === 'muse' || ag.api === 'deepseek') {
                 const compat = ag.api === 'openai-compat';
                 const FIXED_BASES = { perplexity: 'https://api.perplexity.ai', grok: 'https://api.x.ai/v1', muse: 'https://api.llama.com/v1', deepseek: 'https://api.deepseek.com/v1' };
@@ -31449,7 +31509,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (ch && ch.delta && typeof ch.delta.content === 'string') add(ch.delta.content);
                     else if (ch && ch.message && typeof ch.message.content === 'string') add(ch.message.content);
                     if (d.usage) { usage.in += d.usage.prompt_tokens || 0; usage.out += d.usage.completion_tokens || 0; }
-                });
+                }, false, run);
             } else if (ag.api === 'gemini') {
                 const thinkingBudget = effort === 'low' ? 0 : effort === 'high' ? 8192 : -1;      // 0 = off, -1 = dynamic ("Balanced")
                 const body = { systemInstruction: { parts: [{ text: system }] }, contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] })), generationConfig: { maxOutputTokens: 8192, thinkingConfig: { thinkingBudget } } };
@@ -31462,12 +31522,12 @@ Type any command above (e.g. pm list packages -d)</div>
                     const c = d.candidates && d.candidates[0];
                     ((c && c.content && c.content.parts) || []).forEach(p => { if (p.text && !p.thought) add(p.text); });
                     if (d.usageMetadata) meta = d.usageMetadata;
-                });
+                }, false, run);
                 if (meta) { usage.in += meta.promptTokenCount || 0; usage.out += meta.candidatesTokenCount || 0; }
             } else if (ag.api === 'crawl4ai') {
                 // Crawl4AI Cloud's answer service: one GET with the question; it searches, reads pages and writes the answer
                 const q = (system + '\n\n' + msgs[msgs.length - 1].text).slice(0, 4000);
-                const r = await txAiCall({ url: 'https://api.crawl4ai.com/answer?q=' + encodeURIComponent(q), method: 'GET', auth: 'crawl4ai', headers: { accept: 'application/json' }, readTimeoutMs: 120000 }, null, true);
+                const r = await txAiCall({ url: 'https://api.crawl4ai.com/answer?q=' + encodeURIComponent(q), method: 'GET', auth: 'crawl4ai', headers: { accept: 'application/json' }, readTimeoutMs: 120000 }, null, true, run);
                 let j = {};
                 try { j = JSON.parse(r.body || '{}'); } catch (e) {}
                 const a = j && j.answer;
@@ -31478,7 +31538,7 @@ Type any command above (e.g. pm list packages -d)</div>
             } else if (ag.api === 'exa') {
                 // Exa's answer service: one POST with the question; it searches the web and writes the answer with its citations
                 const q = (system + '\n\n' + msgs[msgs.length - 1].text).slice(0, 4000);
-                const r = await txAiCall({ url: 'https://api.exa.ai/answer', method: 'POST', auth: 'exa', headers: json, body: JSON.stringify({ query: q, text: false }), readTimeoutMs: 120000 }, null, true);
+                const r = await txAiCall({ url: 'https://api.exa.ai/answer', method: 'POST', auth: 'exa', headers: json, body: JSON.stringify({ query: q, text: false }), readTimeoutMs: 120000 }, null, true, run);
                 let j = {};
                 try { j = JSON.parse(r.body || '{}'); } catch (e) {}
                 const ans = typeof j.answer === 'string' ? j.answer : (j.answer ? JSON.stringify(j.answer) : '');
@@ -31488,18 +31548,18 @@ Type any command above (e.g. pm list packages -d)</div>
             } else if (ag.api === 'browseruse') {
                 // Browser Use Cloud: start a short task, then ask for it until it ends (the browser looks the question up)
                 const task = txBuTask(system, msgs[msgs.length - 1].text);
-                const made = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks', method: 'POST', auth: 'browseruse', headers: json, body: JSON.stringify({ task, maxSteps: 12 }) }, null, true);
+                const made = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks', method: 'POST', auth: 'browseruse', headers: json, body: JSON.stringify({ task, maxSteps: 12 }) }, null, true, run);
                 let id = '';
                 try { id = String(JSON.parse(made.body || '{}').id || ''); } catch (e) {}
                 if (!/^[0-9a-f-]{36}$/i.test(id)) throw { local: true, msg: 'Browser Use did not start the task.' };
                 const t0 = Date.now();
                 const stopRemote = () => { txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks/' + id, method: 'PATCH', auth: 'browseruse', headers: json, body: JSON.stringify({ action: 'stop' }) }, null, true).catch(() => {}); };
-                if (askRun) askRun.remote = stopRemote;
+                if (run) run.remote = stopRemote;
                 for (;;) {
                     if (onText.alive && !onText.alive()) throw { local: true, msg: 'Stopped.' };
                     if (Date.now() - t0 > 240000) throw { local: true, msg: 'Browser Use took too long (over 4 minutes). Try again later.' };
                     await new Promise(res => setTimeout(res, txBuPollMs));
-                    const g = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks/' + id, method: 'GET', auth: 'browseruse', headers: { accept: 'application/json' } }, null, true);
+                    const g = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks/' + id, method: 'GET', auth: 'browseruse', headers: { accept: 'application/json' } }, null, true, run);
                     let j = {};
                     try { j = JSON.parse(g.body || '{}'); } catch (e) {}
                     if (j.status === 'finished') {
@@ -33664,7 +33724,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function deleteBackupUI(ref) {
             haptic();
             const rec = backupList().find(r => r.ref === ref);
-            if (!confirm('Delete “' + (rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref) + '”?')) return;
+            const what = rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref;          // one name: the question is the 'Delete “{0}”?' of the dictionaries
+            if (!confirm('Delete “' + what + '”?')) return;
             const err = window.AndroidBridge.deleteBackup(ref);
             if (err) showToast(err);
             renderBackups();
@@ -39453,11 +39514,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tool === 'deduplicator') return { deleteAll: false };
             return {};
         }
+        // The service can clear caches in this run: it is connected, or the phone starts it (switched off) or binds it again (on, not connected) by itself,
+        // which it does when the consent is given and a working mode is on (SdmAcsStart.decide); without the consent it never does.
+        function sdAcsUsable(a) { return !!(a && a.consent && (a.connected || isPrivilegedActive)); }
         function sdConfirmText(tool) {
             const t = SD_TOOLS.find(x => x.id === tool), st = sdSelStats(tool);
             let txt = st.all ? t.all : 'Delete ' + st.count + ' selected item' + (st.count === 1 ? '' : 's') + (st.bytes ? ' (' + sdSizeStr(st.bytes) + ')' : '') + '?';
-            if (tool === 'appcleaner' && SD.acs && SD.acs.consent && SD.acs.connected) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
-            if (tool === 'appcleaner' && !(SD.acs && SD.acs.consent && SD.acs.connected)) txt += '\n\nThe accessibility service is not ready (' + (SD.acs && !SD.acs.consent ? 'no consent given' : SD.acs && !SD.acs.enabled ? 'it is off' : 'it is not connected') + '), so the caches that only it can clear stay. After this, use "Clear the rest with accessibility" on the AppCleaner card.';
+            if (tool === 'appcleaner' && sdAcsUsable(SD.acs)) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
+            if (tool === 'appcleaner' && !sdAcsUsable(SD.acs)) txt += '\n\nThe accessibility service is not ready (' + (SD.acs && !SD.acs.consent ? 'no consent given' : SD.acs && !SD.acs.enabled ? 'it is off' : 'it is not connected') + '), so the caches that only it can clear stay. After this, use "Clear the rest with accessibility" on the AppCleaner card.';
             return txt;
         }
         async function sdAcsRefresh() {
@@ -39478,7 +39542,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             await sdAcsRefresh();
             const a = SD.acs || {};
-            if (!a.consent || !a.enabled || !a.connected) {
+            if (!sdAcsUsable(a)) {
                 const why = !a.consent ? 'It needs your consent first.' : !a.enabled ? 'The service is off.' : 'The service is switched on but has not connected yet; turn it off and on again in the accessibility settings.';
                 if (await mpAsk({ title: 'The accessibility service is not ready', text: why + ' Set it up now?', ok: 'Set it up' })) { if (!a.consent || !a.enabled) await sdAcsEnable(); else await sdAcsOp('openSettings'); }
                 return;

@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "Bağlanınca ADB Stub'ı başlat: Kapalı",
 "Start ADB Stub on connect: On": "Bağlanınca ADB Stub'ı başlat: Açık",
 "The ADB Stub no longer starts on its own": "ADB Stub artık kendiliğinden başlamıyor",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "Saatteki ADB Stub başka bir anahtarla imzalanmış. Saatten kaldırın, ardından Yükle'ye dokunun.",
 "The ADB Stub starts when the watch connects": "ADB Stub, saat bağlandığında başlar",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Saatin ekranı açık ve Wi-Fi'si bağlı kalır. Bağlantıyı kes onu durdurur.",
 "Use the + button to create one, or exclude items from any tool's results.": "Oluşturmak için + düğmesini kullanın veya herhangi bir aracın sonuçlarından öğe dışlayın.",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "Paket dosyası",
 "Package installer (Android)": "Paket yükleyici (Android)",
 "Package installer (Google)": "Paket yükleyici (Google)",
-"Package list": "Paket listesi",
 "Package source": "Paket kaynağı",
 "Packages": "Paketler",
 "Packing": "Paketleme",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "Kendi kendine test",
 "The self-test could not run.": "Kendi kendine test çalıştırılamadı.",
 "The self-test is already running.": "Kendi kendine test zaten çalışıyor.",
-"The self-test needs the app build.": "Kendi kendine test için uygulama sürümü gerekir."
+"The self-test needs the app build.": "Kendi kendine test için uygulama sürümü gerekir.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android'den her uygulamanın önbellek dosyalarını silmesini ister; Ayarlar > Tüm uygulamalardaki önbellekleri temizle ile aynıdır. Uygulamalar, verileri, oturum açma bilgileri ve dosyalarınız kalır. Doğrudan RAM değil depolama alanı boşaltır ve bir dakika sürebilir; sonuç kendi sayfasında açılır.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android'in pil tasarrufunu açar; Ayarlar > Pil'deki anahtarın aynısıdır: ekran kararır, arka plan işi, eşitleme ve konum sınırlanır, animasyonlar kısalır. Telefon pil tasarrufu simgesini gösterir.",
+"No patch could be applied": "Hiçbir yama uygulanamadı",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android 3 dakika sonra hâlâ bitirmedi. Bittiğinde sonuç kendi sayfasında açılır."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],

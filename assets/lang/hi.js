@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "कनेक्ट होने पर ADB Stub शुरू करें: बंद",
 "Start ADB Stub on connect: On": "कनेक्ट होने पर ADB Stub शुरू करें: चालू",
 "The ADB Stub no longer starts on its own": "ADB Stub अब अपने आप शुरू नहीं होता",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "घड़ी पर मौजूद ADB Stub किसी दूसरी कुंजी से साइन किया गया है। इसे घड़ी से अनइंस्टॉल करें, फिर इंस्टॉल करें पर टैप करें।",
 "The ADB Stub starts when the watch connects": "घड़ी जुड़ने पर ADB Stub शुरू होता है",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "घड़ी की स्क्रीन चालू और उसका Wi-Fi जुड़ा रहता है। डिस्कनेक्ट करें इसे रोक देता है।",
 "Use the + button to create one, or exclude items from any tool's results.": "बनाने के लिए + बटन इस्तेमाल करें, या किसी भी औज़ार के परिणामों से आइटम बाहर रखें।",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "पैकेज फ़ाइल",
 "Package installer (Android)": "पैकेज इंस्टॉलर (Android)",
 "Package installer (Google)": "पैकेज इंस्टॉलर (Google)",
-"Package list": "पैकेज सूची",
 "Package source": "पैकेज स्रोत",
 "Packages": "पैकेज",
 "Packing": "पैकिंग",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "स्व-परीक्षण",
 "The self-test could not run.": "स्व-परीक्षण नहीं चल सका।",
 "The self-test is already running.": "स्व-परीक्षण पहले से चल रहा है।",
-"The self-test needs the app build.": "स्व-परीक्षण के लिए ऐप बिल्ड चाहिए।"
+"The self-test needs the app build.": "स्व-परीक्षण के लिए ऐप बिल्ड चाहिए।",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android से हर ऐप की कैश फ़ाइलें हटाने को कहता है, वही जो सेटिंग > सभी ऐप्स में कैश ट्रिम करें करता है। ऐप्स, उनका डेटा, लॉगिन और आपकी फ़ाइलें बनी रहती हैं। यह स्टोरेज खाली करता है, सीधे RAM नहीं, और इसमें एक मिनट लग सकता है; नतीजा अपनी अलग शीट में खुलता है।",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android का बैटरी सेवर चालू करता है, वही स्विच जो सेटिंग > बैटरी में है: स्क्रीन की चमक घटती है, पृष्ठभूमि काम, सिंक और स्थान सीमित होते हैं और एनिमेशन छोटे हो जाते हैं। फ़ोन अपना बैटरी-सेवर आइकन दिखाता है।",
+"No patch could be applied": "कोई भी पैच लागू नहीं हो सका",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],

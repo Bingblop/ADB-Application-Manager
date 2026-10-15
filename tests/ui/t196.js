@@ -1,7 +1,7 @@
 // Console tab (v7.12.12): what happens to tab choices saved by an older version, and every way into the log that used to open the Logcat Viewer tab.
 // The Command-Line Interface tab ('terminal') became Console ('console') and Terminal ('terminal'); the Logcat Viewer tab ('logcat') moved into Console.
 //   - a saved choice that has 'terminal' and no 'console': Console takes the old place of 'terminal' (right before it), and is off when 'terminal' was off;
-//     what was saved for 'logcat' (position, off) is dropped; a choice that already has 'console' is left alone; damaged choices fall back to the default,
+//     what was saved for 'logcat' (position, off) is dropped, except that a Logcat Viewer that was on keeps Console on (t402); a choice that already has 'console' is left alone; damaged choices fall back to the default,
 //   - switchView('logcat') (the old name) opens Console on Live Logcat, or says Console is off; the app picker, the Logs button of an app's sheet,
 //     the "?" of the tab, the Back trail and the Terminal tab (no console pane in it any more).
 const { chromium, PAGE } = require('./lib/pw');
@@ -40,8 +40,8 @@ const mock = require('./lib/console_mock');
   check('a moved Command-Line Interface keeps its place for Console (first), Terminal right after it', join(await bar(page)) === 'apps,console,terminal,saved-lists,debloater,installer,files,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about', join(await bar(page)));
   await page.close();
 
-  // the Command-Line Interface off: Console is off too (and Terminal)
-  page = await open(cfg(OLD_ORDER, ['terminal']));
+  // the Command-Line Interface off (and the Logcat Viewer, whose log is in Console now: with it on, Console stays on, see t402): Console is off too (and Terminal)
+  page = await open(cfg(OLD_ORDER, ['terminal', 'logcat']));
   let r = await ev(page, () => ({ bar: Array.from(document.querySelectorAll('.tab-btn')).map(b => b.dataset.tab).join(), off: tabConfig.off.join(), on: tabIsOn('console') + ':' + tabIsOn('terminal') }));
   check('the Command-Line Interface was off: Console is off and so is Terminal', !r.bar.split(',').includes('console') && !r.bar.split(',').includes('terminal') && r.off === 'terminal,console' && r.on === 'false:false', JSON.stringify(r));
   await ev(page, () => { switchView('prefs'); });
@@ -134,7 +134,7 @@ const mock = require('./lib/console_mock');
   await page.close();
 
   // Console off: every way in says so and changes nothing
-  page = await open(cfg(OLD_ORDER, ['terminal']), { log: '10-12 10:00:01.123  1  1 I Tag: hello\n' });
+  page = await open(cfg(OLD_ORDER, ['terminal', 'logcat']), { log: '10-12 10:00:01.123  1  1 I Tag: hello\n' });
   await ev(page, () => openInspector('com.example.one')); await sleep(300);
   await ev(page, () => openAppLog()); await sleep(200);
   r = await ev(page, () => ({ view: currentViewName(), toast: document.getElementById('toastMsg').innerText, sheet: document.getElementById('inspectorModal').classList.contains('show'), app: logcatApp, timer: !!logcatTimer, n: window.__calls.logcat.length, seg: cnSeg }));

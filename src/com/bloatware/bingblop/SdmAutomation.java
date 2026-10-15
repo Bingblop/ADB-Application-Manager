@@ -538,7 +538,15 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
 
         @Override public boolean canInject() { return shell != null && shell.privileged(); }
         @Override public boolean injectKey(int keyCode) { return runInput("input keyevent " + keyCode); }
-        @Override public boolean injectTap(int x, int y) { return runInput("input tap " + x + " " + y); }
+        /** {@code input tap} lands on the topmost window like a finger: the cover is made touch-through for it as for {@link #tap} (else it may press the cover's Cancel). */
+        @Override public boolean injectTap(int x, int y) {
+            cover.passthrough(true);
+            try {
+                return runInput("input tap " + x + " " + y);
+            } finally {
+                cover.passthrough(false);
+            }
+        }
 
         /** One fixed {@code input} command (numbers only: nothing from the screen is put into it) in the working mode; false when it was not run or printed an error. */
         private boolean runInput(String cmd) {

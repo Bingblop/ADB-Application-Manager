@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "Iniciar ADB Stub ao conectar: Não",
 "Start ADB Stub on connect: On": "Iniciar ADB Stub ao conectar: Sim",
 "The ADB Stub no longer starts on its own": "O ADB Stub não inicia mais sozinho",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "O ADB Stub do relógio foi assinado com outra chave. Desinstale-o do relógio e toque em Instalar.",
 "The ADB Stub starts when the watch connects": "O ADB Stub inicia quando o relógio se conecta",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "A tela do relógio fica ligada e o Wi-Fi dele conectado. Desconectar o interrompe.",
 "Use the + button to create one, or exclude items from any tool's results.": "Use o botão + para criar uma, ou exclua itens dos resultados de qualquer ferramenta.",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "Arquivo de pacote",
 "Package installer (Android)": "Instalador de pacotes (Android)",
 "Package installer (Google)": "Instalador de pacotes (Google)",
-"Package list": "Lista de pacotes",
 "Package source": "Origem do pacote",
 "Packages": "Pacotes",
 "Packing": "Compactação",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "Autoteste",
 "The self-test could not run.": "Não foi possível executar o autoteste.",
 "The self-test is already running.": "O autoteste já está em execução.",
-"The self-test needs the app build.": "O autoteste está disponível apenas no app."
+"The self-test needs the app build.": "O autoteste está disponível apenas no app.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Pede ao Android que apague os arquivos de cache de todos os apps, o mesmo que Configurações > Limpar caches de todos os aplicativos. Os apps, seus dados, logins e seus arquivos ficam. Libera armazenamento, não RAM diretamente, e pode levar um minuto; o resultado abre em uma folha própria.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Liga a economia de bateria do Android, a mesma chave de Configurações > Bateria: a tela escurece, o trabalho em segundo plano, a sincronização e a localização ficam limitados e as animações encurtam. O telefone mostra o ícone de economia de bateria.",
+"No patch could be applied": "Nenhum patch pôde ser aplicado",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "O Android não terminou após 3 minutos. O resultado abre em uma folha própria quando terminar."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],

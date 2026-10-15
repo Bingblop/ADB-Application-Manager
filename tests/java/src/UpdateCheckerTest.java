@@ -930,6 +930,16 @@ public class UpdateCheckerTest {
     JSONObject f2 = run(w2, c2, r2, new Events());
     JSONObject m2 = UpdateChecker.merge(f1, f2, r2.only);
     is("retry: a host that is still down leaves the apps failed (and hostsDown says so)", m2.optJSONArray("failed").length() == f1.optJSONArray("failed").length() && m2.optJSONArray("hostsDown").length() == 1);
+    // a retry cancelled before it reaches the apps keeps them failed (they would otherwise be in no list at all and Retry would be gone)
+    UpdateChecker.Options r3 = w2.options();
+    r3.only = pkgsOf(f1.optJSONArray("failed"));
+    r3.force = true;
+    UpdateChecker c3 = new UpdateChecker(w2.net, w2.clock, c2);
+    c3.cancel();
+    JSONObject f3 = c3.check(w2.apps, r3, new Events()).summary;
+    JSONObject m3 = UpdateChecker.merge(f1, f3, r3.only);
+    is("retry: cancelled before any app, the merged result still lists every app as failed (" + m3.optJSONArray("failed").length() + " of " + f1.optJSONArray("failed").length() + ")",
+        f3.optBoolean("cancelled") && f3.optInt("notChecked") > 0 && m3.optJSONArray("failed").length() == f1.optJSONArray("failed").length() && m3.optInt("openSourceErrors") == f1.optInt("openSourceErrors"));
   }
 
   static void requestCountTests() throws Exception {
@@ -1195,6 +1205,9 @@ public class UpdateCheckerTest {
         stamp.contains("!summary.has(\"error\")") && stamp.contains("summary.optBoolean(\"offline\") && before != null") && run.contains("updateLastError = msg") && run.contains("updateLastError = \"\"")
         && methodBody(src, "public String getUpdateState(").contains("o.put(\"error\", updateLastError)"));
     is("wiring: the activity's onDestroy cancels a running check", methodBody(src, "protected void onDestroy(").contains("cancelUpdateCheckRun()"));
+    is("wiring: a Cancel pressed while the apps are still being listed (no checker yet) is kept and applied to the checker once it exists",
+        methodBody(src, "private void cancelUpdateCheckRun(").contains("updateCancelRequested = true") && run.contains("if (updateCancelRequested) checker.cancel();")
+        && run.indexOf("updateCheckRun = checker;") < run.indexOf("if (updateCancelRequested) checker.cancel();") && run.indexOf("if (updateCancelRequested) checker.cancel();") < run.indexOf("checker.check("));
     is("wiring: a kept or restored row is checked against the installed version before it is shown (both places), and the runs are numbered", src.contains("private boolean updateRowStillValid(") && methodBody(src, "private boolean updateRowStillValid(").contains("UpdateChecker.stillNewer(")
         && count(src, "updateRowStillValid(") >= 3 && src.contains("o.generation = updateRunGeneration"));
     is("wiring: the old per-app loops are gone from the activity (no thread pool of its own for the check)", !src.contains("private void checkOpenSourceApps(") && !src.contains("private JSONObject checkOpenSourceApp("));

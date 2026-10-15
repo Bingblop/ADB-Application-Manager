@@ -323,9 +323,10 @@ public final class SdmCorpseFinder implements Sdm.ToolImpl {
             if (!ctx.bool(f.key, f.def)) continue;
             s.check();
             if (f == F_PRIVATEDATA && !(ctx.shell != null && ctx.shell.uid() == 0)) continue;     // private data needs root
-            if ((f == F_PRIVATEDATA || f == F_PUBLICDATA) && user != 0) {
-                // the package list is the calling user's, while the app data folders belong to whichever user their path names: off the
-                // system user another user's apps would look like remnants, so these filters do not run until ownership is checked per user
+            if (user != 0) {
+                // the package list is the calling user's, while the app data folders belong to whichever user their path names, and the
+                // shared storage roots (/storage/emulated/0, SD cards) are user 0's: off the system user another user's apps would look like
+                // remnants, so no filter runs (they all judge ownership by the package list) until ownership is checked per user
                 skipped.add(f.label + " (not on Android user " + user + ")");
                 continue;
             }

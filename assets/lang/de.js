@@ -1768,7 +1768,7 @@ x: {
 "Keep the screen on while charging (1 AC, 2 USB, 4 wireless; 7 = all)": "Bildschirm beim Laden eingeschaltet lassen (1 Netzteil, 2 USB, 4 kabellos; 7 = alle)",
 "Keeps its data (install -r)": "Behält ihre Daten (install -r)",
 "Keeps only the libraries for this phone's CPU. Needs less memory and makes a smaller APK.": "Behält nur die Bibliotheken für die CPU dieses Telefons. Braucht weniger Speicher und macht die APK kleiner.",
-"Keeps the watch screen on and its Wi-Fi connected while this phone is connected.": "Hält den Bildschirm der Uhr an und ihr WLAN verbunden, solange dieses Telefon verbunden ist.",
+"Keeps the watch screen on and its Wi-Fi connected while this phone is connected.": "Hält den Bildschirm der Uhr eingeschaltet und ihr WLAN verbunden, solange dieses Telefon verbunden ist.",
 "Kept": "Beibehalten",
 "Kernel": "Kernel",
 "Key": "Schlüssel",
@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "ADB Stub beim Verbinden starten: Aus",
 "Start ADB Stub on connect: On": "ADB Stub beim Verbinden starten: An",
 "The ADB Stub no longer starts on its own": "Der ADB Stub startet nicht mehr von selbst",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "Der ADB Stub auf der Uhr wurde mit einem anderen Schlüssel signiert. Ihn von der Uhr deinstallieren, dann auf „Installieren“ tippen.",
 "The ADB Stub starts when the watch connects": "Der ADB Stub startet, wenn sich die Uhr verbindet",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Der Bildschirm der Uhr bleibt an und ihr WLAN verbunden. „Trennen“ beendet es.",
 "Use the + button to create one, or exclude items from any tool's results.": "Nutze die +-Schaltfläche, um einen zu erstellen, oder schließe Elemente aus den Ergebnissen eines Werkzeugs aus.",
@@ -2441,7 +2442,6 @@ x: {
 "Package file": "Paketdatei",
 "Package installer (Android)": "Paketinstaller (Android)",
 "Package installer (Google)": "Paketinstaller (Google)",
-"Package list": "Paketliste",
 "Package source": "Paketquelle",
 "Packages": "Pakete",
 "Packing": "Komprimierung",
@@ -4878,7 +4878,11 @@ x: {
 "Self-test": "Selbsttest",
 "The self-test could not run.": "Der Selbsttest konnte nicht ausgeführt werden.",
 "The self-test is already running.": "Der Selbsttest läuft bereits.",
-"The self-test needs the app build.": "Der Selbsttest erfordert den App-Build."
+"The self-test needs the app build.": "Der Selbsttest erfordert den App-Build.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Bittet Android, die Cache-Dateien aller Apps zu löschen, wie Einstellungen > Caches in allen Apps bereinigen. Apps, ihre Daten, Anmeldungen und deine Dateien bleiben. Es gibt Speicherplatz frei, nicht direkt RAM, und kann eine Minute dauern; das Ergebnis öffnet sich in einem eigenen Blatt.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Schaltet den Energiesparmodus von Android ein, derselbe Schalter wie unter Einstellungen > Akku: Der Bildschirm wird dunkler, Hintergrundarbeit, Synchronisierung und Standort werden eingeschränkt und Animationen verkürzt. Das Telefon zeigt sein Energiespar-Symbol.",
+"No patch could be applied": "Kein Patch konnte angewendet werden",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android ist nach 3 Minuten noch nicht fertig. Das Ergebnis öffnet sich in einem eigenen Blatt, wenn es fertig ist."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
