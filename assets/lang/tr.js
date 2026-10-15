@@ -1,6 +1,7 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"History of changes": "Değişiklik geçmişi",
 "\"Allow debugging?\"": "“Hata ayıklamaya izin verilsin mi?”",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": katalog birkaç MB olabilir — F-Droid’inki ise onlarca MB. Bir kez indirilir ve 12 saat saklanır.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Mac dosyaları",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "İlk imzalamada oluşturulur (Android Keystore’da tutulur, asla dışa aktarılmaz)",
-"Made with this app, newest first. Revert puts the old value back.": "Bu uygulamayla yapılanlar, en yeniler üstte. “Geri döndür” eski değeri geri koyar.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "Bu uygulamayla yapılan son 100 değişiklik, en yeniler üstte; uygulama yeniden açılınca da saklanır. “Geri döndür” eski değeri geri koyar.",
 "Madrid": "Madrid",
 "Magnification by triple tap": "Üç kez dokunarak büyütme",
 "Main navigation": "Ana gezinme",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Bir komutu giriş alanına bırakmak için ona dokunun. Bunlar cihaz üzerindeki shell’de çalışır — <1>adb shell</1> ön eki gerekmez.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Görev Yöneticisi sekmesi <1>RohitKushvaha01/TaskManager</1> örnek alınarak hazırlandı.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "Terminal, yerleşik yapay zekâ kodlama ajanlarına sahip, Termux tarzı bir komut satırıdır. Shell komutları yazın ya da <1>Kodlama Ajanları</1> listesinden bir ajan seçip onunla sohbet edin: ajan aynı shell’de dosyalara bakabilir ve komut çalıştırabilir; bir şey çalışmadan önce size sorar. Terminal’i kendi başınıza kullanmak için <2>Yok</2> seçeneğini seçin.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "Geri al çubuğu ve <1>Değişiklikler</1> (⋯ altında) bir değeri geri koyar.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "Geri al çubuğu ve <1>Değişiklikler</1> (saat düğmesi ya da ⋯ altında) bir değeri geri koyar.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "Uygulama komutu seçili her uygulama için sırayla bir kez çalıştırır ve her seferinde <1>$package</1> ifadesini o uygulamanın gerçek paket adıyla değiştirir.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "Giriş alanının solundaki düğme <1/> (shell komutları) ile <2>AI</2> (sohbet) arasında geçiş yapar. Sohbette bir satırı komut olarak çalıştırmak için satıra ! ile başlayın, örneğin !ls.",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "Renkli satır, telefonun şu anda sahip olduğu değerdir. Ardından <1>= anlamı</1>, bu değerin neyi temsil ettiğini söyler.",

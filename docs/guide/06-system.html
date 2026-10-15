@@ -136,8 +136,8 @@
   <p>If you switched off <code>adb_enabled</code> or <code>adb_wifi_enabled</code> (or Wi-Fi, or switched on airplane mode) while the app was using ADB, the app can no longer reach the phone to change them back. Open your phone's own Settings, go to <b>Developer options</b> (a hidden part of Android's Settings; if you cannot find it, search the Settings for its name), switch <b>USB debugging</b> or <b>Wireless debugging</b> back on (and Wi-Fi), then reconnect in <a href="#modes-overview">Working Modes</a>. If another mode (Shizuku or Root) still works, <b>Revert</b> the entry in <b>Changes</b> instead. If a keyboard or accessibility setting locks you out, use your phone's own Settings to choose a working keyboard and switch accessibility services back, then revert the entry.</p>
 </section>
 <section id="settings-journal" data-title="Undoing settings changes: the Undo bar and the history" data-group="The tabs">
-  <p class="hg-lead">Hidden Settings keeps two ways back: an <b>Undo</b> bar that appears right after a change, and a history called <b>Changes</b> where every change you made can be reverted later.</p>
-  <p><b>Where to find it:</b> the Undo bar appears at the bottom of the screen in the <a href="#tab-settings">Hidden Settings</a> and <a href="#tab-overlays">RRO/Monet Customization</a> tabs. The history is under the <b>⋯</b> button of Hidden Settings, in the <b>Changes</b> button.</p>
+  <p class="hg-lead">Hidden Settings keeps two ways back: an <b>Undo</b> bar that appears right after a change, and a history called <b>Changes</b> that keeps your last 100 changes, between launches, so each one can be reviewed and reverted later.</p>
+  <p><b>Where to find it:</b> the Undo bar appears at the bottom of the screen in the <a href="#tab-settings">Hidden Settings</a> and <a href="#tab-overlays">RRO/Monet Customization</a> tabs. The history opens from the clock button next to the search box of Hidden Settings, or from the <b>Changes</b> button under <b>⋯</b>.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -170,12 +170,12 @@
 
   <h4>The Changes history</h4>
   <ol class="hg-steps">
-    <li>Open <b>Hidden Settings</b> and tap <b>⋯</b> next to the search box.</li>
-    <li>Tap <b>Changes</b>. A sheet titled <b>Changes</b> opens, with the line "Made with this app, newest first. Revert puts the old value back."</li>
-    <li>Each entry shows the setting name, the table and how long ago (for example "Global · 3 min ago"), and the change as <i>old value → new value</i>. A value that was not there before shows as <i>(not set)</i>; an empty one as <i>(empty)</i>.</li>
+    <li>Open <b>Hidden Settings</b> and tap the clock button next to the search box (or tap <b>⋯</b>, then <b>Changes</b>).</li>
+    <li>A sheet titled <b>Changes</b> opens, with the line "The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back."</li>
+    <li>Each entry shows the setting name, the table, how long ago and the date and time (for example "Global · 3 min ago · 15 Oct, 21:30"), and the change as <i>old value → new value</i>. A value that was not there before shows as <i>(not set)</i>; an empty one as <i>(empty)</i>.</li>
     <li>Tap <b>Revert</b> under the entry you want to undo.</li>
   </ol>
-  <p>If nothing has been changed yet, the sheet says <i>Nothing was changed with this app yet.</i> The same history is behind the <b>Edited</b> filter chip and the small dot after the name of every changed setting in the list.</p>
+  <p>When a 101st change is made, the oldest entry is dropped. If nothing has been changed yet, the sheet says <i>Nothing was changed with this app yet.</i> The same history is behind the <b>Edited</b> filter chip and the small dot after the name of every changed setting in the list.</p>
 
   <h4>Revert one change</h4>
   <ol class="hg-steps">

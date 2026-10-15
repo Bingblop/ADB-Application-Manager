@@ -1,6 +1,7 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"History of changes": "Cronologia delle modifiche",
 "\"Allow debugging?\"": "“Consentire il debug?”",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": il catalogo può pesare diversi MB, mentre quello di F-Droid ne pesa decine. Viene scaricato una volta e conservato per 12 ore.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "File Mac",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "Creata alla prima firma (conservata nell’Android Keystore, mai esportata)",
-"Made with this app, newest first. Revert puts the old value back.": "Modifiche fatte con questa app, dalla più recente. Ripristina rimette il vecchio valore.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "Le ultime 100 modifiche fatte con questa app, dalla più recente, conservate tra un avvio e l’altro. Ripristina rimette il vecchio valore.",
 "Madrid": "Madrid",
 "Magnification by triple tap": "Ingrandimento con triplo tocco",
 "Main navigation": "Navigazione principale",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Tocca un comando per inserirlo nel campo. Vengono eseguiti nella shell del dispositivo, senza bisogno del prefisso <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Scheda Gestione attività ispirata a <1>RohitKushvaha01/TaskManager</1>.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "Il Terminale è una riga di comando in stile Termux con agenti AI di programmazione integrati. Scrivi comandi shell oppure scegli un agente in <1>Agenti di programmazione</1> e chatta con lui: può esaminare i file ed eseguire comandi nella stessa shell, e ti chiede conferma prima di eseguire qualsiasi cosa. Scegli <2>Nessuno</2> per usare il Terminale per conto tuo.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "La barra Annulla e <1>Modifiche</1> (sotto ⋯) rimettono un valore.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "La barra Annulla e <1>Modifiche</1> (il pulsante con l’orologio, o sotto ⋯) rimettono un valore.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "L’app esegue il comando una volta per ogni app selezionata, una dopo l’altra, e ogni volta sostituisce <1>$package</1> con il vero nome del pacchetto di quell’app.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "Il pulsante a sinistra del campo di input alterna tra <1/> (comandi shell) e <2>AI</2> (chat). In chat, inizia una riga con ! per eseguirla invece come comando, ad esempio !ls.",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "La riga colorata è il valore che il telefono ha ora. Dopo, <1>= significato</1> dice cosa rappresenta quel valore.",

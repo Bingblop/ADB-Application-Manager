@@ -1,6 +1,7 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"History of changes": "Riwayat perubahan",
 "\"Allow debugging?\"": "“Izinkan debugging?”",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": katalognya bisa berukuran beberapa MB — katalog F-Droid sendiri puluhan MB. Katalog diunduh sekali dan disimpan selama 12 jam.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Berkas Mac",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "Dibuat saat pertama kali menandatangani (disimpan di Android Keystore, tidak pernah diekspor)",
-"Made with this app, newest first. Revert puts the old value back.": "Dibuat dengan aplikasi ini, dari yang terbaru. Kembalikan akan menerapkan lagi nilai lama.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "100 perubahan terakhir yang dibuat dengan aplikasi ini, dari yang terbaru, tetap tersimpan antar peluncuran. Kembalikan akan menerapkan lagi nilai lama.",
 "Madrid": "Madrid",
 "Magnification by triple tap": "Pembesaran dengan ketuk tiga kali",
 "Main navigation": "Navigasi utama",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Ketuk perintah untuk memasukkannya ke kolom input. Perintah ini berjalan di shell perangkat — tidak perlu awalan <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Tab Manajer Tugas dibuat berdasarkan <1>RohitKushvaha01/TaskManager</1>.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "Terminal adalah baris perintah ala Termux dengan agen koding AI bawaan. Ketik perintah shell, atau pilih agen di <1>Agen Koding</1> lalu chat dengannya: agen bisa melihat file dan menjalankan perintah di shell yang sama, dan meminta persetujuan Anda sebelum apa pun dijalankan. Pilih <2>Tidak ada</2> untuk memakai Terminal sendiri.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "Bilah Urungkan dan <1>Perubahan</1> (di bawah ⋯) mengembalikan nilai.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "Bilah Urungkan dan <1>Perubahan</1> (tombol jam, atau di bawah ⋯) mengembalikan nilai.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "Aplikasi menjalankan perintah itu satu kali untuk setiap aplikasi terpilih, satu per satu, dan mengganti <1>$package</1> dengan nama paket asli aplikasi tersebut setiap kali.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "Tombol di kiri kolom input beralih antara <1/> (perintah shell) dan <2>AI</2> (chat). Dalam chat, awali baris dengan ! untuk menjalankannya sebagai perintah, misalnya !ls.",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "Baris berwarna adalah nilai yang dimiliki ponsel sekarang. Setelahnya, <1>= arti</1> menyatakan apa yang diwakili nilai itu.",

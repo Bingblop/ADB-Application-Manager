@@ -5627,6 +5627,7 @@
                             <span class="search-clear" id="sdbSearchClear" onclick="sdbClearSearch()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sdbClearSearch();}" role="button" tabindex="0" aria-label="Clear search">✕</span>
                         </div>
                         <button class="sdb-iconbtn accent" onclick="sdbOpenNew()" aria-label="Create a setting" title="Create a setting">＋</button>
+                        <button class="sdb-iconbtn" id="sdbHistBtn" onclick="haptic(); sdbOpenJournal()" aria-label="History of changes" title="History of changes"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></button>
                         <button class="sdb-iconbtn" onclick="sdbOpenMenu()" aria-label="More" title="More">⋯</button>
                     </div>
                     <div class="sdb-filters" id="sdbFilters">
@@ -9882,7 +9883,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <ul>
                     <li>Change one setting at a time, then look at the phone.</li>
                     <li>Use <b>Copy value</b> first to keep the old value.</li>
-                    <li>The Undo bar and <b>Changes</b> (under ⋯) put a value back.</li>
+                    <li>The Undo bar and <b>Changes</b> (the clock button, or under ⋯) put a value back.</li>
                 </ul>
                 <div style="display:flex; gap:10px; margin-top:12px;">
                     <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="sdbCloseHelp(); openHelpGuide('tab-settings')">Open the Help Guide topic</button>
@@ -9959,7 +9960,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
                         <h3>Changes</h3>
-                        <p style="word-break:normal;">Made with this app, newest first. Revert puts the old value back.</p>
+                        <p style="word-break:normal;">The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.</p>
                     </div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="sdbJournalClose()">✕</button>
@@ -35419,7 +35420,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const SDB_PAGE = 120;                    // rows drawn at a time
         const SDB_HOLD_MS = 480;                 // a press this long flips a switch
         const SDB_MAX_KEY = 256, SDB_MAX_VALUE = 20000;
-        const SDB_JOURNAL_MAX = 150;
+        const SDB_JOURNAL_MAX = 100;                    // the history keeps the last 100 changes (the owner's number), between launches
         const SDB_RISKS = {
             conn: 'This can cut the ADB connection this app uses, so you may not be able to change it back from here.',
             lock: 'This can lock you out of parts of the phone (the screen, the keyboard or accessibility).',
@@ -36326,7 +36327,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('sdbJournalClear').style.display = sdbJournal.length ? '' : 'none';
             if (!sdbJournal.length) { box.innerHTML = emptyStateHtml({ key: 'sdb-journal-none', icon: 'clock', title: 'Nothing was changed with this app yet.', compact: true }); return; }
             box.innerHTML = sdbJournal.map(e => '<div class="sdb-jrow"><div class="sdb-key">' + escapeHtml(e.k) + '</div>'
-                + '<div class="sdb-hint">' + SDB_TITLES[e.ns] + ' · ' + sdbAgo(e.t) + '</div>'
+                + '<div class="sdb-hint">' + SDB_TITLES[e.ns] + ' · ' + sdbAgo(e.t) + ' · ' + escapeHtml(lbWhen(e.t)) + '</div>'
                 + '<div class="sdb-change">' + sdbShowValue(e.f, e.lf) + ' → ' + sdbShowValue(e.v, e.lv) + '</div>'
                 + (e.lf ? '' : '<button class="batch-tool-link" style="padding:6px 0 0;" onclick="sdbRevert(' + e.n + ')">Revert</button>') + '</div>').join('');
         }

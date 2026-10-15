@@ -1,6 +1,7 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"History of changes": "변경 기록",
 "\"Allow debugging?\"": "\"디버깅을 허용하시겠습니까?\"",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "의 카탈로그는 수 MB에 이를 수 있습니다(F-Droid 자체 카탈로그는 수십 MB). 한 번만 다운로드하며 12시간 동안 보관됩니다.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Mac 파일",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "처음 서명할 때 만들어집니다(Android Keystore에 보관되며 내보내지 않음)",
-"Made with this app, newest first. Revert puts the old value back.": "이 앱으로 변경한 내역이 최신순으로 표시됩니다. 되돌리기를 누르면 이전 값이 복원됩니다.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "이 앱으로 변경한 최근 100개의 내역이 최신순으로 표시되며, 앱을 다시 실행해도 유지됩니다. 되돌리기를 누르면 이전 값이 복원됩니다.",
 "Madrid": "마드리드",
 "Magnification by triple tap": "세 번 탭하여 확대",
 "Main navigation": "기본 탐색",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "명령을 누르면 입력란에 들어갑니다. 기기 내 셸에서 실행되므로 <1>adb shell</1> 접두사가 필요 없습니다.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "<1>RohitKushvaha01/TaskManager</1>를 참고해 만든 작업 관리자 탭입니다.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "터미널은 AI 코딩 에이전트가 내장된 Termux 스타일의 명령줄입니다. 셸 명령어를 입력하거나, <1>코딩 에이전트</1>에서 에이전트를 선택해 채팅하세요: 에이전트는 같은 셸에서 파일을 살펴보고 명령어를 실행할 수 있으며, 무엇이든 실행하기 전에 먼저 묻습니다. 에이전트 없이 터미널을 사용하려면 <2>없음</2>을 선택하세요.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "실행 취소 바와 <1>변경 사항</1>(⋯ 아래)으로 값을 되돌립니다.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "실행 취소 바와 <1>변경 사항</1>(시계 버튼 또는 ⋯ 아래)으로 값을 되돌립니다.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "앱은 선택한 각 앱에 대해 명령어를 한 번씩 차례로 실행하며, 매번 <1>$package</1>를 해당 앱의 실제 패키지 이름으로 바꿉니다.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "입력란 왼쪽의 버튼으로 <1/>(셸 명령어) 모드와 <2>AI</2>(채팅) 모드를 전환합니다. 채팅 중에 줄을 !로 시작하면 메시지 대신 명령어로 실행됩니다(예: !ls).",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "색이 있는 줄은 휴대폰이 지금 가진 값입니다. 그 뒤의 <1>= 의미</1>는 그 값이 무엇을 뜻하는지 알려 줍니다.",

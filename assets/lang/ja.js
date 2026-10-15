@@ -1,6 +1,7 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"History of changes": "変更の履歴",
 "\"Allow debugging?\"": "「デバッグを許可しますか？」",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "のカタログは数MBになることがあります（F-Droid自体のカタログは数十MB）。一度ダウンロードすると12時間保持されます。",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Mac のファイル",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "初めて署名するときに作成されます（Android Keystoreに保存され、エクスポートされることはありません）",
-"Made with this app, newest first. Revert puts the old value back.": "このアプリで行った変更を新しい順に表示します。「元に戻す」で古い値に戻ります。",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "このアプリで行った直近 100 件の変更を新しい順に表示します。アプリを再起動しても残ります。「元に戻す」で古い値に戻ります。",
 "Madrid": "マドリード",
 "Magnification by triple tap": "3回タップで拡大",
 "Main navigation": "メインナビゲーション",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "コマンドをタップすると入力欄に入ります。これらは端末上のシェルで実行されるため、<1>adb shell</1>は不要です。",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "タスク管理タブは、<1>RohitKushvaha01/TaskManager</1>をモデルにしています。",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "ターミナルは、AIコーディングエージェントを内蔵したTermux風のコマンドラインです。シェルコマンドを入力するか、<1>コーディングエージェント</1>でエージェントを選んでチャットしてください。エージェントは同じシェルでファイルを確認したりコマンドを実行したりでき、何かを実行する前には必ず確認を求めます。エージェントを使わずにターミナルを使うには、<2>なし</2>を選んでください。",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "元に戻すバーと<1>変更履歴</1>（⋯ の下）で値を戻せます。",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "元に戻すバーと<1>変更履歴</1>（時計のボタン、または ⋯ の下）で値を戻せます。",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "アプリは、選択した各アプリに対して順番にコマンドを1回ずつ実行し、そのたびに<1>$package</1>をそのアプリの実際のパッケージ名に置き換えます。",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "入力欄の左のボタンで、<1/>（シェルコマンド）と<2>AI</2>（チャット）を切り替えます。チャット中は、行頭に ! を付けるとその行をコマンドとして実行します（例：!ls）。",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "色付きの行は、端末が今持っている値です。その後の <1>= 意味</1>は、その値が何を表すかを示します。",

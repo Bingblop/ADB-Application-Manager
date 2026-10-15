@@ -1,6 +1,7 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"History of changes": "سجل التغييرات",
 "\"Allow debugging?\"": "«السماح بتصحيح الأخطاء؟»",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": قد يبلغ حجم الفهرس عدة MB، أما فهرس F-Droid فيبلغ عشرات MB. يُنزَّل مرة واحدة ويُحفظ لمدة 12 ساعة.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "ملفات Mac",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "يُنشأ عند أول توقيع (يُحفظ في Android Keystore ولا يُصدَّر أبدًا)",
-"Made with this app, newest first. Revert puts the old value back.": "تغييرات أُجريت بهذا التطبيق، الأحدث أولًا. «إرجاع» يعيد القيمة القديمة.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "آخر 100 تغيير أُجري بهذا التطبيق، الأحدث أولًا، وتبقى محفوظة بين مرات التشغيل. «إرجاع» يعيد القيمة القديمة.",
 "Madrid": "مدريد",
 "Magnification by triple tap": "التكبير بالنقر ثلاث مرات",
 "Main navigation": "التنقل الرئيسي",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "اضغط على أمر لإدراجه في حقل الإدخال. تعمل هذه الأوامر في shell الجهاز — دون الحاجة إلى البادئة <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "تبويب «مدير المهام» مستوحى من <1>RohitKushvaha01/TaskManager</1>.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "الطرفية سطر أوامر على طراز Termux مع وكلاء برمجة مدمجين يعملون بالذكاء الاصطناعي. اكتب أوامر Shell، أو اختر وكيلًا من <1>وكلاء البرمجة</1> ودردش معه: يمكن للوكيل الاطلاع على الملفات وتنفيذ الأوامر في Shell نفسه، ويستأذنك قبل تنفيذ أي شيء. اختر <2>لا شيء</2> لاستخدام الطرفية بنفسك.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "شريط التراجع و<1>التغييرات</1> (تحت ⋯) يعيدان القيمة.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "شريط التراجع و<1>التغييرات</1> (زر الساعة، أو تحت ⋯) يعيدان القيمة.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "ينفّذ التطبيق الأمر مرة لكل تطبيق محدد، واحدًا تلو الآخر، ويستبدل <1>$package</1> باسم الحزمة الفعلي لذلك التطبيق في كل مرة.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "يبدّل الزر المجاور لحقل الإدخال بين <1/> (أوامر Shell) و<2>AI</2> (الدردشة). في الدردشة، ابدأ السطر بـ ! لتنفيذه كأمر بدلًا من ذلك، مثل !ls.",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "السطر الملوّن هو القيمة التي يحملها الهاتف الآن. وبعده يوضح <1>= المعنى</1> ما تمثله هذه القيمة.",

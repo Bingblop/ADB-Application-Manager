@@ -1,6 +1,7 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"History of changes": "История изменений",
 "\"Allow debugging?\"": "«Разрешить отладку?»",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": каталог может занимать несколько MB, а у F-Droid — десятки MB. Он загружается один раз и хранится 12 часов.",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Файлы Mac",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "Создаётся при первом подписании (хранится в Android Keystore и никогда не экспортируется)",
-"Made with this app, newest first. Revert puts the old value back.": "Сделаны в этом приложении, сначала новые. «Откатить» возвращает прежнее значение.",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "Последние 100 изменений, сделанных в этом приложении, сначала новые; сохраняются между запусками. «Откатить» возвращает прежнее значение.",
 "Madrid": "Мадрид",
 "Magnification by triple tap": "Увеличение тройным касанием",
 "Main navigation": "Основная навигация",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Нажмите команду, чтобы поместить её в поле ввода. Они выполняются в оболочке устройства, префикс <1>adb shell</1> не нужен.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Вкладка «Диспетчер задач» создана по образцу <1>RohitKushvaha01/TaskManager</1>.",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "Терминал — это командная строка в стиле Termux со встроенными ИИ-агентами для кода. Вводите команды оболочки или выберите агента в списке <1>Агенты для кода</1> и общайтесь с ним: агент может просматривать файлы и выполнять команды в той же оболочке и спрашивает вас, прежде чем что-либо запустить. Выберите <2>Нет</2>, чтобы работать в Терминале самостоятельно.",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "Панель «Отменить» и <1>Изменения</1> (в меню ⋯) возвращают значение.",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "Панель «Отменить» и <1>Изменения</1> (кнопка с часами или меню ⋯) возвращают значение.",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "Приложение выполняет команду один раз для каждого выбранного приложения, одно за другим, каждый раз подставляя вместо <1>$package</1> настоящее имя пакета этого приложения.",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "Кнопка слева от поля ввода переключает между <1/> (команды оболочки) и <2>AI</2> (чат). В чате начните строку с !, чтобы выполнить её как команду, например !ls.",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "Цветная строка — это значение, которое телефон имеет сейчас. После неё <1>= смысл</1> объясняет, что это значение означает.",

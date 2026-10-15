@@ -1,6 +1,7 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"History of changes": "更改历史",
 "\"Allow debugging?\"": "“要允许调试吗？”",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "的目录可能有几 MB，F-Droid 自己的则有数十 MB。目录只会下载一次，并保留 12 小时。",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Mac 文件",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "首次签名时生成（保存在 Android Keystore 中，绝不会导出）",
-"Made with this app, newest first. Revert puts the old value back.": "通过本应用所做的更改，最新的在前。“还原”会放回旧值。",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "通过本应用所做的最近 100 项更改，最新的在前，重新启动后仍会保留。“还原”会放回旧值。",
 "Madrid": "马德里",
 "Magnification by triple tap": "三击放大",
 "Main navigation": "主导航",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "点按命令即可放入输入框。这些命令在设备端 shell 中运行，无需 <1>adb shell</1> 前缀。",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "“任务管理”标签页参照 <1>RohitKushvaha01/TaskManager</1> 设计。",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "终端是一个 Termux 风格的命令行，内置 AI 编程智能体。你可以输入 Shell 命令，也可以在<1>编程智能体</1>中选择一个智能体并与之对话：智能体可以查看文件，并在同一个 Shell 中运行命令，且在运行任何内容前都会先询问你。选择<2>无</2>即可独自使用终端。",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "撤销栏和<1>更改</1>（在 ⋯ 下）可还原某个值。",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "撤销栏和<1>更改</1>（时钟按钮，或在 ⋯ 下）可还原某个值。",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "应用会对每个所选应用逐个运行一次该命令，并在每次将 <1>$package</1> 替换为该应用的真实包名。",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "输入框左侧的按钮可在 <1/>（Shell 命令）和 <2>AI</2>（对话）之间切换。在对话中，以 ! 开头的行会改为作为命令运行，例如 !ls。",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "彩色的一行是手机当前持有的值。其后的 <1>= 含义</1>说明该值代表什么。",

@@ -1,6 +1,7 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"History of changes": "बदलावों का इतिहास",
 "\"Allow debugging?\"": "“डीबगिंग की अनुमति दें?”",
 "$package": "$package",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": कैटलॉग कई MB का हो सकता है — F-Droid का अपना कैटलॉग दसियों MB का होता है। इसे एक बार डाउनलोड किया जाता है और 12 घंटे तक रखा जाता है।",
@@ -2122,7 +2123,7 @@ x: {
 "MENU": "MENU",
 "Mac files": "Mac फ़ाइलें",
 "Made the first time you sign (kept in the Android Keystore, never exported)": "आपके पहली बार साइन करने पर बनती है (Android Keystore में रखी जाती है, कभी निर्यात नहीं की जाती)",
-"Made with this app, newest first. Revert puts the old value back.": "इस ऐप से किए गए बदलाव, नए सबसे ऊपर। वापस लाएं से पुराना मान लौट आता है।",
+"The last 100 changes made with this app, newest first, kept between launches. Revert puts the old value back.": "इस ऐप से किए गए आखिरी 100 बदलाव, नए सबसे ऊपर, ऐप दोबारा खोलने पर भी सहेजे रहते हैं। वापस लाएं से पुराना मान लौट आता है।",
 "Madrid": "मैड्रिड",
 "Magnification by triple tap": "ट्रिपल टैप से मैग्निफ़िकेशन",
 "Main navigation": "मुख्य नेविगेशन",
@@ -5025,7 +5026,7 @@ x: {
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "किसी कमांड को इनपुट में डालने के लिए उस पर टैप करें। ये ऑन-डिवाइस शेल में चलती हैं — <1>adb shell</1> प्रीफ़िक्स की ज़रूरत नहीं।",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "टास्क मैनेजर टैब <1>RohitKushvaha01/TaskManager</1> पर आधारित है।",
 "The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <1>Coding Agents</1> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <2>None</2> to use the Terminal on your own.": "टर्मिनल Termux जैसी कमांड लाइन है, जिसमें AI कोडिंग एजेंट पहले से मौजूद हैं। शेल कमांड लिखें, या <1>कोडिंग एजेंट</1> में से कोई एजेंट चुनकर उससे चैट करें: एजेंट उसी शेल में फ़ाइलें देख सकता है और कमांड चला सकता है, और कुछ भी चलने से पहले आपसे पूछता है। टर्मिनल को खुद इस्तेमाल करने के लिए <2>कोई नहीं</2> चुनें।",
-"The Undo bar and <1>Changes</1> (under ⋯) put a value back.": "पूर्ववत बार और <1>बदलाव</1> (⋯ के नीचे) कोई मान वापस रखते हैं।",
+"The Undo bar and <1>Changes</1> (the clock button, or under ⋯) put a value back.": "पूर्ववत बार और <1>बदलाव</1> (घड़ी वाला बटन, या ⋯ के नीचे) कोई मान वापस रखते हैं।",
 "The app runs the command once for every selected app, one after another, and replaces <1>$package</1> with that app's real package name each time.": "ऐप वह कमांड हर चुने हुए ऐप के लिए एक-एक करके एक बार चलाता है, और हर बार <1>$package</1> की जगह उस ऐप का असली पैकेज नाम रख देता है।",
 "The button left of the input switches between <1/> (shell commands) and <2>AI</2> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.": "इनपुट के बाईं ओर का बटन <1/> (शेल कमांड) और <2>AI</2> (चैट) के बीच बदलता है। चैट में किसी लाइन को कमांड की तरह चलाने के लिए उसे ! से शुरू करें, जैसे !ls।",
 "The coloured line is the value the phone holds now. After it, <1>= meaning</1> says what that value stands for.": "रंगीन पंक्ति वह मान है जो फ़ोन के पास अभी है। उसके बाद <1>= मतलब</1> बताता है कि वह मान किसका प्रतीक है।",
