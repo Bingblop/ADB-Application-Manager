@@ -125,8 +125,14 @@ const APPS = [
   check('None takes the button off the rows', await ev(() => !document.querySelector('#cdAppList .ab-btn') && !!document.querySelector('#cdAppList .row-menu')));
   await ev(() => { cdActionBtn = 'toggle'; kvSet('cd_action_btn', 'toggle'); cdAppsRender(); });
   const held = await ev(async () => { const seen = []; const k1 = window.cdAppMenu, k2 = window.openAbSheet; window.cdAppMenu = p => seen.push('cd:' + p); window.openAbSheet = p => seen.push('phone:' + p);
-    const b = document.querySelector('#cdcard_com\\.a\\.fit .ab-btn'), r = b.getBoundingClientRect();
-    b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + 5, clientY: r.top + 5 })); await new Promise(z => setTimeout(z, 700)); document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    // a scroll cancels a hold (as on the phone): wait until nothing has scrolled for 300 ms, then hold; a slow runner gets up to three tries
+    let lastScroll = Date.now(); const onScroll = () => { lastScroll = Date.now(); }; document.addEventListener('scroll', onScroll, true);
+    for (let i = 0; i < 3 && !seen.length; i++) {
+      while (Date.now() - lastScroll < 300) await new Promise(z => setTimeout(z, 50));
+      const b = document.querySelector('#cdcard_com\\.a\\.fit .ab-btn'), r = b.getBoundingClientRect();
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + 5, clientY: r.top + 5 })); await new Promise(z => setTimeout(z, 900)); document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    }
+    document.removeEventListener('scroll', onScroll, true);
     window.cdAppMenu = k1; window.openAbSheet = k2; return seen.join(); });
   check('holding it opens that device app\'s menu, not this phone\'s', held === 'cd:com.a.fit', held);
   await ev(() => { const s = document.getElementById('cdAppSort'); s.value = 'name_desc'; s.dispatchEvent(new Event('change')); });

@@ -35,6 +35,6 @@ ok   4. the text of each one is whole in the page: {"SD Maid intro":315,"SD Maid
 ok   5. an intro that fits in two lines (here: changed text, as a new language may do) is not a button and a tap does nothing: {"clamped":false,"role":null,"tab":null,"expanded":null,"open":false}
 ok   6. 320 px: every one is two lines with more to read:
 ok   6. 360 px: every one is two lines with more to read:
-ok   6. 360 px in German: every one is two lines with more to read:  The research agent behind ever
+ok   6. 360 px in German: every one is two lines with more to read:  Der Recherche-Agent hinter jed
 ok   no page errors:
 ALL PASSED
