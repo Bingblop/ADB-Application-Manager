@@ -7844,7 +7844,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">Reinstall</button>
             <button class="batch-grid-btn" onclick="openBatchOps()">Batch Ops</button>
-            <button class="batch-grid-btn" onclick="shareSelectedPackages()">Share List</button>
+            <button class="batch-grid-btn" onclick="batchBackup()">Backup</button>
             <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
         </div>
     </div>
@@ -8550,9 +8550,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>Extract APK</span>
-                </button>
-                <button class="sheet-btn" onclick="openBackups(inspectedPkg)" id="sheetBtnBackup">
-                    <span>Backup</span>
                 </button>
                 <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
                     <span>Optimize</span>
@@ -28098,12 +28095,6 @@ Type any command above (e.g. pm list packages -d)</div>
             copyText(selectedPackagesText());
         }
 
-        function shareSelectedPackages() {
-            haptic();
-            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
-            shareText('Package list', selectedPackagesText());
-        }
-
         function shareManifest() {
             haptic();
             if (!manifestText || manifestText.startsWith('Error:')) { showToast('Manifest not loaded'); return; }
@@ -33473,6 +33464,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---------- Backup and restore ----------
         let backupTargetPkg = null;
+        let backupTargetList = [];      // the apps of a batch backup (two or more); one app is backupTargetPkg
+        let backupBatch = null;         // { queue, total, include, saved, failed } while the apps are backed up one after another
         let restoreTarget = null;
         let backupRunning = false;
 
@@ -33488,10 +33481,27 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.backupApp) { showToast('Backups are only available in the app'); return; }
             backupTargetPkg = pkg || null;
+            backupTargetList = [];
             restoreTarget = null;
             document.getElementById('restorePreview').style.display = 'none';
             document.getElementById('backupResult').style.display = 'none';
             if (pkg) closeInspector();
+            renderBackups();
+            document.getElementById('backupsModal').classList.add('show');
+        }
+
+        // The batch menu's Backup button: the selected apps, one after another, with one choice about their data
+        function batchBackup() {
+            haptic();
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.backupApp) { showToast('Backups are only available in the app'); return; }
+            const pkgs = Array.from(selectedPkgs).filter(pkg => allApps.some(a => a.pkg === pkg));
+            if (!pkgs.length) { showToast('Select apps first'); return; }
+            backupTargetPkg = pkgs.length === 1 ? pkgs[0] : null;
+            backupTargetList = pkgs.length > 1 ? pkgs : [];
+            restoreTarget = null;
+            document.getElementById('restorePreview').style.display = 'none';
+            document.getElementById('backupResult').style.display = 'none';
             renderBackups();
             document.getElementById('backupsModal').classList.add('show');
         }
@@ -33512,12 +33522,21 @@ Type any command above (e.g. pm list packages -d)</div>
                     <div class="switch-sub" style="font-size:11px; color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
                     <input type="checkbox" id="backupIncludeData" ${root ? '' : 'disabled'}></label>
                     <button class="profile-btn accent" ${backupRunning ? 'disabled' : ''} onclick="startBackup()">Create backup</button>`;
+            } else if (backupTargetList.length > 1) {
+                const root = hasRootAccess();
+                const names = backupTargetList.map(pkg => { const a = allApps.find(x => x.pkg === pkg); return a ? a.name : pkg; });
+                tgt.style.display = 'block';
+                tgt.innerHTML = `<h4>Back up ${backupTargetList.length} apps</h4><p>${escapeHtml(names.slice(0, 4).join(', '))}${names.length > 4 ? ', …' : ''}</p>
+                    <label class="switch-row" style="margin-top:8px;"><div><div class="switch-title">Include app data</div>
+                    <div class="switch-sub" style="font-size:11px; color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
+                    <input type="checkbox" id="backupIncludeData" ${root ? '' : 'disabled'}></label>
+                    <button class="profile-btn accent" ${backupRunning ? 'disabled' : ''} onclick="startBackup()">Create backup</button>`;
             } else {
                 tgt.style.display = 'none';
             }
             const list = backupList();
             const el = document.getElementById('backupsList');
-            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Open an app\'s ⋯ menu and tap Backup, or choose a backup file from another phone.', compact: true }); return; }
+            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Select apps, open the batch menu and tap Backup, or choose a backup file from another phone.', compact: true }); return; }
             el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
                 <p>${new Date(r.createdAt).toLocaleString(langLocale())} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
                 <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">Restore</button>
@@ -33532,15 +33551,30 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function startBackup() {
-            if (backupRunning || !backupTargetPkg) return;
+            if (backupRunning || (!backupTargetPkg && backupTargetList.length < 2)) return;
             if (!guardPrivilege('Backup app')) return;
             haptic();
             const include = !!(document.getElementById('backupIncludeData') && document.getElementById('backupIncludeData').checked);
             backupRunning = true;
             document.getElementById('backupResult').style.display = 'none';
             setBackupProgress('Starting...', 2);
+            if (backupTargetList.length > 1) {
+                backupBatch = { queue: backupTargetList.slice(), total: backupTargetList.length, include, saved: [], failed: [] };
+                renderBackups();
+                backupNext();
+                return;
+            }
             renderBackups();
             window.AndroidBridge.backupApp(backupTargetPkg, include);
+        }
+
+        // Starts the next app of a batch backup; the phone runs one backup at a time
+        function backupNext() {
+            const b = backupBatch;
+            const pkg = b.queue.shift();
+            const app = allApps.find(a => a.pkg === pkg);
+            setBackupProgress(`Backing up ${app ? app.name : pkg} (${b.total - b.queue.length} of ${b.total})...`, Math.round(100 * (b.total - b.queue.length - 1) / b.total) + 2);
+            window.AndroidBridge.backupApp(pkg, b.include);
         }
 
         function previewRestore(ref) {
@@ -33601,17 +33635,33 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function onBackupProgress(json) {
             const r = JSON.parse(json || '{}');
-            setBackupProgress(r.msg || '', r.pct || 0);
+            // in a batch the bar shows all the apps: this one's share of it
+            const b = backupBatch;
+            setBackupProgress(r.msg || '', b ? Math.round(100 * (b.total - b.queue.length - 1 + (r.pct || 0) / 100) / b.total) : (r.pct || 0));
         }
 
         function onBackupDone(json) {
             const r = JSON.parse(json || '{}');
+            const b = r.op === 'backup' ? backupBatch : null;
+            if (b) {
+                (r.ok ? b.saved : b.failed).push(r.ok ? r : { name: r.label || (allApps.find(x => x.pkg === r.pkg) || {}).name || r.pkg || '?', error: r.error || 'unknown error' });
+                if (b.queue.length) { backupNext(); return; }
+                backupBatch = null;
+                backupTargetList = [];
+            }
             backupRunning = false;
             setBackupProgress('', 0);
             const box = document.getElementById('backupResult');
             box.style.display = 'block';
-            box.className = 'backup-note' + (r.ok ? '' : ' err');
-            if (!r.ok) {
+            box.className = 'backup-note' + (b ? (b.failed.length ? ' err' : '') : (r.ok ? '' : ' err'));
+            if (b) {
+                const where = (b.saved[b.saved.length - 1] || {}).path || '';
+                const lines = [];
+                if (b.saved.length) lines.push(`Saved ${b.saved.length} of ${b.total} apps to ${escapeHtml(where.replace(/[^/]*$/, ''))}`);
+                if (b.failed.length) lines.push(`Not saved: ${escapeHtml(b.failed.map(f => f.name + ' (' + f.error + ')').join(', '))}`);
+                b.saved.forEach(x => { if (x.warnings && x.warnings.length) lines.push(escapeHtml(x.label || x.pkg) + ': ' + x.warnings.map(escapeHtml).join('; ')); });
+                box.innerHTML = lines.join('<br>');
+            } else if (!r.ok) {
                 box.innerText = (r.op === 'restore' ? 'Restore failed: ' : 'Backup failed: ') + (r.error || 'unknown error');
             } else if (r.op === 'backup') {
                 box.innerHTML = `Saved ${escapeHtml(r.label || r.pkg)} (${formatBytes(r.bytes)}${r.hasData ? ', with data' : ''}) to ${escapeHtml(r.path || '')}` +
