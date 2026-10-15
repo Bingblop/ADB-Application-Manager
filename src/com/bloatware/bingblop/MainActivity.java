@@ -2385,7 +2385,7 @@ public class MainActivity extends Activity {
                             };
                             if (retried == null) {
                                 PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
-                                o.self = new UpdateChecker.App(getPackageName(), "ADB Application Manager Pro", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB System Manager", currentVersionName(), versionCodeOf(me), null, false, false, false);
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
@@ -9042,7 +9042,7 @@ public class MainActivity extends Activity {
             };
             try {
                 checkTermuxReady();
-                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB App Manager check", new TermuxLink.Callback() {
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB System Manager check", new TermuxLink.Callback() {
                     @Override
                     public void onResult(TermuxLink.Result r) {
                         if (!answered.compareAndSet(false, true)) return;
@@ -12064,7 +12064,7 @@ public class MainActivity extends Activity {
                         @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
                     }, 2000, 25L * 1024 * 1024);
                     java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                    head.add("ADB Application Manager - log recording");
+                    head.add("ADB System Manager - log recording");
                     head.add("Started: " + new java.util.Date());
                     head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
                     head.add("Level: " + lv + " and above");
@@ -15884,7 +15884,7 @@ public class MainActivity extends Activity {
                     try {
                         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                         if (cm != null) {
-                            cm.setPrimaryClip(ClipData.newPlainText("ADB App Manager", text));
+                            cm.setPrimaryClip(ClipData.newPlainText("ADB System Manager", text));
                             Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {

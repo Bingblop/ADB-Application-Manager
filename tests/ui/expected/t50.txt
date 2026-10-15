@@ -10,7 +10,7 @@
 4. an app that is not running shows a single notice: true
    an uninstalled app shows the error: true
 5. Save writes one text file named after the app: true ["logcat_com.example.alpha_<stamp>.txt"]
-   the file has a header (app, level, lines) and the raw lines minus the hidden level: true ["# ADB Application Manager - log export","# Sat Oct 03 2026 <clock> GMT+0000 (Coordinated Universal Time)","# Level: Info and above","# App: Alpha (com.example.alpha) | Hidden levels: Warn","# Lines: 3",""]
+   the file has a header (app, level, lines) and the raw lines minus the hidden level: true ["# ADB System Manager - log export","# Sat Oct 03 2026 <clock> GMT+0000 (Coordinated Universal Time)","# Level: Info and above","# App: Alpha (com.example.alpha) | Hidden levels: Warn","# Lines: 3",""]
    the toast says where it went: true
 6. Share hands the same kind of text file to the share sheet: true
 7. the text filter is passed along with the app: true ["I","boom",500,"com.example.alpha"]
