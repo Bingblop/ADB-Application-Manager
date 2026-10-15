@@ -386,13 +386,15 @@ public class MainActivity extends Activity {
     }
 
     private static final int REQ_STORAGE_PERM = 9301;
+    /** A runtime permission asked for from the permissions sheet (Bluetooth Connect, Notifications): a refusal for good sends the person to the app's settings page too */
+    private static final int REQ_SHEET_RUNTIME_PERM = 9304;
 
     /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         try {
-            if (requestCode == REQ_STORAGE_PERM) {
+            if (requestCode == REQ_STORAGE_PERM || requestCode == REQ_SHEET_RUNTIME_PERM) {
                 boolean never = false;
                 for (String p : permissions) {
                     if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
@@ -7145,6 +7147,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** READ_LOGS (signature|privileged|development): like DUMP, granted only with pm grant through ADB/Shizuku/root, and read back from the phone's own permission check. */
+    private boolean hasReadLogsAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** BLUETOOTH_CONNECT is a runtime permission from Android 12 on; below that the app needs nothing to be allowed (it counts as held). */
+    private boolean hasBluetoothConnectAccess() {
+        if (Build.VERSION.SDK_INT < 31) return true;
+        try {
+            return checkSelfPermission("android.permission.BLUETOOTH_CONNECT") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** POST_NOTIFICATIONS is a runtime permission from Android 13 on; below that notifications need no permission (it counts as held). */
+    private boolean hasNotificationAccess() {
+        if (Build.VERSION.SDK_INT < 33) return true;
+        try {
+            return checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
     /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
@@ -12905,7 +12936,7 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return false; }
         }
 
-        /** Which of the three special accesses this app has right now: {files, usage, overlay, sdk}. */
+        /** Which of the accesses and permissions of the permissions sheet this app holds right now, read from the phone's own checks: {files, usage, overlay, ..., sdk}. */
         @JavascriptInterface
         public String getPermissionStatus() {
             JSONObject o = new JSONObject();
@@ -12918,6 +12949,12 @@ public class MainActivity extends Activity {
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
                 o.put("dump", hasDumpAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
+                o.put("read_logs", hasReadLogsAccess());
+                o.put("bluetooth", hasBluetoothConnectAccess());
+                o.put("notifications", hasNotificationAccess());
+                // runtime permissions this Android version does not have yet: held without asking, and the sheet says "Not needed"
+                o.put("bluetooth_na", Build.VERSION.SDK_INT < 31);
+                o.put("notifications_na", Build.VERSION.SDK_INT < 33);
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
             return o.toString();
@@ -13013,6 +13050,62 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
+        /** READ_LOGS - no Settings screen either: pm grant through the working mode, read back with the permission check. Answer: "granted" or "failed". */
+        @JavascriptInterface
+        public String requestReadLogsAccess() {
+            if (hasReadLogsAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.READ_LOGS");
+                if (hasReadLogsAccess()) return "granted";
+            }
+            return "failed";
+        }
+
+        /** Bluetooth Connect (Android 12+): pm grant through the working mode when there is one, else Android's own permission dialog
+         *  (window.onPermissionsChanged follows the answer). Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestBluetoothAccess() {
+            return requestRuntimeForSheet("android.permission.BLUETOOTH_CONNECT", 31);
+        }
+
+        /** Notifications (Android 13+): the same way as Bluetooth Connect. Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestNotificationAccess() {
+            return requestRuntimeForSheet("android.permission.POST_NOTIFICATIONS", 33);
+        }
+
+        private String requestRuntimeForSheet(final String perm, int fromSdk) {
+            if (Build.VERSION.SDK_INT < fromSdk) return "granted";
+            if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " " + perm);
+                if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM); } catch (Exception e) { openOwnAppInfo(); }
+                }
+            });
+            return "dialog";
+        }
+
+        /** All files access for the sheet's Allow button: through the working mode it is granted by command (appops MANAGE_EXTERNAL_STORAGE, or the storage
+         *  permissions below Android 11) and read back from the phone; without one (or when the phone refuses it) Android's screen opens as before.
+         *  Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String grantAllFilesAccess() {
+            if (hasStorageAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                String pkg = getPackageName();
+                if (Build.VERSION.SDK_INT >= 30) executeShell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+                else executeShell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE; pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+                if (hasStorageAccess()) return "granted";
+            }
+            requestAllFilesAccess();
+            return "settings";
+        }
+
         /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
          *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
          *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
@@ -13067,6 +13160,9 @@ public class MainActivity extends Activity {
                 }
                 if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
                 if (!hasDumpAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.DUMP; ");
+                if (!hasReadLogsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.READ_LOGS; ");
+                if (!hasBluetoothConnectAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.BLUETOOTH_CONNECT; ");
+                if (!hasNotificationAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.POST_NOTIFICATIONS; ");
                 if (sb.length() > 0) executeShell(sb.toString() + "true");
             }
             return getPermissionStatus();
@@ -13102,6 +13198,9 @@ public class MainActivity extends Activity {
             }
             if (!hasWriteSecureSettingsAccess()) out.add(pm + "WRITE_SECURE_SETTINGS");
             if (!hasDumpAccess()) out.add(pm + "DUMP");
+            if (!hasReadLogsAccess()) out.add(pm + "READ_LOGS");
+            if (!hasBluetoothConnectAccess()) out.add(pm + "BLUETOOTH_CONNECT");
+            if (!hasNotificationAccess()) out.add(pm + "POST_NOTIFICATIONS");
             StringBuilder sb = new StringBuilder();
             for (String line : out) { if (sb.length() > 0) sb.append('\n'); sb.append(line); }
             return sb.toString();
