@@ -15,7 +15,7 @@ ok   the linked watch is a device with the Bluetooth link transport, kept for ne
 ok   the picker lists every device with its state
 ok   a device that has not allowed this phone says what to do and hides the tools
 ok   the apps of the device are listed with phone names where the phone has the app
-ok   the filter chips carry counts; an uninstalled app counts only as Uninstalled
+ok   the filter pills (the Apps tab's, in its order) carry counts; an uninstalled app counts only as Uninstalled
 ok   each row shows its state and the action that fits it
 ok   System / User and Enabled / Frozen combine and show the Clear filters chip
 ok   Uninstalled with System narrows to the removed system app

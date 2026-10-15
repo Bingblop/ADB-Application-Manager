@@ -243,30 +243,32 @@
     <li>An icon: the real icon when this phone has the same app, otherwise a square with the app's first letter.</li>
     <li>The <b>name</b>. When this phone has the same app installed, the name is the one this phone shows. Otherwise the app makes a name from the package name (the app's unique code name): it takes the last part, adds the part before it for very generic words such as app or wear, splits joined words and gives it a capital letter. So com.google.android.deskclock becomes <b>Deskclock</b>.</li>
     <li>The <b>package name</b> in small letters under it.</li>
-    <li>Badges: <b>UNINSTALLED</b> or <b>DISABLED</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
+    <li>Badges: <b>UNINSTALLED</b> or <b>FROZEN</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
+    <li>A frozen app's row has a blue glow and an uninstalled app's row a red one, as in the Apps tab. <b>Row tints</b> in Settings sets how strong it is (Off turns it off).</li>
     <li>A round-edged button on the right (<b>Freeze</b> in blue, <b>Enable</b> or <b>Reinstall</b> in green, like the app menu) and three dots for the menu.</li>
     <li>A tick box on the left. Tap the box, or the name, to select the row.</li>
   </ul>
   <p>The list is sorted by name. Under the search box a line tells you how many apps are shown (<b>12 apps of 87</b>). Only the first 600 rows are drawn; if there are more, a note says how many are hidden and suggests you search or filter. <b>Reload</b>, next to the search box, reads the device again.</p>
 
   <h4>Search and filters</h4>
-  <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is a row of filters, each with a count:</p>
+  <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is the Apps tab's row of filters, in the same order and colours, each with a count. A device's list does not know which apps are running, updated, suspended, tracking or patched, so those filters are not here:</p>
   <table class="hg-table">
     <thead><tr><th>Filter</th><th>Shows</th></tr></thead>
     <tbody>
-      <tr><td><b>All</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
+      <tr><td><b>All Apps</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
+      <tr><td><b>Installed</b></td><td>Every app that is installed for the device's user.</td></tr>
+      <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
       <tr><td><b>System</b></td><td>Apps that came with the device.</td></tr>
       <tr><td><b>User</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
       <tr><td><b>Enabled</b></td><td>Apps that are installed and not disabled.</td></tr>
       <tr><td><b>Frozen</b></td><td>Apps that are installed but switched off (what Android calls disabled).</td></tr>
-      <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
     </tbody>
   </table>
   <p>The rules are simple:</p>
   <ul>
-    <li><b>System</b> and <b>User</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one.</li>
+    <li>The filters come in pairs, joined into one box: <b>Installed</b> | <b>Uninstalled</b>, <b>System</b> | <b>User</b> and <b>Enabled</b> | <b>Frozen</b>. <b>System</b> and <b>User</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one. <b>Installed</b> and <b>Uninstalled</b> together show every app.</li>
     <li>You can combine one of each pair, for example <b>System</b> and <b>Enabled</b>. A line then says "Showing apps that are System + Enabled." with a <b>Clear filters</b> button.</li>
-    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the System, User, Enabled or Frozen counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>System</b> or <b>User</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
+    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the System, User, Enabled or Frozen counts. Turning on <b>Uninstalled</b> starts a clean list (only <b>Installed</b> stays on): you see only uninstalled apps, and <b>System</b> or <b>User</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
     <li>Tap an active filter again to turn it off. <b>All</b> or <b>Clear filters</b> turns all of them off.</li>
   </ul>
 

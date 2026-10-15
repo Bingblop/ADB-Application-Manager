@@ -153,9 +153,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { window.__st.devs = ['self', 'watch']; cdSelect('192.168.1.20:5555'); }); await wait(900);
 
   // Apps
-  const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-chip')).map(c => c.innerText) }));
+  const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-pill')).map(c => c.innerText.replace(/[()]/g, '').trim()) }));
   check('the apps of the device are listed with phone names where the phone has the app', apps0.n === 5 && apps0.names.includes('Fit') && apps0.names.includes('Deskclock') && /5 apps/.test(apps0.count), JSON.stringify(apps0));
-  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|System 2|User 2|Enabled 3|Frozen 1|Uninstalled 1', apps0.chips.join('|'));
+  check('the filter pills (the Apps tab\'s, in its order) carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All Apps 5|Installed 4|Uninstalled 1|System 2|User 2|Enabled 3|Frozen 1', apps0.chips.join('|'));
   const rowOf = pkg => `#cdcard_${pkg.replace(/\./g, '\\.')}`;
   const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.cd-row-act').innerText; return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
   check('each row shows its state and the action that fits it', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Freeze' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));

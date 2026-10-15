@@ -5169,7 +5169,7 @@
                             <input type="text" class="list-search" id="cdAppSearch" placeholder="Search apps on the device" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdAppsRender()">
                             <button class="mode-action-btn" onclick="cdAppsLoad(true)">Reload</button>
                         </div>
-                        <div class="chip-row" id="cdAppFilters" style="margin-top:8px;"></div>
+                        <div class="filter-scroll" id="cdAppFilters" style="margin-top:8px;"></div>
                         <div class="filter-summary-row" id="cdAppSummary" style="display:none; font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
                         <div class="cd-count" id="cdAppCount"></div>
                         <div id="cdAppList"></div>
@@ -25120,7 +25120,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // adb for ANOTHER device, through the adb this app carries: a Wear OS watch first, any Android device works. Every call goes out as
         // AndroidBridge.cdAdb(tag, serial, args, timeout) and comes back as window.onCdResult({tag, out, ms}). Output is plain text; a failure starts with "Error:".
         const CD_SUBS = [['apps', 'Apps'], ['send', 'Send'], ['console', 'Console'], ['logcat', 'Logcat'], ['files', 'Files'], ['settings', 'Hidden Settings'], ['display', 'Display']];
-        const CD_FILTERS = [['system', 'System'], ['user', 'User'], ['enabled', 'Enabled'], ['disabled', 'Frozen'], ['uninstalled', 'Uninstalled']];
+        // the same pills as the Apps tab (v7.14, the owner's wish), in its order and its pairs: Installed | Uninstalled, System | User, Enabled | Frozen. A device's list
+        // knows only these states (not running, updated, suspended, trackers or patched), so those pills are not here. 'disabled' is Frozen; its pill wears Frozen's colour.
+        const CD_FILTERS = [['installed', 'Installed'], ['uninstalled', 'Uninstalled'], ['system', 'System'], ['user', 'User'], ['enabled', 'Enabled'], ['disabled', 'Frozen']];
+        const CD_FILTER_PAIRS = [['installed', 'uninstalled'], ['system', 'user'], ['enabled', 'disabled']];
         const CD_FILTER_GROUPS = [['user', 'system'], ['enabled', 'disabled']];
         const CD_CHIPS = ['getprop ro.product.model', 'pm list packages -3', 'dumpsys battery', 'dumpsys activity activities | grep mResumedActivity', 'df -h /data', 'ps -A | head -25', 'wm size', 'wm density',
             'settings list global', 'ip addr show wlan0', 'cat /proc/meminfo | head -6', 'logcat -d -t 40', 'input keyevent 26', 'adb devices -l', 'adb pull /sdcard/Download/'];
@@ -25826,7 +25829,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!f.has('uninstalled') || f.has('enabled') || f.has('disabled')) return false;
                 return !(f.has('user') && a.system) && !(f.has('system') && !a.system);
             }
-            if (f.has('uninstalled')) return false;
+            if (f.has('uninstalled') && !f.has('installed')) return false;          // Installed and Uninstalled together are every app, as in the Apps tab
             if (f.has('user') && a.system) return false;
             if (f.has('system') && !a.system) return false;
             if (f.has('enabled') && a.disabled) return false;
@@ -25835,6 +25838,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdFilter(k) {
             haptic();
+            // as in the Apps tab: Uninstalled starts a clean list (Installed stays: the two together are every app)
+            if (k === 'uninstalled' && !cd.filters.has('uninstalled')) { const keep = cd.filters.has('installed'); cd.filters.clear(); if (keep) cd.filters.add('installed'); }
             toggleFilterIn(cd.filters, k, CD_FILTER_GROUPS);
             cdAppsRender();
         }
@@ -25844,10 +25849,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!list || !cd.apps) return;
             const q = (document.getElementById('cdAppSearch').value || '').trim().toLowerCase();
             const rows = cd.apps.filter(a => cdAppMatches(a, cd.filters) && (!q || a.pkg.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)));
-            const n = { user: 0, system: 0, enabled: 0, disabled: 0, uninstalled: 0 };
-            cd.apps.forEach(a => { if (a.uninstalled) n.uninstalled++; else { if (a.system) n.system++; else n.user++; if (a.disabled) n.disabled++; else n.enabled++; } });
-            document.getElementById('cdAppFilters').innerHTML = '<span class="filter-chip' + (cd.filters.size ? '' : ' active') + '" role="button" tabindex="0" onclick="cdFilter(\'all\')">All ' + cd.apps.length + '</span>' +
-                CD_FILTERS.map(f => '<span class="filter-chip' + (cd.filters.has(f[0]) ? ' active' : '') + '" role="button" tabindex="0" onclick="cdFilter(\'' + f[0] + '\')">' + f[1] + ' ' + n[f[0]] + '</span>').join('');
+            const n = { installed: 0, user: 0, system: 0, enabled: 0, disabled: 0, uninstalled: 0 };
+            cd.apps.forEach(a => { if (a.uninstalled) n.uninstalled++; else { n.installed++; if (a.system) n.system++; else n.user++; if (a.disabled) n.disabled++; else n.enabled++; } });
+            const key = ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"';
+            const pill = f => '<div class="filter-pill stat-card' + (cd.filters.has(f) ? ' active' : '') + '" data-filter="' + (f === 'disabled' ? 'frozen' : f) + '" data-cd="' + f + '" role="button" tabindex="0" aria-pressed="' + cd.filters.has(f) + '"' + key +
+                ' onclick="cdFilter(\'' + f + '\')">' + escapeHtml(txT((CD_FILTERS.find(x => x[0] === f) || [0, f])[1])) + ' (<span class="stat-num">' + n[f] + '</span>)</div>';
+            document.getElementById('cdAppFilters').innerHTML = '<div class="filter-pill' + (cd.filters.size ? '' : ' active') + '" data-filter="all" role="button" tabindex="0"' + key + ' onclick="cdFilter(\'all\')">' + escapeHtml(txT('All Apps')) + ' (' + cd.apps.length + ')</div>' +
+                CD_FILTER_PAIRS.map(pr => '<div class="stat-split">' + pill(pr[0]) + pill(pr[1]) + '</div>').join('');
             const sum = document.getElementById('cdAppSummary');
             sum.style.display = cd.filters.size > 1 ? '' : 'none';
             sum.innerHTML = '<span class="filter-summary-text">Showing apps that are ' + escapeHtml(Array.from(cd.filters).map(k => (CD_FILTERS.find(f => f[0] === k) || [0, k])[1]).join(' + ')) + '.</span><button class="filter-clear-chip" type="button" onclick="cdFilter(\'all\')">Clear filters</button>';
@@ -25887,7 +25895,9 @@ Type any command above (e.g. pm list packages -d)</div>
             badges += a.system ? '<span class="tag-badge tag-system">SYSTEM</span>' : '<span class="tag-badge tag-user">USER</span>';
             const act = a.uninstalled ? ['reinstall', 'Reinstall'] : a.disabled ? ['enable', 'Enable'] : ['disable', 'Freeze'];
             const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(a.name.charAt(0).toUpperCase());
-            return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
+            // the same state tint as the rows of the Apps tab (a glow in Frozen's or Uninstalled's colour, as strong as Row tints says)
+            const state = a.uninstalled ? ' uninstalled' : a.disabled ? ' frozen' : '';
+            return '<div class="app-card' + state + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
                 '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : act[0] === 'enable' ? 'accent' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
