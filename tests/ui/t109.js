@@ -271,7 +271,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => cdSub('logcat')); await wait(500);
   const lc = await ev(() => ({ rows: document.querySelectorAll('#cdLcOut .lc-row').length, lvls: Array.from(document.querySelectorAll('#cdLcOut .lc-row')).map(r => r.className.split(' ').pop()).join(), tag: document.querySelector('#cdLcOut .lc-tag').innerText }));
   check('the device log is read and drawn like the phone\'s own logcat', lc.rows === 3 && lc.lvls === 'lvl-I,lvl-W,lvl-E' && lc.tag === 'WatchFace', JSON.stringify(lc));
-  check('the level goes to the device as a logcat filter', (await calls()).some(c => /shell logcat -d -v threadtime -t 500 '\*:I'$/.test(c)));
+  check('the level goes to the device as a logcat filter', (await calls()).some(c => /shell logcat -d -v threadtime -t 1000 '\*:I'$/.test(c)));
   await ev(() => { document.getElementById('cdLcFilter').value = 'sensors'; cdLcDraw(false); });
   check('the filter box narrows the rows and marks the match', await ev(() => document.querySelectorAll('#cdLcOut .lc-row').length === 1 && document.querySelectorAll('#cdLcOut mark').length >= 1));
   await ev(() => { document.getElementById('cdLcFilter').value = ''; cdLcTogglePlay(); }); await wait(100);

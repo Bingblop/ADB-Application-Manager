@@ -5275,14 +5275,14 @@
                         <div class="color-card-title">Logcat</div>
                         <div class="color-card-subtitle">The device's own log.</div>
                         <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
-                            <select class="op-select" id="cdLcLevel" onchange="cdLcRefresh()">
+                            <select class="op-select" id="cdLcLevel" onchange="cdLcSavePrefs(); cdLcRefresh()" aria-label="Level">
                                 <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
                                 <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
                             </select>
-                            <select class="op-select" id="cdLcLines" onchange="cdLcRefresh()">
-                                <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option>
+                            <select class="op-select" id="cdLcLines" onchange="cdLcSavePrefs(); cdLcRefresh()" aria-label="Lines">
+                                <option value="200">200</option><option value="500">500</option><option value="1000" selected>1000</option><option value="2000">2000</option>
                             </select>
-                            <input type="text" class="list-search" id="cdLcFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdLcDraw(false)">
+                            <input type="text" class="list-search" id="cdLcFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdLcDraw(false)" onchange="cdLcSavePrefs()">
                         </div>
                         <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
                             <button type="button" class="batch-tool-link lc-play" id="cdLcPlay" onclick="cdLcTogglePlay()" aria-pressed="false">Play</button>
@@ -5291,6 +5291,8 @@
                             <button class="batch-tool-link" onclick="cdLcCopy()">Copy</button>
                             <button class="batch-tool-link" onclick="cdLcShare()">Share</button>
                         </div>
+                        <!-- Live Logcat's colour key (v7.14, the owner's wish): the same dots; each chip is a switch that hides or shows its level -->
+                        <div class="lc-key" id="cdLcKey" aria-label="Log level color key"></div>
                     </div>
                     <div class="logcat-box" id="cdLcOut"><div class="lc-meta">Press Play, or Refresh, to read the log.</div></div>
                 </div>
@@ -25167,7 +25169,7 @@ Type any command above (e.g. pm list packages -d)</div>
             apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false, pairing: false,
             queue: [], sending: null,
             mode: 'shell', hist: [], histAt: -1, term: [], termRun: '',
-            lcTimer: null, lcBusy: false, lcText: '', lcEntries: [],
+            lcTimer: null, lcBusy: false, lcText: '', lcEntries: [], lcHidden: new Set(),
             fm: { path: '/sdcard', entries: null, busy: false },
             set: { ns: 'global', data: {}, loaded: {}, busy: false },
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
@@ -26437,7 +26439,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const serial = cd.serial;
             cd.lcBusy = true;
             const lvl = document.getElementById('cdLcLevel').value;
-            let n = parseInt(document.getElementById('cdLcLines').value, 10) || 500;
+            let n = parseInt(document.getElementById('cdLcLines').value, 10) || 1000;
             if (live) n = Math.min(n, 300);
             const out = await cdSh('logcat -d -v threadtime -t ' + n + ' \'*:' + lvl + '\'', { timeout: 40000 });
             cd.lcBusy = false;
@@ -26451,7 +26453,39 @@ Type any command above (e.g. pm list packages -d)</div>
             cdLcDraw(!live);
         }
         function cdLcRefresh() { cd.lcText = ''; cdLcFetch(false); }
-        function cdLcNote(msg) { document.getElementById('cdLcOut').innerHTML = '<div class="lc-meta">' + escapeHtml(msg) + '</div>'; }
+        function cdLcNote(msg) { document.getElementById('cdLcOut').innerHTML = '<div class="lc-meta">' + escapeHtml(msg) + '</div>'; cdLcRenderKey([]); }
+        // Live Logcat's colour key: a chip per level with its dot and count; a tap hides or shows that level
+        function cdLcRenderKey(entries) {
+            const key = document.getElementById('cdLcKey');
+            if (!key) return;
+            const n = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+            (entries || []).forEach(e => { if (n[e.lvl] !== undefined) n[e.lvl]++; });
+            key.innerHTML = LC_LEVELS.map(l => { const off = cd.lcHidden.has(l[0]);
+                return '<span class="lc-chip lvl-' + l[0] + (off ? ' off' : '') + '" data-lvl="' + l[0] + '" role="button" tabindex="0" aria-pressed="' + !off + '" onclick="cdLcToggleLevel(\'' + l[0] + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cdLcToggleLevel(\'' + l[0] + '\');}" title="Tap to ' + (off ? 'show' : 'hide') + ' ' + l[1] + ' lines">' +
+                    '<span class="lc-dot"></span><span class="lc-name">' + l[0] + ' · ' + l[1] + '</span><span class="lc-n">' + n[l[0]] + '</span></span>'; }).join('');
+        }
+        function cdLcToggleLevel(l) { haptic(); if (cd.lcHidden.has(l)) cd.lcHidden.delete(l); else cd.lcHidden.add(l); if (cd.lcEntries.length) cdLcDraw(false); else cdLcRenderKey([]); }
+        // the level, the number of lines and the filter text are kept between launches, as Live Logcat's are ("cd_logcat_prefs")
+        let cdLcPrefsReady = false;
+        function cdLcSavePrefs() {
+            if (!cdLcPrefsReady) return;
+            const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+            kvSet('cd_logcat_prefs', { level: v('cdLcLevel'), lines: v('cdLcLines'), filter: v('cdLcFilter') });
+        }
+        function cdLcRestorePrefs() {
+            const p = kvGet('cd_logcat_prefs', null);
+            try {
+                if (p && typeof p === 'object') {
+                    const pick = (id, val) => { const e = document.getElementById(id); if (e && val != null && [...e.options].some(o => o.value === String(val))) e.value = String(val); };
+                    pick('cdLcLevel', p.level);
+                    pick('cdLcLines', p.lines);
+                    const f = document.getElementById('cdLcFilter');
+                    if (f && typeof p.filter === 'string') f.value = p.filter.slice(0, 200);
+                }
+            } catch (e) { }
+            cdLcPrefsReady = true;
+            cdLcRenderKey([]);
+        }
         function cdLcDraw(toBottom) {
             const el = document.getElementById('cdLcOut');
             if (!el) return;
@@ -26459,6 +26493,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
             let entries = cd.lcEntries.filter(e => e.kind === 'entry' && (!low || (e.tag + '\n' + e.lines.join('\n')).toLowerCase().includes(low)));
+            cdLcRenderKey(entries);                                                          // the key counts what the filter box lets through, as Live Logcat's does
+            entries = entries.filter(e => !cd.lcHidden.has(e.lvl));
             const total = entries.length;
             if (entries.length > 700) entries = entries.slice(-700);
             if (!entries.length) { cdLcNote(cd.lcEntries.length ? 'Nothing matches the filter.' : 'No log lines.'); return; }
@@ -27700,6 +27736,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         logcatRenderKey();
         lcRestorePrefs();
+        cdLcRestorePrefs();
 
         // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
         // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a

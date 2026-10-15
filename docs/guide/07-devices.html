@@ -579,15 +579,17 @@
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td>Level (drop-down)</td><td>How serious a line has to be to show. Choices: <b>Verbose</b>, <b>Debug</b>, <b>Info</b> (the default), <b>Warn</b>, <b>Error</b>, <b>Fatal</b>. A level shows itself and everything more serious: <b>Info</b> shows Info, Warn, Error and Fatal; <b>Error</b> shows Error and Fatal. Changing it reads the log again.</td></tr>
-      <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b> (the default) or <b>1000</b>. Changing it reads again.</td></tr>
+      <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b>, <b>1000</b> (the default) or <b>2000</b>. Changing it reads again.</td></tr>
       <tr><td><b>filter text / tag</b> box</td><td>Shows only the entries that contain what you type, in the tag or in the message. Capitals do not matter and the text is taken as it is (no special codes). Every match is highlighted. It works at once on what is already loaded and does not read the device again.</td></tr>
       <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns red and says <b>Stop</b>. Each live read asks for at most 300 lines. Tap <b>Stop</b> to stop.</td></tr>
       <tr><td><b>Refresh</b></td><td>Reads the log once, now.</td></tr>
       <tr><td><b>Clear</b></td><td>Empties the device's log buffer (the command <code>logcat -c</code>) and the screen, and says <b>Log cleared on the device.</b> The old lines cannot be brought back.</td></tr>
       <tr><td><b>Copy</b></td><td>Copies everything that was read to the clipboard as plain text. That includes entries the filter box hides or the 700-row limit leaves off the screen.</td></tr>
       <tr><td><b>Share</b></td><td>Sends the same text as a file named device_logcat.txt through Android's share sheet.</td></tr>
+      <tr><td>The colour key</td><td>Live Logcat's row of level chips, one per level with its coloured dot and how many of the lines read are at that level (after the filter box). Tap a chip to hide that level's lines, tap it again to show them.</td></tr>
     </tbody>
   </table>
+  <p>The level, the number of lines and the filter text are kept for next time, as Live Logcat keeps its own.</p>
     <p>The lines are coloured as in <b>Live Logcat</b>: each line's level letter and the bar at its edge are green for Verbose, yellow for Debug, the theme's accent colour for Info, orange for Warn, red for Error and purple for Fatal, and the line is tinted in that colour as strongly as <b>Row tints</b> in Settings says.</p>
   <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Tap Stop when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
 
@@ -600,7 +602,7 @@
     <li>The message below, in the colour of its level. Several lines that belong to one log call, such as the lines of a crash report, are joined into one row.</li>
     <li>Warnings have an amber background, errors a red one and fatal lines a purple one, and error text is bold.</li>
   </ul>
-  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
+  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no <b>Record to file</b> and no <b>Save</b> button.</p>
 
   <h4>Reading a crash on a watch</h4>
   <ol class="hg-steps">
