@@ -41,7 +41,12 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('row tap still selects app:', await page.locator('.app-card.selected').count() === 1);
   await page.click('.app-left');
   // App menu header text
-  await page.evaluate(() => openInspector('com.sec.android.app.sbrowser')); await page.waitForTimeout(300);
+  await page.evaluate(() => openInspector('com.sec.android.app.sbrowser'));
+  // the version line is filled once the app's details arrive: wait for it (a fixed 300 ms was too short on a busy runner)
+  await page.waitForFunction(() => /Version \S/.test((document.getElementById('sheetVersion') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
+  // and for the sheet to stop sliding in: the drag goes from one end of the line to the other, so the line must be where it was measured
+  await page.evaluate(async () => { const el = document.getElementById('sheetVersion'); let last = '', same = 0;
+    for (let i = 0; i < 100 && same < 3; i++) { await new Promise(r => setTimeout(r, 50)); const r = el.getBoundingClientRect(), k = r.left + ',' + r.top + ',' + r.width; same = k === last ? same + 1 : 0; last = k; } });
   console.log('drag on menu version  →', JSON.stringify(await dragSelect('#sheetVersion')));
   await page.evaluate(() => closeInspector()); await page.waitForTimeout(200);
   // Terminal output
