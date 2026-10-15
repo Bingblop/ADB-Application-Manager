@@ -22,7 +22,7 @@
   </table>
   <p>Two more actions are not switches. <b>Force Stop</b> ends the app right now (it can start again later). <b>Clear Data</b> deletes the app's saved data and settings, like Clear storage in Android's own app settings. Clear Data cannot be undone.</p>
   <div class="hg-warn"><b>Careful.</b> Freezing, suspending or uninstalling a system app can break calls, texts, the keyboard, notifications, the camera or even the home screen. Before you touch one, look it up in the <a href="#tab-debloater">UAD-NG Debloater</a> (read <a href="#debloater-safety">its safety page</a> first), or read the UAD-NG chip in the app menu. Try Freeze before Uninstall: you can see whether anything breaks, and one tap on Enable puts the app back.</div>
-  <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. This version cannot make a new backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
+  <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. If you may want the data again, make a backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
 
   <h4>The boxes at the top</h4>
   <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
@@ -350,7 +350,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b>, <b>Share List</b> and <b>Show Applications</b> work in every mode.</li>
+    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b> and <b>Show Applications</b> work in every mode.</li>
     <li>Every action that changes apps needs a <a href="#modes-overview">working mode</a>. Without one, the "Working Mode Required" box opens.</li>
     <li>Only one batch can run at a time. If you start another, a message says "Another batch action is already running".</li>
   </ul>
@@ -384,7 +384,7 @@
       <tr><td><b>Uninstall</b></td><td>Removes the app for you.</td><td>Yes</td></tr>
       <tr><td><b>Reinstall</b></td><td>Brings back removed system apps (<code>pm install-existing</code>).</td><td>No</td></tr>
       <tr><td><b>Batch Ops</b></td><td>Sets app ops on all of them. See below.</td><td>Its own box</td></tr>
-      <tr><td><b>Share List</b></td><td>Sends the package names, one per line, through the share sheet.</td><td>Nothing runs</td></tr>
+      <tr><td><b>Backup</b></td><td>Opens the backup box for all of them: one choice about app data, then <b>Create backup</b> saves each app in turn. See <a href="#apps-backup">Backups and restore</a>.</td><td>Only to create the backups</td></tr>
       <tr><td><b>Command</b></td><td>Runs a command you type on each app. See below.</td><td>Its own box</td></tr>
     </tbody>
   </table>
@@ -507,13 +507,14 @@
 
 <section id="apps-backup" data-title="Backups and restore" data-group="The tabs">
   <p class="hg-lead">A backup saves an app (its APK, which is the app's installer file), its permission choices and (with root) its data into one file, so you can put it back later or on another phone.</p>
-  <p><b>Where to find it:</b> the <b>Backups</b> button in the <a href="#tab-apps">Application Manager</a> opens the list of backups, where you restore, share and delete them. Since v7.13.4 the app's menu has no <b>Backup</b> button, so this version does not make new backups; backups that already exist (also those made by older versions) work as before.</p>
+  <p><b>Where to find it:</b> make a backup with the <b>Backup</b> button of the batch menu: select one app or more, open the batch sheet and tap it (see <a href="#apps-batch">Selecting many apps and batch actions</a>). The app's own menu has no Backup button since v7.13.4. The <b>Backups</b> button in the <a href="#tab-apps">Application Manager</a> opens the list of backups, where you restore, share and delete them.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>Restoring a backup needs a <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so in Read-Only mode it refuses.</li>
-    <li>Restoring the app's <b>data</b> needs <a href="#mode-root">Root</a>: an app's data is private to it, and only root can read it. The app asks your root manager for permission itself, so the working mode does not have to be Root. Without root, a restore puts back the app and its settings, not its data.</li>
-    <li>Make sure there is enough free storage to install the app again.</li>
+    <li>Making and restoring a backup needs a <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so in Read-Only mode it refuses.</li>
+    <li>Saving the app's <b>data</b> needs <a href="#mode-root">Root</a>: an app's data is private to it, and only root can read it. The app asks your root manager for permission itself, so the working mode does not have to be Root. Without root, a backup holds the app and its settings, not its data.</li>
+    <li>With several apps selected, the backups are made one after another, each into its own file, and the box says at the end how many were saved and which were not.</li>
+    <li>Make sure there is enough free storage: a backup is the app's whole APK file plus, with data, its data folders.</li>
   </ul>
 
   <h4>What is inside a backup</h4>
@@ -531,8 +532,14 @@
   <h4>Where the files go</h4>
   <p>Backups are saved in the <code>Download</code> folder, inside <code>ADB App Manager</code>, then <code>Backups</code>: <code>Download/ADB App Manager/Backups</code>. The file name is the app name, the version and the date and time, for example <code>Calculator_8.5_20261006-101530-123.adbbackup</code>. On Android 8 and 9 the backup goes to the app's own storage instead, and it is removed if you uninstall this app: copy it somewhere safe first.</p>
 
-  <h4>Making a backup</h4>
-  <p>The app's menu used to have a <b>Backup</b> button. It was removed in v7.13.4, so there is nothing in this version that starts a new backup. The Backups box restores, shares and deletes the backups you already have.</p>
+  <h4>Back up one or more apps</h4>
+  <ol class="hg-steps">
+    <li>In the Application Manager, select the app or apps (tap the icon of a row), open the batch sheet with the round button and tap <b>Backup</b>. The Backups box opens. At the top is a card "Back up (app name)" with the package name and version, or "Back up (number) apps" with their names.</li>
+    <li>Decide about the switch <b>Include app data</b>. With root it says "Uses Root. The app is stopped while its data is copied." Without it, the switch is greyed and says "Needs Root, which was not found on this phone."</li>
+    <li>Tap <b>Create backup</b>. A progress line and a bar show: "Reading (name)...", "Backing up data (Root)..." and "Saving the backup...". With several apps the line starts each one with "Backing up (name) (1 of 3)..." and the bar covers all of them.</li>
+    <li>A note appears: "Saved (name) ((size), with data) to (path)". After several apps it says "Saved 4 of 5 apps to (folder)" and "Not saved: (name) (reason)" for each one that failed. It can add warnings. For example "Some data changed while it was being read; the backup may be incomplete", or that the app's app ops could not be read.</li>
+  </ol>
+  <p>If you tick <b>Include app data</b>, the app is force-stopped first, so do not do this while you are using it.</p>
 
   <h4>Restore a backup</h4>
   <p>The list in the Backups box shows each backup the app knows about: the app name and version, the date, the size and "with data" or "APK + settings". Each one has three buttons: <b>Restore</b>, <b>Share</b> and <b>Delete</b>.</p>
@@ -559,7 +566,7 @@
   <ul>
     <li>"Not enough storage to install the app", or "A split APK is missing from the backup": free up space, or the file is damaged.</li>
     <li>"Another backup or restore is still running": wait for the first to finish.</li>
-    <li>The "Working Mode Required" box opens when you tap <b>Confirm restore</b>: you are in Read-Only mode. Set up a working mode.</li>
+    <li>The "Working Mode Required" box opens when you tap <b>Create backup</b> or <b>Confirm restore</b>: you are in Read-Only mode. Set up a working mode.</li>
     <li>Data restore refuses a damaged archive, or one that contains files outside the app's own folders, and says why.</li>
     <li>While data is read, a file may change. The note says so, and the backup may then be incomplete.</li>
   </ul>

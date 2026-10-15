@@ -78,23 +78,32 @@
 </ol>
 <p>If the result says "only root can delete system app for a particular user", Android would not allow it from the shell. The app already tried a second way. Use <b>Freeze</b> instead, or switch to <a href="#mode-root">Root</a>.</p>
 
-<div class="hg-danger"><b>Risky.</b> For an app you installed yourself, <b>Uninstall</b> removes it for good and <b>Reinstall</b> cannot bring it back. To get it back you need a backup you already have (<a href="#recipe-restore-backup">Restore an app from a backup</a>), its APK from <b>Extract APK</b>, or its store.</div>
+<div class="hg-danger"><b>Risky.</b> For an app you installed yourself, <b>Uninstall</b> removes it for good and <b>Reinstall</b> cannot bring it back. To get it back you need a backup (<a href="#recipe-restore-backup">Restore an app from a backup</a>) or its store. Make the backup before you uninstall (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
 
 <p><b>Read more:</b> <a href="#apps-menu">The app menu</a>, <a href="#tab-debloater">UAD-NG Debloater</a>, <a href="#debloater-safety">Debloating safely</a>.</p>
 </section>
 
-<section id="recipe-backup-before" data-title="Backups you already have" data-group="How do I...?">
-<p class="hg-lead">At the end, you know where your backup files are and what you can do with them.</p>
+<section id="recipe-backup-before" data-title="Back up an app before you change it" data-group="How do I...?">
+<p class="hg-lead">At the end, you have one backup file that holds an app, its permission choices and, with root, its data, saved in your Download folder.</p>
 
-<p>The app's menu no longer has a <b>Backup</b> button (removed in v7.13.4), so this version cannot make a new backup. Backups made earlier, also by older versions, are files ending in <code>.adbbackup</code> in <code>Download/ADB App Manager/Backups</code>.</p>
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so Read-Only mode refuses.</li>
+<li>For the app's <b>data</b> (logins, saved games, settings) you need <a href="#mode-root">Root</a> on the phone. The app asks your root manager itself, so your working mode does not have to be Root. Without root, the backup holds the app and its settings, not its data.</li>
+<li>Free storage. Several apps are backed up one after another, each into its own file.</li>
+</ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, tap <b>Backups</b>. The box lists every backup this app knows: the app name and version, the date, the size, and "with data" or "APK + settings".</li>
-<li>Tap <b>Share</b> to send a file somewhere safe (a cloud drive, another phone), or <b>Restore</b> to put an app back (<a href="#recipe-restore-backup">Restore an app from a backup</a>).</li>
+<li>In the <b>Application Manager</b>, tap the icon of the app (or of several apps) to select it. A round button appears at the bottom right; tap it to open the batch sheet.</li>
+<li>Tap <b>Backup</b>. A box opens. At the top is a card, "Back up (app name)", with its package name and version, or "Back up (number) apps" with their names.</li>
+<li>Look at the switch <b>Include app data</b>. With root it says "Uses Root. The app is stopped while its data is copied." Without root it is greyed out and says "Needs Root, which was not found on this phone." Switch it on only if you need the data, and do not use the app meanwhile.</li>
+<li>Tap <b>Create backup</b>. A progress line and bar show "Reading (name)..." and "Saving the backup...".</li>
+<li>A note says "Saved (name) ((size)) to (path)". The file ends in <code>.adbbackup</code> and sits in <code>Download/ADB App Manager/Backups</code>, named like <code>Calculator_8.5_20261006-101530-123.adbbackup</code>.</li>
 </ol>
+<p>Read any warning under the note. For example, "Some data changed while it was being read; the backup may be incomplete". On Android 8 and 9 the file goes to the app's own storage instead, and it is removed if you uninstall this app, so tap <b>Share</b> in the backups list and keep a copy somewhere else.</p>
 
-<div class="hg-note"><b>Good to know.</b> To keep a copy of an app before you change it, use <b>Extract APK</b> in its menu. It saves the installer file, not the app's data.</div>
+<div class="hg-note"><b>Good to know.</b> A backup changes nothing on your phone. It does not hold files the app keeps in shared storage, your online accounts, or secrets kept in Android's Keystore, so a restored app may ask you to sign in again. A data backup holds private information, so keep the file safe.</div>
 
 <p><b>Read more:</b> <a href="#apps-backup">Backups and restore</a>, <a href="#recipe-restore-backup">Restore an app from a backup</a>.</p>
 </section>
@@ -104,7 +113,7 @@
 
 <h4>What you need</h4>
 <ul>
-<li>A <a href="#modes-overview">working mode</a>, and a backup made by this app (a file ending in <code>.adbbackup</code>; see <a href="#recipe-backup-before">Backups you already have</a>).</li>
+<li>A <a href="#modes-overview">working mode</a>, and a backup made by this app (a file ending in <code>.adbbackup</code>). See <a href="#recipe-backup-before">Back up an app before you change it</a>.</li>
 <li>To restore the app's <b>data</b> as well, the backup must contain data and the phone must have <a href="#mode-root">Root</a>.</li>
 <li>The <b>Application Manager</b> tab, and its <b>Backups</b> button (in the row above the filter pills).</li>
 </ul>
@@ -146,7 +155,7 @@
 </ol>
 <p>A <b>Release</b> button instead of <b>Update</b> means the newest release has no file for your phone. It opens the release page. Apps under <b>Not tracked</b> have no known source: tap <b>+ Set source</b> and enter a GitHub, Codeberg or F-Droid link.</p>
 
-<div class="hg-warn"><b>Careful.</b> An update replaces the working version, and there is no one-tap way back. Before it installs, the app checks that the file is the same package, newer, and signed with the same key, and installs nothing if a check fails. For an app that matters, copy its APK first with <b>Extract APK</b>.</div>
+<div class="hg-warn"><b>Careful.</b> An update replaces the working version, and there is no one-tap way back. Before it installs, the app checks that the file is the same package, newer, and signed with the same key, and installs nothing if a check fails. For an app that matters, make a backup first (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
 
 <p><b>Read more:</b> <a href="#tab-updates">Application Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#install-and-update">Installing and updating the app</a>.</p>
 </section>
@@ -170,7 +179,7 @@
 </ol>
 <p>If the site wants a browser check first, tap <b>Open it here, in the app</b> and download the file there. To have the file installed by itself, tick <b>Install on download</b> before you start. To keep a copy somewhere else, change <b>Save downloads to</b>.</p>
 
-<div class="hg-warn"><b>Careful.</b> If Android refuses the install because the installed copy was signed with a different key, the app offers to uninstall that copy first. That deletes its data, so say yes only for an app whose data you do not need or have a copy of (<a href="#apps-backup">Backups</a>).</div>
+<div class="hg-warn"><b>Careful.</b> If Android refuses the install because the installed copy was signed with a different key, the app offers to uninstall that copy first. That deletes its data, so say yes only for an app whose data you do not need or have backed up (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
 
 <p><b>Read more:</b> <a href="#tab-updates">Application Updater</a>.</p>
 </section>
@@ -252,7 +261,7 @@
 <li><b>Big files rather than apps:</b> in the <b>File Manager</b>, search for <code>size:&gt;100mb</code> (see <a href="#files-search">Searching files</a>).</li>
 </ul>
 
-<div class="hg-warn"><b>Careful.</b> Sorting and measuring change nothing on your phone. But <b>Uninstall</b> and <b>Clear Data</b> in an app's menu change your apps (each asks you to confirm first). <b>Clear Data</b> cannot be undone, and <b>Uninstall</b> of an app you installed yourself cannot be undone either, except from a backup you already have (<a href="#recipe-backup-before">Backups you already have</a>). Freeze is the undoable choice.</div>
+<div class="hg-warn"><b>Careful.</b> Sorting and measuring change nothing on your phone. But <b>Uninstall</b> and <b>Clear Data</b> in an app's menu change your apps (each asks you to confirm first). <b>Clear Data</b> cannot be undone, and <b>Uninstall</b> of an app you installed yourself cannot be undone either, except from a backup (<a href="#recipe-backup-before">Back up an app before you change it</a>). Freeze is the undoable choice.</div>
 
 <p><b>Read more:</b> <a href="#tab-apps">Application Manager</a>, <a href="#apps-menu">The app menu</a>, <a href="#app-permissions">The permissions this app asks for</a>.</p>
 </section>
@@ -629,7 +638,7 @@
 <li>In the <b>Application Manager</b>, tap <b>Share CSV</b> and save the list of all your apps somewhere safe (a cloud drive, an email to yourself), a useful checklist.</li>
 <li>Tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
 <li>In <b>Saved Applications</b>, tap <b>Copy</b> on each list and paste it into a note.</li>
-<li>For apps whose data matters, tap <b>Backups</b>, then <b>Share</b> on each backup, and keep the files (<a href="#recipe-backup-before">Backups you already have</a>).</li>
+<li>For apps whose data matters, tap <b>Backups</b>, then <b>Share</b> on each backup, and keep the files (<a href="#recipe-backup-before">Back up an app before you change it</a>).</li>
 <li>If you made your own presets or commands: select any app, tap the round button, then <b>Batch Ops</b> and <b>Export presets</b>, or <b>Command</b> and <b>Export saved commands</b>. Send the files to yourself.</li>
 </ol>
 

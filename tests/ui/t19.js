@@ -70,10 +70,10 @@ const appBatchMock = require('./lib/appbatch_mock');
   await page.evaluate(() => { copyTerminal(); shareTerminal(); });
   // CSV share + selected packages
   await page.evaluate(() => switchView('apps')); await page.waitForTimeout(200);
-  await page.evaluate(() => { exportAppList(true); selectedPkgs.add('com.example.keep'); selectedPkgs.add('com.sec.android.app.sbrowser'); copySelectedPackages(); shareSelectedPackages(); selectedPkgs.clear(); });
+  await page.evaluate(() => { exportAppList(true); selectedPkgs.add('com.example.keep'); selectedPkgs.add('com.sec.android.app.sbrowser'); copySelectedPackages(); selectedPkgs.clear(); });
   const c = await calls();
   console.log('csv share:', c.find(x => x.startsWith('shareFile:app_list')));
-  console.log('copy pkgs:', JSON.stringify(c.find(x => x.startsWith('copy:com.example'))), '| share list:', JSON.stringify(c.find(x => x.startsWith('shareText:Package list'))));
+  console.log('copy pkgs:', JSON.stringify(c.find(x => x.startsWith('copy:com.example'))));
   // profiles: save, share, apply on a "fresh" state
   await page.evaluate(() => openProfiles()); await page.fill('#profileName', 'Lean');
   await page.evaluate(() => saveProfile());

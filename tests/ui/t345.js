@@ -130,7 +130,7 @@ const APPS = [
   // ---------- Backups, Profiles, Task Manager, Updates, Logcat, settings ----------
   await ev(page, () => { backupTargetPkg = null; renderBackups(); });
   s = await state(page, '#backupsList');
-  check('backups, none yet: title and hint split', shared(s) && s.key === 'backups-none' && s.title === 'No backups yet.' && s.hint === 'Choose a backup file from another phone.', JSON.stringify(s));
+  check('backups, none yet: title and hint split', shared(s) && s.key === 'backups-none' && s.title === 'No backups yet.' && s.hint === 'Select apps, open the batch menu and tap Backup, or choose a backup file from another phone.', JSON.stringify(s));
   await ev(page, () => { profiles = []; renderProfiles(); });
   s = await state(page, '#profilesList');
   check('profiles, none yet: title and hint split', shared(s) && s.key === 'profiles-none' && s.title === 'No profiles yet.' && /save them here/.test(s.hint), JSON.stringify(s));
