@@ -2327,6 +2327,21 @@ public class MainActivity extends Activity {
         }
     };
 
+    // ---------------------------------------------------------------------------------------------
+    // Internet speed test (Task Manager > Network > Speed test): SpeedTest (pure Java) does the work; this is the bridge. Needs no working mode: it only
+    // opens HTTPS connections of its own to speed.cloudflare.com through HttpSafe. Runs only while its screen is open (the page stops it on Close, Back
+    // and when the app is hidden); a pool of its own whose idle threads end, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService speedTestExec = SpeedTest.newPool();
+    private final SpeedTest.Runner speedTest = new SpeedTest.Runner(new SpeedTest.Config());
+
+    private final SpeedTest.Sink speedTestSink = new SpeedTest.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onSpeedTest && window.onSpeedTest(" + JSONObject.quote(json) + ")");
+        }
+    };
+
 
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
@@ -11889,6 +11904,49 @@ public class MainActivity extends Activity {
             dnsProbe.cancel(id);
         }
 
+        /**
+         * Internet speed test: starts latency, download and upload against Cloudflare (see SpeedTest for the contract and limits). Returns
+         * {"ok":true,"id":..} or {"ok":false,"error":..}; events arrive in window.onSpeedTest(json), ending with one {"type":"done",..}.
+         */
+        @JavascriptInterface
+        public String speedTestStart(String requestJson) {
+            return speedTest.start(requestJson, speedTestExec, speedTestSink);
+        }
+
+        /** Stops the running speed test if it has this id (its connections are closed at once). */
+        @JavascriptInterface
+        public void speedTestStop(String id) {
+            speedTest.cancel(id);
+        }
+
+        /** The active network for the speed test's cards and its mobile-data warning: {"type":"wifi|cellular|ethernet|vpn|other|none","metered":bool}. */
+        @JavascriptInterface
+        public String speedTestNetInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                String type = "none";
+                boolean metered = false;
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) {
+                    android.net.Network n = cm.getActiveNetwork();
+                    android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+                    if (nc != null) {
+                        if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) type = "wifi";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) type = "cellular";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) type = "ethernet";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) type = "vpn";
+                        else type = "other";
+                    }
+                    metered = cm.isActiveNetworkMetered();
+                }
+                o.put("type", type);
+                o.put("metered", metered);
+            } catch (Throwable t) {
+                try { o.put("type", "other"); o.put("metered", false); } catch (Exception ignored) {}
+            }
+            return o.toString();
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -16130,6 +16188,9 @@ public class MainActivity extends Activity {
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
+        // the internet speed test: refuse new tests and close the running one's connections, then stop its pool
+        try { speedTest.shutdown(); } catch (Throwable ignored) {}
+        try { speedTestExec.shutdownNow(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {
