@@ -49,6 +49,7 @@ import org.json.JSONObject;
  *   speedTestStart(requestJson) -> {"ok":true,"id":"st1"} or {"ok":false,"error":"<short English text>"}
  *     requestJson = {"id":"st1"}; id: 1 to 40 characters [A-Za-z0-9_-]. A new start stops the running test first.
  *   speedTestStop(id)  stops that test if it is the running one; other ids are ignored.
+ *   speedTestNetInfo() (MainActivity) -> {"type":"wifi|cellular|ethernet|vpn|other|none","metered":bool,"maxBytes":Runner.maxBytes()}
  *   Java -> page: window.onSpeedTest(jsonText), every event carries "id":
  *     {"type":"phase","phase":"latency"|"download"|"upload","phaseMs":10000,"rampMs":2000}
  *     {"type":"server","colo":"IAD"}                                       once, from the first answer that names it
@@ -113,6 +114,9 @@ public final class SpeedTest {
         private boolean closed;
 
         public Runner(Config cfg) { this.cfg = cfg == null ? new Config() : cfg; }
+
+        /** The most bytes one test can move (both caps): what the page's mobile-data warning names. */
+        public long maxBytes() { return Math.max(0, cfg.downCap) + Math.max(0, cfg.upCap); }
 
         public synchronized String start(String requestJson, ExecutorService exec, Sink sink) {
             if (closed) return error("stopped");

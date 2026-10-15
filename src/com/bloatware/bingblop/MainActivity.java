@@ -11941,6 +11941,7 @@ public class MainActivity extends Activity {
                 }
                 o.put("type", type);
                 o.put("metered", metered);
+                o.put("maxBytes", speedTest.maxBytes());
             } catch (Throwable t) {
                 try { o.put("type", "other"); o.put("metered", false); } catch (Exception ignored) {}
             }

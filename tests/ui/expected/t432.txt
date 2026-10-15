@@ -1,0 +1,48 @@
+ok   1. the Network section starts with a Speed test button
+ok   2. it opens a full screen of its own, over the bottom bar
+ok      the gauge has its scale 0 to 1000 Mbps, the needle at 0, the arc empty
+ok      nothing is wider than the screen
+ok      ready: Start, the connection (Wi-Fi, not metered), no history yet
+ok      the Task Manager poll is paused while it is open
+ok   3. Start asks the app for a test with an id, and becomes Stop
+ok   4. latency: the phase says Ping, the gauge shows the last sample in ms, the Ping card the running median
+ok      then ping and jitter (one decimal under 10 ms), and the data centre by its city
+ok   5. download: the phase, the live number on the Download card, the card marked live
+ok      the needle and the arc have reached 94.2 Mbps (between 50 and 100 on the scale), the big number too
+ok      the download graph is drawn, the upload graph is still empty
+ok   6. upload: its phase, its number (three figures), its card live, the needle starting again from 0
+ok      and its graph drawn
+ok   7. done: Run again, the final numbers, copy and share offered, nothing live
+ok      the result is kept in the history (the app's settings store) and listed
+ok   8. events after done, or of another test, change nothing
+ok   9. Copy puts the result on the clipboard as text
+ok      Share sends the same text with the subject Speed test
+ok   10. on mobile data Run again asks first, naming the data a test can use (350 MB), and starts nothing
+ok       Cancel: the warning goes, still nothing started
+ok       a metered Wi-Fi is asked about too, with the amount the app names
+ok       Start anyway starts it and clears the last result
+ok   11. Stop tells the app to stop that test, says Stopped, offers Run again, the needle back at 0
+ok       what the stopped test still sends is ignored; nothing is added to the history
+ok   12. X closes the screen and stops the running test; the Task Manager poll resumes
+ok       opened again: the last stopped state, Run again
+ok   13. Back closes it and stops the test
+ok       the back arrow in its header too
+ok   14. the app going to the background stops the test and says why
+ok       coming back does not restart the Task Manager poll under the open screen
+ok   15. leaving the Task Manager tab closes the screen and stops the test
+ok   16. a failed test says so in words and offers Run again
+ok       a start the app refuses: its reason, and nothing running
+ok       no connection: says so and starts nothing
+ok   17. light theme: the screen takes the theme's background, the gauge its accent
+ok       and the graphs are painted again in the new accent
+ok   18. the history keeps the last 10 results, newest first
+ok       a data centre the page has no city for shows its code
+ok       Clear empties it, in the store too
+ok   19. a saved history is shown when the screen opens (a damaged entry is left out)
+ok   20. reduced motion: the needle jumps to the reading at once (no easing)
+ok       and the arc does not pulse
+ok       with motion the needle moves there over frames instead
+ok   21. 37 readings arriving together redraw the graph once
+ok   22. without the app's speed test: a toast says it needs the app, nothing runs
+ok   no page errors
+all passed

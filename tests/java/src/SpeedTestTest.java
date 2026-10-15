@@ -206,6 +206,7 @@ public class SpeedTestTest {
           && new JSONObject(v.start("{\"id\":\"" + rep('x', 40) + "\"}", pool, new Events())).optBoolean("ok"));
       v.shutdown();
       check("no id is refused", "bad id".equals(new JSONObject(new SpeedTest.Runner(cfg(base)).start("{}", pool, new Events())).optString("error")));
+      check("the most a default test can move is its two caps, 350 MB (what the mobile-data warning names)", new SpeedTest.Runner(null).maxBytes() == 350L * 1000 * 1000);
 
       // ---------------------------------------------------------------- threads end
       check("the pool's threads finish their work once the tests are over", waitFor(() -> ((ThreadPoolExecutor) pool).getActiveCount() == 0, 12000));
@@ -219,6 +220,7 @@ public class SpeedTestTest {
         String od = destroy < 0 ? "" : src.substring(destroy, Math.min(src.length(), destroy + 8000));
         check("MainActivity: speedTestStart, speedTestStop and speedTestNetInfo are bridge methods", src.matches("(?s).*@JavascriptInterface\\s+public String speedTestStart\\(String requestJson\\).*") && src.matches("(?s).*@JavascriptInterface\\s+public void speedTestStop\\(String id\\).*") && src.matches("(?s).*@JavascriptInterface\\s+public String speedTestNetInfo\\(\\).*"));
         check("MainActivity: events go to window.onSpeedTest as one quoted JSON text", src.contains("notifyJs(\"window.onSpeedTest && window.onSpeedTest(\" + JSONObject.quote(json) + \")\")"));
+        check("MainActivity: the network info names the test's byte cap", src.contains("o.put(\"maxBytes\", speedTest.maxBytes());"));
         check("MainActivity: onDestroy stops the runner and the pool", od.contains("speedTest.shutdown()") && od.contains("speedTestExec.shutdownNow()"));
       }
     } finally {
