@@ -17,12 +17,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       const lines = e => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight));
       return { names: kids.map(e => e.id || e.tagName.toLowerCase() + ':' + e.innerText.trim().replace(/\n/g, ' ')), fits: row.scrollWidth <= row.clientWidth + 1,
         oneLine: kids.every(e => { const q = e.getBoundingClientRect(), m = row.getBoundingClientRect(); return q.top >= m.top - 1 && q.bottom <= m.bottom + 1; }) && new Set(kids.map(e => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2))).size <= 2,
-        sortW: Math.round(sort.getBoundingClientRect().width), pickW: Math.round(pick.getBoundingClientRect().width), forSort: l1.htmlFor === 'appSort', l2text: l2.innerText.trim(), pickName: pick.getAttribute('aria-label'),
+        sortW: Math.round(sort.getBoundingClientRect().width), pickW: Math.round(pick.getBoundingClientRect().width), forSort: l1.htmlFor === 'appSort', l2text: l2.innerText.trim(), bold: [l1, l2].every(e => +getComputedStyle(e).fontWeight >= 700), pickName: pick.getAttribute('aria-label'),
         buttons: row.querySelectorAll('button:not(#appsActionBtnPick)').length };
     });
     const tag = w + 'px';
     check(tag + ' the row is "Sort", the sort menu, "Button" and the picker, nothing else', r.names.join('|') === 'label:Sort|appSort|appsActionBtnPickTitle|appsActionBtnPick' && r.buttons === 0, r.names.join('|'));
-    check(tag + ' "Sort" is the sort menu\'s label; "Button" stands before the picker, which keeps its full name for a screen reader', r.forSort && r.l2text === 'Button' && r.pickName === 'Action Button', JSON.stringify(r));
+    check(tag + ' "Sort" is the sort menu\'s label; "Button" stands before the picker, which keeps its full name for a screen reader; both words bold', r.forSort && r.bold && r.l2text === 'Button' && r.pickName === 'Action Button', JSON.stringify(r));
     check(tag + ' the row fits on one line without scrolling sideways, and both menus get room (at least 90px)', r.fits && r.oneLine && r.sortW >= 90 && r.pickW >= 90, JSON.stringify(r));
     if (w === 360) {
       await page.evaluate(() => switchView('saved-lists')); await page.waitForTimeout(300);
