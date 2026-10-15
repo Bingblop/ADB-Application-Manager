@@ -115,7 +115,7 @@
 <ul>
 <li>A <a href="#modes-overview">working mode</a>, and a backup made by this app (a file ending in <code>.adbbackup</code>). See <a href="#recipe-backup-before">Back up an app before you change it</a>.</li>
 <li>To restore the app's <b>data</b> as well, the backup must contain data and the phone must have <a href="#mode-root">Root</a>.</li>
-<li>The <b>Application Manager</b> tab, and its <b>Backups</b> button (in the row above the filter pills).</li>
+<li>The <b>Saved Applications</b> tab, and its <b>Backups</b> button (beside <b>New List</b>).</li>
 </ul>
 
 <h4>Steps</h4>
@@ -442,12 +442,12 @@
 <h4>What you need</h4>
 <ul>
 <li>A <a href="#modes-overview">working mode</a> for commands such as <code>pm</code> and <code>dumpsys</code>. Without one, the shell <b>This app (sandbox)</b> still runs file and text commands.</li>
-<li>The <b>Terminal</b> tab (the ADB shell and the log are in the separate <b>Console</b> tab).</li>
+<li>The <b>Terminal</b>: the second part of the <b>Console</b> tab, next to the ADB Shell (the log is in the separate <b>Live Logcat</b> tab).</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>Open <b>Terminal</b>. A black screen prints a welcome.</li>
+<li>Open the <b>Console</b> tab and tap <b>Terminal</b> at its top (or hold <b>Console</b> on the bottom bar and choose <b>Terminal</b>). A black screen prints a welcome.</li>
 <li>Next to <b>Shell</b>, choose <b>Working mode (ADB, Shizuku, Root)</b>. The screen prints a line such as "sh ready through ADB, running as the shell user (uid 2000)". (A uid is the account number Android runs the command under. 2000 is the shell user: it can do a lot, but it is not root.)</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b>. Your line is echoed, and under it comes the answer: your phone's model name.</li>
 <li>Try a command that lists the apps you installed: <code>pm list packages -3</code>. It prints one <code>package:</code> line for each.</li>
@@ -473,7 +473,7 @@
 <h4>Steps</h4>
 <ol class="hg-steps">
 <li>First freeze, suspend or uninstall the apps the way you like them.</li>
-<li>Tap <b>Profiles</b> (in the row under the count boxes, next to <b>Backups</b>). A box called "App Profiles" opens. A line says "Every app that is not enabled is saved." and how many apps that is. If you selected some apps first, it says "Only the selected apps are saved."</li>
+<li>Open the <b>Saved Applications</b> tab and tap <b>Profiles</b> (beside <b>New List</b>). A box called "App Profiles" opens. A line says "Every app that is not enabled is saved." and how many apps that is. If you selected some apps first, it says "Only the selected apps are saved."</li>
 <li>Type a name in the box "Profile name (e.g. Lean Samsung)" and tap <b>Save</b>. A message says "Saved profile (name) ((number) apps)". The card shows a summary such as "12 apps, 8 disabled, 3 suspended, 1 uninstalled".</li>
 <li>Later, open <b>Profiles</b> and tap <b>Apply</b> on the card. A preview says what will change, for example "Will disable 4, suspend 2", then how many already match and how many are not on this phone and are skipped.</li>
 <li>Read it and tap <b>Confirm apply ((number))</b>. The button is greyed out if nothing needs changing. A box shows each app and a <b>Stop</b> button, then <b>Profile Results</b> lists <b>Success</b> or <b>Failed</b> for each app.</li>
@@ -635,8 +635,8 @@
 
 <h4>On the old phone</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, tap <b>Share CSV</b> and save the list of all your apps somewhere safe (a cloud drive, an email to yourself), a useful checklist.</li>
-<li>Tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
+<li>In the <b>Application Manager</b>, tap <b>CSV</b> and save the list of all your apps somewhere safe (a cloud drive, an email to yourself), a useful checklist.</li>
+<li>In <b>Saved Applications</b>, tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
 <li>In <b>Saved Applications</b>, tap <b>Copy</b> on each list and paste it into a note.</li>
 <li>For apps whose data matters, tap <b>Backups</b>, then <b>Share</b> on each backup, and keep the files (<a href="#recipe-backup-before">Back up an app before you change it</a>).</li>
 <li>If you made your own presets or commands: select any app, tap the round button, then <b>Batch Ops</b> and <b>Export presets</b>, or <b>Command</b> and <b>Export saved commands</b>. Send the files to yourself.</li>
@@ -644,7 +644,7 @@
 
 <h4>On the new phone</h4>
 <ol class="hg-steps">
-<li>Install the app (<a href="#install-and-update">Installing and updating the app</a>) and set up a working mode again. Pairing and the ADB key belong to each phone. When you open the app, the title at the top reads "Full ADB/Root System Manager". This guide is in the <b>About</b> tab, under <b>Help Guide</b>.</li>
+<li>Install the app (<a href="#install-and-update">Installing and updating the app</a>) and set up a working mode again. Pairing and the ADB key belong to each phone. When you open the app, the title at the top reads "ADB System Manager". This guide is in the <b>About</b> tab, under <b>Help Guide</b>.</li>
 <li>Install your own apps first, from their stores. A profile skips apps that are not on the phone.</li>
 <li>Open <b>Profiles</b>, paste the text into "Paste a shared profile here to import it", tap <b>Import</b>, then <b>Apply</b>. Read the preview and tap <b>Confirm apply</b>.</li>
 <li>In <b>Saved Applications</b>, tap <b>New List</b>, paste the package names and tap <b>Save List</b>.</li>

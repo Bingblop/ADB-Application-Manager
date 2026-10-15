@@ -1,6 +1,6 @@
 <section id="tab-settings" data-title="Hidden Settings" data-group="The tabs">
   <p class="hg-lead">Android keeps hundreds of small settings that its own Settings app never shows. This tab lists them, lets you read any one, change it, add your own or delete it, and puts the old value back when you change your mind.</p>
-  <p><b>Where to find it:</b> the tab named <b>Hidden Settings</b> (two lines on the tab bar: Hidden and Settings), right after Terminal and right before the <a href="#tab-extrasettings">Extra Settings</a> tab in the default order (RRO/Monet Customization comes after Extra Settings). If it is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <p><b>Where to find it:</b> the tab named <b>Hidden Settings</b> ("Hidden" on the bottom bar, two lines on the tab bar: Hidden and Settings), right after <a href="#tab-logcat">Live Logcat</a> and right before the <a href="#tab-extrasettings">Extra Settings</a> tab in the default order (RRO/Monet Customization comes after Extra Settings). If it is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
   <p><b>Looking for Private DNS?</b> It is not in this tab, which edits Android's own settings tables. It is in the <a href="#tab-extrasettings">Extra Settings</a> tab next to this one: a small note at the top of this tab has a button that opens it.</p>
 
   <h4>Before you start</h4>
@@ -147,7 +147,7 @@
   </ul>
 
   <h4>The Undo bar</h4>
-  <p>After a change, a small bar slides up from the bottom of the screen. It shows a short line in a typewriter font and an <b>Undo</b> button. It stays for about 5 seconds and then slides away.</p>
+  <p>After a change, a small bar slides up and stands just above the bottom bar (higher while the round checkmark button or the batch sheet is up). It shows a short line in a typewriter font and an <b>Undo</b> button. It stays for about 5 seconds and then slides away.</p>
   <table class="hg-table">
     <thead><tr><th>You did this</th><th>The bar says</th><th>Undo does this</th></tr></thead>
     <tbody>
@@ -509,16 +509,16 @@
   <p>Nothing here needs a working mode, a computer or an account. The buttons that open web pages (GitHub, Releases, PayPal) open them in your phone's browser, so they need an internet connection. The rest works offline.</p>
 
   <h4>The top card</h4>
-  <p>The card shows the app's name, <b>ADB Application Manager Pro</b>, its version and build number (for example "Version 7.10.0-Pro · build 820"; yours will differ), and a one-paragraph description. Under it are the main buttons:</p>
+  <p>The card shows the app's name, <b>ADB System Manager</b>, its version and build number (for example "Version 7.10.0-Pro · build 820"; yours will differ), and a one-paragraph description. Under it are the main buttons:</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><b>Issues</b></td><td>Opens the project's issue page, <code>github.com/Bingblop/ADB-Application-Manager/issues</code>, in your browser. Report a bug or ask for a feature there, where other people can see it and add to it. It needs a free GitHub account to write; reading does not.</td></tr>
       <tr><td><b>Contact the developer</b></td><td>Opens a small sheet to write to the developer by email. Type your message, leave <b>Add the app and phone details</b> on (it adds the app version, Android version and phone model, which makes a problem much easier to find; turn it off to send only your words), and tap <b>Send</b>: your email app opens with the message ready, the subject already set to <i>ADB App Manager</i>. <b>Copy message</b> copies the text instead. The message goes to a <b>contact alias</b> (an address that only forwards mail), so the developer's own address is never shown to you or kept in the app. If the phone has no email app, the sheet says so and you can copy the message. The alias is shown in the sheet (<code>bingblop.coral666@simplelogin.fr</code>), so you can also write to it from any email app. A build made without an alias says the contact address is not set up yet and points you to Issues.</td></tr>
       <tr><td><b>GitHub</b></td><td>Opens the project page, <code>github.com/Bingblop/ADB-Application-Manager</code>, in your browser. Source code, releases and the issue tracker are there.</td></tr>
-      <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> and <b>Terminal</b> have none, so this button is how you reach the guide from them.</td></tr>
+      <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> has none, so this button is how you reach the guide from it.</td></tr>
       <tr><td><b>What's new</b></td><td>Opens a sheet titled <b>What's New</b> with the release notes of the newest three versions. At the bottom, <b>Full changelog</b> opens the whole file on GitHub and <b>Got it</b> closes the sheet. The same sheet also opens once by itself after the app has been updated. If the build has no notes, a message says <i>No release notes in this build</i>.</td></tr>
-      <tr><td><b>Permissions</b></td><td>Opens the <b>Permissions</b> sheet: All files access, Usage access, Display over other apps, Install unknown apps and, while a working mode is active, three more. Each row has an <b>Allow</b> button or shows "Allowed". Allow what you like and skip the rest. See <a href="#app-permissions">App permissions</a>.</td></tr>
+      <tr><td><b>Permissions</b></td><td>Opens the <b>Permissions</b> sheet with every permission the app uses: All files access, Allow Restricted Settings, Usage access, Display over other apps, Install unknown apps, Bluetooth Connect, Notifications, and the ones only a working mode can grant (Read/Write External Storage, Write Secure Settings, Dump system services and Read Logs, with a lock until one is on). Each row has an <b>Allow</b> button or shows "Allowed". Allow what you like and skip the rest. See <a href="#app-permissions">App permissions</a>.</td></tr>
       <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">Application Updater</a> box of the APK Installer/Updater tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the APK Installer/Updater tab is switched off, a message says <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
     </tbody>
   </table>
@@ -567,7 +567,7 @@
       <tr><td><b>Report on GitHub</b></td><td>Copies the report and opens the project's <i>phone bug report</i> form with the mode, version and device filled in. Paste the report into the box that asks for it. If a long report does not fit in the address, the form opens with the short part and the full text is on your clipboard.</td></tr>
     </tbody>
   </table>
-  <div class="hg-note"><b>Tip.</b> Run it before you report a problem, and once after each update: a report that says which checks pass on your phone is the fastest way to get a bug fixed. This card has not been tried on a phone yet.</div>
+  <div class="hg-note"><b>Tip.</b> Run it before you report a problem, and once after each update: a report that says which checks pass on your phone is the fastest way to get a bug fixed. So far it has been run on one phone (a Galaxy Note20 with Android 13, through Shizuku): one check that failed there, <i>Read one app's package record</i>, was fixed after that run. Other phones and working modes have not been tried yet.</div>
 
   <h4>Authorization Manager</h4>
   <p>A card between <b>This build</b> and <b>Device Specs</b>. It shows the app's own <b>authorization code</b>, a secret code that belongs to this app. <b>Nothing accepts the code yet</b>: it is kept here for later, so there is nothing for you to set up or to switch on. Nothing here needs a working mode, and the code never leaves the phone.</p>
@@ -607,14 +607,15 @@
   </ul>
 </section>
 <section id="prefs" data-title="Settings (the gear)" data-group="Settings and looks">
-  <p class="hg-lead">The Settings screen decides how the app looks and behaves: its language, light or dark, colours, font, app icons, the extra button on each app row, and which tabs are shown. Everything here changes only this app, not the rest of your phone.</p>
+  <p class="hg-lead">The Settings screen decides how the app looks and behaves: its language, light or dark, colours, font, app icons, the extra button on each app row, where the tabs are and which ones are shown. It also lists the app's own permissions. Everything here changes only this app, not the rest of your phone.</p>
   <p><b>Where to find it:</b> tap the <b>gear icon</b> in the header at the top right, to the left of the working-mode badge. Settings is not a tab: it has no place on the tab bar and cannot be switched off. The gear lights up while the screen is open. Press <b>Back</b> to return to the tab you came from.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>No permission, no computer and no working mode are needed, with no exception here: the <b>Private DNS</b> card in this list is only a pointer to the <a href="#tab-extrasettings">Extra Settings</a> tab, where Private DNS changes a setting of the phone itself and needs a working mode. Every control on this page works at once; there is no Save button, and what you choose is kept on the phone.</li>
+    <li>No permission, no computer and no working mode are needed (only <b>Grant</b> in the Application Permissions sheet works best with one). Private DNS is not here: it is in the <a href="#tab-extrasettings">Extra Settings</a> tab, where it changes a setting of the phone itself. Every control on this page works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Default Ask Agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Private DNS</b> (a pointer to the Extra Settings tab), <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b> (with the <b>Application Permissions</b> button), <b>Appearance</b>, <b>Palette Style &amp; My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Default Ask Agent</b> (with the <b>VirusTotal API key</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Row tints</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Navigation</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it. <b>Reconnecting devices</b> is no longer here: it is a card in the <a href="#tab-devices">Connected Devices</a> tab.</li>
+    <li><b>Cards that fold.</b> <b>Curated Theme Palettes</b>, <b>Action Button</b>, <b>Navigation</b>, <b>Feature List</b> and <b>Press and hold guide</b> fold: tap the card's title, or the arrow in its top right corner, to fold it down to its title or open it again. The app remembers which cards you folded, also after it is closed. Curated Theme Palettes and Press and hold guide start folded; a link or a shortcut that leads into a folded card opens it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Live Logcat</a>. The Terminal has its own gear (<a href="#tab-terminal">Terminal</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -626,20 +627,8 @@
       <tr><td><b>Language</b> (drop-down)</td><td>Chooses the language of the app's buttons and messages. The list has English, Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. Arabic is shown right to left. App names, file names, commands and what Android itself prints stay as they are.</td><td>English, or the phone's language on a first launch when the app has it (the first-launch permission sheet also has this drop-down)</td><td>If you read another language more easily. This guide is English only and uses the English button names, so switch back to English if you cannot find a button it describes.</td></tr>
     </tbody>
   </table>
+  <p>Under the drop-down, the <b>Application Permissions</b> button opens a sheet with that title: <i>Every permission this app uses, and whether it is granted.</i> Each row says <b>Granted</b> or <b>Not granted</b>, a missing one has a <b>Grant</b> button, and <b>Grant all</b> asks for everything that is still missing. It works like the permissions sheet in About: see <a href="#app-permissions">The permissions this app asks for</a>.</p>
   <p><b>What you will see:</b> the whole app is redrawn in the new language and a message says <i>Language: ...</i>. If the language file cannot be loaded, a message says <i>That language could not be loaded. The text stays in</i> and the name of the language you had, and the list returns to that language.</p>
-
-  <h4>Default Ask Agent</h4>
-  <p>A drop-down list under the Language card, with a line under it saying whether the agent you chose is ready, and a button <b>Test the Default Ask Agent</b>. The card was called <i>Default agent</i> in earlier versions.</p>
-  <p>The Default Ask Agent is a <b>research</b> agent: it reads the web and works out an answer. It answers every <b>Ask agent</b> button in the app, and it is the agent the <b>Find and download an app</b> card of the <a href="#tab-updates">Application Updater</a> uses when you tick <b>Use the Default Ask Agent to search as well</b>. It is not a coding agent and it never changes anything on your phone: it only returns text.</p>
-  <table class="hg-table">
-    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
-    <tbody>
-      <tr><td><b>Default Ask Agent</b> (drop-down)</td><td>Chooses the agent that answers. The list is grouped: <b>No default (free web lookup only)</b>; <b>Web research (recommended)</b>: Perplexity, Exa, Browser Use, Crawl4AI; <b>Chat models with an API key</b>: Gemini, Claude, ChatGPT, Grok, Muse, Deepseek; <b>Free Open-Source</b>: Jan.ai, AnythingLLM, Ollama, Own server. The coding agents (Cursor, Copilot, OpenCode) are not in this list. The key or sign-in and the model are the ones set up in the <a href="#tab-terminal">Terminal</a> tab. It is a separate choice from the agent the terminal opens with, so you can chat with one agent and ask the other. Choosing <b>No default</b> is remembered.</td><td><b>Perplexity</b>, until you choose (it searches the web by itself and names its sources)</td><td>To use another agent, or none.</td></tr>
-      <tr><td><b>Test the Default Ask Agent</b> (button)</td><td>Asks the chosen agent one sample question (only that is sent) and says whether it works and how long it took, or why it did not. It has a progress bar and <b>Stop</b>.</td><td>-</td><td>After you add a key.</td></tr>
-    </tbody>
-  </table>
-  <p><b>Where the Ask agent buttons are.</b> Wherever you may want to know what something is: on every row of <a href="#tab-settings">Hidden Settings</a> (a setting without a description says <i>No description yet</i> next to its button) and in the editor sheet; in the app menu on the permissions, app ops, activities, services, receivers, providers, features and libraries lists, and in place of the classification chip of an app the UAD-NG list does not know; on the rows of the <a href="#tab-overlays">overlays</a>; on the processes of the <a href="#tab-taskmgr">Task Manager</a>; on UAD-NG Debloater rows that have no description; on the trackers in the Trackers box; on what <a href="#tab-sdm">SD Maid</a> found; and on a log entry in <a href="#tab-logcat">Live Logcat</a>. A button opens a box that shows exactly what will be sent and asks at once; <b>Ask again</b> asks once more, <b>Web search</b> looks it up instead, and <b>Copy the answer</b> copies it.</p>
-  <p><b>Until the agent has its key</b>, or when <b>No default</b> is chosen, nothing is sent to an agent. Perplexity is the default, but it needs its key (add it in the Terminal of the Console tab; Exa is the same kind of agent, with a key from dashboard.exa.ai/api-keys); until then the Ask agent window still opens and the app's built-in <b>web lookup</b> answers: it searches the web (Bing, then Wikipedia) for a few words about the entry, such as the package name, and only those words leave the phone; it reads the first result pages and shows the passages that mention the entry, with the sites as buttons. It needs no key and no account, but it is not an AI answer, only what the pages say. An <b>Open Settings</b> link opens this screen on the Default Ask Agent card (outlined for a moment), and <b>Web search</b> still opens a search in your browser. The line under the drop-down reads <i>No agent is chosen, so an Ask agent button reads the web for you</i> or <i>... is not connected yet</i>. An agent can be wrong: treat an answer as a hint.</p>
 
   <h4>Appearance</h4>
   <p>Light, dark, or follow your phone. Details and the colour rules are in <a href="#themes">Themes and colours</a>.</p>
@@ -655,8 +644,8 @@
     </tbody>
   </table>
 
-  <h4>Palette Style</h4>
-  <p>One <b>source colour</b>, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, each in a light and a dark version. Tap a style card and the app is rebuilt from the source colour at once; a message says <i>Palette style: Vibrant</i>. The nine styles are the ones Android's own Material You uses, plus Fidelity, Content, Neutral and Monotone from Google's Material Color Utilities.</p>
+  <h4>Palette Style &amp; My Themes</h4>
+  <p>One card, with the palette styles at the top and <b>My Themes</b> under them. One <b>source colour</b>, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, each in a light and a dark version. Tap a style card and the app is rebuilt from the source colour at once; a message says <i>Palette style: Vibrant</i>. The nine styles are the ones Android's own Material You uses, plus Fidelity, Content, Neutral and Monotone from Google's Material Color Utilities.</p>
   <table class="hg-table">
     <thead><tr><th>Style</th><th>What it does</th></tr></thead>
     <tbody>
@@ -688,12 +677,12 @@
   </ul>
 
   <h4>My Themes</h4>
-  <p>Save the look you made under a name and switch between your themes with one tap. A theme holds the palette (a curated palette, Material You, or a palette style with its source colour), your <b>colour tweaks</b> for light and for dark, and <b>Pure black in dark mode</b>. It does <b>not</b> hold <b>Appearance</b> (Light, Dark, System, Schedule): that stays as you set it, so one theme shows in both its light and its dark version.</p>
+  <p>The lower part of the <b>Palette Style &amp; My Themes</b> card. Save the look you made under a name and switch between your themes with one tap. A theme holds the palette (a curated palette, Material You, or a palette style with its source colour), your <b>colour tweaks</b> for light and for dark, and <b>Pure black in dark mode</b>. It does <b>not</b> hold <b>Appearance</b> (Light, Dark, System, Schedule): that stays as you set it, so one theme shows in both its light and its dark version.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><b>Save current theme…</b></td><td>Asks for a name (up to 40 characters; it suggests one such as <i>Vibrant #E91E63</i> or <i>Midnight Slate tweaked</i>) and saves the look in use now. A name that is already used, in capitals or not, asks <i>Replace it with the look in use now?</i>; the replaced theme moves to the top. Up to 30 themes: the 31st is refused with <i>Up to 30 themes: delete one first</i>.</td></tr>
-      <tr><td>A theme (tap it)</td><td>Applies it at once: the palette, source colour, tweaks and Pure black come back and a message says <i>Theme: ...</i>. The theme in use is highlighted, and the <b>Palette Style</b> card follows. The four swatches (accent, background, card, second accent) preview the theme in the light or dark mode you are in. Under the name a line says what it is, for example <i>Vibrant · #E91E63</i> or <i>Midnight Slate · tweaked · pure black</i>.</td></tr>
+      <tr><td>A theme (tap it)</td><td>Applies it at once: the palette, source colour, tweaks and Pure black come back and a message says <i>Theme: ...</i>. The theme in use is highlighted, and the palette styles above follow. The four swatches (accent, background, card, second accent) preview the theme in the light or dark mode you are in. Under the name a line says what it is, for example <i>Vibrant · #E91E63</i> or <i>Midnight Slate · tweaked · pure black</i>.</td></tr>
       <tr><td><b>Rename</b></td><td>Changes the name. Another theme's name (any case) is refused: <i>Another theme is already called ...</i>.</td></tr>
       <tr><td><b>Update</b></td><td>Asks, then puts the look in use now into that theme, keeping its name and place.</td></tr>
       <tr><td><b>Delete</b></td><td>Asks, then removes the theme.</td></tr>
@@ -702,7 +691,7 @@
   <p>Themes are kept on the phone with the other settings. A look made with a very old custom palette cannot be saved (the card says to choose a palette or a palette style first).</p>
 
   <h4>Curated Theme Palettes</h4>
-  <p>Eight ready-made colour schemes. Tap a card to use it. Each has a light and a dark version, and the little strip of four swatches shows how it looks in the mode you are in now. The active card has a highlight.</p>
+  <p>Eight ready-made colour schemes. The card starts folded: tap its title to open it. Tap a palette to use it. Each has a light and a dark version, and the little strip of four swatches shows how it looks in the mode you are in now. The active card has a highlight.</p>
   <table class="hg-table">
     <thead><tr><th>Palette</th><th>What it looks like</th><th>Default</th><th>Note</th></tr></thead>
     <tbody>
@@ -741,6 +730,23 @@
   </table>
   <p>The default of each picker is whatever the selected palette uses. There is no "save"; the tweak is kept as soon as you pick the colour.</p>
 
+  <h4>Default Ask Agent</h4>
+  <p>A card after <b>Curated Theme Palettes</b>: a drop-down list, with a line under it saying whether the agent you chose is ready, and a button <b>Test the Default Ask Agent</b>. The card was called <i>Default agent</i> in earlier versions.</p>
+  <p>The Default Ask Agent is a <b>research</b> agent: it reads the web and works out an answer. It answers every <b>Ask agent</b> button in the app, and it is the agent the <b>Find and download an app</b> card of the <a href="#tab-updates">Application Updater</a> uses when you tick <b>Use the Default Ask Agent to search as well</b>. It is not a coding agent and it never changes anything on your phone: it only returns text.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Default Ask Agent</b> (drop-down)</td><td>Chooses the agent that answers. The list is grouped: <b>No default (free web lookup only)</b>; <b>Web research (recommended)</b>: Perplexity, Exa, Browser Use, Crawl4AI; <b>Chat models with an API key</b>: Gemini, Claude, ChatGPT, Grok, Muse, Deepseek; <b>Free Open-Source</b>: Jan.ai, AnythingLLM, Ollama, Own server. The coding agents (Cursor, Copilot, OpenCode) are not in this list. The key or sign-in and the model are the ones set up in the <a href="#tab-terminal">Terminal</a> tab. It is a separate choice from the agent the terminal opens with, so you can chat with one agent and ask the other. Choosing <b>No default</b> is remembered.</td><td><b>Perplexity</b>, until you choose (it searches the web by itself and names its sources)</td><td>To use another agent, or none.</td></tr>
+      <tr><td><b>Test the Default Ask Agent</b> (button)</td><td>Asks the chosen agent one sample question (only that is sent) and says whether it works and how long it took, or why it did not. It has a progress bar and <b>Stop</b>.</td><td>-</td><td>After you add a key.</td></tr>
+    </tbody>
+  </table>
+  <p><b>Where the Ask agent buttons are.</b> Wherever you may want to know what something is: on every row of <a href="#tab-settings">Hidden Settings</a> (a setting without a description says <i>No description yet</i> next to its button) and in the editor sheet; in the app menu on the permissions, app ops, activities, services, receivers, providers, features and libraries lists, and in place of the classification chip of an app the UAD-NG list does not know; on the rows of the <a href="#tab-overlays">overlays</a>; on the processes of the <a href="#tab-taskmgr">Task Manager</a>; on UAD-NG Debloater rows that have no description; on the trackers in the Trackers box; on what <a href="#tab-sdm">SD Maid</a> found; and on a log entry in <a href="#tab-logcat">Live Logcat</a>. A button opens a box that shows exactly what will be sent and asks at once; <b>Ask again</b> asks once more, <b>Web search</b> looks it up instead, and <b>Copy the answer</b> copies it.</p>
+  <p><b>Until the agent has its key</b>, or when <b>No default</b> is chosen, nothing is sent to an agent. Perplexity is the default, but it needs its key (add it in the Terminal of the Console tab; Exa is the same kind of agent, with a key from dashboard.exa.ai/api-keys); until then the Ask agent window still opens and the app's built-in <b>web lookup</b> answers: it searches the web (Bing, then Wikipedia) for a few words about the entry, such as the package name, and only those words leave the phone; it reads the first result pages and shows the passages that mention the entry, with the sites as buttons. It needs no key and no account, but it is not an AI answer, only what the pages say. An <b>Open Settings</b> link opens this screen on the Default Ask Agent card (outlined for a moment), and <b>Web search</b> still opens a search in your browser. The line under the drop-down reads <i>No agent is chosen, so an Ask agent button reads the web for you</i> or <i>... is not connected yet</i>. An agent can be wrong: treat an answer as a hint.</p>
+
+  <h4>VirusTotal API key</h4>
+  <p>A part of the <b>Default Ask Agent</b> card, under the agent. It is the one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer/Updater</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
+  <p><b>What is left today.</b> Once the key is approved, a line under the box says how many lookups are left in VirusTotal's day, for example <i>377 of 500 lookups left today (123 used)</i>, and when the day ends (00:00 UTC). The numbers come from VirusTotal itself, so scans made in the Installer and in Morphe Helper count together. <b>Refresh</b> asks again; the card asks on its own at most once a minute and after each scan. If VirusTotal gives no counter, the line shows this app's own count and says so. The same line is in the Installer's VirusTotal card.</p>
+
   <h4>Lists</h4>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
@@ -754,34 +760,17 @@
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
       <tr><td><b>Expressive Animations</b> (switch)</td><td>Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide. A message says <i>Expressive animations on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if the motion bothers you or you prefer plain movement.</td></tr>
-      <tr><td><b>Row tints</b> (slider: Off, Subtle, Normal)</td><td>How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app: a glow in that colour behind the app's icon that fades across the row. Off: no tint (the badges and the boxes at the top keep their colours). Subtle: a faint tint. Normal: a clearly visible one. Whatever you choose, only the rows you select get an outline (in the accent colour).</td><td>Subtle</td><td>Turn it up if you want to see the states at a glance, off for plain rows.</td></tr>
     </tbody>
   </table>
+
+  <h4>Row tints</h4>
+  <p>A card of its own, with one slider: <b>Off</b>, <b>Subtle</b> (the default) or <b>Normal</b>. It sets how strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app: a glow in that colour behind the app's icon that fades across the row. Off: no tint (the badges and the boxes at the top keep their colours). Subtle: a faint tint. Normal: a clearly visible one. Whatever you choose, only the rows you select get an outline, in the accent colour (the card says <i>Only the apps you select get an outline.</i>). Turn it up if you want to see the states at a glance, off for plain rows.</p>
 
   <h4>Haptic feedback</h4>
   <p>One switch, <b>Vibrate on taps</b>, <b>on by default</b>. While it is on, every tap on a button, a tab, a switch, a menu or a list row gives a very short vibration, so you feel that the tap was taken. A tap that already vibrated for another reason (a press and hold, for example) is still felt once, not twice. Turn it off and the app stays quiet; turning it on again gives one tick as proof. It is the app's own tick: the touch-feedback setting of your phone is not changed, and if your phone has its vibration switched off, you will not feel it either. Needs no permission.</p>
 
   <h4>Progress messages</h4>
   <p>One switch, <b>Say what is going on</b>, <b>on by default</b>. While an app is uninstalled, frozen, suspended, cleared and so on (from the app menu, the action button, a batch or the Connected Devices apps), the app shows small messages while it works: <i>Working on it&hellip;</i>, then <i>Checking the phone&hellip;</i> (or <i>Checking the device&hellip;</i>) while it asks the phone what became of the app. Turn the switch off if they are noise. What stays: the result (for example <i>Alpha: Uninstalled</i> or <i>Bravo: Still installed</i>), every problem and its result window, and the line on a batch's progress sheet.</p>
-
-  <h4>VirusTotal API key</h4>
-  <p>The one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer/Updater</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
-  <p><b>What is left today.</b> Once the key is approved, a line under the box says how many lookups are left in VirusTotal's day, for example <i>377 of 500 lookups left today (123 used)</i>, and when the day ends (00:00 UTC). The numbers come from VirusTotal itself, so scans made in the Installer and in Morphe Helper count together. <b>Refresh</b> asks again; the card asks on its own at most once a minute and after each scan. If VirusTotal gives no counter, the line shows this app's own count and says so. The same line is in the Installer's VirusTotal card.</p>
-
-  <h4>Reconnecting devices</h4>
-  <p>What the <a href="#tab-devices">Connected Devices</a> tab does when a device you were connected to drops. The same switch is under the <b>Not connected</b> cards in that tab.</p>
-  <table class="hg-table">
-    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
-    <tbody>
-      <tr><td><b>Reconnect on its own</b> (switch)</td><td>When a Wi-Fi, Wireless debugging or Bluetooth device drops while the tab is open, the app tries to bring it back without you pressing anything. A cable (USB) is never retried on its own. A message says <i>Reconnecting on its own: on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if you take devices away on purpose and do not want the app to keep knocking.</td></tr>
-      <tr><td><b>Retry timings</b> (a box)</td><td>The seconds to wait before each attempt, separated by commas or spaces. <b>0, 8, 25</b> means: at once, again 8 seconds after that attempt and a last time 25 seconds later. Up to 8 attempts, each wait from 0 to 600 seconds (10 minutes); a decimal such as 0.5 is allowed. A line under the box repeats what is in use. When the box is not valid the line says why (<i>"x" is not a number of seconds</i>, <i>At most 8 attempts.</i>, <i>Each wait is 600 seconds (10 minutes) at most.</i>) and the timings you had stay.</td><td>0, 8, 25</td><td>A watch that needs longer to wake up: <b>0, 15, 45, 90</b>. A device that comes back fast: <b>0, 3</b>.</td></tr>
-      <tr><td><b>Reset</b> (button)</td><td>Back to 0, 8, 25. It shows only while you use your own timings.</td><td>-</td><td>To undo your timings.</td></tr>
-    </tbody>
-  </table>
-  <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
-
-  <h4>Private DNS</h4>
-  <p>This card only says <i>Private DNS has its own tab now: Extra Settings</i> and has an <b>Open Extra Settings</b> button. The Private DNS services, the speed test and the buttons that change Private DNS are in the <a href="#extra-dns">Extra Settings tab</a>.</p>
 
   <h4>Font</h4>
   <p><b>The list of fonts found is for one visit.</b> What <b>Find fonts on this phone</b> finds is shown under the button, with a <b>Clear this list</b> link. The list is emptied when you leave Settings (and a search that finishes after you left is thrown away), so it does not sit in memory; search again when you need it. The font you chose stays.</p>
@@ -796,7 +785,7 @@
   </table>
   <ol class="hg-steps">
     <li>Tap <b>Find fonts on this phone</b> (or <b>Choose a file...</b>). If you used the search, tap a font in the list.</li>
-    <li>A sheet opens with a sample ("Aa Bb 123", a sentence and "ADB Application Manager") in that font, and the note <i>Only the text of this app changes; names, paths and commands in code-style boxes keep their own font.</i></li>
+    <li>A sheet opens with a sample ("Aa Bb 123", a sentence and "ADB System Manager") in that font, and the note <i>Only the text of this app changes; names, paths and commands in code-style boxes keep their own font.</i></li>
     <li>Tap <b>Use this font</b>, or <b>Cancel</b> to look at another. A message says <i>Font: ...</i> and the whole app changes.</li>
   </ol>
   <p>If a file is not a usable font, a message says <i>Could not use that file</i> with a reason. If your chosen font cannot be loaded the next time the app starts (for example the file was damaged), the app uses the system font again and says so.</p>
@@ -823,30 +812,46 @@
   </table>
   <div class="hg-warn"><b>Careful.</b> Force Stop, Disable, Uninstall and Suspend change real apps on your phone when you tap the button. If you keep one of them as the Action Button, a stray tap does something. App Settings (the default) is the safest choice. For the actions themselves see <a href="#apps-menu">the app menu</a>.</div>
 
-  <h4>Feature List</h4>
-  <p>Which tabs are on the tab bar, and in what order. It has its own section, <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <h4>Navigation</h4>
+  <p>Where the tabs are: <i>The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.</i> The bars themselves are described in <a href="#screen-tour">A tour of the screen</a>.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
-      <tr><td>A <b>switch</b> on each of the 13 movable tabs</td><td>On: the tab is on the bar. Off: it is taken off the bar.</td><td>All on</td><td>To hide tabs you do not use.</td></tr>
-      <tr><td>The <b>up</b> and <b>down arrows</b> on each row</td><td>Move the tab one place earlier or later on the bar.</td><td>The default order</td><td>To put your favourite tabs first.</td></tr>
+      <tr><td><b>Bottom bar + top bar</b>, <b>Bottom bar only</b>, <b>Top bar only</b> (three choices)</td><td>The bottom bar has four pinned tabs and <b>More</b>; the top bar is the row of every tab under the header, which scrolls sideways. With both, you have the two.</td><td>Bottom bar only</td><td>Top bar only if you prefer the older layout; both if you like reaching every tab without opening More.</td></tr>
+      <tr><td><b>Long-press shortcuts</b> (switch)</td><td><i>Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.</i> Off: a hold on a tab does nothing more than a tap.</td><td>On</td><td>Turn it off if you open the menus by mistake.</td></tr>
+      <tr><td><b>Shortcuts</b> (a fold-out list)</td><td>For each pinned tab that has shortcuts, which ones its menu lists and in what order, with a switch and arrows on each. <i>A menu lists four at most; the first one is the one under your thumb.</i> <b>Reset shortcuts</b> puts every menu back.</td><td>The first four of each tab</td><td>To put the shortcut you use most first.</td></tr>
+    </tbody>
+  </table>
+  <p>The shortcuts each tab can have: <b>Apps</b>: Search apps. <b>Installer</b>: Update All (only while two or more updates wait), Updater, Check for updates, Find APKs on storage. <b>Console</b>: ADB Shell, Terminal, Full-screen terminal, Coding Agents, Termux setup, Terminal settings. <b>Live Logcat</b>: Filter the log, Log of one app, Recordings. <b>Hidden Settings</b>: Search settings. <b>Extra Settings</b>: Private DNS, Animations, Brightness, Telemetry, Power, Doze, Zram. <b>Task Manager</b>: Processes, CPU, RAM, GPU, Battery, Network. A shortcut whose target is not there (for example a section your phone lacks) is left out of the menu.</p>
+
+  <h4>Feature List</h4>
+  <p>Which tabs are on, in what order, and which four are on the bottom bar. It has its own section, <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td>A <b>switch</b> on each of the 14 movable tabs</td><td>On: the tab is in the app. Off: it is taken out of the bars and out of More.</td><td>All on</td><td>To hide tabs you do not use.</td></tr>
+      <tr><td>The <b>pin</b> on each row</td><td><i>Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</i></td><td>Application Manager, APK Installer/Updater, Extra Settings and Console</td><td>To have the tabs you use most one tap away.</td></tr>
+      <tr><td>The <b>up</b> and <b>down arrows</b> on each row</td><td>Move the tab one place earlier or later, on the bars and in More.</td><td>The default order</td><td>To put your favourite tabs first.</td></tr>
       <tr><td><b>Reset to Default</b></td><td>Switches every tab on and puts them back in the default order. A message says <i>Tabs are back in their default order, all turned on</i>.</td><td>-</td><td>To start over.</td></tr>
     </tbody>
   </table>
 
   <h4>Press and hold guide</h4>
-  <p>This card has no controls. It lists what responds to a press and hold of about half a second (you feel a short tap when it works):</p>
+  <p>The last card, folded until you open it. It has no controls. It lists what responds to a press and hold of about half a second (you feel a short tap when it works):</p>
   <table class="hg-table">
     <thead><tr><th>What you hold</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
-      <tr><td>An app row</td><td>Apps</td><td>Opens that app's menu (the same as tapping the three dots). Tap the checkbox to select instead.</td></tr>
+      <tr><td>An app row</td><td>Apps, Connected Devices</td><td>Opens that app's menu (the same as tapping the three dots). A tap on the row selects it instead.</td></tr>
       <tr><td>An app's icon</td><td>Apps</td><td>Saves the icon as a PNG to Download/ADB App Manager/Icons.</td></tr>
-      <tr><td>The Action Button</td><td>Apps, Debloater</td><td>Opens the sheet with the actions you chose for the hold menu.</td></tr>
+      <tr><td>The Action Button</td><td>Apps, Debloater</td><td>A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. The <b>Action Button</b> card above chooses which ones it lists.</td></tr>
       <tr><td>The round checkmark button (when apps are selected)</td><td>Apps</td><td>Clears every selection at once.</td></tr>
-      <tr><td>A file or folder row</td><td>File Manager</td><td>Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</td></tr>
-      <tr><td>A file the APK search found</td><td>Installer</td><td>Deletes it from the phone, with an Undo right after.</td></tr>
-      <tr><td>A setting that is 1 or 0</td><td>Hidden Settings</td><td>Flips it. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
+      <tr><td>A tab on the bottom bar</td><td>Bottom bar</td><td>A menu of up to four shortcuts into that tab, such as Search apps, Update All, the Terminal or a Task Manager page. Slide onto one and let go, or tap it. <b>Navigation</b> above chooses them or turns them off.</td></tr>
+      <tr><td>A file or folder row</td><td>File Manager</td><td>Starts selecting. Tap more rows to add them, then Copy, Move, Compress or Delete.</td></tr>
+      <tr><td>A file the APK search found</td><td>Installer</td><td>Asks to delete it from the phone, with an Undo right after.</td></tr>
+      <tr><td>A setting that is on or off</td><td>Hidden Settings</td><td>Flips it (1 / 0, true / false, on / off, yes / no). Any other setting says to tap it to edit. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
       <tr><td>An overlay row</td><td>Overlays</td><td>Switches that overlay on or off. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+      <tr><td>Hold to confirm</td><td>Extra Settings</td><td>Power off, Recovery and Bootloader run only when you keep holding until the ring fills (just over a second). A short tap does nothing.</td></tr>
+      <tr><td>The arrow and page keys</td><td>Real terminal</td><td>Repeat while you hold them, like a keyboard key. See <a href="#tab-terminal">Terminal</a>.</td></tr>
     </tbody>
   </table>
 
@@ -862,21 +867,21 @@
   </ul>
 </section>
 <section id="feature-list" data-title="Turning tabs on and off and moving them" data-group="Settings and looks">
-  <p class="hg-lead">The tab bar has fourteen tabs, and you may not use them all. The Feature List lets you take tabs off the bar and put the rest in the order you like.</p>
-  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>, then scroll to the card named <b>Feature List</b> (after the Action Button card).</p>
+  <p class="hg-lead">The app has fourteen tabs you can move, and you may not use them all. The Feature List lets you switch tabs off, put the rest in the order you like, and pin the four that go on the bottom bar.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>, then scroll to the card named <b>Feature List</b> (after the Action Button and Navigation cards). The card folds: if you see only its title, tap the title to open it. <b>Customize tabs</b> in the <b>More tabs</b> sheet of the bottom bar opens it too.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>No working mode and no permission are needed. Every change shows on the tab bar at once, and it is kept when you close the app and when you restart the phone.</li>
+    <li>No working mode and no permission are needed. Every change shows on the bottom bar, in More and on the tab bar at once, and it is kept when you close the app and when you restart the phone.</li>
     <li>The Feature List only decides what is <b>shown</b>. Switching a tab off does not delete anything: the tab's own settings and saved things stay where they are, and the tab comes back exactly as you left it when you switch it on again.</li>
-    <li>It affects the tab bar only. The <a href="#prefs">Settings</a> screen is opened by the gear, is not a tab, and cannot be switched off, so you can always get back to this card.</li>
+    <li>It affects the tabs only. The <a href="#prefs">Settings</a> screen is opened by the gear, is not a tab, and cannot be switched off, so you can always get back to this card.</li>
   </ul>
 
   <h4>What stays fixed</h4>
   <p><b>Application Manager</b> is always the first tab and <b>About</b> is always the last. They have no switch or arrows in the list because they cannot be turned off or moved. Everything between them can be switched off and moved.</p>
 
   <h4>The list and the default order</h4>
-  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the fourteen movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
+  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> and <i>Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</i> Each of the fourteen movable tabs has a row with its name, a pin, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
   <table class="hg-table">
     <thead><tr><th>#</th><th>Name in the list</th><th>What it is</th></tr></thead>
     <tbody>
@@ -888,7 +893,7 @@
       <tr><td>5</td><td><b>Console</b></td><td><a href="#tab-console">Console</a> (the ADB Shell and the Terminal, with the coding agents)</td></tr>
       <tr><td>6</td><td><b>Live Logcat</b></td><td><a href="#tab-logcat">Live Logcat</a> (the phone's log)</td></tr>
       <tr><td>7</td><td><b>Hidden Settings</b></td><td><a href="#tab-settings">Hidden Settings</a></td></tr>
-      <tr><td>8</td><td><b>Extra Settings</b></td><td><a href="#tab-extrasettings">Extra Settings</a> (Private DNS and its speed test)</td></tr>
+      <tr><td>8</td><td><b>Extra Settings</b></td><td><a href="#tab-extrasettings">Extra Settings</a> (Private DNS, animations, brightness, power and more)</td></tr>
       <tr><td>9</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
       <tr><td>10</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
       <tr><td>11</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
@@ -898,44 +903,51 @@
       <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
     </tbody>
   </table>
-  <p>On the tab bar, long names break into two lines (for example Hidden / Settings). The names in the list are the full names.</p>
+  <p>On the tab bar, long names break into two lines (for example Hidden / Settings); the bottom bar uses a short name (Hidden). The names in the list are the full names.</p>
+
+  <h4>Pin a tab to the bottom bar</h4>
+  <ol class="hg-steps">
+    <li>In the Feature List, tap the pin on a tab's row. It lights up and the tab takes a place on the bottom bar, in the list's order.</li>
+    <li>The bar holds four tabs, Application Manager always among them as the first. Once four are pinned, another pin only says <i>The bottom bar holds 4 tabs. Unpin one first.</i></li>
+    <li>Every tab that is on but not pinned is under <b>More</b>. Out of the box the pinned tabs are Application Manager, APK Installer/Updater, Extra Settings and Console.</li>
+  </ol>
 
   <h4>Switch a tab off</h4>
   <ol class="hg-steps">
     <li>Tap the gear icon, then scroll to <b>Feature List</b>.</li>
     <li>Tap the switch at the right end of the tab's row, so it turns off. The tab's name in the list turns dim.</li>
-    <li>Look at the tab bar under the header: the tab is gone. The tabs that were after it move up to take its place.</li>
+    <li>Look at the bottom bar, More or the tab bar: the tab is gone. The tabs that were after it move up to take its place.</li>
   </ol>
   <p><b>What happens to a tab you switch off:</b></p>
   <ul>
-    <li>It leaves the tab bar at once, and Back no longer goes to it.</li>
+    <li>It leaves the bars and More at once (a pinned tab gives up its place on the bottom bar), and Back no longer goes to it.</li>
     <li>Anything inside the app that points at it does not open it. A message says, for example, <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (the Application Updater box of the APK Installer/Updater tab), the update button in an app's menu (the same box) and <b>Logs</b> in an app's menu (Console, Live Logcat).</li>
     <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer/Updater</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
-    <li>You can switch off every one of the fourteen if you like. The bar then shows only Application Manager and About.</li>
+    <li>You can switch off every one of the fourteen if you like. Only Application Manager and About are then left.</li>
   </ul>
 
   <h4>Get a tab back</h4>
   <ol class="hg-steps">
     <li>Open Settings with the gear icon and scroll to <b>Feature List</b>.</li>
-    <li>Turn the tab's switch on. It returns to the bar in the position its row has in the list.</li>
+    <li>Turn the tab's switch on. It returns in the position its row has in the list.</li>
     <li>If you cannot remember which tab you hid, or want everything as it was, tap <b>Reset to Default</b>.</li>
   </ol>
 
   <h4>Move a tab</h4>
   <ol class="hg-steps">
     <li>In the Feature List, tap the <b>up arrow</b> on a row to move that tab one place earlier, or the <b>down arrow</b> to move it one place later.</li>
-    <li>The row moves and the tab bar follows at once. The screen scrolls so the row stays under your thumb, so you can tap the same arrow again to keep moving it.</li>
+    <li>The row moves and the bars follow at once. The screen scrolls so the row stays under your thumb, so you can tap the same arrow again to keep moving it.</li>
     <li>Repeat for other tabs until the order suits you.</li>
   </ol>
   <p>A tab that is switched off still keeps its place in the list. If you switch it on again later, it returns to that place. Moving a tab never changes the position of Application Manager or About.</p>
 
   <h4>Reset to Default</h4>
-  <p>The <b>Reset to Default</b> button under the list switches all fourteen tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
+  <p>The <b>Reset to Default</b> button under the list switches all fourteen tabs on, puts them back in the default order shown above and pins the four default tabs again (the shortcut menus stay as you set them). A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
 
   <h4>When the app is updated</h4>
-  <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working. One change of this kind: the Command-Line Interface tab became <b>Console</b> (the ADB Shell and Live Logcat) and <b>Terminal</b> (the real terminal and the coding agents), and the Logcat Viewer tab moved into Console. A saved choice keeps its place: Console takes the place the Command-Line Interface had, and is switched off if the Command-Line Interface was switched off. What was saved for the Logcat Viewer is dropped.</p>
+  <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working. Changes of this kind: the Command-Line Interface tab became <b>Console</b> and a <b>Terminal</b> tab, with the log inside Console. Since v7.14 the <b>Console</b> holds the <b>ADB Shell</b> and the <b>Terminal</b> as its two parts, and <b>Live Logcat</b> is a tab of its own again, in the place the Terminal tab had. A saved choice keeps its place: Console takes the place the Command-Line Interface had, and is switched off if the Command-Line Interface was switched off.</p>
 
-  <div class="hg-note"><b>Tip.</b> If you use only a few tabs, hide the rest and put the ones you use most right after Application Manager. The tab bar then shows more of what you need at once, without sideways scrolling.</div>
+  <div class="hg-note"><b>Tip.</b> If you use only a few tabs, hide the rest and put the ones you use most right after Application Manager. Pin the four you use most so they are one tap away on the bottom bar.</div>
 
   <h4>If something goes wrong</h4>
   <ul>
@@ -947,7 +959,7 @@
 </section>
 <section id="themes" data-title="Themes and colours" data-group="Settings and looks">
   <p class="hg-lead">Choose how the app looks: light or dark, one of eight ready-made colour schemes, one of nine palette styles built from a source colour of your choice, or your own colours. These choices change only this app, not the rest of your phone.</p>
-  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Five cards are about looks: <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Three cards are about colours: <b>Appearance</b>, <b>Palette Style &amp; My Themes</b>, and <b>Curated Theme Palettes</b> (folded at first: tap its title) with the <b>Granular Color Pickers</b> inside it, below the palettes. <b>Row tints</b>, further down, sets how strongly app rows are tinted.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -964,7 +976,7 @@
     <li><b>Your tweaks:</b> any colours you changed with the colour pickers. They are saved for one mode only, so a tweak made in dark mode does not change light mode.</li>
     <li><b>Pure black:</b> if it is on, then in dark mode the backgrounds become black whatever the palette and your tweaks say.</li>
   </ol>
-  <p>The text colour on buttons is chosen automatically, black or white, whichever is easier to read on the accent colour. The phone's status bar takes the colour of the app's background.</p>
+  <p>The text colour on buttons is chosen automatically: black on the accent colour wherever black is easy to read (a contrast of 4.5:1), white only where it is not. The fixed colours of Uninstall (red), Freeze (ice blue) and Reinstall (green) always have black text. The phone's status bar takes the colour of the app's background.</p>
 
   <h4>Light, dark or system</h4>
   <p>In the <b>Appearance</b> card, tap one of four buttons. The active one is highlighted, and a message says what you chose (for example <i>Appearance: dark</i>).</p>
@@ -997,12 +1009,12 @@
   </table>
 
   <h4>My Themes</h4>
-  <p>The <b>My Themes</b> card (below Palette Style) saves a look under a name: <b>Save current theme…</b>, then tap a saved theme to wear it again. It keeps the palette or palette style, the source colour, your colour tweaks and Pure black, and leaves Light, Dark and System alone. Each theme can be renamed, updated with the look in use now, or deleted. See <a href="#prefs">Settings</a> for every control.</p>
+  <p>The <b>My Themes</b> part of the <b>Palette Style &amp; My Themes</b> card (below the styles) saves a look under a name: <b>Save current theme…</b>, then tap a saved theme to wear it again. It keeps the palette or palette style, the source colour, your colour tweaks and Pure black, and leaves Light, Dark and System alone. Each theme can be renamed, updated with the look in use now, or deleted. See <a href="#prefs">Settings</a> for every control.</p>
 
   <h4>Palette styles</h4>
-  <p>The <b>Palette Style</b> card (above the eight palettes) builds a whole theme from <b>one source colour</b> in one of nine styles: <b>Tonal Spot</b>, <b>Vibrant</b>, <b>Fidelity</b>, <b>Content</b>, <b>Neutral</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> and <b>Monotone</b>. The source colour is automatic (your wallpaper's main colour on Android 12 and newer, otherwise Material purple) until you pick one with the circle in the card. See <a href="#prefs">Settings</a> for what each style does and for the controls.</p>
+  <p>The palette styles at the top of the <b>Palette Style &amp; My Themes</b> card (above the eight palettes) builds a whole theme from <b>one source colour</b> in one of nine styles: <b>Tonal Spot</b>, <b>Vibrant</b>, <b>Fidelity</b>, <b>Content</b>, <b>Neutral</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> and <b>Monotone</b>. The source colour is automatic (your wallpaper's main colour on Android 12 and newer, otherwise Material purple) until you pick one with the circle in the card. See <a href="#prefs">Settings</a> for what each style does and for the controls.</p>
   <ol class="hg-steps">
-    <li>Open Settings (the gear) and find <b>Palette Style</b>.</li>
+    <li>Open Settings (the gear) and find <b>Palette Style &amp; My Themes</b>.</li>
     <li>Optional: tap the <b>Source color</b> circle and choose a colour, for example #009688.</li>
     <li>Tap a style. The app changes colour at once, the tile is highlighted and a message says <i>Palette style: ...</i>.</li>
     <li>Switch <b>Appearance</b> between Light and Dark to see both versions. Tap one of the eight palette cards to leave the style palette.</li>
