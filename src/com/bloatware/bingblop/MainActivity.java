@@ -7813,23 +7813,22 @@ public class MainActivity extends Activity {
         }
         StringBuilder notes = new StringBuilder();
         List<File> files = new ArrayList<File>();
-        File tmp = null;
         String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
-        if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            files.addAll(MorpheLibrary.unzipApks(apk, tmp));
-        } else {
-            // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
-            // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            tmp.mkdirs();
-            File copy = new File(tmp, apk.getName());
-            copyFile(apk, copy);
-            files.add(copy);
-        }
+        // the folder the APK is copied (or the bundle unpacked) into: filled inside the try below, so a copy that fails half way is removed too
+        File tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
         String out;
         String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
+            if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
+                files.addAll(MorpheLibrary.unzipApks(apk, tmp));
+            } else {
+                // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
+                // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
+                tmp.mkdirs();
+                File copy = new File(tmp, apk.getName());
+                copyFile(apk, copy);
+                files.add(copy);
+            }
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
@@ -7852,7 +7851,7 @@ public class MainActivity extends Activity {
             }
             out = installApksIn(files, mode);          // the mode the question named and the removal above used
         } finally {
-            if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
+            File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete();
         }
         boolean ok = InstallHints.success(out);
         r.put("ok", ok);
