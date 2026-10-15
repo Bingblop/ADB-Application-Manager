@@ -24384,7 +24384,7 @@ Type any command above (e.g. pm list packages -d)</div>
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
             phone: { sel: new Set(), filter: 'user' },
             up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {},
-            stub: {}
+            stub: {}, stubRenew: null, stubRenewing: false
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -24927,7 +24927,30 @@ Type any command above (e.g. pm list packages -d)</div>
             const st = cd.stub[serial] = cd.stub[serial] || {};
             if (r && typeof r.installed === 'boolean') { st.installed = r.installed; st.version = r.version || 0; st.running = !!r.running; }
             if (cd.serial === serial) cdRenderInfo();
+            cdStubRenewTimer();
             return st;
+        }
+        // the stub lets go of the watch by itself when this phone has not renewed it for 5 minutes (the app was closed, Wi-Fi or adb went away), so
+        // while it runs on a connected watch it is renewed once a minute, whichever view is open
+        const CD_STUB_RENEW_MS = 60000;
+        function cdStubRenewTimer() {
+            const any = Object.keys(cd.stub).some(k => (cd.stub[k] || {}).running);
+            if (any && !cd.stubRenew) cd.stubRenew = setInterval(cdStubRenew, CD_STUB_RENEW_MS);
+            else if (!any && cd.stubRenew) { clearInterval(cd.stubRenew); cd.stubRenew = null; }
+        }
+        async function cdStubRenew() {
+            if (cd.stubRenewing) return;
+            cd.stubRenewing = true;
+            try {
+                for (const serial of Object.keys(cd.stub)) {
+                    const st = cd.stub[serial];
+                    if (!st || !st.running || st.busy || !cdIsUp(serial)) continue;
+                    const r = await cdStubCall('renew', serial);
+                    // the answer ends with a fresh status: the stub was stopped on the watch, or its lease ran out while the phone was away
+                    if (r && typeof r.installed === 'boolean' && cd.stub[serial] === st && (r.installed !== st.installed || (r.version || 0) !== st.version || !!r.running !== st.running)) cdStubKeep(serial, r);
+                }
+            } finally { cd.stubRenewing = false; }
+            cdStubRenewTimer();
         }
         // once per connection: what the watch has, and start the stub when it is installed (and up to date) but not running
         async function cdStubOnConnect(serial) {

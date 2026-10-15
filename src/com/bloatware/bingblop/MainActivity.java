@@ -11135,7 +11135,8 @@ public class MainActivity extends Activity {
 
         /**
          * The ADB Stub on a connected watch (see WearStub). action: "status", "install" (the APK this build carries, with its permissions granted),
-         * "start" (phone: the name the stub's screen gives this phone; empty: its model) or "stop". Every action ends with a fresh status.
+         * "start" (phone: the name the stub's screen gives this phone; empty: its model), "renew" (the stub's lease, about once a minute while it runs)
+         * or "stop". Every action ends with a fresh status.
          * Answer: window.onCdResult({tag, ok, out, installed, version, running}).
          */
         @JavascriptInterface
@@ -11143,7 +11144,7 @@ public class MainActivity extends Activity {
             final String t = tag == null ? "" : tag;
             final String a = action == null ? "" : action;
             if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
-            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("stop")) {
+            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("renew") && !a.equals("stop")) {
                 notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: unknown action") + ")");
                 return;
             }
@@ -11170,6 +11171,9 @@ public class MainActivity extends Activity {
                                 String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
                                 ok = WearStub.started(out);
+                            } else if (a.equals("renew")) {
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
+                                ok = WearStub.renewed(out);
                             } else if (a.equals("stop")) {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), 20000);
                                 ok = out.contains("stopped") && !out.startsWith("Error");

@@ -7,9 +7,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.bloatware.bingblop.adbstub.Lease;
+
 // The ADB Stub for Wear OS watches (Connected Devices): the status command run through a real sh against a fake pm / dumpsys / pidof, the reading
-// of its answer, the start and stop commands (quoting of the phone's name, the force-stop that releases the watch's locks), and that WearStub
-// agrees with wearstub/AndroidManifest.xml and the stub's own sources (package, versionCode, the Stop action, the receiver's permission).
+// of its answer, the start, renew and stop commands (quoting of the phone's name, the force-stop that releases the watch's locks), the stub's lease
+// (wearstub Lease: it lets go of the watch by itself 5 minutes after the phone's last renewal), and that WearStub agrees with
+// wearstub/AndroidManifest.xml and the stub's own sources (package, versionCode, the Stop and Renew actions, the receiver's permission).
 public class WearStubTest {
     static int fails = 0, n = 0;
     static void check(String what, boolean ok) { n++; if (!ok) { fails++; System.out.println("FAIL: " + what); } }
@@ -85,6 +88,29 @@ public class WearStubTest {
         check("stop asks the stub first", stop.startsWith("am broadcast -a " + WearStub.PKG + ".STOP -n " + WearStub.PKG + "/.StopReceiver"));
         check("... then ends its process (the watch drops its locks and Wi-Fi request)", stop.contains("am force-stop " + WearStub.PKG + ";"));
         check("... and says it is done", stop.endsWith("echo stopped"));
+        String renew = WearStub.renewCmd();
+        check("renew is a broadcast to the stub's receiver", renew.equals("am broadcast -a " + WearStub.PKG + ".RENEW -n " + WearStub.PKG + "/.StopReceiver"));
+        check("am broadcast's answer: renewed", WearStub.renewed("Broadcasting: Intent { act=" + WearStub.PKG + ".RENEW flg=0x400000 cmp=" + WearStub.PKG + "/.StopReceiver }\nBroadcast completed: result=0"));
+        check("an adb error: not renewed", !WearStub.renewed("error: device offline") && !WearStub.renewed("Error: timed out") && !WearStub.renewed(null));
+
+        // the lease: without word from the phone the stub lets go by itself
+        long t0 = 1_000_000L;
+        Lease lease = new Lease(t0);
+        check("the lease is 5 minutes", Lease.MS == 5 * 60 * 1000L);
+        check("a new lease runs its full length", lease.left(t0) == Lease.MS);
+        check("a minute later 4 are left", lease.left(t0 + 60_000L) == 4 * 60_000L);
+        check("no renewal for 5 minutes: over (let go)", lease.left(t0 + Lease.MS) == 0 && lease.left(t0 + Lease.MS + 1) == 0);
+        check("an hour without renewal: still over, never negative", lease.left(t0 + 3_600_000L) == 0);
+        lease.renew(t0 + 4 * 60_000L);
+        check("renewed after 4 minutes: 5 from then, not over at the first end", lease.left(t0 + Lease.MS) == 4 * 60_000L);
+        check("... and over 5 minutes after the renewal", lease.left(t0 + 9 * 60_000L) == 0);
+        Lease kept = new Lease(t0);
+        for (long t = t0; t <= t0 + 24 * 3_600_000L; t += 60_000L) kept.renew(t);
+        check("renewed every minute for a day: still held", kept.left(t0 + 24 * 3_600_000L + 30_000L) > 0);
+        lease = new Lease(t0);
+        lease.renew(t0 - 10_000L);
+        check("a renewal with an earlier time does not shorten the lease", lease.left(t0) == Lease.MS);
+        check("a time before the lease began gives at most the full length", new Lease(t0).left(t0 - 10_000L) == Lease.MS);
 
         // the stub itself agrees
         File repo = repo();
@@ -97,10 +123,16 @@ public class WearStubTest {
             check("WearStub.PKG is the stub's package", m.contains("package=\"" + WearStub.PKG + "\""));
             check("the Stop action is the stub's", m.contains("<action android:name=\"" + WearStub.STOP_ACTION + "\""));
             check("only the shell and the system may send Stop (DUMP)", Pattern.compile("android:name=\"\\.StopReceiver\"[^>]*android:permission=\"android.permission.DUMP\"").matcher(m).find());
+            check("the Renew action is the stub's (same receiver)", m.contains("<action android:name=\"" + WearStub.RENEW_ACTION + "\""));
             check("the stub's foreground service has a type (Android 14)", m.contains("android:foregroundServiceType=\"connectedDevice\"") && m.contains("FOREGROUND_SERVICE_CONNECTED_DEVICE"));
             String svc = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StubService.java"));
             check("StubService.ACTION_STOP is the same action", svc.contains("ACTION_STOP = \"" + WearStub.STOP_ACTION + "\""));
             check("StubService releases the screen, the Wi-Fi locks and the Wi-Fi request", svc.contains("screen.release()") && svc.contains("wifiLock.release()") && svc.contains("unregisterNetworkCallback"));
+            check("StubService.ACTION_RENEW is the same action", svc.contains("ACTION_RENEW = \"" + WearStub.RENEW_ACTION + "\""));
+            check("StubService starts the lease when it takes hold, and lets go when it is over", svc.contains("lease = new Lease(") && svc.contains("handler.postDelayed(leaseCheck, Lease.MS)") && Pattern.compile("left <= 0\\) stopNow\\(").matcher(svc).find());
+            check("the lease check is taken back on release", svc.contains("handler.removeCallbacks(leaseCheck)"));
+            String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
+            check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
         }
 
         System.out.println(fails == 0 ? "PASS WearStubTest: " + n + " checks" : "FAILED WearStubTest: " + fails + " of " + n);

@@ -1,0 +1,12 @@
+ok   1. the stub was started on connect: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      a renewal runs once a minute while it runs: 60000
+ok      a renewal is sent to the watch: stub renew 192.168.1.30:5555
+ok      another view is opened (the device list is not polled there): the renewal keeps running: 60000
+ok      ... and still renews: stub renew 192.168.1.30:5555
+ok   2. a renewal finds the stub stopped: the row offers Start: {"text":"ADB Stub Installed, not running. Start","btn":"Start"}
+ok      and the renewals stop:
+ok      nothing is renewed while it is not running:
+ok      Start: the renewals run again: 60000
+ok   3. a watch without the stub: no renewal: stub status 192.168.1.30:5555
+errors: []
+ALL OK

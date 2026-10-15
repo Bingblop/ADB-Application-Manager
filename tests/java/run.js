@@ -104,7 +104,7 @@ const SUITES = [
   { name: 'trackers', title: 'Tracker libraries in an app (Exodus list): a hand-built dex, classes defined or only referenced, stored and deflated entries, split apks, damaged files', tests: ['TrackersTest'], main: 'com.bloatware.bingblop.TrackersTest', needs: ['json', 'fixtures'] },
   { name: 'batchverify', title: 'After a batch, the real state decides: uninstall, reinstall, freeze and unfreeze are read back from the package lists (a run whose commands all said "failed" while every app was gone)', tests: ['BatchVerifyTest'], main: 'com.bloatware.bingblop.BatchVerifyTest', needs: ['json'] },
   { name: 'uninstallhints', title: 'What an uninstall failure means (pm uninstall answers: needs root, device policy, user restriction)', tests: ['UninstallHintsTest'], main: 'com.bloatware.bingblop.UninstallHintsTest' },
-  { name: 'wearstub', title: 'The ADB Stub for Wear OS watches (Connected Devices): the status command through a real sh against a fake pm / dumpsys / pidof, the start and stop commands, and that WearStub agrees with wearstub/ (package, versionCode, Stop action, its permission)', tests: ['WearStubTest'], main: 'com.bloatware.bingblop.WearStubTest' },
+  { name: 'wearstub', title: 'The ADB Stub for Wear OS watches (Connected Devices): the status command through a real sh against a fake pm / dumpsys / pidof, the start, renew and stop commands, the stub\'s lease (it lets go by itself when the phone stops renewing), and that WearStub agrees with wearstub/ (package, versionCode, Stop and Renew actions, their permission)', tests: ['WearStubTest'], main: 'com.bloatware.bingblop.WearStubTest', needs: ['wearsrc'] },
   { name: 'devuninstall', title: 'Removing an app on another device (Connected Devices): pm uninstall --user 0, the Binder helper pushed, run and taken off again when a system app needs it, what may go into the shell, against a fake adb', tests: ['DeviceUninstallTest'], main: 'com.bloatware.bingblop.DeviceUninstallTest', needs: ['json'] },
   { name: 'pure', title: 'Package-file scan output and XAPK data paths', tests: ['PureTest'], main: 'PureTest', needs: ['json'] },
   { name: 'storedetail', title: 'App Stores: the detail of an app (pictures of a README, the side file of a repository, GitHub and Codeberg projects)', tests: ['StoreDetailTest'], main: 'com.bloatware.bingblop.StoreDetailTest', needs: ['androidall'] },
@@ -194,6 +194,7 @@ const NEEDS = {
     return jar ? { cp: [jar] } : { skip: 'needs Android\'s real framework classes (android.util.JsonReader): set ANDROID_ALL_JAR to a Robolectric android-all jar' };
   },
   stubs: () => ({ sp: [path.join(HERE, 'stubs')] }),
+  wearsrc: () => ({ sp: [path.join(REPO, 'wearstub', 'src')] }),     // the ADB Stub's own classes that need no Android ones (Lease)
   fixtures: () => ({ props: { fixtures: path.join(HERE, 'fixtures') } }),
   zipfix1: () => zipFixtures('zipfix1', 'mkzip1.py', 'notzip.bin'),
   zipfix2: () => zipFixtures('zipfix2', 'mkzip2.py', 'big_uncompressed.zip'),

@@ -13,9 +13,10 @@ public final class WearStub {
 
     public static final String PKG = "com.bloatware.bingblop.adbstub";
     /** android:versionCode of wearstub/AndroidManifest.xml (the WearStub suite checks they agree). A watch with an older one is offered Update. */
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
     static final String ACTIVITY = PKG + "/.StubActivity";
     static final String STOP_ACTION = PKG + ".STOP";
+    static final String RENEW_ACTION = PKG + ".RENEW";
     static final String RECEIVER = PKG + "/.StopReceiver";
 
     /** What the watch has: installed (and which version), running. */
@@ -71,6 +72,20 @@ public final class WearStub {
     static boolean started(String out) {
         String s = out == null ? "" : out;
         return s.contains("Starting:") && !s.contains("Error");
+    }
+
+    /**
+     * Renews the stub's lease (version 2 and later): the stub lets go of the watch by itself when it has not heard from the phone for 5 minutes, so the
+     * page sends this about once a minute while the stub runs on a connected watch. Only the shell and the system may send it (DUMP).
+     */
+    static String renewCmd() {
+        return "am broadcast -a " + RENEW_ACTION + " -n " + RECEIVER;
+    }
+
+    /** am broadcast prints "Broadcast completed: result=0" when the broadcast was delivered (to the stub, or to nothing when it is not running). */
+    static boolean renewed(String out) {
+        String s = out == null ? "" : out;
+        return s.contains("Broadcast completed") && !s.contains("Error");
     }
 
     /**
