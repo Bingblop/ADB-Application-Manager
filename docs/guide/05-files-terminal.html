@@ -332,7 +332,7 @@
 
 <h4>Run your first command</h4>
 <ol class="hg-steps">
-<li>Open the <b>Terminal</b> tab. The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
+<li>Open the <b>Console</b> tab and tap <b>Terminal</b> at its top (next to <b>ADB Shell</b>). The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b> (or Enter on the keyboard).</li>
 <li>Your line is echoed as <i>folder $ command</i> and the answer appears under it: the model name of your phone. The prompt shows <i>#</i> instead of <i>$</i> when the shell is root.</li>
 </ol>
@@ -622,8 +622,8 @@
 
 <h4>The settings box</h4>
 <ul>
-<li><b>Auto-refresh</b>: how often to measure: Off, 1 s, 2 s, <b>3 s</b> (starting choice), 5 s or 10 s. <b>Refresh now</b> measures once. A longer time uses less battery.</li>
-<li><b>Graph speed</b>: a slider from 150 to 1000 ms (starting at 300 ms). It only changes how often the graph is redrawn, not how often the phone is measured.</li>
+<li><b>Auto-refresh</b>: how often to measure: Off, 0.5 s, <b>1 s</b> (starting choice), 2 s, 3 s, 5 s or 10 s. <b>Refresh now</b> measures once. A longer time uses less battery.</li>
+<li><b>Graph speed</b>: a slider from 50 to 1000 ms (starting at 150 ms). It only changes how often the graph is redrawn, not how often the phone is measured. A low number makes the line move more smoothly and uses a little more battery.</li>
 <li><b>Units</b> (only on the Battery page): temperature in <b>&deg;F</b> or <b>&deg;C</b> (starting at F), and current in <b>mA</b> or <b>µA</b>.</li>
 </ul>
 <p>The graphs keep the last 120 readings. Your choices are remembered.</p>
@@ -658,7 +658,8 @@
 
 <h4>GPU</h4>
 <p>The GPU draws the picture on your screen. The big number is its load. Phones do not all expose it, so you may see <i>Not available on this phone</i>. Some show <i>~40% (by clock speed)</i>, a rough guess from the chip's speed. Under it, <b>GPU Information</b> says whether <b>Vulkan</b> is supported (and its API version) and the <b>OpenGL ES</b> version (Vulkan and OpenGL ES are the two ways apps draw graphics on the chip).</p>
-<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b> or <b>Vulkan</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b>, <b>Vulkan</b> or <b>ANGLE</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, <b>Vulkan</b> if the phone supports it, and <b>ANGLE (OpenGL ES on Vulkan)</b> (plus <b>Default</b> until you pick one). Choosing OpenGL or Vulkan sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p><b>ANGLE</b> is different: it makes every app's OpenGL ES drawing run on Vulkan, through Android's ANGLE layer. The app turns on the system setting <code>angle_gl_driver_all_angle</code> and reads it back to check; apps use ANGLE from the next time they start, and System UI is not restarted. It needs <b>Root</b> mode: in any other mode the entry reads "ANGLE (OpenGL ES on Vulkan), needs Root", a small lock button "ANGLE needs Root" sits on the card, and choosing it only says <i>ANGLE needs Root mode: switch to Root in Working Modes</i>. Choosing another renderer while ANGLE is on turns ANGLE off first (also as root), and applies the other one only when the phone says ANGLE is off.</p>
 <div class="hg-warn"><b>Careful.</b> Change the renderer only if you know why, for example to test an app. Some apps and games behave differently or look wrong with the other engine.</div>
 
 <h4>Battery</h4>
@@ -666,6 +667,16 @@
 
 <h4>Network</h4>
 <p>The big number is the speed now, down and up added together; the line under it shows each: <i>down 1.2 MB/s up 80 KB/s</i> (with arrows on screen). Below are the active connections, busiest first, for example <i>wlan0</i> (Wi-Fi) or <i>rmnet</i> (mobile data), then <b>Network Statistics</b>: <b>Total received</b> and <b>Total sent</b> since the phone started.</p>
+<h4>The speed test</h4>
+<p>At the top of the Network page is a <b>Speed test</b> button ("Ping, download and upload"). It opens a full screen called <b>Speed test</b> (the arrow at the top left, the X or Back close it). No working mode is needed, only an internet connection.</p>
+<ol class="hg-steps">
+<li>Two chips at the top say what you are connected through (Wi-Fi, Mobile data and so on) and the server, <b>Cloudflare</b>.</li>
+<li>Tap <b>Start</b>. The gauge (0 to 1000 Mbps) shows the speed as it is measured: first the ping, then the download, then the upload. The button turns into <b>Stop</b> while it runs, and <b>Run again</b> afterwards.</li>
+<li>On mobile data or on a network Android calls metered, the app first warns: <i>You are on mobile data</i> (or <i>This network is metered</i>), <i>A test can use up to 350 MB of data: it stops early at that amount.</i> Tap <b>Start anyway</b> or <b>Cancel</b>.</li>
+<li>The cards under the gauge: <b>Ping</b> (the median of 15 requests), <b>Jitter</b> (how much the ping varies), <b>Download</b> and <b>Upload</b> in Mbps, each with a small live graph, <b>Server</b> (the Cloudflare data centre that answered) and <b>Connection</b>.</li>
+<li>When it is done, <b>Copy result</b> and <b>Share result</b> appear. <b>History</b> keeps the last 10 results on this phone; <b>Clear</b> empties it.</li>
+</ol>
+<p>The test talks to Cloudflare's public speed test servers (<code>speed.cloudflare.com</code>), at the data centre nearest to you, so Cloudflare sees the phone's IP address, as any website does. The result is this phone, its radio and its network, not the speed of your plan. While the screen is open the Task Manager stops measuring; closing the screen, or leaving the tab, stops a test that is running.</p>
 
 <h4>Why the numbers differ from other apps</h4>
 <ul>

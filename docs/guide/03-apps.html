@@ -73,14 +73,13 @@
   </table>
   <p>One of the first two always stays on: switching off the last one turns the other back on. A <b>regex</b> (regular expression) is a small pattern language that lets one search match many things. Plain words work as you would expect, and capital letters do not matter, so <code>cam</code> finds Camera. Special characters match more: <code>mail|chat</code> finds apps with either word, and <code>^com\.samsung</code> finds packages that start with <code>com.samsung</code>. You can ignore all of this and just type words. If a pattern is not valid, or could take too long, the app searches it as plain words and shows a note under the box. With regex off, <code>cam</code> finds nothing but <code>Camera</code> does. Your choices are remembered.</p>
 
-  <h4>Sort, Share CSV, Profiles, Backups, Action Button</h4>
-  <p>The row above the pills holds a menu, three buttons and the Action Button menu. It is wider than the screen on a small phone: swipe it sideways to reach the end.</p>
+  <h4>Sort, CSV, Backups, Action Button</h4>
+  <p>The row above the pills holds the Sort menu, two plain buttons (<b>CSV</b> and <b>Backups</b>) and the Action Button menu. (The <b>Profiles</b> button that used to be here is now in <a href="#tab-saved-lists">Saved Applications</a>, beside <b>New List</b>.) It is wider than the screen on a small phone: swipe it sideways to reach the end.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><b>Sort</b> (menu)</td><td>Orders the list: <b>Name (A-Z)</b>, <b>Last updated</b>, <b>Install date</b>, <b>Size</b> or <b>Updates first</b> (apps the Application Updater has a newer version for come first). For Last updated, Install date and Size, each row also shows the value it is sorted by, such as "updated Mar 3, 2026". Size counts the app, its data and its cache once usage access is on, and only the app's file before that. Your choice is remembered.</td></tr>
-      <tr><td><b>Share CSV</b></td><td>Builds a CSV file (a plain table that opens in any spreadsheet) of every app, not only the ones the filters show, named like <code>app_list_2026-10-06.csv</code>, and opens Android's share sheet, so you can send it on or save it to a folder.</td></tr>
-      <tr><td><b>Profiles</b></td><td>Opens the profile box. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
+      <tr><td><b>CSV</b></td><td>Builds a CSV file (a plain table that opens in any spreadsheet) of every app, not only the ones the filters show, named like <code>app_list_2026-10-06.csv</code>, and opens Android's share sheet, so you can send it on or save it to a folder.</td></tr>
       <tr><td><b>Backups</b></td><td>Opens the backup box. See <a href="#apps-backup">Backups and restore</a>.</td></tr>
       <tr><td><b>Action Button</b> (menu, at the end of the row; it shows the current choice, with no label before it)</td><td>Tap it and a sheet opens with a title, a few words about what it edits, and every choice with a line saying what it does. Chooses what the extra button on every row does: <b>App Settings</b>, <b>Force Stop</b>, <b>App Launcher</b>, <b>Enable / Disable</b>, <b>Install / Uninstall</b>, <b>Unsuspend / Suspend</b>, <b>Permission Manager</b>, <b>Activity Launcher</b>, or <b>None (no button)</b>. It is the same setting as the <b>Action Button</b> card in Settings: change it in either place and the other follows. The rows change at once, and a message names the choice.</td></tr>
     </tbody>
@@ -89,7 +88,7 @@
   <p>The list is drawn 250 rows at a time. More load as you scroll, or when you tap the <b>Show (number) more</b> button at the bottom.</p>
 
   <h4>What one row shows</h4>
-  <p>From left to right: the app's icon, its name, its package name in grey and a line of badges (plus the date or size you sort by), then the Action Button, the three-dot button and a checkbox. A suspended app has a greyed icon and a faded name.</p>
+  <p>From left to right: the app's icon, its name, its package name in grey and a line of badges (plus the date or size you sort by), then the Action Button and the three-dot button. The icon is also the row's selection box: a selected app gets a round tick on the corner of its icon. A suspended app has a greyed icon and a faded name.</p>
   <table class="hg-table">
     <thead><tr><th>Badge</th><th>Means</th></tr></thead>
     <tbody>
@@ -119,8 +118,8 @@
 
   <h4>Tap, hold and select</h4>
   <ul>
-    <li><b>Tap a row</b> (its name or its checkbox) to select it. The row gets a coloured border and the checkbox shows a tick. This does not change the app.</li>
-    <li><b>Press and hold a row</b> for about half a second to open its app menu, the same as the three dots. You feel a short tap when it works. Hold the name or the empty space of the row. The icon, the buttons and the checkbox have their own jobs.</li>
+    <li><b>Tap a row</b> (its name or its icon) to select it. The row gets an outline and a soft wash in your accent colour, and a round tick appears on the corner of the icon. This does not change the app.</li>
+    <li><b>Press and hold a row</b> for about half a second to open its app menu, the same as the three dots. You feel a short tap when it works. Hold the name or the empty space of the row. The icon and the buttons have their own jobs.</li>
     <li><b>Press and hold an app's icon</b> to save it as a PNG picture in <code>Download/ADB App Manager/Icons</code> (on Android 8 and 9, in the app's own storage instead). A message names the saved file.</li>
     <li>Once an app is selected, a round button with a tick and a number appears at the bottom right. It opens the batch actions: see <a href="#apps-batch">Selecting many apps and batch actions</a>.</li>
   </ul>
@@ -137,7 +136,7 @@
     <li>Type a few letters of the app's name in the search box. The list shrinks as you type.</li>
     <li>Tap the three-dot button on its row. The app menu slides up from the bottom.</li>
     <li>Tap <b>Freeze</b>. A short message says "Working on it&hellip;", then "Checking the phone&hellip;", then what the phone reports, for example "Alpha: Frozen". The menu stays open.</li>
-    <li>Look at the row behind the menu: it now has a blue FROZEN badge and a soft blue glow behind its icon that fades across the row. In the same way the row of a running app glows green and the row of an uninstalled app red (faint; <b>Row tints</b> in Settings turns it off or stronger). Only a row you select gets an outline, in the app's accent colour, and in the menu the Freeze button has turned into <b>Enable</b>, which is green like <b>Reinstall</b> (Freeze is blue and Uninstall red). The Frozen count at the top went up by one.</li>
+    <li>Look at the row behind the menu: it now has a sky-blue FROZEN badge and a soft sky-blue glow behind its icon that fades across the row. In the same way the row of a running app glows green and the row of an uninstalled app red (faint; <b>Row tints</b> in Settings turns it off or stronger). Only a row you select gets an outline, in the app's accent colour, and in the menu the Freeze button has turned into <b>Enable</b>, filled with your accent colour. The coloured buttons are all filled, with black text: Uninstall red, Freeze ice blue, Reinstall green and Enable the accent. The Frozen count at the top went up by one.</li>
     <li>To undo, tap <b>Enable</b> in the same menu.</li>
   </ol>
   <p>For <b>Freeze</b>, <b>Enable</b>, <b>Uninstall</b>, <b>Reinstall</b>, <b>Suspend</b> and <b>Unsuspend</b> the message comes from the phone, not from the command: after the command the app reads the list of apps (and, for Suspend, the app's own suspended flag) and tells you what it found: <i>Frozen</i>, <i>Not frozen</i>, <i>Uninstalled</i>, <i>Still installed</i>, <i>Suspended</i> and so on. A command that printed an error for an app that is in fact gone still counts as done. If Android refuses, you see "Action reported a problem" (or, for these actions, the finding, such as "Still installed") and a <b>Command Result</b> box with Android's own words. Nothing was changed. Some system apps are protected and cannot be frozen. <b>Force stop</b> is read back too: the app looks at the running processes and tells you <i>Stopped</i> or <i>Still running</i> (an app can be started again at once by the system, one of its services or another app, and the card says so). <b>Clear data</b> is read back by counting files: in <b>Root</b> mode in the app's own data folder, in <b>ADB and Shizuku</b> modes (where that folder cannot be read) in the app's folder on the shared storage, <code>Android/data/package</code>, before and after, and once more after a moment to see whether the app wrote files again. You get, for example, <i>Data cleared</i> (12 files, 3.4 MB before, 0 after), <i>Cleared, new files written</i>, <i>Partly cleared</i> or <i>Not cleared</i>. If that folder was empty before, there is nothing to compare, and the command's answer stands with a note saying so. While an app is being changed and checked its row in the list shows a small spinner and <i>Working&hellip;</i> or <i>Checking&hellip;</i> in its corner, even with <a href="#prefs">Progress messages</a> turned off.</p>
@@ -154,7 +153,7 @@
 
 <section id="apps-menu" data-title="The app menu (one app)" data-group="The tabs">
   <p class="hg-lead">The app menu is a sheet with everything about one app: its details, buttons to freeze, stop or remove it, and tabs for its permissions, app ops, activities, components, manifest, features, configurations, signatures and libraries.</p>
-  <p><b>Where to find it:</b> in the <a href="#tab-apps">Application Manager</a>, tap the three-dot button on an app's row, or press and hold the row for about half a second (not on the icon, a button or the checkbox). Tap the X at the top right, or tap outside the sheet, to close it.</p>
+  <p><b>Where to find it:</b> in the <a href="#tab-apps">Application Manager</a>, tap the three-dot button on an app's row, or press and hold the row for about half a second (not on the icon or a button). Tap the X at the top right, or tap outside the sheet, to close it.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -365,7 +364,7 @@
 
   <h4>Selecting apps</h4>
   <ul>
-    <li>Tap a row to tick its checkbox. Tap again to untick it. The row gets a coloured border while it is selected.</li>
+    <li>Tap a row (its name or its icon) to select it. Tap again to unselect it. While it is selected the row has an outline in your accent colour and a round tick on its icon.</li>
     <li>A round button with a tick and a number (how many apps are selected) appears at the bottom right of the screen. This button is how you open the batch sheet.</li>
     <li><b>Hold the round button</b> for about half a second to drop the whole selection at once. A message says "Cleared (number) selections".</li>
     <li>Selected apps stay selected when you change the filters or the search, so you can build a selection in several steps. They do <b>not</b> stay selected when you leave the Application Manager for another tab: the selection is dropped and the round button goes away at once.</li>
@@ -378,7 +377,7 @@
     <li><b>Clear All</b> (outlined too): unselects everything.</li>
     <li>The <b>X</b>: closes the sheet but keeps the selection. The round button comes back.</li>
   </ul>
-  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons:</p>
+  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons. The ones that change the most are filled with a colour: <b>Freeze</b> ice blue, <b>Enable</b> your accent colour, <b>Uninstall</b> red and <b>Reinstall</b> green (and <b>Save to List</b> the accent too).</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does to each app</th><th>Asks first?</th></tr></thead>
     <tbody>
@@ -416,7 +415,7 @@
   <h4>Step by step: freeze five apps</h4>
   <p>You need a working mode. The example freezes five apps you do not use.</p>
   <ol class="hg-steps">
-    <li>In the Application Manager, tap five rows, one by one. The rows get a border, and a round button with a tick and the number 5 appears at the bottom right.</li>
+    <li>In the Application Manager, tap five rows, one by one. The rows get an outline, and a round button with a tick and the number 5 appears at the bottom right.</li>
     <li>Tap the round button. The batch sheet slides up and says "5 Selected".</li>
     <li>Tap <b>Show Applications</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X. At the top of the box <b>Select All</b> adds every app the list shows now, and <b>Clear All</b> empties the selection and closes the box.</li>
     <li>Tap <b>Freeze</b>. The box "Confirm Freeze Selected Apps" opens with the five apps listed.</li>
@@ -454,7 +453,7 @@
 
 <section id="apps-profiles" data-title="Profiles and drift watch" data-group="The tabs">
   <p class="hg-lead">A profile remembers which apps you have disabled, suspended or uninstalled, so you can put the phone back in that state later, or on another phone. A watched profile warns you when a system update brings those apps back.</p>
-  <p><b>Where to find it:</b> the <b>Profiles</b> button in the row under the stat boxes of the <a href="#tab-apps">Application Manager</a>. It opens a box called "App Profiles".</p>
+  <p><b>Where to find it:</b> the <b>Profiles</b> button in the <a href="#tab-saved-lists">Saved Applications</a> tab, beside <b>New List</b> (until v7.14 it was in the Application Manager, next to Backups). It opens a box called "App Profiles". The <b>Review</b> button of the drift banner in the Application Manager opens it too.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -629,6 +628,7 @@
 <section id="tab-saved-lists" data-title="Saved Applications" data-group="The tabs">
   <p class="hg-lead">The second tab keeps named lists of apps. Make a list once, then use it again whenever you want to act on the same group of apps.</p>
   <p><b>Where to find it:</b> the second tab in the tab bar, <b>Saved Applications</b>. It can be turned off, or moved, in the <a href="#feature-list">Feature List</a>.</p>
+  <p>At the top, beside <b>New List</b>, is the <b>Profiles</b> button: it opens the App Profiles box, which saves the state of your apps rather than a list of names (see <a href="#apps-profiles">Profiles and drift watch</a>).</p>
 
   <h4>Before you start</h4>
   <ul>
