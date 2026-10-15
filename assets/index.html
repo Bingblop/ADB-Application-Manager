@@ -1703,12 +1703,30 @@
             word-break: break-word;
         }
 
+        /* The app menu's buttons: a row of three for each group (Open, Control, Maintenance, Package), under a small heading */
         .sheet-action-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: var(--space-3);
             margin-bottom: var(--space-5);
         }
+        .sheet-action-group-label {
+            font-size: var(--fs-overline);
+            font-weight: var(--fw-heavy);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            line-height: 1.2;
+            margin: 0 0 var(--space-1) var(--space-1);
+        }
+        .sheet-action-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-3);
+        }
+        /* a button that does not apply to the app as it is now keeps its place, dimmed; a tap says why (refreshInspectorButtons) */
+        .sheet-btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
+        .sheet-btn[aria-disabled="true"]:active { background: var(--fill-2); color: var(--text-main); }
 
         .sheet-btn {
             height: 44px;
@@ -8521,53 +8539,77 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
             </div>
 
-            <!-- Action Grid -->
-            <div class="sheet-action-grid">
-                <button class="sheet-btn" onclick="singleAction('launch')">
-                    <span>Launch</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('force_stop')">
-                    <span>Force Stop</span>
-                </button>
-                <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
-                    <span>Freeze</span>
-                </button>
-                <button class="sheet-btn sheet-btn-green" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
-                    <span>Enable</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('suspend')" id="sheetBtnSuspend">
-                    <span>Suspend</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('unsuspend')" id="sheetBtnUnsuspend" style="display:none;">
-                    <span>Unsuspend</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('clear_data')">
-                    <span>Clear Data</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('app_settings')">
-                    <span>App Info</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('uninstall_updates')">
-                    <span>Rem Updates</span>
-                </button>
-                <button class="sheet-btn sheet-btn-red" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
-                    <span>Uninstall</span>
-                </button>
-                <button class="sheet-btn sheet-btn-green" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
-                    <span>Reinstall</span>
-                </button>
-                <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
-                    <span>Extract APK</span>
-                </button>
-                <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
-                    <span>Optimize</span>
-                </button>
-                <button class="sheet-btn" onclick="openStandbyModal()" id="sheetBtnStandby">
-                    <span>Standby</span>
-                </button>
-                <button class="sheet-btn" onclick="openAppLog()" id="sheetBtnLogs">
-                    <span>Logs</span>
-                </button>
+            <!-- Action Grid: four rows of three, one row for each thing the person is doing - open or look at the app, control whether it
+                 runs, look after its data and its battery and speed, and the package itself, with Uninstall last. Every button keeps its
+                 place whatever the app's state: a pair (Freeze/Enable, Suspend/Unsuspend, Uninstall/Reinstall) shares one cell and shows
+                 exactly one of its two buttons, and a button that does not apply is shown dimmed with the reason (refreshInspectorButtons) -
+                 so nothing moves when an action changes the app while the menu stays open. -->
+            <div class="sheet-action-grid" id="sheetActionGrid">
+                <div class="sheet-action-group" role="group" aria-labelledby="sheetGrpOpen">
+                    <div class="sheet-action-group-label" id="sheetGrpOpen">Open</div>
+                    <div class="sheet-action-row">
+                        <button class="sheet-btn" onclick="singleAction('launch')" id="sheetBtnLaunch">
+                            <span>Launch</span>
+                        </button>
+                        <button class="sheet-btn" onclick="singleAction('app_settings')" id="sheetBtnAppInfo">
+                            <span>App Info</span>
+                        </button>
+                        <button class="sheet-btn" onclick="openAppLog()" id="sheetBtnLogs">
+                            <span>Logs</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="sheet-action-group" role="group" aria-labelledby="sheetGrpControl">
+                    <div class="sheet-action-group-label" id="sheetGrpControl">Control</div>
+                    <div class="sheet-action-row">
+                        <button class="sheet-btn" onclick="singleAction('force_stop')" id="sheetBtnForceStop">
+                            <span>Force Stop</span>
+                        </button>
+                        <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
+                            <span>Freeze</span>
+                        </button>
+                        <button class="sheet-btn sheet-btn-green" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze" style="display:none;">
+                            <span>Enable</span>
+                        </button>
+                        <button class="sheet-btn" onclick="singleAction('suspend')" id="sheetBtnSuspend">
+                            <span>Suspend</span>
+                        </button>
+                        <button class="sheet-btn" onclick="singleAction('unsuspend')" id="sheetBtnUnsuspend" style="display:none;">
+                            <span>Unsuspend</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="sheet-action-group" role="group" aria-labelledby="sheetGrpCare">
+                    <div class="sheet-action-group-label" id="sheetGrpCare">Maintenance</div>
+                    <div class="sheet-action-row">
+                        <button class="sheet-btn" onclick="singleAction('clear_data')" id="sheetBtnClearData">
+                            <span>Clear Data</span>
+                        </button>
+                        <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
+                            <span>Optimize</span>
+                        </button>
+                        <button class="sheet-btn" onclick="openStandbyModal()" id="sheetBtnStandby">
+                            <span>Standby</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="sheet-action-group" role="group" aria-labelledby="sheetGrpPackage">
+                    <div class="sheet-action-group-label" id="sheetGrpPackage">Package</div>
+                    <div class="sheet-action-row">
+                        <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
+                            <span>Extract APK</span>
+                        </button>
+                        <button class="sheet-btn" onclick="singleAction('uninstall_updates')" id="sheetBtnRemUpdates">
+                            <span>Rem Updates</span>
+                        </button>
+                        <button class="sheet-btn sheet-btn-red" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
+                            <span>Uninstall</span>
+                        </button>
+                        <button class="sheet-btn sheet-btn-green" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
+                            <span>Reinstall</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Sub Tabs -->
@@ -27357,17 +27399,51 @@ Type any command above (e.g. pm list packages -d)</div>
         // Uninstall<->Reinstall) from the current allApps snapshot for one package. Called at open time, and
         // again once loadPackageData's post-action refresh lands - the sheet is no longer closed after running
         // an action (see singleAction), so without this re-check it would keep showing stale buttons.
+        // Every button keeps its cell whatever the app's state, so nothing moves when an action changes the app while the menu is open:
+        // each pair shows exactly one of its two buttons in the same cell, and a button that does not apply stays where it is, dimmed,
+        // with the reason in its title (a tap shows the reason too, see the click guard below).
         function refreshInspectorButtons(pkg) {
-            const app = allApps.find(a => a.pkg === pkg) || { isFrozen: false, isUninstalled: false, isSuspended: false };
-            document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
-            document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
+            const app = allApps.find(a => a.pkg === pkg) || { isFrozen: false, isUninstalled: false, isSuspended: false, isSystem: true };
+            const pair = (onId, offId, on) => {
+                document.getElementById(onId).style.display = on ? 'flex' : 'none';
+                document.getElementById(offId).style.display = on ? 'none' : 'flex';
+            };
+            pair('sheetBtnReinstall', 'sheetBtnUninstall', !!app.isUninstalled);
             // The menu shows Freeze for enabled apps and Enable for frozen ones
-            document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
-            document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
-            // Suspend for active apps, Unsuspend for suspended ones (uninstalled apps can't be suspended)
-            document.getElementById('sheetBtnSuspend').style.display = (app.isSuspended || app.isUninstalled) ? 'none' : 'flex';
-            document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
+            pair('sheetBtnUnfreeze', 'sheetBtnFreeze', !!app.isFrozen);
+            // Suspend or Unsuspend from the app's own flag, read from the phone - an app uninstalled for the user keeps its flag and can still
+            // be suspended or unsuspended (where Android refuses, the check afterwards says so)
+            pair('sheetBtnUnsuspend', 'sheetBtnSuspend', !!app.isSuspended);
+            const notHere = app.isUninstalled ? 'Not installed for this user' : '';
+            sheetBtnOff('sheetBtnLaunch', notHere);
+            sheetBtnOff('sheetBtnForceStop', notHere);
+            sheetBtnOff('sheetBtnRemUpdates', app.isSystem === false ? 'Only a system app has updates to remove' : '');
         }
+        // Dims a menu button that does not apply now (reason) or makes it a normal button again (no reason); it keeps its place either way.
+        // aria-disabled, not disabled: the button stays focusable and a tap on it can still say why; the title (translated like any
+        // other) is read out after the button's own name.
+        function sheetBtnOff(id, reason) {
+            const b = document.getElementById(id);
+            if (!b) return;
+            if (reason) {
+                b.setAttribute('aria-disabled', 'true');
+                b.dataset.reason = reason;
+                b.title = reason;
+            } else {
+                b.removeAttribute('aria-disabled');
+                delete b.dataset.reason;
+                b.removeAttribute('title');
+            }
+        }
+        // A tap on a dimmed menu button runs nothing and says why (caught before the button's own onclick)
+        document.getElementById('sheetActionGrid').addEventListener('click', (e) => {
+            const b = e.target.closest && e.target.closest('.sheet-btn[aria-disabled="true"]');
+            if (!b) return;
+            e.stopPropagation();
+            e.preventDefault();
+            haptic();
+            showToast(b.dataset.reason || 'Not available for this app');
+        }, true);
 
         /** The tile left of the app's name in the app menu: the app's own icon when it is known (asked for when it is not), its first letter until then or when it cannot be drawn. */
         const sheetIconAsked = new Set();
