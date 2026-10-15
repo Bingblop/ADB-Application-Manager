@@ -10171,7 +10171,7 @@ public class MainActivity extends Activity {
 
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
-            String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
+            String raw = executeShell(ShellOutcome.withStatus(cmd, marker));
             ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
             // Every backend here runs a shell, so the marker is missing only when the command never ran (su refused or not granted, a
             // backend that did not start, a timeout): that is a failure whatever else was printed, never an "ok" from an empty answer.
