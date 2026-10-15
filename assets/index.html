@@ -2437,6 +2437,38 @@
             color: var(--status-running);
         }
 
+        .pm-perm {                       /* the Android name of the permission (not translated) */
+            font-family: monospace;
+            font-size: var(--fs-overline);
+            color: var(--text-muted);
+            overflow-wrap: anywhere;
+            margin-top: 1px;
+        }
+
+        .pm-state {                      /* Settings > Application Permissions: "Not granted" */
+            font-size: var(--fs-pkg);
+            font-weight: var(--fw-heavy);
+            color: var(--status-user);
+            margin-top: 2px;
+        }
+
+        .pm-lock {                       /* without a working mode: what only a command can grant */
+            flex: 0 0 auto;
+            max-width: 42%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            font-size: var(--fs-pkg);
+            font-weight: var(--fw-bold);
+            line-height: 1.3;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .pm-lock svg {
+            flex: 0 0 auto;
+        }
+
         .pm-row .mode-action-btn {
             flex: 0 0 auto;
             min-height: 40px;
@@ -5709,6 +5741,12 @@
                 <div class="color-card-title">Language</div>
                 <div class="color-card-subtitle">The text of this app. Names of apps, files and commands are not translated.</div>
                 <select class="op-select lang-select" id="langSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
+            </div>
+
+            <!-- the permissions sheet in full: every permission the app uses, whether it is granted, Grant on each missing one and Grant all -->
+            <div class="color-card" id="appPermsCard">
+                <div class="color-card-subtitle">Every permission this app uses: which are granted, and grant the rest.</div>
+                <button class="mode-action-btn primary" id="appPermsBtn" style="width:100%; justify-content:center; min-height:44px;" onclick="openAppPermissions()">Application Permissions</button>
             </div>
 
             <div class="color-card" id="agentCard">
@@ -12477,6 +12515,10 @@ Type any command above (e.g. pm list packages -d)</div>
                     }
                 }
 
+                // the permissions sheet follows the mode (lock or Allow), a working mode seen for the first time offers to grant the rest, and Shizuku
+                // running but not authorized is asked for by itself while nothing else is ready
+                try { if (typeof permOnModeChange === 'function') permOnModeChange(); } catch (e) { console.error(e); }
+
                 if (verbose) {
                     showToast(`Mode: ${text.innerText}`);
                 }
@@ -17898,7 +17940,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // Called from MainActivity when the Shizuku permission dialog returns
         function onShizukuPermissionResult(granted) {
             showToast(granted ? 'Shizuku authorized. Using Shizuku mode.' : 'Shizuku authorization denied');
+            szAutoAsking = false;
+            szCountDenial(granted);
             checkAllWorkingModes(false);
+            // the first-launch sheet was waiting for this answer: it comes now (with a grant, already able to grant through Shizuku)
+            if (permIntroWaiting) setTimeout(maybeShowPermIntro, 300);
             if (granted) loadPackageData();
             if (rishAwaitingAuth) {
                 rishAwaitingAuth = false;
@@ -17994,6 +18040,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 loadPackageData();
                 setTimeout(maybeShowWhatsNew, 1200);
                 setTimeout(uadEnsureForList, 1600);
+                // Shizuku first (its own dialog), then the first-launch sheet, which waits for that answer so it can already grant through Shizuku
+                setTimeout(() => { szAutoReady = true; szAutoAsk(); }, 700);
                 setTimeout(maybeShowPermIntro, 2300);
             } else {
                 // Mock packages for preview
@@ -28875,26 +28923,33 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---------- Permissions ----------
         // Three accesses have no dialog of their own: All files access, Usage access and Display over other apps each live on a
-        // settings screen of Android. A sheet offers them once (the first time the app is opened, or after an update that brings the
-        // sheet) and from About; and any action that fails for want of file access asks for it on the spot.
+        // settings screen of Android. A sheet offers them, and every other permission the app uses, once (the first time the app is opened,
+        // or after an update that brings the sheet), from About and from Settings > Application Permissions; and any action that fails for
+        // want of file access asks for it on the spot. With a working mode every Allow grants by command; without one, what only a command
+        // can grant shows a lock.
+        // `perm`: the Android name(s) of the permission or app op, shown under the row's name (not translated). `adbOnly`: there is no Android screen or dialog
+        // for it, only a command through a working mode (ADB, Shizuku or root): without one the row shows a lock and a note instead of an Allow button.
         const PERM_DEFS = [
-            { key: 'files', name: 'All files access', why: 'Browse storage, find packages on it and install from it.' },
+            { key: 'files', name: 'All files access', perm: 'MANAGE_EXTERNAL_STORAGE', why: 'Browse storage, find packages on it and install from it.' },
             // Right before Usage access, which is one of the switches Android blocks for an app installed from a file until this is allowed
-            { key: 'restricted_settings', name: 'Allow Restricted Settings', why: "Android blocks a few sensitive switches, Usage access among them, for an app installed from a file. This lifts the block (done with appops through the working mode).", privOnly: true },
-            { key: 'usage', name: 'Usage access', why: 'Show how big each app is and when it was last used.' },
-            { key: 'overlay', name: 'Display over other apps', why: "Lets this app open another app's screen from the background, such as an app you have just installed." },
+            { key: 'restricted_settings', name: 'Allow Restricted Settings', perm: 'ACCESS_RESTRICTED_SETTINGS', why: "Android blocks a few sensitive switches, Usage access among them, for an app installed from a file. This lifts the block (with appops through the working mode, or in this app's App info, in the three-dot menu)." },
+            { key: 'usage', name: 'Usage access', perm: 'PACKAGE_USAGE_STATS', why: 'Show how big each app is and when it was last used.' },
+            { key: 'overlay', name: 'Display over other apps', perm: 'SYSTEM_ALERT_WINDOW', why: "Lets this app open another app's screen from the background, such as an app you have just installed." },
             // `known`: offered only when this build of the app reports it (an older one does not), so an older app never shows a row it cannot fill in
-            { key: 'install_unknown', name: 'Install unknown apps', why: 'Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.', known: true },
-            // The three below only have anything to grant while a working mode (ADB/Shizuku/root) is active - there is no
-            // Settings switch for most of them, so they stay out of the sheet entirely until there is a privileged shell to grant them through.
-            { key: 'storage_legacy', name: 'Read/Write External Storage', why: 'The older storage permission some apps still check for.', privOnly: true },
-            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true },
-            { key: 'dump', name: 'Dump system services (DUMP)', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", privOnly: true, known: true }
+            { key: 'install_unknown', name: 'Install unknown apps', perm: 'REQUEST_INSTALL_PACKAGES', why: 'Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.', known: true },
+            // runtime permissions with Android's own dialog (Android 12 and 13 on); below that they are not needed and the row says so
+            { key: 'bluetooth', name: 'Bluetooth Connect', perm: 'BLUETOOTH_CONNECT', why: 'Lists the Bluetooth devices this phone is paired with (Connected Devices) and sends files to one.', known: true },
+            { key: 'notifications', name: 'Notifications', perm: 'POST_NOTIFICATIONS', why: 'Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.', known: true },
+            { key: 'storage_legacy', name: 'Read/Write External Storage', perm: 'READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE', why: 'The older storage permission some apps still check for.', adbOnly: true },
+            { key: 'secure_settings', name: 'Write Secure Settings', perm: 'WRITE_SECURE_SETTINGS', why: 'Lets this app change a few protected system settings used by some advanced features.', adbOnly: true },
+            { key: 'dump', name: 'Dump system services (DUMP)', perm: 'DUMP', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true },
+            { key: 'read_logs', name: 'Read Logs', perm: 'READ_LOGS', why: "Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true }
         ];
-        // A privOnly entry is only ever offered once isPrivilegedActive is true.
-        function visiblePermDefs() { return PERM_DEFS.filter(d => (!d.privOnly || isPrivilegedActive) && (!d.known || permStatus[d.key] !== undefined)); }
-        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings }: true when allowed
-        let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
+        // Every row the app build reports is listed, with or without a working mode (an adbOnly one is locked without it)
+        function visiblePermDefs() { return PERM_DEFS.filter(d => !d.known || permStatus[d.key] !== undefined); }
+        function permLocked(d) { return !!d.adbOnly && !isPrivilegedActive; }
+        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings, read_logs, bluetooth, notifications }: true when allowed
+        let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'full' (Settings > Application Permissions) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
         let permRetry = null;             // what to do once file access is allowed (the action that asked for it)
@@ -28902,7 +28957,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function setPermRetry(fn) { permRetry = fn || null; permRetryAt = fn ? Date.now() : 0; }
         let permClosedAt = 0;             // when the file-access prompt was last turned down
         const PERM_PAUSE_MS = 5000;       // a prompt turned down is not raised again by the failures that follow it straight away (one action, many files)
-        let permIntroWaiting = false;     // the first-launch sheet is waiting for another sheet to close first
+        let permIntroWaiting = false;     // the first-launch sheet is waiting for another sheet to close first (or for the answer to the Shizuku dialog)
         let permIntroTries = 0;           // how often it has looked again (every three seconds, for two minutes)
 
         function permRefresh() {
@@ -28929,9 +28984,9 @@ Type any command above (e.g. pm list packages -d)</div>
             permMode = mode || 'manual';
             permRefresh();
             permOpenSnap = permSnap(); permAllUsed = false;
-            const files = permMode === 'files';
-            document.getElementById('permTitle').innerText = files ? 'File access needed' : (permMode === 'intro' ? 'Allow a few permissions' : 'Permissions');
-            document.getElementById('permSubtitle').innerText = files ? 'Allow it to continue' : 'Allow what you like and skip the rest: every one can be changed later.';
+            const files = permMode === 'files', full = permMode === 'full';
+            document.getElementById('permTitle').innerText = files ? 'File access needed' : full ? 'Application Permissions' : (permMode === 'intro' ? 'Allow a few permissions' : 'Permissions');
+            document.getElementById('permSubtitle').innerText = files ? 'Allow it to continue' : full ? 'Every permission this app uses, and whether it is granted.' : 'Allow what you like and skip the rest: every one can be changed later.';
             const why = document.getElementById('permReason');
             why.style.display = files && reason ? '' : 'none';
             why.innerText = reason || '';
@@ -28942,18 +28997,30 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
         }
 
+        // Settings > Application Permissions: the same sheet, listing every permission with whether it is granted
+        function openAppPermissions() { openPermSheet('full'); }
+
         function permRender() {
-            const files = permMode === 'files';
+            const files = permMode === 'files', full = permMode === 'full';
             const defs = files ? PERM_DEFS.filter(d => d.key === 'files') : visiblePermDefs();
+            const verb = full ? 'Grant' : 'Allow';
             document.getElementById('permRows').innerHTML = defs.map(d => {
-                const on = !!permStatus[d.key];
-                return '<div class="pm-row"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div><div class="pm-why">' + escapeHtml(d.why) + '</div></div>'
-                    + (on ? '<div class="pm-ok">✓ Allowed</div>' : '<button class="mode-action-btn primary" aria-label="Allow ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">Allow</button>') + '</div>';
+                const on = !!permStatus[d.key], na = on && !!permStatus[d.key + '_na'];
+                let end;
+                if (on) end = '<div class="pm-ok">' + (na ? '✓ Not needed' : full ? '✓ Granted' : '✓ Allowed') + '</div>';
+                else if (permLocked(d)) end = '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>Needs ADB, Shizuku or root</span></div>';
+                else end = '<button class="mode-action-btn primary" aria-label="' + verb + ' ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">' + verb + '</button>';
+                return '<div class="pm-row' + (on ? ' is-on' : ' is-off') + (!on && permLocked(d) ? ' is-locked' : '') + '" data-perm="' + d.key + '"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div>'
+                    + (d.perm ? '<div class="pm-perm" translate="no">' + escapeHtml(d.perm) + '</div>' : '')
+                    + (full && !on ? '<div class="pm-state">Not granted</div>' : '')
+                    + '<div class="pm-why">' + escapeHtml(d.why) + '</div></div>' + end + '</div>';
             }).join('');
             document.getElementById('permCopyBtn').style.display = !files && permGrantCommands() ? '' : 'none';          // nothing missing (or an app build without the list): no button
-            const missing = defs.filter(d => !permStatus[d.key]).length;
-            const showAll = !files && missing > 1;
-            document.getElementById('permAllBtn').style.display = showAll ? '' : 'none';          // with one left its own Allow button is enough
+            const missing = defs.filter(d => !permStatus[d.key] && !permLocked(d)).length;           // what an Allow button can still do
+            const showAll = !files && (full ? missing > 0 : missing > 1);                           // with one left its own Allow button is enough (Settings always offers Grant all)
+            const allBtn = document.getElementById('permAllBtn');
+            allBtn.style.display = showAll ? '' : 'none';
+            allBtn.innerText = full ? 'Grant all' : 'Allow all';
             const closeBtn = document.getElementById('permCloseBtn');
             closeBtn.innerText = missing ? 'Not now' : 'Done';
             closeBtn.style.flex = showAll ? '' : '1';                                             // alone it takes the whole row
@@ -28970,24 +29037,37 @@ Type any command above (e.g. pm list packages -d)</div>
             try { window.AndroidBridge.copyToClipboard(cmds); showToast('Copied. Run these on a computer with USB debugging'); } catch (e) {}
         }
 
-        // Opens the Android screen for one access (or grants it at once when a working mode can). The sheet updates when the app is back.
+        // Grants one access at once through the working mode (appops / pm grant; the phone's own state says whether it worked), or, without one, opens its
+        // Android screen or permission dialog. The sheet updates when the app is back (or the dialog is answered).
         function permAllow(key) {
             haptic();
             const b = window.AndroidBridge;
             if (!b) { showToast('Needs the app build'); return; }
+            const d = PERM_DEFS.find(x => x.key === key);
+            if (d && permLocked(d) && !permStatus[key]) { showToast('Needs ADB, Shizuku or root'); return; }
             permWaiting = key;
             let answer = 'settings';
             try {
-                if (key === 'files') { if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
+                if (key === 'files') { if (b.grantAllFilesAccess) answer = String(b.grantAllFilesAccess()); else if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
                 else if (key === 'usage') { if (b.requestUsageAccess) answer = String(b.requestUsageAccess()); }
                 else if (key === 'overlay') { if (b.requestOverlayAccess) answer = String(b.requestOverlayAccess()); }
                 else if (key === 'install_unknown') { if (b.requestInstallUnknownAccess) answer = String(b.requestInstallUnknownAccess()); }
                 else if (key === 'storage_legacy') { if (b.requestLegacyStorageAccess) answer = String(b.requestLegacyStorageAccess()); }
                 else if (key === 'secure_settings') { if (b.requestWriteSecureSettings) answer = String(b.requestWriteSecureSettings()); }
                 else if (key === 'dump') { if (b.requestDumpAccess) answer = String(b.requestDumpAccess()); }
+                else if (key === 'read_logs') { if (b.requestReadLogsAccess) answer = String(b.requestReadLogsAccess()); }
+                else if (key === 'bluetooth') { if (b.requestBluetoothAccess) answer = String(b.requestBluetoothAccess()); }
+                else if (key === 'notifications') { if (b.requestNotificationAccess) answer = String(b.requestNotificationAccess()); }
                 else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
             } catch (e) {}
             if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }
+            else if (d && d.adbOnly) {
+                // no screen opened: the phone did not take the command, so nothing will bring the app back to go on from
+                permWaiting = '';
+                showToast('The phone did not grant this permission');
+                permOnChange();
+                if (permWalk.length) setTimeout(permNext, 200);
+            }
         }
 
         function permNext() {
@@ -28995,8 +29075,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (k) permAllow(k);
         }
 
-        // "Allow all": with a working mode everything that has a command is granted at once (appops / pm grant), restricted settings first; then the app starts again.
-        // What has no command (or that this phone refused) is opened one Android screen after the other, as before.
+        // "Allow all": with a working mode everything that has a command is granted at once (appops / pm grant), restricted settings first; when that is all of it
+        // the sheet closes and the app starts again right away. What is left (the phone refused the command, or there is no working mode) is asked for one after
+        // the other with its own Allow (a command, an Android screen or a dialog), and the app starts again when the sheet closes. A locked row is left out.
         function permAllowAll() {
             haptic();
             permAllUsed = true;
@@ -29008,7 +29089,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (visiblePermDefs().every(d => permStatus[d.key])) { permRender(); closePermSheet(false); return; }          // closing starts the app again (something was allowed)
                 permRender();
             }
-            permWalk = visiblePermDefs().filter(d => !permStatus[d.key]).map(d => d.key);
+            permWalk = visiblePermDefs().filter(d => !permStatus[d.key] && !permLocked(d)).map(d => d.key);
             permNext();
         }
 
@@ -29039,8 +29120,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!modal || !modal.classList.contains('show')) return;
             modal.classList.remove('show');
             permWalk = [];
-            if (permMode === 'intro') { try { if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
-            if (permMode !== 'files' && (permMode === 'intro' || permAllUsed)) {
+            const b = window.AndroidBridge;
+            if (permMode === 'intro') { try { if (b && b.saveSetting) b.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
+            // the sheet was seen with a working mode on: its "Allow all" was the offer, the one-time question does not come as well
+            if (permMode !== 'files' && isPrivilegedActive) { permOfferDone = true; try { if (b && b.saveSetting) b.saveSetting(PERM_OFFER_KEY, '1'); } catch (e) {} }
+            if (permMode !== 'files') {
                 permRefresh();
                 if (permSnap() !== permOpenSnap) { permOpenSnap = permSnap(); permAllUsed = false; permReload(); }          // something was allowed: start the app again
             }
@@ -29065,7 +29149,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function onFileAccessNeeded(reason) { promptFileAccess(reason ? reason + ', this app needs All-files access.' : '', null, false); }
         window.onFileAccessNeeded = onFileAccessNeeded;
 
-        // The first time the app is opened (and once after the update that brings the sheet): offer the three accesses
+        // The first time the app is opened (and once after the update that brings the sheet): offer the accesses
         function maybeShowPermIntro() {
             const b = window.AndroidBridge;
             if (!b || !b.getPermissionStatus || !b.loadSetting) return;
@@ -29074,15 +29158,106 @@ Type any command above (e.g. pm list packages -d)</div>
             let seen = '';
             try { seen = b.loadSetting('perm_intro_v62'); } catch (e) {}
             if (seen) return;
+            // the Shizuku dialog asked for at start is still up: the sheet comes after its answer (onShizukuPermissionResult), or after a while without one
+            const asked = Date.now() - szAutoAskAt;
+            if (szAutoAsking && asked < SZ_ANSWER_WAIT_MS) {
+                permIntroWaiting = true;
+                setTimeout(maybeShowPermIntro, SZ_ANSWER_WAIT_MS - asked + 50);
+                return;
+            }
             if (document.querySelector('.modal-overlay.show')) {              // after the sheet that is open (What's new, a menu): look again soon
                 permIntroWaiting = true;
                 if (permIntroTries++ < 40) setTimeout(maybeShowPermIntro, 3000);
                 return;
             }
             permRefresh();
-            if (visiblePermDefs().every(d => permStatus[d.key])) { try { b.saveSetting('perm_intro_v62', '1'); } catch (e) {} return; }
+            if (visiblePermDefs().every(d => permStatus[d.key] || permLocked(d))) { try { b.saveSetting('perm_intro_v62', '1'); } catch (e) {} return; }
             permIntroWaiting = false;
             openPermSheet('intro');
+        }
+
+        // ---- A working mode for the first time: one offer to grant the rest by command ----
+        // The first time a working mode (ADB, Shizuku or root) is ready since the app was installed while permissions are still missing, a question offers to
+        // grant them all at once (the same as "Allow all"). It is asked once: the answer is kept in the app's settings (an uninstall clears it).
+        const PERM_OFFER_KEY = 'perm_adb_offer_v714';
+        let permOfferDone = false;
+        function permMaybeOfferAdb() {
+            if (permOfferDone || !isPrivilegedActive) return;
+            const b = window.AndroidBridge;
+            if (!b || !b.loadSetting || !b.saveSetting || !b.grantAllPermissions || !b.getPermissionStatus) return;
+            let offered = '', intro = '';
+            try { offered = b.loadSetting(PERM_OFFER_KEY); intro = b.loadSetting('perm_intro_v62'); } catch (e) {}
+            if (offered) { permOfferDone = true; return; }
+            if (!intro) return;                                                // the first-launch sheet is still to come, and its "Allow all" does the same
+            const m = document.getElementById('permModal');
+            if (m && m.classList.contains('show')) return;                    // the sheet is open: its "Allow all" is the offer
+            permRefresh();
+            if (visiblePermDefs().every(d => permStatus[d.key])) return;      // nothing missing: nothing to offer (yet)
+            permOfferDone = true;
+            try { b.saveSetting(PERM_OFFER_KEY, '1'); } catch (e) {}
+            setTimeout(() => {
+                if (!isPrivilegedActive) return;
+                if (typeof nextDialogTitle === 'function') nextDialogTitle('Grant permissions');
+                if (!confirm('A working mode (ADB, Shizuku or root) is ready. Grant all remaining permissions with it now? The app restarts afterwards.')) return;
+                permGrantAllByCommand();
+            }, 400);
+        }
+        // "Allow all" without the sheet: every missing permission that has a command, then the app starts again when anything changed
+        function permGrantAllByCommand() {
+            const b = window.AndroidBridge;
+            if (!b || !b.grantAllPermissions) return;
+            permRefresh();
+            const before = permSnap();
+            try { permStatus = JSON.parse(b.grantAllPermissions()) || permStatus; } catch (e) {}
+            permRefresh();
+            if (permSnap() !== before) permReload();
+            else showToast('The phone did not grant this permission');
+        }
+
+        // ---- Shizuku at start ----
+        // While no working mode is ready (no ADB TCP, Wireless Debugging or root) and the mode is Auto or Shizuku, a Shizuku that runs but has not authorized
+        // this app is asked at start with its own dialog, every launch, until the person has said no twice (counted in the app's settings); the Shizuku card
+        // always asks when tapped.
+        const SZ_DENY_KEY = 'shizuku_auto_denied', SZ_DENY_MAX = 2;
+        const SZ_ANSWER_WAIT_MS = 15000;  // how long the first-launch sheet waits for the answer to that dialog
+        let szAutoReady = false;          // initApp says when (a moment after start, so the first look at the modes is done)
+        let szAutoTried = false;          // asked once per start of the page
+        let szAutoAsking = false, szAutoAskAt = 0;
+        function szDenials() {
+            try { return parseInt(window.AndroidBridge.loadSetting(SZ_DENY_KEY), 10) || 0; } catch (e) { return 0; }
+        }
+        function szCountDenial(granted) {
+            const b = window.AndroidBridge;
+            if (!b || !b.saveSetting) return;
+            const n = szDenials();
+            try {
+                if (!granted) b.saveSetting(SZ_DENY_KEY, String(n + 1));
+                else if (n) b.saveSetting(SZ_DENY_KEY, '0');
+            } catch (e) {}
+        }
+        function szAutoAsk() {
+            if (!szAutoReady || szAutoTried || isPrivilegedActive) return false;
+            const b = window.AndroidBridge, d = lastModesData;
+            if (!b || !b.requestShizukuPermission || !d) return false;
+            const configured = d.configuredMode || 'auto';
+            if (configured !== 'auto' && configured !== 'shizuku') return false;
+            const sz = d.shizuku || {};
+            if (!sz.running || sz.authorized || sz.preV11) return false;
+            if (szDenials() >= SZ_DENY_MAX) return false;
+            szAutoTried = true;
+            let st = '';
+            try { st = String(b.requestShizukuPermission() || ''); } catch (e) {}
+            if (st === 'requested') { szAutoAsking = true; szAutoAskAt = Date.now(); return true; }
+            if (st === 'granted') { checkAllWorkingModes(false); loadPackageData(); }
+            return false;
+        }
+
+        // checkAllWorkingModes: the mode was just read again
+        function permOnModeChange() {
+            const m = document.getElementById('permModal');
+            if (m && m.classList.contains('show')) { permRefresh(); permRender(); }          // a working mode came (or went): Allow by command, or the lock
+            permMaybeOfferAdb();
+            szAutoAsk();
         }
 
         function onAppResume() {

@@ -26,6 +26,8 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <!-- DUMP: a signature|privileged|development permission, grantable only with pm grant through ADB/Shizuku/root; lets this app run dumpsys itself -->
     <uses-permission android:name="android.permission.DUMP" />
+    <!-- READ_LOGS: like DUMP, granted only with pm grant through ADB/Shizuku/root; lets this app read the system log (logcat) itself -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />

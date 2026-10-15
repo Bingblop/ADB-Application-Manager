@@ -39,13 +39,18 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   };
   const scenario = async (opts, fn, viewport, extra) => { const page = await open(opts, viewport, extra); try { await fn(page); } finally { await page.close(); } };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
-  const sheet = page => ev(page, () => {
+  // Since v7.14 the rows that used to wait for a working mode (Allow Restricted Settings, Read/Write External Storage, Write Secure Settings, DUMP) are in the
+  // sheet without one too (locked when only a command can grant them); this script is about the rest, so without a working mode it leaves them out of what
+  // it reads and clicks (t400 covers them)
+  const LATER = ['restricted_settings', 'storage_legacy', 'secure_settings', 'dump'];
+  const sheet = page => ev(page, LATER => {
     const m = document.getElementById('permModal'), vis = id => getComputedStyle(document.getElementById(id)).display !== 'none';
+    const mine = r => isPrivilegedActive || !LATER.includes(r.dataset.perm);
     return { shown: m.classList.contains('show'), title: document.getElementById('permTitle').innerText.trim(), sub: document.getElementById('permSubtitle').innerText.trim(),
       reason: vis('permReason') ? document.getElementById('permReason').innerText.trim() : null,
-      rows: Array.from(m.querySelectorAll('.pm-row')).map(r => ({ name: r.querySelector('.pm-name').innerText.trim(), ok: !!r.querySelector('.pm-ok'), btn: !!r.querySelector('button') })),
+      rows: Array.from(m.querySelectorAll('.pm-row')).filter(mine).map(r => ({ name: r.querySelector('.pm-name').innerText.trim(), ok: !!r.querySelector('.pm-ok'), btn: !!r.querySelector('button') })),
       all: vis('permAllBtn'), close: document.getElementById('permCloseBtn').innerText.trim() };
-  });
+  }, LATER);
   const rowsOf = s => s.rows.map(r => (r.ok ? '✓' : '—')).join(' ');           // ✓ allowed, — still to allow
   const perms = page => ev(page, () => window.__calls.perms.join(','));
   const saved = page => ev(page, () => window.__calls.kv.filter(k => /^perm_intro_v62=/.test(k)).length);
@@ -54,7 +59,10 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   // the person is back from an Android screen where `now` was switched on (or not: {})
   const back = (page, now) => ev(page, w => { Object.assign(window.__perm, w); window.onAppResume(); }, now);
   const intro = page => ev(page, () => maybeShowPermIntro());
-  const allow = (page, n) => page.click('#permRows .pm-row:nth-child(' + n + ') button');
+  const allow = async (page, n) => {
+    const key = await ev(page, a => Array.from(document.querySelectorAll('#permRows .pm-row')).filter(r => isPrivilegedActive || !a.LATER.includes(r.dataset.perm))[a.n - 1].dataset.perm, { LATER, n });
+    await page.click('#permRows .pm-row[data-perm="' + key + '"] button');
+  };
   const closed = async page => (await sheet(page)).shown === false;
   const waitPerms = (page, n) => page.waitForFunction(k => window.__calls.perms.length >= k, n);
   const ask = (page, why) => ev(page, w => { window.__ran = 0; return promptFileAccess(w || 'To do that, this app needs All-files access.', () => { window.__ran++; }, false); }, why);
@@ -208,7 +216,9 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   const DUMP = 'Dump system services (DUMP)';
   await scenario({ kv: {}, mode: { priv: false }, perm: { files: false, usage: false, overlay: false, dump: false } }, async page => {
     await intro(page);
-    check('DUMP. without a working mode the row is not in the sheet at all (there is nothing to open for it)', !(await names(page)).includes(DUMP), JSON.stringify(await names(page)));
+    // v7.14: it is listed, locked, with a note instead of an Allow button (there is nothing to open for it)
+    check('DUMP. without a working mode the row is locked: no Allow button, a note that it needs ADB, Shizuku or root', (await names(page)).includes(DUMP)
+      && (await ev(page, () => { const r = document.querySelector('#permRows .pm-row[data-perm="dump"]'); return !r.querySelector('button') && !!r.querySelector('.pm-lock svg') && r.querySelector('.pm-lock').innerText.trim() === 'Needs ADB, Shizuku or root'; })), JSON.stringify(await names(page)));
   });
   await scenario({ kv: {}, mode: { priv: true }, perm: { files: true, usage: true, overlay: true } }, async page => {
     await intro(page);
@@ -277,7 +287,8 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   });
 
   // "Copy grant commands": the adb lines for what is still missing, copied for a computer; hidden when nothing is missing and in the file-access prompt
-  const copyBtn = async page => { await page.waitForFunction(() => document.querySelector('#permModal .modal-sheet').getBoundingClientRect().bottom <= innerHeight + 0.5); return ev(page, () => { const b = document.getElementById('permCopyBtn'), r = b.getBoundingClientRect(), m = document.querySelector('#permModal .modal-sheet').getBoundingClientRect();
+  // (v7.14: the sheet lists every permission and may be taller than the screen, so "inside" is measured with the button scrolled to)
+  const copyBtn = async page => { await page.waitForFunction(() => document.querySelector('#permModal .modal-sheet').getBoundingClientRect().bottom <= innerHeight + 0.5); return ev(page, () => { const b = document.getElementById('permCopyBtn'); b.scrollIntoView({ block: 'nearest' }); const r = b.getBoundingClientRect(), m = document.querySelector('#permModal .modal-sheet').getBoundingClientRect();
     return { shown: getComputedStyle(b).display !== 'none', text: b.innerText.trim(), h: Math.round(r.height), inside: r.left >= m.left && r.right <= m.right && r.bottom <= innerHeight + 0.5 }; }); };
   // the exact lists, written out here (not computed) so that they are checked against what MainActivity.getGrantCommands builds
   const PKGN = 'com.bloatware.bingblop', PM = 'adb shell pm grant ' + PKGN + ' android.permission.', APP = 'adb shell appops set ' + PKGN + ' ';
@@ -601,7 +612,9 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
         check(tag + mode + ': the subtitle wraps between words, not in the middle of one', g.subWholeWords);
         check(tag + mode + ': the Allow buttons are at least 40 px tall and the bottom buttons at least 44', g.allowMin >= 40 && g.bottomMin >= 44, g.allowMin + ' / ' + g.bottomMin);
         check(tag + mode + (mode === 'files' ? ': alone, "Not now" takes the whole row' : ': "Not now" shares the row with "Allow all"'), mode === 'files' ? g.closeW >= g.rowsW - 2 : g.closeW < g.rowsW / 2, g.closeW + ' of ' + g.rowsW);
-        if (vp.height >= 800) check(tag + mode + ': on a normal screen the sheet fits without scrolling', !g.scrolls, g.h);
+        // v7.14: the first-launch sheet lists every permission, more than a phone screen holds: it scrolls, and its last buttons are reached that way
+        if (vp.height >= 800 && mode === 'files') check(tag + mode + ': on a normal screen the sheet fits without scrolling', !g.scrolls, g.h);
+        if (mode === 'intro') check(tag + mode + ': scrolled to the end, the bottom buttons are inside the screen', await ev(page, () => { const sh = document.querySelector('#permModal .modal-sheet'); sh.scrollTop = sh.scrollHeight; const r = document.getElementById('permCloseBtn').getBoundingClientRect(); return r.bottom <= innerHeight + 0.5 && r.top >= 0; }));
         if (vp.width === 360 && vp.height === 800) await page.screenshot({ path: 'perm_' + mode + '.png' });
       }, vp);
     }
