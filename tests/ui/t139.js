@@ -63,7 +63,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('2. the batch menu has the grab handle in the middle at the top, like the other sheets', bm.show && bm.handle && /50%|center/.test(bm.pos), bm.pos);
   check('3. Select All and Clear All are outlined buttons ("Clear" is now "Clear All")', bm.tools.length >= 2 && bm.tools[0].t === 'Select All' && bm.tools[1].t === 'Clear All' && bm.tools.slice(0, 2).every(x => x.bw === '1px' && x.bs === 'solid'), JSON.stringify(bm.tools));
   check('4. Keep selecting after running is on', bm.keep === true);
-  check('5. Share List and Show Apps changed places; it is Show Applications now', bm.copy.join('|') === 'Copy Packages|Show Applications' && bm.grid.includes('Share List') && !bm.grid.includes('Show Apps') && bm.grid.indexOf('Share List') === bm.grid.length - 2, JSON.stringify([bm.copy, bm.grid]));
+  check('5. Show Apps is Show Applications now, and Backup (v7.13.4) is where Share List was', bm.copy.join('|') === 'Copy Packages|Show Applications' && bm.grid.includes('Backup') && !bm.grid.includes('Share List') && !bm.grid.includes('Show Apps') && bm.grid.indexOf('Backup') === bm.grid.length - 2, JSON.stringify([bm.copy, bm.grid]));
   // the gestures: drag the handle up, then down, then down again (mouse events do the same as touch)
   const box = await ev(() => { const r = document.getElementById('floatingBatchBar').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
   const drag = async (dy) => { await page.mouse.move(box.x, box.y); await page.mouse.down(); await page.mouse.move(box.x, box.y + dy / 2, { steps: 4 }); await page.mouse.move(box.x, box.y + dy, { steps: 4 }); await page.mouse.up(); await sleep(350); };
