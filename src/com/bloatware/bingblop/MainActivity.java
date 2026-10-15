@@ -11136,13 +11136,15 @@ public class MainActivity extends Activity {
         /**
          * The ADB Stub on a connected watch (see WearStub). action: "status", "install" (the APK this build carries, with its permissions granted),
          * "start" (phone: the name the stub's screen gives this phone; empty: its model), "renew" (the stub's lease, about once a minute while it runs)
-         * or "stop". Every action ends with a fresh status.
-         * Answer: window.onCdResult({tag, ok, out, installed, version, running}).
+         * or "stop" (phone "quick": the stop before Disconnect, a short wait and no status read, so a watch that does not answer does not hold up
+         * Disconnect). Every other action ends with a fresh status.
+         * Answer: window.onCdResult({tag, ok, out, installed, version, running}); a quick stop leaves out installed, version and running.
          */
         @JavascriptInterface
         public void cdStub(final String tag, final String serial, final String action, final String phone) {
             final String t = tag == null ? "" : tag;
             final String a = action == null ? "" : action;
+            final boolean quick = a.equals("stop") && "quick".equals(phone);
             if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
             if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("renew") && !a.equals("stop")) {
                 notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: unknown action") + ")");
@@ -11175,17 +11177,19 @@ public class MainActivity extends Activity {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
                                 ok = WearStub.renewed(out);
                             } else if (a.equals("stop")) {
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), 20000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), quick ? WearStub.QUICK_STOP_MS : 20000);
                                 ok = out.contains("stopped") && !out.startsWith("Error");
                             }
-                            String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
-                            WearStub.Status s = WearStub.parseStatus(st);
-                            if (a.equals("status") && st.startsWith("Error")) { ok = false; out = st; }
+                            if (!quick) {
+                                String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
+                                WearStub.Status s = WearStub.parseStatus(st);
+                                if (a.equals("status") && st.startsWith("Error")) { ok = false; out = st; }
+                                res.put("installed", s.installed);
+                                res.put("version", s.version);
+                                res.put("running", s.running);
+                            }
                             res.put("ok", ok);
                             res.put("out", out.trim());
-                            res.put("installed", s.installed);
-                            res.put("version", s.version);
-                            res.put("running", s.running);
                         } catch (Exception e) {
                             try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
                         }

@@ -8,7 +8,9 @@ ok      and the renewals stop:
 ok      nothing is renewed while it is not running:
 ok      Start: the renewals run again: 60000
 ok   3. a watch without the stub: no renewal: stub status 192.168.1.30:5555
-ok   4. an older stub on the watch: Update: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"}
+ok   4. Disconnect: a quick stop of the stub, then adb disconnects: stub stop quick 192.168.1.30:5555 | adb disconnect 192.168.1.30:5555
+ok      and says so: Disconnected
+ok   5. an older stub on the watch: Update: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"}
 ok      Update fails, signed with another key: the toast says to uninstall it first: The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.
 ok      the Failure [...] line, not "Performing Streamed Install": ["Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]","Failure [INSTALL_FAILED_VERSION_DOWNGRADE]"]
 ok      adb's own error; a line that says error; else the last line; nothing: no answer: ["device offline","adb: connect error for write: closed","something else","No answer from the watch"]

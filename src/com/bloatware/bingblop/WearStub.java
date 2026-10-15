@@ -92,6 +92,12 @@ public final class WearStub {
      * Asks the stub to let go and close (its Stop receiver), then ends its process: when the process is gone the watch drops its screen wake lock,
      * its Wi-Fi lock and its Wi-Fi request too, so Wi-Fi goes back to normal even if the broadcast was not taken.
      */
+    /**
+     * How long the stop before Disconnect may take (the broadcast, a second, am force-stop): a watch whose connection is half open does not answer, and
+     * Disconnect should not wait 20 s for it. The stop is best effort there: the stub's lease lets go of the watch by itself in any case.
+     */
+    static final int QUICK_STOP_MS = 6000;
+
     static String stopCmd() {
         return "am broadcast -a " + STOP_ACTION + " -n " + RECEIVER + " >/dev/null 2>&1; sleep 1; am force-stop " + PKG + "; echo stopped";
     }

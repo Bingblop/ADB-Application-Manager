@@ -1,7 +1,8 @@
 // Connected Devices, ADB Stub for Wear OS watches (review fixes of #233): while the stub runs on a connected watch the phone renews its lease once a
 // minute, whichever view is open (without renewals the stub lets go of the watch by itself after 5 minutes); a renewal whose answer says the stub
 // is no longer running shows Start again and the renewals stop; nothing is renewed while the stub is not running. A failed install says why (the
-// Failure [...] line adb prints after "Performing Streamed Install"), and what to do when the watch has a stub signed with another key.
+// Failure [...] line adb prints after "Performing Streamed Install"), and what to do when the watch has a stub signed with another key. Disconnect
+// asks for a quick stop (a short wait on the watch, no status read) before adb lets go.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -26,16 +27,17 @@ const W = '192.168.1.30:5555';
         cdSelfSerials() { return JSON.stringify(['127.0.0.1:5555']); },
         cdStubInfo() { return JSON.stringify({ bundled: true, version: 2 }); },
         cdStub(tag, serial, action, arg) {
-          st.log.push('stub ' + action + ' ' + serial);
+          st.log.push('stub ' + action + (arg ? ' ' + arg : '') + ' ' + serial);
           let ok = true, out = '';
           if (action === 'install') { if (st.installOut) { ok = false; out = st.installOut; } else { st.inst = true; st.ver = 2; out = 'Performing Streamed Install\nSuccess'; } }
           if (action === 'start') { st.run = true; out = 'Starting: Intent { cmp=com.bloatware.bingblop.adbstub/.StubActivity (has extras) }'; }
-          if (action === 'stop') { st.run = false; out = 'stopped'; }
+          if (action === 'stop') { st.run = false; out = 'stopped'; if (arg === 'quick') return reply({ tag, ok, out }); }
           if (action === 'renew') { if (!st.lease) st.run = false; out = 'Broadcasting: Intent { act=com.bloatware.bingblop.adbstub.RENEW }\nBroadcast completed: result=0'; }
           reply({ tag, ok, out, installed: st.inst, version: st.inst ? st.ver : 0, running: st.inst && st.run });
         },
         cdAdb(tag, serial, argsJson) {
           const a = JSON.parse(argsJson);
+          if (a[0] === 'disconnect') { st.log.push('adb disconnect ' + a[1]); st.up = false; return reply({ tag, out: 'disconnected ' + a[1] }); }
           if (a[0] === 'devices') return reply({ tag, out: 'List of devices attached\n' + (st.up ? W + '\tdevice product:w model:Galaxy_Watch6 device:w transport_id:2\n' : '') });
           if (a[0] === 'shell' && /^for p in/.test(a[1])) return reply({ tag, out: ['ro.product.manufacturer=samsung', 'ro.product.model=SM-R930', 'ro.build.version.release=14', 'ro.build.version.sdk=34',
             'ro.build.characteristics=watch', 'batt=  level: 83   status: 3 '].join('\n') });
@@ -83,11 +85,18 @@ const W = '192.168.1.30:5555';
   check('3. a watch without the stub: no renewal', await renewTimer(page) === '' && !/renew/.test(await log(page)), await log(page));
   await page.close();
 
-  // ---- 4. a failed install says why ----
+  // ---- 4. Disconnect: a quick stop, then adb disconnect ----
+  page = await open({ run: false });
+  await page.evaluate(() => { window.__st.log = []; cdDeviceMenu(); const i = cd.acts.findIndex(x => x.label === 'Disconnect'); cdSheetAct(i); }); await page.waitForTimeout(400);
+  check('4. Disconnect: a quick stop of the stub, then adb disconnects', await log(page) === ['stub stop quick ' + W, 'adb disconnect ' + W].join(' | '), await log(page));
+  check('   and says so', /Disconnected/.test(await toast(page)), await toast(page));
+  await page.close();
+
+  // ---- 5. a failed install says why ----
   const INCOMPATIBLE = 'Performing Streamed Install\nadb: failed to install /data/user/0/com.bloatware.bingblop/cache/adb_stub/adb_stub_80_2.apk: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.bloatware.bingblop.adbstub signatures do not match newer version; ignoring!]';
   page = await open({ ver: 1, installOut: INCOMPATIBLE });
   r = await row(page);
-  check('4. an older stub on the watch: Update', r && r.btn === 'Update', JSON.stringify(r));
+  check('5. an older stub on the watch: Update', r && r.btn === 'Update', JSON.stringify(r));
   await page.click('#cdStubBtn'); await page.waitForTimeout(300);
   check('   Update fails, signed with another key: the toast says to uninstall it first', await toast(page) === 'The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.', await toast(page));
   const fails = await page.evaluate(() => [

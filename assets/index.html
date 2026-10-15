@@ -24914,13 +24914,13 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdStubAutoOn() { return kvGet('cd_stub_auto', true) !== false; }
         // one call: { ok, out, installed, version, running }
-        function cdStubCall(action, serial) {
+        function cdStubCall(action, serial, arg) {
             return new Promise(res => {
                 const b = window.AndroidBridge;
                 if (!b || !b.cdStub) { res({ ok: false, out: 'Error: Connected Devices works in the app, not in a plain browser.' }); return; }
                 const tag = 'cd' + (++cdSeq);
                 cdWait[tag] = r => res(r || {});
-                try { b.cdStub(tag, serial, action, ''); } catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
+                try { b.cdStub(tag, serial, action, arg || ''); } catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
             });
         }
         function cdStubKeep(serial, r) {
@@ -24988,11 +24988,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (fl) return fl[0];
             return cdFail(t) || lines.find(x => /fail|error/i.test(x)) || lines[lines.length - 1] || 'No answer from the watch';
         }
-        // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal
+        // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal. A quick stop (a few seconds at most, no status
+        // read): a watch that does not answer must not hold up Disconnect, and the stub lets go by itself when its lease is not renewed
         async function cdStubStopFor(serial) {
             const st = cd.stub[serial];
             if (!st || !st.installed || !cdIsUp(serial)) return;
-            const r = await cdStubCall('stop', serial);
+            const r = await cdStubCall('stop', serial, 'quick');
             cdStubKeep(serial, r);
         }
         function cdStubRow(serial) {

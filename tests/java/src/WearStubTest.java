@@ -131,6 +131,9 @@ public class WearStubTest {
             check("StubService.ACTION_RENEW is the same action", svc.contains("ACTION_RENEW = \"" + WearStub.RENEW_ACTION + "\""));
             check("StubService starts the lease when it takes hold, and lets go when it is over", svc.contains("lease = new Lease(") && svc.contains("handler.postDelayed(leaseCheck, Lease.MS)") && Pattern.compile("left <= 0\\) stopNow\\(").matcher(svc).find());
             check("the lease check is taken back on release", svc.contains("handler.removeCallbacks(leaseCheck)"));
+            String ma = read(new File(repo, "src/com/bloatware/bingblop/MainActivity.java"));
+            check("the stop before Disconnect has a short wait", WearStub.QUICK_STOP_MS > 0 && WearStub.QUICK_STOP_MS <= 8000 && ma.contains("quick ? WearStub.QUICK_STOP_MS : 20000"));
+            check("... and reads no status after it", ma.contains("final boolean quick = a.equals(\"stop\") && \"quick\".equals(phone);") && Pattern.compile("if \\(!quick\\) \\{\\s*String st = cdExec\\(t, cdStubArgs\\(serial, \"shell\", WearStub.statusCmd\\(\\)\\)").matcher(ma).find());
             String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
             check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
         }
