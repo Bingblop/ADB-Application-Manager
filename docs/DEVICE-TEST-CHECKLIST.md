@@ -553,6 +553,17 @@ Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); t
 - [ ] Without consent, or in Read-Only mode: AppCleaner does not switch anything on by itself and shows the old "turn it on" message.
 - [ ] SD Maid tab > Exclusions (AppCleaner): this app (`com.bloatware.bingblop`) and the WebView packages (`com.google.android.webview`, its `.beta`, `.dev` and `.canary` variants, and `com.android.webview`) are listed as stock exclusions and come back with Restore default exclusions. Turn **Force-stop before clearing** on and clean all apps: this app and Android System WebView are not force-stopped and the cleaning is not cut short; they stay in the result as excluded, not failed.
 
+## 32. Start Shizuku from the app
+
+Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
+
+- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then within about ten seconds "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
+- [ ] **No start script.** After clearing the Shizuku app's data (so it has not written start.sh), tap **Start Shizuku (ADB)**: the toast says Shizuku has not written its start script yet, and the Shizuku app opens. Nothing is started and no error text appears.
+- [ ] **No ADB connection.** With ADB TCP and Wireless Debugging both disconnected, tap it: the toast says to connect one of them first.
+- [ ] **Already running.** With Shizuku running, tap it: "Shizuku is already running", nothing is run.
+- [ ] **A failed start.** If Shizuku does not start (for example a Shizuku version whose start script needs another way), the toast says so and the text the script printed appears under the buttons. Please copy that text into the report: it is what we need to adjust the command for that version.
+- [ ] **Double tap.** Tap twice quickly: one start runs; the second tap says it is already being started.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
