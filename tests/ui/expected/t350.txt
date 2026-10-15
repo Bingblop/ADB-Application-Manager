@@ -1,0 +1,20 @@
+ok   1. a watch without the stub: the ADB Stub row offers Install: {"text":"ADB Stub Keeps the watch screen on and its Wi-Fi connected while this phone is connected. Install","btn":"Install"}
+ok      on connect only the status was read: nothing started: stub status 192.168.1.30:5555
+ok      Install sends the stub and starts it (start on connect is on by default): stub status 192.168.1.30:5555 | stub install 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      then the row says it is running and offers Stop: {"text":"ADB Stub The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it. RUNNING Stop","btn":"Stop"}
+ok      and the toast says so: ADB Stub started on the watch
+ok   2. the device menu has the start-on-connect switch and Disconnect: Reconnect, Reload details, Reboot, Reboot to recovery, Reboot to bootloader, Power off, Copy address, Start ADB Stub on connect: On, Disconnect
+ok      Disconnect: the stub is stopped first, then adb disconnects: stub stop 192.168.1.30:5555 | adb disconnect 192.168.1.30:5555
+ok   3. the stub is installed and not running: it is started when the watch connects: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      the row offers Stop: {"text":"ADB Stub The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it. RUNNING Stop","btn":"Stop"}
+ok      Reload details does not ask or start it again: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      the watch dropped and came back: read and started again: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      Stop stops it; the row offers Start: {"text":"ADB Stub Installed, not running. Start","btn":"Start"}
+ok   4. start on connect off: only the status is read: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555
+ok      the menu shows it off
+ok      and turns it back on: The ADB Stub starts when the watch connects
+ok   5. an older stub: Update, and it was not started: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"} stub status 192.168.1.30:5555
+ok   6. a tablet: no ADB Stub row and no stub call:
+ok      a build without the stub: no row and no stub call:
+errors: []
+ALL OK

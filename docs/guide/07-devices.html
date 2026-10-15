@@ -78,9 +78,20 @@
       <tr><td><b>Reboot to bootloader</b></td><td>Restarts into the bootloader (the tiny program that runs before Android and is used for flashing).</td><td>Yes</td></tr>
       <tr><td><b>Power off</b></td><td>Turns the device off. It has to be started again by hand.</td><td>Yes</td></tr>
       <tr><td><b>Copy address</b></td><td>Copies the device's serial or address, the text shown under its name, such as 192.168.1.20:5555.</td><td>No</td></tr>
-      <tr><td><b>Disconnect</b></td><td>Drops the Wi-Fi or Bluetooth-link connection. Shown only for a device that is reached by an address. The device stays paired, so you can connect again later.</td><td>No</td></tr>
+      <tr><td><b>Start ADB Stub on connect: On</b> (or <b>Off</b>)</td><td>Only for a Wear OS watch. Switches whether the ADB Stub (below) starts on its own when the watch connects. On at first.</td><td>No</td></tr>
+      <tr><td><b>Disconnect</b></td><td>Drops the Wi-Fi or Bluetooth-link connection. Shown only for a device that is reached by an address. The device stays paired, so you can connect again later. On a watch that runs the ADB Stub, the stub is stopped first, so the watch's screen and Wi-Fi go back to normal.</td><td>No</td></tr>
     </tbody>
   </table>
+
+  <h4>The ADB Stub (Wear OS watches)</h4>
+  <p>A watch turns its screen off after a few seconds and, to save battery, often turns Wi-Fi off and talks to its phone over Bluetooth instead. Both can drop the Wi-Fi connection this tab uses. The <b>ADB Stub</b> is a small app this app carries for that: installed on the watch, it keeps the watch's screen on and its Wi-Fi connected while it runs, and its one screen shows the state of the connection (Wi-Fi and its address, Wireless debugging, since when).</p>
+  <p>When the device is a Wear OS watch, a second card titled <b>ADB Stub</b> sits under the device card:</p>
+  <ul>
+    <li><b>Install</b> sends the stub to the watch with its permissions and starts it. <b>Update</b> shows instead when the watch has an older stub than the one in this app.</li>
+    <li>When the stub is installed, it starts by itself every time the watch connects (switch that off in the device menu), and the card shows <b>Running</b> with a <b>Stop</b> button. <b>Start</b> starts it by hand.</li>
+    <li><b>Disconnect</b> in the device menu stops it before the connection is dropped. On the watch, its notification also has <b>Stop</b>.</li>
+  </ul>
+  <div class="hg-note"><b>Note.</b> A screen that stays on uses the watch's battery quickly; keep it on its charger for long sessions. If the connection is lost without Disconnect (the watch walked out of range), the stub keeps running until you stop it. The ADB Stub has not yet been tried on a real watch by the author.</div>
   <div class="hg-danger"><b>Risky.</b> <b>Reboot to recovery</b> and <b>Reboot to bootloader</b> take the device out of normal Android. A device in the bootloader cannot be reached over Wi-Fi, so from this phone you have no way to bring it back: you have to restart it by hand, usually by holding its power button. <b>Power off</b> works the same way. Only use these when you know why. If the device does not come back, check its maker's instructions for starting it.</div>
 
   <h4>The seven sub-tabs</h4>
