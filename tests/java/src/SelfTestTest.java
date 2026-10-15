@@ -64,6 +64,10 @@ public class SelfTestTest {
         eq("pm path without a path fails", judge("pm-path", "").status, SelfTest.Status.FAIL);
         eq("package record", judge("dumpsys-package", "Packages:\n  Package [com.example.app] (abc):").status, SelfTest.Status.PASS);
         eq("dumpsys denied", judge("dumpsys-package", "Permission Denial: can't dump package").status, SelfTest.Status.FAIL);
+        SelfTest.Probe dp = byId(ps, "dumpsys-package");
+        is("the package record is searched for, not cut to the first lines: " + dp.cmd, dp.cmd.contains("grep -F 'Package ['") && !dp.cmd.contains("head"));
+        eq("the record found after the resolver tables passes", judge("dumpsys-package", "  Package [com.bloatware.bingblop] (4f2a1c0):").status, SelfTest.Status.PASS);
+        eq("nothing found (grep printed nothing) fails", judge("dumpsys-package", "").status, SelfTest.Status.FAIL);
         eq("appops with nothing to list still ran", judge("appops", "No operations.").status, SelfTest.Status.PASS);
 
         StringBuilder st = new StringBuilder();

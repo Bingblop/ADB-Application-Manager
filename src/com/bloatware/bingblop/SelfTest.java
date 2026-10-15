@@ -77,7 +77,9 @@ final class SelfTest {
         p.add(new Probe("pm-list-3", GROUP_PKG, "List user-installed packages", "pm list packages -3", Kind.PKG_COUNT_ANY, false));
         p.add(new Probe("pm-list-d", GROUP_PKG, "List disabled packages", "pm list packages -d", Kind.PKG_COUNT_ANY, false));
         p.add(new Probe("pm-path", GROUP_PKG, "Find an app's APK path", "pm path com.android.settings", Kind.PKG_PATH, false));
-        p.add(new Probe("dumpsys-package", GROUP_PKG, "Read one app's package record", "dumpsys package " + own + " | head -n 12", Kind.PKG_SELF, true));
+        // The record is not near the top: the resolver tables of the app's activities and receivers come first (on a Galaxy Note20
+        // with Android 13 the first 12 lines held none of it), so the line is searched for instead of taking the first lines.
+        p.add(new Probe("dumpsys-package", GROUP_PKG, "Read one app's package record", "dumpsys package " + own + " | grep -F 'Package ['", Kind.PKG_SELF, true));
         p.add(new Probe("appops", GROUP_PKG, "Read one app's App Ops", "cmd appops get " + own, Kind.RUNS, true));
 
         p.add(new Probe("settings-global", GROUP_SET, "Read the Global settings table", "settings list global", Kind.SETTINGS_COUNT, false));
