@@ -24959,6 +24959,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (st.checked) return;
             st.checked = true;
             const r = await cdStubCall('status', serial);
+            if (!r.ok) st.checked = false;              // adb could not ask the watch: asked again on the next load of its details
             cdStubKeep(serial, r);
             if (r.installed && !r.running && (r.version || 0) >= cdStubBundled() && cdStubAutoOn() && cdIsUp(serial)) cdStubDo('start', serial, true);
         }

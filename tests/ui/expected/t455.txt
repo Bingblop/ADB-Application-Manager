@@ -14,5 +14,7 @@ ok   5. an older stub on the watch: Update: {"text":"ADB Stub A newer version co
 ok      Update fails, signed with another key: the toast says to uninstall it first: The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.
 ok      the Failure [...] line, not "Performing Streamed Install": ["Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]","Failure [INSTALL_FAILED_VERSION_DOWNGRADE]"]
 ok      adb's own error; a line that says error; else the last line; nothing: no answer: ["device offline","adb: connect error for write: closed","something else","No answer from the watch"]
+ok   6. the status could not be read: nothing started: stub status 192.168.1.30:5555
+ok      the next load of the details asks again and starts it: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
 errors: []
 ALL OK

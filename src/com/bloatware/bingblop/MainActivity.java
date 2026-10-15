@@ -11138,7 +11138,8 @@ public class MainActivity extends Activity {
          * "start" (phone: the name the stub's screen gives this phone; empty: its model), "renew" (the stub's lease, about once a minute while it runs)
          * or "stop" (phone "quick": the stop before Disconnect, a short wait and no status read, so a watch that does not answer does not hold up
          * Disconnect). Every other action ends with a fresh status.
-         * Answer: window.onCdResult({tag, ok, out, installed, version, running}); a quick stop leaves out installed, version and running.
+         * Answer: window.onCdResult({tag, ok, out, installed, version, running}); a quick stop, and a status adb could not read, leave out installed,
+         * version and running (a status action that adb could not read is ok: false).
          */
         @JavascriptInterface
         public void cdStub(final String tag, final String serial, final String action, final String phone) {
@@ -11182,11 +11183,15 @@ public class MainActivity extends Activity {
                             }
                             if (!quick) {
                                 String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
-                                WearStub.Status s = WearStub.parseStatus(st);
-                                if (a.equals("status") && st.startsWith("Error")) { ok = false; out = st; }
-                                res.put("installed", s.installed);
-                                res.put("version", s.version);
-                                res.put("running", s.running);
+                                if (WearStub.adbFailed(st)) {
+                                    // adb could not ask the watch: the answer leaves out what the stub has, so the page keeps what it knew (and asks again later)
+                                    if (a.equals("status")) { ok = false; out = st; }
+                                } else {
+                                    WearStub.Status s = WearStub.parseStatus(st);
+                                    res.put("installed", s.installed);
+                                    res.put("version", s.version);
+                                    res.put("running", s.running);
+                                }
                             }
                             res.put("ok", ok);
                             res.put("out", out.trim());

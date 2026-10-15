@@ -2,7 +2,8 @@
 // minute, whichever view is open (without renewals the stub lets go of the watch by itself after 5 minutes); a renewal whose answer says the stub
 // is no longer running shows Start again and the renewals stop; nothing is renewed while the stub is not running. A failed install says why (the
 // Failure [...] line adb prints after "Performing Streamed Install"), and what to do when the watch has a stub signed with another key. Disconnect
-// asks for a quick stop (a short wait on the watch, no status read) before adb lets go.
+// asks for a quick stop (a short wait on the watch, no status read) before adb lets go. A status adb could not read is asked again on the next load
+// of the watch's details (and then the stub is started).
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -16,7 +17,7 @@ const W = '192.168.1.30:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript((o) => {
       const W = '192.168.1.30:5555';
-      const st = window.__st = { log: [], up: true, inst: o.inst !== false, ver: o.ver || 2, run: !!o.run, lease: true, timers: [], installOut: o.installOut || '' };
+      const st = window.__st = { log: [], up: true, inst: o.inst !== false, ver: o.ver || 2, run: !!o.run, lease: true, timers: [], installOut: o.installOut || '', statusErr: o.statusErr || 0 };
       const si = window.setInterval.bind(window), ci = window.clearInterval.bind(window);
       window.setInterval = (fn, ms, ...a) => { const id = si(fn, ms, ...a); st.timers.push({ id, ms, name: fn && fn.name || '' }); return id; };
       window.clearInterval = (id) => { st.timers = st.timers.filter(t => t.id !== id); ci(id); };
@@ -28,6 +29,7 @@ const W = '192.168.1.30:5555';
         cdStubInfo() { return JSON.stringify({ bundled: true, version: 2 }); },
         cdStub(tag, serial, action, arg) {
           st.log.push('stub ' + action + (arg ? ' ' + arg : '') + ' ' + serial);
+          if (action === 'status' && st.statusErr > 0) { st.statusErr--; return reply({ tag, ok: false, out: 'error: device offline' }); }
           let ok = true, out = '';
           if (action === 'install') { if (st.installOut) { ok = false; out = st.installOut; } else { st.inst = true; st.ver = 2; out = 'Performing Streamed Install\nSuccess'; } }
           if (action === 'start') { st.run = true; out = 'Starting: Intent { cmp=com.bloatware.bingblop.adbstub/.StubActivity (has extras) }'; }
@@ -109,6 +111,13 @@ const W = '192.168.1.30:5555';
   ]);
   check('   the Failure [...] line, not "Performing Streamed Install"', fails[0] === 'Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]' && fails[1] === 'Failure [INSTALL_FAILED_VERSION_DOWNGRADE]', JSON.stringify(fails.slice(0, 2)));
   check('   adb\'s own error; a line that says error; else the last line; nothing: no answer', fails[2] === 'device offline' && fails[3] === 'adb: connect error for write: closed' && fails[4] === 'something else' && fails[5] === 'No answer from the watch', JSON.stringify(fails.slice(2)));
+  await page.close();
+
+  // ---- 6. the first status read fails (adb's "error: device offline"): asked again on the next load of the details, then started ----
+  page = await open({ run: false, statusErr: 1 });
+  check('6. the status could not be read: nothing started', await log(page) === 'stub status ' + W, await log(page));
+  await page.evaluate(() => { cd.lastKey = ''; return cdLoadInfo(); }); await page.waitForTimeout(300);
+  check('   the next load of the details asks again and starts it', await log(page) === ['stub status ' + W, 'stub status ' + W, 'stub start ' + W].join(' | '), await log(page));
   await page.close();
 
   console.log('errors:', JSON.stringify(errors));

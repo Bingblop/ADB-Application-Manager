@@ -47,6 +47,16 @@ public final class WearStub {
     private static final Pattern SVC = Pattern.compile("(?m)^svc:\\s*[1-9]");
     private static final Pattern INST = Pattern.compile("(?m)^inst:package:\\S");
 
+    private static final Pattern ADB_FAILED = Pattern.compile("^(error|adb(\\.exe)?)\\s*:", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * The answer is adb's (or the app's) complaint, not the watch's: "error: device offline", "adb: device 'x' not found", "Error: timed out". Such a
+     * status says nothing about the stub, so it must not be read as "not installed".
+     */
+    static boolean adbFailed(String out) {
+        return out == null || ADB_FAILED.matcher(out.trim()).find();
+    }
+
     static Status parseStatus(String out) {
         String s = out == null ? "" : out;
         boolean inst = INST.matcher(s).find();

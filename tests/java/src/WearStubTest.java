@@ -66,6 +66,9 @@ public class WearStubTest {
         s = WearStub.parseStatus("Error: device offline");
         check("an adb error: nothing", !s.installed && !s.running);
         check("null: nothing", !WearStub.parseStatus(null).installed);
+        check("adb's complaints are failures, in any case", WearStub.adbFailed("error: device offline") && WearStub.adbFailed("Error: timed out") && WearStub.adbFailed("adb: device '192.168.1.30:5555' not found")
+                && WearStub.adbFailed("  error: closed\n") && WearStub.adbFailed("adb.exe: no devices/emulators found") && WearStub.adbFailed(null));
+        check("the watch's answer is not", !WearStub.adbFailed("inst:\nsvc:0\n") && !WearStub.adbFailed("inst:package:/data/app/x/base.apk\n    versionCode=2\nsvc:1\n"));
 
         // the real shell
         File work = Files.createTempDirectory("wearstub").toFile();
@@ -146,6 +149,7 @@ public class WearStubTest {
             String ma = read(new File(repo, "src/com/bloatware/bingblop/MainActivity.java"));
             check("the stop before Disconnect has a short wait", WearStub.QUICK_STOP_MS > 0 && WearStub.QUICK_STOP_MS <= 8000 && ma.contains("quick ? WearStub.QUICK_STOP_MS : 20000"));
             check("... and reads no status after it", ma.contains("final boolean quick = a.equals(\"stop\") && \"quick\".equals(phone);") && Pattern.compile("if \\(!quick\\) \\{\\s*String st = cdExec\\(t, cdStubArgs\\(serial, \"shell\", WearStub.statusCmd\\(\\)\\)").matcher(ma).find());
+            check("cdStub reads no stub state from a status adb could not get", ma.contains("if (WearStub.adbFailed(st)) {") && !ma.contains("st.startsWith(\"Error\")"));
             String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
             check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
         }
