@@ -4105,6 +4105,34 @@
         /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
         .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
         .modal-sheet.sheet-dragging { transition: none !important; }
+        /* The app menu's tab at full screen (sheetFullOpen): the header, the tags and the menu buttons step aside, a slim bar with the tab's name
+           and a ✕ takes the top, the tab strip stays (another tab opens at full screen too) and the open tab's list fills the rest of the screen.
+           The same elements, not a copy, so the search, the chips and the rows keep working and are as they were when it closes. It covers the
+           whole screen like the other sheets (the bottom bar steps aside while a sheet is open). */
+        .sheet-full-btn { flex: 0 0 auto; width: var(--tap); height: var(--tap); margin-block: calc(-1 * var(--space-1)); margin-inline: auto 0; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--accent); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .sheet-full-btn i { display: inline-flex; align-items: center; justify-content: center; width: var(--ctl-h); height: var(--ctl-h); border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2); }
+        .sheet-full-btn:active i { background: var(--accent); color: var(--on-accent); }
+        .sheet-full-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        .list-toolbar .sheet-full-btn { align-self: center; margin-inline-start: 0; }
+        .chip-row.sheet-full-row { justify-content: flex-end; }
+        .sheet-full-head { display: none; }
+        #inspectorModal .modal-sheet.tab-full { height: 100%; max-height: none; min-height: 0; border-radius: 0; display: flex; flex-direction: column; overflow: hidden;
+            padding-top: calc(var(--space-5) + env(safe-area-inset-top, 0px)); padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
+        #inspectorModal .modal-sheet.tab-full > :not(.sheet-full-head):not(.sheet-tabs):not(.sheet-tab-content) { display: none; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-full-head { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+        .sheet-full-titles { flex: 1 1 auto; min-width: 0; }
+        .sheet-full-titles h3 { font-size: var(--fs-sheet); font-weight: var(--fw-heavy); }
+        .sheet-full-titles p { font-size: var(--fs-pkg); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-tabs { flex: 0 0 auto; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-tab-content.active { flex: 1 1 auto; min-height: 0; max-height: none; }
+        #inspectorModal .modal-sheet.tab-full .sheet-full-btn { display: none; }
+        @media (prefers-reduced-motion: no-preference) {
+            #inspectorModal .modal-sheet.tab-full { animation: tabFullIn 0.22s ease-out; }
+            #inspectorModal .modal-sheet.tab-full-back { animation: tabFullBack 0.2s ease-out; }
+            @keyframes tabFullIn { from { opacity: 0.4; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+            @keyframes tabFullBack { from { opacity: 0.4; } to { opacity: 1; } }
+        }
         /* a tab fades in instead of appearing at once (opacity only: no transform, so nothing that is fixed inside it is disturbed) */
         @media (prefers-reduced-motion: no-preference) {
             .view-content.active { animation: viewFadeIn 0.22s ease-out; }
@@ -8712,7 +8740,7 @@ Type any command above (e.g. pm list packages -d)</div>
     </div>
 
     <!-- Inspector Modal -->
-    <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
+    <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) { if (!sheetFullClose()) closeInspector(); }">
         <div class="modal-sheet">
             <!-- the app's name, package and version beside its icon, Share and close on the right; under them, across the whole sheet, the
                  tags (UAD-NG level or Ask agent, trackers), the copy chips, the dates and sizes: on a narrow phone nothing is squeezed into a column -->
@@ -8819,6 +8847,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
             </div>
 
+            <!-- shown only while a tab is at full screen (sheetFullOpen): the tab's name, the app's name, and the ✕ back to the app menu -->
+            <div class="sheet-full-head" id="sheetFullHead">
+                <div class="sheet-full-titles">
+                    <h3 id="sheetFullTitle">Permissions</h3>
+                    <p id="sheetFullApp" translate="no"></p>
+                </div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sheetFullClose()">✕</button>
+            </div>
             <!-- Sub Tabs -->
             <div class="sheet-tabs">
                 <div class="sheet-tab-pill active" data-tab="perms" onclick="switchSheetTab('perms')">Permissions <span class="tab-count" id="permsCount"></span></div>
@@ -8844,6 +8880,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip" data-filter="denied" onclick="setPermsFilter('denied')">Denied</span>
                     <span class="filter-chip" data-filter="changeable" onclick="setPermsFilter('changeable')">Changeable</span>
                     <span class="filter-chip" data-filter="installtime" onclick="setPermsFilter('installtime')">Install-time</span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Permissions" title="Expand Permissions"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="permsContainer">
                     <div class="list-empty">Loading permissions...</div>
@@ -8861,6 +8898,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip" data-filter="allow" onclick="setOpsFilter('allow')">Allowed</span>
                     <span class="filter-chip" data-filter="restricted" onclick="setOpsFilter('restricted')">Ignored / Denied</span>
                     <span class="filter-chip" data-filter="foreground" onclick="setOpsFilter('foreground')">Foreground</span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand App Ops" title="Expand App Ops"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="opsContainer">
                     <div class="list-empty">Loading app ops...</div>
@@ -8887,6 +8925,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip active" data-filter="all" onclick="setActsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="exported" onclick="setActsFilter('exported')">Exported</span>
                     <span class="filter-chip" data-filter="unexported" onclick="setActsFilter('unexported')">Unexported</span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Activities" title="Expand Activities"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="actsContainer">
                     <div class="list-empty">Loading activities...</div>
@@ -8902,6 +8941,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip active" data-filter="all" onclick="setCompsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="exported" onclick="setCompsFilter('exported')">Exported</span>
                     <span class="filter-chip" data-filter="unexported" onclick="setCompsFilter('unexported')">Unexported</span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Components" title="Expand Components"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="compsContainer">
                     <div class="list-empty">Loading components...</div>
@@ -8921,12 +8961,14 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip" onclick="shareManifest()">Share</span>
                     <span class="filter-chip" onclick="saveManifest()">Save to Downloads</span>
                     <span class="manifest-meta" id="manifestMeta"></span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Manifest" title="Expand Manifest"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <pre id="manifestContainer" class="manifest-view">Open this tab to load the manifest.</pre>
             </div>
 
             <!-- Tab 6: Raw -->
             <div id="sheetTabRaw" class="sheet-tab-content">
+                <div class="chip-row sheet-full-row"><button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Raw" title="Expand Raw"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button></div>
                 <pre id="rawContainer" style="font-family:monospace; font-size:11px; color:var(--accent); white-space:pre-wrap;"></pre>
             </div>
 
@@ -8940,6 +8982,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="filter-chip" data-filter="required" onclick="setFeaturesFilter('required')">Required</span>
                     <span class="filter-chip" data-filter="optional" onclick="setFeaturesFilter('optional')">Optional</span>
                     <span class="filter-chip" data-filter="missing" onclick="setFeaturesFilter('missing')">Not on this phone</span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Features" title="Expand Features"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="featuresContainer">
                     <div class="list-empty">Open this tab to load the features.</div>
@@ -8948,6 +8991,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
             <!-- Tab 8: Configurations -->
             <div id="sheetTabConfigs" class="sheet-tab-content">
+                <div class="chip-row sheet-full-row"><button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Configurations" title="Expand Configurations"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button></div>
                 <div id="configsContainer">
                     <div class="list-empty">Open this tab to load the configurations.</div>
                 </div>
@@ -8955,6 +8999,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
             <!-- Tab 9: Signatures -->
             <div id="sheetTabSigs" class="sheet-tab-content">
+                <div class="chip-row sheet-full-row"><button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Signatures" title="Expand Signatures"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button></div>
                 <div id="sigsContainer">
                     <div class="list-empty">Open this tab to load the signatures.</div>
                 </div>
@@ -8964,6 +9009,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="sheetTabLibs" class="sheet-tab-content">
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="libsSearch" placeholder="Search libraries..." oninput="renderLibraries()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Libraries" title="Expand Libraries"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="libsContainer">
                     <div class="list-empty">Open this tab to load the libraries.</div>
@@ -28273,6 +28319,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const modal = document.getElementById('inspectorModal');
             modal.classList.add('show');
 
+            sheetFullReset();
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg, isFrozen: false, isUninstalled: false };
             document.getElementById('sheetTitle').innerText = app.name;
             document.getElementById('sheetPkg').innerText = app.pkg;
@@ -29162,6 +29209,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function closeInspector() {
+            sheetFullReset();
             document.getElementById('inspectorModal').classList.remove('show');
             haptic();
         }
@@ -29176,7 +29224,58 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tab === 'features' || tab === 'configs' || tab === 'sigs' || tab === 'libs') loadAppExtras();
             const pill = document.querySelector('.sheet-tab-pill.active');
             if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            if (sheetFullIsOpen()) sheetFullTitle();                  // at full screen the next tab is at full screen too
             if (!silent) haptic();
+        }
+
+        // ---------- A tab of the app menu at full screen ----------
+        // The round button at the end of a tab's chip row (or of its search row) lets the open tab fill the screen: the class tab-full on the sheet
+        // hides the app's header, its tags and the menu buttons and lets the tab's own panel grow. Nothing is moved or copied, so the search, the
+        // chips, the rows, their toggles and long presses keep working, and the list keeps its scroll, search text and chip. The tab strip stays:
+        // another tab opens at full screen too. The ✕, a pull down by the handle, a tap outside and Back come back to the menu (on the tab that is
+        // open then, the menu scrolled where it was); closing the menu leaves the full screen as well (sheetFullReset).
+        const SHEET_TAB_NAMES = { perms: 'Permissions', ops: 'App Ops', acts: 'Activities', comps: 'Components', manifest: 'Manifest', raw: 'Raw', features: 'Features', configs: 'Configurations', sigs: 'Signatures', libs: 'Libraries' };
+        let sheetFullSaved = null;                                    // how the menu was when it went full screen: { scroll, pulled }
+        function sheetFullSheet() { return document.querySelector('#inspectorModal .modal-sheet'); }
+        function sheetFullIsOpen() { const sh = sheetFullSheet(); return !!(sh && sh.classList.contains('tab-full')); }
+        function sheetFullTitle() {
+            const pill = document.querySelector('#inspectorModal .sheet-tab-pill.active');
+            document.getElementById('sheetFullTitle').textContent = SHEET_TAB_NAMES[pill ? pill.getAttribute('data-tab') : 'perms'] || '';
+            document.getElementById('sheetFullApp').textContent = document.getElementById('sheetTitle').innerText;
+        }
+        function sheetFullOpen() {
+            const sh = sheetFullSheet();
+            if (!sh || sh.classList.contains('tab-full') || !document.getElementById('inspectorModal').classList.contains('show')) return;
+            sheetFullSaved = { scroll: sh.scrollTop, pulled: sh.classList.contains('sheet-expanded') };
+            sheetFullTitle();
+            sh.classList.remove('sheet-expanded', 'tab-full-back');          // a sheet pulled up by its handle is pulled up again when it comes back
+            sh.classList.add('tab-full');
+            sh.scrollTop = 0;
+            const x = sh.querySelector('#sheetFullHead .sheet-close');        // the button that was tapped is hidden now: the focus goes to the ✕
+            if (x) try { x.focus({ preventScroll: true }); } catch (e) {}
+            haptic();
+        }
+        // Back to the menu. Returns true when a tab was at full screen (so a tap outside, Back or a pull down does only this).
+        function sheetFullClose() {
+            const sh = sheetFullSheet();
+            if (!sh || !sh.classList.contains('tab-full')) return false;
+            const saved = sheetFullSaved, hadFocus = sh.querySelector('#sheetFullHead').contains(document.activeElement);
+            sheetFullSaved = null;
+            sh.classList.remove('tab-full');
+            if (saved && saved.pulled) sh.classList.add('sheet-expanded');
+            if (saved) sh.scrollTop = saved.scroll;
+            sh.classList.add('tab-full-back');
+            setTimeout(() => sh.classList.remove('tab-full-back'), 260);
+            const b = sh.querySelector('.sheet-tab-content.active .sheet-full-btn');
+            if (hadFocus && b) try { b.focus({ preventScroll: true }); } catch (e) {}
+            haptic();
+            return true;
+        }
+        // the menu closes or opens another app: no full screen is left over
+        function sheetFullReset() {
+            const sh = sheetFullSheet();
+            sheetFullSaved = null;
+            if (sh && sh.classList.contains('tab-full')) sh.classList.remove('tab-full');
         }
 
         // None of the buttons of the app menu asks first (Uninstall since v7.12.1, Clear Data and Remove updates since v7.12.2)
@@ -41210,6 +41309,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const fast = Math.abs(dy) / Math.max(1, Date.now() - t0) > 0.6;
                 const far = Math.abs(dy) > 70 || fast;
                 const later = () => { swallow = Date.now(); };        // the click that follows a drag (it may land on the dark area) is not a tap
+                if (sh.classList.contains('tab-full')) { if (dy > 0 && far && typeof sheetFullClose === 'function') sheetFullClose(); later(); return; }       // a tab of the app menu at full screen: down goes back to the menu
                 if (dy < 0 && far) { sh.classList.add('sheet-expanded'); later(); return; }
                 if (dy > 0 && far) {
                     if (sh.classList.contains('sheet-expanded')) { sh.classList.remove('sheet-expanded'); later(); return; }
@@ -41231,7 +41331,7 @@ Type any command above (e.g. pm list packages -d)</div>
             new MutationObserver((list) => {
                 for (const m of list) {
                     const t = m.target;
-                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); }
+                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); if (sh && sh.classList.contains('tab-full') && typeof sheetFullReset === 'function') sheetFullReset(); }
                     if (t.classList && t.classList.contains('batch-bottom-sheet') && !t.classList.contains('show') && t.classList.contains('sheet-expanded')) t.classList.remove('sheet-expanded');          // (only when it is there: removing a class that is not there would still write the attribute and loop)
                 }
             }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
