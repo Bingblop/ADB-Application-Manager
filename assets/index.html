@@ -447,6 +447,9 @@
             --bnav-w: 0px;
         }
         html:not([data-nav="top"]) { --bnav-h: var(--bnav-full); }
+        /* What floats at the bottom of the screen (the Undo bars, the back-to-top button) stands on --float-base: the top of the bottom bar,
+           or the edge of the screen above the gesture area when the bar is off or away. Resolved here, on html, where --bnav-h is set. */
+        html { --float-base: max(var(--bnav-h, 0px), env(safe-area-inset-bottom, 0px)); }
         html[data-nav="bottom"] #tabBar { display: none; }
         html[data-nav="top"] .bnav { display: none; }
         html.bnav-away { --bnav-h: 0px; }
@@ -1430,6 +1433,38 @@
             user-select: none;
             touch-action: manipulation;
         }
+
+        /* Back to top: a round button at the right edge, above the bottom bar, in the column of the checkmark button (centred on it; above it
+           while it is up, and above an Undo bar or a docked bar of a tab). It comes in once the screen has been scrolled down about one and a
+           half screens and goes while a sheet, the keyboard or the full-screen terminal is up (bttUpdate). */
+        .btt {
+            position: fixed;
+            right: 24px;
+            bottom: calc(var(--float-base) + var(--btt-lift, 24px));
+            z-index: 190;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            background: var(--bg-sheet);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), var(--glow-accent);
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px) scale(0.8);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btt.show { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s; }
+        .btt:active { background: var(--accent); color: var(--on-accent); }
+        .btt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { .btt, .btt.show { transform: none; transition: opacity 0.01s, visibility 0s; } }
+        .float-probe { position: fixed; right: 0; bottom: var(--float-base); width: 0; height: 0; visibility: hidden; pointer-events: none; }
 
         .batch-fab.clearing {
             animation: fabClear 0.28s ease-out;
@@ -3130,9 +3165,9 @@
         /* Toast */
         .toast {
             position: fixed;
-            bottom: calc(24px + var(--bnav-h, 0px));
+            bottom: calc(24px + var(--bnav-h, 0px) + var(--toast-lift, 0px));          /* --toast-lift: above an Undo bar while one is up (floatSync) */
             left: 50%;
-            transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px)));
+            transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px) + var(--toast-lift, 0px)));
             background: var(--text-main);            /* the inverse surface: a dark toast on the light page, a light one on the dark page, so it never blends into the cards */
             border: 1px solid var(--text-main);
             color: var(--bg-base);
@@ -5312,7 +5347,7 @@
                 .sdb-jrow .sdb-key { font-size:var(--fs-body); }
                 .sdb-jrow .sdb-change { font-family:ui-monospace,monospace; font-size:var(--fs-pill); color:var(--text-muted); margin-top:var(--space-1); overflow-wrap:anywhere; }
                 .sdb-jrow .sdb-change em { color:var(--accent); font-style:normal; }
-                .sdb-snack { position:fixed; left:12px; right:12px; bottom:calc(72px + var(--bnav-h, 0px)); margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4); display:flex; align-items:center; gap:var(--space-3h); font-size:var(--fs-body); font-weight:var(--fw-bold); box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
+                .sdb-snack { position:fixed; left:12px; right:12px; bottom:calc(var(--float-base) + var(--space-3) + var(--undo-lift, 0px)); margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4); display:flex; align-items:center; gap:var(--space-3h); font-size:var(--fs-body); font-weight:var(--fw-bold); box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
                 .sdb-snack.show { transform:translateY(0); opacity:1; pointer-events:auto; }
                 .sdb-snack span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:ui-monospace,monospace; font-size:var(--fs-body); }
                 .sdb-snack button { flex:0 0 auto; border:none; border-radius:var(--radius-md); padding:var(--space-3) var(--space-4); font-weight:var(--fw-heavy); font-size:var(--fs-body); background:var(--accent); color:var(--on-accent); cursor:pointer; }
@@ -7236,7 +7271,7 @@
                 .sd-set input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
                 .sd-set .modal-text-input { flex: 0 0 110px; min-width: 0; margin: 0; }
                 .sd-set .op-select { flex: 0 0 140px; min-width: 0; font-size: var(--fs-item); padding: var(--space-3) var(--space-2); }
-                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: calc(76px + var(--bnav-h, 0px)); z-index: 340; display: none; align-items: center; justify-content: space-between; gap: var(--space-3h); padding: var(--space-4) var(--space-4); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: var(--fs-item); font-weight:var(--fw-bold); }
+                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: calc(var(--float-base) + var(--space-3) + var(--undo-lift, 0px)); z-index: 340; display: none; align-items: center; justify-content: space-between; gap: var(--space-3h); padding: var(--space-4) var(--space-4); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: var(--fs-item); font-weight:var(--fw-bold); }
                 .sd-undo.on { display: flex; }
                 .sd-undo button { border: 0; background: transparent; color: var(--accent); font-weight:var(--fw-black); font-size: var(--fs-item); text-transform: uppercase; cursor: pointer; }
             </style>
@@ -9519,6 +9554,10 @@ Type any command above (e.g. pm list packages -d)</div>
     <!-- Android settings: undo after a change -->
     <div class="sdb-snack" id="sdbSnack" role="status" aria-live="polite"><span id="sdbSnackMsg"></span><button id="sdbSnackUndo" onclick="sdbSnackUndoNow()">Undo</button></div>
 
+    <!-- Back to top: shown on any screen once it has been scrolled down a good way (bttUpdate) -->
+    <button type="button" class="btt" id="backToTop" aria-label="Back to top" title="Back to top" onclick="bttGo()" inert aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></button>
+    <div class="float-probe" id="floatProbe" aria-hidden="true"></div>
+
     <!-- Overlays: one overlay -->
     <div class="modal-overlay" id="ovlDetailModal" onclick="if(event.target===this) ovlCloseDetail()">
         <div class="modal-sheet">
@@ -10843,6 +10882,106 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavVisibility();
             requestAnimationFrame(() => requestAnimationFrame(() => { bnavBoot = false; bnavVisibility(); setTimeout(bnavTipMaybe, 1200); }));          // the page is up: the bar comes in
         }
+
+        // ---- What floats at the bottom of the screen makes room for the rest ----
+        // The Undo bars stand just above the bottom bar (--float-base); while the checkmark button or the batch sheet is up, above that instead
+        // (--undo-lift). A toast goes above an Undo bar that is up (--toast-lift). The back-to-top button stands in the checkmark button's column,
+        // above it, above an Undo bar and above a tab's docked bar (Morphe's patch bar, Connected Devices' batch bar). Heights are read from the
+        // layout (the bottom offset and the height), not from the screen, so a bar that is still sliding in is measured where it will be.
+        let floatUndoLift = 0, floatToastLift = 0, floatQueued = false;
+        function floatTop(el) { return (parseFloat(getComputedStyle(el).bottom) || 0) + el.offsetHeight; }          // its top edge, in px up from the bottom of the screen
+        function floatBase() { const p = document.getElementById('floatProbe'); return p ? window.innerHeight - p.getBoundingClientRect().bottom : 0; }
+        function floatFab() { const f = document.getElementById('batchFab'); return f && f.classList.contains('show') && !document.body.classList.contains('search-menu-open') ? f : null; }
+        function floatUndoBar() {
+            return [document.getElementById('sdbSnack'), document.getElementById('sdUndo')].find(el => el && (el.classList.contains('show') || el.classList.contains('on')) && el.getClientRects().length) || null;
+        }
+        function floatSync() {
+            const root = document.documentElement, base = floatBase();
+            const fab = floatFab(), sheet = document.getElementById('floatingBatchBar');
+            const lift = Math.max(0, Math.round(sheet && sheet.classList.contains('show') ? floatTop(sheet) - base : fab ? floatTop(fab) - base : 0));
+            if (lift !== floatUndoLift) { floatUndoLift = lift; root.style.setProperty('--undo-lift', lift + 'px'); }
+            const undo = floatUndoBar(), toast = document.getElementById('toast');
+            if (toast) {
+                const toastBase = (parseFloat(getComputedStyle(toast).bottom) || 0) - floatToastLift;
+                const tl = undo ? Math.max(0, Math.ceil(floatTop(undo) + 8 - toastBase)) : 0;
+                if (tl !== floatToastLift) { floatToastLift = tl; root.style.setProperty('--toast-lift', tl + 'px'); }
+            }
+            bttUpdate();
+        }
+        function floatQueue() { if (floatQueued) return; floatQueued = true; requestAnimationFrame(() => { floatQueued = false; floatSync(); }); }
+
+        // ---- Back to top: one round button for every screen with a long list ----
+        // The screens scroll the page itself; a list that scrolls in a box of its own as tall as half the screen or more (the Logcat
+        // Viewer) counts too, once it has been scrolled. The button comes in past one and a half screens and scrolls that one back up.
+        let bttInner = null, bttLift = 24, bttQueued = false;
+        function bttDoc() { return document.scrollingElement || document.documentElement; }
+        function bttScroller() {
+            const v = document.querySelector('.view-content.active');
+            if (bttInner && (!bttInner.isConnected || !v || !v.contains(bttInner) || !bttInner.getClientRects().length)) bttInner = null;
+            return bttInner && bttInner.scrollTop > bttDoc().scrollTop ? bttInner : bttDoc();
+        }
+        function bttCovered() {
+            if (document.querySelector('.modal-overlay.show, #txPaneTerminal.tx-full, .rt-overlay.show, .batch-bottom-sheet.show')) return true;          // a sheet or dialog (the bar's More sheet too), the full-screen terminal, the batch sheet
+            if (document.body.classList.contains('search-menu-open')) return true;
+            return bnavTextFocus() || bnavKeyboardUp();                                                           // typing: the keyboard is up
+        }
+        function bttUpdate() {
+            const btn = document.getElementById('backToTop');
+            if (!btn) return;
+            const sc = bttScroller();
+            const show = sc.scrollTop > 1.5 * (sc === bttInner ? sc.clientHeight : window.innerHeight) && !bttCovered();
+            if (show) {
+                const base = floatBase(), fab = floatFab(), undo = floatUndoBar(), edge = window.innerHeight - base;
+                let lift = 24;                                                                                     // where the checkmark button stands
+                if (fab) lift = Math.max(lift, floatTop(fab) - base + 12);
+                if (undo) lift = Math.max(lift, floatTop(undo) - base + 12);
+                document.querySelectorAll('.view-content.active .mp-bar, .view-content.active .cd-batch').forEach(bar => {
+                    if (!bar.getClientRects().length) return;
+                    const r = bar.getBoundingClientRect();
+                    if (r.bottom > edge - 24 && r.top < edge) lift = Math.max(lift, edge - r.top + 12);            // docked at the bottom (sticky), not somewhere up the page
+                });
+                lift = Math.round(lift);
+                if (lift !== bttLift) { bttLift = lift; btn.style.setProperty('--btt-lift', lift + 'px'); }
+            }
+            if (btn.classList.contains('show') === show) return;
+            btn.classList.toggle('show', show);
+            if (show) { btn.removeAttribute('inert'); btn.removeAttribute('aria-hidden'); }
+            else { btn.setAttribute('inert', ''); btn.setAttribute('aria-hidden', 'true'); }
+        }
+        function bttQueue() { if (bttQueued) return; bttQueued = true; requestAnimationFrame(() => { bttQueued = false; bttUpdate(); }); }
+        function bttGo() {
+            const sc = bttScroller();
+            haptic();
+            const behavior = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+            if (sc === bttDoc()) window.scrollTo({ top: 0, behavior }); else sc.scrollTo({ top: 0, behavior });
+        }
+        function floatInit() {
+            document.addEventListener('scroll', e => {
+                const t = e.target;
+                if (t && t.nodeType === 1 && t.clientHeight >= window.innerHeight * 0.5 && t.closest('.view-content.active') && !t.closest('.modal-overlay')) bttInner = t;
+                bttQueue();
+            }, { capture: true, passive: true });
+            window.addEventListener('resize', floatQueue);
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', bttQueue);
+            document.addEventListener('focusin', bttQueue);
+            document.addEventListener('focusout', () => setTimeout(bttQueue, 120));
+            if (window.MutationObserver) {
+                // the bars that float (shown, hidden), and what covers the screen or changes it: a sheet, the terminal, another tab, the body's state
+                const own = new Set(['batchFab', 'floatingBatchBar', 'sdbSnack', 'sdUndo']);
+                new MutationObserver(list => {
+                    let btt = false;
+                    for (const m of list) {
+                        const t = m.target;
+                        if (own.has(t.id)) { floatQueue(); return; }          // (floatSync places the button too)
+                        if (t === document.body || (t.classList && (t.classList.contains('modal-overlay') || t.classList.contains('rt-overlay') || t.classList.contains('view-content') || t.id === 'txPaneTerminal'))) btt = true;
+                    }
+                    if (btt) bttQueue();
+                }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            }
+            if (window.ResizeObserver) { const ro = new ResizeObserver(floatQueue); ['floatingBatchBar', 'sdbSnack', 'sdUndo'].forEach(id => { const el = document.getElementById(id); if (el) ro.observe(el); }); }          // a sheet or a bar that grows
+            floatSync();
+        }
+        window.addEventListener('DOMContentLoaded', floatInit);
 
         // ---- Settings > Navigation ----
         function navLoad() { const m = kvGet('nav_mode', 'bottom'); navMode = m === 'both' || m === 'top' ? m : 'bottom'; navScLoad(); }
@@ -20632,7 +20771,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!recs.length) { showToast("Couldn't delete the files"); return; }
                 if (currentViewName() !== 'installer') { purgeAll(); return; }
                 const msg = 'Deleted ' + recs.length + ' file' + (recs.length === 1 ? '' : 's') + (failed ? ' · ' + failed + ' failed' : '');
-                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 10000, onExpire: purgeAll });
+                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 8000, onExpire: purgeAll });
             };
             const next = () => {
                 if (i >= files.length) { finish(); return; }
@@ -20728,7 +20867,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const purge = () => apkFileOp('purge', rec.trash, '', () => {});
                 // the answer can come after the person has gone to another tab: there is no bar to put Undo on there, so it is final
                 if (currentViewName() !== 'installer') { purge(); return; }
-                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: purge });
+                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: purge });
             });
         }
 
@@ -20737,7 +20876,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!r.ok) {
                     showToast("Couldn't restore " + rec.file.name + (r.error ? ': ' + String(r.error).slice(0, 80) : ''));
                     // the file is still in its hidden folder: offer Undo again (it is removed for good when this bar goes)
-                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
+                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
                     else apkFileOp('purge', rec.trash, '', () => {});
                     return;
                 }
@@ -34606,7 +34745,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('sdbSnackUndo').innerText = (opts && opts.label) || 'Undo';
             el.classList.add('show');
             clearTimeout(sdbSnackTimer);
-            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 7000);
+            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 5000);          // 5 s (a delete of several files 8 s, of one 6 s): long enough to reach Undo, short enough not to linger
         }
 
         function sdbSnackFinish() {
@@ -39534,7 +39673,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const n = res.count || (res.ids ? res.ids.length : 1);
             document.getElementById('sdUndoText').textContent = n + ' exclusion' + (n === 1 ? '' : 's') + ' created';
             document.getElementById('sdUndo').classList.add('on');
-            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, 9000);
+            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, 7000);
             const st = await sdCall('state', {}); if (st.ok) sdApplyState(st);
         }
         async function sdUndoDo() {
