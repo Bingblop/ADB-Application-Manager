@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "SD Maid SE के साथ आने वाले अपवाद वापस आ जाते हैं, वे भी जो आपने हटाए थे। आपके अपवाद बने रहते हैं।",
 "The exclusions could not be read.": "अपवाद पढ़े नहीं जा सके।",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "ऐप सूची की हर पंक्ति पर अतिरिक्त बटन। चुनें कि उस पर टैप करने से क्या हो। उस ऐप की सभी कार्रवाइयों वाली शीट के लिए पंक्ति पर देर तक दबाएँ।",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "डिवाइस की ऐप सूची की हर पंक्ति पर अतिरिक्त बटन। चुनें कि उस पर टैप करने से क्या हो; अनइंस्टॉल किए गए ऐप का बटन उसे वापस ले आता है। उस ऐप का मेनू खोलने के लिए पंक्ति पर देर तक दबाएँ।",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "अतिरिक्त कीज़ Termux की तरह काम करती हैं: ESC लाइन साफ़ करती है, TAB फ़ाइल का नाम पूरा करती है, CTRL-C चल रही चीज़ को रोकती है, तीर पिछली कमांड में घूमते और कर्सर हिलाते हैं, HOME और END लाइन में छलांग लगाती हैं, और | / - ~ इसलिए हैं क्योंकि फ़ोन के कीबोर्ड उन्हें छिपा देते हैं।",
 "The extraction could not start": "एक्सट्रैक्शन शुरू नहीं हो सका",
 "The file": "फ़ाइल",

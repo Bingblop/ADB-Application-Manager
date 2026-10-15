@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "تعود الاستثناءات التي يأتي بها SD Maid SE، بما فيها التي أزلتها. استثناءاتك تبقى.",
 "The exclusions could not be read.": "تعذّرت قراءة الاستثناءات.",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "الزر الإضافي في كل صف من قائمة التطبيقات. اختر ما يحدث عند الضغط عليه. اضغط مطولًا على صف لعرض ورقة بكل الإجراءات لذلك التطبيق.",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "الزر الإضافي في كل صف من قائمة تطبيقات الجهاز. اختر ما يحدث عند الضغط عليه؛ زر التطبيق المُلغى تثبيته يعيده. اضغط مطولًا على صف لفتح قائمة ذلك التطبيق.",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "تعمل المفاتيح الإضافية مثل مفاتيح Termux: يمسح ESC السطر، ويكمل TAB اسم الملف، ويوقف CTRL-C ما يعمل، وتتنقل الأسهم بين الأوامر السابقة وتحرّك المؤشر، وينتقل HOME وEND داخل السطر، وتوجد الرموز | / - ~ لأن لوحات مفاتيح الهاتف تخفيها.",
 "The extraction could not start": "تعذّر بدء الاستخراج",
 "The file": "الملف",

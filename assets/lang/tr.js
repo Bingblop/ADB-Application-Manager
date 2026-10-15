@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "SD Maid SE ile gelen dışlamalar, kaldırdıklarınız dahil geri gelir. Sizinkiler kalır.",
 "The exclusions could not be read.": "Dışlamalar okunamadı.",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "Uygulamalar listesindeki her satırdaki ek düğme. Ona dokunmanın ne yapacağını seçin. O uygulamanın tüm eylemlerinin olduğu bir sayfa için satırda basılı tutun.",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "Cihazın uygulama listesindeki her satırdaki ek düğme. Ona dokunmanın ne yapacağını seçin; kaldırılmış bir uygulamanın düğmesi onu geri yükler. O uygulamanın menüsü için satırda basılı tutun.",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "Ek tuşlar Termux’takiler gibi çalışır: ESC satırı temizler, TAB bir dosya adını tamamlar, CTRL-C çalışanı durdurur, oklar önceki komutlar arasında gezinir ve imleci hareket ettirir, HOME ve END satırın başına ve sonuna atlar; | / - ~ ise telefon klavyeleri onları gizlediği için buradadır.",
 "The extraction could not start": "Çıkarma başlatılamadı",
 "The file": "Dosya",

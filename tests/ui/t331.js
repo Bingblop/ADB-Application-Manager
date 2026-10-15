@@ -117,7 +117,7 @@ const initMock = () => {
   }
   check('5. the sort menu shows its whole choice for every choice (it was cut to 60 px; since v7.14 it shares the row with the Action Button picker)', sorts.every(s => s.fits && s.sorted && s.w >= 60), JSON.stringify(sorts));
   // (v7.14: the menu no longer follows the width of its choice: it takes half the row the labels leave)
-  check('   the row keeps the menu and the Action Button picker, each with its label (v7.14: the buttons moved to Saved Applications)', (await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => e.id || e.innerText.trim().replace(/\n/g, ' ')).join('|'))) === 'Sort|appSort|appsActionBtnPickTitle|appsActionBtnPick');
+  check('   the row keeps the menu and the Action Button picker, each with its label (v7.14: the buttons moved to Saved Applications)', (await ev(() => Array.from(document.querySelectorAll('#view-apps .apps-sort-row > *')).map(e => e.id || e.innerText.trim().replace(/\n/g, ' ')).join('|'))) === 'Sort|appSort|appsActionBtnPickTitle|appsActionBtnPick');
   await page.selectOption('#appSort', 'name');
 
   await page.screenshot({ path: 'apps_400.png', clip: { x: 0, y: 0, width: 400, height: 420 } });

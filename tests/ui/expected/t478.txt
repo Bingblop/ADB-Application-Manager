@@ -17,4 +17,14 @@ ok   Row tints step 3: frozen and uninstalled rows are tinted as the Apps tab's,
 ok   Row tints step 4: frozen and uninstalled rows are tinted as the Apps tab's, a plain row is not
 ok   a device row has the Apps tab's icon selection box, check badge and layout
 ok   tapping the icon again clears the selection and hides the badge
+ok   a device row's Action Button and ⋯ are drawn as the Apps tab's
+ok   by default it enables or disables the app, and puts an uninstalled one back
+ok   the Sort / Button row sits above the list, with the button's choice named
+ok   Button opens the choices a device allows (no suspend, permission or activity lists)
+ok   choosing Force Stop changes every row (an uninstalled app still gets Reinstall), is kept, and leaves the Apps tab's own choice alone
+ok   a tap runs it on the device
+ok   None takes the button off the rows
+ok   holding it opens that device app's menu, not this phone's
+ok   Sort Name (Z–A) turns the list round and is kept
+ok   Name (A–Z) puts it back
 ok   no page errors

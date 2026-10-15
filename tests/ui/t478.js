@@ -1,7 +1,8 @@
 // v7.14.0: Connected Devices' Apps list takes the Apps tab's filters and row tints (the owner's wish). The pills are the Apps tab's pills in its order and pairs
 // (All Apps, Installed | Uninstalled, System | User, Enabled | Frozen) with the same colours; a device knows no running, updated, suspended, tracker or patched
 // state, so those pills are not there. Installed and Uninstalled together are every app; Uninstalled starts a clean list. A frozen or uninstalled app's row is
-// tinted as in the Apps tab, as strongly as Row tints says. The row itself is the Apps tab's: the icon is the selection box with the check badge on its corner.
+// tinted as in the Apps tab, as strongly as Row tints says. The row itself is the Apps tab's: the icon is the selection box with the check badge on its corner, and its Action Button
+// (chosen in the Apps tab's Sort / Button row, which the list has too) is the same icon button with the choices a device allows.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok || extra === undefined ? '' : ': ' + extra)); }
@@ -22,6 +23,7 @@ const APPS = [
   await ev(apps => { switchView('devices'); document.getElementById('cdWork').style.display = ''; cd.apps = apps; cd.filters.clear(); cdAppsRender(); }, APPS);
 
   const pills = () => ev(() => Array.from(document.querySelectorAll('#cdAppFilters .filter-pill')).map(p => p.innerText.replace(/[()]/g, '').replace(/\s+/g, ' ').trim() + (p.classList.contains('active') ? '*' : '')).join('|'));
+  const shown2 = () => ev(() => Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText).join(','));          // in the list's order
   const shown = () => ev(() => Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText).sort().join(','));
   check('the pills are the Apps tab\'s, in its order, with counts', await pills() === 'All Apps 5*|Installed 4|Uninstalled 1|System 2|User 2|Enabled 3|Frozen 1', await pills());
   const shape = await ev(() => {
@@ -95,8 +97,44 @@ const APPS = [
   const same = g.pm && g.pd && ['first', 'role', 'w', 'h', 'left', 'badgeDx', 'badgeDy', 'badgeW', 'shown', 'metaGap', 'last'].every(k => g.pm[k] === g.pd[k]);
   check('a device row has the Apps tab\'s icon selection box, check badge and layout', same && g.pd.first && g.pd.shown === 'visible' && g.label === 'Select Fit' && g.checked === 'true' && g.tick === '\u2713', JSON.stringify(g));
   check('tapping the icon again clears the selection and hides the badge', g.off.checked === 'false' && !g.off.sel && g.off.shown === 'hidden', JSON.stringify(g.off));
+  // the Action Button and the Sort / Button row, as in the Apps tab
+  const ab = await ev(() => {
+    const h = document.createElement('div'); h.innerHTML = appCardHtml({ pkg: 'com.probe', name: 'Probe', isSystem: true }); const pc = h.firstElementChild; document.getElementById('cdAppList').appendChild(pc);
+    const look = b => { const s = getComputedStyle(b), r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), s.color, s.backgroundColor, s.borderRadius].join(); };
+    const out = { main: look(pc.querySelector('.ab-btn')), menuMain: look(pc.querySelector('.row-menu')) }; pc.remove();
+    const row = p => document.getElementById('cdcard_' + p);
+    out.dev = look(row('com.a.fit').querySelector('.ab-btn')); out.menuDev = look(row('com.a.fit').querySelector('.row-menu'));
+    out.kinds = ['com.a.clock', 'com.a.fit', 'com.a.gone'].map(p => row(p).querySelector('.ab-btn').dataset.ab + ':' + row(p).querySelector('.ab-btn').getAttribute('aria-label')).join();
+    out.oldBtn = !!document.querySelector('#cdAppList .cd-row-act');
+    out.bar = Array.from(document.querySelectorAll('#cdAppSortRow > *')).map(e => e.id || e.textContent.trim()).join('|');
+    out.label = document.getElementById('cdAbPickLabel').textContent;
+    return out;
+  });
+  check('a device row\'s Action Button and ⋯ are drawn as the Apps tab\'s', ab.main === ab.dev && ab.menuMain === ab.menuDev && !ab.oldBtn, JSON.stringify(ab));
+  check('by default it enables or disables the app, and puts an uninstalled one back', ab.kinds === 'enable:Enable,disable:Disable,install:Reinstall', ab.kinds);
+  check('the Sort / Button row sits above the list, with the button\'s choice named', ab.bar === 'Sort|cdAppSort|Button|cdAbPick' && ab.label === 'Enable / Disable', JSON.stringify(ab));
+  await ev(() => document.getElementById('cdAbPick').click()); await page.waitForTimeout(150);
+  const pick = await ev(() => ({ open: document.getElementById('choiceSheet').classList.contains('show'), opts: Array.from(document.querySelectorAll('#choiceList .ab-sheet-row')).map(b => b.dataset.v).join(), cur: (document.querySelector('#choiceList .current') || {}).dataset }));
+  check('Button opens the choices a device allows (no suspend, permission or activity lists)', pick.open && pick.opts === 'settings,forcestop,launch,toggle,uninstall,none', JSON.stringify(pick));
+  await ev(() => choiceSheetPick('forcestop'));
+  const fs = await ev(() => ({ kind: document.querySelector('#cdcard_com\\.a\\.fit .ab-btn').dataset.ab, gone: document.querySelector('#cdcard_com\\.a\\.gone .ab-btn').dataset.ab, kv: kvGet('cd_action_btn'), label: document.getElementById('cdAbPickLabel').textContent, apps: actionBtn }));
+  check('choosing Force Stop changes every row (an uninstalled app still gets Reinstall), is kept, and leaves the Apps tab\'s own choice alone', fs.kind === 'forcestop' && fs.gone === 'install' && fs.kv === 'forcestop' && fs.label === 'Force Stop' && fs.apps === 'settings', JSON.stringify(fs));
+  const tapped = await ev(async () => { const seen = []; const keep = window.cdAppAct; window.cdAppAct = (p, a) => seen.push(p + ':' + a); document.querySelector('#cdcard_com\\.a\\.fit .ab-btn').click(); window.cdAppAct = keep; return seen.join(); });
+  check('a tap runs it on the device', tapped === 'com.a.fit:stop', tapped);
+  await ev(() => { cdActionBtn = 'none'; cdAppsRender(); });
+  check('None takes the button off the rows', await ev(() => !document.querySelector('#cdAppList .ab-btn') && !!document.querySelector('#cdAppList .row-menu')));
+  await ev(() => { cdActionBtn = 'toggle'; kvSet('cd_action_btn', 'toggle'); cdAppsRender(); });
+  const held = await ev(async () => { const seen = []; const k1 = window.cdAppMenu, k2 = window.openAbSheet; window.cdAppMenu = p => seen.push('cd:' + p); window.openAbSheet = p => seen.push('phone:' + p);
+    const b = document.querySelector('#cdcard_com\\.a\\.fit .ab-btn'), r = b.getBoundingClientRect();
+    b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + 5, clientY: r.top + 5 })); await new Promise(z => setTimeout(z, 700)); document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    window.cdAppMenu = k1; window.openAbSheet = k2; return seen.join(); });
+  check('holding it opens that device app\'s menu, not this phone\'s', held === 'cd:com.a.fit', held);
+  await ev(() => { const s = document.getElementById('cdAppSort'); s.value = 'name_desc'; s.dispatchEvent(new Event('change')); });
+  check('Sort Name (Z–A) turns the list round and is kept', await shown2() === 'Weather,Maps,Gone,Fit,Clock' && await ev(() => kvGet('cd_sort')) === 'name_desc', await shown2());
+  await ev(() => cdSetSort('name'));
+  check('Name (A–Z) puts it back', await shown2() === 'Clock,Fit,Gone,Maps,Weather', await shown2());
   check('no page errors', errors.length === 0, errors.join(' | '));
-  await ev(() => { setRowTint(2); cdToggleSel('com.a.clock'); document.getElementById('cdAppFilters').scrollIntoView(); }); await page.waitForTimeout(900);
+  await ev(() => { setRowTint(2); cdToggleSel('com.a.clock'); document.getElementById('cdAppSortRow').scrollIntoView(); }); await page.waitForTimeout(900);
   await page.screenshot({ path: 'cd_apps_filters.png' });
   await b.close();
   if (bad) { console.log(bad + ' failed'); process.exit(1); }

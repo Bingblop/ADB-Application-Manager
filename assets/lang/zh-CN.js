@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "SD Maid SE 自带的排除项会恢复，包括你移除过的。你自己的保持不变。",
 "The exclusions could not be read.": "无法读取排除项。",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "应用列表每一行上的额外按钮。选择点按它时的操作。在某一行上长按，可打开包含该应用全部操作的面板。",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "设备应用列表每一行上的额外按钮。选择点按它时的操作；已卸载应用的按钮会将其恢复。在某一行上长按，可打开该应用的菜单。",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "额外按键的用法与 Termux 相同：ESC 清除当前行，TAB 补全文件名，CTRL-C 停止正在运行的内容，方向键可翻阅之前的命令并移动光标，HOME 和 END 在行内跳转；| / - ~ 之所以放在这里，是因为手机键盘会将它们隐藏。",
 "The extraction could not start": "无法开始解压",
 "The file": "文件",

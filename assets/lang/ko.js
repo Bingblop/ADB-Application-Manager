@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "SD Maid SE에 포함된 제외가 제거한 것까지 포함해 돌아옵니다. 직접 만든 것은 그대로 유지됩니다.",
 "The exclusions could not be read.": "제외를 읽을 수 없습니다.",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "앱 목록의 각 행에 있는 추가 버튼. 탭했을 때 할 동작을 선택하세요. 행을 길게 누르면 그 앱의 모든 작업이 있는 시트가 열립니다.",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "기기 앱 목록의 각 행에 있는 추가 버튼. 탭했을 때 할 동작을 선택하세요. 제거된 앱의 버튼은 앱을 되돌립니다. 행에서 길게 누르면 그 앱의 메뉴가 열립니다.",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "추가 키는 Termux와 같이 작동합니다. ESC는 줄을 지우고, TAB은 파일 이름을 자동 완성하며, CTRL-C는 실행 중인 작업을 중지하고, 화살표는 이전 명령어를 탐색하거나 커서를 이동하며, HOME과 END는 줄의 처음과 끝으로 이동합니다. | / - ~는 휴대전화 키보드에 없어서 추가되어 있습니다.",
 "The extraction could not start": "압축 해제를 시작할 수 없습니다",
 "The file": "파일",

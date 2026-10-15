@@ -245,10 +245,13 @@
     <li>The <b>package name</b> in small letters under it.</li>
     <li>Badges: <b>UNINSTALLED</b> or <b>FROZEN</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
     <li>A frozen app's row has a blue glow and an uninstalled app's row a red one, as in the Apps tab. <b>Row tints</b> in Settings sets how strong it is (Off turns it off).</li>
-    <li>A round-edged button on the right (<b>Freeze</b> in blue, <b>Enable</b> or <b>Reinstall</b> in green, like the app menu) and three dots for the menu.</li>
+    <li>On the right, the Apps tab's <b>Action Button</b> (an icon; see "The button on each row" below) and three dots for the menu.</li>
     <li>As in the Apps tab, the icon is the row's selection box: tap the icon, or the name, to select the row, and a check mark appears on the icon's corner.</li>
   </ul>
   <p>The list is sorted by name. Under the search box a line tells you how many apps are shown (<b>12 apps of 87</b>). Only the first 600 rows are drawn; if there are more, a note says how many are hidden and suggests you search or filter. <b>Reload</b>, next to the search box, reads the device again.</p>
+
+  <h4>Sort and Button</h4>
+  <p>Above the search box is the Apps tab's <b>Sort</b> / <b>Button</b> row. <b>Sort</b> puts the list in name order, <b>Name (A–Z)</b> or <b>Name (Z–A)</b> (a device's list has no install dates or sizes to sort by). <b>Button</b> chooses what the button on every row does (below). Both choices are kept for next time and do not change the Apps tab's own.</p>
 
   <h4>Search and filters</h4>
   <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is the Apps tab's row of filters, in the same order and colours, each with a count. A device's list does not know which apps are running, updated, suspended, tracking or patched, so those filters are not here:</p>
@@ -273,14 +276,19 @@
   </ul>
 
   <h4>The button on each row</h4>
+  <p>The icon button left of the three dots is the Apps tab's <b>Action Button</b>. Choose what it does with <b>Button</b> above the list. Press and hold it for that app's menu.</p>
   <table class="hg-table">
-    <thead><tr><th>Button</th><th>Shown when</th><th>What it does</th></tr></thead>
+    <thead><tr><th>Choice</th><th>What a tap does</th></tr></thead>
     <tbody>
-      <tr><td><b>Freeze</b></td><td>The app is enabled</td><td>Switches the app off (<code>pm disable-user</code>, the same thing the Application Manager calls freezing). It stays on the device with its data, but cannot run and is hidden from the launcher. The row gets the blue <b>FROZEN</b> badge.</td></tr>
-      <tr><td><b>Enable</b></td><td>The app is frozen</td><td>Switches it back on.</td></tr>
-      <tr><td><b>Reinstall</b></td><td>The app is uninstalled</td><td>Brings back a removed system app from the copy still kept in the device's system. No download or file is needed.</td></tr>
+      <tr><td><b>Enable / Disable</b> (the first time)</td><td>Freezes an enabled app (<code>pm disable-user</code>, the same thing the Application Manager calls freezing: it stays on the device with its data, but cannot run and is hidden from the launcher; the row gets the blue <b>FROZEN</b> badge), or switches a frozen one back on.</td></tr>
+      <tr><td><b>App Settings</b></td><td>Opens the app's page in the device's own settings, on the device.</td></tr>
+      <tr><td><b>Force Stop</b></td><td>Stops the app on the device.</td></tr>
+      <tr><td><b>App Launcher</b></td><td>Opens the app on the device.</td></tr>
+      <tr><td><b>Install / Uninstall</b></td><td>Uninstalls the app for the device's user (it asks first).</td></tr>
+      <tr><td><b>None</b></td><td>Rows have no extra button.</td></tr>
     </tbody>
   </table>
+  <p>Whatever the choice, an <b>uninstalled</b> app's button is <b>Reinstall</b> (a down arrow): it brings back a removed system app from the copy still kept in the device's system. No download or file is needed. Suspending and the permission and activity lists are not offered here: use the device's menu (the three dots) for what a device allows.</p>
   <p>After the command, the app asks the device what became of the app (it lists the apps again; <i>Checking the device&hellip;</i> shows meanwhile, unless you turned off <a href="#prefs">Progress messages</a>), and the answer is what the device says now, not what the command printed. A message such as <b>Disabled: Fit</b> appears and the row changes in place. If the app is not in the wanted state (<i>Still installed</i>, <i>Not disabled</i>, <i>Not installed</i>), the sheet <b>That did not work</b> opens with <i>Checked afterwards: still installed.</i> and the device's own answer, and a command that printed an error for an app that is in fact gone still counts as done. For several apps at once the device is looked at once for all of them, and the sheet names only those that are not as wanted.</p>
 
   <h4>The three-dot menu of an app</h4>

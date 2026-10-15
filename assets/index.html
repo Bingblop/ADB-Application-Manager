@@ -1299,9 +1299,9 @@
         #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
         /* The buttons at the end of an Apps tab row (the Action Button, ⋯ and, in the Uninstalled filter, Clear leftover data) are drawn as
            bare icons on a --tap square, side by side with no gap, and the last one reaches into the row's padding: the name and the package
-           get the room an outlined box, the gaps and the old checkbox column took. */
-        #appsListContainer .app-actions { gap: 0; margin-left: 0; margin-right: calc(-1 * var(--space-3)); }
-        #appsListContainer .app-actions .btn-mini {
+           get the room an outlined box, the gaps and the old checkbox column took. A device's rows in Connected Devices are drawn the same. */
+        #appsListContainer .app-actions, #cdAppList .app-actions { gap: 0; margin-left: 0; margin-right: calc(-1 * var(--space-3)); }
+        #appsListContainer .app-actions .btn-mini, #cdAppList .app-actions .btn-mini {
             width: var(--tap);
             height: var(--tap);
             background: transparent;
@@ -1309,10 +1309,10 @@
             border-radius: var(--radius-pill);
             color: var(--text-muted);
         }
-        #appsListContainer .app-actions .row-menu { font-size: var(--fs-title); font-weight: var(--fw-black); }
-        #appsListContainer .app-actions .btn-mini.ab-btn { color: var(--accent); }
-        #appsListContainer .app-actions .btn-mini:active { background: var(--fill-3); color: var(--accent); }
-        #appsListContainer .app-actions .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        #appsListContainer .app-actions .row-menu, #cdAppList .app-actions .row-menu { font-size: var(--fs-title); font-weight: var(--fw-black); }
+        #appsListContainer .app-actions .btn-mini.ab-btn, #cdAppList .app-actions .btn-mini.ab-btn { color: var(--accent); }
+        #appsListContainer .app-actions .btn-mini:active, #cdAppList .app-actions .btn-mini:active { background: var(--fill-3); color: var(--accent); }
+        #appsListContainer .app-actions .btn-mini:focus-visible, #cdAppList .app-actions .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
         .ab-btn { color: var(--accent); -webkit-touch-callout: none; }
         .uad-row .uad-actions { margin-left: auto; align-self: flex-start; }
@@ -5016,7 +5016,10 @@
                 .cd-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); margin-right: var(--space-3h); display: flex; align-items: center; justify-content: center; overflow: hidden;
                     background: var(--bg-surface); color: var(--accent); font-weight:var(--fw-black); font-size: var(--fs-lead); }
                 .cd-icon img { width: 100%; height: 100%; object-fit: contain; }
-                .app-sel .cd-icon { width: 100%; height: 100%; margin-right: 0; }          /* a device row's icon fills the Apps tab's selection box */
+                .app-sel .cd-icon { width: 100%; height: 100%; margin-right: 0; }
+                #cdAppSortRow { margin: 0 0 var(--space-2); }          /* (the Apps tab's row tucks under the card above it; this one opens its card) */
+                #cdAppSort { flex: 1 1 0; width: auto; min-width: 84px; text-overflow: ellipsis; }
+                #cdAppSortRow .ab-pick #cdAbPickLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }          /* a device row's icon fills the Apps tab's selection box */
                 /* filled in the accent; .danger, .blue, .green and .accent are filled too (see the sheet buttons, .sheet-btn-red and the rest); .plain is the quiet one */
                 .cd-row-act { border: 1px solid transparent; color: var(--on-accent); background: var(--fill-accent); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { filter: brightness(0.82); }
@@ -5166,6 +5169,16 @@
                 <!-- Apps -->
                 <div class="cd-pane" id="cdPane-apps">
                     <div class="color-card">
+                        <!-- the Apps tab's Sort / Button row (v7.14, the owner's wish); a device's list knows names only, so it sorts by name -->
+                        <div class="apps-sort-row" id="cdAppSortRow">
+                            <label class="apps-row-label" for="cdAppSort">Sort</label>
+                            <select id="cdAppSort" class="op-select apps-sort-select" aria-label="Sort apps by" onchange="cdSetSort(this.value)">
+                                <option value="name">Name (A–Z)</option>
+                                <option value="name_desc">Name (Z–A)</option>
+                            </select>
+                            <span class="apps-row-label apps-row-label-2" aria-hidden="true">Button</span>
+                            <button type="button" id="cdAbPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="cdOpenActionBtnPicker()"><span id="cdAbPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
+                        </div>
                         <div class="cd-row">
                             <input type="text" class="list-search" id="cdAppSearch" placeholder="Search apps on the device" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdAppsRender()">
                             <button class="mode-action-btn" onclick="cdAppsLoad(true)">Reload</button>
@@ -19329,7 +19342,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     timer = null;
                     held = true;
                     const host = b.closest('[data-pkg]');
-                    if (host) openAbSheet(host.dataset.pkg);
+                    if (host && host.closest('#cdAppList')) cdAppMenu(host.dataset.pkg);          // a device's row: that device app's menu, not this phone's
+                    else if (host) openAbSheet(host.dataset.pkg);
                 }, 550);
             }, true);
             document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
@@ -25850,6 +25864,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!list || !cd.apps) return;
             const q = (document.getElementById('cdAppSearch').value || '').trim().toLowerCase();
             const rows = cd.apps.filter(a => cdAppMatches(a, cd.filters) && (!q || a.pkg.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)));
+            rows.sort((x, y) => x.name.toLowerCase().localeCompare(y.name.toLowerCase()) || x.pkg.localeCompare(y.pkg));
+            if (cdSort === 'name_desc') rows.reverse();
+            const so = document.getElementById('cdAppSort'); if (so && so.value !== cdSort) so.value = cdSort;
+            const abl = document.getElementById('cdAbPickLabel'); if (abl) abl.textContent = txT(abShortName(cdActionBtn));
             const n = { installed: 0, user: 0, system: 0, enabled: 0, disabled: 0, uninstalled: 0 };
             cd.apps.forEach(a => { if (a.uninstalled) n.uninstalled++; else { n.installed++; if (a.system) n.system++; else n.user++; if (a.disabled) n.disabled++; else n.enabled++; } });
             const key = ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"';
@@ -25894,7 +25912,6 @@ Type any command above (e.g. pm list packages -d)</div>
             if (a.uninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
             else if (a.disabled) badges += '<span class="tag-badge tag-frozen cd-frozen">FROZEN</span>';
             badges += a.system ? '<span class="tag-badge tag-system">SYSTEM</span>' : '<span class="tag-badge tag-user">USER</span>';
-            const act = a.uninstalled ? ['reinstall', 'Reinstall'] : a.disabled ? ['enable', 'Enable'] : ['disable', 'Freeze'];
             const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(a.name.charAt(0).toUpperCase());
             // the same state tint as the rows of the Apps tab (a glow in Frozen's or Uninstalled's colour, as strong as Row tints says)
             const state = a.uninstalled ? ' uninstalled' : a.disabled ? ' frozen' : '';
@@ -25903,8 +25920,45 @@ Type any command above (e.g. pm list packages -d)</div>
                 '<button type="button" class="app-left app-sel" role="checkbox" aria-checked="' + sel + '" aria-label="' + escapeHtml('Select ' + a.name) + '" onclick="cdToggleSel(this.parentElement.dataset.pkg)">' +
                 '<span class="cd-icon">' + icon + '</span><span class="app-checkbox" aria-hidden="true">' + (sel ? '\u2713' : '') + '</span></button>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
-                '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : act[0] === 'enable' ? 'accent' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<div class="app-actions">' + cdActionBtnHtml(a) +
                 '<button class="btn-mini row-menu" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div></div>';
+        }
+        // The Apps tab's Action Button on a device's rows (v7.14, the owner's wish): the same icon button, with the choices a device allows (it has no
+        // suspend, permission or activity lists through this tab). An uninstalled app's button puts it back. Hold it for the app's menu. Kept as "cd_action_btn".
+        const CD_AB_OPTIONS = ['settings', 'forcestop', 'launch', 'toggle', 'uninstall', 'none'];
+        let cdActionBtn = kvGet('cd_action_btn', 'toggle') || 'toggle';
+        if (!CD_AB_OPTIONS.includes(cdActionBtn)) cdActionBtn = 'toggle';
+        let cdSort = kvGet('cd_sort', 'name') === 'name_desc' ? 'name_desc' : 'name';
+        function cdSetSort(v) { haptic(); cdSort = v === 'name_desc' ? 'name_desc' : 'name'; kvSet('cd_sort', cdSort); cdAppsRender(); }
+        function cdAbSpec(a) {
+            if (a.uninstalled) return { icon: 'install', label: 'Reinstall', act: 'reinstall' };
+            switch (cdActionBtn) {
+                case 'settings': return { icon: 'settings', label: 'App Settings', act: 'page' };
+                case 'forcestop': return { icon: 'forcestop', label: 'Force Stop', act: 'stop' };
+                case 'launch': return { icon: 'launch', label: 'Launch app', act: 'launch' };
+                case 'uninstall': return { icon: 'uninstall', label: 'Uninstall', act: 'uninstall' };
+                default: return a.disabled ? { icon: 'enable', label: 'Enable', act: 'enable' } : { icon: 'disable', label: 'Disable', act: 'disable' };
+            }
+        }
+        function cdActionBtnHtml(a) {
+            if (cdActionBtn === 'none') return '';
+            const sp = cdAbSpec(a), lab = escapeHtml(txT(sp.label));
+            return '<button class="btn-mini ab-btn" data-ab="' + sp.icon + '" title="' + lab + '" aria-label="' + lab + '" onclick="cdActionBtnTap(this.closest(\'[data-pkg]\').dataset.pkg)">' + abSvg(sp.icon) + '</button>';
+        }
+        function cdActionBtnTap(pkg) {
+            const sp = cdAbSpec(cdApp(pkg));
+            haptic();
+            if (sp.act === 'page') cdAppPage(pkg); else cdAppAct(pkg, sp.act);
+        }
+        async function cdAppPage(pkg) { const o = await cdSh('am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:' + cdQ(pkg)); showToast(cdFail(o) || 'Opened on the device'); }
+        function cdOpenActionBtnPicker() {
+            openChoiceSheet({
+                title: 'Action Button',
+                desc: "The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.",
+                options: CD_AB_OPTIONS.map(k => [k, abShortName(k), AB_DESC[k] || '']),
+                current: cdActionBtn,
+                onPick: v => { haptic(); cdActionBtn = CD_AB_OPTIONS.includes(v) ? v : 'toggle'; kvSet('cd_action_btn', cdActionBtn); cdAppsRender(); showToast('Action Button: ' + abShortName(cdActionBtn)); }
+            });
         }
         function cdApp(pkg) { return (cd.apps || []).find(a => a.pkg === pkg) || { pkg: pkg, name: cdDerivedName(pkg), system: false, disabled: false, uninstalled: false }; }
 
@@ -26087,7 +26141,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 b.push({ label: 'Uninstall', cls: 'danger', fn: () => cdAppAct(pkg, 'uninstall') });
                 b.push({ label: 'Pull APK', fn: () => cdPullApk(pkg) });
                 b.push({ label: 'Details', fn: () => cdAppInfo(pkg) });
-                b.push({ label: 'App page on device', fn: async () => { const o = await cdSh('am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:' + cdQ(pkg)); showToast(cdFail(o) || 'Opened on the device'); } });
+                b.push({ label: 'App page on device', fn: () => cdAppPage(pkg) });
             } else {
                 b.push({ label: 'Reinstall', cls: 'green', fn: () => cdAppAct(pkg, 'reinstall') });
             }

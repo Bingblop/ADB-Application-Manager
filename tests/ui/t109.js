@@ -157,8 +157,8 @@ const { chromium, PAGE } = require('./lib/pw');
   check('the apps of the device are listed with phone names where the phone has the app', apps0.n === 5 && apps0.names.includes('Fit') && apps0.names.includes('Deskclock') && /5 apps/.test(apps0.count), JSON.stringify(apps0));
   check('the filter pills (the Apps tab\'s, in its order) carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All Apps 5|Installed 4|Uninstalled 1|System 2|User 2|Enabled 3|Frozen 1', apps0.chips.join('|'));
   const rowOf = pkg => `#cdcard_${pkg.replace(/\./g, '\\.')}`;
-  const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.cd-row-act').innerText; return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
-  check('each row shows its state and the action that fits it', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Freeze' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
+  const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.ab-btn').getAttribute('aria-label'); return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
+  check('each row shows its state and its Action Button (Enable / Disable by default, Reinstall for an uninstalled app)', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Disable' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
   await ev(() => cdFilter('system')); await ev(() => cdFilter('disabled'));
   check('System / User and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
   await ev(() => { cd.filters.clear(); cdFilter('uninstalled'); cdFilter('system'); });
@@ -169,9 +169,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { document.getElementById('cdAppSearch').value = ''; cdAppsRender(); });
 
   // one app: Freeze then Enable, Reinstall, Uninstall (asks first)
-  await ev(() => document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').click()); await wait(250);
-  check('Freeze runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /FROZEN/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').innerText === 'Enable'));
-  await ev(() => document.querySelector('#cdcard_com\\.google\\.android\\.apps\\.fitness .cd-row-act').click()); await wait(250);
+  await ev(() => document.querySelector('#cdcard_com\\.example\\.fit .ab-btn').click()); await wait(250);
+  check('Freeze runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /FROZEN/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .ab-btn').getAttribute('aria-label') === 'Enable'));
+  await ev(() => document.querySelector('#cdcard_com\\.google\\.android\\.apps\\.fitness .ab-btn').click()); await wait(250);
   check('Reinstall runs install-existing and the app is back', (await calls()).some(c => /cmd package install-existing 'com\.google\.android\.apps\.fitness'/.test(c)) && await ev(() => !/UNINSTALLED/.test(document.getElementById('cdcard_com.google.android.apps.fitness').innerText)));
   await ev(() => cdAppMenu('com.example.fit')); await wait(200);
   const menu = await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).map(b => b.innerText));

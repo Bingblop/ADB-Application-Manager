@@ -3857,6 +3857,7 @@ x: {
 "The exclusions SD Maid SE ships with come back, the ones you removed too. Yours stay.": "SD Maid SE に付属する除外が、削除したものも含めて戻ります。自分で追加したものはそのまま残ります。",
 "The exclusions could not be read.": "除外を読み取れませんでした。",
 "The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.": "アプリ一覧の各行にある追加ボタン。タップしたときの動作を選びます。行を長押しすると、そのアプリのすべての操作を一覧したシートが開きます。",
+"The extra button on every row of the device's app list. Choose what a tap on it does; an uninstalled app's button puts it back. Press and hold it on a row for that app's menu.": "デバイスのアプリ一覧の各行にある追加ボタン。タップしたときの動作を選びます。アンインストール済みのアプリでは、ボタンでアプリを元に戻します。行で長押しすると、そのアプリのメニューが開きます。",
 "The extra keys work like Termux's: ESC clears the line, TAB completes a file name, CTRL-C stops what is running, the arrows go through earlier commands and move the cursor, HOME and END jump in the line, and | / - ~ are there because phone keyboards hide them.": "追加キーはTermuxと同じように使えます。ESCは行を消去し、TABはファイル名を補完し、CTRL-Cは実行中の処理を停止し、矢印キーは過去のコマンドをたどったりカーソルを動かしたりし、HOMEとENDは行内を移動します。| / - ~ は、スマートフォンのキーボードでは隠れているため用意されています。",
 "The extraction could not start": "展開を開始できませんでした",
 "The file": "ファイル",
