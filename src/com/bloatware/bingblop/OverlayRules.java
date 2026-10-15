@@ -64,7 +64,7 @@ final class OverlayRules {
 
     // ---- commands ----
 
-    /** Every command names the user ({@code --user current}: the user this app runs as); without it the shell acts on user 0, which in a work profile or a secondary user is another user's overlays and theme. */
+    /** Every command names the user ({@code --user current}: the foreground user); without it cmd overlay acts on user 0, which after a switch to a secondary user is another user's overlays and theme. A work profile is not the foreground user, so there it is still the personal profile's. */
     static String listCommand() {
         return "cmd overlay list --user current";
     }
