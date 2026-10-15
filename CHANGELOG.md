@@ -1,5 +1,76 @@
 # Changelog
 
+## v7.14.0-Pro (versionCode 859)
+
+A feature release on top of v7.13.4, cut from `main`. It carries the owner's v7.14 change list and the follow-ups he asked for (#234), the ADB Stub for Wear OS watches (#233), the on-device Self-test (#229, with its fix #232), the 42 fixes of the v7.12 to v7.14 code review (#235), and the fixes from a code review of the #234 changes. The app is now called **ADB System Manager**; the package name (`com.bloatware.bingblop`), the `Download/ADB App Manager` folders and the signing certificate are unchanged, so it installs over every earlier version. Each change is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone or a watch by the people and tools that wrote it.** `docs/PHONE-SCRIPT-v7.14.0.md` is one phone step per change.
+
+**New**
+
+- **Speed test.** Task Manager > Network starts with a **Speed test** button that opens a screen of its own: a gauge, a live graph per phase, cards for ping, jitter, download, upload, the data centre and the connection, Start / Stop / Run again, copy and share, and the last 10 results. It measures against Cloudflare (`speed.cloudflare.com`) with parallel streams through the app's safe connection code. On mobile data or a metered network it warns first: a test can use up to 350 MB and stops at that amount. Stop, closing it, leaving the tab or sending the app to the background stops the test.
+- **ADB Stub for Wear OS watches** (#233). Connected Devices shows an **ADB Stub** card under a connected Wear OS watch: Install, Update, Start, Stop. While it runs, the watch keeps its screen on and its Wi-Fi connected, and its one screen shows the connection. It starts by itself when the watch connects (a switch in the device menu, on by default); **Disconnect** stops it first, so the watch's Wi-Fi goes back to normal.
+- **Self-test** in the About tab (#229, #232). 27 read-only checks in the current working mode, each PASS, FAIL, INFO or SKIP. **Copy report** puts a redacted report on the clipboard; **Report on GitHub** copies it and opens the bug-report form. No serial, IP or MAC address, account name, key or setting value goes into the report.
+- **Hidden Settings keeps a history of the last 100 changes**, saved between launches. A new clock button next to the search box opens it (it is also under ⋯ > Changes). Each entry shows the table, how long ago, the date and time, and old → new, with **Revert**.
+- **Permissions.** The permissions sheet lists every permission the app uses, with Android's name under each row; new rows: **Read Logs**, **Bluetooth Connect**, **Notifications** and **Allow Restricted Settings**. With a working mode, **Allow** grants by command and the result is read back from the phone. The first working mode after install offers once to grant everything that is left; an installed but unauthorized Shizuku is asked at start (until you say no twice). **Settings > Language** has an **Application Permissions** button that opens the sheet. The manifest now asks for `READ_LOGS` (approved by the owner).
+- **ANGLE** in Task Manager's GPU renderer drop-down ("ANGLE (OpenGL ES on Vulkan)"). It needs Root: outside Root mode it is locked and explains why. Choosing it is read back from the phone.
+- **Back to top.** A round up-arrow button appears once a screen has been scrolled more than one and a half screens.
+- **App menu tabs open full screen**: a round expand button on each tab of an app's menu; the X, a pull down or Back returns to the menu.
+
+**Apps tab and app menu**
+
+- **Filters in the owner's order:** All Apps, Installed | Uninstalled, System | User, Enabled | Frozen, Running, Updated 7d, Suspended, Trackers, Patched. **"3rd Party" is now "User".** Saved Applications, the Debloater and Connected Devices follow the same order.
+- **The top row has only Sort and Button** (the Action Button picker). **Profiles, CSV and Backups** moved to Saved Applications, beside New List.
+- **Only a selected row is outlined;** a running, frozen or uninstalled app gets a soft glow in its colour instead, and a tap that selects a row sweeps a band of light across it. **Frozen is a clear blue.**
+- **Row tints has five steps:** Off, Faint, Subtle (the default), Normal, Vivid. Vivid stops where the badges and Live Logcat's text keep 4.5:1 contrast. Row tints also tints Live Logcat.
+- **Filled colour buttons:** Uninstall is a red gradient, Freeze ice blue, Reinstall green and Enable the accent, all with black text where it reads better. Every filled button is a gradient.
+- **The app menu's buttons stand in four fixed groups** (Open, Control, Maintenance, Package). A button that does not apply stays in its place, dimmed, and a tap says why; nothing moves when the app's state changes. The Patched / modified box is gone from the menu; Share, Copy package and Copy name have centred labels.
+- **Suspend state of apps uninstalled for the user** is read from the phone, so Suspend / Unsuspend shows the real state and its result is checked.
+
+**Live Logcat and the Console**
+
+- **Live Logcat is its own tab again;** Console holds **ADB Shell | Terminal**. A saved tab layout carries over (the Terminal's place goes to Live Logcat). The Terminal takes the theme's colours.
+- Live Logcat reads **1000 lines** by default and **keeps its level, line count, filter and app** between launches. Play / Stop is a filled button (Pause is now Stop). The level dots are in the owner's colours (Verbose dark green, Debug yellow, Info the accent, Warn orange) and each row is tinted in its level's colour. Record to file has a red dot.
+
+**Connected Devices**
+
+- **A device's app list works like the Apps tab:** the same filter pills (only the states a device can report: All Apps, Installed | Uninstalled, System | User, Enabled | Frozen), the same row with the icon as the selection box, the row tints, the Action Button and the Sort / Button row. The button's choices are those a device can run (App Settings, Force Stop, App Launcher, Enable / Disable, Install / Uninstall, None). Holding it opens that device app's menu.
+- **The device Logcat matches Live Logcat:** 1000 lines, remembered choices, the colour key with a count per level, the filled Play / Stop and the level colours. It has no app picker and no Record to file.
+- The **Reconnecting devices** card moved here from Settings and starts folded.
+
+**Settings and the whole app**
+
+- **Settings cards fold** (a round chevron or a tap on the title); the choice is kept. "Palette Style & My Themes" is one card; the VirusTotal key sits in the Default Ask Agent card; the Private DNS pointer left Settings (Private DNS stays in Extra Settings).
+- **The page's dialogs** (alerts, questions, text prompts) are drawn in the app's look with a real title, instead of WebView's "The page at file:// says".
+- **Task Manager is quicker:** the graph speed goes down to 50 ms (default 150 ms) and auto-refresh to 0.5 s (default 1 s); nothing faster is offered.
+- **Undo bars last 3 seconds at most** and sit just above the bottom bar.
+- **Old WebView:** on a WebView older than Chrome 111 the colours are computed by the app so rows, buttons and badges draw correctly, and a one-time notice offers to update Android System WebView.
+- The Help Guide describes all of this; every new string is in all 13 translations.
+
+**Fixes from the v7.12 to v7.14 code review (#235)**
+
+Forty-two findings, each fixed with a test that fails on the old code. The ones you are most likely to notice:
+
+- **The ADB Stub lets the watch go when the phone is gone:** it holds the watch's screen and Wi-Fi on a 5-minute lease that the phone renews every minute, so a killed app or lost Wi-Fi no longer keeps the watch bright until its battery runs out (the stub's version goes to 2, so a watch offers Update). A failed stub install says why, Disconnect no longer stalls on a watch that stopped answering, and Running means the service really runs.
+- **SD Maid SystemCleaner** no longer offers or deletes a folder as "Empty folder" when it holds a file with a line break in its name; **CorpseFinder** no longer offers user 0's folders in a work profile or for a second user; an injected tap no longer lands on the progress cover's Cancel.
+- **Archives:** deleting a file from a tar keeps the content of its hard links; a RAR 4 entry of unknown size no longer stops the archive from opening.
+- **Morphe:** "Install when finished" asks the window that is open; a running Helper download is no longer shown as Paused in a new window (resuming it corrupted the file); Stop at the very end of a patch is no longer ignored.
+- **Updates and installs:** a cancelled Retry keeps the failed apps; offline with an earlier result the App Updater no longer says "Couldn't check (0)"; a path the page hands to the Installer or a restore can never be the app's private data; an escaped or full-width spelling of 127.0.0.1 counts as loopback; "Delete the package after install" deletes only the file the package was read from; `adb keygen` and `adb pubkey` are refused.
+- **The page:** Stop in one Ask window no longer cancels other agent requests; File Manager's View contents waits for a running extraction; the File Manager bars stay below the header; the navigation rail scrolls on a short landscape screen; Trim app caches no longer says Done when it failed; an old tab choice no longer hides the updater or the live log.
+- **Self-test:** a log line or setting that mentions a denied permission is no longer a failed check.
+
+**Release workflow (#236):** a test run with the throwaway key is published as a draft prerelease, never as a normal release.
+
+**Fixes from the code review of the #234 changes**
+
+- The speed test closes a connection that was answered with an error, and its warm-up is the first answer, not the first try (a failed first request no longer inflated the jitter).
+- Task Manager reads a CPU core's min/max clock again when it could not be read the first time.
+- The Apps tab's filters and selection no longer repaint or untick a connected device's rows.
+- Hiding every level of a device's log keeps the key's counts and says every level is hidden.
+- "✓ Granted", "✓ Not needed", three "Console → Terminal" texts and the speed test's data warning are translated in all 13 languages.
+
+**Tests**
+
+- New UI scripts t350, t400 to t407, t410 to t412, t420 to t422, t430 to t432, t440 to t443, t450, t455, t460, t463 and t470 to t481; new Java suites speedmath, speedtest, pagedialogs, selftest and wearstub, and new checks in many others for #235. Goldens follow the new layout.
+
 ## v7.13.4-Pro (versionCode 858)
 
 A small release on top of v7.13.3, cut from `main`: Backup moved from the single-app menu to the batch menu (#230), and nothing else. Not run on a device.
