@@ -49,13 +49,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     for (const k of ['red', 'blue', 'green']) for (const x of s[k]) if (x.text !== 'rgb(0, 0, 0)') bad.push(x.c + ' text ' + x.text);
     for (const x of s.red) { const f = x.fills[x.fills.length - 1]; if (x.fills.length < 2 || !(f[0] > f[1] + 100 && f[0] > f[2] + 100)) bad.push(x.c + ' not a red gradient ' + JSON.stringify(x.fills)); }
     for (const x of s.blue) { const f = x.fills[x.fills.length - 1]; if (x.fills.length < 2 || !(f[2] > f[0] + 60 && f[2] >= f[1])) bad.push(x.c + ' not ice blue ' + JSON.stringify(x.fills)); }
-    for (const x of s.green) { const f = x.fills[x.fills.length - 1]; if (!(f[1] > f[0] + 100 && f[1] > f[2] + 60)) bad.push(x.c + ' not green ' + JSON.stringify(x.fills)); }
+    for (const x of s.green) { const f = x.fills[x.fills.length - 1]; if (x.fills.length < 2 || !(f[1] > f[0] + 100 && f[1] > f[2] + 60)) bad.push(x.c + ' not green ' + JSON.stringify(x.fills)); }
     return bad;
   };
   let s = await sample();
   check('2. dark theme: every one is filled (no outline-only button), Uninstall a red gradient, Freeze ice blue, Reinstall green, black text on each, contrast at least 4.5:1 on every colour stop', look(s).length === 0, look(s).join(' | '));
   const acc = await ev(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
-  check('   Enable is the accent itself', s.accent.every(x => x.fills.length === 1), JSON.stringify(s.accent.map(x => x.fills)) + ' accent ' + acc);
+  // every colour is a gradient (the owner's follow-up); Enable's ends on the accent itself
+  const accRgb = await ev(a => { const e = document.createElement('i'); e.style.color = a; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; }, acc);
+  check('   every filled button is a gradient, Enable\'s from a lighter (or, under white text, darker) accent to the accent', Object.values(s).flat().every(x => x.fills.length >= 2) && s.accent.every(x => 'rgb(' + x.fills[x.fills.length - 1].join(', ') + ')' === accRgb), JSON.stringify(s.accent.map(x => x.fills)) + ' accent ' + accRgb);
 
   await ev(() => { themeState.appearance = 'light'; applyTheme(false); }); await page.waitForTimeout(150);
   const isLight = await ev(() => document.documentElement.getAttribute('data-appearance'));
@@ -68,13 +70,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     for (const a of ['#00E5FF', '#FFC400', '#7C4DFF', '#1E88E5', '#D81B60', '#3D5AFE', '#43A047', '#8E8E8E']) {
       window.currentScheme = () => Object.assign({}, orig(), { accent: a });
       applyTheme(false);
-      res[a] = [getComputedStyle(document.documentElement).getPropertyValue('--on-accent').trim(), +contrastRatio(a, '#000000').toFixed(2), +contrastRatio(a, '#FFFFFF').toFixed(2)];
+      const rs = getComputedStyle(document.documentElement), on = rs.getPropertyValue('--on-accent').trim(), first = (rs.getPropertyValue('--fill-accent').match(/#[0-9A-Fa-f]{6}/) || [''])[0];
+      res[a] = [on, +contrastRatio(a, '#000000').toFixed(2), +contrastRatio(a, '#FFFFFF').toFixed(2), first && contrastRatio(first, on) >= contrastRatio(a, on) - 0.01];
     }
     window.currentScheme = orig; applyTheme(false);
     return res;
   });
-  const wrong = Object.entries(onAcc).filter(([a, [on, blk, wht]]) => on !== (blk >= 4.5 || blk >= wht ? '#000000' : '#FFFFFF'));
-  check('4. the accent buttons\' text is black where black has 4.5:1 or more (or beats white), white otherwise', wrong.length === 0 && onAcc['#00E5FF'][0] === '#000000' && onAcc['#3D5AFE'][0] === '#FFFFFF', JSON.stringify(onAcc));
+  const wrong = Object.entries(onAcc).filter(([a, [on, blk, wht, firstOk]]) => on !== (blk >= 4.5 || blk >= wht ? '#000000' : '#FFFFFF') || !firstOk);
+  check('4. the accent buttons\' text is black where black has 4.5:1 or more (or beats white), white otherwise; the gradient\'s other end only adds contrast', wrong.length === 0 && onAcc['#00E5FF'][0] === '#000000' && onAcc['#3D5AFE'][0] === '#FFFFFF', JSON.stringify(onAcc));
 
   console.log('errors:', JSON.stringify(errors));
   if (errors.length) bad++;
