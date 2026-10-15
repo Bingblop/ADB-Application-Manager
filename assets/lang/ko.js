@@ -4856,7 +4856,15 @@ x: {
 "Moving from one screen to the next.": "한 화면에서 다음 화면으로의 이동.",
 "Animator duration": "Animator 길이",
 "Everything else that moves inside apps: lists, switches, ripples.": "앱 안에서 움직이는 나머지 모든 것: 목록, 스위치, 물결 효과.",
-"Adaptive brightness bias": "밝기 보정"
+"Adaptive brightness bias": "밝기 보정",
+"Report copied. Paste it into the report box of the issue.": "보고서를 복사했습니다. 이슈의 보고서 칸에 붙여넣으세요.",
+"Report on GitHub": "GitHub에 보고",
+"Run self-test": "자가 테스트 실행",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "현재 작업 모드에서 이 휴대폰에 대해 읽기 전용 검사를 약 30개 실행해, 버그 보고나 실기기 테스트에서 실제로 무엇이 동작하는지 알려 줍니다. 휴대폰에서는 아무것도 변경되지 않습니다. 보고서는 영어로 작성되며 일련번호, IP 주소, 계정, 키, 설정 값은 포함되지 않습니다.",
+"Self-test": "자가 테스트",
+"The self-test could not run.": "자가 테스트를 실행할 수 없습니다.",
+"The self-test is already running.": "자가 테스트가 이미 실행 중입니다.",
+"The self-test needs the app build.": "자가 테스트에는 앱 빌드가 필요합니다."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5980,6 +5988,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","적용했지만 휴대전화가 {1} 대신 {0}을(를) 보고합니다. One UI와 일부 휴대전화는 이 값을 초기화하거나 무시합니다."],
 ["{0} of {1}","{1} 중 {0}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} 선택"]
+["Select {0}","{0} 선택"],
+["Running check {0} of {1}…","검사 {0}/{1} 진행 중…"],
+["The self-test could not run: {0}","자가 테스트를 실행할 수 없습니다: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0}개 통과, {1}개 실패, {2}개 정보, {3}개 건너뜀"]
 ]
 };

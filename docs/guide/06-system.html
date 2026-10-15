@@ -556,6 +556,19 @@
   </table>
   <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
 
+  <h4>Self-test</h4>
+  <p>A card above <b>Authorization Manager</b> that checks what works on <i>your</i> phone, in the working mode you are using now. <b>Run self-test</b> goes through 27 checks one after the other (the line under the buttons counts them) and lists each with a coloured verdict: <b>PASS</b> (it worked), <b>FAIL</b> (it did not), <b>INFO</b> (a fact, such as the Android version) or <b>SKIP</b> (not tried, for example a check that needs ADB, Shizuku or root while the app only runs as itself). The checks are grouped as <i>Access</i>, <i>Packages</i>, <i>Settings</i>, <i>System</i>, <i>Files</i> and <i>Other features</i> (the last one only notes whether commands that later features may use exist on your phone).</p>
+  <p><b>Every check only reads.</b> Nothing is changed on the phone, nothing you typed reaches a command, and the report holds no serial number, IP or MAC address, account name, key, token or setting value: only counts, yes or no answers and, for a failed check, the first line of the error with addresses and long codes blanked out.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Run self-test</b></td><td>Starts the checks. The button waits while they run. Run it again at any time; with no working mode it still runs and says what it could not do.</td></tr>
+      <tr><td><b>Copy report</b></td><td>Copies the result as plain English text, whatever language the app is in, ready to paste.</td></tr>
+      <tr><td><b>Report on GitHub</b></td><td>Copies the report and opens the project's <i>phone bug report</i> form with the mode, version and device filled in. Paste the report into the box that asks for it. If a long report does not fit in the address, the form opens with the short part and the full text is on your clipboard.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> Run it before you report a problem, and once after each update: a report that says which checks pass on your phone is the fastest way to get a bug fixed. This card has not been tried on a phone yet.</div>
+
   <h4>Authorization Manager</h4>
   <p>A card between <b>This build</b> and <b>Device Specs</b>. It shows the app's own <b>authorization code</b>, a secret code that belongs to this app. <b>Nothing accepts the code yet</b>: it is kept here for later, so there is nothing for you to set up or to switch on. Nothing here needs a working mode, and the code never leaves the phone.</p>
   <p>The code is 25 letters and digits in five groups of five, for example <code>ABCDE-FGHJK-MNPQR-STVWX-YZ012</code>. It never uses the letters I, L, O or U, so it is easy to read. It is made on your phone the first time and kept in the app's private storage, which other apps cannot read.</p>

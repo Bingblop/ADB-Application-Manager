@@ -9312,6 +9312,100 @@ public class MainActivity extends Activity {
             }
         }
 
+        private final java.util.concurrent.atomic.AtomicBoolean selfTestRunning = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        /**
+         * About tab, Self-test: runs the read-only checks of {@link SelfTest} in the current working mode, off the page's thread.
+         * Returns "started" (progress arrives as window.onSelfTestStep(runId, done, total, title), the answer as
+         * window.onSelfTestDone(runId, json)), "busy" while one is running, or "error: ..." when the app is closing.
+         */
+        @JavascriptInterface
+        public String runSelfTest(final String runId) {
+            final String id = runId == null ? "" : runId;
+            if (!selfTestRunning.compareAndSet(false, true)) return "busy";
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            selfTestJob(id);
+                        } catch (Throwable t) {
+                            notifyJs("window.onSelfTestDone && window.onSelfTestDone(" + JSONObject.quote(id) + "," + JSONObject.quote("{\"error\":" + JSONObject.quote(errMsg(t)) + "}") + ")");
+                        } finally {
+                            selfTestRunning.set(false);
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                selfTestRunning.set(false);
+                return "error: the app is closing";
+            }
+            return "started";
+        }
+
+        private void selfTestJob(final String id) throws Exception {
+            final SelfTest.Shell shell = new SelfTest.Shell() {
+                @Override
+                public String run(String cmd) {
+                    if (activityDestroyed) return "Error: the app is closing";
+                    return executeShell(cmd);
+                }
+            };
+            final List<SelfTest.Probe> probes = SelfTest.probes(getPackageName());
+            List<SelfTest.Row> rows = SelfTest.run(probes, shell, new SelfTest.Listener() {
+                @Override
+                public void onRow(int done, int total, SelfTest.Row row) {
+                    notifyJs("window.onSelfTestStep && window.onSelfTestStep(" + JSONObject.quote(id) + "," + done + "," + total + "," + JSONObject.quote(row.probe.title) + ")");
+                }
+            });
+            java.util.LinkedHashMap<String, String> facts = selfTestFacts();
+            String mode = resolveExecMode();
+            JSONObject out = new JSONObject();
+            JSONArray arr = new JSONArray();
+            for (SelfTest.Row r : rows) {
+                JSONObject o = new JSONObject();
+                o.put("id", r.probe.id);
+                o.put("group", r.probe.group);
+                o.put("title", r.probe.title);
+                o.put("status", r.result.status.name().toLowerCase(java.util.Locale.ROOT));
+                o.put("detail", SelfTest.sanitize(r.result.detail));
+                arr.put(o);
+            }
+            out.put("rows", arr);
+            out.put("passed", SelfTest.count(rows, SelfTest.Status.PASS));
+            out.put("failed", SelfTest.count(rows, SelfTest.Status.FAIL));
+            out.put("info", SelfTest.count(rows, SelfTest.Status.INFO));
+            out.put("skipped", SelfTest.count(rows, SelfTest.Status.SKIP));
+            out.put("report", SelfTest.report(facts, rows));
+            out.put("issueUrl", SelfTest.issueUrl(mode, facts.get("App"), facts.get("Phone") + ", Android " + facts.get("Android"), facts, rows));
+            notifyJs("window.onSelfTestDone && window.onSelfTestDone(" + JSONObject.quote(id) + "," + JSONObject.quote(out.toString()) + ")");
+        }
+
+        /** The lines at the top of a self-test report: the app, the phone, the working mode, Shizuku, root and the two switches the page needs. No address, serial or account. */
+        private java.util.LinkedHashMap<String, String> selfTestFacts() {
+            java.util.LinkedHashMap<String, String> f = SelfTest.facts();
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                f.put("App", "ADB Application Manager Pro " + pi.versionName + " (" + versionCodeOf(pi) + ")");
+            } catch (Exception e) {
+                f.put("App", "ADB Application Manager Pro");
+            }
+            f.put("Android", Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")" + (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SECURITY_PATCH != null ? ", patch " + Build.VERSION.SECURITY_PATCH : ""));
+            f.put("Phone", Build.MANUFACTURER + " " + Build.MODEL);
+            f.put("Working mode", "configured " + activeWorkingMode + ", running as " + resolveExecMode());
+            try {
+                JSONObject sz = shizukuStatus();
+                f.put("Shizuku", (sz.optBoolean("installed") ? "installed" : "not installed") + ", " + (sz.optBoolean("running") ? "running" : "not running")
+                    + ", " + (sz.optBoolean("authorized") ? "authorized" : "not authorized") + (sz.optInt("version") > 0 ? ", version " + sz.optInt("version") : ""));
+            } catch (Throwable ignored) {}
+            f.put("Root", isRootAvailable() ? "su found" : "no su");
+            f.put("Secure settings access", hasWriteSecureSettingsAccess() ? "granted" : "not granted");
+            String ip = deviceWifiIp();
+            f.put("Wi-Fi", ip != null && !ip.isEmpty() ? "connected" : "not connected");
+            f.put("Wireless Debugging port", adbWirelessPort > 0 ? "saved" : "none saved");
+            return f;
+        }
+
         /** The authorization code (About tab): {code}. */
         @JavascriptInterface
         public String authStatus() {

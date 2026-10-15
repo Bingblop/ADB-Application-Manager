@@ -4856,7 +4856,15 @@ x: {
 "Moving from one screen to the next.": "从一个界面切换到下一个界面。",
 "Animator duration": "Animator 时长",
 "Everything else that moves inside apps: lists, switches, ripples.": "应用内其他所有会动的元素：列表、开关、水波纹。",
-"Adaptive brightness bias": "亮度偏移"
+"Adaptive brightness bias": "亮度偏移",
+"Report copied. Paste it into the report box of the issue.": "报告已复制。请粘贴到问题的报告框中。",
+"Report on GitHub": "在 GitHub 上反馈",
+"Run self-test": "运行自检",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "在当前工作模式下对这部手机运行约 30 项只读检查，让错误报告或手机测试能说明哪些功能真正可用。不会更改手机上的任何内容。报告为英文，不包含序列号、IP 地址、账号、密钥或设置值。",
+"Self-test": "自检",
+"The self-test could not run.": "无法运行自检。",
+"The self-test is already running.": "自检已在运行。",
+"The self-test needs the app build.": "自检需要应用的构建版本。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5980,6 +5988,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","已应用，但手机报告的是 {0} 而不是 {1}。One UI 和其他一些手机会重置或忽略这个值。"],
 ["{0} of {1}","{0} / {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","选择 {0}"]
+["Select {0}","选择 {0}"],
+["Running check {0} of {1}…","正在检查第 {0} 项，共 {1} 项…"],
+["The self-test could not run: {0}","无法运行自检：{0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} 项通过，{1} 项失败，{2} 项信息，{3} 项跳过"]
 ]
 };

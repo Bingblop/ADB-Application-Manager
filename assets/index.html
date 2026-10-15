@@ -3973,6 +3973,17 @@
         .about-list { margin: var(--space-3) 0 0; padding-left: 18px; font-size: var(--fs-body); line-height: 1.55; }
         .about-list li { margin-bottom: var(--space-1); }
         .about-list code { background: var(--fill-3); padding: 1px var(--space-1); border-radius: var(--radius-xs); font-size: var(--fs-caption); }
+        /* Self-test card: one line per check, a coloured word for the verdict */
+        .st-sum { margin-top: var(--space-4); font-size: var(--fs-body); font-weight: var(--fw-bold); min-height: 18px; }
+        .st-group { margin: var(--space-4) 0 var(--space-1); font-size: var(--fs-overline); font-weight: var(--fw-heavy); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+        .st-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border-glass); font-size: var(--fs-body); }
+        .st-t { flex: 1 1 auto; min-width: 0; word-break: break-word; font-weight: var(--fw-semibold); }
+        .st-d { display: block; margin-top: 2px; font-size: var(--fs-pkg); font-weight: var(--fw-regular); color: var(--text-muted); }
+        .st-tag { flex: 0 0 auto; min-width: 52px; text-align: center; padding: 2px var(--space-2); border-radius: var(--radius-xs); font-size: var(--fs-overline); font-weight: var(--fw-heavy); }
+        .st-pass { background: var(--tint-running); color: var(--status-running); }
+        .st-fail { background: var(--tint-bloat); color: var(--status-bloat); }
+        .st-info { background: var(--tint-accent); color: var(--accent); }
+        .st-skip { background: var(--fill-3); color: var(--text-muted); }
         .about-tip { font-size: var(--fs-body); line-height: 1.5; margin: var(--space-3) 0 0; }
 
         /* ---- Polish (v7.10): small refinements only. Nothing here hides, moves or shrinks anything that was there before. ---- */
@@ -7330,6 +7341,18 @@
                     <button class="mode-action-btn" onclick="aboutShareDebug()">Share it</button>
                     <button class="mode-action-btn" onclick="aboutCopyFingerprint()">Copy fingerprint</button>
                 </div>
+            </div>
+
+            <div class="color-card" id="selfTestCard">
+                <div class="color-card-title">Self-test</div>
+                <div class="color-card-subtitle">Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.</div>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn primary" id="selfTestRun" onclick="selfTestRun()">Run self-test</button>
+                    <button class="mode-action-btn" id="selfTestCopy" onclick="selfTestCopy()" disabled>Copy report</button>
+                    <button class="mode-action-btn" id="selfTestIssue" onclick="selfTestIssue()" disabled>Report on GitHub</button>
+                </div>
+                <div class="st-sum" id="selfTestSum" role="status" aria-live="polite"></div>
+                <div id="selfTestRows" translate="no"></div>
             </div>
 
             <div class="color-card" id="authCard">
@@ -36269,6 +36292,69 @@ Type any command above (e.g. pm list packages -d)</div>
             const h = aboutInfo && aboutInfo.signerSha256;
             if (!h) { showToast('The fingerprint is shown in the app build'); return; }
             copyText(signFp(h));
+        }
+
+        // ---------- Self-test (About tab): the app runs read-only checks and hands back a report and a pre-filled issue address ----------
+        let selfTestId = '', selfTestData = null;
+        const SELF_TEST_TAG = { pass: 'st-pass', fail: 'st-fail', info: 'st-info', skip: 'st-skip' };
+        function selfTestButtons(running) {
+            const run = document.getElementById('selfTestRun'), cp = document.getElementById('selfTestCopy'), is = document.getElementById('selfTestIssue');
+            if (run) run.disabled = !!running;
+            if (cp) cp.disabled = !!running || !selfTestData;
+            if (is) is.disabled = !!running || !selfTestData;
+        }
+        function selfTestRun() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.runSelfTest) { showToast('The self-test needs the app build.'); return; }
+            selfTestId = 'st' + Date.now();
+            selfTestData = null;
+            const r = String(window.AndroidBridge.runSelfTest(selfTestId));
+            if (r === 'busy') { showToast('The self-test is already running.'); return; }
+            if (r.indexOf('error') === 0) { showToast('The self-test could not run: ' + r.replace(/^error:\s*/, '')); selfTestButtons(false); return; }
+            document.getElementById('selfTestRows').textContent = '';
+            document.getElementById('selfTestSum').textContent = 'Running\u2026';
+            selfTestButtons(true);
+        }
+        window.onSelfTestStep = function (id, done, total) {
+            if (id !== selfTestId) return;
+            const el = document.getElementById('selfTestSum');
+            if (el) el.textContent = 'Running check ' + done + ' of ' + total + '\u2026';
+        };
+        window.onSelfTestDone = function (id, json) {
+            if (id !== selfTestId) return;
+            let d = null;
+            try { d = JSON.parse(json); } catch (e) { d = null; }
+            const sum = document.getElementById('selfTestSum'), box = document.getElementById('selfTestRows');
+            if (!d || d.error || !Array.isArray(d.rows)) {
+                if (sum) sum.textContent = '';
+                showToast(d && d.error ? 'The self-test could not run: ' + d.error : 'The self-test could not run.');
+                selfTestButtons(false);
+                return;
+            }
+            selfTestData = d;
+            sum.textContent = d.passed + ' passed, ' + d.failed + ' failed, ' + d.info + ' info, ' + d.skipped + ' skipped';
+            box.textContent = '';
+            let group = '';
+            d.rows.forEach(r => {
+                if (r.group !== group) {
+                    group = r.group;
+                    const g = document.createElement('div'); g.className = 'st-group'; g.textContent = group; box.appendChild(g);
+                }
+                const row = document.createElement('div'); row.className = 'st-row';
+                const t = document.createElement('div'); t.className = 'st-t'; t.textContent = r.title;
+                if (r.detail) { const dd = document.createElement('span'); dd.className = 'st-d'; dd.textContent = r.detail; t.appendChild(dd); }
+                const tag = document.createElement('span'); tag.classList.add('st-tag', SELF_TEST_TAG[r.status] || 'st-info'); tag.textContent = String(r.status).toUpperCase();
+                row.appendChild(t); row.appendChild(tag); box.appendChild(row);
+            });
+            selfTestButtons(false);
+        };
+        function selfTestCopy() { if (selfTestData && selfTestData.report) copyText(selfTestData.report); }
+        function selfTestIssue() {
+            if (!selfTestData || !selfTestData.issueUrl) return;
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(selfTestData.report);
+            openUrlExternal(selfTestData.issueUrl);
+            showToast('Report copied. Paste it into the report box of the issue.');
         }
 
         // ---------- App profiles ----------

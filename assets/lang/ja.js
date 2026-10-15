@@ -4856,7 +4856,15 @@ x: {
 "Moving from one screen to the next.": "ある画面から次の画面への移動。",
 "Animator duration": "Animator 再生時間",
 "Everything else that moves inside apps: lists, switches, ripples.": "アプリ内で動くその他すべて：リスト、スイッチ、波紋。",
-"Adaptive brightness bias": "明るさの補正"
+"Adaptive brightness bias": "明るさの補正",
+"Report copied. Paste it into the report box of the issue.": "レポートをコピーしました。Issue のレポート欄に貼り付けてください。",
+"Report on GitHub": "GitHub で報告",
+"Run self-test": "セルフテストを実行",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "現在の動作モードで、この端末に対して読み取り専用の約 30 項目をチェックし、バグ報告や実機テストで何が実際に動くかが分かるようにします。端末は一切変更されません。レポートは英語で、シリアル番号、IP アドレス、アカウント、キー、設定値は含まれません。",
+"Self-test": "セルフテスト",
+"The self-test could not run.": "セルフテストを実行できませんでした。",
+"The self-test is already running.": "セルフテストはすでに実行中です。",
+"The self-test needs the app build.": "セルフテストにはアプリ版が必要です。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
@@ -5980,6 +5988,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","適用しましたが、スマートフォンは {1} ではなく {0} を報告しています。One UI や一部のスマートフォンはこの値をリセットまたは無視します。"],
 ["{0} of {1}","{1} 中 {0}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} を選択"]
+["Select {0}","{0} を選択"],
+["Running check {0} of {1}…","{1} 件中 {0} 件目をチェック中…"],
+["The self-test could not run: {0}","セルフテストを実行できませんでした: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} 件成功、{1} 件失敗、{2} 件情報、{3} 件スキップ"]
 ]
 };

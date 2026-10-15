@@ -4856,7 +4856,15 @@ x: {
 "Moving from one screen to the next.": "Bir ekrandan diğerine geçiş.",
 "Animator duration": "Animatör süresi",
 "Everything else that moves inside apps: lists, switches, ripples.": "Uygulamaların içinde hareket eden diğer her şey: listeler, anahtarlar, dalgalanmalar.",
-"Adaptive brightness bias": "Parlaklık kayması"
+"Adaptive brightness bias": "Parlaklık kayması",
+"Report copied. Paste it into the report box of the issue.": "Rapor kopyalandı. Sorunun rapor kutusuna yapıştırın.",
+"Report on GitHub": "GitHub’da bildir",
+"Run self-test": "Kendi kendine testi çalıştır",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Bu telefonda, geçerli çalışma modunda yaklaşık 30 salt okunur denetim çalıştırır; böylece bir hata raporu ya da telefon testi gerçekte neyin çalıştığını söyleyebilir. Telefonda hiçbir şey değiştirilmez. Rapor İngilizce yazılır ve seri numarası, IP adresi, hesap, anahtar veya ayar değeri içermez.",
+"Self-test": "Kendi kendine test",
+"The self-test could not run.": "Kendi kendine test çalıştırılamadı.",
+"The self-test is already running.": "Kendi kendine test zaten çalışıyor.",
+"The self-test needs the app build.": "Kendi kendine test için uygulama sürümü gerekir."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
@@ -5980,6 +5988,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Uygulandı ama telefon {1} yerine {0} bildiriyor. One UI ve bazı başka telefonlar bu değeri sıfırlar veya yok sayar."],
 ["{0} of {1}","{0} / {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} uygulamasını seç"]
+["Select {0}","{0} uygulamasını seç"],
+["Running check {0} of {1}…","Denetim {0} / {1}…"],
+["The self-test could not run: {0}","Kendi kendine test çalıştırılamadı: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} başarılı, {1} başarısız, {2} bilgi, {3} atlandı"]
 ]
 };
