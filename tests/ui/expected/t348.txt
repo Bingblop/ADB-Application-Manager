@@ -1,114 +1,17 @@
-ok   the card sits between "This build" and the Authorization Manager
-ok   it says nothing is changed and what the report leaves out
-ok   before a run: Run is on, Copy report and Report on GitHub are off
-ok   Run asks the app once, with a run id
-ok   while it runs: Run is off and the line says so
-ok   progress: "Running check 3 of 28…"
-ok   progress from another run is ignored
-ok   an answer from another run is ignored
-ok   the summary counts the verdicts
-ok   one row per check, in order, each with its word
-ok   each word has its own colour class
-ok   a heading starts each run of checks of one group
-ok   a detail is shown under its title
-ok   text from the phone is text, not HTML
-ok   the rows are not translated (they are the English report)
-ok   after a run: all three buttons are on
-ok   the card fits the screen (no sideways scroll)
-ok   Copy report copies the whole report
-ok   Report on GitHub copies the report first
-ok   and opens the pre-filled form address the app gave
-ok   and says where to paste
-ok   a second run has a new id and clears the old rows and buttons
-ok   the first run's late answer does not come back
-ok   an error answer: a message, nothing half-drawn, Run is on again
-ok   "busy" from the app: a message, and Run stays on
-ok   "error: ..." from the app: the reason is shown
-ok   an unreadable answer does not break the page
-ok   without the bridge method: a plain message
-ok   320px: no sideways scroll with the rows shown
-ok   the page knows 14 languages (English and 13 translations)
-ok   en: progress line is the dictionary's sentence
-ok   en: title, buttons and subtitle are the dictionary's words
-ok   en: summary is the dictionary's sentence with the counts
-ok   en: the rows stay English (they are the report)
-ok   en: fits 360px
-ok   es: progress line is the dictionary's sentence
-ok   es: title, buttons and subtitle are the dictionary's words
-ok   es: summary is the dictionary's sentence with the counts
-ok   es:   no English word is left on the title, buttons and summary
-ok   es: the rows stay English (they are the report)
-ok   es: fits 360px
-ok   fr: progress line is the dictionary's sentence
-ok   fr: title, buttons and subtitle are the dictionary's words
-ok   fr: summary is the dictionary's sentence with the counts
-ok   fr:   no English word is left on the title, buttons and summary
-ok   fr: the rows stay English (they are the report)
-ok   fr: fits 360px
-ok   de: progress line is the dictionary's sentence
-ok   de: title, buttons and subtitle are the dictionary's words
-ok   de: summary is the dictionary's sentence with the counts
-ok   de:   no English word is left on the title, buttons and summary
-ok   de: the rows stay English (they are the report)
-ok   de: fits 360px
-ok   pt-BR: progress line is the dictionary's sentence
-ok   pt-BR: title, buttons and subtitle are the dictionary's words
-ok   pt-BR: summary is the dictionary's sentence with the counts
-ok   pt-BR:   no English word is left on the title, buttons and summary
-ok   pt-BR: the rows stay English (they are the report)
-ok   pt-BR: fits 360px
-ok   it: progress line is the dictionary's sentence
-ok   it: title, buttons and subtitle are the dictionary's words
-ok   it: summary is the dictionary's sentence with the counts
-ok   it:   no English word is left on the title, buttons and summary
-ok   it: the rows stay English (they are the report)
-ok   it: fits 360px
-ok   ru: progress line is the dictionary's sentence
-ok   ru: title, buttons and subtitle are the dictionary's words
-ok   ru: summary is the dictionary's sentence with the counts
-ok   ru:   no English word is left on the title, buttons and summary
-ok   ru: the rows stay English (they are the report)
-ok   ru: fits 360px
-ok   zh-CN: progress line is the dictionary's sentence
-ok   zh-CN: title, buttons and subtitle are the dictionary's words
-ok   zh-CN: summary is the dictionary's sentence with the counts
-ok   zh-CN:   no English word is left on the title, buttons and summary
-ok   zh-CN: the rows stay English (they are the report)
-ok   zh-CN: fits 360px
-ok   ja: progress line is the dictionary's sentence
-ok   ja: title, buttons and subtitle are the dictionary's words
-ok   ja: summary is the dictionary's sentence with the counts
-ok   ja:   no English word is left on the title, buttons and summary
-ok   ja: the rows stay English (they are the report)
-ok   ja: fits 360px
-ok   ko: progress line is the dictionary's sentence
-ok   ko: title, buttons and subtitle are the dictionary's words
-ok   ko: summary is the dictionary's sentence with the counts
-ok   ko:   no English word is left on the title, buttons and summary
-ok   ko: the rows stay English (they are the report)
-ok   ko: fits 360px
-ok   ar: progress line is the dictionary's sentence
-ok   ar: title, buttons and subtitle are the dictionary's words
-ok   ar: summary is the dictionary's sentence with the counts
-ok   ar:   no English word is left on the title, buttons and summary
-ok   ar: the rows stay English (they are the report)
-ok   ar: fits 360px
-ok   hi: progress line is the dictionary's sentence
-ok   hi: title, buttons and subtitle are the dictionary's words
-ok   hi: summary is the dictionary's sentence with the counts
-ok   hi:   no English word is left on the title, buttons and summary
-ok   hi: the rows stay English (they are the report)
-ok   hi: fits 360px
-ok   tr: progress line is the dictionary's sentence
-ok   tr: title, buttons and subtitle are the dictionary's words
-ok   tr: summary is the dictionary's sentence with the counts
-ok   tr:   no English word is left on the title, buttons and summary
-ok   tr: the rows stay English (they are the report)
-ok   tr: fits 360px
-ok   id: progress line is the dictionary's sentence
-ok   id: title, buttons and subtitle are the dictionary's words
-ok   id: summary is the dictionary's sentence with the counts
-ok   id:   no English word is left on the title, buttons and summary
-ok   id: the rows stay English (they are the report)
-ok   id: fits 360px
+app menu: no Backup button: true | buttons: Launch,Force Stop,Freeze,Enable,Suspend,Unsuspend,Clear Data,App Info,Rem Updates,Uninstall,Reinstall,Extract APK,Optimize,Standby,Logs
+batch menu: Freeze,Enable,Force Stop,Suspend,Unsuspend,Clear Data,Optimize,Uninstall,Reinstall,Batch Ops,Backup,Command,Replace,Skip,Keep both,Reload all,Changes,Copy shown,Share shown | Backup in place of Share List: true
+nothing selected: box closed: true
+box open: true
+card: Back up 5 apps Alpha, Bravo, Charlie, Delta, … Include app data Uses Root. The app is stopped while its data is copied. Create backup
+data checkbox enabled with root: true
+first app started: ["backup:com.example.alpha:true"] | Backing up Alpha (1 of 5)...
+the phone reports progress: the line follows it, the bar shows the first of five apps: Saving the backup... | 10%
+second app started (the first one is done): backup:com.example.bravo:true | still running: true
+bar is part way through five apps: true | the button stays off while it runs: true
+calls: ["backup:com.example.alpha:true","backup:com.example.bravo:true","backup:com.example.charlie:true","backup:com.example.delta:true","backup:com.example.echo:true"]
+summary: Saved 4 of 5 apps to Download/ADB App Manager/Backups/ Not saved: Bravo (No space left) | marked as a problem: true
+progress gone: true | running again possible: true
+one app: card: Back up Echo com.example.echo • v1.0 Include app data Uses R
+no root: data switch disabled: true | Back up 2 apps Alpha, Bravo Include app data Needs Root, whi
+without data: ["backup:com.example.alpha:false"]
 errors: []
