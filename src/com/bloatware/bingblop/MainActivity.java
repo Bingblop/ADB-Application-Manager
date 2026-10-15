@@ -7763,9 +7763,7 @@ public class MainActivity extends Activity {
                     throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");
                 }
             }
-            @Override public BrowserDownload.Cookies cookies() {
-                return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
-            }
+            @Override public BrowserDownload.Cookies cookies() { return new WebViewCookies(); }
             @Override public Runnable openBrowser(final String url, final File dir, final HelperDownloads downloads, final BrowserDownload.Events events) {
                 final HelperBrowser[] box = new HelperBrowser[1];
                 runOnUiThread(new Runnable() {
@@ -7778,6 +7776,11 @@ public class MainActivity extends Activity {
             }
         };
         return morpheHostInstance;
+    }
+
+    /** The in-app browser's cookies for an address. A static class: the Helper's download list is the process's and keeps it, so it must not hold a window. */
+    private static final class WebViewCookies implements BrowserDownload.Cookies {
+        @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } }
     }
 
     private boolean morpheConnectionOk(String conn) {

@@ -121,6 +121,10 @@ public final class MorpheBridge {
     public void release() {
         shared.unbind(sink);
         windows.closed(host);
+        synchronized (this) {                                                            // the download list is the process's: this page is no longer told about it
+            if (downloadList != null && pagePush != null) downloadList.removeListener(pagePush);
+            pagePush = null;
+        }
     }
 
     /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */
@@ -862,11 +866,40 @@ public final class MorpheBridge {
     }
 
     private volatile Runnable browserCloser;
-    private HelperDownloads downloadList;
+    private HelperDownloads downloadList;                                               // the process's list (HelperDownloads.shared): every window sees the same jobs
+    private HelperDownloads.Listener pagePush;                                          // tells this window's page about the list; taken off in release()
     private final Map<String, long[]> lastPush = new ConcurrentHashMap<String, long[]>();
 
     /** Downloads go on in the background, with a notification (a foreground service), unless the person switched that off: a marker file says so. */
-    private boolean backgroundOn() { return !new File(base, "hd_background_off").exists(); }
+    private boolean backgroundOn() { return backgroundOn(base); }
+
+    private static boolean backgroundOn(File base) { return !new File(base, "hd_background_off").exists(); }
+
+    /** Which folders a journal entry may name: the Helper's own. Holds only the folders (the list is the process's and must not keep a window alive). */
+    private static final class HelperFolders implements java.util.function.Predicate<File> {
+        private final File[] dirs;
+        HelperFolders(File... dirs) { this.dirs = dirs; }
+        @Override public boolean test(File f) {
+            try {
+                File c = f.getCanonicalFile();
+                for (File d : dirs) if (c.equals(d.getCanonicalFile())) return true;
+            } catch (IOException e) { return false; }
+            return false;
+        }
+    }
+
+    /** Keeps the downloads' notification service in step with the list. Added once, when the process's list is made; the application context only. */
+    private static final class ServiceSync implements HelperDownloads.Listener {
+        private final Context app;
+        private final File base;
+        private final HelperDownloads list;
+        private final Map<String, Integer> lastState = new ConcurrentHashMap<String, Integer>();
+        ServiceSync(Context app, File base, HelperDownloads list) { this.app = app; this.base = base; this.list = list; }
+        @Override public void onChange(BrowserDownload.Job j) {
+            Integer before = lastState.put(j.id, j.state.ordinal());
+            try { DownloadService.sync(app, list, before == null || before != j.state.ordinal(), backgroundOn(base)); } catch (RuntimeException ignored) {}
+        }
+    }
 
     private void setBackground(boolean on) {
         File f = new File(base, "hd_background_off");
@@ -878,23 +911,25 @@ public final class MorpheBridge {
     /** The Helper's download list (it outlives the browser window, and the journal outlives the app). */
     private synchronized HelperDownloads downloads() {
         if (downloadList == null) {
-            downloadList = new HelperDownloads(new File(base, "helper_downloads.json"), host.cookies(), new java.util.function.Predicate<File>() {
-                @Override public boolean test(File f) {
-                    try { return f.getCanonicalFile().equals(helperDir("cache").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("downloads").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("updater").getCanonicalFile()); }
-                    catch (IOException e) { return false; }
-                }
-            });
-            downloadList.addListener(new HelperDownloads.Listener() {
+            // One list for the process, not one per window (MOR-2): a second window's own list would read a running job from the journal as Paused,
+            // and its Resume would start a second writer on the same part file
+            final Context app = host.context().getApplicationContext();
+            final File baseDir = base;
+            downloadList = HelperDownloads.shared(new File(base, "helper_downloads.json"), host.cookies(),
+                    new HelperFolders(helperDir("cache"), helperDir("downloads"), helperDir("updater")), new java.util.function.Consumer<HelperDownloads>() {
+                        @Override public void accept(HelperDownloads made) { made.addListener(new ServiceSync(app, baseDir, made)); }
+                    });
+            pagePush = new HelperDownloads.Listener() {
                 @Override public void onChange(BrowserDownload.Job j) {
                     long now = System.currentTimeMillis();
                     long[] last = lastPush.get(j.id);
                     long st = j.state.ordinal();
-                    try { DownloadService.sync(host.context(), downloadList, last == null || last[1] != st, backgroundOn()); } catch (RuntimeException ignored) {}
                     if (last != null && last[1] == st && now - last[0] < 400) return;      // progress is passed on a few times a second, a change of state at once
                     lastPush.put(j.id, new long[]{now, st});
                     try { event(new JSONObject().put("t", "hd").put("job", HelperDownloads.forPage(j))); } catch (JSONException ignored) {}
                 }
-            });
+            };
+            downloadList.addListener(pagePush);
         }
         return downloadList;
     }
