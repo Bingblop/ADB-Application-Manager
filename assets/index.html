@@ -5741,12 +5741,8 @@
                 <div class="color-card-title">Language</div>
                 <div class="color-card-subtitle">The text of this app. Names of apps, files and commands are not translated.</div>
                 <select class="op-select lang-select" id="langSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
-            </div>
-
-            <!-- the permissions sheet in full: every permission the app uses, whether it is granted, Grant on each missing one and Grant all -->
-            <div class="color-card" id="appPermsCard">
-                <div class="color-card-subtitle">Every permission this app uses: which are granted, and grant the rest.</div>
-                <button class="mode-action-btn primary" id="appPermsBtn" style="width:100%; justify-content:center; min-height:44px;" onclick="openAppPermissions()">Application Permissions</button>
+                <!-- right after the language: the permissions sheet in full (every permission the app uses, whether it is granted, Grant on each missing one, Grant all) -->
+                <button class="mode-action-btn" id="appPermsBtn" style="width:100%; justify-content:center; min-height:44px; margin-top:12px;" onclick="openAppPermissions()">Application Permissions</button>
             </div>
 
             <div class="color-card" id="agentCard">

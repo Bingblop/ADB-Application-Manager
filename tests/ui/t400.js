@@ -127,7 +127,7 @@ const LOCKABLE = ['storage_legacy', 'secure_settings', 'dump', 'read_logs'];
 
   // 3) Settings > Application Permissions
   await scenario({ kv: FLAGP, mode: { priv: true }, grantAll: true, perm: Object.assign({}, NONE, { files: true, usage: true, overlay: true }) }, async page => {
-    const pos = await ev(page, () => { const c = document.getElementById('appPermsCard'), btn = document.getElementById('appPermsBtn'); return { after: !!c && c.previousElementSibling && c.previousElementSibling.id === 'languageCard', inPrefs: !!c && !!c.closest('#view-prefs'), text: btn && btn.innerText.trim() }; });
+    const pos = await ev(page, () => { const btn = document.getElementById('appPermsBtn'); return { after: !!btn && !!btn.previousElementSibling && btn.previousElementSibling.id === 'langSelect' && btn.parentElement.id === 'languageCard', inPrefs: !!btn && !!btn.closest('#view-prefs'), text: btn && btn.innerText.trim() }; });
     check('3. Settings has an "Application Permissions" button right after the language setting', pos.after && pos.inPrefs && pos.text === 'Application Permissions', JSON.stringify(pos));
     await ev(page, () => document.getElementById('appPermsBtn').click());
     let s = await sheet(page);

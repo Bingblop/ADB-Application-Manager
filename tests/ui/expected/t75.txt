@@ -30,12 +30,12 @@
    and Display over other apps follows by itself: all three ✓ and "Done": true ✓ ✓ ✓ ✓ ✓ ✓
    from nothing, "Allow all" needs just the one screen: the other two are allowed by the mode in between: true
 9. the Allow Restricted Settings row sits above Usage access: true
-   with a working mode "Allow all" grants through the mode (one call), closes the sheet and starts the app again: true [1,1,["perm_intro_v62=1"],{"files":true,"usage":true,"overlay":true,"storage_legacy":true,"secure_settings":true,"restricted_settings":true}]
+   with a working mode "Allow all" grants through the mode (one call), closes the sheet and starts the app again: true [1,1,["perm_intro_v62=1","perm_adb_offer_v714=1"],{"files":true,"usage":true,"overlay":true,"storage_legacy":true,"secure_settings":true,"restricted_settings":true}]
    Usage access allowed by hand in Settings is also granted as a permission in the background (once): true
    and not again when nothing changed: true
    closing the first-launch sheet after something was allowed starts the app again: true
    closing it with nothing allowed does not start the app again: true
-DUMP. without a working mode the row is not in the sheet at all (there is nothing to open for it): true ["All files access","Usage access","Display over other apps"]
+DUMP. without a working mode the row is locked: no Allow button, a note that it needs ADB, Shizuku or root: true ["All files access","Allow Restricted Settings","Usage access","Display over other apps","Read/Write External Storage","Write Secure Settings","Dump system services (DUMP)"]
    with a working mode, a build that does not report DUMP shows no row for it (an older app never shows a row it cannot fill in): true []
    with a working mode and a build that reports it, the row is there right after Write Secure Settings, rows otherwise in the same order: true ["All files access","Allow Restricted Settings","Usage access","Display over other apps","Read/Write External Storage","Write Secure Settings","Dump system services (DUMP)"]
    it says in plain words what it is for, and that it is granted through the working mode: true Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.
@@ -128,32 +128,33 @@ DUMP. without a working mode the row is not in the sheet at all (there is nothin
    and when the person is back the search starts again by itself: true
 20. a search the person started themselves, when it cannot read storage, asks for the access with a sheet: true To search storage for APK, APKS, APKM and XAPK files, this app needs All-files access (or a working mode: ADB, Shizuku or Root).
    once it is allowed the sheet closes and the search starts again: true
-[360x800] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":3,"h":462,"closeW":83,"rowsW":322}
+[360x800] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":true,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":6,"h":680,"closeW":83,"rowsW":322}
 [360x800] intro: the subtitle wraps between words, not in the middle of one: true
 [360x800] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [360x800] intro: "Not now" shares the row with "Allow all": true 83 of 322
-[360x800] intro: on a normal screen the sheet fits without scrolling: true 462
-[360x800] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":279,"closeW":322,"rowsW":322}
+[360x800] intro: scrolled to the end, the bottom buttons are inside the screen: true
+[360x800] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":293,"closeW":322,"rowsW":322}
 [360x800] files: the subtitle wraps between words, not in the middle of one: true
 [360x800] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [360x800] files: alone, "Not now" takes the whole row: true 322 of 322
-[360x800] files: on a normal screen the sheet fits without scrolling: true 279
-[320x640] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":3,"h":462,"closeW":83,"rowsW":282}
+[360x800] files: on a normal screen the sheet fits without scrolling: true 293
+[320x640] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":true,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":6,"h":544,"closeW":83,"rowsW":282}
 [320x640] intro: the subtitle wraps between words, not in the middle of one: true
 [320x640] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [320x640] intro: "Not now" shares the row with "Allow all": true 83 of 282
-[320x640] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":296,"closeW":282,"rowsW":282}
+[320x640] intro: scrolled to the end, the bottom buttons are inside the screen: true
+[320x640] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":310,"closeW":282,"rowsW":282}
 [320x640] files: the subtitle wraps between words, not in the middle of one: true
 [320x640] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [320x640] files: alone, "Not now" takes the whole row: true 282 of 282
-[412x915] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":3,"h":431,"closeW":83,"rowsW":374}
+[412x915] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":true,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":6,"h":778,"closeW":83,"rowsW":374}
 [412x915] intro: the subtitle wraps between words, not in the middle of one: true
 [412x915] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [412x915] intro: "Not now" shares the row with "Allow all": true 83 of 374
-[412x915] intro: on a normal screen the sheet fits without scrolling: true 431
-[412x915] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":279,"closeW":374,"rowsW":374}
+[412x915] intro: scrolled to the end, the bottom buttons are inside the screen: true
+[412x915] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":65,"btnsIn":true,"bottomMin":44,"rows":1,"h":293,"closeW":374,"rowsW":374}
 [412x915] files: the subtitle wraps between words, not in the middle of one: true
 [412x915] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [412x915] files: alone, "Not now" takes the whole row: true 374 of 374
-[412x915] files: on a normal screen the sheet fits without scrolling: true 279
+[412x915] files: on a normal screen the sheet fits without scrolling: true 293
 all checks passed
