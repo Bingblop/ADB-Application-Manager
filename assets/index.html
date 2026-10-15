@@ -8039,19 +8039,19 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="cnSegLog" class="cn-seg lc-pane">
                 <div class="cn-sticky">
                     <div class="cn-row">
-                        <input type="text" class="cn-field" id="logcatFilter" placeholder="Filter tag / text..." autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
+                        <input type="text" class="cn-field" id="logcatFilter" placeholder="Filter tag / text..." autocomplete="off" autocapitalize="off" spellcheck="false" onchange="lcSavePrefs()" onkeydown="if(event.key==='Enter') logcatRefresh()">
                         <button class="cn-icon" onclick="logcatRefresh()" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
                         <button class="cn-icon danger" onclick="logcatClear()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                     </div>
                 </div>
                 <div class="cn-tools cn-scroll">
                     <button type="button" class="batch-tool-link lc-play" id="logcatPlayBtn" onclick="logcatTogglePlay()" aria-pressed="false">Play</button>
-                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()" aria-label="Level">
+                    <select class="op-select" id="logcatLevel" onchange="lcSavePrefs(); logcatRefresh()" aria-label="Level">
                         <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
                         <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
                     </select>
-                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()" aria-label="Lines">
-                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
+                    <select class="op-select" id="logcatLines" onchange="lcSavePrefs(); logcatRefresh()" aria-label="Lines">
+                        <option value="200">200</option><option value="500">500</option><option value="1000" selected>1000</option><option value="2000">2000</option>
                     </select>
                     <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
                     <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
@@ -27026,7 +27026,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function logcatFetch(live) {
             if (!window.AndroidBridge || !(window.AndroidBridge.getLogcatAsync || window.AndroidBridge.getLogcat)) { logcatNotice('Logcat needs the app build.'); return; }
             const level = document.getElementById('logcatLevel').value;
-            let lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
+            let lines = parseInt(document.getElementById('logcatLines').value, 10) || 1000;
             if (live) lines = Math.min(lines, 300);
             const filter = document.getElementById('logcatFilter').value || '';
             if (window.AndroidBridge.getLogcatAsync) {
@@ -27058,6 +27058,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onLogcatData = onLogcatData;
         function logcatRefresh() {
+            lcSavePrefs();
             if (!guardPrivilege('Logcat')) return;
             lcShowAll = false;
             logcatFetch(false);
@@ -27526,7 +27527,31 @@ Type any command above (e.g. pm list packages -d)</div>
             if (clr) clr.style.display = logcatApp ? '' : 'none';
             const sub = document.getElementById('logcatScope');
             if (sub) sub.innerText = logcatApp ? txF('Only the lines written by {0} (every process it has run as).', logcatApp.pkg) : '';
+            lcSavePrefs();
             if (currentViewName() === 'logcat') logcatRefresh();
+        }
+
+        // Live Logcat keeps its choices between launches (the owner's wish, v7.14): the level, how many lines, the filter text and the app it is limited to
+        const LC_PREFS_KEY = 'logcat_prefs';
+        let lcPrefsReady = false;          // nothing is saved while the saved choices are being put back
+        function lcSavePrefs() {
+            if (!lcPrefsReady) return;
+            const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+            kvSet(LC_PREFS_KEY, { level: v('logcatLevel'), lines: v('logcatLines'), filter: v('logcatFilter'), app: logcatApp ? { pkg: logcatApp.pkg, name: logcatApp.name } : null });
+        }
+        function lcRestorePrefs() {
+            const p = kvGet(LC_PREFS_KEY, null);
+            try {
+                if (p && typeof p === 'object') {
+                    const pick = (id, val) => { const e = document.getElementById(id); if (e && val != null && [...e.options].some(o => o.value === String(val))) e.value = String(val); };
+                    pick('logcatLevel', p.level);
+                    pick('logcatLines', p.lines);
+                    const f = document.getElementById('logcatFilter');
+                    if (f && typeof p.filter === 'string') f.value = p.filter.slice(0, 200);
+                    if (p.app && typeof p.app.pkg === 'string' && p.app.pkg) logcatSetApp({ pkg: p.app.pkg, name: typeof p.app.name === 'string' ? p.app.name : p.app.pkg });
+                }
+            } catch (e) { }
+            lcPrefsReady = true;
         }
 
         function lcAppOpen() {
@@ -27566,6 +27591,7 @@ Type any command above (e.g. pm list packages -d)</div>
             logcatSetApp(app);
         }
         logcatRenderKey();
+        lcRestorePrefs();
 
         // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
         // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a

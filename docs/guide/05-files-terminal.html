@@ -545,11 +545,12 @@
 
 <h4>The controls</h4>
 <p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Stop</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
+<p>The tab remembers its choices from one launch of the app to the next: the level, the number of lines, the filter text and the app the log is limited to.</p>
 <table class="hg-table">
 <thead><tr><th>Control</th><th>What it does</th></tr></thead>
 <tbody>
 <tr><td>Level drop-down</td><td>Starts at <b>Info</b>. Shows this level and every more serious one. <b>Error</b> shows E and F; <b>Verbose</b> shows everything.</td></tr>
-<tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
+<tr><td>Lines drop-down</td><td>How many recent lines to read: 200, 500, <b>1000</b> (starting choice) or 2000. While Playing, up to 300 are read each second.</td></tr>
 <tr><td>Filter box (<b>Filter tag / text...</b>, at the top)</td><td>Type a word or a tag and press Enter. It matches plain text, not a regular expression. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
 <tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
 <tr><td><b>Play</b> / <b>Stop</b></td><td>The button is green while it says Play and red while it says Stop. Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Stop stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>

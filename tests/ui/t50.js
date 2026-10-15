@@ -59,7 +59,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#lcAppList .perm-row', { hasText: 'Alpha' }).first().click(); await sleep(250);
   console.log('3. picking an app closes the picker, relabels the button and shows the clear button:', !(await page.locator('#lcAppModal.show').count()) && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && await page.locator('#logcatAppClear').isVisible());
   const calls3 = await page.evaluate(() => window.__calls.logcatFor.slice());
-  console.log('   the log was fetched for that package with the chosen level and lines:', calls3.length >= 1 && calls3[calls3.length - 1][3] === 'com.example.alpha' && calls3[calls3.length - 1][0] === 'I' && calls3[calls3.length - 1][2] === 500, JSON.stringify(calls3));
+  console.log('   the log was fetched for that package with the chosen level and lines:', calls3.length >= 1 && calls3[calls3.length - 1][3] === 'com.example.alpha' && calls3[calls3.length - 1][0] === 'I' && calls3[calls3.length - 1][2] === 1000, JSON.stringify(calls3));
   console.log('   only that app’s lines are drawn (+ the shared-UID note):', /hello from alpha/.test(await page.locator('#logcatOutput').innerText()) && !/Start proc for all/.test(await page.locator('#logcatOutput').innerText()) && /shares its user ID/.test(await page.locator('#logcatOutput').innerText()));
   console.log('   the line under the controls names the package:', /com\.example\.alpha/.test(await page.locator('#logcatScope').innerText()));
 
