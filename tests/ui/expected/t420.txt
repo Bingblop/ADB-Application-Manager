@@ -14,6 +14,6 @@ ok      ccReveal(element) unfolds the card around an element
 ok      the VirusTotal key link opens Settings with the key field in view
 ok   7. the height moves (grid rows, about a quarter of a second)
 ok      with reduced motion it does not move
-ok   8. Reconnecting devices folds in Connected Devices too: open, its chevron named by its title with a 44 px target
+ok   8. Reconnecting devices folds in Connected Devices too: folded at first (it sits above the device area), unfolds, its chevron named by its title with a 44 px target
 ok      folded, only its title row is left
 errors: []

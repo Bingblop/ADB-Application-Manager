@@ -7,7 +7,7 @@ let bad = 0;
 // the details (sizes, positions: they differ a little from one machine's fonts to another's) are printed only when a check fails
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok || extra === undefined ? '' : ': ' + extra)); }
 const CARDS = [['curatedCard', 'Curated Theme Palettes', false], ['actionBtnCard', 'Action Button', true], ['navCard', 'Navigation', true],
-  ['featureCard', 'Feature List', true], ['holdGuideCard', 'Press and hold guide', false], ['cdReconnectCard', 'Reconnecting devices', true]];
+  ['featureCard', 'Feature List', true], ['holdGuideCard', 'Press and hold guide', false], ['cdReconnectCard', 'Reconnecting devices', false]];
 (async () => {
   const b = await chromium.launch();
   const errors = [];
@@ -54,7 +54,7 @@ const CARDS = [['curatedCard', 'Curated Theme Palettes', false], ['actionBtnCard
   await ev(() => switchView('prefs')); await wait(300);
   s = await state();
   check('5. after a reload every card is as it was left (Curated open, Feature List folded, Press and hold open, Navigation folded)',
-    s[0].open && !s[3].open && s[4].open && !s[2].open && s[1].open && s[5].open && s.every(x => x.expanded === String(x.open)), JSON.stringify(s.map(x => x.id + '=' + x.open)));
+    s[0].open && !s[3].open && s[4].open && !s[2].open && s[1].open && !s[5].open && s.every(x => x.expanded === String(x.open)), JSON.stringify(s.map(x => x.id + '=' + x.open)));
 
   // ---- jumps into a folded card unfold it ----
   await ev(() => bnavCustomize()); await wait(500);
@@ -75,7 +75,10 @@ const CARDS = [['curatedCard', 'Curated Theme Palettes', false], ['actionBtnCard
   // ---- the Reconnecting devices card in Connected Devices ----
   await ev(() => switchView('devices')); await wait(400);
   s = await state();
-  check('8. Reconnecting devices folds in Connected Devices too: open, its chevron named by its title with a 44 px target', await ev(() => { const c = document.getElementById('cdReconnectCard'); return document.getElementById('view-devices').contains(c) && c.getBoundingClientRect().height > 0; }) &&
+  const firstFolded = !s[5].open;
+  await page.click('#cdReconnectCard > .cc-btn'); await wait(450);
+  s = await state();
+  check('8. Reconnecting devices folds in Connected Devices too: folded at first (it sits above the device area), unfolds, its chevron named by its title with a 44 px target', await ev(() => { const c = document.getElementById('cdReconnectCard'); return document.getElementById('view-devices').contains(c) && c.getBoundingClientRect().height > 0; }) && firstFolded &&
     s[5].open && s[5].vis === 'visible' && s[5].h > 0 && s[5].name === 'Reconnecting devices' && s[5].controls && s[5].w >= 44 && s[5].hh >= 44, JSON.stringify(s[5]));
   await page.click('#cdReconnectCard > .cc-btn'); await wait(450);
   check('   folded, only its title row is left', await ev(() => { const c = document.getElementById('cdReconnectCard'); return c.classList.contains('cc-closed') && c.getBoundingClientRect().height < 80; }));

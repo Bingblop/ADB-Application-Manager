@@ -43,7 +43,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   Private DNS is still in Extra Settings', await ev(() => document.getElementById('view-extrasettings').contains(document.getElementById('privateDnsCard'))));
 
   // Connected Devices, no device ever connected and none dropped
-  await ev(() => { kvSet('cd_autore', false); kvSet('cd_retry', [0, 5, 15]); switchView('devices'); }); await page.waitForTimeout(500);
+  await ev(() => { kvSet('cd_autore', false); kvSet('cd_retry', [0, 5, 15]); switchView('devices'); const c = document.getElementById('cdReconnectCard'); if (c.classList.contains('cc-closed')) ccToggle(c); }); await page.waitForTimeout(500);
   const cdc = await ev(() => {
     const c = document.getElementById('cdReconnectCard');
     return { inTab: document.getElementById('view-devices').contains(c), afterTop: document.getElementById('cdTop').nextElementSibling === c, shown: c.getBoundingClientRect().height > 0, lost: document.getElementById('cdLost').children.length,
