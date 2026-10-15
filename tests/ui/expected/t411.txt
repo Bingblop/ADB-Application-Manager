@@ -1,0 +1,191 @@
+ok   dark material3, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark material3, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark material3, Row tints Off: every row keeps the card's own background under its tint
+ok   dark material3, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   dark material3, Row tints Off: the other rows are not tinted
+ok   dark material3, Row tints Off: each tint is drawn in its state's colour
+ok   dark material3, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark material3, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark material3, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark material3, Row tints Subtle: every row keeps the card's own background under its tint
+ok   dark material3, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   dark material3, Row tints Subtle: the other rows are not tinted
+ok   dark material3, Row tints Subtle: each tint is drawn in its state's colour
+ok   dark material3, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark material3, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark material3, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark material3, Row tints Normal: every row keeps the card's own background under its tint
+ok   dark material3, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   dark material3, Row tints Normal: the other rows are not tinted
+ok   dark material3, Row tints Normal: each tint is drawn in its state's colour
+ok   dark material3, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark material3: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   dark cyberpunk, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark cyberpunk, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark cyberpunk, Row tints Off: every row keeps the card's own background under its tint
+ok   dark cyberpunk, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   dark cyberpunk, Row tints Off: the other rows are not tinted
+ok   dark cyberpunk, Row tints Off: each tint is drawn in its state's colour
+ok   dark cyberpunk, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark cyberpunk, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark cyberpunk, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark cyberpunk, Row tints Subtle: every row keeps the card's own background under its tint
+ok   dark cyberpunk, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   dark cyberpunk, Row tints Subtle: the other rows are not tinted
+ok   dark cyberpunk, Row tints Subtle: each tint is drawn in its state's colour
+ok   dark cyberpunk, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark cyberpunk, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark cyberpunk, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark cyberpunk, Row tints Normal: every row keeps the card's own background under its tint
+ok   dark cyberpunk, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   dark cyberpunk, Row tints Normal: the other rows are not tinted
+ok   dark cyberpunk, Row tints Normal: each tint is drawn in its state's colour
+ok   dark cyberpunk, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark cyberpunk: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   dark amoled, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amoled, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amoled, Row tints Off: every row keeps the card's own background under its tint
+ok   dark amoled, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   dark amoled, Row tints Off: the other rows are not tinted
+ok   dark amoled, Row tints Off: each tint is drawn in its state's colour
+ok   dark amoled, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amoled, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amoled, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amoled, Row tints Subtle: every row keeps the card's own background under its tint
+ok   dark amoled, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   dark amoled, Row tints Subtle: the other rows are not tinted
+ok   dark amoled, Row tints Subtle: each tint is drawn in its state's colour
+ok   dark amoled, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amoled, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amoled, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amoled, Row tints Normal: every row keeps the card's own background under its tint
+ok   dark amoled, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   dark amoled, Row tints Normal: the other rows are not tinted
+ok   dark amoled, Row tints Normal: each tint is drawn in its state's colour
+ok   dark amoled, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amoled: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   dark amber, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amber, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amber, Row tints Off: every row keeps the card's own background under its tint
+ok   dark amber, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   dark amber, Row tints Off: the other rows are not tinted
+ok   dark amber, Row tints Off: each tint is drawn in its state's colour
+ok   dark amber, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amber, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amber, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amber, Row tints Subtle: every row keeps the card's own background under its tint
+ok   dark amber, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   dark amber, Row tints Subtle: the other rows are not tinted
+ok   dark amber, Row tints Subtle: each tint is drawn in its state's colour
+ok   dark amber, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amber, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   dark amber, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   dark amber, Row tints Normal: every row keeps the card's own background under its tint
+ok   dark amber, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   dark amber, Row tints Normal: the other rows are not tinted
+ok   dark amber, Row tints Normal: each tint is drawn in its state's colour
+ok   dark amber, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   dark amber: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   light material3, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light material3, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light material3, Row tints Off: every row keeps the card's own background under its tint
+ok   light material3, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   light material3, Row tints Off: the other rows are not tinted
+ok   light material3, Row tints Off: each tint is drawn in its state's colour
+ok   light material3, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   light material3, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light material3, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light material3, Row tints Subtle: every row keeps the card's own background under its tint
+ok   light material3, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   light material3, Row tints Subtle: the other rows are not tinted
+ok   light material3, Row tints Subtle: each tint is drawn in its state's colour
+ok   light material3, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   light material3, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light material3, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light material3, Row tints Normal: every row keeps the card's own background under its tint
+ok   light material3, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   light material3, Row tints Normal: the other rows are not tinted
+ok   light material3, Row tints Normal: each tint is drawn in its state's colour
+ok   light material3, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   light material3: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   light cyberpunk, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light cyberpunk, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light cyberpunk, Row tints Off: every row keeps the card's own background under its tint
+ok   light cyberpunk, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   light cyberpunk, Row tints Off: the other rows are not tinted
+ok   light cyberpunk, Row tints Off: each tint is drawn in its state's colour
+ok   light cyberpunk, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   light cyberpunk, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light cyberpunk, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light cyberpunk, Row tints Subtle: every row keeps the card's own background under its tint
+ok   light cyberpunk, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   light cyberpunk, Row tints Subtle: the other rows are not tinted
+ok   light cyberpunk, Row tints Subtle: each tint is drawn in its state's colour
+ok   light cyberpunk, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   light cyberpunk, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light cyberpunk, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light cyberpunk, Row tints Normal: every row keeps the card's own background under its tint
+ok   light cyberpunk, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   light cyberpunk, Row tints Normal: the other rows are not tinted
+ok   light cyberpunk, Row tints Normal: each tint is drawn in its state's colour
+ok   light cyberpunk, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   light cyberpunk: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   light amoled, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amoled, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amoled, Row tints Off: every row keeps the card's own background under its tint
+ok   light amoled, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   light amoled, Row tints Off: the other rows are not tinted
+ok   light amoled, Row tints Off: each tint is drawn in its state's colour
+ok   light amoled, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amoled, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amoled, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amoled, Row tints Subtle: every row keeps the card's own background under its tint
+ok   light amoled, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   light amoled, Row tints Subtle: the other rows are not tinted
+ok   light amoled, Row tints Subtle: each tint is drawn in its state's colour
+ok   light amoled, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amoled, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amoled, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amoled, Row tints Normal: every row keeps the card's own background under its tint
+ok   light amoled, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   light amoled, Row tints Normal: the other rows are not tinted
+ok   light amoled, Row tints Normal: each tint is drawn in its state's colour
+ok   light amoled, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amoled: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   light amber, Row tints Off: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amber, Row tints Off: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amber, Row tints Off: every row keeps the card's own background under its tint
+ok   light amber, Row tints Off: running, frozen and uninstalled rows are tinted at 0
+ok   light amber, Row tints Off: the other rows are not tinted
+ok   light amber, Row tints Off: each tint is drawn in its state's colour
+ok   light amber, Row tints Off: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amber, Row tints Subtle: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amber, Row tints Subtle: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amber, Row tints Subtle: every row keeps the card's own background under its tint
+ok   light amber, Row tints Subtle: running, frozen and uninstalled rows are tinted at 0.11
+ok   light amber, Row tints Subtle: the other rows are not tinted
+ok   light amber, Row tints Subtle: each tint is drawn in its state's colour
+ok   light amber, Row tints Subtle: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amber, Row tints Normal: no row that is not selected has an outline (running, frozen and uninstalled ones neither)
+ok   light amber, Row tints Normal: a selected row (a running one and a plain one) has the accent outline, 2px
+ok   light amber, Row tints Normal: every row keeps the card's own background under its tint
+ok   light amber, Row tints Normal: running, frozen and uninstalled rows are tinted at 0.2
+ok   light amber, Row tints Normal: the other rows are not tinted
+ok   light amber, Row tints Normal: each tint is drawn in its state's colour
+ok   light amber, Row tints Normal: the selected rows are drawn with the accent gradient whatever the setting
+ok   light amber: every badge on a tinted or selected row reads at 4.5:1 or more on the pixels behind it (13 badges)
+ok   dark, no color-mix(): no row that is not selected has an outline
+ok   dark, no color-mix(): the selected row has the accent outline
+ok   dark, no color-mix(): every row keeps the card's background
+ok   dark, no color-mix(): the state tints are drawn, in their colours
+ok   light, no color-mix(): no row that is not selected has an outline
+ok   light, no color-mix(): the selected row has the accent outline
+ok   light, no color-mix(): every row keeps the card's background
+ok   light, no color-mix(): the state tints are drawn, in their colours
+ok   a tap that selects a row starts its shine once (the others do not shine)
+ok   the shine is over after it has run
+ok   unselecting does not shine
+ok   Select all draws the rows selected without a shine
+ok   with reduced motion the row does not shine
+ok   Settings > Row tints says that only a selected row is outlined
+errors: []

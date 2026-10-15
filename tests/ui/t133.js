@@ -61,24 +61,30 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const probe = document.createElement('i'); probe.style.color = 'var(--apps-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
     return bc === want;
   }));
-  check('   a frozen app\'s whole row has a blue tint (a selected one keeps the selection colours), an enabled one has none', await ev(() => {
-    const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st);       // read the colours as they are, not half-way through a fade
-    allApps.length = 0; allApps.push({ name: 'Alpha', pkg: 'com.t.alpha', isFrozen: true, isSystem: false }, { name: 'Bravo', pkg: 'com.t.bravo', isFrozen: false, isSystem: false }); renderApps();
-    const a = document.getElementById('card_com.t.alpha'), b = document.getElementById('card_com.t.bravo');
-    const ba = getComputedStyle(a).backgroundColor, bb = getComputedStyle(b).backgroundColor;
-    const [r, g, bl] = ba.match(/\d+(\.\d+)?/g).map(Number);
-    a.classList.add('selected'); const sel = getComputedStyle(a).backgroundColor; a.classList.remove('selected');
-    return a.classList.contains('frozen') && !b.classList.contains('frozen') && ba !== bb && bl > r && bl > g && sel !== ba;
-  }));
-  check('   a running app\'s row is tinted green and an uninstalled app\'s row red (a frozen one stays blue, a plain one has no tint)', await ev(() => {
-    allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Gone', pkg: 'com.t.gone', isUninstalled: true }, { name: 'Cold', pkg: 'com.t.cold', isFrozen: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps();
-    const rgb = k => { const c = getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor; const n = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number); return /^color\(/.test(c) ? n.map(v => v * 255) : n; };       // a mixed colour comes back as color(srgb 0..1)
-    const run = rgb('run'), gone = rgb('gone'), cold = rgb('cold'), plain = rgb('plain');
-    const lean = (c, i) => [0, 1, 2].every(j => j === i || (c[i] - plain[i]) > (c[j] - plain[j]));        // the tint is very subtle: compare with the plain row, towards green / red / blue
-    const big = c => Math.max(Math.abs(c[0] - plain[0]), Math.abs(c[1] - plain[1]), Math.abs(c[2] - plain[2]));
-    return lean(run, 1) && lean(gone, 0) && lean(cold, 2) && big(run) <= 14 && big(gone) <= 14 && big(cold) <= 14
-      && document.getElementById('card_com.t.plain').className.indexOf('running') < 0 && String(plain) !== String(run) && String(plain) !== String(gone);
-  }));
+  // (v7.14: the tint is a layer of its own, the row's ::before, a glow in the state's colour behind the icon that fades across the row;
+  // the row's own background and border stay those of a plain row, and only a selected row is outlined: t411 checks the look itself)
+  const layer = (k, sel) => ev(([k, sel]) => {
+    const c = document.getElementById('card_com.t.' + k); if (sel) c.classList.add('selected');
+    const a = getComputedStyle(c, '::before'), s = getComputedStyle(c);
+    const probe = v => { const i = document.createElement('i'); i.style.color = 'var(' + v + ')'; document.body.appendChild(i); const w = getComputedStyle(i).color; i.remove(); return w; };
+    const out = { img: a.content === 'none' ? 'none' : a.backgroundImage, o: a.content === 'none' ? 0 : +a.opacity, bg: s.backgroundColor, border: s.borderTopColor, cls: c.className,
+      run: probe('--apps-running'), frozen: probe('--apps-frozen'), gone: probe('--apps-uninstalled'), accent: probe('--accent') };
+    if (sel) c.classList.remove('selected');
+    return out;
+  }, [k, !!sel]);
+  check('   a frozen app\'s row is tinted blue (a selected one has the selection colours instead), an enabled one has no tint', await (async () => {
+    await ev(() => { const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st);
+      allApps.length = 0; allApps.push({ name: 'Alpha', pkg: 'com.t.alpha', isFrozen: true, isSystem: false }, { name: 'Bravo', pkg: 'com.t.bravo', isFrozen: false, isSystem: false }); renderApps(); });
+    const a = await layer('alpha'), b = await layer('bravo'), s = await layer('alpha', true);
+    return /frozen/.test(a.cls) && !/frozen/.test(b.cls) && a.o > 0 && a.img.indexOf(a.frozen) >= 0 && b.img === 'none' && a.bg === b.bg && a.border === b.border
+      && s.img.indexOf(s.accent) >= 0 && s.img.indexOf(s.frozen) < 0 && s.border === s.accent;
+  })());
+  check('   a running app\'s row is tinted green and an uninstalled app\'s row red (a frozen one stays blue, a plain one has no tint)', await (async () => {
+    await ev(() => { allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Gone', pkg: 'com.t.gone', isUninstalled: true }, { name: 'Cold', pkg: 'com.t.cold', isFrozen: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps(); });
+    const run = await layer('run'), gone = await layer('gone'), cold = await layer('cold'), plain = await layer('plain');
+    return run.img.indexOf(run.run) >= 0 && gone.img.indexOf(gone.gone) >= 0 && cold.img.indexOf(cold.frozen) >= 0 && plain.img === 'none'
+      && [run, gone, cold].every(x => x.o > 0 && x.o <= 0.25 && x.bg === plain.bg && x.border === plain.border) && plain.cls.indexOf('running') < 0;
+  })());
   await ev(() => switchView('apps')); await sleep(200);
   await ev(() => setFilter('user')); await sleep(150);
   await page.screenshot({ path: 'stat_boxes.png' });
