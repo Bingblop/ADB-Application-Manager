@@ -5016,6 +5016,7 @@
                 .cd-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); margin-right: var(--space-3h); display: flex; align-items: center; justify-content: center; overflow: hidden;
                     background: var(--bg-surface); color: var(--accent); font-weight:var(--fw-black); font-size: var(--fs-lead); }
                 .cd-icon img { width: 100%; height: 100%; object-fit: contain; }
+                .app-sel .cd-icon { width: 100%; height: 100%; margin-right: 0; }          /* a device row's icon fills the Apps tab's selection box */
                 /* filled in the accent; .danger, .blue, .green and .accent are filled too (see the sheet buttons, .sheet-btn-red and the rest); .plain is the quiet one */
                 .cd-row-act { border: 1px solid transparent; color: var(--on-accent); background: var(--fill-accent); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { filter: brightness(0.82); }
@@ -25897,12 +25898,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(a.name.charAt(0).toUpperCase());
             // the same state tint as the rows of the Apps tab (a glow in Frozen's or Uninstalled's colour, as strong as Row tints says)
             const state = a.uninstalled ? ' uninstalled' : a.disabled ? ' frozen' : '';
+            // the Apps tab's row (v7.14, the owner's wish): the icon is the selection box, with the check badge on its corner
             return '<div class="app-card' + state + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
-                '<div class="cd-icon">' + icon + '</div>' +
+                '<button type="button" class="app-left app-sel" role="checkbox" aria-checked="' + sel + '" aria-label="' + escapeHtml('Select ' + a.name) + '" onclick="cdToggleSel(this.parentElement.dataset.pkg)">' +
+                '<span class="cd-icon">' + icon + '</span><span class="app-checkbox" aria-hidden="true">' + (sel ? '\u2713' : '') + '</span></button>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
                 '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : act[0] === 'enable' ? 'accent' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
-                '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
-                '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
+                '<button class="btn-mini row-menu" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div></div>';
         }
         function cdApp(pkg) { return (cd.apps || []).find(a => a.pkg === pkg) || { pkg: pkg, name: cdDerivedName(pkg), system: false, disabled: false, uninstalled: false }; }
 
@@ -25911,7 +25913,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cd.sel.has(pkg)) cd.sel.delete(pkg); else cd.sel.add(pkg);
             haptic();
             const c = document.getElementById('cdcard_' + pkg);
-            if (c) { c.classList.toggle('selected', cd.sel.has(pkg)); c.querySelector('.app-checkbox').innerText = cd.sel.has(pkg) ? '\u2713' : ''; }
+            markCardSelected(c, cd.sel.has(pkg));
+            if (c && cd.sel.has(pkg)) { c.classList.remove('sel-shine'); void c.offsetWidth; c.classList.add('sel-shine'); c.addEventListener('animationend', () => c.classList.remove('sel-shine'), { once: true }); }          // the Apps tab's sweep of light
             cdBatchBar();
         }
         function cdSelClear() { cd.sel.clear(); cdAppsRender(); }

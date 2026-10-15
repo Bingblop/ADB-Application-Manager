@@ -15,4 +15,6 @@ ok   Row tints step 1: frozen and uninstalled rows are tinted as the Apps tab's,
 ok   Row tints step 2: frozen and uninstalled rows are tinted as the Apps tab's, a plain row is not
 ok   Row tints step 3: frozen and uninstalled rows are tinted as the Apps tab's, a plain row is not
 ok   Row tints step 4: frozen and uninstalled rows are tinted as the Apps tab's, a plain row is not
+ok   a device row has the Apps tab's icon selection box, check badge and layout
+ok   tapping the icon again clears the selection and hides the badge
 ok   no page errors

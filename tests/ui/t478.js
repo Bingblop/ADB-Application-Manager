@@ -1,7 +1,7 @@
 // v7.14.0: Connected Devices' Apps list takes the Apps tab's filters and row tints (the owner's wish). The pills are the Apps tab's pills in its order and pairs
 // (All Apps, Installed | Uninstalled, System | User, Enabled | Frozen) with the same colours; a device knows no running, updated, suspended, tracker or patched
 // state, so those pills are not there. Installed and Uninstalled together are every app; Uninstalled starts a clean list. A frozen or uninstalled app's row is
-// tinted as in the Apps tab, as strongly as Row tints says.
+// tinted as in the Apps tab, as strongly as Row tints says. The row itself is the Apps tab's: the icon is the selection box with the check badge on its corner.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok || extra === undefined ? '' : ': ' + extra)); }
@@ -80,8 +80,23 @@ const APPS = [
     check('Row tints step ' + lv + ': frozen and uninstalled rows are tinted as the Apps tab\'s, a plain row is not',
       /\bfrozen\b/.test(r.cls) && /\buninstalled\b/.test(r.cls) && r.frozen && r.uninst && r.op === want && (r.plain === 'none' || r.plain === 'normal'), JSON.stringify(r));
   }
+  // the row is the Apps tab's row: the icon is the selection box (a button, checkbox role) on the left with the check badge on its corner, then the name, then the buttons
+  const geo = async () => ev(() => {
+    const probeRow = () => { const h = document.createElement('div'); h.innerHTML = appCardHtml({ pkg: 'com.probe', name: 'Probe', isSystem: true }); const c = h.firstElementChild; document.getElementById('cdAppList').appendChild(c); return c; };
+    const shape = c => { const r = c.getBoundingClientRect(), s = c.querySelector(':scope > .app-sel'), b = s && s.querySelector('.app-checkbox'), m = c.querySelector('.app-meta'); if (!s) return null; const sr = s.getBoundingClientRect(), br = b.getBoundingClientRect();
+      return { first: c.firstElementChild === s, role: s.getAttribute('role'), w: Math.round(sr.width), h: Math.round(sr.height), left: Math.round(sr.left - r.left), badgeDx: Math.round(br.right - sr.right), badgeDy: Math.round(br.bottom - sr.bottom), badgeW: Math.round(br.width), shown: getComputedStyle(b).visibility, metaGap: Math.round(m.getBoundingClientRect().left - sr.right), last: c.lastElementChild.className }; };
+    const main = probeRow(); main.classList.add('selected'); const pm = shape(main); main.remove();
+    const row = document.getElementById('cdcard_com.a.fit'); cdToggleSel('com.a.fit'); const pd = shape(row);
+    const label = row.querySelector('.app-sel').getAttribute('aria-label'), checked = row.querySelector('.app-sel').getAttribute('aria-checked'), tick = row.querySelector('.app-checkbox').innerText;
+    row.querySelector('.app-sel').click(); const off = { checked: row.querySelector('.app-sel').getAttribute('aria-checked'), sel: cd.sel.has('com.a.fit'), shown: getComputedStyle(row.querySelector('.app-checkbox')).visibility };
+    return { pm, pd, label, checked, tick, off };
+  });
+  const g = await geo();
+  const same = g.pm && g.pd && ['first', 'role', 'w', 'h', 'left', 'badgeDx', 'badgeDy', 'badgeW', 'shown', 'metaGap', 'last'].every(k => g.pm[k] === g.pd[k]);
+  check('a device row has the Apps tab\'s icon selection box, check badge and layout', same && g.pd.first && g.pd.shown === 'visible' && g.label === 'Select Fit' && g.checked === 'true' && g.tick === '\u2713', JSON.stringify(g));
+  check('tapping the icon again clears the selection and hides the badge', g.off.checked === 'false' && !g.off.sel && g.off.shown === 'hidden', JSON.stringify(g.off));
   check('no page errors', errors.length === 0, errors.join(' | '));
-  await ev(() => { setRowTint(2); document.getElementById('cdAppFilters').scrollIntoView(); });
+  await ev(() => { setRowTint(2); cdToggleSel('com.a.clock'); document.getElementById('cdAppFilters').scrollIntoView(); }); await page.waitForTimeout(900);
   await page.screenshot({ path: 'cd_apps_filters.png' });
   await b.close();
   if (bad) { console.log(bad + ' failed'); process.exit(1); }
