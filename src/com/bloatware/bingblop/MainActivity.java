@@ -2878,23 +2878,29 @@ public class MainActivity extends Activity {
      * Puts back the assistant settings saved by {@link #launchViaAssistant} and clears the record, but only once a read-back shows
      * the values are really back (if the backend is not connected the record stays for the next try).
      */
-    private synchronized void recoverPendingAssistant() {
-        String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
-        if (old == null) {
-            if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
-            return;
-        }
-        try {
-            AndroidBridge sh = new AndroidBridge();
-            restoreSecureSetting(sh, "assistant", old[0]);
-            restoreSecureSetting(sh, "voice_interaction_service", old[1]);
-            boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
-                    && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
-            if (back) prefs.edit().remove("assistant_restore_pending").commit();
-        } catch (Throwable t) {
-            Log.w(TAG, "assistant restore: " + t.getMessage());
+    private void recoverPendingAssistant() {
+        // A lock of its own, not the activity's: the shell commands below can take minutes on a backend that does not answer, and the
+        // activity's monitor is also taken on the UI thread (onDestroy, the Morphe picker) and by every lazy getter (secrets(), vault() ...).
+        synchronized (assistantLock) {
+            String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
+            if (old == null) {
+                if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
+                return;
+            }
+            try {
+                AndroidBridge sh = new AndroidBridge();
+                restoreSecureSetting(sh, "assistant", old[0]);
+                restoreSecureSetting(sh, "voice_interaction_service", old[1]);
+                boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
+                        && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
+                if (back) prefs.edit().remove("assistant_restore_pending").commit();
+            } catch (Throwable t) {
+                Log.w(TAG, "assistant restore: " + t.getMessage());
+            }
         }
     }
+
+    private final Object assistantLock = new Object();
 
     /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
     private List<String> signerDnList(String pkg) {
