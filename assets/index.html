@@ -1921,6 +1921,29 @@
             cursor: default;
         }
 
+        /* A card that folds (class "cc", data-cc="<name>", see ccSetup): the title row stays, the rest folds away under it. The round chevron in the top-right
+           corner (a 44 px target) or a tap on the title folds and unfolds it; the height moves smoothly unless the phone asks for reduced motion. Folded, the body
+           is hidden from touch, focus and screen readers (visibility), not only clipped. */
+        .color-card.cc { position: relative; }
+        .color-card.cc > .cc-head { padding-right: calc(var(--tap) + var(--space-2)); min-height: calc(var(--tap) - 2 * var(--space-3)); display: flex; align-items: center;
+            cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .color-card.cc.cc-closed > .cc-head { margin-bottom: 0; }
+        .cc-btn { position: absolute; top: var(--space-3); right: var(--space-2); width: var(--tap); height: var(--tap); padding: 0; border: 0; border-radius: 50%;
+            background: transparent; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; }
+        .cc-btn i { width: var(--ctl-h); height: var(--ctl-h); border-radius: 50%; border: 1px solid var(--border-glass); background: var(--fill-2); display: inline-flex; align-items: center; justify-content: center; }
+        .cc-btn svg { transition: transform 0.24s ease; }
+        .cc-closed > .cc-btn svg { transform: rotate(180deg); }
+        .cc-btn:active i { transform: scale(0.92); }
+        .cc-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        .cc-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.26s ease, visibility 0s linear 0s; }
+        .cc-closed > .cc-body { grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 0.26s ease, visibility 0s linear 0.26s; }
+        .cc-inner { min-height: 0; }
+        .cc-closed > .cc-body > .cc-inner, .cc-moving > .cc-body > .cc-inner { overflow: hidden; }          /* clipped only while it moves or is folded: open, a focus ring or a glow at its edge shows whole */
+        @media (prefers-reduced-motion: reduce) { .cc-body, .cc-closed > .cc-body, .cc-btn svg { transition: none; } }
+        /* a part of a card that has a heading of its own (Palette Style & My Themes, Default Ask Agent & the VirusTotal key): a hairline above it */
+        .cc-section { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border-glass); }
+        .cc-section-title { font-size: var(--fs-label); font-weight: var(--fw-heavy); margin-bottom: var(--space-1); }
+
         /* A small ? on the first card of each tab: opens the Help Guide at that tab's topic */
         .color-card.has-help { position: relative; }
         /* the title leaves room beside the ? and reaches below it, so the line under the title starts clear of the button */
@@ -4834,7 +4857,6 @@
                 .cd-lost-main span { display: block; font-size: var(--fs-caption); font-weight:var(--fw-semibold); color: var(--text-muted); margin-top: 2px; }
                 .cd-lost-main span.is-err { color: var(--status-bloat); }
                 .cd-lost-btns { display: flex; gap: var(--space-2); flex: 0 0 auto; }
-                .cd-lost-auto { margin-top: var(--space-3); font-size: var(--fs-pill); color: var(--text-muted); }
                 .cd-saved-head { margin-top: var(--space-3h); }
                 .cd-saved { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-3h); margin-top: var(--space-3); border: 1px solid var(--border-glass); border-left: 3px solid var(--accent); border-radius: var(--radius-md); background: var(--fill-1); }
                 .cd-saved.up { border-left-color: var(--status-running); }
@@ -4862,6 +4884,30 @@
                 <div class="cd-info" id="cdInfo"></div>
                 <div id="cdLost"></div>
                 <div id="cdSaved"></div>
+            </div>
+
+            <div class="color-card cc" id="cdReconnectCard" data-cc="cdreconnect">
+                <div class="color-card-title">Reconnecting devices</div>
+                <div class="color-card-subtitle">What this tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Reconnect on its own</div>
+                        <div class="switch-sub">Try to bring a dropped device back without you pressing anything.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="cdAutoSwitch" checked onchange="cdSetAuto(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+                <div class="color-row" style="align-items:flex-start;">
+                    <div class="color-meta">
+                        <h4>Retry timings</h4>
+                        <p>Seconds to wait before each attempt, separated by commas. <b>0, 8, 25</b> tries at once, again 8 seconds later and a last time 25 seconds after that. Up to 8 attempts, each wait 0 to 600.</p>
+                    </div>
+                </div>
+                <div class="cd-retry-line">
+                    <input type="text" class="list-search" id="cdRetryInput" inputmode="numeric" placeholder="0, 8, 25" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Seconds to wait before each reconnect attempt" onchange="cdRetrySave(this.value)">
+                    <button class="mode-action-btn" id="cdRetryReset" onclick="cdRetryReset()">Reset</button>
+                </div>
+                <div class="appearance-note" id="cdRetryNote"></div>
             </div>
 
             <div class="cd-empty" id="cdEmpty">
@@ -5705,20 +5751,6 @@
                 <select class="op-select lang-select" id="langSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
             </div>
 
-            <div class="color-card" id="agentCard">
-                <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
-                <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
-                <div class="appearance-note" id="askAgentNote"></div>
-                <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="mode-action-btn" id="askTestBtn" onclick="askAgentTest()">Test the Default Ask Agent</button>
-                    <button class="mode-action-btn" id="askTestStop" style="display:none;" onclick="askStopRun('askTest')">Stop</button>
-                </div>
-                <div class="agent-ask-prog" id="askTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="askTestBar"><i id="askTestBarFill"></i></div><div class="agent-ask-prog-txt" id="askTestProgTxt"></div></div>
-                <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:8px;"></div>
-                <div class="appearance-note" id="askTestRes"></div>
-            </div>
-
             <div class="color-card">
                 <div class="color-card-title">Appearance</div>
                 <div class="color-card-subtitle">Light, dark, or follow your phone's dark mode setting</div>
@@ -5748,7 +5780,7 @@
             </div>
 
             <div class="color-card" id="paletteStyleCard">
-                <div class="color-card-title">Palette Style</div>
+                <div class="color-card-title">Palette Style &amp; My Themes</div>
                 <div class="color-card-subtitle">One source color, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
 
                 <div class="color-row">
@@ -5767,19 +5799,20 @@
 
                 <div class="palette-presets-grid" id="psStyleGrid"></div>
                 <div class="appearance-note" id="psNote"></div>
-            </div>
 
-            <div class="color-card" id="myThemesCard">
-                <div class="color-card-title">My Themes</div>
-                <div class="color-card-subtitle">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
-                <div class="mode-btn-row" style="margin:2px 0 12px;">
-                    <button class="mode-action-btn primary" id="mtSaveBtn" onclick="mtSave()">Save current theme…</button>
+                <!-- My Themes: saved looks, in the same card as the style they are made from -->
+                <div class="cc-section" id="myThemesCard">
+                    <div class="cc-section-title">My Themes</div>
+                    <div class="color-card-subtitle">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
+                    <div class="mode-btn-row" style="margin:2px 0 12px;">
+                        <button class="mode-action-btn primary" id="mtSaveBtn" onclick="mtSave()">Save current theme…</button>
+                    </div>
+                    <div class="palette-presets-grid" id="mtGrid"></div>
+                    <div class="appearance-note" id="mtNote"></div>
                 </div>
-                <div class="palette-presets-grid" id="mtGrid"></div>
-                <div class="appearance-note" id="mtNote"></div>
             </div>
 
-            <div class="color-card">
+            <div class="color-card cc" id="curatedCard" data-cc="curated" data-cc-default="closed">
                 <div class="color-card-title">Curated Theme Palettes</div>
                 <div class="color-card-subtitle">Every palette has a light and a dark version</div>
 
@@ -5945,6 +5978,34 @@
                 </div>
             </div>
 
+            <div class="color-card" id="agentCard">
+                <div class="color-card-title">Default Ask Agent</div>
+                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
+                <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
+                <div class="appearance-note" id="askAgentNote"></div>
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="mode-action-btn" id="askTestBtn" onclick="askAgentTest()">Test the Default Ask Agent</button>
+                    <button class="mode-action-btn" id="askTestStop" style="display:none;" onclick="askStopRun('askTest')">Stop</button>
+                </div>
+                <div class="agent-ask-prog" id="askTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="askTestBar"><i id="askTestBarFill"></i></div><div class="agent-ask-prog-txt" id="askTestProgTxt"></div></div>
+                <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:8px;"></div>
+                <div class="appearance-note" id="askTestRes"></div>
+
+                <!-- the VirusTotal key, the other outside service the app can use: it is kept as before (vtKeyTyped -> kv 'vt_key', sealed in the Keystore vault on the phone), only its controls are here -->
+                <div class="cc-section" id="vtCard">
+                    <div class="cc-section-title">VirusTotal API key</div>
+                    <div class="color-card-subtitle">One key for the whole app. The Installer's scan and Morphe Helper's scan both use it; neither asks for it again, they only point here when it is missing.</div>
+                    <input class="modal-text-input" id="vtKeyInput" type="password" placeholder="Paste your personal API key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="vtKeyTyped(this.value)" onchange="vtTestKey()">
+                    <div class="mode-btn-row" style="margin-top:10px;">
+                        <button class="mode-action-btn primary" id="vtTestBtn" onclick="vtTestKey()">Test key</button>
+                        <button class="mode-action-btn" onclick="vtClearKey()">Remove key</button>
+                    </div>
+                    <div class="switch-sub" id="vtKeyStatus" style="margin-top:8px;"></div>
+                    <div class="switch-sub vt-quota" id="vtQuotaLine" style="margin-top:4px; display:none;"></div>
+                    <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> &rarr; your account &rarr; API key. It is kept on this phone only, and sent only to VirusTotal when you scan. A key counts as approved once <b>Test key</b> has worked.</div>
+                </div>
+            </div>
+
             <div class="color-card">
                 <div class="color-card-title">Lists</div>
                 <div class="color-card-subtitle">How the app lists start up</div>
@@ -6006,51 +6067,6 @@
                 </label>
             </div>
 
-            <div class="color-card" id="vtCard">
-                <div class="color-card-title">VirusTotal API key</div>
-                <div class="color-card-subtitle">One key for the whole app. The Installer's scan and Morphe Helper's scan both use it; neither asks for it again, they only point here when it is missing.</div>
-                <input class="modal-text-input" id="vtKeyInput" type="password" placeholder="Paste your personal API key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="vtKeyTyped(this.value)" onchange="vtTestKey()">
-                <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="mode-action-btn primary" id="vtTestBtn" onclick="vtTestKey()">Test key</button>
-                    <button class="mode-action-btn" onclick="vtClearKey()">Remove key</button>
-                </div>
-                <div class="switch-sub" id="vtKeyStatus" style="margin-top:8px;"></div>
-                <div class="switch-sub vt-quota" id="vtQuotaLine" style="margin-top:4px; display:none;"></div>
-                <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> &rarr; your account &rarr; API key. It is kept on this phone only, and sent only to VirusTotal when you scan. A key counts as approved once <b>Test key</b> has worked.</div>
-            </div>
-
-            <div class="color-card" id="cdReconnectCard">
-                <div class="color-card-title">Reconnecting devices</div>
-                <div class="color-card-subtitle">What the Devices tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
-                <label class="switch-row">
-                    <div>
-                        <div class="switch-title">Reconnect on its own</div>
-                        <div class="switch-sub">Try to bring a dropped device back without you pressing anything.</div>
-                    </div>
-                    <input type="checkbox" class="switch-input" id="cdAutoSwitch" checked onchange="cdSetAuto(this.checked)">
-                    <span class="switch-track"></span>
-                </label>
-                <div class="color-row" style="align-items:flex-start;">
-                    <div class="color-meta">
-                        <h4>Retry timings</h4>
-                        <p>Seconds to wait before each attempt, separated by commas. <b>0, 8, 25</b> tries at once, again 8 seconds later and a last time 25 seconds after that. Up to 8 attempts, each wait 0 to 600.</p>
-                    </div>
-                </div>
-                <div class="cd-retry-line">
-                    <input type="text" class="list-search" id="cdRetryInput" inputmode="numeric" placeholder="0, 8, 25" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Seconds to wait before each reconnect attempt" onchange="cdRetrySave(this.value)">
-                    <button class="mode-action-btn" id="cdRetryReset" onclick="cdRetryReset()">Reset</button>
-                </div>
-                <div class="appearance-note" id="cdRetryNote"></div>
-            </div>
-
-            <div class="color-card" id="extraSettingsPointerCard">
-                <div class="color-card-title">Private DNS</div>
-                <div class="color-card-subtitle">Private DNS has its own tab now: Extra Settings. It has the Private DNS services, the speed test and the buttons that change Private DNS.</div>
-                <div class="mode-btn-row" style="margin-top:10px;">
-                    <button class="mode-action-btn primary" id="extraSettingsPointerBtn" onclick="switchView('extrasettings')">Open Extra Settings</button>
-                </div>
-            </div>
-
             <div class="color-card" id="fontCard">
                 <div class="color-card-title">Font</div>
                 <div class="color-card-subtitle">The font of the text in this app. It does not change the font of the rest of your phone.</div>
@@ -6078,7 +6094,7 @@
                 </div>
             </div>
 
-            <div class="color-card" id="actionBtnCard">
+            <div class="color-card cc" id="actionBtnCard" data-cc="actionbtn">
                 <div class="color-card-title">Action Button</div>
                 <div class="color-card-subtitle">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
                 <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
@@ -6091,7 +6107,7 @@
                 </div>
             </div>
 
-            <div class="color-card" id="navCard">
+            <div class="color-card cc" id="navCard" data-cc="nav">
                 <div class="color-card-title">Navigation</div>
                 <div class="color-card-subtitle">Where the tabs are. The bottom bar holds the tabs you pin and a More button for the rest; the top bar holds all of them.</div>
                 <div class="nav-opts" role="radiogroup" aria-label="Navigation">
@@ -6117,7 +6133,7 @@
                 </details>
             </div>
 
-            <div class="color-card" id="featureCard">
+            <div class="color-card cc" id="featureCard" data-cc="features">
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
                 <div class="color-card-subtitle">Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</div>
@@ -6126,7 +6142,8 @@
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
                 </div>
             </div>
-            <div class="color-card" id="holdGuideCard">
+
+            <div class="color-card cc" id="holdGuideCard" data-cc="holdguide" data-cc-default="closed">
                 <div class="color-card-title">Press and hold guide</div>
                 <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
                 <div class="hold-list"><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app row</b><span class="hold-where">Apps</span></div><div class="hold-does">Opens that app's menu (the same as tapping ⋯). Tap the checkbox to select it instead.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app's icon</b><span class="hold-where">Apps</span></div><div class="hold-does">Saves the icon as a PNG to Download/ADB App Manager/Icons.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The Action Button</b><span class="hold-where">Apps, Debloater</span></div><div class="hold-does">A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. Choose which ones it lists below.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The round checkmark button (when apps are selected)</b><span class="hold-where">Apps</span></div><div class="hold-does">Clears every selection at once.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file or folder row</b><span class="hold-where">File Manager</span></div><div class="hold-does">Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file the APK search found</b><span class="hold-where">Installer</span></div><div class="hold-does">Deletes it from the phone, with an Undo right after.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A setting that is 1 or 0</b><span class="hold-where">Hidden Settings</span></div><div class="hold-does">Flips it.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An overlay row</b><span class="hold-where">Overlays</span></div><div class="hold-does">Switches that overlay on or off.</div></div></div></div>
@@ -10750,7 +10767,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bnavCustomize() {                                    // the Feature List in Settings
             bnavMoreClose();
             if (!switchView('prefs')) return;
-            setTimeout(() => { const c = document.getElementById('featureCard'); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+            setTimeout(() => { const c = document.getElementById('featureCard'); if (c) { ccReveal(c); c.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 60);
         }
 
         // ---- Away: the keyboard, anything that covers the screen, the start-up ----
@@ -10852,6 +10869,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bnavReveal(sel) {                                    // scroll a section into view and light it up for a moment
             const e = document.querySelector(sel);
             if (!e) return;
+            ccReveal(e);
             e.scrollIntoView({ block: 'start', behavior: 'smooth' });
             e.classList.remove('bn-flash'); void e.offsetWidth; e.classList.add('bn-flash');
             setTimeout(() => e.classList.remove('bn-flash'), 1700);
@@ -11530,6 +11548,58 @@ Type any command above (e.g. pm list packages -d)</div>
                 return true;
             } catch (e) { return false; }
         }
+
+        // ---------- Cards that fold ----------
+        // A card with class "cc" and data-cc="<name>" folds: its first .color-card-title stays as the head, everything after it goes into a body that folds
+        // away. A tap on the head or on the chevron in its top-right corner folds or unfolds it, and the state of each card is kept by name in kv
+        // 'cards_folded' ({ name: true when folded }) across launches. data-cc-default="closed" starts it folded until the person opens it. Anything that
+        // jumps into a card (a shortcut, a link, a search result) calls ccReveal(element) first, which unfolds every folded card around that element.
+        const CC_KV = 'cards_folded';
+        function ccStates() { const o = kvGet(CC_KV, null); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; }
+        function ccIsOpen(card) { const v = ccStates()[card.dataset.cc]; return typeof v === 'boolean' ? !v : card.dataset.ccDefault !== 'closed'; }
+        function ccApply(card, open, save) {
+            const body = card.querySelector(':scope > .cc-body'), btn = card.querySelector(':scope > .cc-btn');
+            if (!body || !btn) return;
+            const was = !card.classList.contains('cc-closed');
+            if (was !== open && save) {                                            // clipped while it moves, so nothing spills out of the card mid-way
+                card.classList.add('cc-moving');
+                clearTimeout(card.__ccT);
+                card.__ccT = setTimeout(() => card.classList.remove('cc-moving'), 320);
+            }
+            card.classList.toggle('cc-closed', !open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (save) { const st = ccStates(); st[card.dataset.cc] = !open; kvSet(CC_KV, st); }
+        }
+        function ccToggle(card) { haptic(); ccApply(card, card.classList.contains('cc-closed'), true); }
+        function ccSetup(card) {
+            if (!card || card.querySelector(':scope > .cc-body')) return;
+            const title = card.querySelector(':scope > .color-card-title'), name = card.dataset.cc;
+            if (!title || !name) return;
+            const inner = document.createElement('div'), body = document.createElement('div');
+            inner.className = 'cc-inner';
+            while (title.nextSibling) inner.appendChild(title.nextSibling);
+            body.className = 'cc-body';
+            body.id = 'ccBody-' + name;
+            body.appendChild(inner);
+            card.appendChild(body);
+            if (!title.id) title.id = 'ccTitle-' + name;
+            title.classList.add('cc-head');
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cc-btn';
+            b.setAttribute('aria-controls', body.id);
+            b.setAttribute('aria-labelledby', title.id);                         // its name is the card's title; aria-expanded says whether it is open
+            b.innerHTML = '<i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg></i>';
+            b.addEventListener('click', e => { e.stopPropagation(); ccToggle(card); });
+            title.after(b);                                                       // next to the title, never inside it
+            title.addEventListener('click', () => ccToggle(card));
+            ccApply(card, ccIsOpen(card), false);
+        }
+        function ccInit(root) { (root || document).querySelectorAll('.color-card.cc[data-cc]').forEach(ccSetup); }
+        function ccReveal(el) {
+            for (let c = el && el.closest ? el.closest('.cc-closed') : null; c; c = c.parentElement ? c.parentElement.closest('.cc-closed') : null) ccApply(c, true, true);
+        }
+        ccInit();
 
         // ---------- Android Back ----------
         // The app asks the page first (see MainActivity.onBackPressed). Back closes the top-most sheet, then drops an open
@@ -13015,6 +13085,7 @@ Type any command above (e.g. pm list packages -d)</div>
             setTimeout(() => {
                 const c = document.getElementById('agentCard');
                 if (!c) return;
+                ccReveal(c);
                 c.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
             }, 250);
@@ -20848,7 +20919,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onInstallProgress = onInstallProgress;
 
         // ---------- VirusTotal (optional pre-install scan) ----------
-        // One VirusTotal key for the whole app (Settings > VirusTotal API key). "Approved" = Test key has worked for exactly this key.
+        // One VirusTotal key for the whole app (Settings > Default Ask Agent card > VirusTotal API key). "Approved" = Test key has worked for exactly this key.
         let vtKeyCache = null;
         function vtKey() {
             if (vtKeyCache === null) {
@@ -20895,7 +20966,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
             switchView('prefs');
-            setTimeout(() => { const c = document.getElementById('vtCard'); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'center' }); const i = document.getElementById('vtKeyInput'); if (i && !vtKey()) i.focus({ preventScroll: true }); }, 120);
+            setTimeout(() => { const c = document.getElementById('vtCard'); ccReveal(c); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'center' }); const i = document.getElementById('vtKeyInput'); if (i && !vtKey()) i.focus({ preventScroll: true }); }, 120);
         }
         // What is left of the key's day, from VirusTotal itself (so the Installer's scans and Morphe Helper's count together). Read when a key is approved, when the card is shown (at most once a minute), after a scan, and on "Refresh".
         let vtQuota = null, vtQuotaFor = '', vtQuotaAt = 0, vtQuotaBusy = false, vtQuotaErr = '';
@@ -24577,7 +24648,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- devices that dropped: remembered while they are connected, offered back with Reconnect (by hand, and once on its own) ----
         const cdSleep = ms => new Promise(r => setTimeout(r, ms));
-        const CD_AUTO_WAITS = [0, 8, 25];                  // seconds before each automatic attempt after a drop (Settings > Reconnecting devices changes it)
+        const CD_AUTO_WAITS = [0, 8, 25];                  // seconds before each automatic attempt after a drop (Connected Devices > Reconnecting devices changes it)
         const CD_RETRY_MAX = 8, CD_RETRY_TOP = 600;
         // "0, 8, 25" or "0 8 25" -> { ok, list: [0, 8, 25] } or { ok: false, why }
         function cdParseWaits(text) {
@@ -24647,6 +24718,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdRenderLost() {
             cdRenderSaved();
+            cdSettingsRender();                                // the Reconnecting devices card below follows the setting whenever this list is drawn
             const el = document.getElementById('cdLost');
             if (!el) return;
             const lost = cdLostList();
@@ -24660,11 +24732,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 return '<div class="cd-lost" data-serial="' + escapeHtml(l.serial) + '"><div class="cd-lost-main"><span style="margin:0 0 2px;font-size:var(--fs-overline);text-transform:uppercase;letter-spacing:.3px;">Not connected</span><b translate="no">' + escapeHtml(l.name) + '</b><span class="' + (!rc.busy && rc.msg ? 'is-err' : '') + '">' + escapeHtml(line) + '</span></div>' +
                     '<div class="cd-lost-btns"><button class="cd-row-act" data-s="' + escapeHtml(l.serial) + '" onclick="cdReconnectSerial(this.dataset.s, false)"' + (rc.busy ? ' disabled' : '') + '>' + (rc.busy ? 'Trying...' : 'Reconnect') + '</button>' +
                     '<button class="cd-row-act" style="border-color:var(--border-glass);color:var(--text-muted);" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
-            }).join('') + '<div class="cd-lost-auto">Reconnect on its own when a device drops: <button class="batch-tool-link" id="cdAutoBtn" onclick="cdAutoToggle()">' + (cdAutoOn() ? 'On' : 'Off') + '</button></div>';
+            }).join('');                                       // whether it reconnects on its own, and when: the Reconnecting devices card just below
         }
-        function cdAutoToggle() { kvSet('cd_autore', !cdAutoOn()); cdRenderLost(); cdSettingsRender(); showToast('Reconnecting on its own: ' + (cdAutoOn() ? 'on' : 'off')); }
         function cdSetAuto(on) { kvSet('cd_autore', !!on); cdRenderLost(); cdSettingsRender(); haptic(); showToast('Reconnecting on its own: ' + (on ? 'on' : 'off')); }
-        // Settings > Reconnecting devices
+        // Connected Devices > Reconnecting devices (the card under the device picker; it was in Settings until 7.14)
         function cdSettingsRender() {
             const sw = document.getElementById('cdAutoSwitch'), inp = document.getElementById('cdRetryInput'), note = document.getElementById('cdRetryNote'), rst = document.getElementById('cdRetryReset');
             if (!sw) return;
@@ -24900,6 +24971,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function onDevicesShown() {
             if (!cd.ready) cdInit();
+            cdSettingsRender();                                // the Reconnecting devices card shows the saved choice before any device is read
             cdRefreshDevices(false);
             cdPollStop();
             cd.poll = setInterval(() => { if (!document.hidden && !cd.refreshing) cdRefreshDevices(false); }, 6000);
