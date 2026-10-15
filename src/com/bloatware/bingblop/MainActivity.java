@@ -6375,6 +6375,9 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Held for every read-modify-write of the backups list (a backup that finishes, a delete, the pruning of missing files). */
+    private final Object backupIndexLock = new Object();
+
     private JSONArray backupIndex() {
         try {
             return new JSONArray(prefs.getString("backups_index", "[]"));
@@ -6553,11 +6556,13 @@ public class MainActivity extends Activity {
                     rec.put("createdAt", meta.getLong("createdAt"));
                     rec.put("bytes", total);
                     rec.put("hasData", withData);
-                    JSONArray index = backupIndex();
-                    JSONArray next = new JSONArray();
-                    next.put(rec);
-                    for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
-                    prefs.edit().putString("backups_index", next.toString()).apply();
+                    synchronized (backupIndexLock) {
+                        JSONArray index = backupIndex();
+                        JSONArray next = new JSONArray();
+                        next.put(rec);
+                        for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
+                        prefs.edit().putString("backups_index", next.toString()).apply();
+                    }
 
                     res.put("ok", true);
                     res.put("label", label);
@@ -11482,17 +11487,28 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getBackups() {
             JSONArray index = backupIndex();
-            JSONArray keep = new JSONArray();
             try {
+                // which files are gone is asked without the lock (it can be slow); the list is then pruned of exactly those, re-read under
+                // the lock, so a backup that finished meanwhile is not dropped
+                Set<String> gone = new HashSet<String>();
                 for (int i = 0; i < index.length(); i++) {
-                    JSONObject rec = index.getJSONObject(i);
-                    if (backupExists(rec.optString("ref"))) keep.put(rec);
+                    String ref = index.getJSONObject(i).optString("ref");
+                    if (!backupExists(ref)) gone.add(ref);
                 }
-                if (keep.length() != index.length()) prefs.edit().putString("backups_index", keep.toString()).apply();
+                synchronized (backupIndexLock) {
+                    JSONArray now = backupIndex();
+                    if (gone.isEmpty()) return now.toString();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        JSONObject rec = now.getJSONObject(i);
+                        if (!gone.contains(rec.optString("ref"))) keep.put(rec);
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
+                    return keep.toString();
+                }
             } catch (Exception e) {
                 return index.toString();
             }
-            return keep.toString();
         }
 
         @JavascriptInterface
@@ -11506,11 +11522,14 @@ public class MainActivity extends Activity {
                 if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
                 if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
                 else ok = new File(ref).delete();
-                JSONArray keep = new JSONArray();
-                for (int i = 0; i < index.length(); i++) {
-                    if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
+                synchronized (backupIndexLock) {                 // re-read: a backup may have been added while the file was deleted
+                    JSONArray now = backupIndex();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        if (!now.getJSONObject(i).optString("ref").equals(ref)) keep.put(now.get(i));
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
                 }
-                prefs.edit().putString("backups_index", keep.toString()).apply();
                 return ok ? "" : "Error: could not delete the file (it may already be gone)";
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
