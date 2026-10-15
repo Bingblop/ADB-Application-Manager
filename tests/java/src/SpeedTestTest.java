@@ -72,7 +72,7 @@ public class SpeedTestTest {
     });
     srv.createContext("/__up", ex -> {
       byte[] b = new byte[32 * 1024];
-      try (InputStream in = ex.getRequestBody()) { int k; while ((k = in.read(b)) >= 0) upBytes.addAndGet(k); } catch (IOException e) { /* closed */ }
+      try (InputStream in = ex.getRequestBody()) { int k; while ((k = in.read(b)) >= 0) { upBytes.addAndGet(k); Thread.sleep(1); } } catch (IOException | InterruptedException e) { /* closed */ }   // about 30 MB/s a stream, like the download: unthrottled, a fast machine fills the 100 MB cap before the page gets its live progress
       ex.getResponseHeaders().add("cf-meta-colo", "TST");
       try { ex.sendResponseHeaders(200, -1); } catch (IOException ignored) {}
       ex.close();
