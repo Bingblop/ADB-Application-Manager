@@ -1,0 +1,19 @@
+ok   1. every folding card has its title row, a chevron button named by the title that controls the body, and a 44 px target
+ok   2. defaults: Curated Theme Palettes and Press and hold guide folded, Action Button, Navigation, Feature List and Reconnecting devices open
+ok      a folded body is hidden (visibility) and takes no height; an open one is visible
+ok      the button sits in the top-right corner of the card
+ok      nothing in a folded card can be reached by a tap
+ok   3. the chevron unfolds Curated Theme Palettes (aria-expanded true, the presets show)
+ok   4. a tap on the title folds Feature List
+ok      and one on the Press and hold guide title unfolds it
+ok      the states are kept in kv cards_folded
+ok      the chevron works from the keyboard too (Navigation folds)
+ok   5. after a reload every card is as it was left (Curated open, Feature List folded, Press and hold open, Navigation folded)
+ok   6. More > Customize (the Feature List) unfolds the Feature List first
+ok      ccReveal(element) unfolds the card around an element
+ok      the VirusTotal key link opens Settings with the key field in view
+ok   7. the height moves (grid rows, about a quarter of a second)
+ok      with reduced motion it does not move
+ok   8. Reconnecting devices folds in Connected Devices too: open, its chevron named by its title with a 44 px target
+ok      folded, only its title row is left
+errors: []

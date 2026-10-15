@@ -37,7 +37,7 @@
    the steps: ["✓ Termux","2 Install Claude Code","3 Sign in","4 Chat here"]
    Install: Debian in Termux, then Anthropic's installer inside it: ["pkg install -y proot-distro","proot-distro login debian -- true 2>/dev/null || proot-distro install debian","proot-distro login debian -- bash -c \"apt-get update && apt-get install -y curl ca-certificates git\"","proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$PATH\"; curl -fsSL https://claude.ai/install.sh | bash'"]
    then: sign in, or use it now: "Sign in\nUse it now"
-   Sign in opens Claude Code in a Termux window: "proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$PATH\"; echo \"Signing in to Claude Code. Follow the link it shows; come back to ADB App Manager when it says you are signed in.\"; claude'"
+   Sign in opens Claude Code in a Termux window: "proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$PATH\"; echo \"Signing in to Claude Code. Follow the link it shows; come back to ADB System Manager when it says you are signed in.\"; claude'"
    in use: cli claude
    a message goes to claude -p in the Debian container, with the saved key handed to it as ANTHROPIC_API_KEY (by the app):
     "proot-distro login debian --shared-tmp --env \"ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY\" -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; cd '\\''<tmp>/termux'\\'' 2>/dev/null; claude -p '\\''fix the build, please'\\'' --model '\\''claude-opus-5-5'\\'''" {"ANTHROPIC_API_KEY":"claude"}

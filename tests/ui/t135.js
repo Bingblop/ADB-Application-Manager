@@ -130,7 +130,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const body = (() => { document.getElementById('contactText').value = 'It crashes when I tap X'; document.getElementById('contactWithInfo').checked = true; return contactBody(); })();
     return body;
   });
-  check('   the message is followed by the app version, Android version and phone', /^It crashes when I tap X\n\n--\nApp: ADB Application Manager Pro 7\.10\.11-Pro \(build 831\)\nAndroid: 14 \(API 34\)\nPhone: Test Phone/.test(sent), JSON.stringify(sent));
+  check('   the message is followed by the app version, Android version and phone', /^It crashes when I tap X\n\n--\nApp: ADB System Manager 7\.10\.11-Pro \(build 831\)\nAndroid: 14 \(API 34\)\nPhone: Test Phone/.test(sent), JSON.stringify(sent));
   await ev(() => { document.getElementById('contactWithInfo').checked = false; });
   check('   with the switch off only the message is sent', await ev(() => contactBody() === 'It crashes when I tap X'));
   await page.click('#contactModal .mode-action-btn:not(.primary)'); await sleep(60);

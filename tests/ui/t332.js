@@ -26,7 +26,7 @@ const PLACES = [
   ['GitHub store intro', 'store', '#substore-github .color-card-subtitle', 'github'],
   ['F-Droid store intro', 'store', '#substore-fdroid .color-card-subtitle', 'fdroid'],
   ['Orion store intro', 'store', '#substore-orion .color-card-subtitle', 'orion'],
-  ['Default Ask Agent', 'prefs', '#agentCard .color-card-subtitle'],
+  ['Default Ask Agent', 'prefs', '#agentCard > .color-card-subtitle'],
   ['Morphe credit', 'morphe', '#view-morphe .mp-credit'],
 ];
 (async () => {
@@ -116,7 +116,7 @@ const PLACES = [
       const s = await state(p, sel);
       if (!(s.clamped && s.lines === 2 && s.full > s.h + 4)) out.push(name + ' ' + JSON.stringify(s));
     }
-    const de = lang ? await p.evaluate(() => document.querySelector('#agentCard .color-card-subtitle').textContent.slice(0, 30)) : '';
+    const de = lang ? await p.evaluate(() => document.querySelector('#agentCard > .color-card-subtitle').textContent.slice(0, 30)) : '';
     check('6. ' + w + ' px' + (lang ? ' in German' : '') + ': every one is two lines with more to read', out.length === 0, out.join(' | ') + (lang ? ' ' + de : ''));
     if (w === 360) { await show(p, 'sdm'); await p.screenshot({ path: 'sdm_' + w + (lang ? '_' + lang : '') + '.png', clip: { x: 0, y: 0, width: w, height: 420 } }); }
     await p.close();
