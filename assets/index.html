@@ -5932,6 +5932,8 @@
 
             <div class="saved-lists-toolbar">
                 <button class="batch-tool-link bs-btn" style="flex:1;" onclick="openListEditorModal()">New List</button>
+                <!-- App Profiles moved here from the Apps tab's top row in v7.14 (the owner's choice); the drift banner's Review still opens it too -->
+                <button class="batch-tool-link bs-btn" style="flex:1;" id="savedProfilesBtn" onclick="openProfiles()">Profiles</button>
             </div>
 
             <div class="color-card" id="listsBackupCard" style="margin-bottom:12px;">
@@ -8385,8 +8387,6 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="restorePreview" class="backup-note" style="display:none;"></div>
             <div class="mode-btn-row" style="margin-top:10px;">
                 <button class="mode-action-btn" onclick="pickBackupUI()">Choose backup file…</button>
-                <!-- App Profiles lost its own button on the Apps tab in v7.14 (the owner's choice): it opens from here and from the drift banner -->
-                <button class="mode-action-btn" id="backupsProfilesBtn" onclick="closeBackups(); openProfiles();">App Profiles…</button>
             </div>
         </div>
     </div>

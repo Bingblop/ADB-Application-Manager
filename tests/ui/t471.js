@@ -1,5 +1,5 @@
-// v7.14.0: the Apps tab's top row, after the owner's list: the Profiles button is gone (App Profiles opens from the Backups sheet and the drift
-// banner), Share CSV is just "CSV", CSV and Backups are plain buttons (not drawn like a pressed filter), and the Sort menu and the Action
+// v7.14.0: the Apps tab's top row, after the owner's list: the Profiles button moved to Saved Applications (next to New List; the drift banner
+// still opens it), Share CSV is just "CSV", CSV and Backups are plain buttons (not drawn like a pressed filter), and the Sort menu and the Action
 // Button picker get the room, so the row fits a phone without scrolling sideways.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
@@ -26,10 +26,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     check(tag + ' CSV and Backups are plain: text colour, no accent outline', r.btns.every(x => x.color === r.text && x.border !== r.accent), JSON.stringify(r.btns) + ' accent ' + r.accent);
     check(tag + ' the row fits on one line without scrolling sideways, and the two menus get the room (each at least 96px)', r.fits && r.oneLine && r.sortW >= 96 && r.pickW >= 96, JSON.stringify(r));
     if (w === 390) {
-      await page.evaluate(() => openBackups()); await page.waitForTimeout(300);
-      check('   the Backups sheet has App Profiles…', await page.evaluate(() => { const e = document.getElementById('backupsProfilesBtn'); return !!e && document.getElementById('backupsModal').contains(e) && /App Profiles/.test(e.innerText); }));
-      await page.evaluate(() => document.getElementById('backupsProfilesBtn').click()); await page.waitForTimeout(300);
-      check('   and it opens App Profiles in place of Backups', await page.evaluate(() => document.getElementById('profilesModal').classList.contains('show') && !document.getElementById('backupsModal').classList.contains('show')));
+      await page.evaluate(() => switchView('saved-lists')); await page.waitForTimeout(300);
+      const pb = await page.evaluate(() => { const e = document.getElementById('savedProfilesBtn'), n = e && e.previousElementSibling; const r = e && e.getBoundingClientRect(), q = n && n.getBoundingClientRect();
+        return { inView: !!e && document.getElementById('view-saved-lists').contains(e), text: e && e.innerText.trim(), nextToNew: !!n && /New List/.test(n.innerText) && Math.abs(r.top - q.top) < 2, h: r && Math.round(r.height) }; });
+      check('   Saved Applications has a Profiles button beside New List', pb.inView && pb.text === 'Profiles' && pb.nextToNew && pb.h > 0, JSON.stringify(pb));
+      await page.click('#savedProfilesBtn'); await page.waitForTimeout(300);
+      check('   and it opens App Profiles', await page.evaluate(() => document.getElementById('profilesModal').classList.contains('show')));
     }
     await page.close();
   }
