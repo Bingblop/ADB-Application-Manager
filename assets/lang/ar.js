@@ -1,6 +1,8 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "قد يستهلك الاختبار حتى <1/> من البيانات: ويتوقف مبكرًا عند بلوغ هذا المقدار.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "وكيل البحث الذي يقف وراء كل زر «اسأل الوكيل»، والذي يطلب منه محدّث التطبيقات العثور على تطبيق. يقرأ الويب ويوازن ما يجده ليجيب عن: ما هو الإعداد المخفي أو الإذن أو العملية أو سطر السجل أو التطبيق. ليس وكيل برمجة ولا يغيّر أي شيء على الهاتف أبدًا. Perplexity هو الافتراضي: يبحث في الويب بنفسه ويذكر مصادره. يُضبط مفتاحه في وحدة التحكم ← الطرفية.",
 "✓ Granted": "✓ ممنوح",
 "✓ Not needed": "✓ غير مطلوب",
 "History of changes": "سجل التغييرات",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "لون تمييز قوي يبرز دون أي صبغة للخلفية",
 "A tab needs a name": "التبويب يحتاج إلى اسم",
 "A tab on the bottom bar": "تبويب في الشريط السفلي",
-"A test can use up to": "قد يستهلك الاختبار حتى",
 "A value can't contain a carriage return (use plain line breaks)": "لا يمكن أن تحتوي القيمة على رمز العودة إلى بداية السطر (استخدم فواصل الأسطر العادية)",
 "A value can't contain control characters": "لا يمكن أن تحتوي القيمة على أحرف تحكم",
 "A value with several lines.": "قيمة من عدة أسطر.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram جزء من الذاكرة يعمل كمبادلة مضغوطة: عندما تشحّ الذاكرة ينقل Android إليه ذاكرة التطبيقات الخاملة، مضغوطةً إلى نحو ثلث حجمها، بدل إغلاقها. يقرأ القسم <1/> (البيانات غير المضغوطة، الحجم المضغوط، الذاكرة المستخدمة فعلًا) و<2/> و<3/> عبر وضع العمل. الضغط هو البيانات غير المضغوطة مقسومة على الحجم المضغوط؛ والذاكرة الموفَّرة هي البيانات غير المضغوطة ناقص الذاكرة التي تشغلها النسخة المضغوطة."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} غير متصل بعد. أضف مفتاحه أو تسجيل دخوله أولًا في وحدة التحكم ← الطرفية."],
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "«{0}» هي الآن القائمة السريعة. أضف بلاطة «إيقاف التطبيقات» أو الأداة لاستخدامها."],
 ["+{0} / −{1} lines • {2}", "الأسطر +{0} / −{1} • {2}"],

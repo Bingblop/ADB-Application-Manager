@@ -1,6 +1,8 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "一次测试最多可能消耗 <1/> 流量：达到该数量时会提前停止。",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "每个询问代理按钮背后的研究代理，也是应用更新器用来查找应用的代理。它会读取网页并权衡所得信息，来回答：某个隐藏设置、权限、进程、日志行或应用是什么。它不是编程代理，也绝不会更改手机上的任何内容。默认为 Perplexity：它会自行搜索网页并注明来源。其密钥在“控制台 → 终端”中设置。",
 "✓ Granted": "✓ 已授予",
 "✓ Not needed": "✓ 无需授予",
 "History of changes": "更改历史",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "醒目的强调色，在无色调的背景上格外突出",
 "A tab needs a name": "标签页需要名称",
 "A tab on the bottom bar": "底部栏中的标签页",
-"A test can use up to": "一次测试最多可能消耗",
 "A value can't contain a carriage return (use plain line breaks)": "值不能包含回车符（请使用普通换行）",
 "A value can't contain control characters": "值不能包含控制字符",
 "A value with several lines.": "多行的值。",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram 是一块作为压缩交换区使用的 RAM：内存不足时，Android 把空闲应用的内存压缩到约三分之一后移入其中，而不是关闭它们。本区块通过工作模式读取 <1/>（未压缩数据、压缩后大小、实际占用的 RAM）、<2/> 和 <3/>。压缩率为未压缩数据除以压缩后大小；节省的 RAM 为未压缩数据减去压缩副本占用的 RAM。"
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} 尚未连接，因此在连接之前，询问代理按钮会为你读取网页（免费，无需密钥）。请在“控制台 → 终端”中添加其密钥。"],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} 尚未连接。请先在“控制台 → 终端”中添加它的密钥或登录。"],
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}”现在是快捷列表。添加“停止应用”图块或小部件即可使用。"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} 行 • {2}"],

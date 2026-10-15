@@ -1,6 +1,8 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "1 回のテストで最大 <1/> のデータを使うことがあります。その量に達すると早めに止まります。",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "すべての「エージェントに質問」ボタンと、アプリのアップデーターがアプリを探すときに使うリサーチエージェントです。Webを読み取り、見つけた内容を吟味して、隠し設定・権限・プロセス・ログの行・アプリが何であるかを答えます。コーディングエージェントではなく、端末を変更することは一切ありません。既定はPerplexityで、自分でWebを検索し、情報源も示します。キーはコンソール → ターミナルで設定します。",
 "✓ Granted": "✓ 付与済み",
 "✓ Not needed": "✓ 不要",
 "History of changes": "変更の履歴",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "背景に色味がなく、強いアクセントカラーが際立つテーマ",
 "A tab needs a name": "タブには名前が必要です",
 "A tab on the bottom bar": "下のバーのタブ",
-"A test can use up to": "1 回のテストで最大",
 "A value can't contain a carriage return (use plain line breaks)": "値にキャリッジリターンは使えません（通常の改行を使ってください）",
 "A value can't contain control characters": "値に制御文字は使えません",
 "A value with several lines.": "複数行の値です。",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram は圧縮スワップとして働く RAM の一部です。メモリが不足すると、Android はアイドル状態のアプリのメモリを閉じる代わりにおよそ3分の1に圧縮してそこへ移します。このセクションは動作モード経由で <1/>（非圧縮データ、圧縮後サイズ、実際に使用する RAM）、<2/>、<3/> を読みます。圧縮率は非圧縮データ÷圧縮後サイズ、節約した RAM は非圧縮データから圧縮コピーが占める RAM を引いた値です。"
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} はまだ接続されていません。先にコンソール → ターミナルでそのキーまたはサインインを追加してください。"],
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "「{0}」がクイックリストになりました。使うには「アプリを停止」タイルまたはウィジェットを追加してください。"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} 行 • {2}"],

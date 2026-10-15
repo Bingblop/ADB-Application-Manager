@@ -1,6 +1,8 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "Satu tes dapat memakai hingga <1/> data: tes berhenti lebih awal saat mencapai jumlah itu.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Agen riset di balik setiap tombol Tanya agen, sekaligus agen yang ditanyai Pembaru Aplikasi untuk menemukan aplikasi. Ia membaca web dan menimbang temuannya untuk menjawab: apa itu setelan tersembunyi, izin, proses, baris log, atau aplikasi. Ini bukan agen pemrograman dan tidak pernah mengubah apa pun di ponsel. Perplexity adalah bawaannya: ia mencari web sendiri dan menyebutkan sumbernya. Kuncinya diatur di Konsol → Terminal.",
 "✓ Granted": "✓ Diberikan",
 "✓ Not needed": "✓ Tidak diperlukan",
 "History of changes": "Riwayat perubahan",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "Aksen kuat yang menonjol tanpa semburat warna pada latar belakang",
 "A tab needs a name": "Tab membutuhkan nama",
 "A tab on the bottom bar": "Tab di bilah bawah",
-"A test can use up to": "Satu tes dapat memakai hingga",
 "A value can't contain a carriage return (use plain line breaks)": "Nilai tidak boleh berisi carriage return (gunakan baris baru biasa)",
 "A value can't contain control characters": "Nilai tidak boleh berisi karakter kontrol",
 "A value with several lines.": "Nilai dengan beberapa baris.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram adalah sepotong RAM yang bekerja sebagai swap terkompresi: saat memori menipis, Android memindahkan memori aplikasi yang diam ke sana, dipadatkan menjadi sekitar sepertiga ukurannya, alih-alih menutupnya. Bagian ini membaca <1/> (data tak terkompresi, ukuran terkompresi, RAM yang benar-benar dipakai), <2/>, dan <3/> lewat mode kerja. Kompresi adalah data tak terkompresi dibagi ukuran terkompresi; RAM dihemat adalah data tak terkompresi dikurangi RAM yang dipakai salinan terkompresi."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} belum terhubung. Tambahkan dulu kunci atau login-nya di Konsol → Terminal."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” kini menjadi daftar cepat. Tambahkan ubin “Hentikan aplikasi” atau widget untuk menggunakannya."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} baris • {2}"],

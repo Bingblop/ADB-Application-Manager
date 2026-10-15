@@ -154,7 +154,7 @@ const mock = require('./lib/console_mock');
 
   // no text of the page sends a person to the Command-Line Interface tab (it is Terminal and Console now)
   const stale = await ev(page, () => { const c = document.documentElement.cloneNode(true); c.querySelectorAll('script, style').forEach(e => e.remove()); askAgentNote(); return { markup: /Command-Line/.test(c.innerHTML), note: document.getElementById('askAgentNote').innerText, sub: [...document.querySelectorAll('.color-card-subtitle')].map(e => e.innerText).filter(t => /Command-Line|Terminal tab|Console > Terminal/.test(t)) }; });
-  check('no text of the page names the Command-Line Interface tab; the Default Ask Agent texts say Console > Terminal', !stale.markup && /Console > Terminal/.test(stale.note + ' ' + stale.sub.join(' ')) && !/Command-Line|Terminal tab/.test(stale.note + ' ' + stale.sub.join(' ')), JSON.stringify(stale));
+  check('no text of the page names the Command-Line Interface tab; the Default Ask Agent texts say Console → Terminal', !stale.markup && /Console → Terminal/.test(stale.note + ' ' + stale.sub.join(' ')) && !/Command-Line|Terminal tab/.test(stale.note + ' ' + stale.sub.join(' ')), JSON.stringify(stale));
   await page.close();
 
   console.log('errors:', JSON.stringify(errors));

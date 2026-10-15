@@ -1,6 +1,8 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "Тест может израсходовать до <1/> трафика: дойдя до этого объёма, он останавливается раньше.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Исследовательский агент за каждой кнопкой «Спросить агента», он же ищет приложение для обновления приложений. Он читает интернет и сопоставляет найденное, чтобы ответить, что такое скрытая настройка, разрешение, процесс, строка журнала или приложение. Это не агент для кода, и он ничего не меняет на телефоне. По умолчанию используется Perplexity: он сам ищет в интернете и называет источники. Его ключ задаётся в разделе «Консоль → Терминал».",
 "✓ Granted": "✓ Выдано",
 "✓ Not needed": "✓ Не требуется",
 "History of changes": "История изменений",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "Яркий акцент, выделяющийся на фоне без оттенка",
 "A tab needs a name": "У вкладки должно быть название",
 "A tab on the bottom bar": "Вкладка на нижней панели",
-"A test can use up to": "Тест может израсходовать до",
 "A value can't contain a carriage return (use plain line breaks)": "Значение не может содержать возврат каретки (используйте обычные переводы строки)",
 "A value can't contain control characters": "Значение не может содержать управляющие символы",
 "A value with several lines.": "Значение из нескольких строк.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram — это часть ОЗУ, работающая как сжатый swap: когда памяти не хватает, Android переносит туда память простаивающих приложений, сжатую примерно до трети, вместо того чтобы их закрывать. Раздел читает <1/> (несжатые данные, сжатый размер, реально занятое ОЗУ), <2/> и <3/> через рабочий режим. Сжатие — это несжатые данные, делённые на сжатый размер; сэкономленное ОЗУ — несжатые данные минус ОЗУ, которое занимает сжатая копия."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ещё не подключён. Сначала добавьте его ключ или вход в разделе «Консоль → Терминал»."],
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "«{0}» теперь быстрый список. Добавьте плитку «Остановить приложения» или виджет, чтобы использовать его."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} строк • {2}"],

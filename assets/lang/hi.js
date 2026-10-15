@@ -1,6 +1,8 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "एक टेस्ट में अधिकतम <1/> डेटा लग सकता है: इतना होते ही यह पहले ही रुक जाता है।",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "हर एजेंट से पूछें बटन के पीछे का रिसर्च एजेंट, और वही जिससे ऐप अपडेटर ऐप खोजने को कहता है। यह वेब पढ़ता है और जो मिलता है उसे परखकर बताता है: छिपी सेटिंग, अनुमति, प्रोसेस, लॉग लाइन या ऐप क्या है। यह कोडिंग एजेंट नहीं है और फ़ोन में कभी कुछ नहीं बदलता। Perplexity डिफ़ॉल्ट है: यह खुद वेब खोजता है और अपने स्रोत बताता है। इसकी कुंजी कंसोल → टर्मिनल में सेट होती है।",
 "✓ Granted": "✓ दी गई",
 "✓ Not needed": "✓ ज़रूरत नहीं",
 "History of changes": "बदलावों का इतिहास",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "दमदार एक्सेंट, जो बिना टिंट वाले बैकग्राउंड पर उभरकर दिखता है",
 "A tab needs a name": "टैब को नाम चाहिए",
 "A tab on the bottom bar": "नीचे की बार का कोई टैब",
-"A test can use up to": "एक टेस्ट में अधिकतम",
 "A value can't contain a carriage return (use plain line breaks)": "मान में कैरिज रिटर्न नहीं हो सकता (सामान्य लाइन ब्रेक इस्तेमाल करें)",
 "A value can't contain control characters": "मान में कंट्रोल कैरेक्टर नहीं हो सकते",
 "A value with several lines.": "कई पंक्तियों वाला मान।",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram RAM का एक हिस्सा है जो संपीड़ित स्वैप की तरह काम करता है: मेमोरी कम होने पर Android निष्क्रिय ऐप्स की मेमोरी को बंद करने के बजाय लगभग एक-तिहाई आकार में दबाकर वहाँ भेज देता है। यह खंड कार्य मोड के ज़रिए <1/> (असंपीड़ित डेटा, संपीड़ित आकार, असल में इस्तेमाल RAM), <2/> और <3/> पढ़ता है। संपीड़न = असंपीड़ित डेटा ÷ संपीड़ित आकार; RAM बचाई = असंपीड़ित डेटा − वह RAM जो संपीड़ित प्रति लेती है।"
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} अभी जुड़ा नहीं है। पहले कंसोल → टर्मिनल में उसकी कुंजी या साइन-इन जोड़ें।"],
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” अब क्विक सूची है। इसे इस्तेमाल करने के लिए \"ऐप्स रोकें\" टाइल या विजेट जोड़ें।"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} पंक्तियां • {2}"],

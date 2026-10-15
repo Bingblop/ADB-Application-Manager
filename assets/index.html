@@ -6259,7 +6259,7 @@
 
             <div class="color-card" id="agentCard">
                 <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console > Terminal.</div>
+                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
@@ -7697,7 +7697,7 @@
                 .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(-100%); }
                 /* the Live Logcat tab has one title in the same row (no segments): the underline spans it */
-                .cn-tabs.lc-title .cn-tab { display: flex; align-items: center; justify-content: center; margin: 0; cursor: default; }
+                .cn-tabs.lc-title .cn-tab { display: flex; align-items: center; justify-content: center; margin: 0; cursor: default; color: var(--accent); }   /* a heading, not a tab: the selected tab's colour without aria-selected */
                 .cn-tabs.lc-title .cn-ind, .cn-tabs.lc-title.has-help .cn-ind { width: calc(100% - var(--cn-help-w, 0px)); transform: none; }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
                 .cn-tabs .help-q { top: calc((48px - var(--ctl-h)) / 2); right: auto; inset-inline-end: var(--space-2); }
@@ -8085,7 +8085,7 @@ Type any command above (e.g. pm list packages -d)</div>
         <!-- VIEW: LIVE LOGCAT (its own tab again since v7.14.0; the pane keeps the id cnSegLog it had as a segment of Console, and the Console's look) -->
         <section id="view-logcat" class="view-content">
             <div class="cn-tabs lc-title" id="lcTitleRow">
-                <h2 class="cn-tab" id="lcTitle" aria-selected="true">Live Logcat</h2>
+                <h2 class="cn-tab" id="lcTitle">Live Logcat</h2>
                 <span class="cn-ind" aria-hidden="true"></span>
             </div>
             <div id="cnSegLog" class="cn-seg lc-pane">
@@ -8402,7 +8402,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="st-actions"><button type="button" class="st-go" id="stGo" onclick="stGo()">Start</button></div>
                 <div class="st-warn" id="stWarn" style="display:none;" role="alert">
                     <div class="st-warn-title" id="stWarnTitle">You are on mobile data</div>
-                    <div class="st-warn-text"><span>A test can use up to</span> <b id="stWarnMb" translate="no">350 MB</b> <span>of data: it stops early at that amount.</span></div>
+                    <div class="st-warn-text">A test can use up to <b id="stWarnMb" translate="no">350 MB</b> of data: it stops early at that amount.</div>
                     <div class="st-warn-btns">
                         <button type="button" class="mode-action-btn primary" onclick="stWarnContinue()">Start anyway</button>
                         <button type="button" class="mode-action-btn" onclick="stWarnCancel()">Cancel</button>
@@ -13747,7 +13747,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = askAgentDef();
             if (!ag) { el.textContent = 'No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you.'; return; }
             txRefreshVault();
-            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console > Terminal. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
             el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
         }
@@ -13774,7 +13774,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 out.style.display = 'none';
                 res.classList.add('is-err');
                 res.textContent = !ag ? txT('No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
-                    : txF('{0} is not connected yet. Add its key or sign-in in Console > Terminal first.', ag.name);
+                    : txF('{0} is not connected yet. Add its key or sign-in in Console → Terminal first.', ag.name);
                 return;
             }
             if (txEngine(ag) === 'cli' || ag.api === 'cli') {

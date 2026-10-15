@@ -1,6 +1,8 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "Bir test en fazla <1/> veri kullanabilir: bu miktara ulaşınca erken durur.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Her Sor aracısı düğmesinin arkasındaki ve Uygulama Güncelleyici'nin bir uygulamayı bulmak için sorduğu araştırma aracısı. Web'i okur ve bulduklarını tartarak şunun yanıtını verir: gizli bir ayar, bir izin, bir işlem, bir günlük satırı veya bir uygulama nedir. Kodlama aracısı değildir ve telefonda hiçbir şeyi değiştirmez. Varsayılan Perplexity'dir: web'i kendisi arar ve kaynaklarını belirtir. Anahtarı Konsol → Terminal bölümünde ayarlanır.",
 "✓ Granted": "✓ Verildi",
 "✓ Not needed": "✓ Gerekmiyor",
 "History of changes": "Değişiklik geçmişi",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "Arka plan tonu olmadan öne çıkan güçlü bir vurgu",
 "A tab needs a name": "Sekmenin bir adı olmalı",
 "A tab on the bottom bar": "Alt çubuktaki bir sekme",
-"A test can use up to": "Bir test en fazla",
 "A value can't contain a carriage return (use plain line breaks)": "Değer satır başı (CR) karakteri içeremez (normal satır sonları kullanın)",
 "A value can't contain control characters": "Değer denetim karakterleri içeremez",
 "A value with several lines.": "Birden çok satırlı bir değer.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram, sıkıştırılmış takas olarak çalışan bir RAM parçasıdır: bellek azaldığında Android, boştaki uygulamaların belleğini kapatmak yerine yaklaşık üçte birine sıkıştırarak oraya taşır. Bölüm, çalışma modu üzerinden <1/> (sıkıştırılmamış veri, sıkıştırılmış boyut, gerçekten kullanılan RAM), <2/> ve <3/> okur. Sıkıştırma, sıkıştırılmamış verinin sıkıştırılmış boyuta bölümüdür; kazanılan RAM, sıkıştırılmamış veri eksi sıkıştırılmış kopyanın kapladığı RAM'dir."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} henüz bağlı değil. Önce Konsol → Terminal bölümünde anahtarını veya girişini ekleyin."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” artık hızlı liste. Kullanmak için “Uygulamaları durdur” kutucuğunu veya widget’ı ekleyin."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} satır • {2}"],

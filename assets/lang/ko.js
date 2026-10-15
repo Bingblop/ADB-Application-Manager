@@ -1,6 +1,8 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "테스트 한 번에 최대 <1/>의 데이터를 사용할 수 있으며, 그 양에 도달하면 일찍 멈춥니다.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "모든 질문 에이전트 버튼과, 앱 업데이트 도구가 앱을 찾을 때 묻는 리서치 에이전트입니다. 웹을 읽고 찾은 내용을 따져 숨겨진 설정, 권한, 프로세스, 로그 줄 또는 앱이 무엇인지 답합니다. 코딩 에이전트가 아니며 휴대폰을 절대 변경하지 않습니다. 기본값은 Perplexity로, 직접 웹을 검색하고 출처를 밝힙니다. 키는 콘솔 → 터미널에서 설정합니다.",
 "✓ Granted": "✓ 부여됨",
 "✓ Not needed": "✓ 필요 없음",
 "History of changes": "변경 기록",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "배경 색조 없이 돋보이는 강한 강조 색상",
 "A tab needs a name": "탭에는 이름이 필요합니다",
 "A tab on the bottom bar": "하단 바의 탭",
-"A test can use up to": "테스트 한 번에 최대",
 "A value can't contain a carriage return (use plain line breaks)": "값에는 캐리지 리턴을 사용할 수 없습니다(일반 줄바꿈 사용)",
 "A value can't contain control characters": "값에는 제어 문자를 사용할 수 없습니다",
 "A value with several lines.": "여러 줄로 된 값입니다.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram은 압축 스왑으로 동작하는 RAM의 일부입니다. 메모리가 부족하면 Android는 유휴 앱의 메모리를 닫는 대신 약 3분의 1로 압축해 그곳으로 옮깁니다. 이 섹션은 작업 모드를 통해 <1/>(비압축 데이터, 압축 크기, 실제 사용 RAM), <2/>, <3/>을 읽습니다. 압축률은 비압축 데이터를 압축 크기로 나눈 값이고, 절약된 RAM은 비압축 데이터에서 압축 사본이 차지하는 RAM을 뺀 값입니다."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0}은(는) 아직 연결되지 않았습니다. 먼저 콘솔 → 터미널에서 키 또는 로그인을 추가하세요."],
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "\"{0}\" 목록이 이제 빠른 목록입니다. 사용하려면 \"앱 중지\" 타일이나 위젯을 추가하세요."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1}줄 • {2}"],

@@ -1,6 +1,8 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"A test can use up to <1/> of data: it stops early at that amount.": "Um teste pode usar até <1/> de dados: ele para antes ao chegar a essa quantidade.",
+"The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "O agente de pesquisa por trás de todo botão de consulta ao agente, e aquele a quem o Atualizador de apps pede para encontrar um app. Ele lê a web e pondera o que encontra para responder: o que é uma configuração oculta, uma permissão, um processo, uma linha de log ou um app. Não é um agente de programação e nunca altera nada no telefone. O Perplexity é o padrão: pesquisa na web sozinho e cita as fontes. A chave dele é configurada em Console → Terminal.",
 "✓ Granted": "✓ Concedida",
 "✓ Not needed": "✓ Não é necessária",
 "History of changes": "Histórico de alterações",
@@ -129,7 +131,6 @@ x: {
 "A strong accent that stands out against no background tint": "Um destaque forte que se sobressai sobre um fundo sem tonalidade",
 "A tab needs a name": "A aba precisa de um nome",
 "A tab on the bottom bar": "Uma aba da barra inferior",
-"A test can use up to": "Um teste pode usar até",
 "A value can't contain a carriage return (use plain line breaks)": "O valor não pode conter retorno de carro (use quebras de linha simples)",
 "A value can't contain control characters": "O valor não pode conter caracteres de controle",
 "A value with several lines.": "Um valor com várias linhas.",
@@ -5064,6 +5065,8 @@ x: {
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "O zram é um pedaço da RAM que funciona como swap comprimido: quando a memória fica baixa, o Android move para lá a memória dos apps ociosos, espremida a cerca de um terço do tamanho, em vez de fechá-los. A seção lê <1/> (dados não comprimidos, tamanho comprimido, RAM realmente usada), <2/> e <3/> pelo modo de trabalho. A compressão é os dados não comprimidos divididos pelo tamanho comprimido; a RAM economizada é os dados não comprimidos menos a RAM que a cópia comprimida ocupa."
 },
 p: [
+["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ainda não está conectado, então um botão de consulta ao agente lê a web para você (grátis, sem chave) até que esteja. Adicione a chave dele em Console → Terminal."],
+["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ainda não está conectado. Adicione primeiro a chave ou o login dele em Console → Terminal."],
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
 ["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” agora é a lista rápida. Adicione o bloco “Parar apps” ou o widget para usá-la."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} linhas • {2}"],
