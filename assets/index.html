@@ -75,6 +75,19 @@
             --line-suspended: color-mix(in srgb, var(--status-suspended) 35%, transparent);
             --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
             --line-accent: color-mix(in srgb, var(--accent) 35%, transparent);
+            --tint-apps-frozen: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
+            --line-apps-frozen: color-mix(in srgb, var(--apps-frozen) 40%, transparent);
+            --tint-apps-system: color-mix(in srgb, var(--apps-system) 14%, transparent);
+            --line-apps-system: color-mix(in srgb, var(--apps-system) 40%, transparent);
+            --tint-apps-uninstalled: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent);
+            --line-apps-uninstalled: color-mix(in srgb, var(--apps-uninstalled) 40%, transparent);
+            --tint-apps-enabled: color-mix(in srgb, var(--apps-enabled) 14%, transparent);
+            --line-apps-enabled: color-mix(in srgb, var(--apps-enabled) 40%, transparent);
+            /* A WebView before Chrome 111 has no color-mix(). A declaration that uses it AND a var() is not dropped when it is read: it
+               fails later, when it is computed, and the property then falls to its initial value (a border turns the text colour, white;
+               a background turns transparent), so a plain declaration before it does not help. The tokens above are therefore computed
+               in JS there (colorMixFallback(), called by applyTheme()) and written over these values, and the rules that mix colours
+               themselves get an @supports not (color: color-mix(...)) block next to them that draws them from the tokens. */
 
             /* ---- Fixed colours [fixed] ---- */
             --danger-solid: #C62828;                 /* the Stop button: a solid red that carries white text in every theme */
@@ -1080,9 +1093,9 @@
         }
 
         .tag-frozen {
-            background: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
+            background: var(--tint-apps-frozen);
             color: var(--apps-frozen);
-            border: 1px solid color-mix(in srgb, var(--apps-frozen) 40%, transparent);
+            border: 1px solid var(--line-apps-frozen);
         }
 
         /* Connected Devices: the FROZEN badge reads a little stronger (a fuller tint, the text pulled towards the page's text colour) */
@@ -1093,9 +1106,9 @@
         }
 
         .tag-system {
-            background: color-mix(in srgb, var(--apps-system) 14%, transparent);
+            background: var(--tint-apps-system);
             color: var(--apps-system);
-            border: 1px solid color-mix(in srgb, var(--apps-system) 40%, transparent);
+            border: 1px solid var(--line-apps-system);
         }
 
         .tag-user {
@@ -1803,9 +1816,9 @@
         }
 
         /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
-        .sheet-btn-red { background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
-        .sheet-btn-blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
-        .sheet-btn-green { background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
+        .sheet-btn-red { background: var(--tint-apps-uninstalled); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
+        .sheet-btn-blue { background: var(--tint-apps-frozen); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
+        .sheet-btn-green { background: var(--tint-apps-enabled); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
         .sheet-btn-red:active, .sheet-btn-blue:active, .sheet-btn-green:active { background: var(--accent); color: var(--on-accent); }
 
         .sheet-tabs {
@@ -2923,7 +2936,7 @@
         /* The trash can and the recycle symbol used to say which buttons delete and which are the main action */
         .batch-grid-btn.danger { color: var(--status-bloat); border-color: var(--status-bloat); }
         .batch-grid-btn.accent { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
-        .batch-grid-btn.blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
+        .batch-grid-btn.blue { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
 
         .arc-textarea {
             width: 100%;
@@ -4096,6 +4109,29 @@
             .view-content.active { animation: viewFadeIn 0.22s ease-out; }
             @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
         }
+
+        /* No color-mix() (a WebView before Chrome 111): the rules of this sheet that mix two colours themselves, drawn from the tokens instead
+           (computed in JS there). A translucent token laid over an opaque colour (linear-gradient(t, t), base) is the same mix. */
+        @supports not (color: color-mix(in srgb, red 50%, blue)) {
+            #prefsHeaderBtn { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--bg-card); border-color: var(--line-accent); }
+            .bn-tile .bn-ico, .bn-tile.current, .bn-sc.fav { background: var(--tint-accent); }
+            .nav-opt[aria-checked="true"] { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--input-bg); }
+            .bn-menu { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line-accent); }
+            .stat-card[data-filter="running"], .stat-card[data-filter="enabled"] { --tone-tint: var(--tint-running-strong); }
+            .stat-card[data-filter="uninstalled"] { --tone-tint: var(--tint-bloat-strong); }
+            .stat-card[data-filter="frozen"] { --tone-tint: var(--line-apps-frozen); }
+            .stat-card[data-filter="user"] { --tone-tint: var(--tint-user-strong); }
+            .stat-card[data-filter="system"] { --tone-tint: var(--line-apps-system); }
+            .filter-pill.stat-card:not([data-filter="installed"]) { background: var(--fill-2); }
+            .filter-pill.stat-card.active:not([data-filter="installed"]) { background: linear-gradient(var(--tone-tint), var(--tone-tint)), var(--bg-card); }
+            .app-card > .app-sel .app-checkbox { box-shadow: 0 0 0 2px var(--bg-card); }
+            .tag-frozen.cd-frozen { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--line-apps-frozen); }
+            .sheet-btn-red { border-color: var(--line-apps-uninstalled); }
+            .sheet-btn-blue { border-color: var(--line-apps-frozen); }
+            .sheet-btn-green { border-color: var(--line-apps-enabled); }
+            .lc-ent-ai, .agent-ask-bar, .agent-ask-hist-row:active { background: var(--tint-accent); }
+            .lc-msg { color: var(--lc); }
+        }
     </style>
 </head>
 <body>
@@ -4832,11 +4868,16 @@
                 .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act:disabled { opacity: 0.45; }
-                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); }
-                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); }
+                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: var(--tint-apps-uninstalled); }
+                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: var(--tint-apps-frozen); }
                 .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
-                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
+                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: var(--tint-apps-enabled); }
                 .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) {
+                    .cd-row-act.danger { border-color: var(--line-apps-uninstalled); }
+                    .cd-row-act.blue { border-color: var(--line-apps-frozen); }
+                    .cd-row-act.green { border-color: var(--line-apps-enabled); }
+                }
                 .cd-batch { position: sticky; bottom: calc(10px + var(--bnav-h, 0px)); z-index: 30; display: none; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3h); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-lg);
                     background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .cd-batch.show { display: flex; }
@@ -5365,6 +5406,7 @@
                 .sdb-help p, .sdb-help li { font-size:var(--fs-body); line-height:1.5; margin:var(--space-1) 0; }
                 .sdb-help ul { margin:var(--space-1) 0 var(--space-1) 18px; padding:0; }
                 .sdb-help code { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-body); }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) { .sdb-val, .sdb-about-now { color: var(--accent); } }
             </style>
 
             <div class="color-card" id="sdbTop">
@@ -7567,6 +7609,11 @@
                 #cnSegLog .lc-key { margin: 10px -16px 0; }
                 #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
                 #cnSegLog #logcatScope:empty { display: none; }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) {
+                    .cn-icon.danger, .cn-find .find-nav.danger, .cn-card.is-fail .cn-badge { color: var(--status-bloat); }
+                    .cn-card.is-ok .cn-badge { color: var(--status-running); }
+                    #cnSegLog .lc-badge, #cnSegLog .lc-head .lc-tag { color: var(--lc); }
+                }
             </style>
 
             <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -10368,6 +10415,96 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function hexToRgba(hex, alpha) {
             return 'rgba(' + hexToRgb(hex).join(',') + ',' + alpha + ')';
+        }
+
+        // ---------- No color-mix() (a WebView before Chrome 111) ----------
+        // There a declaration such as border-color: color-mix(in srgb, <a token> 40%, transparent) fails when it is computed, and the border
+        // then takes the text colour (white) and a background goes transparent. The tokens of the first :root sheet that are color-mix() mixes
+        // (--tint-*, --line-*) are computed here from the theme colours applyTheme() has just set and written inline over the sheet's value:
+        // a mix with transparent is the colour at that alpha, a mix of two colours their blend (premultiplied, as color-mix() does it).
+        function colorMixSupported() {
+            try { return !!(window.CSS && CSS.supports && CSS.supports('color', 'color-mix(in srgb, red 50%, blue)')); } catch (e) { return false; }
+        }
+
+        // The arguments of the first color-mix( ... ) in a value, split at the top-level commas (null when there is none)
+        function colorMixArgs(value) {
+            const at = String(value || '').indexOf('color-mix(');
+            if (at < 0) return null;
+            const args = [];
+            let depth = 0, cur = '';
+            for (let i = at + 'color-mix('.length; i < value.length; i++) {
+                const ch = value[i];
+                if (ch === '(') depth++;
+                else if (ch === ')') { if (depth === 0) { args.push(cur.trim()); return args; } depth--; }
+                if (ch === ',' && depth === 0) { args.push(cur.trim()); cur = ''; } else cur += ch;
+            }
+            return null;
+        }
+
+        // A colour term of a mix as [r, g, b, a]: a hex, rgb()/rgba(), transparent or a var() of a token (read from the inline theme first)
+        function colorMixTerm(term, depth) {
+            term = String(term || '').trim();
+            if (depth > 4) return null;
+            const v = /^var\(\s*(--[\w-]+)\s*(?:,(.*))?\)$/.exec(term);
+            if (v) {
+                const root = document.documentElement;
+                const val = root.style.getPropertyValue(v[1]).trim() || getComputedStyle(root).getPropertyValue(v[1]).trim() || (v[2] || '').trim();
+                return colorMixTerm(val, (depth || 0) + 1);
+            }
+            if (/^transparent$/i.test(term)) return [0, 0, 0, 0];
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(term)) return hexToRgb(term).concat(1);
+            const m = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(term);
+            if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
+            return null;
+        }
+
+        // color-mix(in srgb, A p%, B [q%]) as a colour string, or null when a term cannot be read
+        function colorMixCompute(value) {
+            const args = colorMixArgs(value);
+            if (!args || args.length !== 3 || !/^in\s+srgb$/i.test(args[0])) return null;
+            const part = s => { const m = /^(.*?)(?:\s+([\d.]+)%)?$/.exec(s); return { c: colorMixTerm(m[1], 0), p: m[2] === undefined ? null : +m[2] / 100 }; };
+            const a = part(args[1]), b = part(args[2]);
+            if (!a.c || !b.c) return null;
+            let pa = a.p, pb = b.p;
+            if (pa === null && pb === null) pa = pb = 0.5;
+            else if (pa === null) pa = 1 - pb;
+            else if (pb === null) pb = 1 - pa;
+            const sum = pa + pb;
+            if (!(sum > 0)) return null;
+            pa /= sum; pb /= sum;
+            const alpha = a.c[3] * pa + b.c[3] * pb;
+            if (alpha <= 0) return 'rgba(0, 0, 0, 0)';
+            const rgb = [0, 1, 2].map(i => Math.round((a.c[i] * a.c[3] * pa + b.c[i] * b.c[3] * pb) / alpha));
+            const al = Math.round(alpha * Math.min(1, sum) * 1000) / 1000;          // percentages under 100% in all make it that much more transparent
+            return al >= 1 ? rgbToHex(rgb) : 'rgba(' + rgb.join(', ') + ', ' + al + ')';
+        }
+
+        // The first :root rule of the page's first sheet (the token sheet)
+        function tokenSheetRule() {
+            try {
+                for (const sheet of Array.from(document.styleSheets)) {
+                    for (const rule of Array.from(sheet.cssRules || [])) if (rule.selectorText === ':root') return rule;
+                }
+            } catch (e) { /* a sheet that cannot be read */ }
+            return null;
+        }
+
+        // Writes every color-mix() token of the token sheet inline as a plain colour (only where color-mix() is missing). Returns what it set.
+        function colorMixFallback() {
+            if (colorMixSupported()) return {};
+            const rule = tokenSheetRule();
+            const set = {};
+            if (!rule) return set;
+            const css = document.documentElement.style;
+            for (let i = 0; i < rule.style.length; i++) {
+                const name = rule.style[i];
+                if (!name.startsWith('--')) continue;
+                const raw = rule.style.getPropertyValue(name);
+                if (raw.indexOf('color-mix(') < 0) continue;
+                const value = colorMixCompute(raw);
+                if (value) { css.setProperty(name, value); set[name] = value; }
+            }
+            return set;
         }
 
         // ---------- Palette styles: a whole scheme from one source color ----------
@@ -18170,6 +18307,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 setTimeout(maybeShowWhatsNew, 1200);
                 setTimeout(uadEnsureForList, 1600);
                 setTimeout(maybeShowPermIntro, 2300);
+                setTimeout(maybeShowOldWebViewNotice, 1500);
             } else {
                 // Mock packages for preview
                 for (let i = 1; i <= 60; i++) {
@@ -28560,6 +28698,7 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
             css.setProperty('--input-bg', light ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.35)');
+            colorMixFallback();          // a WebView before Chrome 111: the --tint-* / --line-* mixes as plain colours, from the colours just set
 
             PICKER_KEYS.forEach(([id, key]) => {
                 const circ = document.getElementById('circ' + id);
@@ -33880,6 +34019,47 @@ Type any command above (e.g. pm list packages -d)</div>
             if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
         }
 
+        // ---------- An out-of-date Android System WebView ----------
+        // The page is drawn by the phone's WebView, and one before Chrome 111 has no color-mix(): the tokens get plain colours then
+        // (colorMixFallback), but a few rules still look wrong. Said once, on start, with a way to update it (often the updates were removed by a debloat).
+        const WEBVIEW_COLOR_MIX_MIN = 111;
+        function webviewChromeMajor(ua) {
+            const m = /Chrome\/(\d+)\./.exec(ua === undefined ? (navigator.userAgent || '') : String(ua || ''));
+            return m ? parseInt(m[1], 10) : 0;
+        }
+        function webviewChromeVersion() {
+            const m = /Chrome\/([\d.]+)/.exec(navigator.userAgent || '');
+            return m ? m[1] : '';
+        }
+        // The store page of the package that provides the WebView (Android System WebView, or Chrome on Android 7-9), market:// first
+        function openWebViewStore() {
+            haptic();
+            let pkg = 'com.google.android.webview';
+            const wv = String((aboutInfo && aboutInfo.webview) || '').split(' ')[0];
+            if (/^[\w.]+$/.test(wv) && /webview|chrome/i.test(wv)) pkg = wv;
+            const b = window.AndroidBridge;
+            if (b && b.openInStore) b.openInStore(pkg);              // market://details, or the https Play page when nothing takes market://
+            else openUrlExternal('https://play.google.com/store/apps/details?id=' + pkg);
+        }
+        let webviewNoticeTries = 0;
+        async function maybeShowOldWebViewNotice() {
+            const v = webviewChromeMajor();
+            if (!v || v >= WEBVIEW_COLOR_MIX_MIN) return;
+            if (kvGet('webview_old_notice', null)) return;
+            if (document.querySelector('.modal-overlay.show')) {           // after the sheet that is open (What's new): look again soon
+                if (webviewNoticeTries++ < 40) setTimeout(maybeShowOldWebViewNotice, 3000);
+                return;
+            }
+            kvSet('webview_old_notice', { version: v });
+            if (!aboutInfo || !aboutInfo.webview) { try { aboutInfo = JSON.parse((window.AndroidBridge && window.AndroidBridge.getAboutInfo && window.AndroidBridge.getAboutInfo()) || '{}') || {}; } catch (e) { /* the default package */ } }
+            const go = await mpAsk({
+                title: 'WebView out of date',
+                text: 'Android System WebView is out of date (version ' + v + '). Some colours may look wrong. Update it from the Play Store. If WebView updates were uninstalled with a debloat, reinstalling them fixes it.',
+                ok: 'Update', cancel: 'Not now'
+            });
+            if (go) openWebViewStore();
+        }
+
         // ---------- Android settings (the global, secure and system tables) ----------
         // `settings list | get | put | delete` through the active privileged mode (SettingsDb / MainActivity do the work and check every
         // name and value). The page keeps one Map per table and shows it as a searchable list. A change is applied by the app and
@@ -36351,7 +36531,7 @@ Type any command above (e.g. pm list packages -d)</div>
             row('Android', i.android ? i.android + ' (API ' + i.sdk + ')' : '');
             row('Device', i.device);
             row('CPU', i.abi);
-            row('WebView', i.webview);
+            row('WebView', i.webview || (webviewChromeVersion() ? 'Chrome ' + webviewChromeVersion() : ''));          // the version from the user agent when the app cannot name the package
             row('Working mode', (document.getElementById('execModeText') || {}).innerText);
             document.getElementById('aboutBuild').innerHTML = rows.join('');
             const sig = document.getElementById('aboutSig');
@@ -37180,7 +37360,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const ok = document.getElementById('mpAskOk');
                 ok.textContent = o.ok || 'OK';
                 ok.style.background = o.danger ? '#c62828' : ''; ok.style.color = o.danger ? '#fff' : '';
-                document.getElementById('mpAskNo').style.display = o.noCancel ? 'none' : '';
+                const no = document.getElementById('mpAskNo');
+                no.style.display = o.noCancel ? 'none' : ''; no.textContent = o.cancel || 'Cancel';
                 document.getElementById('mpAskModal').classList.add('show');
                 if (o.input) setTimeout(() => inp.focus(), 120);
             });
