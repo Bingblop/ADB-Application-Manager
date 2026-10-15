@@ -23,7 +23,7 @@
    the setting shows as on, and the Debloater and Saved rows come back too: true
    it saves the change (tapping All Apps saves an empty set): true
    with the setting off (the default), a saved filter set is ignored: true none
-4. a tip arrow sits under the CSV / Backups buttons, held at the right end of the filter row: true {"shown":true,"text":"Scroll the filters below sideways for more filters","title":"Scroll the filters below sideways for more filters","arrow":"›","belowButtons":true,"inRow":true,"width":48,"height":36,"sticky":"sticky"}
+4. a tip arrow sits under the Sort and Action Button menus, held at the right end of the filter row: true {"shown":true,"text":"Scroll the filters below sideways for more filters","title":"Scroll the filters below sideways for more filters","arrow":"›","belowButtons":true,"inRow":true,"width":48,"height":36,"sticky":"sticky"}
    its name and tooltip tell to scroll the filters sideways for more: true Scroll the filters below sideways for more filters
    the filters really do scroll sideways (more pills than fit): true
    scrolling the filters sideways makes it go: true

@@ -1,4 +1,4 @@
-ok   the row: the Sort menu first (no "Sort" text beside it), CSV, Backups and the Action Button menu (no Export; v7.14: Share CSV became CSV, Profiles moved into Backups)
+ok   the row (v7.14, the owner's choice): "Sort" and its menu, "Button" and the Action Button menu; CSV, Backups and Profiles moved to Saved Applications (no Export)
 ok   the menu shows the current choice by name
 ok   there is no Export CSV button
 ok   tapping it opens a sheet with a title and a few words about what it edits

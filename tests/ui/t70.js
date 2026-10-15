@@ -89,13 +89,13 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   // 4) the tip: an arrow at the right end of the filter row
   page = await open();
   const t = await ev(page, () => { const h = document.getElementById('filtersHint'), r = x => document.querySelector(x).getBoundingClientRect();
-    const btns = Array.from(document.querySelectorAll('.apps-sort-row .mode-action-btn')); const lastBtn = btns[btns.length - 1].getBoundingClientRect();
-    const exp = btns.find(x => /Backups/.test(x.innerText)).getBoundingClientRect(), csv = btns.find(x => /^CSV$/.test(x.innerText.trim())).getBoundingClientRect();   // v7.14: Share CSV is CSV, Profiles moved into Backups
+    // v7.14: the sort row keeps only its two menus (CSV, Backups and Profiles moved to Saved Applications)
+    const exp = r('#appSort'), csv = r('#appsActionBtnPick'), lastBtn = csv;
     const hr = h.getBoundingClientRect(), fr = r('#filterScroll');
     return { shown: getComputedStyle(h).display !== 'none', text: h.getAttribute('aria-label'), title: h.getAttribute('title'), arrow: h.innerText.trim(), belowButtons: hr.top >= Math.max(exp.bottom, csv.bottom, lastBtn.bottom) - 1,
       inRow: h.parentElement === document.getElementById('filterScroll') && hr.top >= fr.top - 1 && hr.bottom <= fr.bottom + 1 && Math.abs(hr.right - fr.right) <= 1, width: Math.round(hr.width), height: Math.round(hr.height), sticky: getComputedStyle(h).position };
   });
-  check('4. a tip arrow sits under the CSV / Backups buttons, held at the right end of the filter row', t.shown && t.belowButtons && t.inRow && t.sticky === 'sticky' && t.arrow === '›', JSON.stringify(t));
+  check('4. a tip arrow sits under the Sort and Action Button menus, held at the right end of the filter row', t.shown && t.belowButtons && t.inRow && t.sticky === 'sticky' && t.arrow === '›', JSON.stringify(t));
   check('   its name and tooltip tell to scroll the filters sideways for more', /scroll/i.test(t.text) && /sideways/i.test(t.text) && /more filters/i.test(t.text) && t.title === t.text, t.text);
   check('   the filters really do scroll sideways (more pills than fit)', await ev(page, () => { const f = document.getElementById('filterScroll'); return f.scrollWidth > f.clientWidth + 20; }));
   await ev(page, () => { document.getElementById('filterScroll').scrollLeft = 200; });

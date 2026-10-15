@@ -2277,9 +2277,11 @@
 
         .saved-lists-toolbar {
             display: flex;
-            gap: var(--space-3);
+            flex-wrap: wrap;                         /* New List, Profiles, CSV, Backups: one row, two on a very narrow screen */
+            gap: var(--space-2);
             margin-bottom: var(--space-4);
         }
+        .saved-lists-toolbar > .bs-btn { flex: 1 0 auto; white-space: nowrap; padding-inline: var(--space-3); }
 
         .saved-list-card {
             background: var(--bg-card);
@@ -4005,8 +4007,8 @@
             padding: var(--space-1) var(--space-3h);
             font-size: var(--fs-pkg);
         }
-        /* Sort, CSV, Backups and the Action Button picker: one row that fits a phone without scrolling: the two menus share what the
-           buttons leave and cut their text short; scrolling sideways stays only as the fallback for a very narrow screen or big font. */
+        /* "Sort" and its menu, "Button" and the Action Button picker: one row that fits a phone without scrolling (v7.14: CSV, Backups
+           and Profiles moved to Saved Applications); scrolling sideways stays only as the fallback for a very narrow screen or big font. */
         .apps-sort-row {
             display: flex;
             align-items: center;
@@ -4063,8 +4065,10 @@
             font-size: var(--fs-caption);
         }
         /* the sort menu and the Action Button picker share the room the buttons leave (below) */
-        #appSort { flex: 0 1 auto; width: auto; field-sizing: content; min-width: 84px; text-overflow: ellipsis; }
+        #appSort { flex: 1 1 0; width: auto; min-width: 84px; text-overflow: ellipsis; }
         .apps-sort-select.apps-ab-select { flex: 1 1 0; width: auto; min-width: 84px; }
+        .apps-row-label { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-muted); line-height: 1.15; padding: 0 var(--space-1); }
+        .apps-row-label-2 { margin-inline-start: var(--space-2); }
         .ab-pick { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-1); text-align: left; cursor: pointer; }
         .ab-pick #appsActionBtnPickLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
         .ab-pick-chev { color: var(--text-muted); font-size: var(--fs-pkg); flex: 0 0 auto; }
@@ -4307,6 +4311,7 @@
 
             <!-- Sort and export -->
             <div class="apps-sort-row">
+                <label class="apps-row-label" for="appSort">Sort</label>
                 <select id="appSort" class="op-select apps-sort-select" aria-label="Sort apps by" onchange="setAppSort(this.value)">
                     <option value="name">Name (A–Z)</option>
                     <option value="updated">Last updated</option>
@@ -4314,8 +4319,7 @@
                     <option value="size">Size</option>
                     <option value="updates">Updates first</option>
                 </select>
-                <button class="mode-action-btn" onclick="exportAppList(true)" aria-label="Share the app list as CSV">CSV</button>
-                <button class="mode-action-btn" onclick="openBackups()">Backups</button>
+                <span class="apps-row-label apps-row-label-2" id="appsActionBtnPickTitle" aria-hidden="true">Button</span>
                 <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
             </div>
 
@@ -5931,9 +5935,12 @@
             </div>
 
             <div class="saved-lists-toolbar">
-                <button class="batch-tool-link bs-btn" style="flex:1;" onclick="openListEditorModal()">New List</button>
-                <!-- App Profiles moved here from the Apps tab's top row in v7.14 (the owner's choice); the drift banner's Review still opens it too -->
-                <button class="batch-tool-link bs-btn" style="flex:1;" id="savedProfilesBtn" onclick="openProfiles()">Profiles</button>
+                <button class="batch-tool-link bs-btn" onclick="openListEditorModal()">New List</button>
+                <!-- Profiles, CSV and Backups moved here from the Apps tab's top row in v7.14 (the owner's choice), which keeps only Sort and the
+                     Action Button; the drift banner's Review still opens App Profiles too -->
+                <button class="batch-tool-link bs-btn" id="savedProfilesBtn" onclick="openProfiles()">Profiles</button>
+                <button class="batch-tool-link bs-btn" id="savedCsvBtn" onclick="exportAppList(true)" aria-label="Share the app list as CSV">CSV</button>
+                <button class="batch-tool-link bs-btn" id="savedBackupsBtn" onclick="openBackups()">Backups</button>
             </div>
 
             <div class="color-card" id="listsBackupCard" style="margin-bottom:12px;">
