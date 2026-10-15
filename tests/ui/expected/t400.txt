@@ -1,0 +1,12 @@
+ok   1. the Terminal turn and the Ask window each sent a request
+ok      Stop in the Ask window cancels its own request
+ok      ... and not the Terminal agent turn
+ok      the Terminal turn is still running
+ok      closing the Ask window leaves the Terminal turn alone too
+ok      the Terminal turn then ends with its answer
+ok   2. two Ask windows: Stop in the first cancels the first one's request
+ok      ... and not the second window's
+ok      Stop in the second window cancels its request
+ok      both windows are done and no run is left over
+ok   no page errors
+all passed
