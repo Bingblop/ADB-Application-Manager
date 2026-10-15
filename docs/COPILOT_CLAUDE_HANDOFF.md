@@ -194,6 +194,21 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.13.4 (cut from `main`; written 2026-10-15)
+
+A small release: Backup moved from the single-app menu to the batch menu (owner's request, 2026-10-15). No setting or permission changes, and no Java change: the page loops over the existing `backupApp` bridge call (the phone runs one backup at a time and reports each result through `onBackupDone`).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #230 | no Backup button in the app menu; batch Backup (where Share List was) backs up the selected apps in turn; new hint and four strings in 13 languages | t348 (new), t19, t21, t69, t103, t139, t144, t345, i18n check | PHONE-SCRIPT-v7.13.4 steps 1 to 7 |
+| bump | Version 7.13.4 (858), changelog, README, guide, `docs/RELEASE-CHECKLIST-v7.13.4.md`, `docs/PHONE-SCRIPT-v7.13.4.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device.** The batch run depends on the phone finishing each backup before the next call; a second `backupApp` while one runs is refused with "Another backup or restore is still running" and would show under "Not saved".
+- **Share List is gone.** Copy Packages and the Apps tab's Share CSV remain; `shareSelectedPackages` was removed.
+- **Held, still:** the drafts #167, #168, #169, #177, #179 and the self-test PR #229 wait for a phone test.
+
 ## v7.13.3 (cut from `main`; written 2026-10-14)
 
 A screen-layout release: the usability findings of the 2026-10-14 UI audit, #216 and #220 to #227, and nothing else. No command, setting or permission changes. Two lists changed shape (the Apps rows: the icon is the checkbox; the File Manager: the rarely used options are under ⋯ More), so they are the first things to look at on a phone.
