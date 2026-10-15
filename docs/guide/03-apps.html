@@ -24,41 +24,32 @@
   <div class="hg-warn"><b>Careful.</b> Freezing, suspending or uninstalling a system app can break calls, texts, the keyboard, notifications, the camera or even the home screen. Before you touch one, look it up in the <a href="#tab-debloater">UAD-NG Debloater</a> (read <a href="#debloater-safety">its safety page</a> first), or read the UAD-NG chip in the app menu. Try Freeze before Uninstall: you can see whether anything breaks, and one tap on Enable puts the app back.</div>
   <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. If you may want the data again, make a backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
 
-  <h4>The boxes at the top</h4>
-  <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
-  <ul>
-    <li><b>Installed</b>: the apps that are installed on the phone. It does not count the UNINSTALLED apps. Tap it and the list shows only the installed apps. Tap <b>Installed</b> and <b>Bloatware (Uninstalled)</b> together and the list shows every app on the phone, installed or not. With no box lit the list also shows every app (the <b>All Apps</b> pill is lit then).</li>
-    <li><b>Running</b>: apps that have a live process right now. Needs a working mode. Turning it on turns <b>Uninstalled</b> off (a running app is installed).</li>
-    <li><b>Bloatware (Uninstalled)</b>: system apps that were removed for you (by this app or by another tool) but whose files are still in the system. "Bloatware" means apps that come pre-installed and that many people do not want. Needs a working mode.</li>
-    <li><b>Enabled | Frozen</b>: a split box with two halves. Enabled counts apps that are on (a suspended app still counts as Enabled, it is only paused). Frozen counts apps that are disabled.</li>
-    <li><b>3rd Party | System</b>: another split box. 3rd Party counts apps that you or a store installed. System counts apps that came with the phone.</li>
-  </ul>
-  <p>UNINSTALLED apps are counted in Bloatware (Uninstalled) and in the All Apps pill only, not in Installed or in the four halves.</p>
-  <p>The filter pills under the boxes add one more: <b>Trackers</b>, for apps with a known tracker library (see the table below and <a href="#apps-menu">The Trackers chip</a>).</p>
-  <p><b>Bloatware (Uninstalled) starts a clean list.</b> Tapping it (or the Uninstalled pill) turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another box or pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
-  <p><b>Clear what an uninstalled app left behind.</b> While the Uninstalled filter is on, each row has a small bin button next to its action button. It clears the data that one app kept after it was uninstalled (see <a href="#tab-sdm">Clear Data from Uninstalled Apps</a> in the SD Maid tab). It asks first, because it cannot be undone; in <b>Root</b> mode it names the size and says so if the app has no data left, and the result is checked afterwards like any batch.</p>
-  <p><b>A pair keeps one side.</b> Enabled and Frozen are a pair, and so are 3rd Party and System. Only one half of a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off.</p>
-  <p><b>Clear filters.</b> When more than one filter is on, a line appears above the pills saying what is combined, for example "Showing apps that are Running + 3rd Party.", with a <b>Clear filters</b> chip. Tap the chip (or <b>All Apps</b>) to turn them all off.</p>
-
   <h4>The filter pills</h4>
-  <p>Under the Sort row is a strip of pills that scrolls sideways. A tip says so; tap its X to hide it, or just scroll the strip once. Tap a pill to turn it on or off. The number in brackets is how many apps are in that group.</p>
+  <p>Under the Sort row is one strip of filter pills that scrolls sideways. A tip says so; tap its arrow to scroll, or its X to hide it, or just scroll the strip once. Tap a pill to turn it on or off. The number in brackets is how many apps are in that group. A pill lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for User, purple for System and red for Uninstalled, so you can tell at a glance which one is in use.</p>
+  <p>The pills, from left to right: <b>All Apps</b>, then three pairs that share one frame (<b>Installed | Uninstalled</b>, <b>System | User</b>, <b>Enabled | Frozen</b>), then <b>Running</b>, <b>Updated 7d</b>, <b>Suspended</b>, <b>Trackers</b> and <b>Patched</b>.</p>
   <table class="hg-table">
     <thead><tr><th>Pill</th><th>Shows the apps that...</th></tr></thead>
     <tbody>
-      <tr><td><b>All Apps</b></td><td>...are in the list. Tapping it turns every other filter off.</td></tr>
-      <tr><td><b>Updated 7d</b></td><td>...were installed or updated in the last 7 days.</td></tr>
-      <tr><td><b>Running</b></td><td>...have a live process now.</td></tr>
-      <tr><td><b>3rd Party</b></td><td>...you or a store installed. The row badge for these says USER.</td></tr>
+      <tr><td><b>All Apps</b></td><td>...are in the list, installed or not. Tapping it turns every other filter off. It is lit while no other filter is on.</td></tr>
+      <tr><td><b>Installed</b></td><td>...are installed on the phone. It does not count the UNINSTALLED apps. Installed and Uninstalled together show every app.</td></tr>
+      <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (by this app or by another tool) whose files are still in the system: the UNINSTALLED badge. Needs a working mode.</td></tr>
       <tr><td><b>System</b></td><td>...came with the phone.</td></tr>
+      <tr><td><b>User</b></td><td>...you or a store installed. The row badge for these says USER. (Older versions called this pill 3rd Party.)</td></tr>
       <tr><td><b>Enabled</b></td><td>...are on: not frozen and not uninstalled. A suspended app is still Enabled.</td></tr>
       <tr><td><b>Frozen</b></td><td>...are disabled.</td></tr>
+      <tr><td><b>Running</b></td><td>...have a live process now. Needs a working mode. Turning it on turns Uninstalled off (a running app is installed).</td></tr>
+      <tr><td><b>Updated 7d</b></td><td>...were installed or updated in the last 7 days.</td></tr>
       <tr><td><b>Suspended</b></td><td>...are paused with Suspend.</td></tr>
-      <tr><td><b>Patched</b></td><td>...look patched or repackaged, for example by ReVanced, or Xposed/LSPosed modules. They carry a teal tag.</td></tr>
       <tr><td><b>Trackers</b></td><td>...contain at least one known tracker library (advertising, analytics, crash reporting). The first time you tap it the app reads the code of every installed app once (it says how many, and the pill counts them as it goes); later taps are instant, and only new or updated apps are read again. See <a href="#apps-menu">The Trackers chip</a>.</td></tr>
-      <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (the UNINSTALLED badge).</td></tr>
+      <tr><td><b>Patched</b></td><td>...look patched or repackaged, for example by ReVanced, or Xposed/LSPosed modules. They carry a teal tag.</td></tr>
     </tbody>
   </table>
-  <p>Filters stack: an app has to match every filter that is on. Running and 3rd Party together show your own apps that are running now. System and Frozen show the system apps you have frozen. 3rd Party, System and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well. Turning Uninstalled on turns every other pill off first (add another one afterwards to combine).</p>
+  <p>UNINSTALLED apps are counted in Uninstalled and in All Apps only, not in Installed, System, User, Enabled or Frozen.</p>
+  <p><b>Uninstalled starts a clean list.</b> Tapping it turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
+  <p><b>Clear what an uninstalled app left behind.</b> While the Uninstalled filter is on, each row has a small bin button next to its action button. It clears the data that one app kept after it was uninstalled (see <a href="#tab-sdm">Clear Data from Uninstalled Apps</a> in the SD Maid tab). It asks first, because it cannot be undone; in <b>Root</b> mode it names the size and says so if the app has no data left, and the result is checked afterwards like any batch.</p>
+  <p><b>A pair keeps one side.</b> System and User are a pair, and so are Enabled and Frozen. Only one half of such a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off. (Installed and Uninstalled share a frame but can both be on.)</p>
+  <p><b>Filters stack.</b> An app has to match every filter that is on. Running and User together show your own apps that are running now. System and Frozen show the system apps you have frozen. System, User, Enabled and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well.</p>
+  <p><b>Clear filters.</b> When more than one filter is on, a line appears above the list saying what is combined, for example "Showing apps that are Running + User.", with a <b>Clear filters</b> chip. Tap the chip (or <b>All Apps</b>) to turn them all off.</p>
 
   <h4>Search</h4>
   <p>The search box sits under the pills. It narrows the list while you type, and it searches inside whatever the filters already show. The X in the box clears the text. If nothing matches you see "No Applications Found".</p>
@@ -97,7 +88,7 @@
       <tr><td>SUSPENDED</td><td>The app is paused and cannot be opened.</td></tr>
       <tr><td>UNINSTALLED</td><td>A system app removed for you. It can be brought back with Reinstall. An uninstalled app never also shows FROZEN.</td></tr>
       <tr><td>SYSTEM</td><td>The app came with the phone.</td></tr>
-      <tr><td>USER</td><td>You or a store installed it. This is what the filters call 3rd Party.</td></tr>
+      <tr><td>USER</td><td>You or a store installed it. This is what the filters call User.</td></tr>
       <tr><td>UAD-NG and a level (RECOMMENDED, ADVANCED, EXPERT or UNSAFE)</td><td>The UAD-NG community list knows this app and rates how safe it is to remove (see <a href="#tab-debloater">UAD-NG Debloater</a>). Tap it for the full description, exactly as in the app menu. It shows only after the list has been downloaded once, and only for apps the list contains.</td></tr>
       <tr><td>Teal tag (ReVanced, Morphe, LSPatch, NPatch, Xposed...)</td><td>The app looks patched or repackaged by that tool (the Patched filter finds them). The app menu checks deeper.</td></tr>
     </tbody>
@@ -693,7 +684,7 @@
   <div class="hg-note"><b>Tip.</b> Choose a folder that your cloud app syncs (or an SD card), switch <b>Back up automatically</b> on, and your lists survive losing the phone. If Android says it no longer lets the app use the folder (<i>choose it again</i>), press <b>Choose folder…</b> once more.</div>
 
   <h4>The filters of this tab</h4>
-  <p>Under the heading "Show only the apps in each list that match (combine as many as you like)" is a row of pills: <b>All</b>, <b>Updated 7d</b>, <b>Running</b>, <b>3rd Party</b>, <b>System</b>, <b>Enabled</b>, <b>Frozen</b>, <b>Suspended</b>, <b>Patched</b> and <b>Uninstalled</b>. They are the same filters as in the <a href="#tab-apps">Application Manager</a>, including the rule that 3rd Party / System and Enabled / Frozen are pairs that keep only one side.</p>
+  <p>Under the heading "Show only the apps in each list that match (combine as many as you like)" is a row of pills: <b>All</b>, <b>Uninstalled</b>, <b>System</b>, <b>User</b>, <b>Enabled</b>, <b>Frozen</b>, <b>Running</b>, <b>Updated 7d</b>, <b>Suspended</b> and <b>Patched</b>. They are the same filters as in the <a href="#tab-apps">Application Manager</a>, including the rule that System / User and Enabled / Frozen are pairs that keep only one side.</p>
   <ul>
     <li>With a filter on, each card shows only the apps that match, the count reads "(number) of (total) apps", and <b>Recall</b> becomes "Recall (number)": only the matching apps are selected.</li>
     <li>A list with no matching app is hidden. If every list is hidden, the tab says "No saved list has apps that match these filters."</li>

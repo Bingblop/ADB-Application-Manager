@@ -155,12 +155,12 @@ const { chromium, PAGE } = require('./lib/pw');
   // Apps
   const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-chip')).map(c => c.innerText) }));
   check('the apps of the device are listed with phone names where the phone has the app', apps0.n === 5 && apps0.names.includes('Fit') && apps0.names.includes('Deskclock') && /5 apps/.test(apps0.count), JSON.stringify(apps0));
-  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|3rd Party 2|System 2|Enabled 3|Frozen 1|Uninstalled 1', apps0.chips.join('|'));
+  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|System 2|User 2|Enabled 3|Frozen 1|Uninstalled 1', apps0.chips.join('|'));
   const rowOf = pkg => `#cdcard_${pkg.replace(/\./g, '\\.')}`;
   const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.cd-row-act').innerText; return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
   check('each row shows its state and the action that fits it', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Freeze' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
   await ev(() => cdFilter('system')); await ev(() => cdFilter('disabled'));
-  check('3rd Party / System and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
+  check('System / User and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
   await ev(() => { cd.filters.clear(); cdFilter('uninstalled'); cdFilter('system'); });
   check('Uninstalled with System narrows to the removed system app', await ev(() => Array.from(document.querySelectorAll('#cdAppList .app-card')).map(c => c.dataset.pkg).join()) === 'com.google.android.apps.fitness');
   await ev(() => cdFilter('all'));

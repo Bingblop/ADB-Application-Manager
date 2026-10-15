@@ -689,7 +689,7 @@
             display: block;
         }
 
-        /* The counts that are also filters (Installed, Running, 3rd Party / System, Enabled / Frozen, Uninstalled) are pills in the filter row:
+        /* The counts that are also filters (Installed / Uninstalled, System / User, Enabled / Frozen, Running) are pills in the filter row:
            each wears its own colour (the one its number has), a faint tint when off and a strong one with a ring when it is the filter in use */
         .stat-card[data-filter="running"] { --tone: var(--apps-running); }
         .stat-card[data-filter="uninstalled"] { --tone: var(--apps-uninstalled); }
@@ -705,7 +705,7 @@
         .filter-pill.stat-card { transition: transform 0.15s; }                 /* the colours change at once, like the stat boxes they were */
         .filter-pill.stat-card:active { transform: scale(0.96); }
         .filter-pill.stat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-        /* a pair that splits the apps in two (3rd Party / System, Enabled / Frozen): two pills in one frame, the frame in the colour of the side that is on */
+        /* a pair that splits the apps in two (Installed / Uninstalled, System / User, Enabled / Frozen; v7.14 order: the owner's): two pills in one frame, the frame in the colour of the side that is on */
         .stat-split { flex: 0 0 auto; display: inline-flex; border-radius: var(--radius-chip); outline: 1px solid var(--border-glass); outline-offset: -1px; }          /* an outline, not a border or overflow: hidden, so each pill is a whole 36px chip and its 44px tap area is not cut off */
         .stat-split .filter-pill.stat-card { border-width: 1px 0; border-color: transparent; border-radius: 0; }          /* the frame's outline lies over the top and bottom border */
         .stat-split .filter-pill.stat-card:first-child { border-start-start-radius: var(--radius-chip); border-end-start-radius: var(--radius-chip); }
@@ -716,6 +716,8 @@
         .stat-split:has(.stat-card.active[data-filter="frozen"]) { outline-color: var(--apps-frozen); }
         .stat-split:has(.stat-card.active[data-filter="user"]) { outline-color: var(--status-user); }
         .stat-split:has(.stat-card.active[data-filter="system"]) { outline-color: var(--apps-system); }
+        .stat-split:has(.stat-card.active[data-filter="installed"]) { outline-color: var(--accent); }
+        .stat-split:has(.stat-card.active[data-filter="uninstalled"]) { outline-color: var(--apps-uninstalled); }
         .filter-summary-row { display: flex; align-items: center; gap: var(--space-3); }
         .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
         .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
@@ -4324,19 +4326,18 @@
             </div>
 
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
-            <!-- The filters, with their counts. The ones with a colour (Installed, Running, 3rd Party / System, Enabled / Frozen, Uninstalled) are
+            <!-- The filters, with their counts. The ones with a colour (Installed / Uninstalled, System / User, Enabled / Frozen, Running) are
                  buttons with a pressed state; a pair that splits the apps in two shares one frame -->
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
-                <div class="filter-pill stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Installed (<span class="stat-num" id="statTotal">--</span>)</div>
-                <div class="filter-pill stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Running (<span class="stat-num" id="statRunning">--</span>)</div>
-                <div class="stat-split"><div class="filter-pill stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">3rd Party (<span class="stat-num" id="statUser">--</span>)</div><div class="filter-pill stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">System (<span class="stat-num" id="statSystem">--</span>)</div></div>
+                <div class="stat-split"><div class="filter-pill stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Installed (<span class="stat-num" id="statTotal">--</span>)</div><div class="filter-pill stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Uninstalled (<span class="stat-num" id="statUninstalled">--</span>)</div></div>
+                <div class="stat-split"><div class="filter-pill stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">System (<span class="stat-num" id="statSystem">--</span>)</div><div class="filter-pill stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">User (<span class="stat-num" id="statUser">--</span>)</div></div>
                 <div class="stat-split"><div class="filter-pill stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Enabled (<span class="stat-num" id="statEnabled">--</span>)</div><div class="filter-pill stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Frozen (<span class="stat-num" id="statFrozen">--</span>)</div></div>
+                <div class="filter-pill stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Running (<span class="stat-num" id="statRunning">--</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
-                <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="trackers" onclick="setFilter('trackers', this)">Trackers (<span id="countTrackers">?</span>)</div>
-                <div class="filter-pill stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Uninstalled (<span class="stat-num" id="statUninstalled">--</span>)</div>
+                <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <!-- The tip that this row scrolls sideways: an arrow held at the right end of the row (it scrolls the row), until the row has been scrolled once -->
                 <button type="button" class="filters-hint" id="filtersHint" aria-label="Scroll the filters below sideways for more filters" title="Scroll the filters below sideways for more filters" onclick="filtersMore()"><span aria-hidden="true">&#8250;</span></button>
             </div>
@@ -10610,11 +10611,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = true;          // on every time: it is put back on whenever a new selection starts (the switch is not remembered)
         let rememberFilters = false;   // off by default: the Apps tab opens on All Apps unless the user asks for the filters to be kept
-        // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
-        // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
+        // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + User = your running
+        // user apps). None on is "All Apps". Two pairs can only have one member on, or none: System / User, and Enabled / Frozen.
         const activeFilters = new Set();
         const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
-        const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
+        const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: 'User', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -12624,7 +12625,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The Saved Applications filters: the same pills as the Application Manager, applied to the apps inside each list
         const savedFilters = new Set();
-        const SAVED_FILTER_KEYS = ['recent', 'running', 'user', 'system', 'enabled', 'frozen', 'suspended', 'patched', 'uninstalled'];
+        const SAVED_FILTER_KEYS = ['uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'recent', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
         function setSavedFilter(k) {
             toggleFilterIn(savedFilters, k);
             haptic();
@@ -13433,7 +13434,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The Debloater's combining filters, the same pills as the Application Manager (the On device / Enabled / Disabled row above covers state)
         const uadExtra = new Set();
-        const UAD_EXTRA_KEYS = ['recent', 'running', 'user', 'system', 'suspended', 'patched'];
+        const UAD_EXTRA_KEYS = ['system', 'user', 'running', 'recent', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
         function renderUadExtra() {
             const row = document.getElementById('uadExtraRow');
             if (!row) return;
@@ -18924,7 +18925,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (e.key === 'Escape' && closeSearchMenu()) { e.preventDefault(); const b = document.getElementById('searchMenuBtn'); if (b) b.focus(); }
         });
 
-        // Does this app match every filter in the set? 3rd Party / System leave out uninstalled apps unless Uninstalled is on too.
+        // Does this app match every filter in the set? System / User leave out uninstalled apps unless Uninstalled is on too.
         function appMatchesFilterSet(app, f) {
             if (f.has('running') && !app.isRunning) return false;
             if (f.has('enabled') && (app.isFrozen || app.isUninstalled)) return false;       // installed and not disabled (a suspended app is still enabled)
@@ -18941,7 +18942,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function appMatchesFilters(app) { return appMatchesFilterSet(app, activeFilters); }
 
-        // A tap on a filter turns it on or off in the set ("all" empties it); a pair (3rd Party / System, Enabled / Frozen) keeps one member
+        // A tap on a filter turns it on or off in the set ("all" empties it); a pair (System / User, Enabled / Frozen) keeps one member
         function toggleFilterIn(set, filter, groups) {
             if (filter === 'all') { set.clear(); return; }
             if (set.has(filter)) { set.delete(filter); return; }
@@ -25087,7 +25088,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // adb for ANOTHER device, through the adb this app carries: a Wear OS watch first, any Android device works. Every call goes out as
         // AndroidBridge.cdAdb(tag, serial, args, timeout) and comes back as window.onCdResult({tag, out, ms}). Output is plain text; a failure starts with "Error:".
         const CD_SUBS = [['apps', 'Apps'], ['send', 'Send'], ['console', 'Console'], ['logcat', 'Logcat'], ['files', 'Files'], ['settings', 'Hidden Settings'], ['display', 'Display']];
-        const CD_FILTERS = [['user', '3rd Party'], ['system', 'System'], ['enabled', 'Enabled'], ['disabled', 'Frozen'], ['uninstalled', 'Uninstalled']];
+        const CD_FILTERS = [['system', 'System'], ['user', 'User'], ['enabled', 'Enabled'], ['disabled', 'Frozen'], ['uninstalled', 'Uninstalled']];
         const CD_FILTER_GROUPS = [['user', 'system'], ['enabled', 'disabled']];
         const CD_CHIPS = ['getprop ro.product.model', 'pm list packages -3', 'dumpsys battery', 'dumpsys activity activities | grep mResumedActivity', 'df -h /data', 'ps -A | head -25', 'wm size', 'wm density',
             'settings list global', 'ip addr show wlan0', 'cat /proc/meminfo | head -6', 'logcat -d -t 40', 'input keyevent 26', 'adb devices -l', 'adb pull /sdcard/Download/'];
@@ -25786,7 +25787,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (force) showToast(cd.apps.length + ' apps');
         }
 
-        // An uninstalled app counts towards "Uninstalled" only; with that filter on, 3rd Party / System narrow it
+        // An uninstalled app counts towards "Uninstalled" only; with that filter on, System / User narrow it
         function cdAppMatches(a, f) {
             if (!f.size) return true;
             if (a.uninstalled) {
@@ -26141,7 +26142,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const q = (document.getElementById('cdPhoneSearch').value || '').trim().toLowerCase(), f = cd.phone.filter;
             const apps = (typeof allApps !== 'undefined' ? allApps : []).filter(a => !a.isUninstalled && (f === 'all' || (f === 'user' ? !a.isSystem : a.isSystem)) && (!q || a.pkg.toLowerCase().includes(q) || String(a.name).toLowerCase().includes(q)))
                 .sort((a, b) => String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
-            document.getElementById('cdPhoneFilters').innerHTML = [['user', '3rd Party'], ['system', 'System'], ['all', 'All']].map(x => '<span class="filter-chip' + (f === x[0] ? ' active' : '') + '" role="button" tabindex="0" onclick="cdPhoneFilter(\'' + x[0] + '\')">' + x[1] + '</span>').join('');
+            document.getElementById('cdPhoneFilters').innerHTML = [['system', 'System'], ['user', 'User'], ['all', 'All']].map(x => '<span class="filter-chip' + (f === x[0] ? ' active' : '') + '" role="button" tabindex="0" onclick="cdPhoneFilter(\'' + x[0] + '\')">' + x[1] + '</span>').join('');
             const shown = apps.slice(0, 300);
             document.getElementById('cdPhoneList').innerHTML = shown.map(a => {
                 const on = cd.phone.sel.has(a.pkg), pk = escapeHtml(a.pkg);

@@ -255,8 +255,8 @@
     <thead><tr><th>Filter</th><th>Shows</th></tr></thead>
     <tbody>
       <tr><td><b>All</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
-      <tr><td><b>3rd Party</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
       <tr><td><b>System</b></td><td>Apps that came with the device.</td></tr>
+      <tr><td><b>User</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
       <tr><td><b>Enabled</b></td><td>Apps that are installed and not disabled.</td></tr>
       <tr><td><b>Frozen</b></td><td>Apps that are installed but switched off (what Android calls disabled).</td></tr>
       <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
@@ -264,9 +264,9 @@
   </table>
   <p>The rules are simple:</p>
   <ul>
-    <li><b>3rd Party</b> and <b>System</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one.</li>
+    <li><b>System</b> and <b>User</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one.</li>
     <li>You can combine one of each pair, for example <b>System</b> and <b>Enabled</b>. A line then says "Showing apps that are System + Enabled." with a <b>Clear filters</b> button.</li>
-    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the 3rd Party, System, Enabled or Frozen counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>3rd Party</b> or <b>System</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
+    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the System, User, Enabled or Frozen counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>System</b> or <b>User</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
     <li>Tap an active filter again to turn it off. <b>All</b> or <b>Clear filters</b> turns all of them off.</li>
   </ul>
 
@@ -393,7 +393,7 @@
   <h4>From this phone</h4>
   <ol class="hg-steps">
     <li>Tap <b>From this phone</b>. A sheet opens: <b>Apps on this phone</b>, "Choose the ones to send to the device".</li>
-    <li>Use the search box and the filters <b>3rd Party</b>, <b>System</b> and <b>All</b>. Tap rows to tick them. Only the first 300 are drawn: search to find the rest.</li>
+    <li>Use the search box and the filters <b>System</b>, <b>User</b> and <b>All</b>. Tap rows to tick them. Only the first 300 are drawn: search to find the rest.</li>
     <li>Tap <b>Add to the list</b> (it says <b>Add 2 to the list</b> when two are ticked). With nothing ticked you read <b>Tick the apps to send</b>.</li>
     <li>Each app becomes a row that says <b>From this phone</b> and the number of files. An app that this phone keeps in several parts ("splits", see <a href="#installer-splits">Split APKs</a>) says <b>(splits made for this phone, they may not fit the device)</b>.</li>
   </ol>
@@ -857,7 +857,7 @@
 
   <h4>Example 1: remove a preinstalled app you never use</h4>
   <ol class="hg-steps">
-    <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>3rd Party</b> or <b>System</b> to narrow it, or type a word in the search box.</li>
+    <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>System</b> or <b>User</b> to narrow it, or type a word in the search box.</li>
     <li>Find the app. If its name means nothing to you, leave it: use <a href="#debloater-safety">Debloater safety</a> as a guide to what is safe.</li>
     <li>Tap <b>Freeze</b> on its row. The row gets the <b>FROZEN</b> badge and the app is hidden from the watch's own app list.</li>
     <li>Use the watch for a few days. If anything breaks, tap <b>Enable</b>.</li>

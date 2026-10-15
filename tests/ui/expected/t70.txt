@@ -19,7 +19,7 @@
    the highlight does not change the size of a card or move the others: true
 3. a remembered filter is ignored: the app opens on All Apps: true none
    a remembered filter with no card is ignored too: true none
-3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true running:true,user:true
+3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true user:true,running:true
    the setting shows as on, and the Debloater and Saved rows come back too: true
    it saves the change (tapping All Apps saves an empty set): true
    with the setting off (the default), a saved filter set is ignored: true none

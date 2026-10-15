@@ -52,7 +52,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     });
     return out;
   });
-  check('1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, 3rd Party orange, System purple', Object.keys(colors).every(k => colors[k].tone === 'ok'), JSON.stringify(Object.keys(colors).map(k => k + ':' + colors[k].tone)));
+  check('1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, User orange, System purple', Object.keys(colors).every(k => colors[k].tone === 'ok'), JSON.stringify(Object.keys(colors).map(k => k + ':' + colors[k].tone)));
   check('   the one in use is a clearly stronger shade than when it is off, with a ring in its colour', ['enabled', 'frozen', 'user', 'system'].every(k => colors[k].on !== colors[k].off && colors[k].border !== 'rgba(0, 0, 0, 0)'), JSON.stringify(colors.user));
   check('   the four colours differ from each other', new Set(['enabled', 'frozen', 'user', 'system'].map(k => colors[k].on)).size === 4);
   check('   a pair keeps its frame in the colour of the side that is on', await ev(() => {

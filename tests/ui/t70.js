@@ -77,7 +77,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
 
   // 3b) the opt-in "Remember my filters" setting (Settings, Lists): off by default, and when on the filters come back
   page = await open({ ui_state: JSON.stringify({ rememberFilters: true, filters: { apps: ['running', 'user', 'bogus'], uad: ['system'], saved: ['frozen'] } }) });
-  check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', (await active(page)) === 'running:true,user:true', await active(page));
+  check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', ['running:true,user:true', 'user:true,running:true'].includes(await active(page)), await active(page));   // (v7.14 put User before Running in the row)
   check('   the setting shows as on, and the Debloater and Saved rows come back too', await ev(page, () => document.getElementById('rememberFiltersToggle').checked && uadExtra.has('system') && savedFilters.has('frozen')));
   await page.click('#filterScroll .filter-pill[data-filter="all"]'); await ev(page, () => new Promise(r => setTimeout(r, 200)));
   check('   it saves the change (tapping All Apps saves an empty set)', await ev(page, () => JSON.parse(window.AndroidBridge.loadStore('ui_state') || '{}').filters.apps.length === 0));
