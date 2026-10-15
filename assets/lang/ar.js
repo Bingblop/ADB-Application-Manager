@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "الانتقال من شاشة إلى التالية.",
 "Animator duration": "مدة Animator",
 "Everything else that moves inside apps: lists, switches, ripples.": "كل ما يتحرك داخل التطبيقات غير ذلك: القوائم والمفاتيح والتموجات.",
-"Adaptive brightness bias": "انحياز السطوع"
+"Adaptive brightness bias": "انحياز السطوع",
+"A screenshot or recording is already running.": "هناك لقطة شاشة أو تسجيل قيد التشغيل بالفعل.",
+"Nothing is recording.": "لا يوجد تسجيل قيد التشغيل.",
+"Record screen": "تسجيل الشاشة",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "جارٍ التسجيل. ارجع واضغط على «إيقاف التسجيل»؛ يتوقف من تلقاء نفسه بعد 3 دقائق.",
+"Records the screen for up to 3 minutes": "يسجّل الشاشة حتى 3 دقائق",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "يحتاج تسجيل الشاشة إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root.",
+"Screen recording works in the app on a phone, not in a browser.": "يعمل تسجيل الشاشة في التطبيق على الهاتف لا في المتصفح.",
+"Screenshot": "لقطة شاشة",
+"Screenshot in 3 seconds. Open the screen you want.": "لقطة شاشة بعد 3 ثوانٍ. افتح الشاشة التي تريدها.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "تحتاج لقطات الشاشة إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root.",
+"Screenshots work in the app on a phone, not in a browser.": "تعمل لقطات الشاشة في التطبيق على الهاتف لا في المتصفح.",
+"Stop recording": "إيقاف التسجيل",
+"Stopping the recording…": "جارٍ إيقاف التسجيل…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "تلتقط لقطة شاشة للهاتف بعد 3 ثوانٍ لتتمكن من فتح الشاشة التي تريدها",
+"The phone did not save it.": "لم يحفظه الهاتف.",
+"The recording could not be started.": "تعذّر بدء التسجيل.",
+"The screenshot could not be started.": "تعذّر بدء لقطة الشاشة.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "يحتاج هذا إلى وضع عمل: ADB أو التصحيح اللاسلكي أو Shizuku أو Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","تم التطبيق، لكن الهاتف يبلّغ عن {0} بدلاً من {1}. تعيد One UI وبعض الهواتف الأخرى ضبط هذه القيمة أو تتجاهلها."],
 ["{0} of {1}","{0} من {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","تحديد {0}"]
+["Select {0}","تحديد {0}"],
+["Saved {0} ({1}).", "تم حفظ {0} ({1})."],
+["The phone did not save it: {0}", "لم يحفظه الهاتف: {0}"]
 ]
 };

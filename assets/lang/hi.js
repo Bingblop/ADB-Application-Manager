@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "एक स्क्रीन से अगली स्क्रीन पर जाना।",
 "Animator duration": "Animator अवधि",
 "Everything else that moves inside apps: lists, switches, ripples.": "ऐप्स के अंदर हिलने वाली बाकी सब चीज़ें: सूचियाँ, स्विच, लहरें।",
-"Adaptive brightness bias": "चमक का झुकाव"
+"Adaptive brightness bias": "चमक का झुकाव",
+"A screenshot or recording is already running.": "स्क्रीनशॉट या रिकॉर्डिंग पहले से चल रही है।",
+"Nothing is recording.": "कुछ भी रिकॉर्ड नहीं हो रहा।",
+"Record screen": "स्क्रीन रिकॉर्ड करें",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "रिकॉर्डिंग चल रही है। वापस आकर “रिकॉर्डिंग रोकें” पर टैप करें; 3 मिनट बाद यह अपने-आप रुक जाती है।",
+"Records the screen for up to 3 minutes": "स्क्रीन को 3 मिनट तक रिकॉर्ड करता है",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "स्क्रीन रिकॉर्डिंग के लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।",
+"Screen recording works in the app on a phone, not in a browser.": "स्क्रीन रिकॉर्डिंग ब्राउज़र में नहीं, फ़ोन पर ऐप में काम करती है।",
+"Screenshot": "स्क्रीनशॉट",
+"Screenshot in 3 seconds. Open the screen you want.": "3 सेकंड में स्क्रीनशॉट। जो स्क्रीन चाहिए उसे खोलें।",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "स्क्रीनशॉट के लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।",
+"Screenshots work in the app on a phone, not in a browser.": "स्क्रीनशॉट ब्राउज़र में नहीं, फ़ोन पर ऐप में काम करते हैं।",
+"Stop recording": "रिकॉर्डिंग रोकें",
+"Stopping the recording…": "रिकॉर्डिंग रोकी जा रही है…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3 सेकंड बाद फ़ोन का स्क्रीनशॉट लेता है, ताकि आप मनचाही स्क्रीन खोल सकें",
+"The phone did not save it.": "फ़ोन ने इसे सहेजा नहीं।",
+"The recording could not be started.": "रिकॉर्डिंग शुरू नहीं हो सकी।",
+"The screenshot could not be started.": "स्क्रीनशॉट शुरू नहीं हो सका।",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "इसके लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","लागू हुआ, पर फ़ोन {1} की जगह {0} बता रहा है। One UI और कुछ अन्य फ़ोन इस मान को रीसेट या अनदेखा कर देते हैं।"],
 ["{0} of {1}","{1} में से {0}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} चुनें"]
+["Select {0}","{0} चुनें"],
+["Saved {0} ({1}).", "{0} सहेजा गया ({1})।"],
+["The phone did not save it: {0}", "फ़ोन ने इसे सहेजा नहीं: {0}"]
 ]
 };

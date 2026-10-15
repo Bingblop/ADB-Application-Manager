@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "Perpindahan dari satu layar ke layar berikutnya.",
 "Animator duration": "Durasi animator",
 "Everything else that moves inside apps: lists, switches, ripples.": "Semua hal lain yang bergerak di dalam aplikasi: daftar, sakelar, riak.",
-"Adaptive brightness bias": "Geser kecerahan"
+"Adaptive brightness bias": "Geser kecerahan",
+"A screenshot or recording is already running.": "Tangkapan layar atau rekaman sedang berjalan.",
+"Nothing is recording.": "Tidak ada yang sedang direkam.",
+"Record screen": "Rekam layar",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Merekam. Kembali dan ketuk Hentikan rekaman; rekaman berhenti sendiri setelah 3 menit.",
+"Records the screen for up to 3 minutes": "Merekam layar hingga 3 menit",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Perekaman layar membutuhkan mode kerja: ADB, Debugging nirkabel, Shizuku, atau Root.",
+"Screen recording works in the app on a phone, not in a browser.": "Perekaman layar berfungsi di aplikasi pada ponsel, bukan di browser.",
+"Screenshot": "Tangkapan layar",
+"Screenshot in 3 seconds. Open the screen you want.": "Tangkapan layar dalam 3 detik. Buka layar yang Anda inginkan.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Tangkapan layar membutuhkan mode kerja: ADB, Debugging nirkabel, Shizuku, atau Root.",
+"Screenshots work in the app on a phone, not in a browser.": "Tangkapan layar berfungsi di aplikasi pada ponsel, bukan di browser.",
+"Stop recording": "Hentikan rekaman",
+"Stopping the recording…": "Menghentikan rekaman…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "Mengambil tangkapan layar ponsel setelah 3 detik, agar Anda sempat membuka layar yang diinginkan",
+"The phone did not save it.": "Ponsel tidak menyimpannya.",
+"The recording could not be started.": "Rekaman tidak dapat dimulai.",
+"The screenshot could not be started.": "Tangkapan layar tidak dapat dimulai.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Ini membutuhkan mode kerja: ADB, Debugging nirkabel, Shizuku, atau Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Diterapkan, tetapi ponsel melaporkan {0} bukan {1}. One UI dan beberapa ponsel lain menyetel ulang atau mengabaikan nilai ini."],
 ["{0} of {1}","{0} dari {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Pilih {0}"]
+["Select {0}","Pilih {0}"],
+["Saved {0} ({1}).", "Tersimpan {0} ({1})."],
+["The phone did not save it: {0}", "Ponsel tidak menyimpannya: {0}"]
 ]
 };

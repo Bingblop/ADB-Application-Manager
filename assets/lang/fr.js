@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "Le passage d’un écran au suivant.",
 "Animator duration": "Durée de l’animateur",
 "Everything else that moves inside apps: lists, switches, ripples.": "Tout le reste qui bouge dans les applis : listes, interrupteurs, ondulations.",
-"Adaptive brightness bias": "Décalage de luminosité"
+"Adaptive brightness bias": "Décalage de luminosité",
+"A screenshot or recording is already running.": "Une capture ou un enregistrement est déjà en cours.",
+"Nothing is recording.": "Aucun enregistrement en cours.",
+"Record screen": "Enregistrer l’écran",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "Enregistrement en cours. Revenez et touchez Arrêter l’enregistrement ; il s’arrête de lui-même après 3 minutes.",
+"Records the screen for up to 3 minutes": "Enregistre l’écran jusqu’à 3 minutes",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "L’enregistrement d’écran nécessite un mode de travail : ADB, débogage sans fil, Shizuku ou Root.",
+"Screen recording works in the app on a phone, not in a browser.": "L’enregistrement d’écran fonctionne dans l’application, sur un téléphone, pas dans un navigateur.",
+"Screenshot": "Capture d’écran",
+"Screenshot in 3 seconds. Open the screen you want.": "Capture dans 3 secondes. Ouvrez l’écran voulu.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Les captures d’écran nécessitent un mode de travail : ADB, débogage sans fil, Shizuku ou Root.",
+"Screenshots work in the app on a phone, not in a browser.": "Les captures d’écran fonctionnent dans l’application, sur un téléphone, pas dans un navigateur.",
+"Stop recording": "Arrêter l’enregistrement",
+"Stopping the recording…": "Arrêt de l’enregistrement…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "Fait une capture d’écran du téléphone après 3 secondes, pour que vous puissiez ouvrir l’écran voulu",
+"The phone did not save it.": "Le téléphone ne l’a pas enregistrée.",
+"The recording could not be started.": "Impossible de démarrer l’enregistrement.",
+"The screenshot could not be started.": "Impossible de démarrer la capture d’écran.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "Cela nécessite un mode de travail : ADB, débogage sans fil, Shizuku ou Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Appliqué, mais le téléphone rapporte {0} au lieu de {1}. One UI et certains autres téléphones réinitialisent ou ignorent cette valeur."],
 ["{0} of {1}","{0} sur {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Sélectionner {0}"]
+["Select {0}","Sélectionner {0}"],
+["Saved {0} ({1}).", "{0} enregistré ({1})."],
+["The phone did not save it: {0}", "Le téléphone ne l’a pas enregistrée : {0}"]
 ]
 };

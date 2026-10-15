@@ -90,6 +90,9 @@ public class MainActivity extends Activity {
     private static long renderGoneAt;
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
+    /** One screenshot or recording at a time (the Terminal's Screenshot and Record buttons); both run on the executor, which onDestroy shuts down. */
+    private final java.util.concurrent.atomic.AtomicBoolean screenBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean screenRecording = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     /**
      * Hands a job to the executor. False when it refuses (shut down with the Activity): the caller then clears the
@@ -8430,6 +8433,102 @@ public class MainActivity extends Activity {
                 }
             });
             return "started";
+        }
+
+        /**
+         * Takes a screenshot through the working mode (screencap is a shell tool) after delaySec seconds (0..10, so you can open the screen you want),
+         * into Pictures/ADB App Manager. Answer: "started", "busy" or "no_access" (no ADB, Shizuku or Root); the outcome arrives as
+         * window.onScreenCaptureResult(json) with kind, status (ok, failed or no_access), path, bytes and text. "ok" means the phone reports a file above 0 bytes.
+         */
+        @JavascriptInterface
+        public String captureScreenshot(final int delaySec) {
+            final String mode = resolveExecMode();
+            if ("standard".equals(mode)) return "no_access";
+            if (!screenBusy.compareAndSet(false, true)) return "busy";
+            final int delay = ScreenCapture.clampDelay(delaySec);
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (delay > 0) Thread.sleep(delay * 1000L);
+                            String path = ScreenCapture.shotPath(System.currentTimeMillis(), java.util.TimeZone.getDefault());
+                            screenCaptureReply("shot", path, runPrivilegedShell(mode, ScreenCapture.shotCommand(path), 20000));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            screenBusy.set(false);
+                        }
+                    }
+                });
+            } catch (RuntimeException e) {          // the executor is already shut down: the app is closing
+                screenBusy.set(false);
+                return "no_access";
+            }
+            return "started";
+        }
+
+        /**
+         * Records the screen through the working mode (screenrecord) for at most `seconds` (5..180) into Movies/ADB App Manager. Same answers and the same
+         * window.onScreenCaptureResult(json) as captureScreenshot, with kind "record" when the file is finished. stopScreenRecord ends it early.
+         */
+        @JavascriptInterface
+        public String startScreenRecord(final int seconds) {
+            final String mode = resolveExecMode();
+            if ("standard".equals(mode)) return "no_access";
+            if (!screenBusy.compareAndSet(false, true)) return "busy";
+            final int secs = ScreenCapture.clampRecord(seconds);
+            screenRecording.set(true);
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String path = ScreenCapture.videoPath(System.currentTimeMillis(), java.util.TimeZone.getDefault());
+                            screenCaptureReply("record", path, runPrivilegedShell(mode, ScreenCapture.recordCommand(path, secs), (secs + 25) * 1000));
+                        } finally {
+                            screenRecording.set(false);
+                            screenBusy.set(false);
+                        }
+                    }
+                });
+            } catch (RuntimeException e) {
+                screenRecording.set(false);
+                screenBusy.set(false);
+                return "no_access";
+            }
+            return "started";
+        }
+
+        /** Asks a running recording to finish its file now. Answer: "stopping" or "idle" (nothing is recording). The file arrives through onScreenCaptureResult. */
+        @JavascriptInterface
+        public String stopScreenRecord() {
+            if (!screenRecording.get()) return "idle";
+            final String mode = resolveExecMode();
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        runPrivilegedShell(mode, ScreenCapture.stopCommand(), 6000);
+                    }
+                });
+            } catch (RuntimeException e) {
+                return "idle";
+            }
+            return "stopping";
+        }
+
+        private void screenCaptureReply(String kind, String path, String raw) {
+            ScreenCapture.Result r = ScreenCapture.parse(raw);
+            JSONObject o = new JSONObject();
+            try {
+                o.put("kind", kind);
+                o.put("status", ScreenCapture.status(raw, r));
+                o.put("path", path);
+                o.put("bytes", r.bytes);
+                o.put("text", r.text);
+            } catch (Exception ignored) {}
+            notifyJs("window.onScreenCaptureResult && window.onScreenCaptureResult(" + JSONObject.quote(o.toString()) + ")");
         }
 
         @JavascriptInterface

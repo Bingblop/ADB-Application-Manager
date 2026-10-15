@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "한 화면에서 다음 화면으로의 이동.",
 "Animator duration": "Animator 길이",
 "Everything else that moves inside apps: lists, switches, ripples.": "앱 안에서 움직이는 나머지 모든 것: 목록, 스위치, 물결 효과.",
-"Adaptive brightness bias": "밝기 보정"
+"Adaptive brightness bias": "밝기 보정",
+"A screenshot or recording is already running.": "스크린샷 또는 녹화가 이미 진행 중입니다.",
+"Nothing is recording.": "녹화 중인 것이 없습니다.",
+"Record screen": "화면 녹화",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "녹화 중입니다. 돌아와서 ‘녹화 중지’를 누르세요. 3분 뒤에는 저절로 멈춥니다.",
+"Records the screen for up to 3 minutes": "화면을 최대 3분간 녹화합니다",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "화면 녹화에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root.",
+"Screen recording works in the app on a phone, not in a browser.": "화면 녹화는 브라우저가 아니라 휴대폰의 앱에서 작동합니다.",
+"Screenshot": "스크린샷",
+"Screenshot in 3 seconds. Open the screen you want.": "3초 뒤에 스크린샷을 찍습니다. 원하는 화면을 여세요.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "스크린샷에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root.",
+"Screenshots work in the app on a phone, not in a browser.": "스크린샷은 브라우저가 아니라 휴대폰의 앱에서 작동합니다.",
+"Stop recording": "녹화 중지",
+"Stopping the recording…": "녹화를 중지하는 중…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3초 뒤 휴대폰의 스크린샷을 찍어, 원하는 화면을 열 시간을 줍니다",
+"The phone did not save it.": "휴대폰이 저장하지 않았습니다.",
+"The recording could not be started.": "녹화를 시작할 수 없습니다.",
+"The screenshot could not be started.": "스크린샷을 시작할 수 없습니다.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "이 기능에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","적용했지만 휴대전화가 {1} 대신 {0}을(를) 보고합니다. One UI와 일부 휴대전화는 이 값을 초기화하거나 무시합니다."],
 ["{0} of {1}","{1} 중 {0}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} 선택"]
+["Select {0}","{0} 선택"],
+["Saved {0} ({1}).", "{0} 저장됨 ({1})."],
+["The phone did not save it: {0}", "휴대폰이 저장하지 않았습니다: {0}"]
 ]
 };

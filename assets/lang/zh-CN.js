@@ -4856,7 +4856,25 @@ x: {
 "Moving from one screen to the next.": "从一个界面切换到下一个界面。",
 "Animator duration": "Animator 时长",
 "Everything else that moves inside apps: lists, switches, ripples.": "应用内其他所有会动的元素：列表、开关、水波纹。",
-"Adaptive brightness bias": "亮度偏移"
+"Adaptive brightness bias": "亮度偏移",
+"A screenshot or recording is already running.": "已有截图或录制正在进行。",
+"Nothing is recording.": "当前没有在录制。",
+"Record screen": "录制屏幕",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "正在录制。请回来点按“停止录制”；3 分钟后会自动停止。",
+"Records the screen for up to 3 minutes": "最长录制屏幕 3 分钟",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "录制屏幕需要一种工作模式：ADB、无线调试、Shizuku 或 Root。",
+"Screen recording works in the app on a phone, not in a browser.": "录制屏幕需在手机上的应用中使用，不能在浏览器中使用。",
+"Screenshot": "截图",
+"Screenshot in 3 seconds. Open the screen you want.": "3 秒后截图。请打开你想要的画面。",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "截图需要一种工作模式：ADB、无线调试、Shizuku 或 Root。",
+"Screenshots work in the app on a phone, not in a browser.": "截图需在手机上的应用中使用，不能在浏览器中使用。",
+"Stop recording": "停止录制",
+"Stopping the recording…": "正在停止录制…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3 秒后对手机截图，让你有时间打开想要的画面",
+"The phone did not save it.": "手机没有保存。",
+"The recording could not be started.": "无法开始录制。",
+"The screenshot could not be started.": "无法开始截图。",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "这需要一种工作模式：ADB、无线调试、Shizuku 或 Root。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
@@ -5980,6 +5998,8 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","已应用，但手机报告的是 {0} 而不是 {1}。One UI 和其他一些手机会重置或忽略这个值。"],
 ["{0} of {1}","{0} / {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","选择 {0}"]
+["Select {0}","选择 {0}"],
+["Saved {0} ({1}).", "已保存 {0}（{1}）。"],
+["The phone did not save it: {0}", "手机没有保存：{0}"]
 ]
 };
