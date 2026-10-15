@@ -63,7 +63,7 @@
     <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
     <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
   </ol>
-  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Ask agent</b> (asks your <a href="#prefs">Default Ask Agent</a> what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess; until the agent has its key, or with <b>No default</b> chosen, the built-in web lookup answers instead), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Shell of the <a href="#tab-console">Console</a> tab).</p>
+  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 5 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Ask agent</b> (asks your <a href="#prefs">Default Ask Agent</a> what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess; until the agent has its key, or with <b>No default</b> chosen, the built-in web lookup answers instead), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Shell of the <a href="#tab-console">Console</a> tab).</p>
 
   <h4>Flip a switch</h4>
   <ol class="hg-steps">
@@ -147,7 +147,7 @@
   </ul>
 
   <h4>The Undo bar</h4>
-  <p>After a change, a small bar slides up from the bottom of the screen. It shows a short line in a typewriter font and an <b>Undo</b> button. It stays for about 7 seconds and then slides away.</p>
+  <p>After a change, a small bar slides up from the bottom of the screen. It shows a short line in a typewriter font and an <b>Undo</b> button. It stays for about 5 seconds and then slides away.</p>
   <table class="hg-table">
     <thead><tr><th>You did this</th><th>The bar says</th><th>Undo does this</th></tr></thead>
     <tbody>
@@ -162,10 +162,10 @@
   </table>
   <ol class="hg-steps">
     <li>Make a change.</li>
-    <li>Within about 7 seconds, tap <b>Undo</b> on the bar.</li>
+    <li>Within about 5 seconds, tap <b>Undo</b> on the bar.</li>
     <li>A message says <i>Put back: name</i> (or <i>Removed: name</i> when the setting did not exist before), and the row shows the old value again.</li>
   </ol>
-  <p><b>What you will see:</b> the bar disappears when you tap Undo, when 7 seconds have passed, when a newer change takes its place (only the newest change has an Undo bar), or when you leave the Hidden Settings and RRO/Monet Customization tabs. After the bar is gone, use <b>Changes</b>.</p>
+  <p><b>What you will see:</b> the bar disappears when you tap Undo, when 5 seconds have passed, when a newer change takes its place (only the newest change has an Undo bar), or when you leave the Hidden Settings and RRO/Monet Customization tabs. After the bar is gone, use <b>Changes</b>.</p>
   <div class="hg-note"><b>Tip.</b> If you change a theme and Android restarts the app (this happens when the colours change), the app comes back to the RRO/Monet tab by itself with the Undo bar waiting. This works for changes made in the last 20 seconds.</div>
 
   <h4>The Changes history</h4>
@@ -455,7 +455,7 @@
     <li>Choose the source, the colour (if custom) and the style.</li>
     <li>Read the line under the buttons: <i>Android repaints in a moment, and apps may restart.</i> If it says <i>This is already what the phone uses.</i>, there is nothing to apply. With an invalid code, <b>Apply theme</b> stays grey.</li>
     <li>Tap <b>Apply theme</b>. It reads <b>Applying...</b> while the app reads the current setting, writes the new one and reads it back.</li>
-    <li>Android repaints within a second or two and may restart the app. The Undo bar appears for about 7 seconds with <i>Theme applied</i>, and the colours in use update.</li>
+    <li>Android repaints within a second or two and may restart the app. The Undo bar appears for about 5 seconds with <i>Theme applied</i>, and the colours in use update.</li>
   </ol>
   <p>The app keeps other choices stored in the same setting (a font, icon shape or icon pack on Pixel-like phones) and replaces only the colour entries. It writes one setting, the secure setting <code>theme_customization_overlay_packages</code>, and lists the change in <a href="#settings-journal">Changes</a> in Hidden Settings, with a Revert. <b>Default</b> asks <i>Go back to the system default?</i>; if you confirm, the theme setting is cleared (wallpaper colours, Tonal Spot) and Samsung's switch is left alone. The <b>How this works</b> card has <b>Copy the setting</b> (the raw setting text, for a bug report) and <b>Reload</b>.</p>
   <div class="hg-note"><b>Tip.</b> The app's own look can follow these colours: the <b>Material You</b> palette in <a href="#themes">Themes and colours</a> uses them, so this app may change colour too.</div>
@@ -474,14 +474,14 @@
     <li>Find the overlay (search or a chip).</li>
     <li><b>Tap its switch</b>, or <b>press and hold the row</b> for about half a second (you feel a short tap).</li>
     <li>The app runs the change and reads the whole list again, so the row shows what Android reports, not what was asked for.</li>
-    <li>The Undo bar says <i>On: name</i> or <i>Off: name</i>. Tap <b>Undo</b> within about 7 seconds to put it back.</li>
+    <li>The Undo bar says <i>On: name</i> or <i>Off: name</i>. Tap <b>Undo</b> within about 5 seconds to put it back.</li>
   </ol>
   <p><b>The detail sheet.</b> Tap a row (not the switch) to open a sheet with the full name, state and target, a note, <b>Switch on</b> or <b>Switch off</b>, and the links <b>Copy name</b>, <b>Copy target</b> and <b>Copy command</b> (the exact <code>cmd overlay</code> line).</p>
   <p><b>When an overlay will not switch.</b> Some overlays are fixed on or off by the system or belong to another app. Android 12 and newer answer with a bare "commit failed", and the app says so: <i>Android refused the change and gave no reason</i>. A sheet titled <b>Could not switch it on</b> (or off) shows Android's words and advice. If no answer comes in time, the phone may still apply it and the list is read again shortly. Overlays are switched for the user the phone's shell uses by default, which is the owner on nearly every phone.</p>
 
   <h4>If a colour looks bad: undo and recovery</h4>
   <ol class="hg-steps">
-    <li><b>Tap Undo</b> on the bar (about 7 seconds). The old theme is written back and a message says <i>Theme put back</i>.</li>
+    <li><b>Tap Undo</b> on the bar (about 5 seconds). The old theme is written back and a message says <i>Theme put back</i>.</li>
     <li><b>Or tap Default</b> and confirm: wallpaper colours and Tonal Spot again.</li>
     <li><b>Or use the history:</b> <b>Hidden Settings</b>, <b>⋯</b>, <b>Changes</b>, find <code>theme_customization_overlay_packages</code>, <b>Revert</b> (see <a href="#settings-journal">Undoing settings changes</a>).</li>
     <li><b>Or delete the setting:</b> in <b>Hidden Settings</b> open <b>Secure</b>, search <code>theme_customization</code>, tap the row and <b>Delete</b>. Android then uses its default.</li>
@@ -754,7 +754,7 @@
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
       <tr><td><b>Expressive Animations</b> (switch)</td><td>Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide. A message says <i>Expressive animations on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if the motion bothers you or you prefer plain movement.</td></tr>
-      <tr><td><b>Row tints</b> (slider: Off, Subtle, Normal)</td><td>How strongly the Apps tab tints the whole row of a running (green), frozen (blue) or uninstalled (red) app. Off: no tint (the badges and the boxes at the top keep their colours). Subtle: a faint tint. Normal: a clearly visible one.</td><td>Subtle</td><td>Turn it up if you want to see the states at a glance, off for plain rows.</td></tr>
+      <tr><td><b>Row tints</b> (slider: Off, Subtle, Normal)</td><td>How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app: a glow in that colour behind the app's icon that fades across the row. Off: no tint (the badges and the boxes at the top keep their colours). Subtle: a faint tint. Normal: a clearly visible one. Whatever you choose, only the rows you select get an outline (in the accent colour).</td><td>Subtle</td><td>Turn it up if you want to see the states at a glance, off for plain rows.</td></tr>
     </tbody>
   </table>
 

@@ -75,6 +75,19 @@
             --line-suspended: color-mix(in srgb, var(--status-suspended) 35%, transparent);
             --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
             --line-accent: color-mix(in srgb, var(--accent) 35%, transparent);
+            --tint-apps-frozen: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
+            --line-apps-frozen: color-mix(in srgb, var(--apps-frozen) 40%, transparent);
+            --tint-apps-system: color-mix(in srgb, var(--apps-system) 14%, transparent);
+            --line-apps-system: color-mix(in srgb, var(--apps-system) 40%, transparent);
+            --tint-apps-uninstalled: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent);
+            --line-apps-uninstalled: color-mix(in srgb, var(--apps-uninstalled) 40%, transparent);
+            --tint-apps-enabled: color-mix(in srgb, var(--apps-enabled) 14%, transparent);
+            --line-apps-enabled: color-mix(in srgb, var(--apps-enabled) 40%, transparent);
+            /* A WebView before Chrome 111 has no color-mix(). A declaration that uses it AND a var() is not dropped when it is read: it
+               fails later, when it is computed, and the property then falls to its initial value (a border turns the text colour, white;
+               a background turns transparent), so a plain declaration before it does not help. The tokens above are therefore computed
+               in JS there (colorMixFallback(), called by applyTheme()) and written over these values, and the rules that mix colours
+               themselves get an @supports not (color: color-mix(...)) block next to them that draws them from the tokens. */
 
             /* ---- Fixed colours [fixed] ---- */
             --danger-solid: #C62828;                 /* the Stop button: a solid red that carries white text in every theme */
@@ -446,6 +459,9 @@
             --bnav-w: 0px;
         }
         html:not([data-nav="top"]) { --bnav-h: var(--bnav-full); }
+        /* What floats at the bottom of the screen (the Undo bars, the back-to-top button) stands on --float-base: the top of the bottom bar,
+           or the edge of the screen above the gesture area when the bar is off or away. Resolved here, on html, where --bnav-h is set. */
+        html { --float-base: max(var(--bnav-h, 0px), env(safe-area-inset-bottom, 0px)); }
         html[data-nav="bottom"] #tabBar { display: none; }
         html[data-nav="top"] .bnav { display: none; }
         html.bnav-away { --bnav-h: 0px; }
@@ -881,31 +897,67 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: background 0.15s;
+            position: relative;
+            isolation: isolate;          /* the tint layer (::before, z-index -1) lies on the card's own background, under its content */
         }
 
+        /* A row's colours. Only a row the person selected has an outline (the accent); every other row keeps the plain hairline.
+           A running, frozen or uninstalled app gets a glow in its state's colour (green, blue, red) behind its icon that fades across the
+           row, with a soft shine along the top, as strong as "Row tints" in Settings says: Off, Subtle (the default) or Normal.
+           Drawn without color-mix(): a WebView before Chrome 111 throws a color-mix() declaration away, and the row then got a white
+           outline (currentColor) and no background at all. The layer is one static gradient: nothing moves while the list scrolls. */
+        html { --rt-o: 0.11; }
+        html[data-row-tint="off"] { --rt-o: 0; }
+        html[data-row-tint="normal"] { --rt-o: 0.2; }
+        .app-card { --rt-dir: 90deg; --rt-x: 32px; }
+        [dir="rtl"] .app-card { --rt-dir: 270deg; --rt-x: calc(100% - 32px); }          /* the leading edge is on the right */
+        .app-card.running { --rt-c: var(--apps-running); }
+        .app-card.frozen { --rt-c: var(--apps-frozen); }
+        .app-card.uninstalled { --rt-c: var(--apps-uninstalled); }
+        .app-card.running::before, .app-card.frozen::before, .app-card.uninstalled::before, .app-card.selected::before {          /* (a plain row has no layer at all) */
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: inherit;
+            pointer-events: none;
+            opacity: var(--rt-o);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 45%),                                  /* the shine along the top */
+                radial-gradient(64px 64px at var(--rt-x) 50%, var(--rt-c), transparent),                          /* the glow behind the icon */
+                linear-gradient(var(--rt-dir), var(--rt-c), transparent 55%);                                     /* the wash that fades across the row */
+        }
+
+        /* Selected: the accent outline (2px: the border and a ring inside it, no blur) over the accent-to-secondary gradient of the app's
+           primary buttons, whatever the row tints are */
         .app-card.selected {
             border-color: var(--accent);
-            background: var(--tint-accent);
+            box-shadow: inset 0 0 0 1px var(--accent);
         }
-
-        /* The whole row of an app is tinted like the box at the top for its state: green running, blue frozen (disabled), red uninstalled
-           (the later rule wins); a selected row keeps the selection colours */
-        /* "Row tints" in Settings: Off, Subtle (the default) or Normal */
-        html { --rt-bg: 3%; --rt-bd: 12%; }
-        html[data-row-tint="off"] { --rt-bg: 0%; --rt-bd: 0%; }
-        html[data-row-tint="normal"] { --rt-bg: 9%; --rt-bd: 35%; }
-        .app-card.running:not(.selected) {
-            background: color-mix(in srgb, var(--apps-running) var(--rt-bg), var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-running) var(--rt-bd), var(--border-glass));
+        .app-card.selected::before {
+            opacity: 0.13;          /* about the 12% accent wash the status colours are made to read on (statusInk) */
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 45%),
+                linear-gradient(105deg, var(--accent), var(--secondary));
         }
-        .app-card.frozen:not(.selected) {
-            background: color-mix(in srgb, var(--apps-frozen) var(--rt-bg), var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-frozen) var(--rt-bd), var(--border-glass));
+        /* The moment a row is selected by a tap, a band of light sweeps across it once (not when a whole list is drawn selected) */
+        @media (prefers-reduced-motion: no-preference) {
+            .app-card.selected.sel-shine::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                border-radius: inherit;
+                pointer-events: none;
+                background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%) no-repeat;
+                background-size: 250% 100%;
+                background-position: -20% 0;
+                animation: selShine 0.7s ease-out 1;
+            }
         }
-        .app-card.uninstalled:not(.selected) {
-            background: color-mix(in srgb, var(--apps-uninstalled) var(--rt-bg), var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-uninstalled) var(--rt-bd), var(--border-glass));
+        @keyframes selShine {
+            0% { background-position: 120% 0; }
+            100% { background-position: -20% 0; }
         }
 
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
@@ -1040,9 +1092,9 @@
         }
 
         .tag-frozen {
-            background: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
+            background: var(--tint-apps-frozen);
             color: var(--apps-frozen);
-            border: 1px solid color-mix(in srgb, var(--apps-frozen) 40%, transparent);
+            border: 1px solid var(--line-apps-frozen);
         }
 
         /* Connected Devices: the FROZEN badge reads a little stronger (a fuller tint, the text pulled towards the page's text colour) */
@@ -1053,9 +1105,9 @@
         }
 
         .tag-system {
-            background: color-mix(in srgb, var(--apps-system) 14%, transparent);
+            background: var(--tint-apps-system);
             color: var(--apps-system);
-            border: 1px solid color-mix(in srgb, var(--apps-system) 40%, transparent);
+            border: 1px solid var(--line-apps-system);
         }
 
         .tag-user {
@@ -1393,6 +1445,38 @@
             user-select: none;
             touch-action: manipulation;
         }
+
+        /* Back to top: a round button at the right edge, above the bottom bar, in the column of the checkmark button (centred on it; above it
+           while it is up, and above an Undo bar or a docked bar of a tab). It comes in once the screen has been scrolled down about one and a
+           half screens and goes while a sheet, the keyboard or the full-screen terminal is up (bttUpdate). */
+        .btt {
+            position: fixed;
+            right: 24px;
+            bottom: calc(var(--float-base) + var(--btt-lift, 24px));
+            z-index: 190;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            background: var(--bg-sheet);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), var(--glow-accent);
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px) scale(0.8);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btt.show { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s; }
+        .btt:active { background: var(--accent); color: var(--on-accent); }
+        .btt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { .btt, .btt.show { transform: none; transition: opacity 0.01s, visibility 0s; } }
+        .float-probe { position: fixed; right: 0; bottom: var(--float-base); width: 0; height: 0; visibility: hidden; pointer-events: none; }
 
         .batch-fab.clearing {
             animation: fabClear 0.28s ease-out;
@@ -1749,9 +1833,9 @@
         }
 
         /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
-        .sheet-btn-red { background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
-        .sheet-btn-blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
-        .sheet-btn-green { background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
+        .sheet-btn-red { background: var(--tint-apps-uninstalled); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
+        .sheet-btn-blue { background: var(--tint-apps-frozen); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
+        .sheet-btn-green { background: var(--tint-apps-enabled); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
         .sheet-btn-red:active, .sheet-btn-blue:active, .sheet-btn-green:active { background: var(--accent); color: var(--on-accent); }
 
         .sheet-tabs {
@@ -2926,7 +3010,7 @@
         /* The trash can and the recycle symbol used to say which buttons delete and which are the main action */
         .batch-grid-btn.danger { color: var(--status-bloat); border-color: var(--status-bloat); }
         .batch-grid-btn.accent { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
-        .batch-grid-btn.blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
+        .batch-grid-btn.blue { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
 
         .arc-textarea {
             width: 100%;
@@ -3168,9 +3252,9 @@
         /* Toast */
         .toast {
             position: fixed;
-            bottom: calc(24px + var(--bnav-h, 0px));
+            bottom: calc(24px + var(--bnav-h, 0px) + var(--toast-lift, 0px));          /* --toast-lift: above an Undo bar while one is up (floatSync) */
             left: 50%;
-            transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px)));
+            transform: translateX(-50%) translateY(calc(100px + var(--bnav-h, 0px) + var(--toast-lift, 0px)));
             background: var(--text-main);            /* the inverse surface: a dark toast on the light page, a light one on the dark page, so it never blends into the cards */
             border: 1px solid var(--text-main);
             color: var(--bg-base);
@@ -4110,6 +4194,29 @@
             .view-content.active { animation: viewFadeIn 0.22s ease-out; }
             @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
         }
+
+        /* No color-mix() (a WebView before Chrome 111): the rules of this sheet that mix two colours themselves, drawn from the tokens instead
+           (computed in JS there). A translucent token laid over an opaque colour (linear-gradient(t, t), base) is the same mix. */
+        @supports not (color: color-mix(in srgb, red 50%, blue)) {
+            #prefsHeaderBtn { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--bg-card); border-color: var(--line-accent); }
+            .bn-tile .bn-ico, .bn-tile.current, .bn-sc.fav { background: var(--tint-accent); }
+            .nav-opt[aria-checked="true"] { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--input-bg); }
+            .bn-menu { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line-accent); }
+            .stat-card[data-filter="running"], .stat-card[data-filter="enabled"] { --tone-tint: var(--tint-running-strong); }
+            .stat-card[data-filter="uninstalled"] { --tone-tint: var(--tint-bloat-strong); }
+            .stat-card[data-filter="frozen"] { --tone-tint: var(--line-apps-frozen); }
+            .stat-card[data-filter="user"] { --tone-tint: var(--tint-user-strong); }
+            .stat-card[data-filter="system"] { --tone-tint: var(--line-apps-system); }
+            .filter-pill.stat-card:not([data-filter="installed"]) { background: var(--fill-2); }
+            .filter-pill.stat-card.active:not([data-filter="installed"]) { background: linear-gradient(var(--tone-tint), var(--tone-tint)), var(--bg-card); }
+            .app-card > .app-sel .app-checkbox { box-shadow: 0 0 0 2px var(--bg-card); }
+            .tag-frozen.cd-frozen { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--line-apps-frozen); }
+            .sheet-btn-red { border-color: var(--line-apps-uninstalled); }
+            .sheet-btn-blue { border-color: var(--line-apps-frozen); }
+            .sheet-btn-green { border-color: var(--line-apps-enabled); }
+            .lc-ent-ai, .agent-ask-bar, .agent-ask-hist-row:active { background: var(--tint-accent); }
+            .lc-msg { color: var(--lc); }
+        }
     </style>
 </head>
 <body>
@@ -4846,11 +4953,16 @@
                 .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act:disabled { opacity: 0.45; }
-                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); }
-                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); }
+                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: var(--tint-apps-uninstalled); }
+                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: var(--tint-apps-frozen); }
                 .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
-                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
+                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: var(--tint-apps-enabled); }
                 .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) {
+                    .cd-row-act.danger { border-color: var(--line-apps-uninstalled); }
+                    .cd-row-act.blue { border-color: var(--line-apps-frozen); }
+                    .cd-row-act.green { border-color: var(--line-apps-enabled); }
+                }
                 .cd-batch { position: sticky; bottom: calc(10px + var(--bnav-h, 0px)); z-index: 30; display: none; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3h); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-lg);
                     background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .cd-batch.show { display: flex; }
@@ -5397,7 +5509,7 @@
                 .sdb-jrow .sdb-key { font-size:var(--fs-body); }
                 .sdb-jrow .sdb-change { font-family:ui-monospace,monospace; font-size:var(--fs-pill); color:var(--text-muted); margin-top:var(--space-1); overflow-wrap:anywhere; }
                 .sdb-jrow .sdb-change em { color:var(--accent); font-style:normal; }
-                .sdb-snack { position:fixed; left:12px; right:12px; bottom:calc(72px + var(--bnav-h, 0px)); margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4); display:flex; align-items:center; gap:var(--space-3h); font-size:var(--fs-body); font-weight:var(--fw-bold); box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
+                .sdb-snack { position:fixed; left:12px; right:12px; bottom:calc(var(--float-base) + var(--space-3) + var(--undo-lift, 0px)); margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4); display:flex; align-items:center; gap:var(--space-3h); font-size:var(--fs-body); font-weight:var(--fw-bold); box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
                 .sdb-snack.show { transform:translateY(0); opacity:1; pointer-events:auto; }
                 .sdb-snack span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:ui-monospace,monospace; font-size:var(--fs-body); }
                 .sdb-snack button { flex:0 0 auto; border:none; border-radius:var(--radius-md); padding:var(--space-3) var(--space-4); font-weight:var(--fw-heavy); font-size:var(--fs-body); background:var(--accent); color:var(--on-accent); cursor:pointer; }
@@ -5415,6 +5527,7 @@
                 .sdb-help p, .sdb-help li { font-size:var(--fs-body); line-height:1.5; margin:var(--space-1) 0; }
                 .sdb-help ul { margin:var(--space-1) 0 var(--space-1) 18px; padding:0; }
                 .sdb-help code { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-body); }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) { .sdb-val, .sdb-about-now { color: var(--accent); } }
             </style>
 
             <div class="color-card" id="sdbTop">
@@ -6117,7 +6230,7 @@
 
             <div class="color-card" id="rowTintCard">
                 <div class="color-card-title">Row tints</div>
-                <div class="color-card-subtitle">How strongly the Apps tab tints the whole row of a running (green), frozen (blue) or uninstalled (red) app</div>
+                <div class="color-card-subtitle">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app. Only the apps you select get an outline.</div>
                 <div class="row-tint-slider">
                     <input type="range" id="rowTintRange" min="0" max="2" step="1" value="1" oninput="setRowTint(this.value)" aria-label="Row tints">
                     <div class="row-tint-ticks"><span>Off</span><span>Subtle</span><span>Normal</span></div>
@@ -7294,7 +7407,7 @@
                 .sd-set input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
                 .sd-set .modal-text-input { flex: 0 0 110px; min-width: 0; margin: 0; }
                 .sd-set .op-select { flex: 0 0 140px; min-width: 0; font-size: var(--fs-item); padding: var(--space-3) var(--space-2); }
-                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: calc(76px + var(--bnav-h, 0px)); z-index: 340; display: none; align-items: center; justify-content: space-between; gap: var(--space-3h); padding: var(--space-4) var(--space-4); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: var(--fs-item); font-weight:var(--fw-bold); }
+                .sd-undo { position: fixed; left: 12px; right: 12px; bottom: calc(var(--float-base) + var(--space-3) + var(--undo-lift, 0px)); z-index: 340; display: none; align-items: center; justify-content: space-between; gap: var(--space-3h); padding: var(--space-4) var(--space-4); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-main); border: 1px solid var(--accent); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: var(--fs-item); font-weight:var(--fw-bold); }
                 .sd-undo.on { display: flex; }
                 .sd-undo button { border: 0; background: transparent; color: var(--accent); font-weight:var(--fw-black); font-size: var(--fs-item); text-transform: uppercase; cursor: pointer; }
             </style>
@@ -7605,6 +7718,11 @@
                 #cnSegLog .lc-key { margin: 10px -16px 0; }
                 #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
                 #cnSegLog #logcatScope:empty { display: none; }
+                @supports not (color: color-mix(in srgb, red 50%, blue)) {
+                    .cn-icon.danger, .cn-find .find-nav.danger, .cn-card.is-fail .cn-badge { color: var(--status-bloat); }
+                    .cn-card.is-ok .cn-badge { color: var(--status-running); }
+                    #cnSegLog .lc-badge, #cnSegLog .lc-head .lc-tag { color: var(--lc); }
+                }
             </style>
 
             <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -9755,6 +9873,10 @@ Type any command above (e.g. pm list packages -d)</div>
     <!-- Android settings: undo after a change -->
     <div class="sdb-snack" id="sdbSnack" role="status" aria-live="polite"><span id="sdbSnackMsg"></span><button id="sdbSnackUndo" onclick="sdbSnackUndoNow()">Undo</button></div>
 
+    <!-- Back to top: shown on any screen once it has been scrolled down a good way (bttUpdate) -->
+    <button type="button" class="btt" id="backToTop" aria-label="Back to top" title="Back to top" onclick="bttGo()" inert aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></button>
+    <div class="float-probe" id="floatProbe" aria-hidden="true"></div>
+
     <!-- Overlays: one overlay -->
     <div class="modal-overlay" id="ovlDetailModal" onclick="if(event.target===this) ovlCloseDetail()">
         <div class="modal-sheet">
@@ -10567,6 +10689,96 @@ Type any command above (e.g. pm list packages -d)</div>
             return 'rgba(' + hexToRgb(hex).join(',') + ',' + alpha + ')';
         }
 
+        // ---------- No color-mix() (a WebView before Chrome 111) ----------
+        // There a declaration such as border-color: color-mix(in srgb, <a token> 40%, transparent) fails when it is computed, and the border
+        // then takes the text colour (white) and a background goes transparent. The tokens of the first :root sheet that are color-mix() mixes
+        // (--tint-*, --line-*) are computed here from the theme colours applyTheme() has just set and written inline over the sheet's value:
+        // a mix with transparent is the colour at that alpha, a mix of two colours their blend (premultiplied, as color-mix() does it).
+        function colorMixSupported() {
+            try { return !!(window.CSS && CSS.supports && CSS.supports('color', 'color-mix(in srgb, red 50%, blue)')); } catch (e) { return false; }
+        }
+
+        // The arguments of the first color-mix( ... ) in a value, split at the top-level commas (null when there is none)
+        function colorMixArgs(value) {
+            const at = String(value || '').indexOf('color-mix(');
+            if (at < 0) return null;
+            const args = [];
+            let depth = 0, cur = '';
+            for (let i = at + 'color-mix('.length; i < value.length; i++) {
+                const ch = value[i];
+                if (ch === '(') depth++;
+                else if (ch === ')') { if (depth === 0) { args.push(cur.trim()); return args; } depth--; }
+                if (ch === ',' && depth === 0) { args.push(cur.trim()); cur = ''; } else cur += ch;
+            }
+            return null;
+        }
+
+        // A colour term of a mix as [r, g, b, a]: a hex, rgb()/rgba(), transparent or a var() of a token (read from the inline theme first)
+        function colorMixTerm(term, depth) {
+            term = String(term || '').trim();
+            if (depth > 4) return null;
+            const v = /^var\(\s*(--[\w-]+)\s*(?:,(.*))?\)$/.exec(term);
+            if (v) {
+                const root = document.documentElement;
+                const val = root.style.getPropertyValue(v[1]).trim() || getComputedStyle(root).getPropertyValue(v[1]).trim() || (v[2] || '').trim();
+                return colorMixTerm(val, (depth || 0) + 1);
+            }
+            if (/^transparent$/i.test(term)) return [0, 0, 0, 0];
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(term)) return hexToRgb(term).concat(1);
+            const m = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(term);
+            if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
+            return null;
+        }
+
+        // color-mix(in srgb, A p%, B [q%]) as a colour string, or null when a term cannot be read
+        function colorMixCompute(value) {
+            const args = colorMixArgs(value);
+            if (!args || args.length !== 3 || !/^in\s+srgb$/i.test(args[0])) return null;
+            const part = s => { const m = /^(.*?)(?:\s+([\d.]+)%)?$/.exec(s); return { c: colorMixTerm(m[1], 0), p: m[2] === undefined ? null : +m[2] / 100 }; };
+            const a = part(args[1]), b = part(args[2]);
+            if (!a.c || !b.c) return null;
+            let pa = a.p, pb = b.p;
+            if (pa === null && pb === null) pa = pb = 0.5;
+            else if (pa === null) pa = 1 - pb;
+            else if (pb === null) pb = 1 - pa;
+            const sum = pa + pb;
+            if (!(sum > 0)) return null;
+            pa /= sum; pb /= sum;
+            const alpha = a.c[3] * pa + b.c[3] * pb;
+            if (alpha <= 0) return 'rgba(0, 0, 0, 0)';
+            const rgb = [0, 1, 2].map(i => Math.round((a.c[i] * a.c[3] * pa + b.c[i] * b.c[3] * pb) / alpha));
+            const al = Math.round(alpha * Math.min(1, sum) * 1000) / 1000;          // percentages under 100% in all make it that much more transparent
+            return al >= 1 ? rgbToHex(rgb) : 'rgba(' + rgb.join(', ') + ', ' + al + ')';
+        }
+
+        // The first :root rule of the page's first sheet (the token sheet)
+        function tokenSheetRule() {
+            try {
+                for (const sheet of Array.from(document.styleSheets)) {
+                    for (const rule of Array.from(sheet.cssRules || [])) if (rule.selectorText === ':root') return rule;
+                }
+            } catch (e) { /* a sheet that cannot be read */ }
+            return null;
+        }
+
+        // Writes every color-mix() token of the token sheet inline as a plain colour (only where color-mix() is missing). Returns what it set.
+        function colorMixFallback() {
+            if (colorMixSupported()) return {};
+            const rule = tokenSheetRule();
+            const set = {};
+            if (!rule) return set;
+            const css = document.documentElement.style;
+            for (let i = 0; i < rule.style.length; i++) {
+                const name = rule.style[i];
+                if (!name.startsWith('--')) continue;
+                const raw = rule.style.getPropertyValue(name);
+                if (raw.indexOf('color-mix(') < 0) continue;
+                const value = colorMixCompute(raw);
+                if (value) { css.setProperty(name, value); set[name] = value; }
+            }
+            return set;
+        }
+
         // ---------- Palette styles: a whole scheme from one source color ----------
         // The nine styles are Google's Material 3 "dynamic scheme" variants. A color is described as hue, chroma and tone (HCT: the CAM16
         // appearance model's hue and chroma with L* as the tone), so a tone ladder of one palette always looks evenly lit. The method is the one
@@ -11103,6 +11315,106 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavVisibility();
             requestAnimationFrame(() => requestAnimationFrame(() => { bnavBoot = false; bnavVisibility(); setTimeout(bnavTipMaybe, 1200); }));          // the page is up: the bar comes in
         }
+
+        // ---- What floats at the bottom of the screen makes room for the rest ----
+        // The Undo bars stand just above the bottom bar (--float-base); while the checkmark button or the batch sheet is up, above that instead
+        // (--undo-lift). A toast goes above an Undo bar that is up (--toast-lift). The back-to-top button stands in the checkmark button's column,
+        // above it, above an Undo bar and above a tab's docked bar (Morphe's patch bar, Connected Devices' batch bar). Heights are read from the
+        // layout (the bottom offset and the height), not from the screen, so a bar that is still sliding in is measured where it will be.
+        let floatUndoLift = 0, floatToastLift = 0, floatQueued = false;
+        function floatTop(el) { return (parseFloat(getComputedStyle(el).bottom) || 0) + el.offsetHeight; }          // its top edge, in px up from the bottom of the screen
+        function floatBase() { const p = document.getElementById('floatProbe'); return p ? window.innerHeight - p.getBoundingClientRect().bottom : 0; }
+        function floatFab() { const f = document.getElementById('batchFab'); return f && f.classList.contains('show') && !document.body.classList.contains('search-menu-open') ? f : null; }
+        function floatUndoBar() {
+            return [document.getElementById('sdbSnack'), document.getElementById('sdUndo')].find(el => el && (el.classList.contains('show') || el.classList.contains('on')) && el.getClientRects().length) || null;
+        }
+        function floatSync() {
+            const root = document.documentElement, base = floatBase();
+            const fab = floatFab(), sheet = document.getElementById('floatingBatchBar');
+            const lift = Math.max(0, Math.round(sheet && sheet.classList.contains('show') ? floatTop(sheet) - base : fab ? floatTop(fab) - base : 0));
+            if (lift !== floatUndoLift) { floatUndoLift = lift; root.style.setProperty('--undo-lift', lift + 'px'); }
+            const undo = floatUndoBar(), toast = document.getElementById('toast');
+            if (toast) {
+                const toastBase = (parseFloat(getComputedStyle(toast).bottom) || 0) - floatToastLift;
+                const tl = undo ? Math.max(0, Math.ceil(floatTop(undo) + 8 - toastBase)) : 0;
+                if (tl !== floatToastLift) { floatToastLift = tl; root.style.setProperty('--toast-lift', tl + 'px'); }
+            }
+            bttUpdate();
+        }
+        function floatQueue() { if (floatQueued) return; floatQueued = true; requestAnimationFrame(() => { floatQueued = false; floatSync(); }); }
+
+        // ---- Back to top: one round button for every screen with a long list ----
+        // The screens scroll the page itself; a list that scrolls in a box of its own as tall as half the screen or more (the Logcat
+        // Viewer) counts too, once it has been scrolled. The button comes in past one and a half screens and scrolls that one back up.
+        let bttInner = null, bttLift = 24, bttQueued = false;
+        function bttDoc() { return document.scrollingElement || document.documentElement; }
+        function bttScroller() {
+            const v = document.querySelector('.view-content.active');
+            if (bttInner && (!bttInner.isConnected || !v || !v.contains(bttInner) || !bttInner.getClientRects().length)) bttInner = null;
+            return bttInner && bttInner.scrollTop > bttDoc().scrollTop ? bttInner : bttDoc();
+        }
+        function bttCovered() {
+            if (document.querySelector('.modal-overlay.show, #txPaneTerminal.tx-full, .rt-overlay.show, .batch-bottom-sheet.show')) return true;          // a sheet or dialog (the bar's More sheet too), the full-screen terminal, the batch sheet
+            if (document.body.classList.contains('search-menu-open')) return true;
+            return bnavTextFocus() || bnavKeyboardUp();                                                           // typing: the keyboard is up
+        }
+        function bttUpdate() {
+            const btn = document.getElementById('backToTop');
+            if (!btn) return;
+            const sc = bttScroller();
+            const show = sc.scrollTop > 1.5 * (sc === bttInner ? sc.clientHeight : window.innerHeight) && !bttCovered();
+            if (show) {
+                const base = floatBase(), fab = floatFab(), undo = floatUndoBar(), edge = window.innerHeight - base;
+                let lift = 24;                                                                                     // where the checkmark button stands
+                if (fab) lift = Math.max(lift, floatTop(fab) - base + 12);
+                if (undo) lift = Math.max(lift, floatTop(undo) - base + 12);
+                document.querySelectorAll('.view-content.active .mp-bar, .view-content.active .cd-batch').forEach(bar => {
+                    if (!bar.getClientRects().length) return;
+                    const r = bar.getBoundingClientRect();
+                    if (r.bottom > edge - 24 && r.top < edge) lift = Math.max(lift, edge - r.top + 12);            // docked at the bottom (sticky), not somewhere up the page
+                });
+                lift = Math.round(lift);
+                if (lift !== bttLift) { bttLift = lift; btn.style.setProperty('--btt-lift', lift + 'px'); }
+            }
+            if (btn.classList.contains('show') === show) return;
+            btn.classList.toggle('show', show);
+            if (show) { btn.removeAttribute('inert'); btn.removeAttribute('aria-hidden'); }
+            else { btn.setAttribute('inert', ''); btn.setAttribute('aria-hidden', 'true'); }
+        }
+        function bttQueue() { if (bttQueued) return; bttQueued = true; requestAnimationFrame(() => { bttQueued = false; bttUpdate(); }); }
+        function bttGo() {
+            const sc = bttScroller();
+            haptic();
+            const behavior = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+            if (sc === bttDoc()) window.scrollTo({ top: 0, behavior }); else sc.scrollTo({ top: 0, behavior });
+        }
+        function floatInit() {
+            document.addEventListener('scroll', e => {
+                const t = e.target;
+                if (t && t.nodeType === 1 && t.clientHeight >= window.innerHeight * 0.5 && t.closest('.view-content.active') && !t.closest('.modal-overlay')) bttInner = t;
+                bttQueue();
+            }, { capture: true, passive: true });
+            window.addEventListener('resize', floatQueue);
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', bttQueue);
+            document.addEventListener('focusin', bttQueue);
+            document.addEventListener('focusout', () => setTimeout(bttQueue, 120));
+            if (window.MutationObserver) {
+                // the bars that float (shown, hidden), and what covers the screen or changes it: a sheet, the terminal, another tab, the body's state
+                const own = new Set(['batchFab', 'floatingBatchBar', 'sdbSnack', 'sdUndo']);
+                new MutationObserver(list => {
+                    let btt = false;
+                    for (const m of list) {
+                        const t = m.target;
+                        if (own.has(t.id)) { floatQueue(); return; }          // (floatSync places the button too)
+                        if (t === document.body || (t.classList && (t.classList.contains('modal-overlay') || t.classList.contains('rt-overlay') || t.classList.contains('view-content') || t.id === 'txPaneTerminal'))) btt = true;
+                    }
+                    if (btt) bttQueue();
+                }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            }
+            if (window.ResizeObserver) { const ro = new ResizeObserver(floatQueue); ['floatingBatchBar', 'sdbSnack', 'sdUndo'].forEach(id => { const el = document.getElementById(id); if (el) ro.observe(el); }); }          // a sheet or a bar that grows
+            floatSync();
+        }
+        window.addEventListener('DOMContentLoaded', floatInit);
 
         // ---- Settings > Navigation ----
         function navLoad() { const m = kvGet('nav_mode', 'bottom'); navMode = m === 'both' || m === 'top' ? m : 'bottom'; navScLoad(); }
@@ -18369,6 +18681,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 // Shizuku first (its own dialog), then the first-launch sheet, which waits for that answer so it can already grant through Shizuku
                 setTimeout(() => { szAutoReady = true; szAutoAsk(); }, 700);
                 setTimeout(maybeShowPermIntro, 2300);
+                setTimeout(maybeShowOldWebViewNotice, 1500);
             } else {
                 // Mock packages for preview
                 for (let i = 1; i <= 60; i++) {
@@ -19695,7 +20008,14 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             haptic();
             updateBatchBar();
-            markCardSelected(document.getElementById('card_' + pkg), selectedPkgs.has(pkg));
+            const card = document.getElementById('card_' + pkg);
+            markCardSelected(card, selectedPkgs.has(pkg));
+            if (card && selectedPkgs.has(pkg)) {                          // the row just selected by this tap: a band of light sweeps across it once
+                card.classList.remove('sel-shine');
+                void card.offsetWidth;                                   // (restarts it on a quick second tap)
+                card.classList.add('sel-shine');
+                card.addEventListener('animationend', () => card.classList.remove('sel-shine'), { once: true });
+            }
         }
 
         function selectAllVisible(select) {
@@ -20974,7 +21294,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!recs.length) { showToast("Couldn't delete the files"); return; }
                 if (currentViewName() !== 'installer') { purgeAll(); return; }
                 const msg = 'Deleted ' + recs.length + ' file' + (recs.length === 1 ? '' : 's') + (failed ? ' · ' + failed + ' failed' : '');
-                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 10000, onExpire: purgeAll });
+                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 8000, onExpire: purgeAll });
             };
             const next = () => {
                 if (i >= files.length) { finish(); return; }
@@ -21070,7 +21390,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const purge = () => apkFileOp('purge', rec.trash, '', () => {});
                 // the answer can come after the person has gone to another tab: there is no bar to put Undo on there, so it is final
                 if (currentViewName() !== 'installer') { purge(); return; }
-                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: purge });
+                sdbSnack('Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: purge });
             });
         }
 
@@ -21079,7 +21399,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!r.ok) {
                     showToast("Couldn't restore " + rec.file.name + (r.error ? ': ' + String(r.error).slice(0, 80) : ''));
                     // the file is still in its hidden folder: offer Undo again (it is removed for good when this bar goes)
-                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
+                    if (currentViewName() === 'installer') sdbSnack('Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 6000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
                     else apkFileOp('purge', rec.trash, '', () => {});
                     return;
                 }
@@ -29304,6 +29624,7 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
             css.setProperty('--input-bg', light ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.35)');
+            colorMixFallback();          // a WebView before Chrome 111: the --tint-* / --line-* mixes as plain colours, from the colours just set
 
             PICKER_KEYS.forEach(([id, key]) => {
                 const circ = document.getElementById('circ' + id);
@@ -34769,6 +35090,47 @@ Type any command above (e.g. pm list packages -d)</div>
             if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
         }
 
+        // ---------- An out-of-date Android System WebView ----------
+        // The page is drawn by the phone's WebView, and one before Chrome 111 has no color-mix(): the tokens get plain colours then
+        // (colorMixFallback), but a few rules still look wrong. Said once, on start, with a way to update it (often the updates were removed by a debloat).
+        const WEBVIEW_COLOR_MIX_MIN = 111;
+        function webviewChromeMajor(ua) {
+            const m = /Chrome\/(\d+)\./.exec(ua === undefined ? (navigator.userAgent || '') : String(ua || ''));
+            return m ? parseInt(m[1], 10) : 0;
+        }
+        function webviewChromeVersion() {
+            const m = /Chrome\/([\d.]+)/.exec(navigator.userAgent || '');
+            return m ? m[1] : '';
+        }
+        // The store page of the package that provides the WebView (Android System WebView, or Chrome on Android 7-9), market:// first
+        function openWebViewStore() {
+            haptic();
+            let pkg = 'com.google.android.webview';
+            const wv = String((aboutInfo && aboutInfo.webview) || '').split(' ')[0];
+            if (/^[\w.]+$/.test(wv) && /webview|chrome/i.test(wv)) pkg = wv;
+            const b = window.AndroidBridge;
+            if (b && b.openInStore) b.openInStore(pkg);              // market://details, or the https Play page when nothing takes market://
+            else openUrlExternal('https://play.google.com/store/apps/details?id=' + pkg);
+        }
+        let webviewNoticeTries = 0;
+        async function maybeShowOldWebViewNotice() {
+            const v = webviewChromeMajor();
+            if (!v || v >= WEBVIEW_COLOR_MIX_MIN) return;
+            if (kvGet('webview_old_notice', null)) return;
+            if (document.querySelector('.modal-overlay.show')) {           // after the sheet that is open (What's new): look again soon
+                if (webviewNoticeTries++ < 40) setTimeout(maybeShowOldWebViewNotice, 3000);
+                return;
+            }
+            kvSet('webview_old_notice', { version: v });
+            if (!aboutInfo || !aboutInfo.webview) { try { aboutInfo = JSON.parse((window.AndroidBridge && window.AndroidBridge.getAboutInfo && window.AndroidBridge.getAboutInfo()) || '{}') || {}; } catch (e) { /* the default package */ } }
+            const go = await mpAsk({
+                title: 'WebView out of date',
+                text: 'Android System WebView is out of date (version ' + v + '). Some colours may look wrong. Update it from the Play Store. If WebView updates were uninstalled with a debloat, reinstalling them fixes it.',
+                ok: 'Update', cancel: 'Not now'
+            });
+            if (go) openWebViewStore();
+        }
+
         // ---------- Android settings (the global, secure and system tables) ----------
         // `settings list | get | put | delete` through the active privileged mode (SettingsDb / MainActivity do the work and check every
         // name and value). The page keeps one Map per table and shows it as a searchable list. A change is applied by the app and
@@ -35634,7 +35996,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('sdbSnackUndo').innerText = (opts && opts.label) || 'Undo';
             el.classList.add('show');
             clearTimeout(sdbSnackTimer);
-            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 7000);
+            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 5000);          // 5 s (a delete of several files 8 s, of one 6 s): long enough to reach Undo, short enough not to linger
         }
 
         function sdbSnackFinish() {
@@ -37241,7 +37603,7 @@ Type any command above (e.g. pm list packages -d)</div>
             row('Android', i.android ? i.android + ' (API ' + i.sdk + ')' : '');
             row('Device', i.device);
             row('CPU', i.abi);
-            row('WebView', i.webview);
+            row('WebView', i.webview || (webviewChromeVersion() ? 'Chrome ' + webviewChromeVersion() : ''));          // the version from the user agent when the app cannot name the package
             row('Working mode', (document.getElementById('execModeText') || {}).innerText);
             document.getElementById('aboutBuild').innerHTML = rows.join('');
             const sig = document.getElementById('aboutSig');
@@ -38133,7 +38495,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const ok = document.getElementById('mpAskOk');
                 ok.textContent = o.ok || 'OK';
                 ok.style.background = o.danger ? '#c62828' : ''; ok.style.color = o.danger ? '#fff' : '';
-                document.getElementById('mpAskNo').style.display = o.noCancel ? 'none' : '';
+                const no = document.getElementById('mpAskNo');
+                no.style.display = o.noCancel ? 'none' : ''; no.textContent = o.cancel || 'Cancel';
                 document.getElementById('mpAskModal').classList.add('show');
                 if (o.input) setTimeout(() => inp.focus(), 120);
             });
@@ -40626,7 +40989,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const n = res.count || (res.ids ? res.ids.length : 1);
             document.getElementById('sdUndoText').textContent = n + ' exclusion' + (n === 1 ? '' : 's') + ' created';
             document.getElementById('sdUndo').classList.add('on');
-            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, 9000);
+            clearTimeout(SD.undoT); SD.undoT = setTimeout(() => { document.getElementById('sdUndo').classList.remove('on'); }, 7000);
             const st = await sdCall('state', {}); if (st.ok) sdApplyState(st);
         }
         async function sdUndoDo() {

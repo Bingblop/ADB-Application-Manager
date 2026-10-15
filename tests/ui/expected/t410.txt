@@ -1,0 +1,35 @@
+ok   1. Apps, at the top of a list of 200: no back-to-top button (and it cannot be reached by a screen reader or Tab)
+ok      less than one and a half screens down: still none
+ok      three screens down: it comes in
+ok      a round button of 44px or more, named "Back to top"
+ok      at the right edge, above the bottom bar, on the screen
+ok      it scrolls smoothly, or at once when the phone asks for reduced motion
+ok      a tap scrolls the list back to the top, and the button goes
+ok   2. with an app selected the button stands above the round checkmark button, in its column, not on it
+ok      the batch sheet open: it goes
+ok      the sheet closed again: it is back
+ok      the selection cleared: it takes the checkmark button's place again
+ok      an app's sheet open: it goes
+ok      the sheet closed: it is back
+ok      a text field in use (the keyboard is up): it goes
+ok      the keyboard down: it is back
+ok   3. prefs (a long screen): it comes in scrolled down, and takes the screen to the top
+ok   3. extrasettings (a long screen): it comes in scrolled down, and takes the screen to the top
+ok   3. sdm (a long screen): it comes in scrolled down, and takes the screen to the top
+ok   3. about (a long screen): it comes in scrolled down, and takes the screen to the top
+ok      a list in a box of its own, scrolled two screens of the box: it comes in
+ok      a tap scrolls that box to its top (and leaves the page where it is)
+ok      the full-screen terminal up: it goes
+ok      the bottom bar's More sheet open: it goes
+ok      and then it is back
+ok   4. the Undo bar stands just above the bottom bar (at most 12px over it)
+ok      it lasts 5 seconds (7 before)
+ok      the installer's delete Undo bars last 8 s (several files) and 6 s (one file), SD Maid's 7 s
+ok      a toast shown with it goes above it, not over it
+ok      the back-to-top button stands above an Undo bar, not on it
+ok      after 5 seconds the bar is gone and the button comes back down
+ok      with the checkmark button up, the Undo bar stands above it
+ok      with the batch sheet open, above the sheet
+ok      SD Maid's Undo bar too stands just above the bottom bar
+ok      with the bottom bar off, near the bottom edge of the screen
+errors: []

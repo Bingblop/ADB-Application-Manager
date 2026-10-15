@@ -169,6 +169,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await sleep(2300);
   const aft = await ev(() => ({ moved: ovlPaletteSig(ovlPalette), polls: window.__ovlCalls.palette, resumed: window.__resumed }));
   check('   the page watches the palette until it moves, then tells the rest of the app', aft.moved !== seedBefore && aft.polls >= 2 && aft.resumed >= 1, JSON.stringify([aft.polls, aft.resumed]));
+  await ev(() => clearTimeout(sdbSnackTimer));          // (the Undo bar lasts 5 s: it is kept up while the script watches the polls stop, for step 9)
   const polls1 = aft.polls; await sleep(2500);
   check('   and then stops looking', (await ev(() => window.__ovlCalls.palette)) === polls1, String(polls1));
 

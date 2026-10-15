@@ -16,15 +16,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { txBuPollMs = 40; const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st); });
 
   // ---- 1. Row tints ----
-  const rgb = k => ev(k => { const c = getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor; const n = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number); return /^color\(/.test(c) ? n.map(v => v * 255) : n; }, k);
+  // (v7.14: the tint is the row's ::before layer, a glow in the state's colour; its strength is that layer's opacity, a plain row has none)
+  const layer = k => ev(k => { const a = getComputedStyle(document.getElementById('card_com.t.' + k), '::before'); return a.content === 'none' ? 0 : +a.opacity; }, k);
   await ev(() => { switchView('apps'); allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps(); });
-  const dist = async () => { const a = await rgb('run'), p = await rgb('plain'); return Math.max(Math.abs(a[0] - p[0]), Math.abs(a[1] - p[1]), Math.abs(a[2] - p[2])); };
+  const dist = async () => Math.round(((await layer('run')) - (await layer('plain'))) * 1000) / 1000;
   const subtle = await dist();
   const def = await ev(() => ({ attr: document.documentElement.getAttribute('data-row-tint'), range: document.getElementById('rowTintRange').value, card: !!document.getElementById('rowTintCard') }));
-  check('1. Settings has a Row tints slider; it starts on Subtle', def.card && def.attr === 'subtle' && def.range === '1' && subtle > 1 && subtle <= 14, JSON.stringify({ def, subtle }));
+  check('1. Settings has a Row tints slider; it starts on Subtle', def.card && def.attr === 'subtle' && def.range === '1' && subtle > 0.05 && subtle <= 0.15, JSON.stringify({ def, subtle }));
   await ev(() => setRowTint(2)); const normal = await dist();
   await ev(() => setRowTint(0)); const off = await dist();
-  check('   Normal tints the row more than Subtle, and Off not at all', normal > subtle * 1.8 && off < 0.6, JSON.stringify({ off, subtle, normal }));
+  check('   Normal tints the row more than Subtle, and Off not at all', normal > subtle * 1.5 && off === 0, JSON.stringify({ off, subtle, normal }));
   check('   the choice is kept', await ev(() => kvGet('row_tint', -1) === 0 && document.documentElement.getAttribute('data-row-tint') === 'off'));
   await ev(() => setRowTint(1));
   await ev(() => switchView('prefs')); await sleep(200);
