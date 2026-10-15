@@ -22,7 +22,7 @@
   </table>
   <p>Two more actions are not switches. <b>Force Stop</b> ends the app right now (it can start again later). <b>Clear Data</b> deletes the app's saved data and settings, like Clear storage in Android's own app settings. Clear Data cannot be undone.</p>
   <div class="hg-warn"><b>Careful.</b> Freezing, suspending or uninstalling a system app can break calls, texts, the keyboard, notifications, the camera or even the home screen. Before you touch one, look it up in the <a href="#tab-debloater">UAD-NG Debloater</a> (read <a href="#debloater-safety">its safety page</a> first), or read the UAD-NG chip in the app menu. Try Freeze before Uninstall: you can see whether anything breaks, and one tap on Enable puts the app back.</div>
-  <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. If you may want the data again, make a backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
+  <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. This version cannot make a new backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
 
   <h4>The boxes at the top</h4>
   <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
@@ -206,7 +206,6 @@
       <tr><td><b>Rem Updates</b></td><td>"Remove updates": takes the updates off a system app so it goes back to the version it shipped with (<code>pm uninstall-system-updates</code>). Use it only on a system app that has updates. It runs at once, with no question (since v7.12.2), and to get the updates back you update the app again from its store.</td><td>Yes</td></tr>
       <tr><td><b>App Info</b></td><td>Opens Android's own App info screen for the app.</td><td>No</td></tr>
       <tr><td><b>Extract APK</b></td><td>Copies the app's installer file to <code>Download/ADB App Manager/APKs</code> as <code>Name_version.apk</code>. A split app becomes one <code>.apks</code> bundle instead, which the <a href="#tab-installer">APK Installer/Updater</a> tab can install. A message names the saved file. On Android 8 and 9 the file goes to the app's own storage instead.</td><td>No</td></tr>
-      <tr><td><b>Backup</b></td><td>Closes the menu and opens the backup box for this app. See <a href="#apps-backup">Backups and restore</a>.</td><td>Only to create the backup</td></tr>
       <tr><td><b>Optimize</b></td><td>Opens "Dex optimization": recompiles the app's code (<code>pm compile</code>), which prepares it in advance. This is an advanced tool and most people can skip it. Choose a <b>Compile mode</b> (verify, speed-profile, speed, everything; speed is the default) and whether to <b>Force</b> it (on by default), then tap <b>Run</b>. It can take a while. A progress bar and a <b>Stop</b> button show.</td><td>Yes</td></tr>
       <tr><td><b>Logs</b></td><td>Closes the menu and opens the Console tab on Live Logcat, showing only this app's lines. The Console tab must be switched on, and reading the log needs a working mode. See <a href="#console-logcat">Live Logcat</a>.</td><td>Yes, to read the log</td></tr>
     </tbody>
@@ -319,7 +318,7 @@
       <tr><td>Header, copy chips, Share, dates, sizes</td><td>Works (data and cache need usage access)</td><td>Works</td></tr>
       <tr><td>App Info, Extract APK, Manifest, Raw, Features, Configurations, Signatures, Libraries</td><td>Works</td><td>Works</td></tr>
       <tr><td>Launch, Force Stop, Freeze, Suspend, Clear Data, Uninstall, Rem Updates, Optimize</td><td>Opens "Working Mode Required"</td><td>Works</td></tr>
-      <tr><td>Backup, Logs</td><td>Backup opens its box, but Create backup opens "Working Mode Required". Logs opens Live Logcat, but it needs a working mode to read the log</td><td>Works</td></tr>
+      <tr><td>Logs</td><td>Opens Live Logcat, but it needs a working mode to read the log</td><td>Works</td></tr>
       <tr><td>Permissions</td><td>You can read the list. Toggles show a padlock.</td><td>Runtime ones can be changed</td></tr>
       <tr><td>App Ops</td><td>Not available</td><td>Works</td></tr>
       <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>Everything works</td></tr>
@@ -508,14 +507,13 @@
 
 <section id="apps-backup" data-title="Backups and restore" data-group="The tabs">
   <p class="hg-lead">A backup saves an app (its APK, which is the app's installer file), its permission choices and (with root) its data into one file, so you can put it back later or on another phone.</p>
-  <p><b>Where to find it:</b> make a backup from one app's menu with the <b>Backup</b> button (see <a href="#apps-menu">The app menu</a>). The <b>Backups</b> button in the <a href="#tab-apps">Application Manager</a> opens the list of backups, where you restore, share and delete them.</p>
+  <p><b>Where to find it:</b> the <b>Backups</b> button in the <a href="#tab-apps">Application Manager</a> opens the list of backups, where you restore, share and delete them. Since v7.13.4 the app's menu has no <b>Backup</b> button, so this version does not make new backups; backups that already exist (also those made by older versions) work as before.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>Making and restoring a backup needs a <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so in Read-Only mode it refuses.</li>
-    <li>Saving the app's <b>data</b> needs <a href="#mode-root">Root</a>: an app's data is private to it, and only root can read it. The app asks your root manager for permission itself, so the working mode does not have to be Root. Without root, a backup holds the app and its settings, not its data.</li>
-    <li>There is no button to back up many apps at once. A backup is made for one app at a time.</li>
-    <li>Make sure there is enough free storage: a backup is the app's whole APK file plus, with data, its data folders.</li>
+    <li>Restoring a backup needs a <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so in Read-Only mode it refuses.</li>
+    <li>Restoring the app's <b>data</b> needs <a href="#mode-root">Root</a>: an app's data is private to it, and only root can read it. The app asks your root manager for permission itself, so the working mode does not have to be Root. Without root, a restore puts back the app and its settings, not its data.</li>
+    <li>Make sure there is enough free storage to install the app again.</li>
   </ul>
 
   <h4>What is inside a backup</h4>
@@ -533,14 +531,8 @@
   <h4>Where the files go</h4>
   <p>Backups are saved in the <code>Download</code> folder, inside <code>ADB App Manager</code>, then <code>Backups</code>: <code>Download/ADB App Manager/Backups</code>. The file name is the app name, the version and the date and time, for example <code>Calculator_8.5_20261006-101530-123.adbbackup</code>. On Android 8 and 9 the backup goes to the app's own storage instead, and it is removed if you uninstall this app: copy it somewhere safe first.</p>
 
-  <h4>Back up one app</h4>
-  <ol class="hg-steps">
-    <li>In the Application Manager, open the app's menu and tap <b>Backup</b>. The menu closes and the Backups box opens. At the top is a card "Back up (app name)" with its package name and version.</li>
-    <li>Decide about the switch <b>Include app data</b>. With root it says "Uses Root. The app is stopped while its data is copied." Without it, the switch is greyed and says "Needs Root, which was not found on this phone."</li>
-    <li>Tap <b>Create backup</b>. A progress line and a bar show: "Reading (name)...", "Backing up data (Root)..." and "Saving the backup...".</li>
-    <li>A note appears: "Saved (name) ((size), with data) to (path)". It can add warnings. For example "Some data changed while it was being read; the backup may be incomplete", or that the app's app ops could not be read.</li>
-  </ol>
-  <p>If you tick <b>Include app data</b>, the app is force-stopped first, so do not do this while you are using it.</p>
+  <h4>Making a backup</h4>
+  <p>The app's menu used to have a <b>Backup</b> button. It was removed in v7.13.4, so there is nothing in this version that starts a new backup. The Backups box restores, shares and deletes the backups you already have.</p>
 
   <h4>Restore a backup</h4>
   <p>The list in the Backups box shows each backup the app knows about: the app name and version, the date, the size and "with data" or "APK + settings". Each one has three buttons: <b>Restore</b>, <b>Share</b> and <b>Delete</b>.</p>
@@ -567,7 +559,7 @@
   <ul>
     <li>"Not enough storage to install the app", or "A split APK is missing from the backup": free up space, or the file is damaged.</li>
     <li>"Another backup or restore is still running": wait for the first to finish.</li>
-    <li>The "Working Mode Required" box opens when you tap <b>Create backup</b> or <b>Confirm restore</b>: you are in Read-Only mode. Set up a working mode.</li>
+    <li>The "Working Mode Required" box opens when you tap <b>Confirm restore</b>: you are in Read-Only mode. Set up a working mode.</li>
     <li>Data restore refuses a damaged archive, or one that contains files outside the app's own folders, and says why.</li>
     <li>While data is read, a file may change. The note says so, and the backup may then be incomplete.</li>
   </ul>

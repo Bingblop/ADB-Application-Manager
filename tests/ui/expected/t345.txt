@@ -20,7 +20,7 @@ files, an empty folder: the shared block, the .. row stays: true {"key":"fm-empt
 store, a search finds nothing: the shared block with Clear search: true {"key":"store-nomatch-search","title":"No apps match your search.","hint":null,"buttons":["Clear search"],"icon":true,"iconMuted":true,"centered":true,"inside":true}
   Clear search lists the app again: true
   an empty catalog with no search: "No apps found." and no Clear search: true {"key":"store-none","title":"No apps found.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
-backups, none yet: title and hint split: true {"key":"backups-none","title":"No backups yet.","hint":"Open an app's ⋯ menu and tap Backup, or choose a backup file from another phone.","buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
+backups, none yet: title and hint split: true {"key":"backups-none","title":"No backups yet.","hint":"Choose a backup file from another phone.","buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
 profiles, none yet: title and hint split: true {"key":"profiles-none","title":"No profiles yet.","hint":"Disable, suspend or uninstall apps the way you like, then save them here.","buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
 task manager without a working mode: says what it needs: true {"key":"tm-procs-locked","title":"Needs ADB, Wireless Debugging, Shizuku or Root to list processes.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}
   with one, but no process read: says so: true {"key":"tm-procs-none","title":"No processes read.","hint":null,"buttons":[],"icon":true,"iconMuted":true,"centered":true,"inside":true}

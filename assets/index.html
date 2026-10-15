@@ -8536,9 +8536,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>Extract APK</span>
                 </button>
-                <button class="sheet-btn" onclick="openBackups(inspectedPkg)" id="sheetBtnBackup">
-                    <span>Backup</span>
-                </button>
                 <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
                     <span>Optimize</span>
                 </button>
@@ -33459,7 +33456,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const list = backupList();
             const el = document.getElementById('backupsList');
-            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Open an app\'s ⋯ menu and tap Backup, or choose a backup file from another phone.', compact: true }); return; }
+            if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Choose a backup file from another phone.', compact: true }); return; }
             el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
                 <p>${new Date(r.createdAt).toLocaleString(langLocale())} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
                 <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">Restore</button>
