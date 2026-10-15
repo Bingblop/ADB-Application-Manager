@@ -49,19 +49,19 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // ---- 3. More: the tabs that are on and not pinned, in the saved order, three to a row ----
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(500);
   const more = await ev(() => ({ open: document.getElementById('bnavMoreModal').classList.contains('show'), tiles: [...document.querySelectorAll('#bnavMoreGrid .bn-tile')].map(t => t.dataset.tab), cols: getComputedStyle(document.getElementById('bnavMoreGrid')).gridTemplateColumns.split(' ').length, title: document.getElementById('bnavMoreTitle').innerText, expanded: document.querySelector('#bnav .bn-item[data-more]').getAttribute('aria-expanded'), link: [...document.querySelectorAll('#bnavMoreModal .bn-custom')].map(x => x.innerText) }));
-  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,terminal,settings,overlays,store,taskmgr,devices,morphe,sdm,about', more.tiles.join());
+  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,logcat,settings,overlays,store,taskmgr,devices,morphe,sdm,about', more.tiles.join());
   check('   three columns, a title, the Customize tabs link, aria-expanded on the slot', more.cols === 3 && more.title === 'More tabs' && more.link.join() === 'Customize tabs' && more.expanded === 'true', JSON.stringify([more.cols, more.title, more.link, more.expanded]));
   await page.screenshot({ path: 'more_sheet.png' });
-  await page.click('#bnavMoreGrid .bn-tile[data-tab="terminal"]'); await page.waitForTimeout(500);
+  await page.click('#bnavMoreGrid .bn-tile[data-tab="logcat"]'); await page.waitForTimeout(500);
   const afterMore = await ev(() => ({ view: currentViewName(), open: document.getElementById('bnavMoreModal').classList.contains('show'), away: document.getElementById('bnav').classList.contains('bnav-off') }));
-  check('6. a tile switches to its tab and closes the sheet', afterMore.view === 'terminal' && !afterMore.open && !afterMore.away, JSON.stringify(afterMore));
+  check('6. a tile switches to its tab and closes the sheet', afterMore.view === 'logcat' && !afterMore.open && !afterMore.away, JSON.stringify(afterMore));
   const s2 = await slots(), mo = s2.find(s => s.tab === 'more');
-  check('7. on a tab that is not pinned, More is lit and shows that tab\'s label', mo.active && mo.label === 'Terminal' && mo.cur === 'page' && s2.filter(s => s.active).length === 1, JSON.stringify(mo));
-  check('   its icon is the tab\'s own (not the dots)', await ev(() => { const t = document.createElement('div'); t.innerHTML = bnavSvg(BNAV_ICONS.terminal); return t.querySelector('path').getAttribute('d') === document.querySelector('#bnav .bn-item[data-more] svg path').getAttribute('d'); }));
+  check('7. on a tab that is not pinned, More is lit and shows that tab\'s label', mo.active && mo.label === 'Logcat' && mo.cur === 'page' && s2.filter(s => s.active).length === 1, JSON.stringify(mo));
+  check('   its icon is the tab\'s own (not the dots)', await ev(() => { const t = document.createElement('div'); t.innerHTML = bnavSvg(BNAV_ICONS.logcat); return t.querySelector('path').getAttribute('d') === document.querySelector('#bnav .bn-item[data-more] svg path').getAttribute('d'); }));
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(400);
-  check('   the sheet marks the current tab', await ev(() => document.querySelector('#bnavMoreGrid .bn-tile.current').dataset.tab) === 'terminal');
+  check('   the sheet marks the current tab', await ev(() => document.querySelector('#bnavMoreGrid .bn-tile.current').dataset.tab) === 'logcat');
   await page.keyboard.press('Escape'); await ev(() => handleAndroidBack()); await page.waitForTimeout(400);
-  check('8. Android Back closes the More sheet first', !(await ev(() => document.getElementById('bnavMoreModal').classList.contains('show'))) && await ev(() => currentViewName()) === 'terminal');
+  check('8. Android Back closes the More sheet first', !(await ev(() => document.getElementById('bnavMoreModal').classList.contains('show'))) && await ev(() => currentViewName()) === 'logcat');
   // a tap on the backdrop closes it too
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(300);
   await page.mouse.click(180, 20); await page.waitForTimeout(400);

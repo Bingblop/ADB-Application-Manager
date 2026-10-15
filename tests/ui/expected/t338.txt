@@ -6,11 +6,11 @@ ok   360 x 800:   the input line and the extra keys are above the bar, the scree
 ok   360 x 800:   no sideways scroll
 ok   360 x 800: full screen: the bar goes away, the screen grows, the keys stay inside the window
 ok   360 x 800: back from full screen: the same fit as before
-ok   360 x 800: the window gets shorter (360 x 720): the screen shrinks and the keys stay above the bar
+ok   360 x 800: the window gets shorter (360 x 780): the screen shrinks and the keys stay above the bar
 ok   360 x 800: another shell's screen has the same size
-ok   360 x 700: the bottom bar is shown and the page is at the top
-ok   360 x 700:   the input line and the extra keys are above the bar, the screen keeps at least 160 px
-ok   360 x 700:   no sideways scroll
+ok   360 x 760: the bottom bar is shown and the page is at the top
+ok   360 x 760:   the input line and the extra keys are above the bar, the screen keeps at least 160 px
+ok   360 x 760:   no sideways scroll
 ok   400 x 860: the bottom bar is shown and the page is at the top
 ok   400 x 860:   the input line and the extra keys are above the bar, the screen keeps at least 160 px
 ok   400 x 860:   no sideways scroll

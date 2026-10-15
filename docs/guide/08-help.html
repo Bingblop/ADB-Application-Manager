@@ -288,7 +288,7 @@
 <table class="hg-table">
 <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
 <tbody>
-<tr><td><b>Working Mode Required</b>, "reading logcat needs ADB, Shizuku or Root"</td><td>Read-Only mode cannot read the log.</td><td>Set up a mode (<a href="#console-logcat">Live Logcat</a>).</td></tr>
+<tr><td><b>Working Mode Required</b>, "reading logcat needs ADB, Shizuku or Root"</td><td>Read-Only mode cannot read the log.</td><td>Set up a mode (<a href="#tab-logcat">Live Logcat</a>).</td></tr>
 <tr><td>"(no matching log lines)", "(no output)"</td><td>The level is too high, the filter matches nothing, or the app wrote nothing.</td><td>Set the level to Verbose, empty the filter, or choose <b>All apps</b>.</td></tr>
 <tr><td>Empty after <b>Clear</b></td><td>Clear empties the log for every app, and the log is short.</td><td>Make the problem happen again, then <b>Refresh</b>.</td></tr>
 <tr><td>Task Manager: "Needs ADB, Wireless Debugging, Shizuku or Root"</td><td>Processes and GPU need a mode. Battery needs none. CPU, RAM and Network work without one only on some phones.</td><td>Tap <b>Set Up</b> (<a href="#tab-taskmgr">Task Manager</a>).</td></tr>
@@ -380,7 +380,7 @@
 <li><b>The app's details.</b> In the <b>About</b> tab, <b>This build</b> card, tap <b>Copy debug info</b> (or <b>Share it</b>). It holds the app's version and package name, your Android version, the phone model and processor, the WebView version, the working mode and the signing fingerprint, but no names, accounts or app lists. Paste it into the report.</li>
 <li><b>The exact message.</b> Copy it, or screenshot the note or the <b>Command Result</b> box. Add your phone's make and which working mode was on.</li>
 <li><b>The steps.</b> Which tab and button, in what order, whether it happens every time, and what you expected.</li>
-<li><b>For a crash or restart,</b> the log: in <b>Console</b>, <b>Live Logcat</b>, tap <b>All apps</b>, choose ADB Application Manager Pro, set the level to Error, make it happen again, then <b>Share</b> or <b>Save</b>. Read the file first: a log can hold personal details.</li>
+<li><b>For a crash or restart,</b> the log: in <b>Live Logcat</b>, tap <b>All apps</b>, choose ADB Application Manager Pro, set the level to Error, make it happen again, then <b>Share</b> or <b>Save</b>. Read the file first: a log can hold personal details.</li>
 </ol>
 <p><b>Where to report.</b> In the About tab tap <b>Report a bug or idea</b>. It opens GitHub's page for a new issue on <code>github.com/Bingblop/ADB-Application-Manager</code>. You need a GitHub account to post. Look through the existing issues first.</p>
 <div class="hg-warn"><b>Careful.</b> Issues on GitHub are public. Never paste an API key, a token, a password or a pairing code, and remove personal details from screenshots and logs.</div>
@@ -698,7 +698,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>launcher</b></td><td>The home screen app. Do not remove yours unless another is chosen. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
-<tr><td><b>logcat</b></td><td>The phone's running diary, in which Android and every app write short notes. See <a href="#console-logcat">Live Logcat</a>.</td></tr>
+<tr><td><b>logcat</b></td><td>The phone's running diary, in which Android and every app write short notes. See <a href="#tab-logcat">Live Logcat</a>.</td></tr>
 </tbody>
 </table>
 
@@ -821,7 +821,7 @@
 <tbody>
 <tr><td><b>table</b></td><td>In Hidden Settings, one of the three groups of settings: Global, Secure or System. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
 <tr><td><b>target</b></td><td>The app, or part of Android, that an overlay changes. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
-<tr><td><b>Termux</b></td><td>A terminal app for Android. The Terminal tab can use it as a shell. See <a href="#tab-terminal">Terminal</a>.</td></tr>
+<tr><td><b>Termux</b></td><td>A terminal app for Android. The Terminal (in the Console tab) can use it as a shell. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>tile</b></td><td>A button in Android's Quick Settings panel. This app adds two, Working mode and Stop apps. See <a href="#quick-tiles">Quick Settings tiles</a>.</td></tr>
 <tr><td><b>toast</b></td><td>A small message that slides up at the bottom of the screen and fades. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
 <tr><td><b>token</b></td><td>In a coding agent chat, a piece of text that the AI counts, and that the provider may bill for. The state line shows how many tokens were sent and received. A <b>GitHub token</b> is a different thing, see above. See <a href="#terminal-agents">Coding agents</a>.</td></tr>

@@ -1,0 +1,18 @@
+1. a Live Logcat tab right after Console, in the place of the Terminal tab: true {"def":{"key":"logcat","label":"Live\nLogcat","name":"Live Logcat"},"bar":"apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about","btn":"Live\nLogcat"}
+   Console no longer has a Live Logcat segment: true
+   the log is not read before the tab is opened: true
+2. opening the tab starts the log (Play turns into Pause) and shows its lines: true {"view":"logcat","timer":true,"n":1,"rows":1,"play":"Pause","shown":true}
+3. leaving the tab (here to Console) stops the log: true {"timer":false,"play":"Play"}
+   and nothing is read while it is away: true
+4. switchView('logcat') opens the tab and reads again: true
+5. the title row has the ? of the guide at the Live Logcat topic: true {"topic":"tab-logcat","row":true}
+   it is the Console's row: as tall, the title clear of the ?, the underline under the title: true {"rowH":50,"titleRight":335,"qLeft":341,"ul":318,"titleW":318}
+6. the app picker limits the log to one app, in the tab: true {"app":"com.example.one","view":"logcat","last":[4,"I","",300,"com.example.one"]}
+   Logs in an app's sheet closes the sheet and opens Live Logcat limited to that app: true {"view":"logcat","app":"com.example.two","sheet":false,"timer":true}
+7. its long-press menu: Filter the log, Log of one app, Recordings; it has its own icon and "Logcat" on the bottom bar: true {"ids":"filter,app,recordings","shown":"Filter the log,Log of one app,Recordings","icon":true,"short":"Logcat"}
+   "Filter the log" opens the tab with the filter focused: true
+   "Log of one app" opens the tab and its app picker: true
+8. Live Logcat off: Logs in an app's sheet says so and keeps the sheet; switchView('logcat') returns false; nothing is read: true {"view":"apps","toast":"Live Logcat is turned off. Turn it on in Settings, Feature List.","sheet":true,"app":null,"timer":false,"n":0,"ok":false,"view2":"apps"}
+   Console stays on: true
+9. no page errors: true
+all passed

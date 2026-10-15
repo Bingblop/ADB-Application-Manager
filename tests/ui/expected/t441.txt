@@ -1,0 +1,22 @@
+1. Console opens on ADB Shell, its segments are "ADB Shell | Terminal": true {"view":"console","seg":"shell","shell":true,"term":false,"tabs":"ADB Shell:true,Terminal:false","kv":"\"shell\"","active":"console","paneShown":false}
+   the Terminal pane, the Coding Agents and full screen live in Console now (no Terminal tab, no view-terminal): true
+2. a tap on Terminal shows the terminal (and starts it) and remembers the choice: true {"view":"console","seg":"term","shell":false,"term":true,"tabs":"ADB Shell:false,Terminal:true","kv":"\"term\"","active":"console","paneShown":true}
+   the underline moved under Terminal: true 0
+3. leaving and coming back opens Console on Terminal again: true {"view":"console","seg":"term","shell":false,"term":true,"tabs":"ADB Shell:false,Terminal:true","kv":"\"term\"","active":"console","paneShown":true}
+4. switchView('terminal') (links, shortcuts, Termux setup, agent buttons) opens Console on its Terminal segment: true {"view":"console","seg":"term","shell":false,"term":true,"tabs":"ADB Shell:false,Terminal:true","kv":"\"term\"","active":"console","paneShown":true}
+   "Open it" from the Default Ask Agent note does too: true
+5. full screen ends when the ADB Shell segment is chosen: true
+   and when another tab is opened: true
+6. Console's long-press menu: both segments, then the Terminal's full screen and Coding Agents (Termux setup and settings can be chosen): true {"ids":"shell,term,full,agents,termux,settings","shown":"ADB Shell,Terminal,Full-screen terminal,Coding Agents","terminal":false}
+   "Coding Agents" opens Console on Terminal with the agent picker focused: true
+   "ADB Shell" opens Console on the shell: true
+7. dark: the screen is the card colour with the theme's text and 16px corners, like the Console's output: true {"screenBg":true,"screenFg":true,"screenRadius":true,"red":true,"redVal":"#E05561","send":true,"input":true,"keys":true,"tool":true,"xterm":true}
+   the Run button is the solid accent (no gradient), the input is the Console's field, the keys and tools are its chips: true
+   ANSI red is the theme's red: true
+   the real terminal (xterm) gets the same background, text, cursor and palette: true
+8. light: the same, in the light colours (the screen is not black): true {"screenBg":true,"screenFg":true,"screenRadius":true,"red":true,"redVal":"#C41E1E","send":true,"input":true,"keys":true,"tool":true,"xterm":true}
+   the red already on the screen took the light red too: true
+9. saved "term": Console opens on Terminal after a restart: true
+   saved "log" (Live Logcat was the second segment): Console opens on ADB Shell: true
+10. no page errors: true
+all passed

@@ -1,8 +1,9 @@
 // Terminal: the input line and the extra-keys row sit above the bottom navigation bar without scrolling. The screen was 50vh tall, which put the
 // extra keys (and part of the input) under the bar at 320 x 800 and 360 x 800. Now the screen is as tall as the window allows with both rows above
-// the bar: measured at 320 x 800, 360 x 800, 360 x 700 and 400 x 860, in German, in "Top bar only" (no bottom bar: above the window's edge), after the
+// the bar: measured at 320 x 800, 360 x 800, 360 x 760 and 400 x 860, in German, in "Top bar only" (no bottom bar: above the window's edge), after the
 // window changes size, after full screen and back. Full screen keeps its own layout (the bar goes away, the keys sit inside the window), and a short
-// window keeps a 160 px screen and scrolls as before.
+// window keeps a 160 px screen and scrolls as before. Since v7.14.0 the Terminal is a segment of the Console tab, under its "ADB Shell | Terminal" row
+// (about 60 px): the smallest window measured with everything above the bar went from 360 x 700 to 360 x 760, and the shorter window from 720 to 780.
 const { chromium, PAGE } = require('./lib/pw');
 const tx = require('./lib/tx_mock');
 (async () => {
@@ -29,7 +30,7 @@ const tx = require('./lib/tx_mock');
   });
   const above = (g) => g.keys.bottom <= (g.navTop === null ? g.H : g.navTop) && g.input.top >= 0;
 
-  for (const [width, height] of [[320, 800], [360, 800], [360, 700], [400, 860]]) {
+  for (const [width, height] of [[320, 800], [360, 800], [360, 760], [400, 860]]) {
     const page = await open({ width, height });
     const g = await geo(page);
     const tag = width + ' x ' + height + ': ';
@@ -43,9 +44,9 @@ const tx = require('./lib/tx_mock');
       await page.evaluate(() => txFullToggle(false)); await page.waitForTimeout(300);
       const back = await geo(page);
       check(tag + 'back from full screen: the same fit as before', above(back) && Math.abs(back.screen - g.screen) <= 1, JSON.stringify(back));
-      await page.setViewportSize({ width: 360, height: 720 }); await page.waitForTimeout(400);
+      await page.setViewportSize({ width: 360, height: 780 }); await page.waitForTimeout(400);
       const small = await geo(page);
-      check(tag + 'the window gets shorter (360 x 720): the screen shrinks and the keys stay above the bar', above(small) && small.screen < g.screen, JSON.stringify(small));
+      check(tag + 'the window gets shorter (360 x 780): the screen shrinks and the keys stay above the bar', above(small) && small.screen < g.screen, JSON.stringify(small));
       await page.evaluate(() => { const s = document.getElementById('txShell'); s.value = 'app'; txPickShell('app'); }); await page.waitForTimeout(300);
       check(tag + 'another shell\'s screen has the same size', Math.abs((await geo(page)).screen - small.screen) <= 1);
     }
