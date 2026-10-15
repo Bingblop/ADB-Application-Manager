@@ -160,7 +160,7 @@
     <li><b>Dates.</b> "Installed (date)" and, when it is different, "Updated (date)".</li>
     <li><b>Sizes.</b> A line like "APK 12 MB (3 parts)", then Data and Cache sizes, with dots between the pieces. The APK is the app's file; "3 parts" means a split app. Data and Cache need <b>usage access</b>, a special Android permission. Until it is on, the line ends with a <b>Show data usage</b> link. Tap it and the app turns usage access on through your working mode, or opens Android's settings screen where you switch it on yourself.</li>
     <li><b>Update line.</b> If the <a href="#tab-updates">Application Updater</a> has found a newer version, a line says so and shows a button. <b>Update</b> goes to the Application Updater box of the APK Installer/Updater tab and starts the update (it needs a working mode). <b>Release</b> opens the release page, when the newest release has no file for your phone. <b>Download</b> shows up only for this app itself and takes you to its own update card. The APK Installer/Updater tab must be switched on.</li>
-    <li><b>Patched / modified.</b> If the app looks changed by a patching tool, a box lists tags such as ReVanced, Morphe, LSPatch, NPatch, Xposed/LSPosed module or "Debug-signed (repackaged)", and who installed it ("Installed by ..."). Opening the menu does a deeper check than the list does: it reads the app's file, so a patched app can show a tag here that the list did not show.</li>
+    <li><b>Patched apps.</b> The menu does not show a patched box. Opening it does a deeper check than the list does (it reads the app's file and its signing key), and a tag it finds, such as ReVanced, Morphe, LSPatch, NPatch, Xposed/LSPosed module or "Debug-signed (repackaged)", goes to the app's row and the <b>Patched</b> filter the next time the list is drawn.</li>
     <li><b>Share</b> (top right, next to the X). Opens Android's share sheet with the app's name, package name and version as text.</li>
     <li><b>The classification chip</b> under Share (or, for an app the list does not know, an <b>Ask agent</b> button in its place, a little to the left of the right edge). See below.</li>
     <li><b>The TRACKERS chip</b> under it, with a number. See <a href="#apps-menu">The Trackers chip</a>.</li>
@@ -300,7 +300,7 @@
     <li><b>Signers</b>: an app can be signed by several keys; each gets its own card.</li>
     <li><b>Copy all</b> copies the whole thing as text.</li>
   </ul>
-  <p>Compare the SHA-256 fingerprint with the one the app's maker publishes to check an app is the real one. The "Patched / modified" box in the header also reads the signing key, to spot apps signed with the common debug key (a sign of re-signing by a tool).</p>
+  <p>Compare the SHA-256 fingerprint with the one the app's maker publishes to check an app is the real one. Opening the menu also reads the signing key, to spot apps signed with the common debug key (a sign of re-signing by a tool); the row then carries the tag "Debug-signed (repackaged)".</p>
 
   <h5>Libraries</h5>
   <p>Three lists of code the app uses, with a search box over all of them:</p>

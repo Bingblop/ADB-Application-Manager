@@ -8898,7 +8898,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 <p id="sheetDates" class="sheet-dates"></p>
                 <p id="sheetSizes" class="sheet-dates"></p>
                 <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
-                <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
             </div>
 
             <!-- Action Grid: four rows of three, one row for each thing the person is doing - open or look at the app, control whether it
@@ -14992,17 +14991,6 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (upd) line = 'Last updated ' + upd;
             el.innerText = line;
             el.style.display = line ? 'block' : 'none';
-        }
-
-        function renderInspectorMods(d) {
-            const el = document.getElementById('sheetMods');
-            if (!el) return;
-            const mods = (d && d.mods) || [];
-            if (!mods.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
-            el.style.display = 'block';
-            const chips = mods.map(m => `<span class="tag-badge tag-mod">${escapeHtml(m)}</span>`).join(' ');
-            const by = d.installer ? `<div style="margin-top:4px; font-size:11px; color:var(--text-muted);">Installed by <code>${escapeHtml(d.installer)}</code></div>` : '';
-            el.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">Patched / modified</div>${chips}${by}`;
         }
 
         function renderInspectorUpdateHint(pkg) {
@@ -28701,7 +28689,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 ver.innerText = name || code ? `Version ${name || code}${name && code ? ' (' + code + ')' : ''}` : 'Version unavailable';
             }
             renderInspectorDates(d);
-            renderInspectorMods(d);
+            // the sheet shows no "Patched / modified" box any more (the owner's choice, v7.14); what its deeper check (the app's file, its signing key) finds goes to the
+            // list instead, so the row's tag and the Patched filter carry it from the next time the list is drawn
+            const listed = d && inspectedPkg ? allApps.find(a => a.pkg === inspectedPkg) : null;
+            if (listed && Array.isArray(d.mods) && d.mods.length > ((listed.mods && listed.mods.length) || 0)) listed.mods = d.mods.slice();
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();
