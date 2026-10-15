@@ -1,0 +1,8 @@
+ok   dark: the Verbose dot is a dark green, darker than Info's green
+ok   dark: Record to file reads "Record to file" in the text colour, with a red dot before it
+ok   dark: the Verbose rows keep their grey badge
+ok   light: the Verbose dot is a dark green, darker than Info's green
+ok   light: Record to file reads "Record to file" in the text colour, with a red dot before it
+ok   light: the Verbose rows keep their grey badge
+ok   while recording: "Stop recording · 5 lines" after an orange square
+errors: []

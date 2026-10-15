@@ -150,6 +150,8 @@
 
             /* ---- Logcat: one row per log entry, colored by level [fixed palette] ---- */
             --lc-v: #9AA0A6;
+            --lc-v-dot: #1B7A3A;                     /* the dot of the Verbose chip only: a dark green */
+            --rec-dot: #F23B30;                      /* Live Logcat's Record to file dot: red */
             --lc-d: #29B6F6;
             --lc-i: #2EBD6B;
             --lc-w: #FFA000;
@@ -2708,6 +2710,8 @@
             background: var(--lc);
             box-shadow: 0 0 0 2px var(--fill-3);
         }
+        /* the owner's choice (v7.14): Verbose's dot is a dark green, apart from Info's bright one; the Verbose rows keep their grey */
+        .lc-chip.lvl-V .lc-dot { background: var(--lc-v-dot); }
 
         .lc-chip .lc-n {
             font-weight:var(--fw-bold);
@@ -7751,8 +7755,11 @@
                 #cnSegLog .lc-badge::after { content: '/'; }
                 #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: var(--fw-bold); font-family: ui-monospace, monospace; font-size: var(--fs-pill); }
                 /* the colours the script sets on Record are kept readable on a light page too (Play / Stop is filled, see .lc-play) */
-                #cnSegLog #logcatRecBtn { color: color-mix(in srgb, #FF5252 80%, var(--text-main)) !important; }
-                #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)) !important; }
+                /* Record to file: the label in the text colour, its dot red (the owner's choice, v7.14); while recording the square and the label turn orange */
+                #cnSegLog #logcatRecBtn { color: var(--text-main); gap: var(--space-2); }
+                #cnSegLog #logcatRecBtn::before { content: '\25CF'; color: var(--rec-dot); }
+                #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)); }
+                #cnSegLog #logcatRecBtn.is-recording::before { content: '\25A0'; color: inherit; }
                 #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
                 #cnSegLog .lc-key { margin: 10px -16px 0; }
                 #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
@@ -8055,7 +8062,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     </select>
                     <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
                     <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
-                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
+                    <button type="button" class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()">Record to file</button>
                     <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
                     <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
                     <button class="batch-tool-link" onclick="logcatSave()">Save</button>
@@ -27196,9 +27203,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function lcRecButton(st) {
             const btn = document.getElementById('logcatRecBtn');
             if (!btn) return;
-            btn.innerText = st && st.running ? '■ Stop recording · ' + st.lines + ' lines' : '● Record to file';
+            btn.innerText = st && st.running ? txF('Stop recording · {0} lines', st.lines) : 'Record to file';          // the dot or the square comes from the CSS (::before)
             btn.classList.toggle('is-recording', !!(st && st.running));
-            btn.style.color = st && st.running ? '#FFA726' : '#FF5252';
         }
         // Asks the phone how the recording is doing; keeps asking while one runs. A recording that ended by itself (the size limit) is announced once.
         function lcRecPoll() {
