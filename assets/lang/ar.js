@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "الانتقال من شاشة إلى التالية.",
 "Animator duration": "مدة Animator",
 "Everything else that moves inside apps: lists, switches, ripples.": "كل ما يتحرك داخل التطبيقات غير ذلك: القوائم والمفاتيح والتموجات.",
-"Adaptive brightness bias": "انحياز السطوع"
+"Adaptive brightness bias": "انحياز السطوع",
+"Report copied. Paste it into the report box of the issue.": "تم نسخ التقرير. الصقه في خانة التقرير في البلاغ.",
+"Report on GitHub": "الإبلاغ على GitHub",
+"Run self-test": "تشغيل الاختبار الذاتي",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "يشغّل نحو 30 فحصًا للقراءة فقط على هذا الهاتف بوضع العمل الحالي، ليوضح تقرير الخلل أو اختبار الهاتف ما يعمل فعلًا. لا يتم تغيير أي شيء على الهاتف. التقرير مكتوب بالإنجليزية ولا يتضمن الرقم التسلسلي أو عنوان IP أو الحساب أو المفاتيح أو قيم الإعدادات.",
+"Self-test": "الاختبار الذاتي",
+"The self-test could not run.": "تعذّر تشغيل الاختبار الذاتي.",
+"The self-test is already running.": "الاختبار الذاتي قيد التشغيل بالفعل.",
+"The self-test needs the app build.": "يتطلب الاختبار الذاتي نسخة التطبيق."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","تم التطبيق، لكن الهاتف يبلّغ عن {0} بدلاً من {1}. تعيد One UI وبعض الهواتف الأخرى ضبط هذه القيمة أو تتجاهلها."],
 ["{0} of {1}","{0} من {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","تحديد {0}"]
+["Select {0}","تحديد {0}"],
+["Running check {0} of {1}…","جارٍ الفحص {0} من {1}…"],
+["The self-test could not run: {0}","تعذّر تشغيل الاختبار الذاتي: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} ناجح، {1} فاشل، {2} معلومات، {3} متخطى"]
 ]
 };

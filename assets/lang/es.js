@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "El paso de una pantalla a la siguiente.",
 "Animator duration": "Duración del animador",
 "Everything else that moves inside apps: lists, switches, ripples.": "Todo lo demás que se mueve dentro de las apps: listas, interruptores, ondas.",
-"Adaptive brightness bias": "Ajuste de brillo"
+"Adaptive brightness bias": "Ajuste de brillo",
+"Report copied. Paste it into the report box of the issue.": "Informe copiado. Pégalo en el cuadro de informe de la incidencia.",
+"Report on GitHub": "Informar en GitHub",
+"Run self-test": "Ejecutar autodiagnóstico",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Ejecuta unas 30 comprobaciones de solo lectura en este teléfono con el modo de trabajo actual, para que un informe de error o una prueba en el teléfono diga qué funciona de verdad. No se cambia nada en el teléfono. El informe está en inglés y no incluye número de serie, dirección IP, cuenta, clave ni valores de ajustes.",
+"Self-test": "Autodiagnóstico",
+"The self-test could not run.": "No se pudo ejecutar el autodiagnóstico.",
+"The self-test is already running.": "El autodiagnóstico ya se está ejecutando.",
+"The self-test needs the app build.": "El autodiagnóstico solo está disponible en la app."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Aplicado, pero el teléfono informa {0} en lugar de {1}. One UI y algunos otros teléfonos restablecen o ignoran este valor."],
 ["{0} of {1}","{0} de {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Seleccionar {0}"]
+["Select {0}","Seleccionar {0}"],
+["Running check {0} of {1}…","Ejecutando comprobación {0} de {1}…"],
+["The self-test could not run: {0}","No se pudo ejecutar el autodiagnóstico: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} correctas, {1} fallidas, {2} informativas, {3} omitidas"]
 ]
 };

@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "Il passaggio da una schermata alla successiva.",
 "Animator duration": "Durata animatore",
 "Everything else that moves inside apps: lists, switches, ripples.": "Tutto il resto che si muove nelle app: elenchi, interruttori, onde.",
-"Adaptive brightness bias": "Scostamento luminosità"
+"Adaptive brightness bias": "Scostamento luminosità",
+"Report copied. Paste it into the report box of the issue.": "Rapporto copiato. Incollalo nella casella del rapporto della segnalazione.",
+"Report on GitHub": "Segnala su GitHub",
+"Run self-test": "Esegui autotest",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Esegue circa 30 controlli di sola lettura su questo telefono con la modalità di lavoro attuale, così una segnalazione di bug o un test sul telefono dice cosa funziona davvero. Sul telefono non viene modificato nulla. Il rapporto è in inglese e non contiene numero di serie, indirizzo IP, account, chiave né valori delle impostazioni.",
+"Self-test": "Autotest",
+"The self-test could not run.": "Impossibile eseguire l’autotest.",
+"The self-test is already running.": "L’autotest è già in esecuzione.",
+"The self-test needs the app build.": "L’autotest richiede la build dell’app."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Applicato, ma il telefono riporta {0} invece di {1}. One UI e alcuni altri telefoni azzerano o ignorano questo valore."],
 ["{0} of {1}","{0} di {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Seleziona {0}"]
+["Select {0}","Seleziona {0}"],
+["Running check {0} of {1}…","Controllo {0} di {1}…"],
+["The self-test could not run: {0}","Impossibile eseguire l’autotest: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} superati, {1} falliti, {2} info, {3} saltati"]
 ]
 };

@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "Perpindahan dari satu layar ke layar berikutnya.",
 "Animator duration": "Durasi animator",
 "Everything else that moves inside apps: lists, switches, ripples.": "Semua hal lain yang bergerak di dalam aplikasi: daftar, sakelar, riak.",
-"Adaptive brightness bias": "Geser kecerahan"
+"Adaptive brightness bias": "Geser kecerahan",
+"Report copied. Paste it into the report box of the issue.": "Laporan disalin. Tempel ke kotak laporan di isu.",
+"Report on GitHub": "Laporkan di GitHub",
+"Run self-test": "Jalankan uji mandiri",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Menjalankan sekitar 30 pemeriksaan hanya-baca di ponsel ini dengan mode kerja saat ini, agar laporan bug atau uji ponsel menunjukkan apa yang benar-benar berfungsi. Tidak ada yang diubah di ponsel. Laporan ditulis dalam bahasa Inggris dan tidak berisi nomor seri, alamat IP, akun, kunci, atau nilai pengaturan.",
+"Self-test": "Uji mandiri",
+"The self-test could not run.": "Uji mandiri tidak dapat dijalankan.",
+"The self-test is already running.": "Uji mandiri sedang berjalan.",
+"The self-test needs the app build.": "Uji mandiri memerlukan build aplikasi."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Diterapkan, tetapi ponsel melaporkan {0} bukan {1}. One UI dan beberapa ponsel lain menyetel ulang atau mengabaikan nilai ini."],
 ["{0} of {1}","{0} dari {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Pilih {0}"]
+["Select {0}","Pilih {0}"],
+["Running check {0} of {1}…","Pemeriksaan {0} dari {1}…"],
+["The self-test could not run: {0}","Uji mandiri tidak dapat dijalankan: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} lulus, {1} gagal, {2} info, {3} dilewati"]
 ]
 };

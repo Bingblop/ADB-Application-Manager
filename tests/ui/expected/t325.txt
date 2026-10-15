@@ -25,7 +25,7 @@ ok   morphe 400: 8 controls, the buttons and chips drawn at least 36px tall
 ok   morphe 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   morphe 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   morphe 400: the ? is 36x36 and no text of its card lies under it
-ok   about 400: 17 controls, the buttons and chips drawn at least 36px tall
+ok   about 400: 20 controls, the buttons and chips drawn at least 36px tall
 ok   about 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   about 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   prefs 400: 11 controls, the buttons and chips drawn at least 36px tall
@@ -65,7 +65,7 @@ ok   morphe 320: 8 controls, the buttons and chips drawn at least 36px tall
 ok   morphe 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   morphe 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   morphe 320: the ? is 36x36 and no text of its card lies under it
-ok   about 320: 17 controls, the buttons and chips drawn at least 36px tall
+ok   about 320: 20 controls, the buttons and chips drawn at least 36px tall
 ok   about 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   about 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   prefs 320: 11 controls, the buttons and chips drawn at least 36px tall

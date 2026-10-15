@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "A passagem de uma tela para a próxima.",
 "Animator duration": "Duração do animador",
 "Everything else that moves inside apps: lists, switches, ripples.": "Todo o resto que se move dentro dos apps: listas, chaves, ondulações.",
-"Adaptive brightness bias": "Ajuste de brilho"
+"Adaptive brightness bias": "Ajuste de brilho",
+"Report copied. Paste it into the report box of the issue.": "Relatório copiado. Cole-o na caixa de relatório da issue.",
+"Report on GitHub": "Reportar no GitHub",
+"Run self-test": "Executar autoteste",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Executa cerca de 30 verificações somente de leitura neste telefone, no modo de trabalho atual, para que um relatório de bug ou um teste no telefone diga o que realmente funciona. Nada no telefone é alterado. O relatório é escrito em inglês e não inclui número de série, endereço IP, conta, chave nem valores de configurações.",
+"Self-test": "Autoteste",
+"The self-test could not run.": "Não foi possível executar o autoteste.",
+"The self-test is already running.": "O autoteste já está em execução.",
+"The self-test needs the app build.": "O autoteste está disponível apenas no app."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Aplicado, mas o telefone informa {0} em vez de {1}. O One UI e alguns outros telefones redefinem ou ignoram este valor."],
 ["{0} of {1}","{0} de {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Selecionar {0}"]
+["Select {0}","Selecionar {0}"],
+["Running check {0} of {1}…","Verificação {0} de {1}…"],
+["The self-test could not run: {0}","Não foi possível executar o autoteste: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} aprovadas, {1} com falha, {2} informativas, {3} ignoradas"]
 ]
 };

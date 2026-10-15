@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "एक स्क्रीन से अगली स्क्रीन पर जाना।",
 "Animator duration": "Animator अवधि",
 "Everything else that moves inside apps: lists, switches, ripples.": "ऐप्स के अंदर हिलने वाली बाकी सब चीज़ें: सूचियाँ, स्विच, लहरें।",
-"Adaptive brightness bias": "चमक का झुकाव"
+"Adaptive brightness bias": "चमक का झुकाव",
+"Report copied. Paste it into the report box of the issue.": "रिपोर्ट कॉपी हो गई। इसे इश्यू के रिपोर्ट बॉक्स में पेस्ट करें।",
+"Report on GitHub": "GitHub पर रिपोर्ट करें",
+"Run self-test": "स्व-परीक्षण चलाएँ",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "मौजूदा वर्किंग मोड में इस फ़ोन पर लगभग 30 केवल-पढ़ने वाली जाँचें चलाता है, ताकि बग रिपोर्ट या फ़ोन टेस्ट बता सके कि असल में क्या काम करता है। फ़ोन में कुछ नहीं बदलता। रिपोर्ट अंग्रेज़ी में लिखी जाती है और उसमें सीरियल नंबर, IP पता, खाता, कुंजी या सेटिंग मान शामिल नहीं होते।",
+"Self-test": "स्व-परीक्षण",
+"The self-test could not run.": "स्व-परीक्षण नहीं चल सका।",
+"The self-test is already running.": "स्व-परीक्षण पहले से चल रहा है।",
+"The self-test needs the app build.": "स्व-परीक्षण के लिए ऐप बिल्ड चाहिए।"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","लागू हुआ, पर फ़ोन {1} की जगह {0} बता रहा है। One UI और कुछ अन्य फ़ोन इस मान को रीसेट या अनदेखा कर देते हैं।"],
 ["{0} of {1}","{1} में से {0}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} चुनें"]
+["Select {0}","{0} चुनें"],
+["Running check {0} of {1}…","जाँच {0} / {1} चल रही है…"],
+["The self-test could not run: {0}","स्व-परीक्षण नहीं चल सका: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} सफल, {1} विफल, {2} जानकारी, {3} छोड़ी गईं"]
 ]
 };

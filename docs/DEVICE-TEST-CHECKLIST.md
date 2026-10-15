@@ -9,6 +9,7 @@ it works; write down what you saw when it does not.
 - [ ] Install the APK over the old version (it must keep your data). About shows the version you expect.
 - [ ] A working mode is on (ADB over TCP, Wireless Debugging, Shizuku or Root). Most items below need one.
 - [ ] Use a phone you do not mind changing: some items disable apps or change app ops. Everything can be undone from the same screens.
+- [ ] About > Self-test > Run self-test (with your working mode on, then once more with no mode): 27 rows appear with PASS, FAIL, INFO or SKIP, and the line under the buttons counts them. Copy report: paste it somewhere and check it holds no serial number, IP or MAC address, account name or key. Report on GitHub: the browser opens the phone bug report form with the mode, version and device filled in and the report is on the clipboard. Paste the report (or the failing rows) into the issue; this one step tells us what else on this list is worth chasing.
 
 ## 0. New in v7.10.0
 

@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "Переход с одного экрана на другой.",
 "Animator duration": "Длительность аниматора",
 "Everything else that moves inside apps: lists, switches, ripples.": "Всё остальное, что движется внутри приложений: списки, переключатели, волны.",
-"Adaptive brightness bias": "Смещение яркости"
+"Adaptive brightness bias": "Смещение яркости",
+"Report copied. Paste it into the report box of the issue.": "Отчёт скопирован. Вставьте его в поле отчёта в обращении.",
+"Report on GitHub": "Сообщить на GitHub",
+"Run self-test": "Запустить самопроверку",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Выполняет около 30 проверок только для чтения на этом телефоне в текущем режиме работы, чтобы отчёт об ошибке или тест на телефоне показывал, что действительно работает. На телефоне ничего не меняется. Отчёт написан на английском и не содержит серийного номера, IP-адреса, аккаунта, ключей и значений настроек.",
+"Self-test": "Самопроверка",
+"The self-test could not run.": "Не удалось выполнить самопроверку.",
+"The self-test is already running.": "Самопроверка уже выполняется.",
+"The self-test needs the app build.": "Самопроверка работает только в приложении."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Применено, но телефон сообщает {0} вместо {1}. One UI и некоторые другие телефоны сбрасывают или игнорируют это значение."],
 ["{0} of {1}","{0} из {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","Выбрать {0}"]
+["Select {0}","Выбрать {0}"],
+["Running check {0} of {1}…","Проверка {0} из {1}…"],
+["The self-test could not run: {0}","Не удалось выполнить самопроверку: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","Успешно: {0}, ошибок: {1}, сведений: {2}, пропущено: {3}"]
 ]
 };

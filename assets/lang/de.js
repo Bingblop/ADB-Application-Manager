@@ -4857,7 +4857,15 @@ x: {
 "Moving from one screen to the next.": "Der Wechsel von einem Bildschirm zum nächsten.",
 "Animator duration": "Animator-Dauer",
 "Everything else that moves inside apps: lists, switches, ripples.": "Alles andere, was sich in Apps bewegt: Listen, Schalter, Wellen.",
-"Adaptive brightness bias": "Helligkeitsversatz"
+"Adaptive brightness bias": "Helligkeitsversatz",
+"Report copied. Paste it into the report box of the issue.": "Bericht kopiert. Füge ihn in das Berichtsfeld des Issues ein.",
+"Report on GitHub": "Auf GitHub melden",
+"Run self-test": "Selbsttest starten",
+"Runs about 30 read-only checks on this phone in the current working mode, so a bug report or a phone test can say what really works. Nothing on the phone is changed. The report is written in English and holds no serial number, IP address, account, key or setting value.": "Führt etwa 30 reine Lese-Prüfungen auf diesem Telefon im aktuellen Arbeitsmodus aus, damit ein Fehlerbericht oder ein Telefontest sagt, was wirklich funktioniert. Am Telefon wird nichts verändert. Der Bericht ist auf Englisch und enthält weder Seriennummer noch IP-Adresse, Konto, Schlüssel oder Einstellungswerte.",
+"Self-test": "Selbsttest",
+"The self-test could not run.": "Der Selbsttest konnte nicht ausgeführt werden.",
+"The self-test is already running.": "Der Selbsttest läuft bereits.",
+"The self-test needs the app build.": "Der Selbsttest erfordert den App-Build."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
@@ -5977,6 +5985,9 @@ p: [
 ["Applied, but the phone reports {0} instead of {1}. One UI and some other phones reset or ignore this value.","Angewendet, aber das Telefon meldet {0} statt {1}. One UI und einige andere Telefone setzen diesen Wert zurück oder ignorieren ihn."],
 ["{0} of {1}","{0} von {1}"],
 ["One UI {0}","One UI {0}"],
-["Select {0}","{0} auswählen"]
+["Select {0}","{0} auswählen"],
+["Running check {0} of {1}…","Prüfung {0} von {1}…"],
+["The self-test could not run: {0}","Der Selbsttest konnte nicht ausgeführt werden: {0}"],
+["{0} passed, {1} failed, {2} info, {3} skipped","{0} bestanden, {1} fehlgeschlagen, {2} Infos, {3} übersprungen"]
 ]
 };
