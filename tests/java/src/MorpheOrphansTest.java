@@ -28,7 +28,8 @@ public class MorpheOrphansTest {
         File jobs = File.createTempFile("morph", "jobs"); jobs.delete(); jobs.mkdirs();
         final long now = 10L * 24 * 3600 * 1000;
         long old = now - 20L * 3600 * 1000;
-        String ok = "LOG INFO hi\nRESULT {\"success\":true,\"pkg\":\"com.a.b\",\"versionName\":\"2.0\",\"versionCode\":\"20\",\"applied\":[\"Hide ads\"]}\n";
+        // the RESULT line exactly as EngineMain.finish() writes it (success, output, package, versionName, versionCode, applied, failed, steps): "package", not "pkg" (MOR-4)
+        String ok = "LOG INFO hi\nRESULT {\"success\":true,\"output\":\"/x/patched.apk\",\"package\":\"com.a.b\",\"versionName\":\"2.0\",\"versionCode\":\"20\",\"applied\":[\"Hide ads\"],\"failed\":[],\"steps\":[]}\n";
         String bad = "LOG INFO hi\nRESULT {\"success\":false,\"error\":\"boom\"}\n";
 
         File done = new File(jobs, "jdone");                                   // finished, request saved
@@ -64,7 +65,7 @@ public class MorpheOrphansTest {
         check("its saved request comes back whole", od != null && od.request.optString("name").equals("App B") && od.request.optString("keepIn").equals("downloads") && od.apk.getName().equals("patched.apk") && od.result.optBoolean("success"), String.valueOf(od == null ? null : od.request));
         MorpheOrphans.Orphan on = null;
         for (MorpheOrphans.Orphan o : s.finished) if (o.dir.getName().equals("jnoreq")) on = o;
-        check("a run that left no request is filed from what the engine reported (package, version, patches)", on != null && on.request.optString("pkg").equals("com.a.b") && on.request.optString("version").equals("2.0") && on.request.optString("keepIn").equals("app") && on.result.optJSONArray("applied").length() == 1, String.valueOf(on == null ? null : on.request));
+        check("a run that left no request is filed from what the engine reported (package, version, patches)", on != null && on.request.optString("pkg").equals("com.a.b") && on.request.optString("name").equals("com.a.b") && on.request.optString("version").equals("2.0") && on.request.optString("versionCode").equals("20") && on.request.optString("keepIn").equals("app") && on.result.optJSONArray("applied").length() == 1, String.valueOf(on == null ? null : on.request));
         check("a failed run is debris, also with a partial APK", has(s.debris, failedRun), null);
         check("a success whose APK is gone is debris", has(s.debris, noApk), null);
         check("a run with no answer for 20 hours is debris, also with a half APK (it is never filed)", has(s.debris, stale) && !has(s.finished, "jstale"), null);
