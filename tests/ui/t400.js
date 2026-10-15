@@ -23,8 +23,8 @@ const LOCKABLE = ['storage_legacy', 'secure_settings', 'dump', 'read_logs'];
     page.__dialogs = []; page.__answer = true;
     page.on('dialog', d => { page.__dialogs.push(d.message()); page.__answer ? d.accept() : d.dismiss(); });
     await page.addInitScript(inst.initScript, Object.assign({ kv: FLAG, perm: NONE, mode: { priv: false } }, opts || {}));
-    // the helper another part of the app gives the native dialog its title with: recorded here
-    await page.addInitScript(() => { window.__titles = []; window.nextDialogTitle = t => { window.__titles.push(t); }; });
+    // the title the native dialog gets (nextDialogTitle hands it to the bridge's setNextDialogTitle): recorded here
+    await page.addInitScript(() => { window.__titles = []; if (window.AndroidBridge) window.AndroidBridge.setNextDialogTitle = t => { window.__titles.push(t); }; });
     await page.goto(PAGE);
     await page.waitForFunction(() => typeof window.maybeShowPermIntro === 'function' && typeof window.openAppPermissions === 'function');
     await page.evaluate(() => { window.__toasts = []; const o = window.showToast; window.showToast = function (m) { window.__toasts.push(String(m)); return o.apply(this, arguments); }; });

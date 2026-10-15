@@ -18,7 +18,7 @@
 8. a saved font that is missing: the system font stays, the choice is reset and a toast says so: true {"css":"","kv":{"mode":"system"},"cur":"In use: the system font"} The font could not be loaded, so the system font is used.
 9. Choose a file: the chooser opens, its answer is read and shown on the sheet: true pickFontFile,fontPreview:content://font/1
 10. nothing found: a sentence says so and that a file can still be chosen by hand: true
-    no access to storage: the note says so in the failed color and the access prompt opens: true {"note":"This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).","err":true,"prompt":"File access needed\n\nAllow it to continue\n\n✕\nTo search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.\nAll files access\nBrowse storage, find packages on it and install from it.\nAllow\nNot now"}
+    no access to storage: the note says so in the failed color and the access prompt opens: true {"note":"This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).","err":true,"prompt":"File access needed\n\nAllow it to continue\n\n✕\nTo search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.\nAll files access\nMANAGE_EXTERNAL_STORAGE\nBrowse storage, find packages on it and install from it.\nAllow\nNot now"}
     a failed search starts with words and is in the failed color: true
 10b. a variable font is loaded with a weight range (1 to 1000), a static one without: true [["PreviewFont","1 1000"],["AppFont","1 1000"]]
 11. twelve fonts: the filter box shows and narrows the list by name: true
