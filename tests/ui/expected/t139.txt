@@ -12,7 +12,7 @@ ok      confirming runs the batch action clear_removed_data on the ticked apps, 
 ok   2. the batch menu has the grab handle in the middle at the top, like the other sheets: 50% 7px
 ok   3. Select All and Clear All are outlined buttons ("Clear" is now "Clear All"): [{"t":"Select All","bw":"1px","bs":"solid"},{"t":"Clear All","bw":"1px","bs":"solid"}]
 ok   4. Keep selecting after running is on
-ok   5. Share List and Show Apps changed places; it is Show Applications now: [["Copy Packages","Show Applications"],["Freeze","Enable","Force Stop","Suspend","Unsuspend","Clear Data","Optimize","Uninstall","Reinstall","Batch Ops","Share List","Command"]]
+ok   5. Show Apps is Show Applications now, and Backup (v7.13.4) is where Share List was: [["Copy Packages","Show Applications"],["Freeze","Enable","Force Stop","Suspend","Unsuspend","Clear Data","Optimize","Uninstall","Reinstall","Batch Ops","Backup","Command"]]
 ok      pulled up, the menu gets taller (like the other sheets)
 ok      pulled down once, it goes back to its size
 ok      pulled down again, the menu closes to the checkmark button and the apps stay selected
