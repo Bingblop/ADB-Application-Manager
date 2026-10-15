@@ -7128,6 +7128,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** A Settings.Global number any app may read; -1 when the phone has no such setting or refuses the read. */
+    private int readGlobalInt(String name) {
+        try {
+            return android.provider.Settings.Global.getInt(getContentResolver(), name, -1);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
     private boolean hasWriteSecureSettingsAccess() {
         try {
             return checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED;
@@ -8111,6 +8120,25 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void showWirelessPairingNotification() {
             postPairingNotification();
+        }
+
+        /**
+         * What the "Connection check" card of Working Modes needs beyond the mode probe: the Wi-Fi address, the three Developer options switches
+         * (-1 when this phone does not say), whether this app holds WRITE_SECURE_SETTINGS, and the Android version. Reads only; connects and
+         * changes nothing.
+         */
+        @JavascriptInterface
+        public String getConnectionFacts() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("sdk", Build.VERSION.SDK_INT);
+                o.put("wifiIp", deviceWifiIp());
+                o.put("developerOptions", readGlobalInt("development_settings_enabled"));
+                o.put("usbDebugging", readGlobalInt("adb_enabled"));
+                o.put("wirelessDebugging", readGlobalInt("adb_wifi_enabled"));
+                o.put("secureSettings", hasWriteSecureSettingsAccess());
+            } catch (Exception ignored) {}
+            return o.toString();
         }
 
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */
