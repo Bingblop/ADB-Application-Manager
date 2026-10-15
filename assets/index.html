@@ -39453,11 +39453,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (tool === 'deduplicator') return { deleteAll: false };
             return {};
         }
+        // The service can clear caches in this run: it is connected, or the phone starts it (switched off) or binds it again (on, not connected) by itself,
+        // which it does when the consent is given and a working mode is on (SdmAcsStart.decide); without the consent it never does.
+        function sdAcsUsable(a) { return !!(a && a.consent && (a.connected || isPrivilegedActive)); }
         function sdConfirmText(tool) {
             const t = SD_TOOLS.find(x => x.id === tool), st = sdSelStats(tool);
             let txt = st.all ? t.all : 'Delete ' + st.count + ' selected item' + (st.count === 1 ? '' : 's') + (st.bytes ? ' (' + sdSizeStr(st.bytes) + ')' : '') + '?';
-            if (tool === 'appcleaner' && SD.acs && SD.acs.consent && SD.acs.connected) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
-            if (tool === 'appcleaner' && !(SD.acs && SD.acs.consent && SD.acs.connected)) txt += '\n\nThe accessibility service is not ready (' + (SD.acs && !SD.acs.consent ? 'no consent given' : SD.acs && !SD.acs.enabled ? 'it is off' : 'it is not connected') + '), so the caches that only it can clear stay. After this, use "Clear the rest with accessibility" on the AppCleaner card.';
+            if (tool === 'appcleaner' && sdAcsUsable(SD.acs)) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
+            if (tool === 'appcleaner' && !sdAcsUsable(SD.acs)) txt += '\n\nThe accessibility service is not ready (' + (SD.acs && !SD.acs.consent ? 'no consent given' : SD.acs && !SD.acs.enabled ? 'it is off' : 'it is not connected') + '), so the caches that only it can clear stay. After this, use "Clear the rest with accessibility" on the AppCleaner card.';
             return txt;
         }
         async function sdAcsRefresh() {
@@ -39478,7 +39481,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             await sdAcsRefresh();
             const a = SD.acs || {};
-            if (!a.consent || !a.enabled || !a.connected) {
+            if (!sdAcsUsable(a)) {
                 const why = !a.consent ? 'It needs your consent first.' : !a.enabled ? 'The service is off.' : 'The service is switched on but has not connected yet; turn it off and on again in the accessibility settings.';
                 if (await mpAsk({ title: 'The accessibility service is not ready', text: why + ' Set it up now?', ok: 'Set it up' })) { if (!a.consent || !a.enabled) await sdAcsEnable(); else await sdAcsOp('openSettings'); }
                 return;
