@@ -372,6 +372,7 @@ public class SdmSystemCleanerTest {
             deleteAll();
             deleteSelection();
             deleteReverify();
+            emptyDirsShellNewline();
             deleteShellDies();
             deleteCancel();
             apkFilter();
@@ -1136,6 +1137,57 @@ public class SdmSystemCleanerTest {
         is("a folder that became a file is not deleted", exists(S + "Gone1"), true);
         is("... reported as failed", rep2.failed.contains(p(S + "Gone1")), true);
         is("the other folder is deleted", exists(S + "Gone2"), false);
+    }
+
+    /**
+     * SDM-1: "Empty folders" in an area read through the working mode's shell (Android/data on Android 11+). {@code ls -1A} splits a name with a
+     * line break into two names that stat finds nothing for; a folder whose only file has such a name must not count as empty, neither in the scan
+     * nor in the look before the delete. Real /bin/sh, SdmShell and SdmFsShell; skipped where sh or `stat -c` is missing.
+     */
+    static void emptyDirsShellNewline() throws Exception {
+        fresh();
+        if (!new File("/bin/sh").canExecute()) { System.out.println("SKIP emptyDirsShellNewline: no /bin/sh"); return; }
+        SdmShell sh = new SdmShell(new SdmShell.ModeRunner() {
+            @Override public String mode() { return "shizuku"; }
+            @Override public Process open(String script) throws IOException { return new ProcessBuilder("/bin/sh", "-c", script).redirectErrorStream(true).start(); }
+        });
+        mk(S + "probe");
+        Sdm.Entry probe;
+        try { probe = new SdmFsShell(sh).stat(p(S + "probe")); } catch (IOException e) { probe = null; }
+        if (probe == null || probe.type != Sdm.DIR) { System.out.println("SKIP emptyDirsShellNewline: `stat -c` is not supported by this machine's stat"); return; }
+        rmtree(T.resolve(S + "probe"));
+        String nl = "draft\n2024.txt";
+        file(AD + "com.some.app/files/notes/" + nl, 9);
+        file(AD + "com.some.app/files/other.txt", 1);
+        mk(AD + "com.some.app/files/trulyempty");
+        mk(AD + "com.some.app/files/later");
+        final FakeAreas fa = new FakeAreas();
+        fa.list.add(new Sdm.AreaInfo(Sdm.Area.SDCARD, p("storage/emulated/0"), true, "java", ""));
+        fa.list.add(new Sdm.AreaInfo(Sdm.Area.PUBLIC_DATA, p("storage/emulated/0/Android/data"), true, "shell", ""));
+        Sdm.Areas a = new Sdm.Areas() {                                             // the area root itself belongs to the area, so the walk goes through the shell too
+            @Override public List<Sdm.AreaInfo> all() { return fa.all(); }
+            @Override public Sdm.AreaInfo get(Sdm.Area x) { return fa.get(x); }
+            @Override public Sdm.AreaInfo areaOf(String path) {
+                for (Sdm.AreaInfo i : fa.list) if (i.root.equals(path)) return i;
+                return fa.areaOf(path);
+            }
+        };
+        SdmFs fs = new SdmFs(a, new SdmFsJava(), new SdmFsShell(sh));
+        is("the data area is read through the shell", fs.viaShell(p(AD + "com.some.app/files/notes")) && fs.viaShell(p("storage/emulated/0/Android/data")), true);
+        JSONObject only = new JSONObject();
+        for (String id : SdmSystemCleaner.filterIds()) only.put(SdmSystemCleaner.filterKey(id), id.equals("emptydirectories"));
+        Sdm.Ctx c = new Sdm.Ctx(fs, a, new FakePkgs(), new FakeEx(), sh, only, null, null, now);
+        SdmSystemCleaner.SysResult r = scan(c);
+        List<String> found = r.paths("emptydirectories");
+        is("a folder whose only file has a line break in its name is no empty folder", found.contains(p(AD + "com.some.app/files/notes")), false);
+        is("a truly empty folder in the same area is still found", found.contains(p(AD + "com.some.app/files/trulyempty")), true);
+        // the look before the delete: a folder that was empty at the scan and now holds such a file is not deleted
+        file(AD + "com.some.app/files/later/" + nl, 4);
+        Sdm.DeleteReport rep = new SdmSystemCleaner().delete(r, new Sdm.Selection(), new Sdm.Ctx(fs, a, new FakePkgs(), new FakeEx(), sh, only, null, null, now));
+        is("the file with the line break is still there", exists(AD + "com.some.app/files/notes/" + nl), true);
+        is("a folder that got such a file after the scan is kept", exists(AD + "com.some.app/files/later/" + nl), true);
+        is("... and reported as failed", rep.failed.contains(p(AD + "com.some.app/files/later")), true);
+        is("the truly empty folder is deleted", exists(AD + "com.some.app/files/trulyempty"), false);
     }
 
     static long statSize2(SdmSystemCleaner.SysResult r, String group, String rel, Sdm.DeleteReport rep) {
