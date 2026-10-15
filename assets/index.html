@@ -92,6 +92,13 @@
             /* ---- Fixed colours [fixed] ---- */
             --danger-solid: #C62828;                 /* the Stop button: a solid red that carries white text in every theme */
             --on-danger: #FFFFFF;
+            /* The coloured action buttons are filled (the owner's choice for v7.14): Uninstall a red gradient, Freeze ice blue, Reinstall
+               green, all with black text; Enable takes the accent with --on-accent. Fixed, so the black text keeps its contrast in every
+               theme (a light theme darkens the status colours, which would not carry black). No color-mix(), so an old WebView draws them too. */
+            --fill-uninstall: linear-gradient(135deg, #FF8A80 0%, #E53935 100%);
+            --fill-freeze: linear-gradient(135deg, #E1F5FE 0%, #81D4FA 100%);
+            --fill-reinstall: linear-gradient(135deg, #69F0AE 0%, #00E676 100%);
+            --on-fill: #000000;
 
             /* ---- Spacing [fixed]: padding, margin and gap take these. 2px and 1px hairline gaps stay literal. ---- */
             --space-1: 4px;                          /* inside badges, icon + label */
@@ -1833,10 +1840,16 @@
         }
 
         /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
-        .sheet-btn-red { background: var(--tint-apps-uninstalled); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
-        .sheet-btn-blue { background: var(--tint-apps-frozen); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
-        .sheet-btn-green { background: var(--tint-apps-enabled); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
-        .sheet-btn-red:active, .sheet-btn-blue:active, .sheet-btn-green:active { background: var(--accent); color: var(--on-accent); }
+        .sheet-btn-red, .sheet-btn-blue, .sheet-btn-green, .sheet-btn-accent,
+        .batch-grid-btn.danger, .batch-grid-btn.blue, .batch-grid-btn.green, .batch-grid-btn.accent,
+        .cd-row-act.danger, .cd-row-act.blue, .cd-row-act.green, .cd-row-act.accent, .mp-act.danger { border-color: transparent; color: var(--on-fill); }
+        .sheet-btn-red, .batch-grid-btn.danger, .cd-row-act.danger, .mp-act.danger { background: var(--fill-uninstall); }
+        .sheet-btn-blue, .batch-grid-btn.blue, .cd-row-act.blue { background: var(--fill-freeze); }
+        .sheet-btn-green, .batch-grid-btn.green, .cd-row-act.green { background: var(--fill-reinstall); }
+        .sheet-btn-accent, .batch-grid-btn.accent, .cd-row-act.accent { background: var(--accent); color: var(--on-accent); }
+        .sheet-btn-red:active, .sheet-btn-blue:active, .sheet-btn-green:active, .sheet-btn-accent:active,
+        .batch-grid-btn.danger:active, .batch-grid-btn.blue:active, .batch-grid-btn.green:active, .batch-grid-btn.accent:active,
+        .cd-row-act.danger:active, .cd-row-act.blue:active, .cd-row-act.green:active, .cd-row-act.accent:active, .mp-act.danger:active { filter: brightness(0.82); }
 
         .sheet-tabs {
             display: flex;
@@ -3008,9 +3021,7 @@
         .sign-fp { font-family: monospace; font-size: var(--fs-pkg); font-weight:var(--fw-semibold); color: var(--text-muted); margin-top: 2px; word-break: break-all; line-height: 1.4; }
         .batch-grid-btn:disabled { opacity: 0.4; pointer-events: none; }
         /* The trash can and the recycle symbol used to say which buttons delete and which are the main action */
-        .batch-grid-btn.danger { color: var(--status-bloat); border-color: var(--status-bloat); }
-        .batch-grid-btn.accent { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
-        .batch-grid-btn.blue { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--apps-frozen); }   /* Connected Devices: Freeze, the same blue as the row button */
+        /* .danger, .accent, .blue and .green are filled: see the sheet buttons (.sheet-btn-red and the rest) */
 
         .arc-textarea {
             width: 100%;
@@ -4211,9 +4222,6 @@
             .filter-pill.stat-card.active:not([data-filter="installed"]) { background: linear-gradient(var(--tone-tint), var(--tone-tint)), var(--bg-card); }
             .app-card > .app-sel .app-checkbox { box-shadow: 0 0 0 2px var(--bg-card); }
             .tag-frozen.cd-frozen { background: var(--tint-apps-frozen); color: var(--apps-frozen); border-color: var(--line-apps-frozen); }
-            .sheet-btn-red { border-color: var(--line-apps-uninstalled); }
-            .sheet-btn-blue { border-color: var(--line-apps-frozen); }
-            .sheet-btn-green { border-color: var(--line-apps-enabled); }
             .lc-ent-ai, .agent-ask-bar, .agent-ask-hist-row:active { background: var(--tint-accent); }
             .lc-msg { color: var(--lc); }
         }
@@ -4950,19 +4958,12 @@
                 .cd-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); margin-right: var(--space-3h); display: flex; align-items: center; justify-content: center; overflow: hidden;
                     background: var(--bg-surface); color: var(--accent); font-weight:var(--fw-black); font-size: var(--fs-lead); }
                 .cd-icon img { width: 100%; height: 100%; object-fit: contain; }
-                .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
-                .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
+                /* filled in the accent; .danger, .blue, .green and .accent are filled too (see the sheet buttons, .sheet-btn-red and the rest); .plain is the quiet one */
+                .cd-row-act { border: 1px solid transparent; color: var(--on-accent); background: var(--accent); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
+                .cd-row-act:active { filter: brightness(0.82); }
                 .cd-row-act:disabled { opacity: 0.45; }
-                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: var(--tint-apps-uninstalled); }
-                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: var(--tint-apps-frozen); }
-                .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
-                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: var(--tint-apps-enabled); }
-                .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
-                @supports not (color: color-mix(in srgb, red 50%, blue)) {
-                    .cd-row-act.danger { border-color: var(--line-apps-uninstalled); }
-                    .cd-row-act.blue { border-color: var(--line-apps-frozen); }
-                    .cd-row-act.green { border-color: var(--line-apps-enabled); }
-                }
+                .cd-row-act.plain { background: transparent; border-color: var(--border-glass); color: var(--text-muted); }
+                .cd-row-act.plain:active { filter: none; background: var(--fill-2); }
                 .cd-batch { position: sticky; bottom: calc(10px + var(--bnav-h, 0px)); z-index: 30; display: none; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3h); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-lg);
                     background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .cd-batch.show { display: flex; }
@@ -5117,7 +5118,7 @@
                     </div>
                     <div class="cd-batch" id="cdBatch">
                         <b id="cdBatchCount">0 selected</b>
-                        <button class="cd-row-act green" onclick="cdBatch('enable')">Enable</button>
+                        <button class="cd-row-act accent" onclick="cdBatch('enable')">Enable</button>
                         <button class="cd-row-act blue" onclick="cdBatch('disable')">Freeze</button>
                         <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
                         <button class="cd-row-act green" onclick="cdBatch('reinstall')">Reinstall</button>
@@ -7142,7 +7143,6 @@
                 .mp-act { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: var(--radius-pill); padding: var(--space-2) var(--space-4); font-size: var(--fs-pill); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .mp-act:active { background: var(--accent); color: var(--on-accent); }
                 .mp-act:disabled { opacity: 0.45; }
-                .mp-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
                 .mp-feat { display: flex; gap: var(--space-3); overflow-x: auto; padding: var(--space-1) 0 var(--space-3); scrollbar-width: none; }
                 .mp-feat::-webkit-scrollbar { display: none; }
                 .mp-feat-item { flex: 0 0 auto; width: 74px; text-align: center; cursor: pointer; }
@@ -7378,7 +7378,7 @@
                 .sd-act { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3h); align-items: stretch; }
                 .sd-act #sdClearRest { flex: 1 1 100%; order: -1; }
                 .sd-act .mode-action-btn { flex: 1 1 0; justify-content: center; min-width: 0; }
-                .sd-act .mode-action-btn.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
+                .sd-act .mode-action-btn.danger { border-color: transparent; background: var(--fill-uninstall); color: var(--on-fill); }
                 .sd-act .mode-action-btn.danger.fill { background: var(--danger-solid); color: var(--on-danger); }
                 .sd-act .mode-action-btn.ico { flex: 0 0 auto; padding-left: var(--space-4); padding-right: var(--space-4); }
                 .sd-act .mode-action-btn:disabled { opacity: 0.45; }
@@ -8061,15 +8061,15 @@ Type any command above (e.g. pm list packages -d)</div>
             <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" checked onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
         </label>
         <div class="batch-actions-grid">
-            <button class="batch-grid-btn" onclick="batchAction('freeze')">Freeze</button>
-            <button class="batch-grid-btn" onclick="batchAction('unfreeze')">Enable</button>
+            <button class="batch-grid-btn blue" onclick="batchAction('freeze')">Freeze</button>
+            <button class="batch-grid-btn accent" onclick="batchAction('unfreeze')">Enable</button>
             <button class="batch-grid-btn" onclick="batchAction('force_stop')">Force Stop</button>
             <button class="batch-grid-btn" onclick="batchAction('suspend')">Suspend</button>
             <button class="batch-grid-btn" onclick="batchAction('unsuspend')">Unsuspend</button>
             <button class="batch-grid-btn" onclick="batchAction('clear_data')">Clear Data</button>
             <button class="batch-grid-btn" onclick="openOptimizeModal('batch')">Optimize</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">Uninstall</button>
-            <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">Reinstall</button>
+            <button class="batch-grid-btn green" onclick="batchAction('reinstall')">Reinstall</button>
             <button class="batch-grid-btn" onclick="openBatchOps()">Batch Ops</button>
             <button class="batch-grid-btn" onclick="batchBackup()">Backup</button>
             <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
@@ -8893,7 +8893,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
                             <span>Freeze</span>
                         </button>
-                        <button class="sheet-btn sheet-btn-green" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze" style="display:none;">
+                        <button class="sheet-btn sheet-btn-accent" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze" style="display:none;">
                             <span>Enable</span>
                         </button>
                         <button class="sheet-btn" onclick="singleAction('suspend')" id="sheetBtnSuspend">
@@ -25373,7 +25373,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const line = rc.busy ? (rc.msg || 'Reconnecting...') : (rc.msg ? rc.msg : cdTransport(l.serial) + ' \u00b7 ' + when);
                 return '<div class="cd-lost" data-serial="' + escapeHtml(l.serial) + '"><div class="cd-lost-main"><span style="margin:0 0 2px;font-size:var(--fs-overline);text-transform:uppercase;letter-spacing:.3px;">Not connected</span><b translate="no">' + escapeHtml(l.name) + '</b><span class="' + (!rc.busy && rc.msg ? 'is-err' : '') + '">' + escapeHtml(line) + '</span></div>' +
                     '<div class="cd-lost-btns"><button class="cd-row-act" data-s="' + escapeHtml(l.serial) + '" onclick="cdReconnectSerial(this.dataset.s, false)"' + (rc.busy ? ' disabled' : '') + '>' + (rc.busy ? 'Trying...' : 'Reconnect') + '</button>' +
-                    '<button class="cd-row-act" style="border-color:var(--border-glass);color:var(--text-muted);" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
+                    '<button class="cd-row-act plain" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
             }).join('');                                       // whether it reconnects on its own, and when: the Reconnecting devices card just below
         }
         function cdSetAuto(on) { kvSet('cd_autore', !!on); cdRenderLost(); cdSettingsRender(); haptic(); showToast('Reconnecting on its own: ' + (on ? 'on' : 'off')); }
@@ -25431,7 +25431,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     const line = rc.busy ? (rc.msg || 'Connecting...') : (r.up ? cdTransport(r.serial) + ' \u00b7 connected now' : cdTransport(r.serial) + ' \u00b7 ' + (r.at ? 'last connected ' + cdAgo(r.at) : 'saved'));
                     return '<div class="cd-saved' + (r.up ? ' up' : '') + '" data-serial="' + escapeHtml(r.serial) + '"><div class="cd-lost-main"><b translate="no">' + escapeHtml(r.name) + '</b><span>' + escapeHtml(line) + '</span></div>' +
                         '<div class="cd-lost-btns">' + (r.up ? '' : '<button class="cd-row-act" data-s="' + escapeHtml(r.serial) + '" onclick="cdSavedConnect(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Connect</button>') +
-                        '<button class="cd-row-act" style="border-color:var(--status-bloat);color:var(--status-bloat);" data-s="' + escapeHtml(r.serial) + '" onclick="cdDeleteSaved(this.dataset.s)">Delete</button></div></div>';
+                        '<button class="cd-row-act danger" data-s="' + escapeHtml(r.serial) + '" onclick="cdDeleteSaved(this.dataset.s)">Delete</button></div></div>';
                 }).join('');
                 h += '<div class="cd-saved-foot"><span>Remember the devices I connect: <button class="batch-tool-link" id="cdSaveBtn" onclick="cdSaveToggle()">' + (cdSaveOn() ? 'On' : 'Off') + '</button></span>' +
                     '<button class="batch-tool-link" id="cdDeleteAllBtn" onclick="cdDeleteAllSaved()">Delete all</button></div>';
@@ -25803,7 +25803,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
-                '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : act[0] === 'enable' ? 'accent' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
                 '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
                 '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
         }
@@ -25989,7 +25989,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 b.push({ label: 'Details', fn: () => cdAppInfo(pkg) });
                 b.push({ label: 'App page on device', fn: async () => { const o = await cdSh('am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:' + cdQ(pkg)); showToast(cdFail(o) || 'Opened on the device'); } });
             } else {
-                b.push({ label: 'Reinstall', cls: 'accent', fn: () => cdAppAct(pkg, 'reinstall') });
+                b.push({ label: 'Reinstall', cls: 'green', fn: () => cdAppAct(pkg, 'reinstall') });
             }
             b.push({ label: cd.sel.has(pkg) ? 'Deselect' : 'Select', fn: () => cdToggleSel(pkg) });
             b.push({ label: 'Copy package', fn: () => copyText(pkg) });
@@ -29593,7 +29593,9 @@ Type any command above (e.g. pm list packages -d)</div>
 
             css.setProperty('--accent', t.accent);
             css.setProperty('--accent-glow', hexToRgba(t.accent, light ? 0.2 : 0.27));
-            css.setProperty('--on-accent', contrastRatio(t.accent, '#000000') >= contrastRatio(t.accent, '#FFFFFF') ? '#000000' : '#FFFFFF');
+            // black on the accent where it reads (4.5:1, the owner's preference), white only where black would not
+            const blackOn = contrastRatio(t.accent, '#000000');
+            css.setProperty('--on-accent', blackOn >= 4.5 || blackOn >= contrastRatio(t.accent, '#FFFFFF') ? '#000000' : '#FFFFFF');
             // Buttons and tiles painted with the accent-to-secondary gradient: the text colour that reads worst-case best over BOTH ends, not over the accent alone
             css.setProperty('--on-gradient', onGradientColor(t.accent, t.secondary));
             css.setProperty('--bg-base', t.bg);

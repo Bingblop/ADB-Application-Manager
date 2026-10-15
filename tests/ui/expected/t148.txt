@@ -2,7 +2,7 @@ ok   1. Settings has a Row tints slider; it starts on Subtle: {"def":{"attr":"su
 ok      Normal tints the row more than Subtle, and Off not at all: {"off":0,"subtle":0.11,"normal":0.2}
 ok      the choice is kept
 ok      the slider has the three labels
-ok   2. Enable and Reinstall are tinted green like Freeze is blue and Uninstall red: {"en":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"re":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"fr":{"cls":"sheet-btn sheet-btn-blue","col":"rgb(148, 188, 255)"},"un":{"cls":"sheet-btn sheet-btn-red","col":"rgb(255, 159, 159)"}}
+ok   2. Reinstall is green like Freeze is blue and Uninstall red; Enable is the accent (v7.14: the owner's colours): {"en":{"cls":"sheet-btn sheet-btn-accent","col":"rgb(0, 0, 0)"},"re":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 0, 0)"},"fr":{"cls":"sheet-btn sheet-btn-blue","col":"rgb(0, 0, 0)"},"un":{"cls":"sheet-btn sheet-btn-red","col":"rgb(0, 0, 0)"}}
 ok   3. while a Browser Use task runs the window shows a progress bar (by steps) and a Stop button: {"stop":"flex","w":"25%","txt":"Step 3 of up to 12 · 0 s","go":true}
 ok      Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop: {"t":"Stopped.","prog":false,"stop":"none","go":false}
 ok      and no more questions about the task are sent

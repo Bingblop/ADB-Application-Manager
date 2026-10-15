@@ -33,7 +33,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // ---- 2. green buttons ----
   const gb = await ev(() => { const f = (id) => { const e = document.getElementById(id); return { cls: e.className, col: getComputedStyle(e).color }; }; return { en: f('sheetBtnUnfreeze'), re: f('sheetBtnReinstall'), fr: f('sheetBtnFreeze'), un: f('sheetBtnUninstall') }; });
-  check('2. Enable and Reinstall are tinted green like Freeze is blue and Uninstall red', /sheet-btn-green/.test(gb.en.cls) && /sheet-btn-green/.test(gb.re.cls) && /sheet-btn-blue/.test(gb.fr.cls) && /sheet-btn-red/.test(gb.un.cls), JSON.stringify(gb));
+  check('2. Reinstall is green like Freeze is blue and Uninstall red; Enable is the accent (v7.14: the owner\'s colours)', /sheet-btn-accent/.test(gb.en.cls) && /sheet-btn-green/.test(gb.re.cls) && /sheet-btn-blue/.test(gb.fr.cls) && /sheet-btn-red/.test(gb.un.cls), JSON.stringify(gb));
 
   // ---- 3. progress and Stop (Browser Use) ----
   await ev(() => { window.__ai.keyAnswer = () => ({ ok: true, status: 200, body: '{}' }); switchView('terminal'); });

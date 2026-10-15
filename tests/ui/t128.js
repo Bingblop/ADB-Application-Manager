@@ -134,7 +134,8 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { window.__st.canConnect = {}; delete window.__st.up['192.168.1.20:5555']; window.__st.up['192.168.1.20:5555'] = 'device'; }); await refresh();
   await ev(() => { delete window.__st.up['192.168.1.20:5555']; }); await ev(() => { kvSet('cd_autore', false); window.__st.calls.length = 0; }); await refresh(); await wait(500);
   check('with the setting off, nothing is tried until the button is pressed', !(await calls()).some(c => /^connect /.test(c)), JSON.stringify(await calls()));
-  await ev(() => cdSettingsRender()); await page.click('#cdAutoSwitch + .switch-track'); await wait(100);
+  // (the Reconnecting devices card starts folded in v7.14: unfold it first)
+  await ev(() => { cdSettingsRender(); const c = document.getElementById('cdReconnectCard'); if (c.classList.contains('cc-closed')) ccToggle(c); }); await wait(350); await page.click('#cdAutoSwitch + .switch-track'); await wait(100);
   check('the setting is switched in the card of this tab (and remembered)', await ev(() => kvGet('cd_autore', true) === true && document.getElementById('cdAutoSwitch').checked));
 
   // ---- Reconnect all ----

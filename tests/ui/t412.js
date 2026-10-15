@@ -103,8 +103,9 @@ const ALL_MIX = (rootBlock.match(/--[\w-]+:\s*color-mix\(/g) || []).length;
     const fb = [];
     if (!near(o.el.gear.border, o.lineAccent)) fb.push('gear border ' + o.el.gear.border);
     if (o.el.gear.img === 'none') fb.push('gear fill none');
-    if (!near(o.el.red.border, o.lineRed)) fb.push('red sheet button border ' + o.el.red.border);
-    if (!near(o.el.cdRed.border, o.lineRed)) fb.push('Connected Devices row button border ' + o.el.cdRed.border);
+    // the coloured action buttons are filled (v7.14) from fixed gradients that need no color-mix()
+    if (!/linear-gradient/.test(o.el.red.img)) fb.push('red sheet button fill ' + o.el.red.img);
+    if (!/linear-gradient/.test(o.el.cdRed.img)) fb.push('Connected Devices row button fill ' + o.el.cdRed.img);
     if (!near(o.el.cdFrozen.border, o.lineFrozen) || clear(o.el.cdFrozen.bg)) fb.push('Connected Devices FROZEN ' + o.el.cdFrozen.border + ' ' + o.el.cdFrozen.bg);
     if (o.el.nav.img === 'none') fb.push('Navigation choice fill none');
     if (o.el.pillOn.img === 'none') fb.push('active stat pill fill none');
