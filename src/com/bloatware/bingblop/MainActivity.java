@@ -6300,7 +6300,9 @@ public class MainActivity extends Activity {
             if (in == null) throw new java.io.FileNotFoundException("cannot open the backup file");
             return in;
         }
-        return new java.io.FileInputStream(ref);
+        // A path the page (or an "Open with" intent) names: never the app's own private data, which would otherwise be copied into the
+        // Installer's work folder, a folder the share sheet and VirusTotal may read.
+        return openUnlessPrivate(new File(ref));
     }
 
     /**

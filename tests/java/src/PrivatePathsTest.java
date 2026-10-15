@@ -291,6 +291,8 @@ public class PrivatePathsTest {
       routeHas(m, "public String archiveCreate(", "fmPrivate(dir.getPath())", null);
       routeHas(m, "public String archiveCreate(", "isPrivateData(f)", null);
       routeHas(m, "public String fmSearch(", "searchSkip()", null);
+      // INS-1: the Installer, backup info and restore read a path the page names through openRef: never the app's own data (it would be copied into cache/installer, which may be shared)
+      routeHas(m, "private InputStream openRef(", "openUnlessPrivate(new File(ref))", "new java.io.FileInputStream(");
       String ou = bodyOf(m, "private InputStream openUnlessPrivate(");
       is("openUnlessPrivate opens first and judges the descriptor (fstat link count, /proc/self/fd target), closing it when refused", ou != null && ou.indexOf("ParcelFileDescriptor.open(") < ou.indexOf("checkOpenedNotPrivate(pfd)") && ou.contains("pfd.close()"));
       String co = bodyOf(m, "private void checkOpenedNotPrivate(");
