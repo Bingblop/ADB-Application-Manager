@@ -1,0 +1,13 @@
+ok   dark, off: the level-coloured badge and tag and the text read at 4.5:1 or more on the untinted row
+ok   dark, subtle: every row is tinted in its level dot's colour
+ok   dark, subtle: its text keeps at least 4.5:1 where the tint is strongest
+ok   dark, normal: every row is tinted in its level dot's colour
+ok   dark, normal: its text keeps at least 4.5:1 where the tint is strongest
+ok   dark: Off draws no tint, Normal more than Subtle
+ok   light, off: the level-coloured badge and tag and the text read at 4.5:1 or more on the untinted row
+ok   light, subtle: every row is tinted in its level dot's colour
+ok   light, subtle: its text keeps at least 4.5:1 where the tint is strongest
+ok   light, normal: every row is tinted in its level dot's colour
+ok   light, normal: its text keeps at least 4.5:1 where the tint is strongest
+ok   light: Off draws no tint, Normal more than Subtle
+errors: []

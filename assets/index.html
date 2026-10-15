@@ -150,8 +150,8 @@
 
             /* ---- Logcat: one row per log entry, colored by level [fixed palette] ---- */
             --lc-v: #9AA0A6;
-            --lc-v-dot: #2EBD6B;                     /* the dots of the level chips only (the owner's choice, v7.14): Verbose the green Info had, */
-            --lc-d-dot: #FFD600;                     /* Debug yellow, Warn orange, Info the theme's accent (set in the rule); the rows keep their own colours */
+            --lc-v-dot: #2EBD6B;                     /* the colours of the levels' dots and of Live Logcat's row tints (the owner's choice, v7.14): Verbose the green Info had, */
+            --lc-d-dot: #FFD600;                     /* Debug yellow, Warn orange, Info the theme's accent (set with .lvl-I); the badges and tags keep --lc-* */
             --lc-w-dot: #FF6D00;
             --rec-dot: #F23B30;                      /* Live Logcat's Record to file dot: red */
             --lc-d: #29B6F6;
@@ -2675,12 +2675,12 @@
             word-break: break-word;
         }
 
-        .lvl-V { --lc: var(--lc-v); }
-        .lvl-D { --lc: var(--lc-d); }
-        .lvl-I { --lc: var(--lc-i); }
-        .lvl-W { --lc: var(--lc-w); }
-        .lvl-E { --lc: var(--lc-e); }
-        .lvl-F { --lc: var(--lc-f); }
+        .lvl-V { --lc: var(--lc-v); --lc-dot: var(--lc-v-dot); }
+        .lvl-D { --lc: var(--lc-d); --lc-dot: var(--lc-d-dot); }
+        .lvl-I { --lc: var(--lc-i); --lc-dot: var(--accent); }
+        .lvl-W { --lc: var(--lc-w); --lc-dot: var(--lc-w-dot); }
+        .lvl-E { --lc: var(--lc-e); --lc-dot: var(--lc-e); }
+        .lvl-F { --lc: var(--lc-f); --lc-dot: var(--lc-f); }
 
         .lc-key {
             display: flex;
@@ -2712,11 +2712,8 @@
             background: var(--lc);
             box-shadow: 0 0 0 2px var(--fill-3);
         }
-        /* the owner's choice (v7.14): the dots of the level chips; the rows of each level keep their own colours */
-        .lc-chip.lvl-V .lc-dot { background: var(--lc-v-dot); }
-        .lc-chip.lvl-D .lc-dot { background: var(--lc-d-dot); }
-        .lc-chip.lvl-I .lc-dot { background: var(--accent); }
-        .lc-chip.lvl-W .lc-dot { background: var(--lc-w-dot); }
+        /* the owner's choice (v7.14): the dots of the level chips (--lc-dot, set with each level above); Live Logcat's rows are tinted in the same colour */
+        .lc-chip .lc-dot { background: var(--lc-dot, var(--lc)); }
 
         .lc-chip .lc-n {
             font-weight:var(--fw-bold);
@@ -7756,6 +7753,14 @@
                 #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: var(--space-3h) 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
                 #cnSegLog .lc-row { display: flex; gap: var(--space-1); align-items: baseline; margin-bottom: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--bg-card); border: 0; border-radius: 4px; }
                 #cnSegLog .lc-row.lvl-W, #cnSegLog .lc-row.lvl-E, #cnSegLog .lc-row.lvl-F { background: var(--bg-card); }
+                /* each row tinted in the colour of its level's dot (the owner's wish, v7.14), as strong as "Row tints" in Settings says (Off, Subtle, Normal: --rt-o);
+                   a wash from the leading edge, without color-mix() so an old WebView draws it too */
+                #cnSegLog .lc-row { position: relative; isolation: isolate; --lc-dir: 90deg; }
+                [dir="rtl"] #cnSegLog .lc-row { --lc-dir: 270deg; }
+                #cnSegLog .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+                    background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: var(--rt-o); }
+                /* on a light page the level-coloured badge and tag are inked darker, so they keep 4.5:1 on the tint (they were under it even untinted) */
+                html[data-appearance="light"] #cnSegLog .lc-badge, html[data-appearance="light"] #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
                 #cnSegLog .lc-badge::after { content: '/'; }
                 #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: var(--fw-bold); font-family: ui-monospace, monospace; font-size: var(--fs-pill); }
