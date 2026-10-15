@@ -275,7 +275,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { document.getElementById('cdLcFilter').value = 'sensors'; cdLcDraw(false); });
   check('the filter box narrows the rows and marks the match', await ev(() => document.querySelectorAll('#cdLcOut .lc-row').length === 1 && document.querySelectorAll('#cdLcOut mark').length >= 1));
   await ev(() => { document.getElementById('cdLcFilter').value = ''; cdLcTogglePlay(); }); await wait(100);
-  check('Play follows the log and the button says Pause', await ev(() => document.getElementById('cdLcPlay').innerText === 'Pause' && !!cd.lcTimer));
+  check('Play follows the log and the button says Stop', await ev(() => document.getElementById('cdLcPlay').innerText === 'Stop' && !!cd.lcTimer));
   await ev(() => cdSub('apps'));
   check('leaving the Logcat sub-tab stops following', await ev(() => !cd.lcTimer && document.getElementById('cdLcPlay').innerText === 'Play'));
   await ev(() => { cdSub('logcat'); cdLcClear(); }); await wait(200);

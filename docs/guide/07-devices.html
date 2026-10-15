@@ -571,14 +571,15 @@
       <tr><td>Level (drop-down)</td><td>How serious a line has to be to show. Choices: <b>Verbose</b>, <b>Debug</b>, <b>Info</b> (the default), <b>Warn</b>, <b>Error</b>, <b>Fatal</b>. A level shows itself and everything more serious: <b>Info</b> shows Info, Warn, Error and Fatal; <b>Error</b> shows Error and Fatal. Changing it reads the log again.</td></tr>
       <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b> (the default) or <b>1000</b>. Changing it reads again.</td></tr>
       <tr><td><b>filter text / tag</b> box</td><td>Shows only the entries that contain what you type, in the tag or in the message. Capitals do not matter and the text is taken as it is (no special codes). Every match is highlighted. It works at once on what is already loaded and does not read the device again.</td></tr>
-      <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns orange and says <b>Pause</b>. Each live read asks for at most 300 lines. Tap <b>Pause</b> to stop.</td></tr>
+      <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns red and says <b>Stop</b>. Each live read asks for at most 300 lines. Tap <b>Stop</b> to stop.</td></tr>
       <tr><td><b>Refresh</b></td><td>Reads the log once, now.</td></tr>
       <tr><td><b>Clear</b></td><td>Empties the device's log buffer (the command <code>logcat -c</code>) and the screen, and says <b>Log cleared on the device.</b> The old lines cannot be brought back.</td></tr>
       <tr><td><b>Copy</b></td><td>Copies everything that was read to the clipboard as plain text. That includes entries the filter box hides or the 700-row limit leaves off the screen.</td></tr>
       <tr><td><b>Share</b></td><td>Sends the same text as a file named device_logcat.txt through Android's share sheet.</td></tr>
     </tbody>
   </table>
-  <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Pause when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
+    <p>The lines are coloured as in <b>Live Logcat</b>: each line's level letter and the bar at its edge are green for Verbose, yellow for Debug, the theme's accent colour for Info, orange for Warn, red for Error and purple for Fatal, and the line is tinted in that colour as strongly as <b>Row tints</b> in Settings says.</p>
+  <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Tap Stop when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
 
   <h4>How the rows are drawn</h4>
   <p>Exactly like in Live Logcat. Each entry is one row:</p>

@@ -245,9 +245,23 @@
         }
         .copy-chip:active { transform: scale(0.96); }
         /* Live Logcat's Play / Stop (the owner's choice, v7.14): filled, the Reinstall green to play and the Uninstall red to stop, black text and a black outline in either theme */
-        #cnSegLog .batch-tool-link.lc-play { background: var(--fill-reinstall); color: var(--on-fill); border: 1px solid var(--on-fill); font-weight: var(--fw-heavy); }
-        #cnSegLog .batch-tool-link.lc-play.is-playing { background: var(--fill-uninstall); }
-        #cnSegLog .batch-tool-link.lc-play:active { filter: brightness(0.82); }
+        #cnSegLog .batch-tool-link.lc-play, #cdPane-logcat .batch-tool-link.lc-play { background: var(--fill-reinstall); color: var(--on-fill); border: 1px solid var(--on-fill); font-weight: var(--fw-heavy); }
+        #cnSegLog .batch-tool-link.lc-play.is-playing, #cdPane-logcat .batch-tool-link.lc-play.is-playing { background: var(--fill-uninstall); }
+        #cnSegLog .batch-tool-link.lc-play:active, #cdPane-logcat .batch-tool-link.lc-play:active { filter: brightness(0.82); }
+        #cdPane-logcat .batch-tool-link.lc-play { padding: var(--space-1) var(--space-4); border-radius: var(--radius-sm); }
+        /* Connected Devices' Logcat in the same colours as Live Logcat (the owner's wish, v7.14): the badge and the bar in the level's dot colour, each row tinted
+           in it as strongly as Row tints says, in place of the fixed washes of Warn, Error and Fatal */
+        #cdLcOut .lc-row { position: relative; isolation: isolate; border-left-color: var(--lc-dot, var(--lc)); --lc-dir: 90deg; }
+        [dir="rtl"] #cdLcOut .lc-row { --lc-dir: 270deg; }
+        #cdLcOut .lc-row, #cdLcOut .lc-row.lvl-W, #cdLcOut .lc-row.lvl-E, #cdLcOut .lc-row.lvl-F { background: var(--bg-card); }          /* on the card colour, as Live Logcat's rows */
+        #cdLcOut .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+            background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: calc(var(--rt-o) * 0.8); }
+        #cdLcOut .lc-badge { background: var(--lc-dot, var(--lc)); }
+        #cdLcOut .lc-row.lvl-I .lc-badge { color: var(--on-accent); }
+        /* the text as in Live Logcat: the tag in the level's colour (inked darker on a light page), the message muted, so it reads on the tint */
+        #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); }
+        html[data-appearance="light"] #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
+        #cdLcOut .lc-msg { color: var(--text-muted); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
         .find-bar .list-search { flex: 1 1 100px; min-width: 100px; margin: 0; }          /* the buttons go on the next line when the box would get narrower than its hint */
         @media (max-width: 340px) { .find-bar .list-search { flex-basis: 100%; } }
@@ -5257,7 +5271,7 @@
                             <input type="text" class="list-search" id="cdLcFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdLcDraw(false)">
                         </div>
                         <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
-                            <button class="batch-tool-link" id="cdLcPlay" onclick="cdLcTogglePlay()" style="color:#4ADE80;">Play</button>
+                            <button type="button" class="batch-tool-link lc-play" id="cdLcPlay" onclick="cdLcTogglePlay()" aria-pressed="false">Play</button>
                             <button class="batch-tool-link" onclick="cdLcRefresh()">Refresh</button>
                             <button class="batch-tool-link" onclick="cdLcClear()">Clear</button>
                             <button class="batch-tool-link" onclick="cdLcCopy()">Copy</button>
@@ -6280,7 +6294,7 @@
 
             <div class="color-card" id="rowTintCard">
                 <div class="color-card-title">Row tints</div>
-                <div class="color-card-subtitle">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat each line in the colour of its level. Only the apps you select get an outline.</div>
+                <div class="color-card-subtitle">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.</div>
                 <div class="row-tint-slider">
                     <input type="range" id="rowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
                     <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
@@ -26390,14 +26404,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cd.lcTimer) { cdLcStop(); return; }
             if (!cdReady()) { showToast('Choose a connected device first'); return; }
             const b = document.getElementById('cdLcPlay');
-            b.innerText = 'Pause'; b.style.color = '#FFA726';
+            b.innerText = 'Stop'; b.classList.add('is-playing'); b.setAttribute('aria-pressed', 'true');
             cdLcFetch(false);
             cd.lcTimer = setInterval(() => { if (!document.hidden) cdLcFetch(true); }, 2500);
         }
         function cdLcStop() {
             if (cd.lcTimer) { clearInterval(cd.lcTimer); cd.lcTimer = null; }
             const b = document.getElementById('cdLcPlay');
-            if (b) { b.innerText = 'Play'; b.style.color = '#4ADE80'; }
+            if (b) { b.innerText = 'Play'; b.classList.remove('is-playing'); b.setAttribute('aria-pressed', 'false'); }
         }
         async function cdLcClear() {
             const out = await cdSh('logcat -c');

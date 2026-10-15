@@ -57,7 +57,7 @@ ok   Copy gives the whole session
 ok   the device log is read and drawn like the phone's own logcat
 ok   the level goes to the device as a logcat filter
 ok   the filter box narrows the rows and marks the match
-ok   Play follows the log and the button says Pause
+ok   Play follows the log and the button says Stop
 ok   leaving the Logcat sub-tab stops following
 ok   Clear empties the device's log buffer
 ok   the device's storage opens with folders first
