@@ -553,6 +553,14 @@ Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); t
 - [ ] Without consent, or in Read-Only mode: AppCleaner does not switch anything on by itself and shows the old "turn it on" message.
 - [ ] SD Maid tab > Exclusions (AppCleaner): this app (`com.bloatware.bingblop`) and the WebView packages (`com.google.android.webview`, its `.beta`, `.dev` and `.canary` variants, and `com.android.webview`) are listed as stock exclusions and come back with Restore default exclusions. Turn **Force-stop before clearing** on and clean all apps: this app and Android System WebView are not force-stopped and the cleaning is not cut short; they stay in the result as excluded, not failed.
 
+## 31. Wireless Debugging: the port changed
+
+Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-Fi it uses switched on. None of this has been run on a phone yet.
+
+- [ ] **The saved port goes stale, the app finds the new one.** In Working Modes connect **Wireless Debugging** until the card says connected. Open Android's Developer options, switch **Wireless debugging** off and on again (the port changes every time). Back in the app, in Working Modes tap **Wireless Debugging** to select it again, or open a tab that needs a privileged mode (for example Installer). Expected: within a few seconds the mode is ready again with no new pairing, the card shows the new port, and the connect message reads "Wireless Debugging moved from port ... to ...; connected to ... and saved the new port." Force-stop the app and open it again: it still uses the new port.
+- [ ] **Nothing else changes.** Type a wrong port by hand in the Wireless Debugging card and tap **Connect**: it fails as before and does not jump to another port (a typed port is never replaced). Turn Wireless debugging off completely and select the mode: it says it is not connected; no error loop, no crash.
+- [ ] **A second phone is never picked.** If another phone with Wireless debugging on is on the same Wi-Fi, the app still only reconnects to the address it was saved with (or this phone's own Wi-Fi address when it was saved as 127.0.0.1).
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
