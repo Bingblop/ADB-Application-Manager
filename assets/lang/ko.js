@@ -2442,7 +2442,6 @@ x: {
 "Package file": "패키지 파일",
 "Package installer (Android)": "패키지 설치 관리자 (Android)",
 "Package installer (Google)": "패키지 설치 관리자 (Google)",
-"Package list": "패키지 목록",
 "Package source": "패키지 출처",
 "Packages": "패키지",
 "Packing": "압축 방식",
@@ -4879,7 +4878,10 @@ x: {
 "Self-test": "자가 테스트",
 "The self-test could not run.": "자가 테스트를 실행할 수 없습니다.",
 "The self-test is already running.": "자가 테스트가 이미 실행 중입니다.",
-"The self-test needs the app build.": "자가 테스트에는 앱 빌드가 필요합니다."
+"The self-test needs the app build.": "자가 테스트에는 앱 빌드가 필요합니다.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "모든 앱의 캐시 파일을 삭제하도록 Android에 요청합니다. 설정 > 모든 앱의 캐시 정리와 같습니다. 앱, 앱 데이터, 로그인 정보와 사용자 파일은 그대로 남습니다. RAM이 아니라 저장공간을 확보하며 1분 정도 걸릴 수 있습니다. 결과는 별도 시트에서 열립니다.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android의 배터리 세이버를 켭니다. 설정 > 배터리에 있는 것과 같은 스위치입니다. 화면이 어두워지고 백그라운드 작업, 동기화, 위치가 제한되며 애니메이션이 줄어듭니다. 휴대전화에 배터리 세이버 아이콘이 표시됩니다.",
+"No patch could be applied": "패치를 하나도 적용하지 못했습니다"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],

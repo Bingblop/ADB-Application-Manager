@@ -2442,7 +2442,6 @@ x: {
 "Package file": "Paketdatei",
 "Package installer (Android)": "Paketinstaller (Android)",
 "Package installer (Google)": "Paketinstaller (Google)",
-"Package list": "Paketliste",
 "Package source": "Paketquelle",
 "Packages": "Pakete",
 "Packing": "Komprimierung",
@@ -4879,7 +4878,10 @@ x: {
 "Self-test": "Selbsttest",
 "The self-test could not run.": "Der Selbsttest konnte nicht ausgeführt werden.",
 "The self-test is already running.": "Der Selbsttest läuft bereits.",
-"The self-test needs the app build.": "Der Selbsttest erfordert den App-Build."
+"The self-test needs the app build.": "Der Selbsttest erfordert den App-Build.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Bittet Android, die Cache-Dateien aller Apps zu löschen, wie Einstellungen > Caches in allen Apps bereinigen. Apps, ihre Daten, Anmeldungen und deine Dateien bleiben. Es gibt Speicherplatz frei, nicht direkt RAM, und kann eine Minute dauern; das Ergebnis öffnet sich in einem eigenen Blatt.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Schaltet den Energiesparmodus von Android ein, derselbe Schalter wie unter Einstellungen > Akku: Der Bildschirm wird dunkler, Hintergrundarbeit, Synchronisierung und Standort werden eingeschränkt und Animationen verkürzt. Das Telefon zeigt sein Energiespar-Symbol.",
+"No patch could be applied": "Kein Patch konnte angewendet werden"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],

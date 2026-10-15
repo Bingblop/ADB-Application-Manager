@@ -2442,7 +2442,6 @@ x: {
 "Package file": "Arquivo de pacote",
 "Package installer (Android)": "Instalador de pacotes (Android)",
 "Package installer (Google)": "Instalador de pacotes (Google)",
-"Package list": "Lista de pacotes",
 "Package source": "Origem do pacote",
 "Packages": "Pacotes",
 "Packing": "Compactação",
@@ -4879,7 +4878,10 @@ x: {
 "Self-test": "Autoteste",
 "The self-test could not run.": "Não foi possível executar o autoteste.",
 "The self-test is already running.": "O autoteste já está em execução.",
-"The self-test needs the app build.": "O autoteste está disponível apenas no app."
+"The self-test needs the app build.": "O autoteste está disponível apenas no app.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Pede ao Android que apague os arquivos de cache de todos os apps, o mesmo que Configurações > Limpar caches de todos os aplicativos. Os apps, seus dados, logins e seus arquivos ficam. Libera armazenamento, não RAM diretamente, e pode levar um minuto; o resultado abre em uma folha própria.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Liga a economia de bateria do Android, a mesma chave de Configurações > Bateria: a tela escurece, o trabalho em segundo plano, a sincronização e a localização ficam limitados e as animações encurtam. O telefone mostra o ícone de economia de bateria.",
+"No patch could be applied": "Nenhum patch pôde ser aplicado"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» não é um número de segundos."],

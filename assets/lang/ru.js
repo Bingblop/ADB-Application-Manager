@@ -2442,7 +2442,6 @@ x: {
 "Package file": "Файл пакета",
 "Package installer (Android)": "Установщик пакетов (Android)",
 "Package installer (Google)": "Установщик пакетов (Google)",
-"Package list": "Список пакетов",
 "Package source": "Источник пакета",
 "Packages": "Пакеты",
 "Packing": "Сжатие",
@@ -4879,7 +4878,10 @@ x: {
 "Self-test": "Самопроверка",
 "The self-test could not run.": "Не удалось выполнить самопроверку.",
 "The self-test is already running.": "Самопроверка уже выполняется.",
-"The self-test needs the app build.": "Самопроверка работает только в приложении."
+"The self-test needs the app build.": "Самопроверка работает только в приложении.",
+"Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Просит Android удалить файлы кэша всех приложений — то же, что «Настройки > Очистка кэшей во всех приложениях». Приложения, их данные, входы в аккаунты и ваши файлы остаются. Освобождает место в хранилище, а не ОЗУ напрямую, и может занять минуту; результат откроется на отдельной панели.",
+"Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Включает энергосбережение Android — тот же переключатель, что в «Настройки > Батарея»: экран тускнеет, фоновая работа, синхронизация и геолокация ограничиваются, анимации сокращаются. Телефон показывает значок энергосбережения.",
+"No patch could be applied": "Не удалось применить ни один патч"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],

@@ -33717,7 +33717,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function deleteBackupUI(ref) {
             haptic();
             const rec = backupList().find(r => r.ref === ref);
-            if (!confirm('Delete “' + (rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref) + '”?')) return;
+            const what = rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref;          // one name: the question is the 'Delete “{0}”?' of the dictionaries
+            if (!confirm('Delete “' + what + '”?')) return;
             const err = window.AndroidBridge.deleteBackup(ref);
             if (err) showToast(err);
             renderBackups();
