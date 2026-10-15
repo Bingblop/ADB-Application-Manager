@@ -22,13 +22,15 @@ final class InstallerStage<E> {
         final List<E> extras;
         final File zip;
         final String sourceName;
+        final String sourceRef;                 // the file the package was read from: the only one "delete after install" may remove
 
-        Snapshot(long gen, File dir, List<E> extras, File zip, String sourceName) {
+        Snapshot(long gen, File dir, List<E> extras, File zip, String sourceName, String sourceRef) {
             this.gen = gen;
             this.dir = dir;
             this.extras = extras;
             this.zip = zip;
             this.sourceName = sourceName;
+            this.sourceRef = sourceRef;
         }
     }
 
@@ -38,6 +40,7 @@ final class InstallerStage<E> {
     private List<E> extras = Collections.emptyList();
     private File zip = null;
     private String sourceName = "";
+    private String sourceRef = "";
     private final List<File> busy = new ArrayList<File>();     // folders of installs that are running (one entry per install)
 
     /** @param root the installer cache folder, in canonical form (the folders handed out are compared with the canonical parents of files) */
@@ -50,6 +53,12 @@ final class InstallerStage<E> {
      * running install uses (older packages, and leftovers from an earlier run). The caller deletes those and then creates the folder.
      */
     synchronized File beginRead(String name, List<File> toDelete) {
+        return beginRead(name, "", toDelete);
+    }
+
+    /** {@link #beginRead(String, List)}, remembering the file ({@code ref}) the package is read from. */
+    synchronized File beginRead(String name, String ref, List<File> toDelete) {
+        sourceRef = ref == null ? "" : ref;
         gen++;
         dir = new File(root, "p" + gen);
         extras = Collections.emptyList();
@@ -79,7 +88,7 @@ final class InstallerStage<E> {
     synchronized Snapshot<E> beginInstall(File filesDir) {
         if (dir == null || filesDir == null || !dir.equals(filesDir)) return null;
         busy.add(dir);
-        return new Snapshot<E>(gen, dir, extras, zip, sourceName);
+        return new Snapshot<E>(gen, dir, extras, zip, sourceName, sourceRef);
     }
 
     /**

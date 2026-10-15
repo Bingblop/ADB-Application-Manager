@@ -4022,7 +4022,7 @@ public class MainActivity extends Activity {
         // A folder of its own: an install still running from the package read before keeps its files (and its own OBB data, see runInstallSelected).
         InstallerStage<XapkInfo.Extra> stage = installStage();
         List<File> stale = new ArrayList<File>();
-        File work = stage.beginRead(sourceNameOf(ref), stale);
+        File work = stage.beginRead(sourceNameOf(ref), ref, stale);
         final long gen = stage.generation();
         for (File f : stale) deleteRecursively(f);
         work.mkdirs();
@@ -4890,12 +4890,14 @@ public class MainActivity extends Activity {
                 }
             }
             if (success && opts.optBoolean("autoDelete", false)) {
-                String ref = opts.optString("sourceRef");
+                // The file this install was read from, as the Installer recorded it: not a path the page names (which could be any file,
+                // the app's own data among them), and never the app's private data.
+                String ref = snap == null || snap.sourceRef == null ? "" : snap.sourceRef;
                 boolean deleted = false;
                 try {
                     if (ref.startsWith("content://")) {
                         deleted = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
-                    } else if (!ref.isEmpty()) {
+                    } else if (!ref.isEmpty() && !isPrivateData(new File(ref))) {
                         deleted = new File(ref).delete();
                     }
                 } catch (Exception ignored) {}
