@@ -566,6 +566,17 @@ None of this has been run on a phone yet. Open the working-mode badge at the top
 - [ ] **Android below 11, or a phone that hides the switch.** If you have such a phone: the Wireless Debugging switch row is INFO, not a false CHECK.
 - [ ] **Another language** (Settings > Language): the card, its rows and its buttons are translated, the addresses and ports are not, no text is cut off, in light and in dark.
 
+## 33. Turn on Wireless Debugging (Connection Check)
+
+None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, with a working mode connected (ADB TCP or Shizuku) or the secure-settings permission granted.
+
+- [ ] **The button.** In Developer options switch Wireless debugging off, open Working Modes and tap **Check again**: the switch row says CHECK, "Switched off. The button turns it on...", with **Turn on Wireless Debugging**. Tap it: the toast says it is on and to use Auto-Detect Ports, the row turns OK, and Developer options shows Wireless debugging switched on. Write down whether Android asked anything.
+- [ ] **A new port.** Tap **Auto-Detect Ports**, then connect: the connection works on the port Android chose this time.
+- [ ] **No Wi-Fi.** Turn Wi-Fi off, switch Wireless debugging off again and try the button: the toast says to connect to Wi-Fi first and the switch stays off.
+- [ ] **No way to write.** In Read-Only mode with no secure-settings permission the row still offers **Open Developer Options**, not the new button.
+- [ ] **Leaving the Wi-Fi.** With it on, leave the Wi-Fi network: Android switches Wireless debugging off again, and **Check again** shows CHECK.
+- [ ] **Another language:** the row, the button and the toasts are translated and nothing is cut off.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

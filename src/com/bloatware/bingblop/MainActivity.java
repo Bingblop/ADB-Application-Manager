@@ -8141,6 +8141,40 @@ public class MainActivity extends Activity {
             return o.toString();
         }
 
+        /**
+         * Turns the Wireless debugging switch on or off (Settings.Global adb_wifi_enabled, Android 11 or newer). Only ever called from a button the user
+         * pressed: nothing in the app switches it by itself. Uses WRITE_SECURE_SETTINGS when this app holds it, else a privileged shell
+         * (ADB, Shizuku or root). The answer comes from reading the setting back, not from the command's text:
+         * "on" / "off" (the state now), "unsupported" (Android 10 or older, or the phone does not say), "no_wifi" (turning on without Wi-Fi:
+         * Android switches it straight off again), "no_access" (nothing to write with) or "failed" (the setting did not change).
+         */
+        @JavascriptInterface
+        public String setWirelessDebugging(boolean enable) {
+            if (Build.VERSION.SDK_INT < 30 || readGlobalInt("adb_wifi_enabled") < 0) return "unsupported";
+            int want = enable ? 1 : 0;
+            if (readGlobalInt("adb_wifi_enabled") == want) return enable ? "on" : "off";
+            if (enable && deviceWifiIp().isEmpty()) return "no_wifi";
+            boolean wrote = false;
+            if (hasWriteSecureSettingsAccess()) {
+                try {
+                    wrote = android.provider.Settings.Global.putInt(getContentResolver(), "adb_wifi_enabled", want);
+                } catch (Exception ignored) {}
+            }
+            if (!wrote && !"standard".equals(resolveExecMode())) {
+                executeShell("settings put global adb_wifi_enabled " + want);
+                wrote = true;
+            }
+            if (!wrote) return "no_access";
+            int now = readGlobalInt("adb_wifi_enabled");
+            for (int i = 0; i < 6 && now != want; i++) { // give the phone a moment to apply it
+                try { Thread.sleep(250); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                now = readGlobalInt("adb_wifi_enabled");
+            }
+            if (now != want) return "failed";
+            invalidateModeCache();
+            return now == 1 ? "on" : "off";
+        }
+
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */
         @JavascriptInterface
         public String getWorkingMode() {
