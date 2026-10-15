@@ -23,6 +23,28 @@ public class FileOpsTest {
   static String rep(char c, int n) { char[] a = new char[n]; Arrays.fill(a, c); return new String(a); }
   static List<String> names(File d) { String[] a = d.list(); List<String> r = a == null ? new ArrayList<String>() : new ArrayList<String>(Arrays.asList(a)); Collections.sort(r); return r; }
 
+  static File srcDir() {
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    for (int i = 0; d != null && i < 8; i++, d = d.getParentFile()) {
+      File f = new File(d, "src/com/bloatware/bingblop");
+      if (f.isDirectory()) return f;
+    }
+    return null;
+  }
+
+  /** The body of the method declared by {@code sig}, braces matched; null when it is not there. */
+  static String bodyOf(String src, String sig) {
+    int i = src.indexOf(sig);
+    if (i < 0) return null;
+    int open = src.indexOf('{', src.indexOf(')', i)), depth = 0;
+    for (int j = open; j >= 0 && j < src.length(); j++) {
+      char c = src.charAt(j);
+      if (c == '{') depth++;
+      else if (c == '}' && --depth == 0) return src.substring(open, j + 1);
+    }
+    return null;
+  }
+
   public static void main(String[] args) throws Exception {
     // ---------- free names ----------
     File d = tmp("fo-names");
@@ -314,6 +336,29 @@ public class FileOpsTest {
     check("and edited in place (" + why + ")", why == null && ArchiveIo.list(new File(ln, a252 + ".tar"), null).items.size() == 2);
     check("no temporary file is left: " + names(ln), names(ln).equals(new ArrayList<String>(new java.util.TreeSet<String>(Arrays.asList("long.zip", "out", "src.txt", a252 + ".tar", a252 + ".zip")))));
     rm(ln);
+
+    // SDM-4, a source scan of MainActivity (the batch routes need Android classes): an item a move skips because the name is taken stays where it is,
+    // so it is reported in "kept" and the page keeps it on the move clipboard; every skip of the batch routes (also into a plain folder from added
+    // storage) does so
+    File sdir = srcDir();
+    if (sdir == null) System.out.println("SKIP the batch source scan: src/com/bloatware/bingblop not found");
+    else {
+      String m = new String(Files.readAllBytes(new File(sdir, "MainActivity.java").toPath()), StandardCharsets.UTF_8);
+      for (String sig : new String[] { "private void runSafBatch(", "public String fmBatch2(" }) {
+        String b = bodyOf(m, sig);
+        check(sig + " found", b != null);
+        if (b == null) continue;
+        int at = 0, skips = 0;
+        while ((at = b.indexOf("skipped++;", at)) >= 0) {
+          skips++;
+          int end = b.indexOf('}', at);
+          String rest = end < 0 ? "" : b.substring(at, end);
+          check(sig + " skip #" + skips + " puts the item into kept: " + rest.replaceAll("\\s+", " "), rest.contains("kept.put(q);"));
+          at += 10;
+        }
+        check(sig + " has skips to look at", skips > 0);
+      }
+    }
 
     for (File f : new File[]{src, dst, cdst, tc, msrc, mdst, ddir, outside, w, sd, ss}) rm(f);
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");

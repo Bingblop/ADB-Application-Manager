@@ -14204,7 +14204,7 @@ public class MainActivity extends Activity {
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
                                 // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
                                 if (FileOps.exists(new File(dest, name))) {
-                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }   // left where it is: it stays on the move clipboard
                                     if ("keep".equals(policyName)) asName = FileOps.uniqueName(new File(dest), name);
                                 }
                             }
