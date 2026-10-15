@@ -2779,7 +2779,7 @@
         }
 
         /* file manager: select several, then copy / move / delete together */
-        .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-3h); margin-bottom: var(--space-3); border: 1px solid var(--accent); border-radius: var(--radius-md); background: var(--fill-2); position: sticky; top: 0; z-index: 4; backdrop-filter: blur(6px); }
+        .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-3h); margin-bottom: var(--space-3); border: 1px solid var(--accent); border-radius: var(--radius-md); background: var(--fill-2); position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 4; backdrop-filter: blur(6px); }          /* below the sticky header and tab bar, as the other sticky bars */
         .fm-selbar .fm-count { font-size: var(--fs-body); font-weight:var(--fw-heavy); margin-right: auto; }
         #fmList .fm-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-inline-end: var(--space-3h); border: 2px solid var(--text-muted); border-radius: var(--radius-xs); align-items: center; justify-content: center; font-size: var(--fs-item); font-weight:var(--fw-black); color: transparent; }
         #fmList.fm-selecting .fm-chk { display: flex; }
