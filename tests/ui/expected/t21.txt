@@ -1,4 +1,4 @@
-menu has Backup button: true
+menu has no Backup button (creating a backup is not offered from the menu): true
 modal open: true | inspector closed: true
 target: Back up Samsung Internet com.sec.android.app.sbrowser • v26.0 Include app data Uses Root. The app is stopped while its d
 data checkbox enabled with root: true
