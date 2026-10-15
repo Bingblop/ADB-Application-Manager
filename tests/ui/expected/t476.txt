@@ -10,4 +10,5 @@ ok   light, subtle: its text keeps at least 4.5:1 where the tint is strongest
 ok   light, normal: every row is tinted in its level dot's colour
 ok   light, normal: its text keeps at least 4.5:1 where the tint is strongest
 ok   light: Off draws no tint, Normal more than Subtle
+ok   Settings > Row tints says it tints Live Logcat too
 errors: []

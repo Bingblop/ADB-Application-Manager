@@ -44,6 +44,7 @@ const LOG = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + i + '
     }
     check(theme + ': Off draws no tint, Normal more than Subtle', ops.off === 0 && ops.normal > ops.subtle && ops.subtle > 0, JSON.stringify(ops));
   }
+  check('Settings > Row tints says it tints Live Logcat too', await ev(() => /Live Logcat/.test(document.querySelector('#rowTintCard .color-card-subtitle').textContent)));
   await ev(() => logcatStop());
   console.log('errors:', JSON.stringify(errors));
   if (errors.length) bad++;
