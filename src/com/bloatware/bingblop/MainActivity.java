@@ -9762,7 +9762,9 @@ public class MainActivity extends Activity {
                     o.put("isSystem", true);
                     o.put("isRunning", false);
                     o.put("isFrozen", true);
-                    o.put("isSuspended", false);
+                    // the user's own flag: Android keeps a package's state per user after an uninstall for that user, and the app menu shows
+                    // Suspend or Unsuspend for an uninstalled app from this
+                    o.put("isSuspended", uninstalledSuspended(pm, pkg));
                     o.put("isUninstalled", true);
                     o.put("targetSdk", 0);
                     arr.put(o);
@@ -9771,6 +9773,16 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "[]";
             }
+        }
+
+        /** Whether a package uninstalled for the current user is suspended for that user (FLAG_SUSPENDED of its per-user
+         *  ApplicationInfo, which MATCH_UNINSTALLED_PACKAGES still returns); false when it cannot be read. */
+        private boolean uninstalledSuspended(PackageManager pm, String pkg) {
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                return (info.flags & ApplicationInfo.FLAG_SUSPENDED) != 0;
+            } catch (Exception ignored) {}
+            return false;
         }
 
         /** The real app name for a package that's uninstalled-for-this-user but still has a stub on this system
@@ -10061,7 +10073,9 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < rows.length(); i++) {
                     String pkg = rows.getJSONObject(i).optString("pkg", "");
                     Boolean sus = null;
-                    if (installed.contains(pkg) && BackupScripts.isPackageName(pkg)) {
+                    // read for an app uninstalled for the user too: its "User 0:" line (installed=false) still carries the flag, and the app menu
+                    // offers Suspend / Unsuspend for it. A package the phone does not know has no such line and stays unknown.
+                    if (BackupScripts.isPackageName(pkg)) {
                         try { sus = BatchVerify.suspendedFrom(executeShell("dumpsys package " + pkg)); } catch (Throwable ignored) {}
                     }
                     if (sus == null) unknown.add(pkg); else if (sus.booleanValue()) suspended.add(pkg);
