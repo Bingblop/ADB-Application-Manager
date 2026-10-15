@@ -37,6 +37,7 @@ public class SpeedTestTest {
   static final AtomicBoolean failPing = new AtomicBoolean(false), failDown = new AtomicBoolean(false);
   static final AtomicLong postBytes = new AtomicLong();
   static final AtomicInteger okHits = new AtomicInteger();
+  static final AtomicInteger failPingsLeft = new AtomicInteger(), pingHits = new AtomicInteger();
 
   static final class Events implements SpeedTest.Sink {
     final List<JSONObject> list = Collections.synchronizedList(new ArrayList<JSONObject>());
@@ -57,7 +58,8 @@ public class SpeedTestTest {
     srv.createContext("/__down", ex -> {
       String q = ex.getRequestURI().getQuery();
       long want = Long.parseLong(q.substring(q.indexOf('=') + 1));
-      if ((want == 0 && failPing.get()) || (want > 0 && failDown.get())) { ex.sendResponseHeaders(500, -1); ex.close(); return; }
+      if (want == 0) pingHits.incrementAndGet();
+      if ((want == 0 && (failPing.get() || failPingsLeft.getAndUpdate(k -> Math.max(0, k - 1)) > 0)) || (want > 0 && failDown.get())) { ex.sendResponseHeaders(500, -1); ex.close(); return; }
       ex.getResponseHeaders().add("colo", "TST");
       ex.sendResponseHeaders(200, want == 0 ? -1 : want);
       if (want > 0) {
@@ -182,6 +184,17 @@ public class SpeedTestTest {
       twice.shutdown();
       check("shutdown stops the running test", bEv.waitDone(5000) && bEv.done().optBoolean("stopped"));
       check("and refuses a new one", !new JSONObject(twice.start("{\"id\":\"c1\"}", pool, new Events())).optBoolean("ok"));
+
+      // ---------------------------------------------------------------- the first latency request fails: the warm-up is the first answer, not the first try
+      failPingsLeft.set(1); pingHits.set(0);
+      Events evWarm = new Events();
+      SpeedTest.Config cw = cfg(base);
+      new SpeedTest.Runner(cw).start("{\"id\":\"w1\"}", pool, evWarm);
+      boolean warmDone = evWarm.waitDone(15000);
+      JSONObject latW = evWarm.of("latency").isEmpty() ? new JSONObject() : evWarm.of("latency").get(0);
+      check("a failed first request: still " + cw.pings + " samples, after one failure and one warm-up (" + (cw.pings + 2) + " requests, got " + pingHits.get() + ")",
+          warmDone && latW.optInt("samples") == cw.pings && evWarm.of("ping").size() == cw.pings && pingHits.get() == cw.pings + 2);
+      failPingsLeft.set(0);
 
       // ---------------------------------------------------------------- failures in words
       failPing.set(true);

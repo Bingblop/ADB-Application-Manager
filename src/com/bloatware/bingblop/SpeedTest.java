@@ -231,7 +231,8 @@ public final class SpeedTest {
             emit(new JSONObject().put("type", "phase").put("phase", "latency"));
             List<Double> samples = new ArrayList<Double>();
             int failed = 0;
-            for (int i = 0; i <= cfg.pings; i++) {
+            boolean warmed = false;
+            while (samples.size() < cfg.pings) {                         // ends: every failure counts towards the limit below
                 check();
                 double ms;
                 try {
@@ -242,7 +243,7 @@ public final class SpeedTest {
                     if (failed > cfg.pings / 2) throw new TestError("no answer from the test server");
                     continue;
                 }
-                if (i == 0) continue;                                    // the warm-up: it also opened the connection
+                if (!warmed) { warmed = true; continue; }                // the warm-up (the first answer, not the first try): it also opened the connection
                 samples.add(ms);
                 double[] a = toArray(samples);
                 emit(new JSONObject().put("type", "ping").put("ms", SpeedMath.roundMs(ms)).put("n", samples.size()).put("of", cfg.pings)
@@ -260,16 +261,18 @@ public final class SpeedTest {
             long t0 = System.nanoTime();
             HttpURLConnection c = HttpSafe.open(cfg.base + "/__down?bytes=0", cfg.connectMs, cfg.readMs, null);
             open.add(c);
+            boolean clean = false;
             try {
                 long t1 = System.nanoTime();
                 int code = c.getResponseCode();
                 if (code != 200) throw new IOException("HTTP " + code);
                 noteColo(c);
                 drain(c.getInputStream(), -1);
+                clean = true;
                 return (t1 - t0) / 1e6;
             } finally {
                 open.remove(c);
-                if (stopped.get()) { try { c.disconnect(); } catch (Throwable ignored) {} }
+                if (!clean || stopped.get()) { try { c.disconnect(); } catch (Throwable ignored) {} }   // an error answer or a failed read: close the socket, it cannot be reused
             }
         }
 
@@ -371,7 +374,7 @@ public final class SpeedTest {
         private void downloadChunk(AtomicLong total, AtomicBoolean phaseStop, long cap) throws IOException {
             HttpURLConnection c = HttpSafe.open(cfg.base + "/__down?bytes=" + cfg.downChunk, cfg.connectMs, cfg.readMs, null);
             open.add(c);
-            boolean aborted = false;
+            boolean aborted = false, clean = false;
             try {
                 if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
                 noteColo(c);
@@ -386,9 +389,10 @@ public final class SpeedTest {
                 } finally {
                     if (!aborted) in.close();
                 }
+                clean = !aborted;
             } finally {
                 open.remove(c);
-                if (aborted) c.disconnect();                         // the rest of the chunk is not wanted: drop the connection instead of reading it
+                if (!clean) c.disconnect();                          // the rest of the chunk is not wanted, or the answer was an error: drop the connection instead of leaving it open
             }
         }
 
@@ -403,8 +407,7 @@ public final class SpeedTest {
                 @Override
                 public void opened(HttpURLConnection conn) {
                     held[0] = conn;
-                    open.add(conn);                                  // Stop can close it while it writes (a stalled write has no timeout of its own)
-                    if (stopped.get()) conn.disconnect();
+                    open.add(conn);                                  // Stop can close it while it writes (a stalled write has no timeout of its own); writeTo checks Stop before its first write
                 }
                 @Override
                 public void writeTo(OutputStream out) throws IOException {
@@ -419,15 +422,18 @@ public final class SpeedTest {
                 }
                 });
             } catch (IOException e) {
-                if (held[0] != null) open.remove(held[0]);
+                if (held[0] != null) { open.remove(held[0]); try { held[0].disconnect(); } catch (Throwable ignored) {} }
                 throw e;
             }
+            boolean clean = false;
             try {
                 if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
                 noteColo(c);
                 drain(c.getInputStream(), 64 * 1024);
+                clean = true;
             } finally {
                 open.remove(c);
+                if (!clean) { try { c.disconnect(); } catch (Throwable ignored) {} }   // an error answer or a failed read: close the socket instead of leaving it open
             }
         }
     }

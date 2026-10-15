@@ -12783,7 +12783,8 @@ public class MainActivity extends Activity {
 
                 int cores = Runtime.getRuntime().availableProcessors();
                 long[] curHz = new long[cores];
-                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s)
+                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s);
+                // a core whose limits could not be read (its whole cluster offline answers -EBUSY) is read again on later polls until it answers
                 long[] minHz = tmCpuMinHz, maxHz = tmCpuMaxHz;
                 boolean readLimits = minHz == null || maxHz == null || minHz.length != cores || maxHz.length != cores;
                 if (readLimits) { minHz = new long[cores]; maxHz = new long[cores]; }
@@ -12792,7 +12793,7 @@ public class MainActivity extends Activity {
                     String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
                     // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
                     // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
-                    if (readLimits) {
+                    if (readLimits || maxHz[i] <= 0) {
                         minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
                         maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
                     }
