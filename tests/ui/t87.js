@@ -52,7 +52,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // ---------------------------------------------------------------- opening the tab
   await page.evaluate(() => switchView('taskmgr')); await sleep(100);
   console.log('1. the tab is in the registry and opens to the Processes sub-tab:', (await page.evaluate(() => document.getElementById('view-taskmgr').classList.contains('active'))) && (await page.evaluate(() => document.querySelector('#tmTabs .sdb-tab.active').dataset.sub)) === 'processes');
-  console.log('   opening it starts the native poll at the default interval (3s) with no gate (privileged):', (await page.evaluate(() => window.__calls.tmStart.slice(-1)[0])) === 3000 && (await disp('#tmGate')) === 'none');
+  console.log('   opening it starts the native poll at the default interval (1s since v7.14) with no gate (privileged):', (await page.evaluate(() => window.__calls.tmStart.slice(-1)[0])) === 1000 && (await disp('#tmGate')) === 'none');
 
   await page.evaluate((s) => window.onTaskMgrData(s), sample); await sleep(50);
 
@@ -97,14 +97,14 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---------------------------------------------------------------- GPU renderer switch (debug.hwui.renderer)
   const optionValues = () => page.evaluate(() => [...document.querySelectorAll('#tmRendererSelect option')].map(o => o.value));
-  console.log('12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan:', JSON.stringify(await optionValues()) === JSON.stringify(['', 'skiagl', 'skiavk']) && !(await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)));
+  console.log('12. switching to GPU loads the renderer dropdown: Default plus both backends (this sample supports Vulkan) and ANGLE:', JSON.stringify(await optionValues()) === JSON.stringify(['', 'skiagl', 'skiavk', 'angle']) && !(await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)));
   let before = await page.evaluate(() => window.__calls.executeShell.length);
   // v7.10.9: the renderer is the first thing in the GPU tab, as a card that says which one is in use
   console.log('    the renderer card is the first thing in the GPU tab, above the graph:', await page.evaluate(() => { const p = document.getElementById('tmGpuPanel'); return p.firstElementChild.id === 'tmRendererCard' && p.firstElementChild.getBoundingClientRect().bottom <= document.getElementById('tmGpuCanvas').getBoundingClientRect().top + 1; }));
   console.log('    it names the renderer in use in large letters (Default until one is set):', (await text('#tmRendererNow')) === 'Default');
   await page.selectOption('#tmRendererSelect', 'skiavk'); await sleep(30);
   console.log('    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call):', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiavk', 'am crash com.android.systemui']));
-  console.log('    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set):', (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiavk' && JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'skiavk']));
+  console.log('    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set):', (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiavk' && JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'skiavk', 'angle']));
   before = await page.evaluate(() => window.__calls.executeShell.length);
   await page.selectOption('#tmRendererSelect', 'skiagl'); await sleep(30);
   console.log('    picking OpenGL does the same with skiagl:', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiagl', 'am crash com.android.systemui']) && (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiagl');
@@ -122,7 +122,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   await page.evaluate((s) => window.onTaskMgrData(Object.assign({}, s, { gpu: Object.assign({}, s.gpu, { vulkanSupported: false }) })), sample); await sleep(20);
   await page.evaluate(() => tmLoadRenderer()); await sleep(30);
-  console.log('    a device without Vulkan hardware support is never offered the Vulkan option:', JSON.stringify(await optionValues()) === JSON.stringify(['skiagl']));
+  console.log('    a device without Vulkan hardware support is never offered the Vulkan option:', JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'angle']));
   await page.evaluate((s) => window.onTaskMgrData(s), sample); await sleep(20);
 
   // ---------------------------------------------------------------- Battery: units, and the units row only shows on this sub-tab

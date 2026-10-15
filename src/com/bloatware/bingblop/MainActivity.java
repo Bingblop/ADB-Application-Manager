@@ -5167,6 +5167,16 @@ public class MainActivity extends Activity {
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
+    // a tick that is still running makes the next one (a scheduled one or "Refresh now") a no-op instead of a second shell round trip queued behind it
+    private final java.util.concurrent.atomic.AtomicBoolean tmTickBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // the thread count reads every process's status file: it is taken at most once every TM_THREADS_EVERY_MS and the last count is shown in between
+    private static final long TM_THREADS_EVERY_MS = 3000;
+    private long tmThreadsAt;
+    private long tmThreadsLast = -1;
+    // what does not change while the app runs is read once: the GPU facts, each core's min / max clock, which thermal zone is the CPU's
+    private volatile JSONObject tmGpuInfoCache;
+    private volatile long[] tmCpuMinHz, tmCpuMaxHz;
+    private volatile String tmThermalPath;              // "" when no zone was readable
     private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
             TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
             TM_M10 = "@@TM10-THREADS@@";
@@ -12137,7 +12147,7 @@ public class MainActivity extends Activity {
         /** Starts (or restarts, at a new period) the native poll. Each tick runs {@link #tmTick()} on the shared executor. */
         @JavascriptInterface
         public String tmStart(int intervalMs) {
-            if (intervalMs < 1000) intervalMs = 1000;
+            if (intervalMs < 500) intervalMs = 500;            // the page's fastest choice; the fixed delay below keeps ticks from piling up even then
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
                 if (tmClosed) return "closed";
@@ -12181,12 +12191,24 @@ public class MainActivity extends Activity {
          *  missing piece never corrupts another), plus a synchronous battery read (no shell, no permission needed).
          *  Pushes window.onTaskMgrData(json); never throws (a failure is reported in the JSON, not as a crash). */
         private void tmTick() {
+            if (!tmTickBusy.compareAndSet(false, true)) return;          // the previous one is still running: skip, do not queue
+            try {
+                tmTickOnce();
+            } finally {
+                tmTickBusy.set(false);
+            }
+        }
+
+        private void tmTickOnce() {
             JSONObject res = new JSONObject();
             try {
                 res.put("ts", System.currentTimeMillis());
                 boolean havePriv = !"standard".equals(resolveExecMode());
                 res.put("privileged", havePriv);
                 String blob = null;
+                long tickAt = System.currentTimeMillis();
+                boolean wantThreads;
+                synchronized (tmLock) { wantThreads = tmThreadsLast < 0 || tickAt - tmThreadsAt >= TM_THREADS_EVERY_MS; }
                 if (havePriv) {
                     try {
                         blob = executeShell(
@@ -12199,7 +12221,7 @@ public class MainActivity extends Activity {
                                         + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
                                         + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
                                         + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; echo " + TM_M10);
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TM_M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
@@ -12308,7 +12330,12 @@ public class MainActivity extends Activity {
                 cpuJson.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
                 if (havePriv) {
                     cpuJson.put("processes", ps.procs.size());
-                    cpuJson.put("threads", ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""));
+                    long threads;
+                    synchronized (tmLock) {
+                        if (wantThreads) { tmThreadsLast = ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""); tmThreadsAt = tickAt; }
+                        threads = tmThreadsLast;
+                    }
+                    if (threads >= 0) cpuJson.put("threads", threads);
                 }
 
                 // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
@@ -12325,7 +12352,9 @@ public class MainActivity extends Activity {
                 if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
                 gpuJson.put("approx", gpu.approx != null && gpu.approx);
                 gpuJson.put("label", GpuStats.label(gpu));
-                mergeInto(gpuJson, gpuInfoJson());
+                JSONObject gpuInfo = tmGpuInfoCache;
+                if (gpuInfo == null) { gpuInfo = gpuInfoJson(); tmGpuInfoCache = gpuInfo; }
+                mergeInto(gpuJson, gpuInfo);
                 res.put("gpu", gpuJson);
 
                 // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
@@ -12441,17 +12470,24 @@ public class MainActivity extends Activity {
                 if (tempC != null) o.put("tempC", tempC.doubleValue());
 
                 int cores = Runtime.getRuntime().availableProcessors();
-                long[] minHz = new long[cores], curHz = new long[cores], maxHz = new long[cores];
+                long[] curHz = new long[cores];
+                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s)
+                long[] minHz = tmCpuMinHz, maxHz = tmCpuMaxHz;
+                boolean readLimits = minHz == null || maxHz == null || minHz.length != cores || maxHz.length != cores;
+                if (readLimits) { minHz = new long[cores]; maxHz = new long[cores]; }
                 boolean anyFreq = false;
                 for (int i = 0; i < cores; i++) {
                     String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
                     // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
                     // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
-                    minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                    if (readLimits) {
+                        minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                        maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
+                    }
                     curHz[i] = 1000L * parseLongOr(readWorldReadable(base + "scaling_cur_freq"), 0);
-                    maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
                     if (maxHz[i] > 0) anyFreq = true;
                 }
+                if (readLimits) { tmCpuMinHz = minHz; tmCpuMaxHz = maxHz; }
                 if (anyFreq) {
                     JSONArray clusters = new JSONArray();
                     for (CpuStats.Cluster c : CpuStats.groupClusters(minHz, curHz, maxHz)) {
@@ -12474,17 +12510,25 @@ public class MainActivity extends Activity {
          *  of a degree on some) are not standardized across devices. */
         private Double cpuThermalC() {
             try {
+                // which zone is the CPU's does not change: it is looked for once (a phone can have 80+ zones, two files each), then only its temp is read
+                String known = tmThermalPath;
+                if (known != null) {
+                    if (known.isEmpty()) return null;
+                    String raw = readWorldReadable(known).trim();
+                    return raw.isEmpty() ? null : millidegreesToC(raw);
+                }
                 File[] zones = new File("/sys/class/thermal").listFiles();
-                if (zones == null) return null;
-                String fallback = null;
+                if (zones == null) { tmThermalPath = ""; return null; }
+                String fallback = null, fallbackPath = null;
                 for (File z : zones) {
                     if (!z.getName().startsWith("thermal_zone")) continue;
                     String raw = readWorldReadable(z.getPath() + "/temp").trim();
                     if (raw.isEmpty()) continue;
-                    if (fallback == null) fallback = raw;
+                    if (fallback == null) { fallback = raw; fallbackPath = z.getPath() + "/temp"; }
                     String type = readWorldReadable(z.getPath() + "/type").trim();
-                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) return millidegreesToC(raw);
+                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) { tmThermalPath = z.getPath() + "/temp"; return millidegreesToC(raw); }
                 }
+                tmThermalPath = fallbackPath == null ? "" : fallbackPath;
                 return fallback == null ? null : millidegreesToC(fallback);
             } catch (Throwable t) {
                 return null;

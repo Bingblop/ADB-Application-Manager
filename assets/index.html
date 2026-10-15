@@ -5109,6 +5109,8 @@
                 .tm-renderer-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3h); }
                 .tm-renderer-head span { font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; }
                 .tm-renderer-head b { font-size: 22px; font-weight:var(--fw-black); color: var(--text-main); }
+                .tm-angle-lock { flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--ctl-h); padding: 0 var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: var(--fill-2); color: var(--text-muted); font: inherit; font-size: var(--fs-pill); font-weight: var(--fw-bold); cursor: pointer; }
+                .tm-angle-lock:active { background: var(--fill-3); }
                 .tm-info-title { font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; margin: var(--space-5) 0 var(--space-2); }
                 .tm-cluster { padding: var(--space-3) var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); margin-top: var(--space-3); }
                 .tm-cluster-head { font-size: var(--fs-pill); font-weight:var(--fw-bold); color: var(--text-muted); margin-bottom: var(--space-2); }
@@ -5141,15 +5143,15 @@
                         <span>Auto-refresh</span>
                         <select class="op-select" id="tmAutoRefresh" onchange="tmAutoRefreshChange()" aria-label="Auto-refresh">
                             <option value="0">Off</option>
-                            <option value="1">1 s</option><option value="2">2 s</option><option value="3" selected>3 s</option>
+                            <option value="0.5">0.5 s</option><option value="1" selected>1 s</option><option value="2">2 s</option><option value="3">3 s</option>
                             <option value="5">5 s</option><option value="10">10 s</option>
                         </select>
                         <button class="batch-tool-link" onclick="tmRefreshNow()">Refresh now</button>
                     </div>
                     <div class="tm-settings-row ovl-slider" style="margin:0;">
                         <b style="flex:0 0 104px; color:var(--text-muted); font-weight:700; font-size:11px;">Graph speed</b>
-                        <input type="range" id="tmGraphDelay" min="150" max="1000" step="10" value="300" oninput="tmGraphDelayInput()" aria-label="Graph speed">
-                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">300 ms</span>
+                        <input type="range" id="tmGraphDelay" min="50" max="1000" step="10" value="150" oninput="tmGraphDelayInput()" aria-label="Graph speed">
+                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">150 ms</span>
                     </div>
                     <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
                         <span>Units</span>
@@ -5195,6 +5197,7 @@
                             <select class="op-select" id="tmRendererSelect" onchange="tmSetRenderer()" aria-label="Renderer" disabled>
                                 <option value="">—</option>
                             </select>
+                            <button type="button" class="tm-angle-lock" id="tmAngleLock" onclick="tmAngleExplain()" style="display:none;"><span id="tmAngleLockIc" aria-hidden="true"></span><span>ANGLE needs Root</span></button>
                         </div>
                         <div class="switch-sub" id="tmRendererNote" style="margin-top:6px;">Switches the system's HWUI renderer and restarts System UI to apply it - a visible flicker of the status and navigation bars is normal.</div>
                     </div>
@@ -26816,17 +26819,30 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
         // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a
         // fresh sample (a shell round trip when privileged). Battery and, unprivileged, CPU/RAM/network still work -
-        // only the process list and GPU need a working mode. ----
+        // only the process list and GPU need a working mode.
+        // Speeds (v7.14): the graph redraws every 150 ms by default (50 ms at the fastest) and the poll runs every second (0.5 s at the
+        // fastest). Nothing faster is offered: the poll is one shell round trip that lists every process, and the native side runs the
+        // next one only after the last has finished (a fixed delay), so a period shorter than the round trip itself would only run them
+        // back to back; the graph has nothing new to show between two samples beyond its scroll, which is already smooth at 50 ms
+        // (20 frames a second). A redraw is painted in an animation frame, at most one waiting at a time, and skipped when nothing on
+        // the canvas would change. ----
         let tmReady = false;
         let tmSub = 'processes';
-        let tmAutoMs = 3000;
-        let tmGraphMs = 300;
+        const TM_AUTO_CHOICES = [0, 500, 1000, 2000, 3000, 5000, 10000];
+        const TM_GRAPH_MIN = 50, TM_GRAPH_MAX = 1000;
+        let tmAutoMs = 1000;
+        let tmGraphMs = 150;
         let tmTempUnit = 'f';
         let tmCurrentUnit = 'ma';
         let tmSort = 'cpu';
         let tmAppsFirst = false;                // apps (processes that belong to an app) above system and kernel processes
         let tmRedrawTimer = null;
+        let tmRedrawFrame = 0;                  // the animation frame a redraw waits for (one at a time)
         let tmLastData = null;
+        let tmLastSampleAt = 0, tmSampleGap = 0;    // performance.now() of the last sample, and the gap before it (the scroll's pace)
+        let tmBufVersion = 0;                   // bumped by every sample: a redraw with the same version, scroll and size is skipped
+        const tmDrawn = {};                     // canvas id -> what it last showed
+        let tmColorCache = null, tmColorAt = 0;
         const TM_BUF_MAX = 120;
         const tmBuf = { cpu: [], ram: [], gpu: [], batt: [], net: [] };
         const TM_PANELS = { processes: 'tmProcessesPanel', cpu: 'tmCpuPanel', ram: 'tmRamPanel', gpu: 'tmGpuPanel', battery: 'tmBatteryPanel', network: 'tmNetworkPanel' };
@@ -26836,8 +26852,9 @@ Type any command above (e.g. pm list packages -d)</div>
             tmReady = true;
             const ui = kvGet('taskmgr_ui', {}) || {};
             if (Object.prototype.hasOwnProperty.call(TM_PANELS, ui.sub)) tmSub = ui.sub;
-            if ([0, 1000, 2000, 3000, 5000, 10000].includes(ui.autoMs)) tmAutoMs = ui.autoMs;
-            if (typeof ui.graphMs === 'number' && ui.graphMs >= 150 && ui.graphMs <= 1000) tmGraphMs = ui.graphMs;
+            // a value saved by an older version keeps working; only one that is now out of range is brought to the nearest allowed
+            if (typeof ui.autoMs === 'number' && isFinite(ui.autoMs)) tmAutoMs = tmSnapAuto(ui.autoMs);
+            if (typeof ui.graphMs === 'number' && isFinite(ui.graphMs)) tmGraphMs = Math.max(TM_GRAPH_MIN, Math.min(TM_GRAPH_MAX, Math.round(ui.graphMs)));
             if (ui.tempUnit === 'c' || ui.tempUnit === 'f') tmTempUnit = ui.tempUnit;
             if (ui.currentUnit === 'ua' || ui.currentUnit === 'ma') tmCurrentUnit = ui.currentUnit;
             if (ui.sort === 'mem' || ui.sort === 'cpu') tmSort = ui.sort;
@@ -26853,6 +26870,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', tmSort === 'mem');
             tmSyncAppsFirst();
             tmShowPanels();
+        }
+        // the auto-refresh choice nearest to a saved period (0 stays Off)
+        function tmSnapAuto(ms) {
+            if (!(ms > 0)) return 0;
+            let best = 1000;
+            TM_AUTO_CHOICES.forEach(c => { if (c > 0 && Math.abs(c - ms) < Math.abs(best - ms)) best = c; });
+            return best;
         }
         // a temperature in the unit chosen under Units (the Battery and CPU tabs share it)
         function tmFormatTemp(c) { return tmTempUnit === 'f' ? Math.round(c * 9 / 5 + 32) + '°F' : Math.round(c) + '°C'; }
@@ -26903,13 +26927,22 @@ Type any command above (e.g. pm list packages -d)</div>
             tmRenderCurrent();
             tmMaybeLoadRenderer();
             tmRedrawNow();
-            if (tmRedrawTimer) clearInterval(tmRedrawTimer);
-            tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs);
+            tmStartRedrawTimer();
             if (!window.AndroidBridge || !window.AndroidBridge.tmStart) return;
             if (tmAutoMs > 0) window.AndroidBridge.tmStart(tmAutoMs); else if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
         }
+        // the graph's clock: every tmGraphMs it asks for one redraw in the next animation frame; a frame still waiting is not asked for twice
+        function tmStartRedrawTimer() {
+            if (tmRedrawTimer) clearInterval(tmRedrawTimer);
+            tmRedrawTimer = setInterval(tmRequestRedraw, tmGraphMs);
+        }
+        function tmRequestRedraw() {
+            if (document.hidden || tmRedrawFrame) return;
+            tmRedrawFrame = requestAnimationFrame(function () { tmRedrawFrame = 0; if (currentViewName() === 'taskmgr') tmRedrawNow(); });
+        }
         function tmStop() {
             if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
+            if (tmRedrawFrame) { cancelAnimationFrame(tmRedrawFrame); tmRedrawFrame = 0; }
             if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
         }
         // the poll runs only while the tab is on screen: the app going to the background stops it, coming back starts it again
@@ -26921,7 +26954,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- settings controls ----
         function tmAutoRefreshChange() {
             const sel = document.getElementById('tmAutoRefresh');
-            tmAutoMs = (parseInt(sel.value, 10) || 0) * 1000;
+            tmAutoMs = tmSnapAuto((parseFloat(sel.value) || 0) * 1000);
             tmSaveUi();
             haptic();
             if (!window.AndroidBridge) return;
@@ -26934,10 +26967,10 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function tmGraphDelayInput() {
             const slider = document.getElementById('tmGraphDelay');
-            tmGraphMs = parseInt(slider.value, 10) || 300;
+            tmGraphMs = Math.max(TM_GRAPH_MIN, Math.min(TM_GRAPH_MAX, parseInt(slider.value, 10) || 150));
             const sliderVal = document.getElementById('tmGraphDelayVal'); if (sliderVal) sliderVal.innerText = tmGraphMs + ' ms';
             tmSaveUi();
-            if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs); }
+            if (tmRedrawTimer) tmStartRedrawTimer();
         }
         function tmSetSort(sort) {
             if (sort !== 'cpu' && sort !== 'mem') return;
@@ -26972,6 +27005,10 @@ Type any command above (e.g. pm list packages -d)</div>
         function onTaskMgrData(data) {
             tmLastData = data;
             if (!data || !data.ok) return;
+            const now = performance.now();
+            tmSampleGap = tmLastSampleAt ? now - tmLastSampleAt : 0;
+            tmLastSampleAt = now;
+            tmBufVersion++;
             tmPush(tmBuf.cpu, data.cpu ? data.cpu.overall : 0);
             const mem = data.mem;
             tmPush(tmBuf.ram, mem && mem.totalKb ? (100 * mem.usedKb / mem.totalKb) : 0);
@@ -26993,13 +27030,34 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---- a generic canvas line-graph, themed from the app's own CSS custom properties ----
-        function tmCssVar(name) { return (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80'; }
-        function tmDrawGraph(canvasId, buf, color, scaleMax) {
+        // The colours are read from the computed style at most once a second (getComputedStyle can force a style pass), and again
+        // right after the theme changes (applyTheme calls tmThemeChanged).
+        function tmCssVar(name) {
+            const now = performance.now();
+            if (!tmColorCache || now - tmColorAt > 1000) { tmColorCache = {}; tmColorAt = now; }
+            if (!(name in tmColorCache)) tmColorCache[name] = (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80';
+            return tmColorCache[name];
+        }
+        function tmThemeChanged() { try { tmColorCache = null; Object.keys(tmDrawn).forEach(k => delete tmDrawn[k]); } catch (e) {} }     // try: applyTheme may run before this part of the script has
+        // How far the graph has scrolled since the last sample, from 0 (just arrived, at the right edge) to 1 (one step to the left,
+        // where the next sample lands). The pace is the gap between the last two samples (never less than the chosen period), so the
+        // line moves on smoothly between samples and does not jump when one arrives. No scroll with auto-refresh off or reduced motion.
+        function tmScrollFraction() {
+            if (!tmAutoMs || !tmLastSampleAt) return 0;
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+            const pace = Math.max(tmAutoMs, Math.min(tmSampleGap || tmAutoMs, tmAutoMs * 3));
+            return Math.max(0, Math.min(1, (performance.now() - tmLastSampleAt) / pace));
+        }
+        function tmDrawGraph(canvasId, buf, color, scaleMax, frac) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             const wrap = canvas.parentElement;
             const w = wrap.clientWidth, h = wrap.clientHeight;
             if (!w || !h) return;
+            const f = buf.length > 1 ? (frac || 0) : 0;
+            const key = tmBufVersion + '|' + Math.round(f * 200) + '|' + w + 'x' + h + '|' + color + '|' + buf.length;
+            if (tmDrawn[canvasId] === key) return;                    // the same picture as last time: nothing to paint
+            tmDrawn[canvasId] = key;
             const dpr = window.devicePixelRatio || 1;
             const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
             if (canvas.width !== pw) canvas.width = pw;
@@ -27011,7 +27069,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const max = scaleMax != null ? scaleMax : Math.max(1, ...buf);
             const n = buf.length;
             const stepX = TM_BUF_MAX > 1 ? w / (TM_BUF_MAX - 1) : w;
-            const x0 = w - (n - 1) * stepX;
+            const x0 = w - (n - 1) * stepX - f * stepX;
             const y = v => h - Math.max(0, Math.min(1, v / max)) * (h - 4) - 2;
             if (n === 1) {       // a bare line/fill path needs two points; show the first reading as a dot instead of nothing
                 ctx.beginPath(); ctx.arc(w - 3, y(buf[0]), 2.5, 0, Math.PI * 2);
@@ -27019,10 +27077,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             const pts = buf.map((v, i) => [x0 + i * stepX, y(v)]);
+            if (f > 0) pts.push([w, pts[n - 1][1]]);                  // the latest reading holds until the next one comes in
+            const m = pts.length;
             ctx.beginPath();
             ctx.moveTo(pts[0][0], h);
             pts.forEach(p => ctx.lineTo(p[0], p[1]));
-            ctx.lineTo(pts[n - 1][0], h);
+            ctx.lineTo(pts[m - 1][0], h);
             ctx.closePath();
             ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = color; ctx.fill(); ctx.restore();
             ctx.beginPath();
@@ -27031,11 +27091,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function tmRedrawNow() {
             const accent = tmCssVar('--accent');
-            if (tmSub === 'cpu') tmDrawGraph('tmCpuCanvas', tmBuf.cpu, accent, 100);
-            else if (tmSub === 'ram') tmDrawGraph('tmRamCanvas', tmBuf.ram, accent, 100);
-            else if (tmSub === 'gpu') tmDrawGraph('tmGpuCanvas', tmBuf.gpu, accent, 100);
-            else if (tmSub === 'battery') tmDrawGraph('tmBattCanvas', tmBuf.batt, accent, 100);
-            else if (tmSub === 'network') tmDrawGraph('tmNetCanvas', tmBuf.net, tmCssVar('--secondary'), null);
+            const f = tmScrollFraction();
+            if (tmSub === 'cpu') tmDrawGraph('tmCpuCanvas', tmBuf.cpu, accent, 100, f);
+            else if (tmSub === 'ram') tmDrawGraph('tmRamCanvas', tmBuf.ram, accent, 100, f);
+            else if (tmSub === 'gpu') tmDrawGraph('tmGpuCanvas', tmBuf.gpu, accent, 100, f);
+            else if (tmSub === 'battery') tmDrawGraph('tmBattCanvas', tmBuf.batt, accent, 100, f);
+            else if (tmSub === 'network') tmDrawGraph('tmNetCanvas', tmBuf.net, tmCssVar('--secondary'), null, f);
         }
 
         // ---- Processes ----
@@ -27056,8 +27117,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             statusEl.innerText = procs.length + ' process' + (procs.length === 1 ? '' : 'es') + (d.procsFullFormat === false ? ' (reduced ps output on this device)' : '');
             if (!procs.length) { el.innerHTML = emptyStateHtml({ key: 'tm-procs-none', icon: 'cpu', title: 'No processes read.', compact: true }); return; }
-            el.innerHTML = procs.slice(0, 200).map(p => {
-                const app = p.pkg ? allApps.find(a => a.pkg === p.pkg) : null;
+            const byPkg = new Map();                            // one pass over the app list, not one search per row (this runs every poll)
+            (allApps || []).forEach(a => { if (a && a.pkg && !byPkg.has(a.pkg)) byPkg.set(a.pkg, a); });
+            const html = procs.slice(0, 200).map(p => {
+                const app = p.pkg ? (byPkg.get(p.pkg) || null) : null;
                 const title = app ? app.name : p.name;
                 const parts = [];
                 if (p.pkg) parts.push(p.pkg);
@@ -27065,6 +27128,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc(${jsArg(p.pkg)})" aria-label="Force Stop">✕</button>` : '';
                 return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div>${agentBtnHtml('process', p.name, [p.pkg ? 'Belongs to the app: ' + (app ? app.name + ' (' + p.pkg + ')' : p.pkg) : 'Not an app: a system or native process', 'Memory: ' + formatBytes(p.rssKb * 1024), 'CPU: ' + p.cpuPercent.toFixed(1) + '%'])}</div>${killBtn}</div>`;
             }).join('');
+            if (el.__tmHtml === html && el.querySelector('.tm-row')) return;         // nothing changed since the last poll: leave the rows (and the translation of them) alone
+            el.__tmHtml = html;
+            el.innerHTML = html;
         }
 
         // ---- CPU ----
@@ -27187,15 +27253,50 @@ Type any command above (e.g. pm list packages -d)</div>
         // on purpose to force that restart - Android relaunches it immediately, so this is a visible flicker of the
         // status/navigation bars, not data loss. Read and set only on request, never on the auto-refresh tick: this
         // control is a dropdown the person is actively using, and rebuilding it every poll could close it under them.
+        //
+        // ANGLE (v7.14): the global setting angle_gl_driver_all_angle = 1 makes ANGLE the OpenGL ES driver of every app (ANGLE runs the
+        // app's OpenGL ES on Vulkan). It is a separate switch from HWUI's renderer: on, it wins the dropdown; leaving it for another
+        // renderer turns it off first (0, read back) and only then applies that renderer the usual way. Changing it is only offered in
+        // Root mode (the owner's rule): outside Root the entry carries a lock and a tap on it says why. Every change is judged by reading
+        // the setting back, never by the command's output. Running apps keep their driver until they restart.
+        const TM_ANGLE_SETTING = 'angle_gl_driver_all_angle';
+        let tmAngleOn = false;                  // the setting as last read: true only when the phone said 1
         function tmRendererLabel(raw) {
+            if (raw === 'angle') return 'ANGLE';
             if (raw === 'skiavk') return 'Vulkan';
             if (raw === 'skiagl') return 'OpenGL';
             return 'Default';
+        }
+        function tmAngleUnlocked() { return !!isPrivilegedActive && currentWorkingMode === 'root'; }
+        // '1', '0' (also when the setting was never written: "null") or null when it could not be read
+        function tmReadAngle() {
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return null;
+            let out = '';
+            try { out = String(window.AndroidBridge.executeShell('settings get global ' + TM_ANGLE_SETTING) || ''); } catch (e) { return null; }
+            const lines = out.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const last = lines.length ? lines[lines.length - 1] : '';
+            if (last === '1') return '1';
+            if (last === '0' || last === 'null') return '0';
+            return null;
+        }
+        // a tap on the lock (or on the locked entry) says what it needs and where to get it
+        function tmAngleExplain() {
+            haptic();
+            showToast('ANGLE needs Root mode: switch to Root in Working Modes');
+        }
+        function tmSyncAngleLock() {
+            const lock = document.getElementById('tmAngleLock');
+            if (!lock) return;
+            const locked = !tmAngleUnlocked();
+            lock.style.display = locked ? '' : 'none';
+            const ic = document.getElementById('tmAngleLockIc');
+            if (ic && !ic.firstChild) xqLockGlyph(ic);
         }
         function tmLoadRenderer() {
             const sel = document.getElementById('tmRendererSelect');
             const note = document.getElementById('tmRendererNote');
             if (!sel) return;
+            tmSyncAngleLock();
             if (!isPrivilegedActive || !window.AndroidBridge || !window.AndroidBridge.executeShell) {
                 sel.innerHTML = '<option value="">—</option>';
                 sel.disabled = true;
@@ -27205,22 +27306,53 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             let raw = '';
             try { raw = (window.AndroidBridge.executeShell('getprop debug.hwui.renderer') || '').trim(); } catch (e) {}
+            tmAngleOn = tmReadAngle() === '1';
             const gpu = (tmLastData && tmLastData.gpu) || {};
+            const cur = tmAngleOn ? 'angle' : raw;
             const opts = [];
-            if (raw !== 'skiagl' && raw !== 'skiavk') opts.push('<option value="" selected>Default</option>');
-            opts.push(`<option value="skiagl"${raw === 'skiagl' ? ' selected' : ''}>OpenGL</option>`);
-            if (gpu.vulkanSupported) opts.push(`<option value="skiavk"${raw === 'skiavk' ? ' selected' : ''}>Vulkan</option>`);
+            if (raw !== 'skiagl' && raw !== 'skiavk') opts.push(`<option value=""${cur === '' || (cur !== 'angle' && cur !== 'skiagl' && cur !== 'skiavk') ? ' selected' : ''}>Default</option>`);
+            opts.push(`<option value="skiagl"${cur === 'skiagl' ? ' selected' : ''}>OpenGL</option>`);
+            if (gpu.vulkanSupported) opts.push(`<option value="skiavk"${cur === 'skiavk' ? ' selected' : ''}>Vulkan</option>`);
+            const locked = !tmAngleUnlocked();
+            opts.push(`<option value="angle"${cur === 'angle' ? ' selected' : ''}>${locked ? 'ANGLE (OpenGL ES on Vulkan), needs Root' : 'ANGLE (OpenGL ES on Vulkan)'}</option>`);
             sel.innerHTML = opts.join('');
             sel.disabled = false;
-            const label = tmRendererLabel(raw);
+            const label = tmRendererLabel(cur);
             const nowEl = document.getElementById('tmRendererNow'); if (nowEl) nowEl.innerText = label;
-            if (note) note.innerText = `Currently using ${label}. Switching restarts System UI to apply it.`;
+            if (note) note.innerText = tmAngleOn ? 'Currently using ANGLE for every app. Apps pick up a change when they restart.' : `Currently using ${label}. Switching restarts System UI to apply it.`;
+        }
+        // ANGLE on or off as root, judged by reading the setting back; true when the phone now says what was asked
+        function tmApplyAngle(on) {
+            execShellOk('settings put global ' + TM_ANGLE_SETTING + ' ' + (on ? '1' : '0'));
+            const back = tmReadAngle();
+            if (back !== null) tmAngleOn = back === '1';
+            return back === (on ? '1' : '0');
         }
         function tmSetRenderer() {
             const sel = document.getElementById('tmRendererSelect');
             const note = document.getElementById('tmRendererNote');
             const v = sel.value;
-            if (!v || !window.AndroidBridge || !window.AndroidBridge.executeShell) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return;
+            if (v === 'angle') {
+                if (!tmAngleUnlocked()) { tmAngleExplain(); tmLoadRenderer(); return; }
+                if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
+                haptic();
+                if (note) note.innerText = 'Turning on ANGLE…';
+                const ok = tmApplyAngle(true);
+                showToast(ok ? 'ANGLE on - apps use it when they restart' : 'Could not turn on ANGLE');
+                tmLoadRenderer();
+                return;
+            }
+            if (tmAngleOn) {
+                // leaving ANGLE: it is turned off first, and the other renderer is applied only once the phone says it is off
+                if (!tmAngleUnlocked()) { showToast('Turning ANGLE off needs Root mode'); tmLoadRenderer(); return; }
+                if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
+                haptic();
+                if (note) note.innerText = 'Turning off ANGLE…';
+                if (!tmApplyAngle(false)) { showToast('Could not turn off ANGLE'); tmLoadRenderer(); return; }
+                if (!v) { showToast('ANGLE off - apps use the default driver when they restart'); tmLoadRenderer(); return; }
+            }
+            if (!v) return;
             if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
             haptic();
             const label = tmRendererLabel(v);
@@ -28391,6 +28523,8 @@ Type any command above (e.g. pm list packages -d)</div>
             renderStyleCards(mode);
             renderMyThemes(mode);
             renderAppearanceControls(mode);
+            if (typeof tmThemeChanged === 'function') tmThemeChanged();          // the Task Manager graphs pick up the new colours
+            if (typeof stThemeChanged === 'function') stThemeChanged();          // and the speed test's gauge and graphs
 
             if (window.AndroidBridge) {
                 if (save && window.AndroidBridge.savePreferences) {
