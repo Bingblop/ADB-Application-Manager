@@ -32,15 +32,19 @@ public final class WearStub {
         }
     }
 
-    /** Prints "inst:package:/data/app/..." (nothing after "inst:" when it is not installed), its versionCode line, and "pid:" with its process ids. */
+    /**
+     * Prints "inst:package:/data/app/..." (nothing after "inst:" when it is not installed), its versionCode line, and "svc:" with the number of the
+     * stub's services the system has running. Running means the service that holds the screen and Wi-Fi, not a live process: after Stop on the
+     * watch (or the end of its lease) the process may stay alive with nothing held.
+     */
     static String statusCmd() {
         return "p=$(pm path " + PKG + " 2>/dev/null | head -n 1); echo \"inst:$p\"; "
                 + "case \"$p\" in package:*) dumpsys package " + PKG + " 2>/dev/null | grep -m 1 'versionCode=';; esac; "
-                + "echo \"pid:$(pidof " + PKG + " 2>/dev/null)\"";
+                + "echo \"svc:$(dumpsys activity services " + PKG + " 2>/dev/null | grep -c 'ServiceRecord{.*" + PKG + "/.*StubService')\"";
     }
 
     private static final Pattern VER = Pattern.compile("versionCode=(\\d+)");
-    private static final Pattern PID = Pattern.compile("(?m)^pid:\\s*\\d+");
+    private static final Pattern SVC = Pattern.compile("(?m)^svc:\\s*[1-9]");
     private static final Pattern INST = Pattern.compile("(?m)^inst:package:\\S");
 
     static Status parseStatus(String out) {
@@ -53,7 +57,7 @@ public final class WearStub {
                 try { ver = Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {}
             }
         }
-        return new Status(inst, ver, inst && PID.matcher(s).find());
+        return new Status(inst, ver, inst && SVC.matcher(s).find());
     }
 
     /** The phone's name as the stub's screen shows it: printable, at most 60 characters, quoted for the device's shell. */

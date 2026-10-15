@@ -30,11 +30,19 @@ public class WearStubTest {
         f.setExecutable(true);
     }
 
-    /** statusCmd() through sh with stand-ins: installed (with versionCode) or not, running or not. */
+    /** statusCmd() through sh with stand-ins: installed (with versionCode) or not, its service running or not, its process alive or not. */
     static String runStatus(File bin, boolean installed, int ver, boolean running) throws Exception {
+        return runStatus(bin, installed, ver, running, running);
+    }
+
+    static String runStatus(File bin, boolean installed, int ver, boolean running, boolean process) throws Exception {
         exe(new File(bin, "pm"), installed ? "[ \"$1\" = path ] && [ \"$2\" = " + WearStub.PKG + " ] && echo package:/data/app/~~x==/" + WearStub.PKG + "-1/base.apk\n" : "exit 1\n");
-        exe(new File(bin, "dumpsys"), "echo 'Packages:'\necho '  Package [" + WearStub.PKG + "] (abc):'\necho '    versionCode=" + ver + " minSdk=25 targetSdk=34'\necho '    versionCode=99 minSdk=1 targetSdk=1'\n");
-        exe(new File(bin, "pidof"), running ? "echo 4242\n" : "exit 1\n");
+        String services = "echo 'ACTIVITY MANAGER SERVICES (dumpsys activity services)'\n" + (running
+                ? "echo '  User 0 active services:'\necho '  * ServiceRecord{9c3b2a u0 " + WearStub.PKG + "/.StubService}'\necho '    intent={cmp=" + WearStub.PKG + "/.StubService}'\n"
+                : "echo '  (nothing)'\n");
+        exe(new File(bin, "dumpsys"), "if [ \"$1\" = activity ] && [ \"$2\" = services ] && [ \"$3\" = " + WearStub.PKG + " ]; then\n" + services + "exit 0\nfi\n"
+                + "echo 'Packages:'\necho '  Package [" + WearStub.PKG + "] (abc):'\necho '    versionCode=" + ver + " minSdk=25 targetSdk=34'\necho '    versionCode=99 minSdk=1 targetSdk=1'\n");
+        exe(new File(bin, "pidof"), process ? "echo 4242\n" : "exit 1\n");
         ProcessBuilder pb = new ProcessBuilder("sh", "-c", WearStub.statusCmd()).redirectErrorStream(true);
         pb.environment().put("PATH", bin.getPath() + File.pathSeparator + System.getenv("PATH"));
         Process p = pb.start();
@@ -45,14 +53,16 @@ public class WearStubTest {
 
     public static void main(String[] args) throws Exception {
         // reading the answer
-        WearStub.Status s = WearStub.parseStatus("inst:\npid:\n");
+        WearStub.Status s = WearStub.parseStatus("inst:\nsvc:0\n");
         check("not installed", !s.installed && s.version == 0 && !s.running);
-        s = WearStub.parseStatus("inst:package:/data/app/x/base.apk\n    versionCode=3 minSdk=25 targetSdk=34\npid:1234\n");
+        s = WearStub.parseStatus("inst:package:/data/app/x/base.apk\n    versionCode=3 minSdk=25 targetSdk=34\nsvc:1\n");
         check("installed, version 3, running", s.installed && s.version == 3 && s.running);
-        s = WearStub.parseStatus("inst:package:/data/app/x/base.apk\n    versionCode=1 minSdk=25\npid:\n");
+        s = WearStub.parseStatus("inst:package:/data/app/x/base.apk\n    versionCode=1 minSdk=25\nsvc:0\n");
         check("installed, not running", s.installed && s.version == 1 && !s.running);
-        s = WearStub.parseStatus("inst:\nversionCode=7\npid:99\n");
-        check("a versionCode or a pid without an installed package counts for nothing", !s.installed && s.version == 0 && !s.running);
+        s = WearStub.parseStatus("inst:\nversionCode=7\nsvc:1\n");
+        check("a versionCode or a service without an installed package counts for nothing", !s.installed && s.version == 0 && !s.running);
+        s = WearStub.parseStatus("inst:package:/data/app/x/base.apk\n    versionCode=2 minSdk=25\npid:1234\nsvc:0\n");
+        check("a live process without the service is not running", s.installed && !s.running);
         s = WearStub.parseStatus("Error: device offline");
         check("an adb error: nothing", !s.installed && !s.running);
         check("null: nothing", !WearStub.parseStatus(null).installed);
@@ -66,6 +76,8 @@ public class WearStubTest {
             check("sh: installed, version from the first versionCode line, running", s.installed && s.version == 2 && s.running);
             s = WearStub.parseStatus(runStatus(bin, true, 1, false));
             check("sh: installed, not running", s.installed && s.version == 1 && !s.running);
+            s = WearStub.parseStatus(runStatus(bin, true, 2, false, true));
+            check("sh: the process is alive but the service was stopped (Stop on the watch): not running", s.installed && s.version == 2 && !s.running);
             s = WearStub.parseStatus(runStatus(bin, false, 5, true));
             check("sh: not installed (dumpsys is not even asked)", !s.installed && s.version == 0 && !s.running);
         } finally {
