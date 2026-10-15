@@ -10605,8 +10605,18 @@ Type any command above (e.g. pm list packages -d)</div>
             const pinned = Array.isArray(saved.pinned) ? saved.pinned.map(k => k === 'terminal' ? 'console' : k) : saved.pinned;
             return Object.assign({}, saved, { order, off, pinned });
         }
+        // The App Updater ('updates', v7.12.8) became a box of the APK Installer/Updater tab and the Logcat Viewer ('logcat', v7.12.12) a segment of Console.
+        // A record saved before that may have the tab that took one in switched off while the old tab was on: that tab stays on, or the updater or the log would
+        // disappear with it (APK Installer off and App Updater on; Command-Line Interface off and Logcat Viewer on). Records saved since have neither key.
+        function tabMigrateMerged(saved) {
+            const m = tabMigrateConsole(saved);
+            if (!m || !Array.isArray(m.order) || !Array.isArray(m.off)) return m;
+            const on = k => m.order.includes(k) && !m.off.includes(k);
+            const keep = (on('updates') ? ['installer'] : []).concat(on('logcat') ? ['console'] : []);
+            return keep.length ? Object.assign({}, m, { off: m.off.filter(k => !keep.includes(k)) }) : m;
+        }
         function tabLoadConfig() {
-            const saved = tabMigrateConsole(kvGet('tab_config', null));
+            const saved = tabMigrateMerged(kvGet('tab_config', null));
             let order = saved && Array.isArray(saved.order) ? saved.order.filter((k, i, a) => TAB_MOVABLE.includes(k) && a.indexOf(k) === i) : [];
             TAB_MOVABLE.forEach((k, i) => {
                 if (order.includes(k)) return;
