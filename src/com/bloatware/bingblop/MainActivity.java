@@ -2329,6 +2329,21 @@ public class MainActivity extends Activity {
         }
     };
 
+    // ---------------------------------------------------------------------------------------------
+    // Internet speed test (Task Manager > Network > Speed test): SpeedTest (pure Java) does the work; this is the bridge. Needs no working mode: it only
+    // opens HTTPS connections of its own to speed.cloudflare.com through HttpSafe. Runs only while its screen is open (the page stops it on Close, Back
+    // and when the app is hidden); a pool of its own whose idle threads end, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService speedTestExec = SpeedTest.newPool();
+    private final SpeedTest.Runner speedTest = new SpeedTest.Runner(new SpeedTest.Config());
+
+    private final SpeedTest.Sink speedTestSink = new SpeedTest.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onSpeedTest && window.onSpeedTest(" + JSONObject.quote(json) + ")");
+        }
+    };
+
 
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
@@ -5169,6 +5184,16 @@ public class MainActivity extends Activity {
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
+    // a tick that is still running makes the next one (a scheduled one or "Refresh now") a no-op instead of a second shell round trip queued behind it
+    private final java.util.concurrent.atomic.AtomicBoolean tmTickBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // the thread count reads every process's status file: it is taken at most once every TM_THREADS_EVERY_MS and the last count is shown in between
+    private static final long TM_THREADS_EVERY_MS = 3000;
+    private long tmThreadsAt;
+    private long tmThreadsLast = -1;
+    // what does not change while the app runs is read once: the GPU facts, each core's min / max clock, which thermal zone is the CPU's
+    private volatile JSONObject tmGpuInfoCache;
+    private volatile long[] tmCpuMinHz, tmCpuMaxHz;
+    private volatile String tmThermalPath;              // "" when no zone was readable
     private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
             TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
             TM_M10 = "@@TM10-THREADS@@";
@@ -12018,6 +12043,50 @@ public class MainActivity extends Activity {
             dnsProbe.cancel(id);
         }
 
+        /**
+         * Internet speed test: starts latency, download and upload against Cloudflare (see SpeedTest for the contract and limits). Returns
+         * {"ok":true,"id":..} or {"ok":false,"error":..}; events arrive in window.onSpeedTest(json), ending with one {"type":"done",..}.
+         */
+        @JavascriptInterface
+        public String speedTestStart(String requestJson) {
+            return speedTest.start(requestJson, speedTestExec, speedTestSink);
+        }
+
+        /** Stops the running speed test if it has this id (its connections are closed at once). */
+        @JavascriptInterface
+        public void speedTestStop(String id) {
+            speedTest.cancel(id);
+        }
+
+        /** The active network for the speed test's cards and its mobile-data warning: {"type":"wifi|cellular|ethernet|vpn|other|none","metered":bool}. */
+        @JavascriptInterface
+        public String speedTestNetInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                String type = "none";
+                boolean metered = false;
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) {
+                    android.net.Network n = cm.getActiveNetwork();
+                    android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+                    if (nc != null) {
+                        if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) type = "wifi";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) type = "cellular";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) type = "ethernet";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) type = "vpn";
+                        else type = "other";
+                    }
+                    metered = cm.isActiveNetworkMetered();
+                }
+                o.put("type", type);
+                o.put("metered", metered);
+                o.put("maxBytes", speedTest.maxBytes());
+            } catch (Throwable t) {
+                try { o.put("type", "other"); o.put("metered", false); } catch (Exception ignored) {}
+            }
+            return o.toString();
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -12276,7 +12345,7 @@ public class MainActivity extends Activity {
         /** Starts (or restarts, at a new period) the native poll. Each tick runs {@link #tmTick()} on the shared executor. */
         @JavascriptInterface
         public String tmStart(int intervalMs) {
-            if (intervalMs < 1000) intervalMs = 1000;
+            if (intervalMs < 500) intervalMs = 500;            // the page's fastest choice; the fixed delay below keeps ticks from piling up even then
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
                 if (tmClosed) return "closed";
@@ -12320,12 +12389,24 @@ public class MainActivity extends Activity {
          *  missing piece never corrupts another), plus a synchronous battery read (no shell, no permission needed).
          *  Pushes window.onTaskMgrData(json); never throws (a failure is reported in the JSON, not as a crash). */
         private void tmTick() {
+            if (!tmTickBusy.compareAndSet(false, true)) return;          // the previous one is still running: skip, do not queue
+            try {
+                tmTickOnce();
+            } finally {
+                tmTickBusy.set(false);
+            }
+        }
+
+        private void tmTickOnce() {
             JSONObject res = new JSONObject();
             try {
                 res.put("ts", System.currentTimeMillis());
                 boolean havePriv = !"standard".equals(resolveExecMode());
                 res.put("privileged", havePriv);
                 String blob = null;
+                long tickAt = System.currentTimeMillis();
+                boolean wantThreads;
+                synchronized (tmLock) { wantThreads = tmThreadsLast < 0 || tickAt - tmThreadsAt >= TM_THREADS_EVERY_MS; }
                 if (havePriv) {
                     try {
                         blob = executeShell(
@@ -12338,7 +12419,7 @@ public class MainActivity extends Activity {
                                         + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
                                         + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
                                         + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; echo " + TM_M10);
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TM_M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
@@ -12447,7 +12528,12 @@ public class MainActivity extends Activity {
                 cpuJson.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
                 if (havePriv) {
                     cpuJson.put("processes", ps.procs.size());
-                    cpuJson.put("threads", ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""));
+                    long threads;
+                    synchronized (tmLock) {
+                        if (wantThreads) { tmThreadsLast = ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""); tmThreadsAt = tickAt; }
+                        threads = tmThreadsLast;
+                    }
+                    if (threads >= 0) cpuJson.put("threads", threads);
                 }
 
                 // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
@@ -12464,7 +12550,9 @@ public class MainActivity extends Activity {
                 if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
                 gpuJson.put("approx", gpu.approx != null && gpu.approx);
                 gpuJson.put("label", GpuStats.label(gpu));
-                mergeInto(gpuJson, gpuInfoJson());
+                JSONObject gpuInfo = tmGpuInfoCache;
+                if (gpuInfo == null) { gpuInfo = gpuInfoJson(); tmGpuInfoCache = gpuInfo; }
+                mergeInto(gpuJson, gpuInfo);
                 res.put("gpu", gpuJson);
 
                 // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
@@ -12580,17 +12668,24 @@ public class MainActivity extends Activity {
                 if (tempC != null) o.put("tempC", tempC.doubleValue());
 
                 int cores = Runtime.getRuntime().availableProcessors();
-                long[] minHz = new long[cores], curHz = new long[cores], maxHz = new long[cores];
+                long[] curHz = new long[cores];
+                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s)
+                long[] minHz = tmCpuMinHz, maxHz = tmCpuMaxHz;
+                boolean readLimits = minHz == null || maxHz == null || minHz.length != cores || maxHz.length != cores;
+                if (readLimits) { minHz = new long[cores]; maxHz = new long[cores]; }
                 boolean anyFreq = false;
                 for (int i = 0; i < cores; i++) {
                     String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
                     // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
                     // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
-                    minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                    if (readLimits) {
+                        minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                        maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
+                    }
                     curHz[i] = 1000L * parseLongOr(readWorldReadable(base + "scaling_cur_freq"), 0);
-                    maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
                     if (maxHz[i] > 0) anyFreq = true;
                 }
+                if (readLimits) { tmCpuMinHz = minHz; tmCpuMaxHz = maxHz; }
                 if (anyFreq) {
                     JSONArray clusters = new JSONArray();
                     for (CpuStats.Cluster c : CpuStats.groupClusters(minHz, curHz, maxHz)) {
@@ -12613,17 +12708,25 @@ public class MainActivity extends Activity {
          *  of a degree on some) are not standardized across devices. */
         private Double cpuThermalC() {
             try {
+                // which zone is the CPU's does not change: it is looked for once (a phone can have 80+ zones, two files each), then only its temp is read
+                String known = tmThermalPath;
+                if (known != null) {
+                    if (known.isEmpty()) return null;
+                    String raw = readWorldReadable(known).trim();
+                    return raw.isEmpty() ? null : millidegreesToC(raw);
+                }
                 File[] zones = new File("/sys/class/thermal").listFiles();
-                if (zones == null) return null;
-                String fallback = null;
+                if (zones == null) { tmThermalPath = ""; return null; }
+                String fallback = null, fallbackPath = null;
                 for (File z : zones) {
                     if (!z.getName().startsWith("thermal_zone")) continue;
                     String raw = readWorldReadable(z.getPath() + "/temp").trim();
                     if (raw.isEmpty()) continue;
-                    if (fallback == null) fallback = raw;
+                    if (fallback == null) { fallback = raw; fallbackPath = z.getPath() + "/temp"; }
                     String type = readWorldReadable(z.getPath() + "/type").trim();
-                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) return millidegreesToC(raw);
+                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) { tmThermalPath = z.getPath() + "/temp"; return millidegreesToC(raw); }
                 }
+                tmThermalPath = fallbackPath == null ? "" : fallbackPath;
                 return fallback == null ? null : millidegreesToC(fallback);
             } catch (Throwable t) {
                 return null;
@@ -16293,6 +16396,9 @@ public class MainActivity extends Activity {
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
+        // the internet speed test: refuse new tests and close the running one's connections, then stop its pool
+        try { speedTest.shutdown(); } catch (Throwable ignored) {}
+        try { speedTestExec.shutdownNow(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {

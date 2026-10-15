@@ -5170,6 +5170,17 @@
                 .tm-renderer-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3h); }
                 .tm-renderer-head span { font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; }
                 .tm-renderer-head b { font-size: 22px; font-weight:var(--fw-black); color: var(--text-main); }
+                .tm-angle-lock { flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--ctl-h); padding: 0 var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: var(--fill-2); color: var(--text-muted); font: inherit; font-size: var(--fs-pill); font-weight: var(--fw-bold); cursor: pointer; }
+                .tm-angle-lock:active { background: var(--fill-3); }
+                .tm-speed-btn { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--tap); margin: 0 0 var(--space-3h); padding: var(--space-3) var(--space-4); border: 1px solid var(--line-accent); border-radius: var(--radius-md); background: var(--tint-accent); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; }
+                .tm-speed-btn:active { background: var(--fill-3); }
+                .tm-speed-ic { flex: 0 0 auto; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient, var(--on-accent)); }
+                .tm-speed-ic svg { width: 22px; height: 22px; }
+                .tm-speed-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+                .tm-speed-txt b { font-size: var(--fs-item); font-weight: var(--fw-heavy); }
+                .tm-speed-txt small { font-size: var(--fs-pkg); color: var(--text-muted); }
+                .tm-speed-go { flex: 0 0 auto; color: var(--accent); display: inline-flex; }
+                .tm-speed-go svg { width: 18px; height: 18px; }
                 .tm-info-title { font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; margin: var(--space-5) 0 var(--space-2); }
                 .tm-cluster { padding: var(--space-3) var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); margin-top: var(--space-3); }
                 .tm-cluster-head { font-size: var(--fs-pill); font-weight:var(--fw-bold); color: var(--text-muted); margin-bottom: var(--space-2); }
@@ -5202,15 +5213,15 @@
                         <span>Auto-refresh</span>
                         <select class="op-select" id="tmAutoRefresh" onchange="tmAutoRefreshChange()" aria-label="Auto-refresh">
                             <option value="0">Off</option>
-                            <option value="1">1 s</option><option value="2">2 s</option><option value="3" selected>3 s</option>
+                            <option value="0.5">0.5 s</option><option value="1" selected>1 s</option><option value="2">2 s</option><option value="3">3 s</option>
                             <option value="5">5 s</option><option value="10">10 s</option>
                         </select>
                         <button class="batch-tool-link" onclick="tmRefreshNow()">Refresh now</button>
                     </div>
                     <div class="tm-settings-row ovl-slider" style="margin:0;">
                         <b style="flex:0 0 104px; color:var(--text-muted); font-weight:700; font-size:11px;">Graph speed</b>
-                        <input type="range" id="tmGraphDelay" min="150" max="1000" step="10" value="300" oninput="tmGraphDelayInput()" aria-label="Graph speed">
-                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">300 ms</span>
+                        <input type="range" id="tmGraphDelay" min="50" max="1000" step="10" value="150" oninput="tmGraphDelayInput()" aria-label="Graph speed">
+                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">150 ms</span>
                     </div>
                     <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
                         <span>Units</span>
@@ -5256,6 +5267,7 @@
                             <select class="op-select" id="tmRendererSelect" onchange="tmSetRenderer()" aria-label="Renderer" disabled>
                                 <option value="">—</option>
                             </select>
+                            <button type="button" class="tm-angle-lock" id="tmAngleLock" onclick="tmAngleExplain()" style="display:none;"><span id="tmAngleLockIc" aria-hidden="true"></span><span>ANGLE needs Root</span></button>
                         </div>
                         <div class="switch-sub" id="tmRendererNote" style="margin-top:6px;">Switches the system's HWUI renderer and restarts System UI to apply it - a visible flicker of the status and navigation bars is normal.</div>
                     </div>
@@ -5273,6 +5285,7 @@
 
                 <!-- NETWORK -->
                 <div id="tmNetworkPanel" style="display:none;">
+                    <button type="button" class="tm-speed-btn" id="tmSpeedBtn" onclick="stOpen()"><span class="tm-speed-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/></svg></span><span class="tm-speed-txt"><b>Speed test</b><small>Ping, download and upload</small></span><span class="tm-speed-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span></button>
                     <div class="tm-canvas-wrap"><canvas id="tmNetCanvas"></canvas><div class="tm-canvas-label" id="tmNetNow">—</div><div class="tm-canvas-sub" id="tmNetSub">&nbsp;</div></div>
                     <div class="tm-net-ifaces" id="tmNetIfaces"></div>
                     <div id="tmNetInfo"></div>
@@ -8046,6 +8059,130 @@ Type any command above (e.g. pm list packages -d)</div>
     </div>
 
     <!-- Backup and restore -->
+    <!-- Internet speed test (Task Manager > Network > Speed test): a full screen of its own, closed with Back, the arrow or the X. SpeedTest.java does the measuring. -->
+    <div class="modal-overlay st-overlay" id="stModal" onclick="if(event.target===this) stClose()" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+        <style>
+            .st-overlay { align-items: stretch; justify-content: center; background: var(--bg-base); }
+            .st-screen.modal-sheet { display: flex; flex-direction: column; width: 100%; max-width: 600px; height: 100%; max-height: none; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: var(--bg-base); color: var(--text-main); }     /* a sheet (it slides up like one) that fills the screen */
+            .st-head { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-2); padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-4) var(--space-2); border-bottom: 1px solid var(--border-glass); }
+            .st-head h3 { flex: 1 1 auto; margin: 0; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+            .st-back { flex: 0 0 auto; width: var(--tap); height: var(--tap); margin-left: calc(-1 * var(--space-3)); display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-main); cursor: pointer; }
+            .st-back:active { background: var(--fill-3); }
+            .st-back svg { width: 22px; height: 22px; }
+            .st-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); }
+            .st-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; margin-bottom: var(--space-2); }
+            .st-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 28px; padding: 0 var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: var(--fill-1); font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+            .st-chip b { color: var(--text-main); font-weight: var(--fw-heavy); }
+            .st-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+            .st-chip.is-wifi i { background: var(--status-running); }
+            .st-chip.is-mobile i { background: var(--status-suspended); }
+            .st-gauge-wrap { position: relative; width: min(100%, 340px); margin: 0 auto; aspect-ratio: 300 / 250; }
+            .st-gauge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+            .st-track { fill: none; stroke: var(--fill-3); stroke-width: 16; stroke-linecap: round; }
+            .st-arc { fill: none; stroke: url(#stGrad); stroke-width: 16; stroke-linecap: round; }
+            .st-g0 { stop-color: var(--accent); }
+            .st-g1 { stop-color: var(--secondary); }
+            .st-tickmark { stroke: var(--text-dim); stroke-width: 2; stroke-linecap: round; }
+            .st-ticklabel { fill: var(--text-muted); font-size: var(--fs-overline); font-weight: var(--fw-bold); text-anchor: middle; dominant-baseline: middle; }
+            .st-needle { fill: var(--text-main); }
+            .st-hub { fill: var(--bg-card); stroke: var(--accent); stroke-width: 3; }
+            .st-readout { position: absolute; left: 0; right: 0; top: 70%; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+            .st-num { font-size: 44px; line-height: 1; font-weight: var(--fw-black); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+            .st-unit { margin-top: 2px; font-size: var(--fs-item); color: var(--text-muted); font-weight: var(--fw-bold); }
+            .st-phase { margin-top: var(--space-1); font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; }
+            .st-running .st-phase { color: var(--accent); }
+            .st-actions { display: flex; justify-content: center; margin: var(--space-3) 0 var(--space-4); }
+            .st-go { min-width: 168px; min-height: 48px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill); background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient, var(--on-accent)); font: inherit; font-size: var(--fs-lead); font-weight: var(--fw-heavy); cursor: pointer; box-shadow: 0 4px 16px var(--accent-glow); }
+            .st-go:active { transform: scale(0.97); }
+            .st-go.is-stop { background: var(--danger-solid); color: var(--on-danger); box-shadow: none; }
+            .st-warn { margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px solid var(--line-suspended); border-radius: var(--radius-md); background: var(--tint-suspended); }
+            .st-warn-title { font-size: var(--fs-item); font-weight: var(--fw-heavy); color: var(--text-main); }
+            .st-warn-text { margin-top: var(--space-1); font-size: var(--fs-body); color: var(--text-main); line-height: 1.4; }
+            .st-warn-btns { display: flex; gap: var(--space-3); margin-top: var(--space-3); flex-wrap: wrap; }
+            .st-err { margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid var(--line-bloat); border-radius: var(--radius-md); background: var(--tint-bloat); font-size: var(--fs-body); color: var(--text-main); }
+            .st-err b { color: var(--status-bloat); }
+            .st-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+            .st-card { min-width: 0; padding: var(--space-3h) var(--space-4); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); transition: border-color .2s; }
+            .st-card.is-live { border-color: var(--line-accent); background: var(--tint-accent); }
+            .st-card-label { display: flex; align-items: center; gap: var(--space-1); font-size: var(--fs-overline); font-weight: var(--fw-heavy); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+            .st-card-label svg { width: 14px; height: 14px; }
+            .st-card-val { margin-top: 2px; font-size: 22px; font-weight: var(--fw-black); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .st-card-val small { margin-left: var(--space-1); font-size: var(--fs-pkg); font-weight: var(--fw-bold); color: var(--text-muted); }
+            .st-card-sub { font-size: var(--fs-pkg); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .st-card.is-down .st-card-label { color: var(--accent); }
+            .st-card.is-up .st-card-label { color: var(--secondary); }
+            .st-graph { position: relative; height: 56px; margin-top: var(--space-2); border-radius: var(--radius-sm); background: var(--input-bg); overflow: hidden; }
+            .st-graph canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+            .st-share { display: flex; gap: var(--space-3); justify-content: center; margin: var(--space-4) 0 0; flex-wrap: wrap; }
+            .st-sec { margin: var(--space-6) 0 var(--space-2); display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+            .st-sec span { font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; }
+            .st-hist { display: flex; flex-direction: column; gap: var(--space-2); }
+            .st-hrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); font-size: var(--fs-body); }
+            .st-hrow .st-hdate { min-width: 0; color: var(--text-muted); font-size: var(--fs-pkg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .st-hrow b { font-variant-numeric: tabular-nums; font-weight: var(--fw-heavy); }
+            .st-hrow .st-hdown { color: var(--accent); }
+            .st-hrow .st-hup { color: var(--secondary); }
+            .st-hrow .st-hping { color: var(--text-muted); }
+            .st-note { margin-top: var(--space-5); font-size: var(--fs-caption); color: var(--text-muted); line-height: 1.45; }
+            @media (prefers-reduced-motion: no-preference) {
+                .st-running .st-arc { animation: stGlow 1.6s ease-in-out infinite; }
+                @keyframes stGlow { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 6px var(--accent-glow)); } }
+            }
+        </style>
+        <div class="modal-sheet st-screen" id="stScreen">
+            <div class="st-head">
+                <button type="button" class="st-back" onclick="stClose()" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+                <h3 id="stTitle">Speed test</h3>
+                <button type="button" class="sheet-close" onclick="stClose()" aria-label="Close">✕</button>
+            </div>
+            <div class="st-body">
+                <div class="st-chips">
+                    <span class="st-chip" id="stNetChip"><i aria-hidden="true"></i><span id="stNetText">Checking the connection…</span></span>
+                    <span class="st-chip" id="stServerChip"><span>Server</span><b id="stServerText" translate="no">Cloudflare</b></span>
+                </div>
+                <div class="st-gauge-wrap" id="stGaugeWrap">
+                    <svg class="st-gauge" viewBox="0 0 300 250" aria-hidden="true">
+                        <defs><linearGradient id="stGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="st-g0"/><stop offset="1" class="st-g1"/></linearGradient></defs>
+                        <path class="st-track" d="M 66.56 233.44 A 118 118 0 1 1 233.44 233.44"/>
+                        <path class="st-arc" id="stArc" d="M 66.56 233.44 A 118 118 0 1 1 233.44 233.44" pathLength="1000" stroke-dasharray="1000" stroke-dashoffset="1000"/>
+                        <g id="stTicks" translate="no"></g>
+                        <g id="stNeedle" transform="rotate(135 150 150)"><path class="st-needle" d="M 150 145 L 230 150 L 150 155 Z"/><circle class="st-hub" cx="150" cy="150" r="10"/></g>
+                    </svg>
+                    <div class="st-readout">
+                        <div class="st-num" id="stNum" translate="no">0</div>
+                        <div class="st-unit" id="stUnit">Mbps</div>
+                        <div class="st-phase" id="stPhase" aria-live="polite">Ready</div>
+                    </div>
+                </div>
+                <div class="st-actions"><button type="button" class="st-go" id="stGo" onclick="stGo()">Start</button></div>
+                <div class="st-warn" id="stWarn" style="display:none;" role="alert">
+                    <div class="st-warn-title" id="stWarnTitle">You are on mobile data</div>
+                    <div class="st-warn-text"><span>A test can use up to</span> <b id="stWarnMb" translate="no">350 MB</b> <span>of data: it stops early at that amount.</span></div>
+                    <div class="st-warn-btns">
+                        <button type="button" class="mode-action-btn primary" onclick="stWarnContinue()">Start anyway</button>
+                        <button type="button" class="mode-action-btn" onclick="stWarnCancel()">Cancel</button>
+                    </div>
+                </div>
+                <div class="st-err" id="stErr" style="display:none;" role="alert"><b id="stErrTitle">The test did not finish</b> <span id="stErrText"></span></div>
+                <div class="st-cards">
+                    <div class="st-card" id="stCardPing"><div class="st-card-label">Ping</div><div class="st-card-val"><span id="stPing" translate="no">—</span><small>ms</small></div><div class="st-card-sub" id="stPingSub">Median of 15 requests</div></div>
+                    <div class="st-card" id="stCardJitter"><div class="st-card-label">Jitter</div><div class="st-card-val"><span id="stJitter" translate="no">—</span><small>ms</small></div><div class="st-card-sub">How much the ping varies</div></div>
+                    <div class="st-card is-down" id="stCardDown"><div class="st-card-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg><span>Download</span></div><div class="st-card-val"><span id="stDown" translate="no">—</span><small>Mbps</small></div><div class="st-graph"><canvas id="stDownGraph"></canvas></div></div>
+                    <div class="st-card is-up" id="stCardUp"><div class="st-card-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><span>Upload</span></div><div class="st-card-val"><span id="stUp" translate="no">—</span><small>Mbps</small></div><div class="st-graph"><canvas id="stUpGraph"></canvas></div></div>
+                    <div class="st-card" id="stCardServer"><div class="st-card-label">Server</div><div class="st-card-val" id="stServer" translate="no">—</div><div class="st-card-sub" id="stServerSub" translate="no">Cloudflare</div></div>
+                    <div class="st-card" id="stCardNet"><div class="st-card-label">Connection</div><div class="st-card-val" id="stNet">—</div><div class="st-card-sub" id="stNetSub">&nbsp;</div></div>
+                </div>
+                <div class="st-share" id="stShare" style="display:none;">
+                    <button type="button" class="mode-action-btn" onclick="stCopy()">Copy result</button>
+                    <button type="button" class="mode-action-btn" onclick="stShareResult()">Share result</button>
+                </div>
+                <div class="st-sec"><span>History</span><button type="button" class="batch-tool-link" id="stHistClear" onclick="stHistClear()">Clear</button></div>
+                <div class="st-hist" id="stHist"></div>
+                <div class="st-note">Measured against Cloudflare's public speed test servers (speed.cloudflare.com), at the data centre nearest to you. Cloudflare sees this phone's IP address, as any website does. The result is this phone, its radio and its network, not your plan's speed; Wi-Fi signal and other apps using the network change it.</div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="backupsModal" onclick="if(event.target===this) closeBackups()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -11298,6 +11435,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName !== 'files' && typeof arcOpenAbort === 'function') arcOpenAbort();       // an archive still being unpacked for its listing is not wanted any more
             if (viewName !== 'console' && typeof logcatStop === 'function') logcatStop();          // the live log runs only while Console is open on Live Logcat
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
+            if (viewName !== 'taskmgr' && typeof stLeave === 'function') stLeave();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'installer') { if (!instKeep && fromView !== 'installer') instPane = 'install'; onInstallerShown(); instPaneShow(instPane, true); }
@@ -26925,17 +27063,30 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
         // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a
         // fresh sample (a shell round trip when privileged). Battery and, unprivileged, CPU/RAM/network still work -
-        // only the process list and GPU need a working mode. ----
+        // only the process list and GPU need a working mode.
+        // Speeds (v7.14): the graph redraws every 150 ms by default (50 ms at the fastest) and the poll runs every second (0.5 s at the
+        // fastest). Nothing faster is offered: the poll is one shell round trip that lists every process, and the native side runs the
+        // next one only after the last has finished (a fixed delay), so a period shorter than the round trip itself would only run them
+        // back to back; the graph has nothing new to show between two samples beyond its scroll, which is already smooth at 50 ms
+        // (20 frames a second). A redraw is painted in an animation frame, at most one waiting at a time, and skipped when nothing on
+        // the canvas would change. ----
         let tmReady = false;
         let tmSub = 'processes';
-        let tmAutoMs = 3000;
-        let tmGraphMs = 300;
+        const TM_AUTO_CHOICES = [0, 500, 1000, 2000, 3000, 5000, 10000];
+        const TM_GRAPH_MIN = 50, TM_GRAPH_MAX = 1000;
+        let tmAutoMs = 1000;
+        let tmGraphMs = 150;
         let tmTempUnit = 'f';
         let tmCurrentUnit = 'ma';
         let tmSort = 'cpu';
         let tmAppsFirst = false;                // apps (processes that belong to an app) above system and kernel processes
         let tmRedrawTimer = null;
+        let tmRedrawFrame = 0;                  // the animation frame a redraw waits for (one at a time)
         let tmLastData = null;
+        let tmLastSampleAt = 0, tmSampleGap = 0;    // performance.now() of the last sample, and the gap before it (the scroll's pace)
+        let tmBufVersion = 0;                   // bumped by every sample: a redraw with the same version, scroll and size is skipped
+        const tmDrawn = {};                     // canvas id -> what it last showed
+        let tmColorCache = null, tmColorAt = 0;
         const TM_BUF_MAX = 120;
         const tmBuf = { cpu: [], ram: [], gpu: [], batt: [], net: [] };
         const TM_PANELS = { processes: 'tmProcessesPanel', cpu: 'tmCpuPanel', ram: 'tmRamPanel', gpu: 'tmGpuPanel', battery: 'tmBatteryPanel', network: 'tmNetworkPanel' };
@@ -26945,8 +27096,9 @@ Type any command above (e.g. pm list packages -d)</div>
             tmReady = true;
             const ui = kvGet('taskmgr_ui', {}) || {};
             if (Object.prototype.hasOwnProperty.call(TM_PANELS, ui.sub)) tmSub = ui.sub;
-            if ([0, 1000, 2000, 3000, 5000, 10000].includes(ui.autoMs)) tmAutoMs = ui.autoMs;
-            if (typeof ui.graphMs === 'number' && ui.graphMs >= 150 && ui.graphMs <= 1000) tmGraphMs = ui.graphMs;
+            // a value saved by an older version keeps working; only one that is now out of range is brought to the nearest allowed
+            if (typeof ui.autoMs === 'number' && isFinite(ui.autoMs)) tmAutoMs = tmSnapAuto(ui.autoMs);
+            if (typeof ui.graphMs === 'number' && isFinite(ui.graphMs)) tmGraphMs = Math.max(TM_GRAPH_MIN, Math.min(TM_GRAPH_MAX, Math.round(ui.graphMs)));
             if (ui.tempUnit === 'c' || ui.tempUnit === 'f') tmTempUnit = ui.tempUnit;
             if (ui.currentUnit === 'ua' || ui.currentUnit === 'ma') tmCurrentUnit = ui.currentUnit;
             if (ui.sort === 'mem' || ui.sort === 'cpu') tmSort = ui.sort;
@@ -26962,6 +27114,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', tmSort === 'mem');
             tmSyncAppsFirst();
             tmShowPanels();
+        }
+        // the auto-refresh choice nearest to a saved period (0 stays Off)
+        function tmSnapAuto(ms) {
+            if (!(ms > 0)) return 0;
+            let best = 1000;
+            TM_AUTO_CHOICES.forEach(c => { if (c > 0 && Math.abs(c - ms) < Math.abs(best - ms)) best = c; });
+            return best;
         }
         // a temperature in the unit chosen under Units (the Battery and CPU tabs share it)
         function tmFormatTemp(c) { return tmTempUnit === 'f' ? Math.round(c * 9 / 5 + 32) + '°F' : Math.round(c) + '°C'; }
@@ -27012,25 +27171,35 @@ Type any command above (e.g. pm list packages -d)</div>
             tmRenderCurrent();
             tmMaybeLoadRenderer();
             tmRedrawNow();
-            if (tmRedrawTimer) clearInterval(tmRedrawTimer);
-            tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs);
+            tmStartRedrawTimer();
             if (!window.AndroidBridge || !window.AndroidBridge.tmStart) return;
             if (tmAutoMs > 0) window.AndroidBridge.tmStart(tmAutoMs); else if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
         }
+        // the graph's clock: every tmGraphMs it asks for one redraw in the next animation frame; a frame still waiting is not asked for twice
+        function tmStartRedrawTimer() {
+            if (tmRedrawTimer) clearInterval(tmRedrawTimer);
+            tmRedrawTimer = setInterval(tmRequestRedraw, tmGraphMs);
+        }
+        function tmRequestRedraw() {
+            if (document.hidden || tmRedrawFrame) return;
+            tmRedrawFrame = requestAnimationFrame(function () { tmRedrawFrame = 0; if (currentViewName() === 'taskmgr') tmRedrawNow(); });
+        }
         function tmStop() {
             if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
+            if (tmRedrawFrame) { cancelAnimationFrame(tmRedrawFrame); tmRedrawFrame = 0; }
             if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
         }
         // the poll runs only while the tab is on screen: the app going to the background stops it, coming back starts it again
         document.addEventListener('visibilitychange', function () {
             if (currentViewName() !== 'taskmgr') return;
-            if (document.hidden) tmStop(); else onTaskMgrShown();
+            const stm = document.getElementById('stModal');
+            if (document.hidden) tmStop(); else if (!(stm && stm.classList.contains('show'))) onTaskMgrShown();     // not while the speed test has the screen
         });
 
         // ---- settings controls ----
         function tmAutoRefreshChange() {
             const sel = document.getElementById('tmAutoRefresh');
-            tmAutoMs = (parseInt(sel.value, 10) || 0) * 1000;
+            tmAutoMs = tmSnapAuto((parseFloat(sel.value) || 0) * 1000);
             tmSaveUi();
             haptic();
             if (!window.AndroidBridge) return;
@@ -27043,10 +27212,10 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function tmGraphDelayInput() {
             const slider = document.getElementById('tmGraphDelay');
-            tmGraphMs = parseInt(slider.value, 10) || 300;
+            tmGraphMs = Math.max(TM_GRAPH_MIN, Math.min(TM_GRAPH_MAX, parseInt(slider.value, 10) || 150));
             const sliderVal = document.getElementById('tmGraphDelayVal'); if (sliderVal) sliderVal.innerText = tmGraphMs + ' ms';
             tmSaveUi();
-            if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs); }
+            if (tmRedrawTimer) tmStartRedrawTimer();
         }
         function tmSetSort(sort) {
             if (sort !== 'cpu' && sort !== 'mem') return;
@@ -27081,6 +27250,10 @@ Type any command above (e.g. pm list packages -d)</div>
         function onTaskMgrData(data) {
             tmLastData = data;
             if (!data || !data.ok) return;
+            const now = performance.now();
+            tmSampleGap = tmLastSampleAt ? now - tmLastSampleAt : 0;
+            tmLastSampleAt = now;
+            tmBufVersion++;
             tmPush(tmBuf.cpu, data.cpu ? data.cpu.overall : 0);
             const mem = data.mem;
             tmPush(tmBuf.ram, mem && mem.totalKb ? (100 * mem.usedKb / mem.totalKb) : 0);
@@ -27102,13 +27275,34 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---- a generic canvas line-graph, themed from the app's own CSS custom properties ----
-        function tmCssVar(name) { return (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80'; }
-        function tmDrawGraph(canvasId, buf, color, scaleMax) {
+        // The colours are read from the computed style at most once a second (getComputedStyle can force a style pass), and again
+        // right after the theme changes (applyTheme calls tmThemeChanged).
+        function tmCssVar(name) {
+            const now = performance.now();
+            if (!tmColorCache || now - tmColorAt > 1000) { tmColorCache = {}; tmColorAt = now; }
+            if (!(name in tmColorCache)) tmColorCache[name] = (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80';
+            return tmColorCache[name];
+        }
+        function tmThemeChanged() { try { tmColorCache = null; Object.keys(tmDrawn).forEach(k => delete tmDrawn[k]); } catch (e) {} }     // try: applyTheme may run before this part of the script has
+        // How far the graph has scrolled since the last sample, from 0 (just arrived, at the right edge) to 1 (one step to the left,
+        // where the next sample lands). The pace is the gap between the last two samples (never less than the chosen period), so the
+        // line moves on smoothly between samples and does not jump when one arrives. No scroll with auto-refresh off or reduced motion.
+        function tmScrollFraction() {
+            if (!tmAutoMs || !tmLastSampleAt) return 0;
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+            const pace = Math.max(tmAutoMs, Math.min(tmSampleGap || tmAutoMs, tmAutoMs * 3));
+            return Math.max(0, Math.min(1, (performance.now() - tmLastSampleAt) / pace));
+        }
+        function tmDrawGraph(canvasId, buf, color, scaleMax, frac) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             const wrap = canvas.parentElement;
             const w = wrap.clientWidth, h = wrap.clientHeight;
             if (!w || !h) return;
+            const f = buf.length > 1 ? (frac || 0) : 0;
+            const key = tmBufVersion + '|' + Math.round(f * 200) + '|' + w + 'x' + h + '|' + color + '|' + buf.length;
+            if (tmDrawn[canvasId] === key) return;                    // the same picture as last time: nothing to paint
+            tmDrawn[canvasId] = key;
             const dpr = window.devicePixelRatio || 1;
             const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
             if (canvas.width !== pw) canvas.width = pw;
@@ -27120,7 +27314,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const max = scaleMax != null ? scaleMax : Math.max(1, ...buf);
             const n = buf.length;
             const stepX = TM_BUF_MAX > 1 ? w / (TM_BUF_MAX - 1) : w;
-            const x0 = w - (n - 1) * stepX;
+            const x0 = w - (n - 1) * stepX - f * stepX;
             const y = v => h - Math.max(0, Math.min(1, v / max)) * (h - 4) - 2;
             if (n === 1) {       // a bare line/fill path needs two points; show the first reading as a dot instead of nothing
                 ctx.beginPath(); ctx.arc(w - 3, y(buf[0]), 2.5, 0, Math.PI * 2);
@@ -27128,10 +27322,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             const pts = buf.map((v, i) => [x0 + i * stepX, y(v)]);
+            if (f > 0) pts.push([w, pts[n - 1][1]]);                  // the latest reading holds until the next one comes in
+            const m = pts.length;
             ctx.beginPath();
             ctx.moveTo(pts[0][0], h);
             pts.forEach(p => ctx.lineTo(p[0], p[1]));
-            ctx.lineTo(pts[n - 1][0], h);
+            ctx.lineTo(pts[m - 1][0], h);
             ctx.closePath();
             ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = color; ctx.fill(); ctx.restore();
             ctx.beginPath();
@@ -27140,11 +27336,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function tmRedrawNow() {
             const accent = tmCssVar('--accent');
-            if (tmSub === 'cpu') tmDrawGraph('tmCpuCanvas', tmBuf.cpu, accent, 100);
-            else if (tmSub === 'ram') tmDrawGraph('tmRamCanvas', tmBuf.ram, accent, 100);
-            else if (tmSub === 'gpu') tmDrawGraph('tmGpuCanvas', tmBuf.gpu, accent, 100);
-            else if (tmSub === 'battery') tmDrawGraph('tmBattCanvas', tmBuf.batt, accent, 100);
-            else if (tmSub === 'network') tmDrawGraph('tmNetCanvas', tmBuf.net, tmCssVar('--secondary'), null);
+            const f = tmScrollFraction();
+            if (tmSub === 'cpu') tmDrawGraph('tmCpuCanvas', tmBuf.cpu, accent, 100, f);
+            else if (tmSub === 'ram') tmDrawGraph('tmRamCanvas', tmBuf.ram, accent, 100, f);
+            else if (tmSub === 'gpu') tmDrawGraph('tmGpuCanvas', tmBuf.gpu, accent, 100, f);
+            else if (tmSub === 'battery') tmDrawGraph('tmBattCanvas', tmBuf.batt, accent, 100, f);
+            else if (tmSub === 'network') tmDrawGraph('tmNetCanvas', tmBuf.net, tmCssVar('--secondary'), null, f);
         }
 
         // ---- Processes ----
@@ -27165,8 +27362,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             statusEl.innerText = procs.length + ' process' + (procs.length === 1 ? '' : 'es') + (d.procsFullFormat === false ? ' (reduced ps output on this device)' : '');
             if (!procs.length) { el.innerHTML = emptyStateHtml({ key: 'tm-procs-none', icon: 'cpu', title: 'No processes read.', compact: true }); return; }
-            el.innerHTML = procs.slice(0, 200).map(p => {
-                const app = p.pkg ? allApps.find(a => a.pkg === p.pkg) : null;
+            const byPkg = new Map();                            // one pass over the app list, not one search per row (this runs every poll)
+            (allApps || []).forEach(a => { if (a && a.pkg && !byPkg.has(a.pkg)) byPkg.set(a.pkg, a); });
+            const html = procs.slice(0, 200).map(p => {
+                const app = p.pkg ? (byPkg.get(p.pkg) || null) : null;
                 const title = app ? app.name : p.name;
                 const parts = [];
                 if (p.pkg) parts.push(p.pkg);
@@ -27174,6 +27373,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc(${jsArg(p.pkg)})" aria-label="Force Stop">✕</button>` : '';
                 return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div>${agentBtnHtml('process', p.name, [p.pkg ? 'Belongs to the app: ' + (app ? app.name + ' (' + p.pkg + ')' : p.pkg) : 'Not an app: a system or native process', 'Memory: ' + formatBytes(p.rssKb * 1024), 'CPU: ' + p.cpuPercent.toFixed(1) + '%'])}</div>${killBtn}</div>`;
             }).join('');
+            if (el.__tmHtml === html && el.querySelector('.tm-row')) return;         // nothing changed since the last poll: leave the rows (and the translation of them) alone
+            el.__tmHtml = html;
+            el.innerHTML = html;
         }
 
         // ---- CPU ----
@@ -27296,15 +27498,50 @@ Type any command above (e.g. pm list packages -d)</div>
         // on purpose to force that restart - Android relaunches it immediately, so this is a visible flicker of the
         // status/navigation bars, not data loss. Read and set only on request, never on the auto-refresh tick: this
         // control is a dropdown the person is actively using, and rebuilding it every poll could close it under them.
+        //
+        // ANGLE (v7.14): the global setting angle_gl_driver_all_angle = 1 makes ANGLE the OpenGL ES driver of every app (ANGLE runs the
+        // app's OpenGL ES on Vulkan). It is a separate switch from HWUI's renderer: on, it wins the dropdown; leaving it for another
+        // renderer turns it off first (0, read back) and only then applies that renderer the usual way. Changing it is only offered in
+        // Root mode (the owner's rule): outside Root the entry carries a lock and a tap on it says why. Every change is judged by reading
+        // the setting back, never by the command's output. Running apps keep their driver until they restart.
+        const TM_ANGLE_SETTING = 'angle_gl_driver_all_angle';
+        let tmAngleOn = false;                  // the setting as last read: true only when the phone said 1
         function tmRendererLabel(raw) {
+            if (raw === 'angle') return 'ANGLE';
             if (raw === 'skiavk') return 'Vulkan';
             if (raw === 'skiagl') return 'OpenGL';
             return 'Default';
+        }
+        function tmAngleUnlocked() { return !!isPrivilegedActive && currentWorkingMode === 'root'; }
+        // '1', '0' (also when the setting was never written: "null") or null when it could not be read
+        function tmReadAngle() {
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return null;
+            let out = '';
+            try { out = String(window.AndroidBridge.executeShell('settings get global ' + TM_ANGLE_SETTING) || ''); } catch (e) { return null; }
+            const lines = out.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const last = lines.length ? lines[lines.length - 1] : '';
+            if (last === '1') return '1';
+            if (last === '0' || last === 'null') return '0';
+            return null;
+        }
+        // a tap on the lock (or on the locked entry) says what it needs and where to get it
+        function tmAngleExplain() {
+            haptic();
+            showToast('ANGLE needs Root mode: switch to Root in Working Modes');
+        }
+        function tmSyncAngleLock() {
+            const lock = document.getElementById('tmAngleLock');
+            if (!lock) return;
+            const locked = !tmAngleUnlocked();
+            lock.style.display = locked ? '' : 'none';
+            const ic = document.getElementById('tmAngleLockIc');
+            if (ic && !ic.firstChild) xqLockGlyph(ic);
         }
         function tmLoadRenderer() {
             const sel = document.getElementById('tmRendererSelect');
             const note = document.getElementById('tmRendererNote');
             if (!sel) return;
+            tmSyncAngleLock();
             if (!isPrivilegedActive || !window.AndroidBridge || !window.AndroidBridge.executeShell) {
                 sel.innerHTML = '<option value="">—</option>';
                 sel.disabled = true;
@@ -27314,22 +27551,53 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             let raw = '';
             try { raw = (window.AndroidBridge.executeShell('getprop debug.hwui.renderer') || '').trim(); } catch (e) {}
+            tmAngleOn = tmReadAngle() === '1';
             const gpu = (tmLastData && tmLastData.gpu) || {};
+            const cur = tmAngleOn ? 'angle' : raw;
             const opts = [];
-            if (raw !== 'skiagl' && raw !== 'skiavk') opts.push('<option value="" selected>Default</option>');
-            opts.push(`<option value="skiagl"${raw === 'skiagl' ? ' selected' : ''}>OpenGL</option>`);
-            if (gpu.vulkanSupported) opts.push(`<option value="skiavk"${raw === 'skiavk' ? ' selected' : ''}>Vulkan</option>`);
+            if (raw !== 'skiagl' && raw !== 'skiavk') opts.push(`<option value=""${cur === '' || (cur !== 'angle' && cur !== 'skiagl' && cur !== 'skiavk') ? ' selected' : ''}>Default</option>`);
+            opts.push(`<option value="skiagl"${cur === 'skiagl' ? ' selected' : ''}>OpenGL</option>`);
+            if (gpu.vulkanSupported) opts.push(`<option value="skiavk"${cur === 'skiavk' ? ' selected' : ''}>Vulkan</option>`);
+            const locked = !tmAngleUnlocked();
+            opts.push(`<option value="angle"${cur === 'angle' ? ' selected' : ''}>${locked ? 'ANGLE (OpenGL ES on Vulkan), needs Root' : 'ANGLE (OpenGL ES on Vulkan)'}</option>`);
             sel.innerHTML = opts.join('');
             sel.disabled = false;
-            const label = tmRendererLabel(raw);
+            const label = tmRendererLabel(cur);
             const nowEl = document.getElementById('tmRendererNow'); if (nowEl) nowEl.innerText = label;
-            if (note) note.innerText = `Currently using ${label}. Switching restarts System UI to apply it.`;
+            if (note) note.innerText = tmAngleOn ? 'Currently using ANGLE for every app. Apps pick up a change when they restart.' : `Currently using ${label}. Switching restarts System UI to apply it.`;
+        }
+        // ANGLE on or off as root, judged by reading the setting back; true when the phone now says what was asked
+        function tmApplyAngle(on) {
+            execShellOk('settings put global ' + TM_ANGLE_SETTING + ' ' + (on ? '1' : '0'));
+            const back = tmReadAngle();
+            if (back !== null) tmAngleOn = back === '1';
+            return back === (on ? '1' : '0');
         }
         function tmSetRenderer() {
             const sel = document.getElementById('tmRendererSelect');
             const note = document.getElementById('tmRendererNote');
             const v = sel.value;
-            if (!v || !window.AndroidBridge || !window.AndroidBridge.executeShell) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return;
+            if (v === 'angle') {
+                if (!tmAngleUnlocked()) { tmAngleExplain(); tmLoadRenderer(); return; }
+                if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
+                haptic();
+                if (note) note.innerText = 'Turning on ANGLE…';
+                const ok = tmApplyAngle(true);
+                showToast(ok ? 'ANGLE on - apps use it when they restart' : 'Could not turn on ANGLE');
+                tmLoadRenderer();
+                return;
+            }
+            if (tmAngleOn) {
+                // leaving ANGLE: it is turned off first, and the other renderer is applied only once the phone says it is off
+                if (!tmAngleUnlocked()) { showToast('Turning ANGLE off needs Root mode'); tmLoadRenderer(); return; }
+                if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
+                haptic();
+                if (note) note.innerText = 'Turning off ANGLE…';
+                if (!tmApplyAngle(false)) { showToast('Could not turn off ANGLE'); tmLoadRenderer(); return; }
+                if (!v) { showToast('ANGLE off - apps use the default driver when they restart'); tmLoadRenderer(); return; }
+            }
+            if (!v) return;
             if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
             haptic();
             const label = tmRendererLabel(v);
@@ -27402,6 +27670,350 @@ Type any command above (e.g. pm list packages -d)</div>
             if (net.totalTxBytes != null) infoRows.push(['Total sent', formatBytes(net.totalTxBytes)]);
             infoEl.innerHTML = tmInfoGrid('Network Statistics', infoRows);
         }
+
+        // ---- Internet speed test (Task Manager > Network > Speed test) ----
+        // A full screen of its own over the Task Manager (Back, the arrow and the X close it). SpeedTest.java measures (latency, then download,
+        // then upload against Cloudflare) and streams events to window.onSpeedTest; this part only shows them. While the screen is open the
+        // Task Manager's own poll is paused (it would compete with the test for the CPU and the radio) and it resumes on closing. A test stops
+        // on Stop, on closing the screen, on leaving the tab and when the app goes to the background; the app stops it in onDestroy.
+        const ST_TICKS = [0, 1, 5, 10, 20, 50, 100, 250, 500, 1000];           // the gauge's scale: equal steps between these, so 3 Mbps and 300 both move the needle
+        const ST_HIST_KEY = 'speedtest_history', ST_HIST_MAX = 10;
+        const ST_COLOS = { AMS: 'Amsterdam', ARN: 'Stockholm', ATL: 'Atlanta', ATH: 'Athens', BCN: 'Barcelona', BKK: 'Bangkok', BNE: 'Brisbane', BOG: 'Bogotá', BOM: 'Mumbai', BOS: 'Boston',
+            BRU: 'Brussels', BUD: 'Budapest', CAI: 'Cairo', CDG: 'Paris', CGK: 'Jakarta', CPH: 'Copenhagen', CPT: 'Cape Town', DEL: 'New Delhi', DEN: 'Denver', DFW: 'Dallas', DUB: 'Dublin',
+            DUS: 'Düsseldorf', DXB: 'Dubai', EWR: 'Newark', EZE: 'Buenos Aires', FCO: 'Rome', FRA: 'Frankfurt', GRU: 'São Paulo', HAM: 'Hamburg', HEL: 'Helsinki', HKG: 'Hong Kong',
+            IAD: 'Ashburn', ICN: 'Seoul', IST: 'Istanbul', JNB: 'Johannesburg', KIX: 'Osaka', KUL: 'Kuala Lumpur', LAX: 'Los Angeles', LHR: 'London', LIS: 'Lisbon', MAD: 'Madrid',
+            MAN: 'Manchester', MEL: 'Melbourne', MEX: 'Mexico City', MIA: 'Miami', MRS: 'Marseille', MSP: 'Minneapolis', MUC: 'Munich', MXP: 'Milan', NRT: 'Tokyo', ORD: 'Chicago',
+            OSL: 'Oslo', OTP: 'Bucharest', PDX: 'Portland', PHX: 'Phoenix', PRG: 'Prague', SCL: 'Santiago', SEA: 'Seattle', SFO: 'San Francisco', SIN: 'Singapore', SJC: 'San Jose',
+            SOF: 'Sofia', SYD: 'Sydney', TLV: 'Tel Aviv', TPE: 'Taipei', VIE: 'Vienna', WAW: 'Warsaw', YUL: 'Montreal', YVR: 'Vancouver', YYZ: 'Toronto', ZRH: 'Zurich' };
+        const ST_NET_LABEL = { wifi: 'Wi-Fi', cellular: 'Mobile data', ethernet: 'Ethernet', vpn: 'VPN', other: 'Other network', none: 'No connection' };
+        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, ping: null, jitter: null, down: null, up: null, colo: '',
+            samples: { download: [], upload: [] }, phaseMs: { download: 10000, upload: 10000 }, rampMs: { download: 2000, upload: 2000 },
+            target: 0, targetV: 0, shown: 0, gaugeKey: '', frame: 0, lastT: 0, graphFrame: 0, dirty: {}, colors: null, ticks: false, result: null };
+
+        function stCalm() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
+        function stEl(id) { return document.getElementById(id); }
+        function stText(id, text) { const el = stEl(id); if (el && el.textContent !== text) el.textContent = text; }        // only touches the page when the words change
+        function stFmtMbps(v) { v = +v || 0; if (v <= 0) return '0'; return v >= 100 ? String(Math.round(v)) : v >= 10 ? v.toFixed(1) : v.toFixed(2); }
+        function stFmtMs(v) { if (v == null || !isFinite(v)) return '—'; return v < 10 ? (Math.round(v * 10) / 10).toFixed(1) : String(Math.round(v)); }
+        function stScale(v) {                                                       // Mbps -> 0..1 along the arc
+            v = Math.max(0, +v || 0);
+            const T = ST_TICKS, n = T.length - 1;
+            if (v >= T[n]) return 1;
+            for (let i = 0; i < n; i++) if (v < T[i + 1]) return (i + (v - T[i]) / (T[i + 1] - T[i])) / n;
+            return 1;
+        }
+        function stCity(colo) { return colo && ST_COLOS[colo] ? ST_COLOS[colo] : (colo || ''); }
+
+        function stDrawTicks() {
+            if (spd.ticks) return;
+            const g = stEl('stTicks'); if (!g) return;
+            const n = ST_TICKS.length - 1;
+            let svg = '';
+            ST_TICKS.forEach((t, i) => {
+                const a = (135 + 270 * i / n) * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+                svg += '<line class="st-tickmark" x1="' + (150 + 100 * c).toFixed(1) + '" y1="' + (150 + 100 * s).toFixed(1) + '" x2="' + (150 + 106 * c).toFixed(1) + '" y2="' + (150 + 106 * s).toFixed(1) + '"/>';
+                svg += '<text class="st-ticklabel" x="' + (150 + 88 * c).toFixed(1) + '" y="' + (150 + 88 * s).toFixed(1) + '">' + t + '</text>';
+            });
+            g.innerHTML = svg;
+            spd.ticks = true;
+        }
+        function stUnscale(f) {                                                     // 0..1 along the arc -> Mbps
+            const T = ST_TICKS, n = T.length - 1;
+            f = Math.max(0, Math.min(1, +f || 0)) * n;
+            const i = Math.min(n - 1, Math.floor(f));
+            return T[i] + (f - i) * (T[i + 1] - T[i]);
+        }
+        function stPaintGauge(v, f) {
+            if (f == null) f = stScale(v);
+            const key = Math.round(f * 2000);
+            if (key !== spd.gaugeKey) {
+                spd.gaugeKey = key;
+                const nd = stEl('stNeedle'), arc = stEl('stArc');
+                if (nd) nd.setAttribute('transform', 'rotate(' + (135 + 270 * f).toFixed(2) + ' 150 150)');
+                if (arc) arc.setAttribute('stroke-dashoffset', (1000 * (1 - f)).toFixed(1));
+            }
+            if (spd.phase === 'download' || spd.phase === 'upload' || spd.phase === 'done' || spd.phase === 'stopped') stText('stNum', stFmtMbps(v));
+        }
+        // The needle eases toward the latest reading on animation frames (one at a time); with reduced motion, or hidden, it jumps there.
+        // spd.shown and spd.target are positions along the arc (0..1); the number shown is the reading itself once the needle is there.
+        function stSetTarget(v) {
+            spd.targetV = Math.max(0, +v || 0);
+            spd.target = stScale(spd.targetV);
+            if (stCalm() || document.hidden) {
+                if (spd.frame) { cancelAnimationFrame(spd.frame); spd.frame = 0; }
+                spd.shown = spd.target; stPaintGauge(spd.targetV, spd.shown); return;
+            }
+            if (!spd.frame) { spd.lastT = 0; spd.frame = requestAnimationFrame(stAnimate); }
+        }
+        function stAnimate(now) {
+            spd.frame = 0;
+            const dt = spd.lastT ? Math.min(100, now - spd.lastT) : 16;
+            spd.lastT = now;
+            spd.shown += (spd.target - spd.shown) * (1 - Math.exp(-dt / 140));
+            if (Math.abs(spd.target - spd.shown) < 0.0015) spd.shown = spd.target;
+            stPaintGauge(spd.shown === spd.target ? spd.targetV : stUnscale(spd.shown), spd.shown);
+            if (spd.shown !== spd.target && !document.hidden) spd.frame = requestAnimationFrame(stAnimate);
+        }
+        function stGaugeNow() { stPaintGauge(spd.shown === spd.target ? spd.targetV : stUnscale(spd.shown), spd.shown); }
+
+        function stColor(name) {
+            if (!spd.colors) spd.colors = {};
+            if (!(name in spd.colors)) spd.colors[name] = (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80';
+            return spd.colors[name];
+        }
+        function stThemeChanged() { try { spd.colors = null; stQueueGraph('download'); stQueueGraph('upload'); } catch (e) {} }     // try: applyTheme may run before this part of the script has
+        function stQueueGraph(phase) {
+            spd.dirty[phase] = true;
+            if (spd.graphFrame || !spd.open || document.hidden) return;
+            spd.graphFrame = requestAnimationFrame(function () {
+                spd.graphFrame = 0;
+                ['download', 'upload'].forEach(p => { if (spd.dirty[p]) { spd.dirty[p] = false; stDrawGraph(p); } });
+            });
+        }
+        // Speed over the phase's time: the shaded strip at the left is the ramp-up the result leaves out.
+        function stDrawGraph(phase) {
+            const canvas = stEl(phase === 'download' ? 'stDownGraph' : 'stUpGraph');
+            if (!canvas) return;
+            const wrap = canvas.parentElement, w = wrap.clientWidth, h = wrap.clientHeight;
+            if (!w || !h) return;
+            const dpr = window.devicePixelRatio || 1;
+            const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+            if (canvas.width !== pw) canvas.width = pw;
+            if (canvas.height !== ph) canvas.height = ph;
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+            const s = spd.samples[phase] || [];
+            if (!s.length) return;
+            const color = stColor(phase === 'download' ? '--accent' : '--secondary');
+            const T = Math.max(1, spd.phaseMs[phase] || 10000), ramp = Math.max(0, spd.rampMs[phase] || 0);
+            if (ramp) { ctx.save(); ctx.globalAlpha = 0.08; ctx.fillStyle = color; ctx.fillRect(0, 0, Math.min(w, w * ramp / T), h); ctx.restore(); }
+            if (s.length < 2) return;
+            let max = 1; for (const p of s) if (p.mbps > max) max = p.mbps;
+            max *= 1.15;
+            const X = t => Math.max(0, Math.min(w, w * t / T)), Y = v => h - Math.max(0, Math.min(1, v / max)) * (h - 4) - 2;
+            ctx.beginPath(); ctx.moveTo(X(s[0].t), h);
+            s.forEach(p => ctx.lineTo(X(p.t), Y(p.mbps)));
+            ctx.lineTo(X(s[s.length - 1].t), h); ctx.closePath();
+            ctx.save(); ctx.globalAlpha = 0.18; ctx.fillStyle = color; ctx.fill(); ctx.restore();
+            ctx.beginPath();
+            s.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p.mbps)) : ctx.moveTo(X(p.t), Y(p.mbps)));
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
+        }
+
+        function stNetRefresh() {
+            let n = null;
+            try { if (window.AndroidBridge && window.AndroidBridge.speedTestNetInfo) n = JSON.parse(window.AndroidBridge.speedTestNetInfo()); } catch (e) { n = null; }
+            if (!n || typeof n !== 'object') n = { type: 'other', metered: false };
+            if (!ST_NET_LABEL[n.type]) n.type = 'other';
+            n.metered = !!n.metered;
+            n.maxBytes = +n.maxBytes > 0 ? +n.maxBytes : 350e6;
+            spd.net = n;
+            const label = txT(ST_NET_LABEL[n.type]);
+            stText('stNetText', n.metered ? label + ' · ' + txT('metered') : label);
+            const chip = stEl('stNetChip');
+            if (chip) { chip.classList.toggle('is-wifi', n.type === 'wifi' || n.type === 'ethernet'); chip.classList.toggle('is-mobile', n.type === 'cellular' || n.metered); }
+            stText('stNet', label);
+            stText('stNetSub', n.type === 'none' ? ' ' : txT(n.metered ? 'Metered: data may cost money' : 'Not metered'));
+            return n;
+        }
+        function stServerShow() {
+            stText('stServer', spd.colo ? stCity(spd.colo) : '—');
+            stText('stServerSub', spd.colo ? spd.colo + ' · Cloudflare' : 'Cloudflare');
+            stText('stServerText', spd.colo ? stCity(spd.colo) : 'Cloudflare');
+        }
+        function stLive(card) { ['stCardPing', 'stCardJitter', 'stCardDown', 'stCardUp'].forEach(id => { const el = stEl(id); if (el) el.classList.toggle('is-live', id === card); }); }
+        function stButton() {
+            const b = stEl('stGo'); if (!b) return;
+            b.classList.toggle('is-stop', spd.running);
+            stText('stGo', txT(spd.running ? 'Stop' : (spd.result || spd.ping != null || spd.phase === 'stopped' ? 'Run again' : 'Start')));
+            const scr = stEl('stScreen'); if (scr) scr.classList.toggle('st-running', spd.running);
+        }
+        function stErr(text) {
+            const box = stEl('stErr'); if (!box) return;
+            box.style.display = text ? '' : 'none';
+            stText('stErrText', text ? txT(text) : '');
+        }
+        function stReset() {
+            spd.phase = ''; spd.ping = null; spd.jitter = null; spd.down = null; spd.up = null; spd.colo = ''; spd.result = null;
+            spd.samples = { download: [], upload: [] };
+            ['stPing', 'stJitter', 'stDown', 'stUp'].forEach(id => stText(id, '—'));
+            stText('stPingSub', txT('Median of 15 requests'));
+            stServerShow(); stLive('');
+            stEl('stShare').style.display = 'none';
+            stErr('');
+            stText('stNum', '0'); stText('stUnit', 'Mbps'); stText('stPhase', txT('Ready'));
+            spd.dirty = {}; stQueueGraph('download'); stQueueGraph('upload');
+            stSetTarget(0);
+        }
+
+        function stOpen() {
+            haptic();
+            const m = stEl('stModal'); if (!m) return;
+            stDrawTicks();
+            m.classList.add('show');
+            spd.open = true;
+            if (typeof tmStop === 'function') tmStop();                    // the Task Manager's poll waits while the test has the screen
+            stNetRefresh();
+            stHistRender();
+            if (!spd.running) { stButton(); spd.gaugeKey = ''; stGaugeNow(); }
+            stQueueGraph('download'); stQueueGraph('upload');
+        }
+        function stClose() {
+            const m = stEl('stModal'); if (!m) return;
+            if (spd.running) stStop('Stopped');
+            stEl('stWarn').style.display = 'none';
+            m.classList.remove('show');
+            spd.open = false;
+            if (spd.frame) { cancelAnimationFrame(spd.frame); spd.frame = 0; spd.shown = spd.target; spd.gaugeKey = ''; }
+            if (spd.graphFrame) { cancelAnimationFrame(spd.graphFrame); spd.graphFrame = 0; }
+            if (currentViewName() === 'taskmgr' && !document.hidden && typeof onTaskMgrShown === 'function') onTaskMgrShown();
+        }
+        // Leaving the Task Manager while the screen is open (switchView): the test ends with it.
+        function stLeave() { try { if (spd.open) stClose(); } catch (e) {} }
+        function stGo() {
+            haptic();
+            if (spd.running) { stStop('Stopped'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.speedTestStart) { showToast('The speed test needs the app'); return; }
+            const n = stNetRefresh();
+            if (n.type === 'none') { stErr('No internet connection.'); return; }
+            if (n.type === 'cellular' || n.metered) {                       // ask first: the test can use a lot of data
+                stText('stWarnTitle', txT(n.type === 'cellular' ? 'You are on mobile data' : 'This network is metered'));
+                stText('stWarnMb', Math.round(n.maxBytes / 1e6) + ' MB');
+                stEl('stWarn').style.display = '';
+                return;
+            }
+            stStart();
+        }
+        function stWarnContinue() { haptic(); stEl('stWarn').style.display = 'none'; stStart(); }
+        function stWarnCancel() { haptic(); stEl('stWarn').style.display = 'none'; }
+        function stStart() {
+            if (!spd.open || spd.running) return;
+            stReset();
+            const id = 'st' + Date.now().toString(36) + (++spd.seq);
+            let r = null;
+            try { r = JSON.parse(window.AndroidBridge.speedTestStart(JSON.stringify({ id: id }))); } catch (e) { r = null; }
+            if (!r || !r.ok) { stErr(r && r.error ? txT('Could not start:') + ' ' + r.error : 'Could not start the test.'); stButton(); return; }
+            spd.id = id; spd.running = true; spd.phase = 'starting';
+            stText('stPhase', txT('Connecting…'));
+            stButton();
+        }
+        // Stop: the app closes the test's connections at once. Whatever comes from that test after this is ignored.
+        function stStop(label) {
+            if (!spd.running) return;
+            const id = spd.id;
+            spd.running = false; spd.id = ''; spd.phase = 'stopped';
+            try { if (window.AndroidBridge && window.AndroidBridge.speedTestStop) window.AndroidBridge.speedTestStop(id); } catch (e) {}
+            stLive('');
+            if (label) stText('stPhase', txT(label));
+            stText('stUnit', 'Mbps');
+            stSetTarget(0);
+            stButton();
+        }
+
+        window.onSpeedTest = function (raw) {
+            let e;
+            try { e = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (x) { return; }
+            if (!e || !spd.running || e.id !== spd.id) return;                 // another (stopped) test, or none running
+            const type = e.type;
+            if (type === 'phase') {
+                spd.phase = e.phase;
+                if (e.phase === 'latency') { stText('stPhase', txT('Ping')); stText('stUnit', 'ms'); stText('stNum', '—'); stLive('stCardPing'); }
+                else if (e.phase === 'download' || e.phase === 'upload') {
+                    if (+e.phaseMs > 0) spd.phaseMs[e.phase] = +e.phaseMs;
+                    if (+e.rampMs >= 0) spd.rampMs[e.phase] = +e.rampMs;
+                    spd.samples[e.phase] = [];
+                    stText('stPhase', txT(e.phase === 'download' ? 'Download' : 'Upload'));
+                    stText('stUnit', 'Mbps');
+                    stLive(e.phase === 'download' ? 'stCardDown' : 'stCardUp');
+                    spd.shown = 0; spd.gaugeKey = ''; stSetTarget(0); stPaintGauge(0, 0);
+                    stQueueGraph(e.phase);
+                }
+            } else if (type === 'server') {
+                spd.colo = /^[A-Z]{3}$/.test(e.colo || '') ? e.colo : '';
+                stServerShow();
+            } else if (type === 'ping') {
+                if (spd.phase === 'latency') stText('stNum', stFmtMs(+e.ms));
+                stText('stPing', stFmtMs(+e.medianMs));
+                stText('stPingSub', txT('Sample') + ' ' + (e.n | 0) + ' / ' + (e.of | 0));
+            } else if (type === 'latency') {
+                spd.ping = +e.pingMs; spd.jitter = +e.jitterMs;
+                stText('stPing', stFmtMs(spd.ping)); stText('stJitter', stFmtMs(spd.jitter));
+                stText('stPingSub', txT('Median of') + ' ' + (e.samples | 0) + ' ' + txT('requests'));
+            } else if (type === 'progress') {
+                const p = e.phase === 'upload' ? 'upload' : 'download';
+                const v = Math.max(0, +e.mbps || 0);
+                spd.samples[p].push({ t: Math.max(0, +e.t || 0), mbps: v });
+                stText(p === 'download' ? 'stDown' : 'stUp', stFmtMbps(v));
+                stSetTarget(v);
+                stQueueGraph(p);
+            } else if (type === 'result') {
+                const v = Math.max(0, +e.mbps || 0);
+                if (e.phase === 'upload') spd.up = v; else spd.down = v;
+                stText(e.phase === 'upload' ? 'stUp' : 'stDown', stFmtMbps(v));
+            } else if (type === 'done') {
+                spd.running = false; spd.id = '';
+                stLive('');
+                if (e.ok) {
+                    spd.phase = 'done';
+                    spd.ping = +e.pingMs; spd.jitter = +e.jitterMs; spd.down = +e.downMbps || 0; spd.up = +e.upMbps || 0;
+                    if (/^[A-Z]{3}$/.test(e.colo || '')) { spd.colo = e.colo; stServerShow(); }
+                    stText('stDown', stFmtMbps(spd.down)); stText('stUp', stFmtMbps(spd.up));
+                    stText('stPing', stFmtMs(spd.ping)); stText('stJitter', stFmtMs(spd.jitter));
+                    stText('stPhase', txT('Done')); stText('stUnit', txT('Mbps download'));
+                    stSetTarget(spd.down);
+                    spd.result = { at: Date.now(), down: spd.down, up: spd.up, ping: spd.ping, jitter: spd.jitter, colo: spd.colo, net: spd.net ? spd.net.type : '' };
+                    stEl('stShare').style.display = '';
+                    stHistAdd(spd.result);
+                } else {
+                    spd.phase = 'stopped';
+                    stText('stPhase', txT(e.stopped ? 'Stopped' : 'Failed'));
+                    stSetTarget(0);
+                    if (!e.stopped) stErr(e.error ? String(e.error).charAt(0).toUpperCase() + String(e.error).slice(1) + '.' : 'The connection failed.');
+                }
+                stButton();
+            }
+        };
+
+        function stResultText(r) {
+            if (!r) return '';
+            const d = new Date(r.at);
+            const lines = [txT('Speed test') + ' (Cloudflare' + (r.colo ? ', ' + stCity(r.colo) + ' ' + r.colo : '') + ')',
+                txT('Download') + ': ' + stFmtMbps(r.down) + ' Mbps',
+                txT('Upload') + ': ' + stFmtMbps(r.up) + ' Mbps',
+                txT('Ping') + ': ' + stFmtMs(r.ping) + ' ms, ' + txT('jitter') + ' ' + stFmtMs(r.jitter) + ' ms'];
+            if (r.net && ST_NET_LABEL[r.net]) lines.push(txT('Connection') + ': ' + txT(ST_NET_LABEL[r.net]));
+            lines.push(d.toLocaleString());
+            return lines.join('\n');
+        }
+        function stCopy() { if (!spd.result) return; copyText(stResultText(spd.result)); }
+        function stShareResult() { haptic(); if (!spd.result) return; shareText(txT('Speed test'), stResultText(spd.result)); }
+
+        function stHistLoad() {
+            const h = kvGet(ST_HIST_KEY, []);
+            return Array.isArray(h) ? h.filter(r => r && isFinite(r.at) && isFinite(r.down) && isFinite(r.up)).slice(0, ST_HIST_MAX) : [];
+        }
+        function stHistAdd(r) { const h = stHistLoad(); h.unshift(r); kvSet(ST_HIST_KEY, h.slice(0, ST_HIST_MAX)); stHistRender(); }
+        function stHistClear() { haptic(); kvSet(ST_HIST_KEY, []); stHistRender(); showToast('History cleared'); }
+        function stHistRender() {
+            const el = stEl('stHist'); if (!el) return;
+            const h = stHistLoad();
+            stEl('stHistClear').style.display = h.length ? '' : 'none';
+            if (!h.length) { el.innerHTML = '<div class="list-empty">No results yet. They are kept on this phone.</div>'; return; }
+            el.innerHTML = h.map(r => {
+                const d = new Date(r.at);
+                const when = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                const where = r.colo ? ' · ' + escapeHtml(stCity(String(r.colo))) : '';
+                return '<div class="st-hrow"><span class="st-hdate" translate="no">' + escapeHtml(when) + where + '</span>'
+                    + '<b class="st-hdown" translate="no">↓ ' + stFmtMbps(r.down) + '</b><b class="st-hup" translate="no">↑ ' + stFmtMbps(r.up) + '</b>'
+                    + '<span class="st-hping" translate="no">' + stFmtMs(+r.ping) + ' ms</span></div>';
+            }).join('');
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) { if (spd.open) { stQueueGraph('download'); stQueueGraph('upload'); spd.gaugeKey = ''; stGaugeNow(); } return; }
+            if (spd.running) stStop('Stopped: the app went to the background');
+            if (spd.frame) { cancelAnimationFrame(spd.frame); spd.frame = 0; spd.shown = spd.target; }
+        });
 
         // ---- Play Store / Aurora update routing (lightweight) ----
         function refreshStoreStatus() {
@@ -28534,6 +29146,8 @@ Type any command above (e.g. pm list packages -d)</div>
             renderStyleCards(mode);
             renderMyThemes(mode);
             renderAppearanceControls(mode);
+            if (typeof tmThemeChanged === 'function') tmThemeChanged();          // the Task Manager graphs pick up the new colours
+            if (typeof stThemeChanged === 'function') stThemeChanged();          // and the speed test's gauge and graphs
 
             if (window.AndroidBridge) {
                 if (save && window.AndroidBridge.savePreferences) {

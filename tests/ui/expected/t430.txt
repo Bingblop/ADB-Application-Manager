@@ -1,0 +1,24 @@
+ok   1. fresh install: auto-refresh 1 s, graph speed 150 ms, the slider goes from 50 to 1000 ms
+ok      opening the tab starts the native poll every 1000 ms
+ok   2. the auto-refresh choices are Off, 0.5, 1, 2, 3, 5 and 10 s
+ok      0.5 s asks the native side for a 500 ms poll and is saved as 500
+ok   3. the graph slider reaches 50 ms, shows it and saves it
+ok      it cannot go below 50 ms
+ok   4. ten redraw requests before the next frame ask for ONE animation frame (no pile-up)
+ok   5. with nothing new to show, the 50 ms timer paints the graph once and then skips (no repaint in 600 ms)
+ok      a new sample is painted at the next tick
+ok   6. auto-refresh 1 s, graph 50 ms: the graph scrolls on between samples (many paints in 0.6 s, not one)
+ok      half a period after a sample it has scrolled about half a step
+ok      once a full step has passed with no new sample it holds still (no more paints) instead of running ahead
+ok   7. a poll with 200 changed processes renders the 200 rows well inside one 500 ms period (under 100 ms here)
+ok      the same sample again does not rewrite the list (no DOM change)
+ok   8. leaving the tab stops the native poll and both page timers (interval and waiting frame)
+ok      and nothing is painted after that
+ok   9. an older saved 3 s and 300 ms keep working as they were
+ok      so do 10 s and 1000 ms
+ok      and Off (one sample on opening, no poll)
+ok   10. out of range: 250 ms becomes 0.5 s and a 20 ms graph becomes 50 ms
+ok       7 s becomes the nearest choice (5 s) and 5000 ms becomes 1000 ms
+ok   11. with reduced motion the graph does not scroll between samples
+ok   12. the app going to the background (screen off) stops the poll and the graph timer
+ok   no page errors
