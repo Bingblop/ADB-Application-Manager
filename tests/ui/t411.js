@@ -52,7 +52,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const t = (dark ? 'dark' : 'light') + ' ' + preset;
     const page = await open({ dark, preset });
     await page.evaluate(() => { toggleSelectPkg('com.android.chrome'); toggleSelectPkg('com.amazon.mShop.android.shopping'); }); await page.waitForTimeout(250);
-    for (const [v, name, want] of [[0, 'Off', 0], [1, 'Subtle', 0.11], [2, 'Normal', 0.2]]) {
+    for (const [v, name, want] of [[0, 'Off', 0], [1, 'Faint', 0.06], [2, 'Subtle', 0.11], [3, 'Normal', 0.2], [4, 'Vivid', 0.24]]) {
       await page.evaluate(v => setRowTint(v), v); await page.waitForTimeout(120);
       const s = summary(await rows(page));
       check(`${t}, Row tints ${name}: no row that is not selected has an outline (running, frozen and uninstalled ones neither)`, s.outlineFree, s.outlined.join(' | '));
@@ -63,8 +63,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       check(`${t}, Row tints ${name}: each tint is drawn in its state's colour`, s.colours);
       check(`${t}, Row tints ${name}: the selected rows are drawn with the accent gradient whatever the setting`, s.selGradient && s.selTint.every(o => Math.abs(o - 0.13) < 0.001), JSON.stringify(s.selTint));
     }
-    // the badges read on what is really behind them (Normal is the strongest tint; the selected rows too): the text hidden, the pixels averaged
-    await page.evaluate(() => setRowTint(2)); await page.waitForTimeout(150);
+    // the badges read on what is really behind them (Vivid is the strongest tint; the selected rows too): the text hidden, the pixels averaged
+    await page.evaluate(() => setRowTint(4)); await page.waitForTimeout(150);
     const badges = await page.evaluate(() => [...document.querySelectorAll('#view-apps .app-card .tag-badge')].map((e, i) => { e.dataset.t411 = i; const r = e.getBoundingClientRect(); return { i, kind: e.textContent, sel: !!e.closest('.selected'), color: getComputedStyle(e).color, x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 }; }));
     await page.addStyleTag({ content: '[data-t411] { color: transparent !important; }' });
     await page.evaluate(() => { const s = document.createElement('canvas'); s.id = 't411c'; s.style.display = 'none'; document.body.appendChild(s); });
@@ -88,7 +88,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // a WebView without color-mix(): the rows look the same (no white outline, the card's background), the tint and the selection are drawn
   for (const dark of [true, false]) {
     const page = await open({ dark }, true);
-    await page.evaluate(() => { toggleSelectPkg('com.android.chrome'); setRowTint(2); }); await page.waitForTimeout(250);
+    await page.evaluate(() => { toggleSelectPkg('com.android.chrome'); setRowTint(3); }); await page.waitForTimeout(250);
     const s = summary(await rows(page));
     const t = (dark ? 'dark' : 'light') + ', no color-mix()';
     check(`${t}: no row that is not selected has an outline`, s.outlineFree, s.outlined.join(' | '));

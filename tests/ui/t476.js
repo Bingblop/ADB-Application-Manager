@@ -32,7 +32,7 @@ const LOG = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + i + '
   for (const theme of ['dark', 'light']) {
     await ev(t => { themeState.appearance = t; applyTheme(false); switchView('logcat'); }, theme); await page.waitForTimeout(600);
     const ops = {};
-    for (const [v, name] of [[0, 'off'], [1, 'subtle'], [2, 'normal']]) {
+    for (const [v, name] of [[0, 'off'], [1, 'faint'], [2, 'subtle'], [3, 'normal'], [4, 'vivid']]) {
       await ev(x => setRowTint(x), v); await page.waitForTimeout(100);
       const r = await look();
       ops[name] = r.I && r.I.op;
@@ -42,7 +42,7 @@ const LOG = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + i + '
         check(theme + ', ' + name + ': its text keeps at least 4.5:1 where the tint is strongest', Object.values(r).every(x => x.minText >= 4.5), JSON.stringify(Object.fromEntries(Object.entries(r).map(([k, x]) => [k, x.minText]))));
       }
     }
-    check(theme + ': Off draws no tint, Normal more than Subtle', ops.off === 0 && ops.normal > ops.subtle && ops.subtle > 0, JSON.stringify(ops));
+    check(theme + ': Off draws no tint, and each step more than the one before (Faint, Subtle, Normal, Vivid)', ops.off === 0 && ops.faint > 0 && ops.subtle > ops.faint && ops.normal > ops.subtle && ops.vivid > ops.normal, JSON.stringify(ops));
   }
   check('Settings > Row tints says it tints Live Logcat too', await ev(() => /Live Logcat/.test(document.querySelector('#rowTintCard .color-card-subtitle').textContent)));
   await ev(() => logcatStop());

@@ -924,9 +924,11 @@
            row, with a soft shine along the top, as strong as "Row tints" in Settings says: Off, Subtle (the default) or Normal.
            Drawn without color-mix(): a WebView before Chrome 111 throws a color-mix() declaration away, and the row then got a white
            outline (currentColor) and no background at all. The layer is one static gradient: nothing moves while the list scrolls. */
-        html { --rt-o: 0.11; }
+        html { --rt-o: 0.11; }          /* Subtle; five steps since v7.14 (the owner's wish): Off, Faint, Subtle, Normal, Vivid */
         html[data-row-tint="off"] { --rt-o: 0; }
+        html[data-row-tint="faint"] { --rt-o: 0.06; }
         html[data-row-tint="normal"] { --rt-o: 0.2; }
+        html[data-row-tint="vivid"] { --rt-o: 0.24; }
         .app-card { --rt-dir: 90deg; --rt-x: 32px; }
         [dir="rtl"] .app-card { --rt-dir: 270deg; --rt-x: calc(100% - 32px); }          /* the leading edge is on the right */
         .app-card.running { --rt-c: var(--apps-running); }
@@ -6280,8 +6282,8 @@
                 <div class="color-card-title">Row tints</div>
                 <div class="color-card-subtitle">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat each line in the colour of its level. Only the apps you select get an outline.</div>
                 <div class="row-tint-slider">
-                    <input type="range" id="rowTintRange" min="0" max="2" step="1" value="1" oninput="setRowTint(this.value)" aria-label="Row tints">
-                    <div class="row-tint-ticks"><span>Off</span><span>Subtle</span><span>Normal</span></div>
+                    <input type="range" id="rowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
+                    <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
                 </div>
             </div>
 
@@ -7758,7 +7760,7 @@
                 #cnSegLog .lc-row { position: relative; isolation: isolate; --lc-dir: 90deg; }
                 [dir="rtl"] #cnSegLog .lc-row { --lc-dir: 270deg; }
                 #cnSegLog .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
-                    background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: var(--rt-o); }
+                    background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: calc(var(--rt-o) * 0.8); }          /* a little under the Apps rows: small monospaced text lies on it */
                 /* on a light page the level-coloured badge and tag are inked darker, so they keep 4.5:1 on the tint (they were under it even untinted) */
                 html[data-appearance="light"] #cnSegLog .lc-badge, html[data-appearance="light"] #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
@@ -13657,19 +13659,28 @@ Type any command above (e.g. pm list packages -d)</div>
         // One Coding Agent answers every "Ask agent" button (what a hidden setting, a permission, a process, a log line or an app is). It is chosen
         // in Settings, under Language; the key or sign-in and the model are the ones set up in the Terminal tab. Without one, the
         // button leads to Settings instead.
-        // ---- Row tints (Settings): 0 Off, 1 Subtle (default), 2 Normal ----
+        // ---- Row tints (Settings): 0 Off, 1 Faint, 2 Subtle (default), 3 Normal, 4 Vivid (kv 'row_tint_lv'). Before v7.14 there were three steps in 'row_tint'
+        // (0 Off, 1 Subtle, 2 Normal): a choice saved there is read once and kept as the same step of the five.
+        const ROW_TINTS = ['off', 'faint', 'subtle', 'normal', 'vivid'];
+        function rowTintLevel() {
+            let v = parseInt(kvGet('row_tint_lv', -1), 10);
+            if (v >= 0 && v <= 4) return v;
+            const old = parseInt(kvGet('row_tint', -1), 10);
+            v = old === 0 ? 0 : old === 2 ? 3 : 2;
+            if (old >= 0 && old <= 2) kvSet('row_tint_lv', v);
+            return v;
+        }
         function rowTintApply() {
-            let v = parseInt(kvGet('row_tint', 1), 10);
-            if (!(v >= 0 && v <= 2)) v = 1;
-            document.documentElement.setAttribute('data-row-tint', ['off', 'subtle', 'normal'][v]);
+            const v = rowTintLevel();
+            document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
             const r = document.getElementById('rowTintRange');
             if (r) r.value = String(v);
             return v;
         }
         function setRowTint(v) {
             v = parseInt(v, 10);
-            if (!(v >= 0 && v <= 2)) return;
-            kvSet('row_tint', v);
+            if (!(v >= 0 && v <= 4)) return;
+            kvSet('row_tint_lv', v);
             rowTintApply();
             haptic();
         }
