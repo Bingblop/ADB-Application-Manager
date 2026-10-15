@@ -13928,7 +13928,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // The apps the check could not look at, so "no update" is never claimed for them: a host that is down is named once, the others one by one
         function updFailureHtml() {
             if (updRunning || (!updFailed.length && !updInfo.offline)) return '';
-            let html = `<div class="color-card-title" style="margin:14px 0 8px;">${escapeHtml(txF('Couldn’t check ({0})', updFailed.length))}</div>
+            // the count and "These apps …" only with apps to list: offline with an earlier result kept, there are none, and the no-internet line says it all
+            let html = !updFailed.length ? '' : `<div class="color-card-title" style="margin:14px 0 8px;">${escapeHtml(txF('Couldn’t check ({0})', updFailed.length))}</div>
                 <div class="uad-credit" style="border:none; padding:0 0 8px;">${escapeHtml(txT('These apps were not checked, so an update for them may be waiting.'))}</div>`;
             if (updInfo.offline) {
                 html += `<div class="upd-row"><div class="upd-msg error" style="margin:0;">${escapeHtml(txT('No internet connection'))}</div><div class="upd-msg">${escapeHtml(txT('Check your Wi-Fi or mobile data, then try again.'))}</div></div>`;
