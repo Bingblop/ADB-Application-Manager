@@ -31,8 +31,8 @@ const { chromium, PAGE } = require('./lib/pw');
   // ---- with Root ----
   let { page: p, errors } = await run(true);
   await p.evaluate(() => openInspector('com.sec.android.app.sbrowser')); await p.waitForTimeout(250);
-  console.log('menu has Backup button:', await p.locator('#sheetBtnBackup').isVisible());
-  await p.click('#sheetBtnBackup'); await p.waitForTimeout(300);
+  console.log('menu has no Backup button (creating a backup is not offered from the menu):', await p.locator('#sheetBtnBackup').count() === 0);
+  await p.evaluate(() => openBackups('com.sec.android.app.sbrowser')); await p.waitForTimeout(300);
   console.log('modal open:', await p.locator('#backupsModal.show').count() === 1, '| inspector closed:', await p.locator('#inspectorModal.show').count() === 0);
   console.log('target:', (await p.innerText('#backupTarget')).replace(/\s+/g, ' ').slice(0, 120));
   console.log('data checkbox enabled with root:', await p.locator('#backupIncludeData').isEnabled());

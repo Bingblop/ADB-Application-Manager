@@ -26,7 +26,7 @@ Debugging, Shizuku or Root**.
   </tr>
   <tr>
     <td align="center"><sub>App list: versions, update hints, sorting</sub></td>
-    <td align="center"><sub>App menu: sizes, dates, copy, share, backup</sub></td>
+    <td align="center"><sub>App menu: sizes, dates, copy, share</sub></td>
     <td align="center"><sub>Debloat, review, log and undo</sub></td>
   </tr>
 </table>
@@ -67,7 +67,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | | |
 |---|---|
 | **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · a clean row layout (name, package and badges flush left; checkbox, letter icon, gear and ⋯ together on the right) · versions and update hints in the list (versions are off by default; the Versions filter turns them on) · select many and run batch actions · save selections as named lists · export everything to CSV |
-| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List · **Keep selection after running** (optional switch: run another batch command on the same apps without reselecting them) · batch actions, Dex optimization and applying a profile all run **off the page's thread with a live progress bar (app name and package, fill bar) and a Stop button**, so the page never freezes while they work |
+| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · **Backup** (each selected app in turn) · **Keep selection after running** (optional switch: run another batch command on the same apps without reselecting them) · batch actions, Dex optimization and applying a profile all run **off the page's thread with a live progress bar (app name and package, fill bar) and a Stop button**, so the page never freezes while they work |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none; in Read-Only mode only none, the system installer, is offered) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · an install through ADB / Shizuku / Root asks first in a dialog of the app · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** with a progress bar that lists every package file on the phone, where **press and hold deletes a file with Undo** · **the splits that fit the phone are ticked** (CPU, screen density, language) · **▾ lists of common installers and requesters** for the `-i` and `--originating-uri` boxes · **Launch Application / Application Settings** buttons once an install worked · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
 | **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one (the app asks after the download) or **Update All** (the app asks once for the whole list) · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
@@ -917,7 +917,7 @@ a review you confirm.
 
 ## Backup and restore
 
-**💾 Backup** (app menu) and **🗄️ Backups** (Applications tab) save an app as one `.adbbackup` file in
+**💾 Backup** (batch menu, one app or several in turn) and **🗄️ Backups** (Applications tab) save an app as one `.adbbackup` file in
 `Download/ADB App Manager/Backups/`. It is a zip holding:
 
 | In the file | Needs |
@@ -974,7 +974,7 @@ public class QuickActionActivity extends MainActivity {
 
 - **Select and copy any text**: long-press app names, package names, versions, permissions, activities,
   manifest and terminal output. Buttons stay unselectable so taps work as usual.
-- **Copy chips** for package, version and name in the app menu; **Copy Packages** and **Share List** for a
+- **Copy chips** for package, version and name in the app menu; **Copy Packages** for a
   batch selection.
 - **Share sheet** (Android's own): package lists, the app-list CSV, a manifest, terminal output, profiles and
   backups. Files go through a private cache provider that grants one-off read access to the receiving
