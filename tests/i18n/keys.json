@@ -3633,6 +3633,7 @@
 {"k":"The # button switches to commands.","ctx":"built by the code of: tx announce agent"},
 {"k":"The $ button switches to commands.","ctx":"built by the code of: tx announce agent"},
 {"k":"The ADB Stub no longer starts on its own","ctx":"built by the code of: fn"},
+{"k":"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.","ctx":"built by the code of: cd stub fail"},
 {"k":"The ADB Stub starts when the watch connects","ctx":"built by the code of: fn"},
 {"k":"The ADB key and the APK-signing key are created on this phone and never leave it.","ctx":"in the About tab"},
 {"k":"The APK","ctx":"built by the code of: mp hdop"},

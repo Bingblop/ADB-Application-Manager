@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "ADB Stub beim Verbinden starten: Aus",
 "Start ADB Stub on connect: On": "ADB Stub beim Verbinden starten: An",
 "The ADB Stub no longer starts on its own": "Der ADB Stub startet nicht mehr von selbst",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "Der ADB Stub auf der Uhr wurde mit einem anderen Schlüssel signiert. Ihn von der Uhr deinstallieren, dann auf „Installieren“ tippen.",
 "The ADB Stub starts when the watch connects": "Der ADB Stub startet, wenn sich die Uhr verbindet",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Der Bildschirm der Uhr bleibt an und ihr WLAN verbunden. „Trennen“ beendet es.",
 "Use the + button to create one, or exclude items from any tool's results.": "Nutze die +-Schaltfläche, um einen zu erstellen, oder schließe Elemente aus den Ergebnissen eines Werkzeugs aus.",

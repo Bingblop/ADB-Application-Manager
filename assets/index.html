@@ -24971,12 +24971,22 @@ Type any command above (e.g. pm list packages -d)</div>
             let r;
             try { r = await cdStubCall(action, serial); } finally { st.busy = ''; }
             cdStubKeep(serial, r);
-            if (!r.ok) { showToast(cdFail(r.out) || String(r.out || 'No answer from the watch').trim().split('\n')[0]); return; }
+            if (!r.ok) { showToast(cdStubFail(r.out)); return; }
             if (action === 'install') {
                 if (cdStubAutoOn()) { await cdStubDo('start', serial, true); return; }
                 showToast('ADB Stub installed');
             } else if (action === 'start') showToast(auto ? 'ADB Stub started on the watch' : 'ADB Stub started');
             else showToast('ADB Stub stopped');
+        }
+        // what a failed stub call says: adb install prints "Performing Streamed Install" first and the reason after it, so the line that names the failure
+        // (Failure [...], adb's or the shell's error), else the last line
+        function cdStubFail(out) {
+            const t = String(out || '').trim();
+            if (/INSTALL_FAILED_UPDATE_INCOMPATIBLE/.test(t)) return 'The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.';
+            const lines = t.split('\n').map(x => x.trim()).filter(Boolean);
+            const fl = lines.map(x => /Failure \[.*/.exec(x)).find(Boolean);
+            if (fl) return fl[0];
+            return cdFail(t) || lines.find(x => /fail|error/i.test(x)) || lines[lines.length - 1] || 'No answer from the watch';
         }
         // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal
         async function cdStubStopFor(serial) {

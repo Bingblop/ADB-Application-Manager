@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "Bağlanınca ADB Stub'ı başlat: Kapalı",
 "Start ADB Stub on connect: On": "Bağlanınca ADB Stub'ı başlat: Açık",
 "The ADB Stub no longer starts on its own": "ADB Stub artık kendiliğinden başlamıyor",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "Saatteki ADB Stub başka bir anahtarla imzalanmış. Saatten kaldırın, ardından Yükle'ye dokunun.",
 "The ADB Stub starts when the watch connects": "ADB Stub, saat bağlandığında başlar",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Saatin ekranı açık ve Wi-Fi'si bağlı kalır. Bağlantıyı kes onu durdurur.",
 "Use the + button to create one, or exclude items from any tool's results.": "Oluşturmak için + düğmesini kullanın veya herhangi bir aracın sonuçlarından öğe dışlayın.",

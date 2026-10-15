@@ -1,6 +1,7 @@
 // Connected Devices, ADB Stub for Wear OS watches (review fixes of #233): while the stub runs on a connected watch the phone renews its lease once a
 // minute, whichever view is open (without renewals the stub lets go of the watch by itself after 5 minutes); a renewal whose answer says the stub
-// is no longer running shows Start again and the renewals stop; nothing is renewed while the stub is not running.
+// is no longer running shows Start again and the renewals stop; nothing is renewed while the stub is not running. A failed install says why (the
+// Failure [...] line adb prints after "Performing Streamed Install"), and what to do when the watch has a stub signed with another key.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -14,7 +15,7 @@ const W = '192.168.1.30:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript((o) => {
       const W = '192.168.1.30:5555';
-      const st = window.__st = { log: [], up: true, inst: o.inst !== false, ver: 2, run: !!o.run, lease: true, timers: [] };
+      const st = window.__st = { log: [], up: true, inst: o.inst !== false, ver: o.ver || 2, run: !!o.run, lease: true, timers: [], installOut: o.installOut || '' };
       const si = window.setInterval.bind(window), ci = window.clearInterval.bind(window);
       window.setInterval = (fn, ms, ...a) => { const id = si(fn, ms, ...a); st.timers.push({ id, ms, name: fn && fn.name || '' }); return id; };
       window.clearInterval = (id) => { st.timers = st.timers.filter(t => t.id !== id); ci(id); };
@@ -27,6 +28,7 @@ const W = '192.168.1.30:5555';
         cdStub(tag, serial, action, arg) {
           st.log.push('stub ' + action + ' ' + serial);
           let ok = true, out = '';
+          if (action === 'install') { if (st.installOut) { ok = false; out = st.installOut; } else { st.inst = true; st.ver = 2; out = 'Performing Streamed Install\nSuccess'; } }
           if (action === 'start') { st.run = true; out = 'Starting: Intent { cmp=com.bloatware.bingblop.adbstub/.StubActivity (has extras) }'; }
           if (action === 'stop') { st.run = false; out = 'stopped'; }
           if (action === 'renew') { if (!st.lease) st.run = false; out = 'Broadcasting: Intent { act=com.bloatware.bingblop.adbstub.RENEW }\nBroadcast completed: result=0'; }
@@ -50,6 +52,7 @@ const W = '192.168.1.30:5555';
   };
   const log = page => page.evaluate(() => window.__st.log.join(' | '));
   const renewTimer = page => page.evaluate(() => window.__st.timers.filter(t => t.name === 'cdStubRenew').map(t => t.ms).join(','));
+  const toast = page => page.evaluate(() => document.getElementById('toastMsg').innerText);
   const row = page => page.evaluate(() => { const r = document.getElementById('cdStub'), btn = document.getElementById('cdStubBtn'); return r ? { text: r.innerText.replace(/\s+/g, ' ').trim(), btn: btn ? btn.innerText.trim() : '' } : null; });
 
   // ---- 1. the stub runs: renewed once a minute, also from another view ----
@@ -78,6 +81,25 @@ const W = '192.168.1.30:5555';
   // ---- 3. no stub on the watch: no renewal ----
   page = await open({ inst: false });
   check('3. a watch without the stub: no renewal', await renewTimer(page) === '' && !/renew/.test(await log(page)), await log(page));
+  await page.close();
+
+  // ---- 4. a failed install says why ----
+  const INCOMPATIBLE = 'Performing Streamed Install\nadb: failed to install /data/user/0/com.bloatware.bingblop/cache/adb_stub/adb_stub_80_2.apk: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.bloatware.bingblop.adbstub signatures do not match newer version; ignoring!]';
+  page = await open({ ver: 1, installOut: INCOMPATIBLE });
+  r = await row(page);
+  check('4. an older stub on the watch: Update', r && r.btn === 'Update', JSON.stringify(r));
+  await page.click('#cdStubBtn'); await page.waitForTimeout(300);
+  check('   Update fails, signed with another key: the toast says to uninstall it first', await toast(page) === 'The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.', await toast(page));
+  const fails = await page.evaluate(() => [
+    cdStubFail('Performing Streamed Install\nadb: failed to install /x/adb_stub.apk: Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]'),
+    cdStubFail('Performing Streamed Install\nFailure [INSTALL_FAILED_VERSION_DOWNGRADE]'),
+    cdStubFail('error: device offline'),
+    cdStubFail('Performing Streamed Install\nadb: connect error for write: closed'),
+    cdStubFail('Performing Streamed Install\nsomething else'),
+    cdStubFail('')
+  ]);
+  check('   the Failure [...] line, not "Performing Streamed Install"', fails[0] === 'Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]' && fails[1] === 'Failure [INSTALL_FAILED_VERSION_DOWNGRADE]', JSON.stringify(fails.slice(0, 2)));
+  check('   adb\'s own error; a line that says error; else the last line; nothing: no answer', fails[2] === 'device offline' && fails[3] === 'adb: connect error for write: closed' && fails[4] === 'something else' && fails[5] === 'No answer from the watch', JSON.stringify(fails.slice(2)));
   await page.close();
 
   console.log('errors:', JSON.stringify(errors));

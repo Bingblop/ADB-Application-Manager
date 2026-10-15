@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "Mulai ADB Stub saat terhubung: Mati",
 "Start ADB Stub on connect: On": "Mulai ADB Stub saat terhubung: Nyala",
 "The ADB Stub no longer starts on its own": "ADB Stub tidak lagi mulai sendiri",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "ADB Stub di jam tangan ditandatangani dengan kunci lain. Uninstal dari jam tangan, lalu ketuk Instal.",
 "The ADB Stub starts when the watch connects": "ADB Stub dimulai saat jam tangan terhubung",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "Layar jam tangan tetap menyala dan Wi-Fi-nya tetap terhubung. Putuskan akan menghentikannya.",
 "Use the + button to create one, or exclude items from any tool's results.": "Gunakan tombol + untuk membuatnya, atau kecualikan item dari hasil alat mana pun.",

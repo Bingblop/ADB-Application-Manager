@@ -2159,6 +2159,7 @@ x: {
 "Start ADB Stub on connect: Off": "连接时启动 ADB Stub：关",
 "Start ADB Stub on connect: On": "连接时启动 ADB Stub：开",
 "The ADB Stub no longer starts on its own": "ADB Stub 不再自动启动",
+"The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.": "手表上的 ADB Stub 使用了另一个密钥签名。请先从手表卸载它，然后点按“安装”。",
 "The ADB Stub starts when the watch connects": "手表连接时启动 ADB Stub",
 "The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.": "手表屏幕保持常亮，Wi-Fi 保持连接。断开连接即可停止。",
 "Use the + button to create one, or exclude items from any tool's results.": "使用 + 按钮创建，或从任何工具的结果中排除项目。",
