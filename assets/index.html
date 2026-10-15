@@ -150,7 +150,9 @@
 
             /* ---- Logcat: one row per log entry, colored by level [fixed palette] ---- */
             --lc-v: #9AA0A6;
-            --lc-v-dot: #1B7A3A;                     /* the dot of the Verbose chip only: a dark green */
+            --lc-v-dot: #2EBD6B;                     /* the dots of the level chips only (the owner's choice, v7.14): Verbose the green Info had, */
+            --lc-d-dot: #FFD600;                     /* Debug yellow, Warn orange, Info the theme's accent (set in the rule); the rows keep their own colours */
+            --lc-w-dot: #FF6D00;
             --rec-dot: #F23B30;                      /* Live Logcat's Record to file dot: red */
             --lc-d: #29B6F6;
             --lc-i: #2EBD6B;
@@ -2710,8 +2712,11 @@
             background: var(--lc);
             box-shadow: 0 0 0 2px var(--fill-3);
         }
-        /* the owner's choice (v7.14): Verbose's dot is a dark green, apart from Info's bright one; the Verbose rows keep their grey */
+        /* the owner's choice (v7.14): the dots of the level chips; the rows of each level keep their own colours */
         .lc-chip.lvl-V .lc-dot { background: var(--lc-v-dot); }
+        .lc-chip.lvl-D .lc-dot { background: var(--lc-d-dot); }
+        .lc-chip.lvl-I .lc-dot { background: var(--accent); }
+        .lc-chip.lvl-W .lc-dot { background: var(--lc-w-dot); }
 
         .lc-chip .lc-n {
             font-weight:var(--fw-bold);

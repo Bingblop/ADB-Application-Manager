@@ -1,4 +1,5 @@
-// v7.14.0: Live Logcat colours (the owner's choice). The dot of the Verbose chip is a dark green (Info keeps its bright green; the Verbose rows keep their grey),
+// v7.14.0: Live Logcat colours (the owner's choice). The dots of the level chips: Verbose the green Info had (#2EBD6B), Debug yellow, Info the theme's accent, Warn orange
+// (the rows keep their own colours; the Verbose rows their grey),
 // and Record to file has a red dot before its label, which is in the text colour; while recording the dot is a square and the button turns orange.
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/console_mock');
@@ -19,10 +20,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       const dot = l => getComputedStyle(document.querySelector('#logcatKey .lvl-' + l + ' .lc-dot')).backgroundColor;
       const rec = document.getElementById('logcatRecBtn'), before = getComputedStyle(rec, '::before');
       const badge = document.querySelector('#logcatOutput .lc-row.lvl-V .lc-badge');
-      return { v: dot('V'), i: dot('I'), recText: rec.innerText.trim(), recColor: getComputedStyle(rec).color, main: getComputedStyle(document.body).color, mark: before.content, markColor: before.color, vBadge: badge ? getComputedStyle(badge).color : '' };
+      const acc = document.createElement('i'); acc.style.color = 'var(--accent)'; document.body.appendChild(acc); const accent = getComputedStyle(acc).color; acc.remove();
+      return { v: dot('V'), d: dot('D'), i: dot('I'), w: dot('W'), accent, recText: rec.innerText.trim(), recColor: getComputedStyle(rec).color, main: getComputedStyle(document.body).color, mark: before.content, markColor: before.color, vBadge: badge ? getComputedStyle(badge).color : '' };
     });
-    const v = rgb(r.v), i = rgb(r.i), m = rgb(r.markColor);
-    check(theme + ': the Verbose dot is a dark green, darker than Info\'s green', v[1] > v[0] + 50 && v[1] > v[2] + 40 && v[1] < 150 && v[1] < i[1] - 40, JSON.stringify([r.v, r.i]));
+    const d = rgb(r.d), w = rgb(r.w), m = rgb(r.markColor);
+    check(theme + ': the dots: Verbose the old Info green, Debug yellow, Info the accent, Warn orange',
+      r.v === 'rgb(46, 189, 107)' && d[0] > 230 && d[1] > 200 && d[2] < 60 && r.i === r.accent && w[0] > 230 && w[1] > 80 && w[1] < 150 && w[2] < 40, JSON.stringify([r.v, r.d, r.i, r.accent, r.w]));
     check(theme + ': Record to file reads "Record to file" in the text colour, with a red dot before it', r.recText === 'Record to file' && r.recColor === r.main && r.mark === '"●"' && m[0] > 200 && m[1] < 90 && m[2] < 90, JSON.stringify(r));
     check(theme + ': the Verbose rows keep their grey badge', !r.vBadge || (() => { const c = rgb(r.vBadge); return Math.max(...c) - Math.min(...c) < 30; })(), r.vBadge);
   }
