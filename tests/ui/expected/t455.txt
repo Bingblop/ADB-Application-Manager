@@ -16,5 +16,6 @@ ok      the Failure [...] line, not "Performing Streamed Install": ["Failure [IN
 ok      adb's own error; a line that says error; else the last line; nothing: no answer: ["device offline","adb: connect error for write: closed","something else","No answer from the watch"]
 ok   6. the status could not be read: nothing started: stub status 192.168.1.30:5555
 ok      the next load of the details asks again and starts it: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok   7. German: "keeps the screen on": {"text":"ADB Stub Hält den Bildschirm der Uhr eingeschaltet und ihr WLAN verbunden, solange dieses Telefon verbunden ist. Installieren","btn":"Installieren"}
 errors: []
 ALL OK

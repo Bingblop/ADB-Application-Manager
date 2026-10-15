@@ -11311,7 +11311,7 @@ Type any command above (e.g. pm list packages -d)</div>
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
             '.tm-row-name', '.tm-row-sub', '.tm-stat-raw',
             '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
-            '#hgBody', '.cd-dev-name', '.cd-dev-sub', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
+            '#hgBody', '.cd-dev-name', '.cd-dev-sub:not(.cd-stub-state)', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
         ].join(', '));
         // The same inside a sentence: in these templates the changing part is the name of the app, file, folder or saved item the action is about. Other templates
         // translate a changing part that is a word of the dictionary (a filter, a mode, a stream); a folder called Download must not become "Descargar" in "Delete Download?"
@@ -25008,7 +25008,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else if ((st.version || 0) < top) { state = 'A newer version comes with this app.'; btn = ['install', 'Update', true]; }
             else if (st.running) { state = 'The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.'; btn = ['stop', 'Stop', false]; badge = '<span class="tag-badge tag-running">Running</span>'; }
             else { state = 'Installed, not running.'; btn = ['start', 'Start', true]; }
-            return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub">' + escapeHtml(state) + '</div>' +
+            return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub cd-stub-state">' + escapeHtml(state) + '</div>' +
                 (badge ? '<div class="cd-dev-badges">' + badge + '</div>' : '') + '</div>' +
                 (btn ? '<button class="mode-action-btn' + (btn[2] ? ' primary' : '') + '" id="cdStubBtn" onclick="cdStubDo(\'' + btn[0] + '\', cd.serial, false)">' + btn[1] + '</button>' : '') + '</div>';
         }

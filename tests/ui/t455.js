@@ -3,7 +3,8 @@
 // is no longer running shows Start again and the renewals stop; nothing is renewed while the stub is not running. A failed install says why (the
 // Failure [...] line adb prints after "Performing Streamed Install"), and what to do when the watch has a stub signed with another key. Disconnect
 // asks for a quick stop (a short wait on the watch, no status read) before adb lets go. A status adb could not read is asked again on the next load
-// of the watch's details (and then the stub is started).
+// of the watch's details (and then the stub is started). In German the card says the stub keeps the screen on ("eingeschaltet", not "an", which
+// reads as "stops").
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -119,6 +120,13 @@ const W = '192.168.1.30:5555';
   await page.evaluate(() => { cd.lastKey = ''; return cdLoadInfo(); }); await page.waitForTimeout(300);
   check('   the next load of the details asks again and starts it', await log(page) === ['stub status ' + W, 'stub status ' + W, 'stub start ' + W].join(' | '), await log(page));
   await page.close();
+
+  // ---- 7. German: the card says the screen is kept on ----
+  page = await open({ inst: false, run: false });
+  await page.evaluate(() => I18N.set('de')); await page.waitForTimeout(600);
+  r = await row(page);
+  check('7. German: "keeps the screen on"', r && r.text.includes('Hält den Bildschirm der Uhr eingeschaltet und ihr WLAN verbunden'), JSON.stringify(r));
+  await page.evaluate(() => I18N.set('en')); await page.close();
 
   console.log('errors:', JSON.stringify(errors));
   console.log(bad ? bad + ' FAILED' : 'ALL OK');

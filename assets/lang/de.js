@@ -1768,7 +1768,7 @@ x: {
 "Keep the screen on while charging (1 AC, 2 USB, 4 wireless; 7 = all)": "Bildschirm beim Laden eingeschaltet lassen (1 Netzteil, 2 USB, 4 kabellos; 7 = alle)",
 "Keeps its data (install -r)": "Behält ihre Daten (install -r)",
 "Keeps only the libraries for this phone's CPU. Needs less memory and makes a smaller APK.": "Behält nur die Bibliotheken für die CPU dieses Telefons. Braucht weniger Speicher und macht die APK kleiner.",
-"Keeps the watch screen on and its Wi-Fi connected while this phone is connected.": "Hält den Bildschirm der Uhr an und ihr WLAN verbunden, solange dieses Telefon verbunden ist.",
+"Keeps the watch screen on and its Wi-Fi connected while this phone is connected.": "Hält den Bildschirm der Uhr eingeschaltet und ihr WLAN verbunden, solange dieses Telefon verbunden ist.",
 "Kept": "Beibehalten",
 "Kernel": "Kernel",
 "Key": "Schlüssel",
