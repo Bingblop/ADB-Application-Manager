@@ -1,6 +1,8 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"✓ Granted": "✓ 부여됨",
+"✓ Not needed": "✓ 필요 없음",
 "History of changes": "변경 기록",
 "\"Allow debugging?\"": "\"디버깅을 허용하시겠습니까?\"",
 "$package": "$package",

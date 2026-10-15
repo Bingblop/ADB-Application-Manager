@@ -133,6 +133,19 @@ const APPS = [
   check('Sort Name (Z–A) turns the list round and is kept', await shown2() === 'Weather,Maps,Gone,Fit,Clock' && await ev(() => kvGet('cd_sort')) === 'name_desc', await shown2());
   await ev(() => cdSetSort('name'));
   check('Name (A–Z) puts it back', await shown2() === 'Clock,Fit,Gone,Maps,Weather', await shown2());
+  // the phone's filters and selection stay on the phone (the v7.14 review): the Apps tab repaints only its own pills and unticks only its own rows
+  await ev(() => { cd.filters.clear(); cdFilter('system'); });
+  await ev(() => { setFilter('user'); clearBatchSelectionNow(); });
+  const pillState = await ev(() => Array.from(document.querySelectorAll('#cdAppFilters .filter-pill[data-filter]')).filter(p => p.classList.contains('active') || p.getAttribute('aria-pressed') === 'true').map(p => p.dataset.filter + ':' + p.getAttribute('aria-pressed')).join());
+  check('a filter tapped in the Apps tab leaves the device\'s pills as they were (System on, User off)', pillState === 'system:true', pillState);
+  await ev(() => { cd.filters.clear(); setFilter('user'); cdAppsRender(); cd.sel.clear(); cdToggleSel('com.a.maps'); clearBatchSelectionNow(); clearBatchSelection(); });
+  const kept = await ev(() => { const c = document.getElementById('cdcard_com.a.maps'); return { sel: cd.sel.has('com.a.maps'), row: c.classList.contains('selected'), aria: c.querySelector('.app-sel').getAttribute('aria-checked') }; });
+  check('clearing the Apps tab\'s selection leaves a ticked device row ticked, on screen and in its selection', kept.sel && kept.row && kept.aria === 'true', JSON.stringify(kept));
+  const shines = await ev(() => { const c = document.getElementById('cdcard_com.a.maps'); let n = 0; const add = c.addEventListener.bind(c);
+    c.addEventListener = (t, f, o) => { if (t === 'animationend') n++; return add(t, f, o); }; const rm = c.removeEventListener.bind(c); let r = 0; c.removeEventListener = (t, f, o) => { if (t === 'animationend') r++; return rm(t, f, o); };
+    for (let i = 0; i < 4; i++) { cdToggleSel('com.a.maps'); cdToggleSel('com.a.maps'); } return { added: n, removed: r }; });
+  check('the sweep of light keeps one listener per row (each new one replaces the last)', shines.added === 4 && shines.removed >= 3, JSON.stringify(shines));
+  await ev(() => { setFilter('user'); cd.sel.clear(); cd.filters.clear(); cdAppsRender(); });
   check('no page errors', errors.length === 0, errors.join(' | '));
   await ev(() => { setRowTint(2); cdToggleSel('com.a.clock'); document.getElementById('cdAppSortRow').scrollIntoView(); }); await page.waitForTimeout(900);
   await page.screenshot({ path: 'cd_apps_filters.png' });

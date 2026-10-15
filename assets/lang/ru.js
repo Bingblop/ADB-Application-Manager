@@ -1,6 +1,8 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"✓ Granted": "✓ Выдано",
+"✓ Not needed": "✓ Не требуется",
 "History of changes": "История изменений",
 "\"Allow debugging?\"": "«Разрешить отладку?»",
 "$package": "$package",

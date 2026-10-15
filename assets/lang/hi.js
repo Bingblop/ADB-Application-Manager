@@ -1,6 +1,8 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"✓ Granted": "✓ दी गई",
+"✓ Not needed": "✓ ज़रूरत नहीं",
 "History of changes": "बदलावों का इतिहास",
 "\"Allow debugging?\"": "“डीबगिंग की अनुमति दें?”",
 "$package": "$package",

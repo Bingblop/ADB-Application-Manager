@@ -1,6 +1,8 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"✓ Granted": "✓ 付与済み",
+"✓ Not needed": "✓ 不要",
 "History of changes": "変更の履歴",
 "\"Allow debugging?\"": "「デバッグを許可しますか？」",
 "$package": "$package",

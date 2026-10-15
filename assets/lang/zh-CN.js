@@ -1,6 +1,8 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"✓ Granted": "✓ 已授予",
+"✓ Not needed": "✓ 无需授予",
 "History of changes": "更改历史",
 "\"Allow debugging?\"": "“要允许调试吗？”",
 "$package": "$package",

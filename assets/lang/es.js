@@ -1,6 +1,8 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"✓ Granted": "✓ Concedido",
+"✓ Not needed": "✓ No hace falta",
 "History of changes": "Historial de cambios",
 "\"Allow debugging?\"": "“¿Permitir la depuración?”",
 "$package": "$package",

@@ -27,4 +27,7 @@ ok   None takes the button off the rows
 ok   holding it opens that device app's menu, not this phone's
 ok   Sort Name (Z–A) turns the list round and is kept
 ok   Name (A–Z) puts it back
+ok   a filter tapped in the Apps tab leaves the device's pills as they were (System on, User off)
+ok   clearing the Apps tab's selection leaves a ticked device row ticked, on screen and in its selection
+ok   the sweep of light keeps one listener per row (each new one replaces the last)
 ok   no page errors

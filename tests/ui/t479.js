@@ -47,6 +47,10 @@ const LOG = ['V', 'D', 'I', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + 
   check('   Enter on it shows them again', await ev(() => document.querySelectorAll('#cdLcOut .lc-row').length) === 7);
   await ev(() => { document.getElementById('cdLcFilter').value = 'TagW'; cdLcDraw(false); });
   check('   the counts follow the filter box', await ev(() => Array.from(document.querySelectorAll('#cdLcKey .lc-n')).map(e => e.textContent).join()) === '0,0,0,1,0,0');
+  await ev(() => document.querySelector('#cdLcKey .lc-chip[data-lvl="W"]').click());
+  const allHid = await ev(() => ({ n: Array.from(document.querySelectorAll('#cdLcKey .lc-n')).map(e => e.textContent).join(), out: document.getElementById('cdLcOut').innerText.trim() }));
+  check('   hiding the only level left keeps the counts and says every level is hidden (not "nothing matches")', allHid.n === '0,0,0,1,0,0' && /^Every level is hidden/.test(allHid.out), JSON.stringify(allHid));
+  await ev(() => document.querySelector('#cdLcKey .lc-chip[data-lvl="W"]').click());
 
   // change everything through the controls themselves, then launch again
   await page.selectOption('#cdLcLevel', 'W');

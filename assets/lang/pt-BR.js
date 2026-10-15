@@ -1,6 +1,8 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"✓ Granted": "✓ Concedida",
+"✓ Not needed": "✓ Não é necessária",
 "History of changes": "Histórico de alterações",
 "\"Allow debugging?\"": "“Permitir a depuração?”",
 "$package": "$package",

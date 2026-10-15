@@ -4,6 +4,7 @@ ok   2. the colour key has Live Logcat's chips with the same dot colours and eac
 ok      a tap on Info hides its lines and greys its chip
 ok      Enter on it shows them again
 ok      the counts follow the filter box
+ok      hiding the only level left keeps the counts and says every level is hidden (not "nothing matches")
 ok   3. after a new launch the level (Warn), the lines (2000) and the filter text are as they were left
 ok      and Live Logcat's own choices were not touched
 ok   4. an unknown saved value is ignored (Info, 1000 lines, no filter)

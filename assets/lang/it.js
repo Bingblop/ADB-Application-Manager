@@ -1,6 +1,8 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"✓ Granted": "✓ Concesso",
+"✓ Not needed": "✓ Non serve",
 "History of changes": "Cronologia delle modifiche",
 "\"Allow debugging?\"": "“Consentire il debug?”",
 "$package": "$package",

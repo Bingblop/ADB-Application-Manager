@@ -20118,12 +20118,17 @@ Type any command above (e.g. pm list packages -d)</div>
             updateBatchBar();
             const card = document.getElementById('card_' + pkg);
             markCardSelected(card, selectedPkgs.has(pkg));
-            if (card && selectedPkgs.has(pkg)) {                          // the row just selected by this tap: a band of light sweeps across it once
-                card.classList.remove('sel-shine');
-                void card.offsetWidth;                                   // (restarts it on a quick second tap)
-                card.classList.add('sel-shine');
-                card.addEventListener('animationend', () => card.classList.remove('sel-shine'), { once: true });
-            }
+            if (card && selectedPkgs.has(pkg)) selShine(card);            // the row just selected by this tap: a band of light sweeps across it once
+        }
+        // The sweep of light on a row just selected (the Apps tab, Connected Devices). One listener per row at a time: with reduced motion the animation
+        // never runs, so an animationend never comes, and a listener added per tap would pile up.
+        function selShine(card) {
+            if (card._shineEnd) card.removeEventListener('animationend', card._shineEnd);
+            card.classList.remove('sel-shine');
+            void card.offsetWidth;                                       // (restarts it on a quick second tap)
+            card.classList.add('sel-shine');
+            card._shineEnd = () => { card._shineEnd = null; card.classList.remove('sel-shine'); };
+            card.addEventListener('animationend', card._shineEnd, { once: true });
         }
 
         function selectAllVisible(select) {
@@ -20194,14 +20199,14 @@ Type any command above (e.g. pm list packages -d)</div>
             els.forEach(e => { e.style.transition = 'none'; });
             selectedPkgs.clear();
             updateBatchBar();
-            document.querySelectorAll('.app-card').forEach(c => markCardSelected(c, false));
+            document.querySelectorAll('.app-card').forEach(c => { if (!c.closest('#cdAppList')) markCardSelected(c, false); });   // the phone's selection only: a connected device's rows keep cd.sel
             requestAnimationFrame(() => requestAnimationFrame(() => els.forEach(e => { e.style.transition = ''; })));
         }
 
         function clearBatchSelection() {
             selectedPkgs.clear();
             updateBatchBar();
-            document.querySelectorAll('.app-card').forEach(c => markCardSelected(c, false));
+            document.querySelectorAll('.app-card').forEach(c => { if (!c.closest('#cdAppList')) markCardSelected(c, false); });   // the phone's selection only: a connected device's rows keep cd.sel
             haptic();
         }
 
@@ -20522,6 +20527,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // The pills with a colour (Installed, Running, ...) are buttons: their pressed state follows the filter
         function syncStatCards() {
             document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
+                if (c.closest('#cdAppFilters')) return;                  // a connected device's pills follow cd's own filters, not the phone's
                 const k = c.getAttribute('data-filter');
                 const on = activeFilters.has(k);
                 c.classList.toggle('active', on);
@@ -26057,7 +26063,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             const c = document.getElementById('cdcard_' + pkg);
             markCardSelected(c, cd.sel.has(pkg));
-            if (c && cd.sel.has(pkg)) { c.classList.remove('sel-shine'); void c.offsetWidth; c.classList.add('sel-shine'); c.addEventListener('animationend', () => c.classList.remove('sel-shine'), { once: true }); }          // the Apps tab's sweep of light
+            if (c && cd.sel.has(pkg)) selShine(c);          // the Apps tab's sweep of light
             cdBatchBar();
         }
         function cdSelClear() { cd.sel.clear(); cdAppsRender(); }
@@ -26581,9 +26587,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
             let entries = cd.lcEntries.filter(e => e.kind === 'entry' && (!low || (e.tag + '\n' + e.lines.join('\n')).toLowerCase().includes(low)));
             cdLcRenderKey(entries);                                                          // the key counts what the filter box lets through, as Live Logcat's does
+            const matched = entries.length;
             entries = entries.filter(e => !cd.lcHidden.has(e.lvl));
             const total = entries.length;
             if (entries.length > 700) entries = entries.slice(-700);
+            if (!entries.length && matched) { el.innerHTML = '<div class="lc-meta">' + escapeHtml(txT('Every level is hidden - tap the color key above to show some.')) + '</div>'; return; }   // the key keeps its counts
             if (!entries.length) { cdLcNote(cd.lcEntries.length ? 'Nothing matches the filter.' : 'No log lines.'); return; }
             el.innerHTML = (total > entries.length ? '<div class="lc-meta">' + (total - entries.length) + ' earlier entries not shown</div>' : '') + entries.map(e =>
                 '<div class="lc-row lvl-' + e.lvl + '"><div class="lc-badge" title="' + e.lvl + '">' + e.lvl + '</div><div class="lc-main"><div class="lc-head"><span class="lc-tag">' + lcHighlight(e.tag, rx) + '</span><span class="lc-time">' + e.time +
@@ -30580,7 +30588,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('permRows').innerHTML = defs.map(d => {
                 const on = !!permStatus[d.key], na = on && !!permStatus[d.key + '_na'];
                 let end;
-                if (on) end = '<div class="pm-ok">' + (na ? '✓ Not needed' : full ? '✓ Granted' : '✓ Allowed') + '</div>';
+                if (on) end = '<div class="pm-ok">' + (na ? txT('✓ Not needed') : full ? txT('✓ Granted') : txT('✓ Allowed')) + '</div>';
                 else if (permLocked(d)) end = '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>Needs ADB, Shizuku or root</span></div>';
                 else end = '<button class="mode-action-btn primary" aria-label="' + verb + ' ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">' + verb + '</button>';
                 return '<div class="pm-row' + (on ? ' is-on' : ' is-off') + (!on && permLocked(d) ? ' is-locked' : '') + '" data-perm="' + d.key + '"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div>'

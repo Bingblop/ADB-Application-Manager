@@ -1,6 +1,8 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"✓ Granted": "✓ ممنوح",
+"✓ Not needed": "✓ غير مطلوب",
 "History of changes": "سجل التغييرات",
 "\"Allow debugging?\"": "«السماح بتصحيح الأخطاء؟»",
 "$package": "$package",

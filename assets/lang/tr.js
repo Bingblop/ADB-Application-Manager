@@ -1,6 +1,8 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"✓ Granted": "✓ Verildi",
+"✓ Not needed": "✓ Gerekmiyor",
 "History of changes": "Değişiklik geçmişi",
 "\"Allow debugging?\"": "“Hata ayıklamaya izin verilsin mi?”",
 "$package": "$package",
