@@ -1,0 +1,17 @@
+app menu: no Backup button: true | buttons: Launch,Force Stop,Freeze,Enable,Suspend,Unsuspend,Clear Data,App Info,Rem Updates,Uninstall,Reinstall,Extract APK,Optimize,Standby,Logs
+batch menu: Freeze,Enable,Force Stop,Suspend,Unsuspend,Clear Data,Optimize,Uninstall,Reinstall,Batch Ops,Backup,Command,Replace,Skip,Keep both,Reload all,Changes,Copy shown,Share shown | Backup in place of Share List: true
+nothing selected: box closed: true
+box open: true
+card: Back up 5 apps Alpha, Bravo, Charlie, Delta, … Include app data Uses Root. The app is stopped while its data is copied. Create backup
+data checkbox enabled with root: true
+first app started: ["backup:com.example.alpha:true"] | Backing up Alpha (1 of 5)...
+the phone reports progress: the line follows it, the bar shows the first of five apps: Saving the backup... | 10%
+second app started (the first one is done): backup:com.example.bravo:true | still running: true
+bar is part way through five apps: true | the button stays off while it runs: true
+calls: ["backup:com.example.alpha:true","backup:com.example.bravo:true","backup:com.example.charlie:true","backup:com.example.delta:true","backup:com.example.echo:true"]
+summary: Saved 4 of 5 apps to Download/ADB App Manager/Backups/ Not saved: Bravo (No space left) | marked as a problem: true
+progress gone: true | running again possible: true
+one app: card: Back up Echo com.example.echo • v1.0 Include app data Uses R
+no root: data switch disabled: true | Back up 2 apps Alpha, Bravo Include app data Needs Root, whi
+without data: ["backup:com.example.alpha:false"]
+errors: []

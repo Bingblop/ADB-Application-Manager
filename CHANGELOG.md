@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.13.4-Pro (versionCode 858)
+
+A small release on top of v7.13.3, cut from `main`: Backup moved from the single-app menu to the batch menu (#230), and nothing else. Not run on a device.
+
+- **Backup is a batch-menu button, and it backs up several apps.** The app's menu (the ⋯ sheet) no longer has a Backup button. In the batch menu (select apps, tap the round button), **Backup** now sits where **Share List** was: it opens the Backups box for the selected apps with one choice, **Include app data** (needs Root), then **Create backup** saves each app in turn into its own file under `Download/ADB App Manager/Backups`. The bar covers the whole run, one app that fails does not stop the others, and the box ends with "Saved 4 of 5 apps to (folder)" and "Not saved: (app) (reason)". One selected app keeps the old single-app card. Restore, Share, Delete and **Choose backup file…** work as before.
+- **Share List is gone from the batch menu.** **Copy Packages** and the **Share CSV** button of the Apps tab still hand out a list of apps. The empty Backups list now says to select apps and tap Backup in the batch menu. Four new messages and the new hint are translated in all 13 languages; the Help Guide, the full guide and the device checklist describe the new place.
+- **Tests.** A new UI script (t348) runs a five-app batch with one failure, with and without Root; the app sheet is one row shorter, so a few goldens moved.
+
 ## v7.13.3-Pro (versionCode 857)
 
 A screen-layout release on top of v7.13.2, cut from `main`. It carries the usability findings of the 2026-10-14 UI audit (#216 and #220 to #227) and nothing else: no feature, no new setting, no change to what any command does. The pages are tighter, the small text and badges are readable in every theme preset, and the controls are easier to hit. Two lists changed shape (the Apps rows and the File Manager's top card), so they are the ones to look at first. Each change is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone by the people and tools that wrote it.** `docs/PHONE-SCRIPT-v7.13.3.md` is one phone step per change.

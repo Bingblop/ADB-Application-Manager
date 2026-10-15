@@ -1,4 +1,4 @@
-// Batch menu: a taller sheet with a fourth row (Batch Ops, Share List, Command), and a close X at the top right like the app menu's.
+// Batch menu: a taller sheet with a fourth row (Batch Ops, Backup, Command; Backup took the place of Share List in v7.13.4), and a close X at the top right like the app menu's.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();

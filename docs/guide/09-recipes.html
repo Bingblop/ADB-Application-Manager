@@ -90,13 +90,13 @@
 <ul>
 <li>A <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so Read-Only mode refuses.</li>
 <li>For the app's <b>data</b> (logins, saved games, settings) you need <a href="#mode-root">Root</a> on the phone. The app asks your root manager itself, so your working mode does not have to be Root. Without root, the backup holds the app and its settings, not its data.</li>
-<li>One app at a time. There is no button to back up many apps at once. Make sure you have free storage.</li>
+<li>Free storage. Several apps are backed up one after another, each into its own file.</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, find the app and open its <b>...</b> menu.</li>
-<li>Tap <b>Backup</b>. The menu closes and a box opens. At the top is a card, "Back up (app name)", with its package name and version.</li>
+<li>In the <b>Application Manager</b>, tap the icon of the app (or of several apps) to select it. A round button appears at the bottom right; tap it to open the batch sheet.</li>
+<li>Tap <b>Backup</b>. A box opens. At the top is a card, "Back up (app name)", with its package name and version, or "Back up (number) apps" with their names.</li>
 <li>Look at the switch <b>Include app data</b>. With root it says "Uses Root. The app is stopped while its data is copied." Without root it is greyed out and says "Needs Root, which was not found on this phone." Switch it on only if you need the data, and do not use the app meanwhile.</li>
 <li>Tap <b>Create backup</b>. A progress line and bar show "Reading (name)..." and "Saving the backup...".</li>
 <li>A note says "Saved (name) ((size)) to (path)". The file ends in <code>.adbbackup</code> and sits in <code>Download/ADB App Manager/Backups</code>, named like <code>Calculator_8.5_20261006-101530-123.adbbackup</code>.</li>
