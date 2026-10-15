@@ -123,6 +123,25 @@ public class MorpheSharedTest {
         for (int i = 0; i < pageSeen.size() && contiguous; i++) if (pageSeen.get(i) != i + 1) contiguous = false;
         check("the events a late page is told about and the ones after join with no gap and no repeat", contiguous, "got " + pageSeen.size() + " of " + total);
 
+        // MOR-1: the window a patch that is going asks for the installer. Window A starts the patch; A is recreated as B; B's page has not made a
+        // Morphe call yet (so B has no bridge). Before: the newest bridge was A's, A's release() left "no newest", and the install fell back to A's
+        // destroyed window, whose question is a silent No.
+        MorpheShared.Windows<String> w = new MorpheShared.Windows<String>();
+        check("no window open: nobody to ask", w.newest() == null, null);
+        w.opened("A");
+        check("the window that started the patch is asked while it is the only one", "A".equals(w.newest()), w.newest());
+        w.opened("B");                                                                // B's onCreate, before its page makes any Morphe call
+        w.closed("A");                                                                // A's onDestroy (its bridge's release())
+        check("A recreated as B, B has made no Morphe call: B is asked, not the destroyed A", "B".equals(w.newest()), w.newest());
+        w.opened("A");
+        w.opened("B");
+        check("a window that registers again (its bridge is made later) keeps its place", "A".equals(w.newest()), w.newest());
+        w.closed("A");
+        w.opened("C"); w.closed("C");
+        check("the newest window closes while an older one is open: the older one is asked", "B".equals(w.newest()), w.newest());
+        w.closed("B");
+        check("every window closed: nobody (the caller then uses its own)", w.newest() == null, null);
+
         File src = null;
         for (File dd = new File(System.getProperty("user.dir")).getAbsoluteFile(); dd != null && src == null; dd = dd.getParentFile()) { File f = new File(dd, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
         check("the bridge source was found", src != null, null);
@@ -131,13 +150,17 @@ public class MorpheSharedTest {
             check("the bridge takes its runner and slot from the process-wide holder, not its own", m.contains("MorpheShared.get(") && m.contains("this.runner = shared.runner") && m.contains("this.slot = shared.slot") && !m.contains("new MorpheRunner(") && !m.contains("new MorpheSlot("), null);
             check("a new bridge binds itself as the sink for the patch's events", m.contains("shared.bind("), null);
             check("the patch's events are numbered and kept through the holder", m.contains("shared.emit(e)") && m.contains("shared.begin(jobId, a)"), null);
-            check("the run's install goes to the newest window", m.contains("(latest != null ? latest : this).host.install("), null);
+            check("the run's install goes to the newest open window (MOR-1)", m.contains("Host asks = windows.newest();") && m.contains("(asks != null ? asks : host).install(") && !m.contains("MorpheBridge latest"), null);
+            check("a bridge registers its window and release() takes it out", m.contains("windows.opened(host)") && m.contains("windows.closed(host)") && m.contains("public static void windowOpened(Host h)") && m.contains("public static void windowClosed(Host h)"), null);
             int js = m.indexOf("case \"jobStatus\":");
             String jb = js < 0 ? "" : m.substring(js, Math.min(m.length(), js + 900));
             check("the status answer is built and posted inside the holder's lock (no event can slip between)", jb.contains("shared.atomically(") && jb.contains("shared.status()") && jb.contains("NO_REPLY"), jb);
             String main = new String(java.nio.file.Files.readAllBytes(new File(src.getParentFile(), "MainActivity.java").toPath()), "UTF-8");
             int od = main.indexOf("protected void onDestroy()");
             check("the window releases its bridge when it is destroyed (the holder must not keep it alive)", od > 0 && main.substring(od, od + 600).contains("mb.release()") && m.contains("public void release()") && m.contains("shared.unbind(sink)"), null);
+            int oc = main.indexOf("protected void onCreate(Bundle"), hl = main.indexOf("if (isHeadless()) {", oc), wo = main.indexOf("MorpheBridge.windowOpened(morpheHost())", oc), oe = main.indexOf("\n    }\n", oc);
+            check("onCreate names the window as the newest one for Morphe before its page loads, not for a headless start (MOR-1)", oc > 0 && hl > oc && wo > hl && wo < oe, "onCreate=" + oc + " headless=" + hl + " opened=" + wo);
+            check("onDestroy takes the window out even when it never made its bridge", od > 0 && main.substring(od, od + 900).contains("MorpheBridge.windowClosed(mh)") && main.contains("private synchronized MorpheBridge.Host morpheHost()") && main.contains("new MorpheBridge(morpheHost(),"), null);
             check("the launcher the process keeps is a static class with the application context only (an inner class would keep the first window alive)", m.contains("getApplicationContext()") && m.contains("private static final class ServiceLauncher") && m.contains("MorpheShared.get(new ServiceLauncher(app))") && !m.contains("MorpheService.start(host.context()"), null);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }

@@ -323,7 +323,7 @@ public class MorpheRunnerTest {
             check("after the engine's answer and before Saving the run checks for a Stop, and then deletes the unsaved APK and reports cancelled (MOR-3)",
                     eng > 0 && stop1 > eng && stop1 < sav && stopBlock.contains("output.delete()") && stopBlock.contains(".put(\"cancelled\", true)"), "engine=" + eng + " check=" + stop1 + " saving=" + sav);
             int inst = pb.indexOf("step(jobId, \"Installing\", \"RUNNING\")"), stop2 = pb.indexOf("runner.isCancelled(jobId)", stop1 + 1);
-            check("...and again before Installing: a Stop during Saving installs nothing", stop2 > sav && stop2 < inst && pb.indexOf("host.install(", 0) > inst, "check=" + stop2 + " installing=" + inst);
+            check("...and again before Installing: a Stop during Saving installs nothing", stop2 > sav && stop2 < inst && pb.indexOf(".install(new File(saved.optString(\"file\"))") > inst, "check=" + stop2 + " installing=" + inst);
             check("the cancel call checks the job id and that it is the running job, then goes through runner.cancel", cb.contains("validJobId(job)") && cb.contains("slot.current()") && cb.contains("runner.cancel(job)") && !cb.contains("MorpheService.cancel"), cb);
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }

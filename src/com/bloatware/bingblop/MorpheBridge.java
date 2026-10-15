@@ -80,7 +80,7 @@ public final class MorpheBridge {
     private final MorpheRunner runner;                                                  // the one engine lock of the process (see MorpheShared)
     private final MorpheRunner.EventSink sink;                                          // this window's side of the patch's events
     private final MorpheSlot slot;                                                      // the one patch run at a time (an atomic take, see MorpheSlot)
-    private static volatile MorpheBridge latest;                                        // the bridge of the newest window: the one a patch that is going must ask for the installer
+    private static final MorpheShared.Windows<Host> windows = new MorpheShared.Windows<Host>();   // the open windows: the newest is the one a patch that is going asks for the installer
     private final BundleApprovals approvals;                                            // which custom bundles the person has allowed to run (see BundleApprovals)
     private final BundleApprovals.Asker asker = new BundleApprovals.Asker() {
         @Override public BundleApprovals.Answer ask(String title, String text) { return host.confirmBundle(title, text); }
@@ -102,16 +102,25 @@ public final class MorpheBridge {
         this.slot = shared.slot;
         this.sink = new MorpheRunner.EventSink() { @Override public void accept(JSONObject e) { event(e); } };
         this.shared.bind(sink);
-        latest = this;
+        windows.opened(host);
     }
 
     /**
-     * The window of this bridge is going away. The process-wide holder stops pointing at it (it would keep the destroyed window alive); a patch that is
+     * A window of the app was created. It is the one a patch that is going asks for the installer from now on (until a newer one opens), also when its
+     * page has not used the Morphe tab yet (its bridge is only made on the first call). The activity calls this from onCreate.
+     */
+    public static void windowOpened(Host h) { windows.opened(h); }
+
+    /** The window of {@code h} is destroyed: it is never asked again; the newest window still open is. The activity calls this from onDestroy. */
+    public static void windowClosed(Host h) { windows.closed(h); }
+
+    /**
+     * The window of this bridge is going away. The process-wide holders stop pointing at it (they would keep the destroyed window alive); a patch that is
      * going goes on, and the next window's bridge takes over its events.
      */
     public void release() {
         shared.unbind(sink);
-        if (latest == this) latest = null;
+        windows.closed(host);
     }
 
     /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */
@@ -607,7 +616,8 @@ public final class MorpheBridge {
                 } else if (a.optBoolean("installAfter")) {
                     step(jobId, "Installing", "RUNNING");
                     JSONObject ir;
-                    try { ir = (latest != null ? latest : this).host.install(new File(saved.optString("file")), a.optString("pkg"), false); }   // the newest window asks for the installer
+                    Host asks = windows.newest();                                         // the newest open window asks for the installer, never one that is gone (MOR-1)
+                    try { ir = (asks != null ? asks : host).install(new File(saved.optString("file")), a.optString("pkg"), false); }
                     catch (Exception e) { ir = new JSONObject().put("ok", false).put("output", "Error: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage())); }
                     ir.put("t", "install");
                     ev(jobId, ir);

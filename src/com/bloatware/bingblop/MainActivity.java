@@ -275,6 +275,8 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
+        // the newest window is the one a Morphe patch that is going asks for the installer, also before this page makes a Morphe call (MOR-1)
+        try { MorpheBridge.windowOpened(morpheHost()); } catch (Throwable t) { Log.w(TAG, "Morphe window registration failed: " + t.getMessage()); }
 
         webView.setVerticalScrollBarEnabled(true);
         webView.setHorizontalScrollBarEnabled(false);
@@ -7618,6 +7620,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_MORPHE = 4292;
     private volatile String morphePickTag = "";
     private MorpheBridge morpheBridge;
+    private MorpheBridge.Host morpheHostInstance;
 
     private AuthManager authManagerInstance;
 
@@ -7700,7 +7703,16 @@ public class MainActivity extends Activity {
     }
 
     private synchronized MorpheBridge morphe() {
-        if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
+        if (morpheBridge == null) morpheBridge = new MorpheBridge(morpheHost(), new File(getFilesDir(), "morphe"));
+        return morpheBridge;
+    }
+
+    /**
+     * What this window gives the Morphe bridge. Made without the bridge (which reads its files) so onCreate can name this window as the newest one
+     * (MorpheBridge.windowOpened) before its page makes any Morphe call: a patch that is going then asks this window, not a closed one, for the installer.
+     */
+    private synchronized MorpheBridge.Host morpheHost() {
+        if (morpheHostInstance == null) morpheHostInstance = new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
             @Override public void js(String script) { notifyJs(script); }
             @Override public boolean pick(final String tag, String kind) {
@@ -7764,8 +7776,8 @@ public class MainActivity extends Activity {
                 });
                 return new Runnable() { @Override public void run() { runOnUiThread(new Runnable() { @Override public void run() { if (box[0] != null) box[0].close(); } }); } };
             }
-        }, new File(getFilesDir(), "morphe"));
-        return morpheBridge;
+        };
+        return morpheHostInstance;
     }
 
     private boolean morpheConnectionOk(String conn) {
@@ -16313,6 +16325,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
         activityDestroyed = true;
         try { MorpheBridge mb = morpheBridge; if (mb != null) mb.release(); } catch (Throwable ignored) {}      // a patch that is going goes on; the next window takes over its events
+        try { MorpheBridge.Host mh = morpheHostInstance; if (mh != null) MorpheBridge.windowClosed(mh); } catch (Throwable ignored) {}   // never asked for the installer again
         cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)

@@ -31,6 +31,25 @@ public final class MorpheShared {
         return instance;
     }
 
+    /**
+     * The windows of the app that are open now, oldest first. A patch that is going asks the NEWEST open one for the installer ("Install when
+     * finished"). A window is added when it is created, before its page has made any Morphe call (the bridge of a window is only made on the first
+     * call), and taken out when it is destroyed: so a window that is gone is never asked while one that is open is there, and closing the newest
+     * window hands over to the one opened before it.
+     */
+    public static final class Windows<T> {
+        private final ArrayList<T> open = new ArrayList<T>();
+
+        /** A window was created (a second call for the same window changes nothing: it keeps its place). */
+        public synchronized void opened(T w) { if (w != null && !open.contains(w)) open.add(w); }
+
+        /** A window was destroyed. */
+        public synchronized void closed(T w) { open.remove(w); }
+
+        /** The newest window that is open, or null when none is. */
+        public synchronized T newest() { return open.isEmpty() ? null : open.get(open.size() - 1); }
+    }
+
     /** A holder of its own (tests). */
     static MorpheShared create(MorpheRunner.Launcher launcher, MorpheRunner.Timing timing) { return new MorpheShared(launcher, timing); }
 
