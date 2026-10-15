@@ -21,6 +21,16 @@ final class MorpheInstallStep {
     }
 
     /**
+     * The state of the run's "Installing" step for an install answer: OK only when it was installed ({@link #installed}), FAIL when it was not, and
+     * OPENED when the APK was only handed to Android's installer (the person may still cancel there). The page draws a step it does not know as a
+     * plain chip, neither done nor failed, and logs it as "Installing opened".
+     */
+    static String stepState(JSONObject r) {
+        if (installed(r)) return "OK";
+        return r != null && r.optBoolean("ok") && r.optBoolean("handedOff") ? "OPENED" : "FAIL";
+    }
+
+    /**
      * Applies an install answer to the library entry {@code id}: marks it installed when it was, and deletes it as well when {@code deleteAfter}.
      * Returns true when the entry was deleted.
      */

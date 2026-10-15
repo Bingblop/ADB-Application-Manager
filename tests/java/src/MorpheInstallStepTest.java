@@ -82,6 +82,13 @@ public class MorpheInstallStepTest {
         JSONObject e = file(lib, root, "e");
         check("a failed install keeps the APK and does not mark it", !afterRun(failedInstall, lib, e, true) && new File(e.getString("file")).isFile() && !lib.get(e.getString("id")).optBoolean("installed"), null);
 
+        // MOR-5: the "Installing" step of the run is done only when the app was installed; the system installer only opened is not "OK"
+        check("the Installing step of an answer that was only handed to the system installer is not OK (OPENED)", "OPENED".equals(MorpheInstallStep.stepState(system.install(null, "", false))), MorpheInstallStep.stepState(system.install(null, "", false)));
+        check("...of a working-mode install that worked: OK", "OK".equals(MorpheInstallStep.stepState(privileged.install(null, "", false))), null);
+        check("...of a bundle whose system verdict was Success: OK", "OK".equals(MorpheInstallStep.stepState(bundleOk.install(null, "", false))), null);
+        check("...of a failed install, a cancelled question or no answer: FAIL", "FAIL".equals(MorpheInstallStep.stepState(failedInstall.install(null, "", false)))
+                && "FAIL".equals(MorpheInstallStep.stepState(new JSONObject().put("ok", false).put("cancelled", true))) && "FAIL".equals(MorpheInstallStep.stepState(null)), null);
+
         // the bridge uses all this
         File src = null;
         for (File dd = new File(System.getProperty("user.dir")).getAbsoluteFile(); dd != null && src == null; dd = dd.getParentFile()) { File f = new File(dd, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
@@ -89,6 +96,7 @@ public class MorpheInstallStepTest {
         if (src != null) {
             String m = new String(java.nio.file.Files.readAllBytes(src.toPath()), "UTF-8");
             check("after a run the bridge settles the install answer through MorpheInstallStep (no ok -> delete of its own)", m.contains("MorpheInstallStep.settle(library, saved.optString(\"id\"), ir, a.optBoolean(\"deleteAfter\"))") && !m.contains("if (ir.optBoolean(\"ok\"))"), null);
+            check("after a run the bridge marks the Installing step through MorpheInstallStep.stepState (an ok that was only handed off is not OK)", m.contains("step(jobId, \"Installing\", MorpheInstallStep.stepState(ir))") && !m.contains("step(jobId, \"Installing\", ir.optBoolean(\"ok\")"), null);
             check("the install call settles through it too", m.contains("MorpheInstallStep.settle(library, a.optString(\"id\"), r, false)"), null);
             File main = new File(src.getParentFile(), "MainActivity.java");
             String ma = new String(java.nio.file.Files.readAllBytes(main.toPath()), "UTF-8");

@@ -602,7 +602,7 @@ public final class MorpheBridge {
                     catch (Exception e) { ir = new JSONObject().put("ok", false).put("output", "Error: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage())); }
                     ir.put("t", "install");
                     ev(jobId, ir);
-                    step(jobId, "Installing", ir.optBoolean("ok") ? "OK" : "FAIL");
+                    step(jobId, "Installing", MorpheInstallStep.stepState(ir));                    // only handed to the system installer: not marked done
                     if (MorpheInstallStep.settle(library, saved.optString("id"), ir, a.optBoolean("deleteAfter"))) ev(jobId, new JSONObject().put("t", "deleted"));
                 }
                 result.put("item", saved);
