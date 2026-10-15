@@ -23174,7 +23174,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function arcOpen(path, onFail) {
-            if (arcBusy) { showToast('Another archive job is still running'); return; }
+            // a File Manager extraction or compression owns the status line and its Cancel button, as a file job does: an open (a compressed tar waits in that line) would take them over
+            if (arcBusy || exRunning || czRunning) { showToast('Another archive job is still running'); return; }
+            if (fmBatchRunning) { showToast('A file job is still running'); return; }
             const name = path.split('/').pop();
             showToast('Opening ' + name + '…');
             // let the toast paint first: the bridge call is synchronous
