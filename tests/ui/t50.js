@@ -104,7 +104,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('9. the app sheet has a Logs button:', (await page.locator('#sheetBtnLogs').count()) === 1);
   await page.evaluate(() => { window.__calls.logcatFor.length = 0; });
   await page.locator('#sheetBtnLogs').click(); await sleep(400);
-  console.log('   it opens Console on Live Logcat limited to that app:', (await page.evaluate(() => currentViewName())) === 'console' && (await page.evaluate(() => cnSeg)) === 'log' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
+  console.log('   it opens the Live Logcat tab limited to that app:', (await page.evaluate(() => currentViewName())) === 'logcat' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
 
   // 10) Back closes the picker.
   await page.locator('#logcatAppBtn').click(); await sleep(100);

@@ -17,6 +17,6 @@
    ✕ Show all apps goes back to the plain log: true
 8. saving an empty log says so and writes nothing: true
 9. the app sheet has a Logs button: true
-   it opens Console on Live Logcat limited to that app: true
+   it opens the Live Logcat tab limited to that app: true
 10. Back closes the app picker: true
 errors: []

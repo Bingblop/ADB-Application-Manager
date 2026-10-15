@@ -1,4 +1,4 @@
-// v7.0 Tabs: the tab bar is built from one registry (new names, two-line labels, new order: Updates before Stores; v7.12.12: Console and Terminal where the Command-Line Interface was, no Logcat Viewer tab); the
+// v7.0 Tabs: the tab bar is built from one registry (new names, two-line labels, new order: Updates before Stores; v7.12.12: Console and Terminal where the Command-Line Interface was, no Logcat Viewer tab; v7.14.0: Console and Live Logcat, the Terminal a segment of Console); the
 // header gear opens Settings; Settings has a Feature List (turn tabs off and on, move them, Reset to Default) with Application Manager and About fixed;
 // the choice is kept, and a saved choice from an older version is made to fit the tabs this version has.
 const { chromium, PAGE } = require('./lib/pw');
@@ -6,7 +6,7 @@ const inst = require('./lib/inst_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'about'];
+const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'logcat', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'about'];
 const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];          // the tabs on the bottom bar until the user pins others (saved with the order; Extra Settings takes the third place, Console the fourth)
 
 (async () => {
@@ -30,7 +30,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   let page = await open();
   let t = await bar(page);
   check('1. sixteen tabs in the new order', JSON.stringify(t.map(x => x.key)) === JSON.stringify(DEFAULT_ORDER), JSON.stringify(t.map(x => x.key)));
-  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'Installer/\nUpdater', 'File\nManager', 'Console', 'Terminal', 'Hidden\nSettings', 'Extra\nSettings', 'RRO/Monet\nCustomization', 'App\nStores', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid',  'About']), JSON.stringify(t.map(x => x.text)));
+  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'Installer/\nUpdater', 'File\nManager', 'Console', 'Live\nLogcat', 'Hidden\nSettings', 'Extra\nSettings', 'RRO/Monet\nCustomization', 'App\nStores', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid',  'About']), JSON.stringify(t.map(x => x.text)));
   check('   Application Manager is active at the start', t[0].active && t.filter(x => x.active).length === 1);
   const geo = await ev(page, () => Array.from(document.querySelectorAll('.tab-btn')).map(b => ({ h: Math.round(b.getBoundingClientRect().height), clipped: b.scrollWidth > b.clientWidth + 1, font: getComputedStyle(b).fontSize, lines: b.innerText.split('\n').length })));
   check('   every tab is at least 44 px tall and no label is cut off', geo.every(g => g.h >= 44 && !g.clipped), JSON.stringify(geo.map(g => g.h + (g.clipped ? '!' : ''))));
@@ -58,7 +58,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   let r = await rows(page);
   check('   fourteen rows, every tab except Application Manager and About, in the tab bar order, all on', r.length === 14 && r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 15).join() && r.every(x => x.on), JSON.stringify(r.map(x => x.name)));
   check('   the first row cannot move up and the last cannot move down', r[0].up === false && r[0].down === true && r[13].up === true && r[13].down === false);
-  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer/Updater|File Manager|Console|Terminal|Hidden Settings|Extra Settings|RRO/Monet Customization|App Stores|Task Manager|Connected Devices|Morphe Patcher|SD Maid');
+  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer/Updater|File Manager|Console|Live Logcat|Hidden Settings|Extra Settings|RRO/Monet Customization|App Stores|Task Manager|Connected Devices|Morphe Patcher|SD Maid');
   const a11y = await ev(page, () => ({ switches: Array.from(document.querySelectorAll('#featureList .switch-input')).every(i => i.getAttribute('aria-label')), moves: Array.from(document.querySelectorAll('#featureList .fl-move')).every(b => /^Move .+ (up|down)$/.test(b.getAttribute('aria-label'))) }));
   check('   every switch and arrow has a name for a screen reader', a11y.switches && a11y.moves, JSON.stringify(a11y));
   check('   there is a Reset to Default button', (await ev(page, () => document.getElementById('featureResetBtn').innerText)) === 'Reset to Default');
@@ -71,27 +71,27 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   check('   Application Manager and About are still first and last', (await keys(page))[0] === 'apps' && (await keys(page)).slice(-1)[0] === 'about');
   check('   the choice is saved', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 15), off: ['files'], pinned: DEFAULT_PINNED, shortcuts: {} }), JSON.stringify(await saved(page)));
   await page.locator('#featureList .fl-row[data-tab="debloater"] .fl-switch').click();
-  check('   two off at once', (await keys(page)).join() === 'apps,saved-lists,installer,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
+  check('   two off at once', (await keys(page)).join() === 'apps,saved-lists,installer,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
   await page.locator('#featureList .fl-row[data-tab="files"] .fl-switch').click();
-  check('   File Manager back on: it returns to its place in the bar', (await keys(page)).join() === 'apps,saved-lists,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
+  check('   File Manager back on: it returns to its place in the bar', (await keys(page)).join() === 'apps,saved-lists,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,about');
   await page.locator('#featureList .fl-row[data-tab="debloater"] .fl-switch').click();
 
   // 5) a tab that is off cannot be opened by the app's own links either
   await page.locator('#featureList .fl-row[data-tab="console"] .fl-switch').click();
-  await ev(page, () => switchView('logcat'));          // the old name of the log lands in Console, so it is turned away the same way
+  await ev(page, () => switchView('terminal'));          // the old name of the Terminal lands in Console (v7.14.0), so it is turned away the same way
   const s5 = await ev(page, () => ({ view: currentViewName(), toast: document.getElementById('toastMsg').innerText }));
   check('5. switchView on a tab that is off stays where it is and says why', s5.view === 'prefs' && /Console is turned off/.test(s5.toast) && /Feature List/.test(s5.toast), JSON.stringify(s5));
   await ev(page, () => { viewStack = ['files', 'console', 'installer']; tabsApplyConfig(); });
   check('   Back never lands on a tab that is off', (await ev(page, () => viewStack.join())) === 'files,installer');
   await page.locator('#featureList .fl-row[data-tab="console"] .fl-switch').click();
-  await ev(page, () => switchView('logcat'));
-  check('   and when it is on again the link works (the old logcat name opens Console on Live Logcat)', (await ev(page, () => currentViewName() + ':' + cnSeg)) === 'console:log');
+  await ev(page, () => switchView('terminal'));
+  check('   and when it is on again the link works (the old terminal name opens Console on its Terminal segment)', (await ev(page, () => currentViewName() + ':' + cnSeg)) === 'console:term');
   await ev(page, () => switchView('prefs'));
 
   // 6) moving
   await page.locator('#featureList .fl-row[data-tab="console"] .fl-move').first().click();
   r = await rows(page);
-  check('6. Console up one: Feature List and tab bar agree', r.map(x => x.key).slice(0, 6).join() === 'saved-lists,debloater,installer,console,files,terminal', r.map(x => x.key).join());
+  check('6. Console up one: Feature List and tab bar agree', r.map(x => x.key).slice(0, 6).join() === 'saved-lists,debloater,installer,console,files,logcat', r.map(x => x.key).join());
   const barKeys6 = (await keys(page)).filter(k => k !== 'apps' && k !== 'about');
   check('   the tab bar follows (same order, same tabs)', barKeys6.join() === r.map(x => x.key).join(), barKeys6.join());
   const focus6 = await ev(page, () => ({ key: document.activeElement.closest('.fl-row') ? document.activeElement.closest('.fl-row').dataset.tab : '', cls: document.activeElement.className }));
@@ -127,7 +127,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   page = await open({ tab_config: JSON.stringify(odd) });
   const k8 = await keys(page);
   check('8. unknown tabs, repeats and the two fixed tabs in a saved choice are ignored', !k8.includes('bogus') && k8[0] === 'apps' && k8.slice(-1)[0] === 'about' && new Set(k8).size === k8.length, k8.join());
-  check('   the tabs it does not know are placed after their default neighbour, the saved ones keep their order', k8.join() === 'apps,saved-lists,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,debloater,about', k8.join());
+  check('   the tabs it does not know are placed after their default neighbour, the saved ones keep their order', k8.join() === 'apps,saved-lists,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,debloater,about', k8.join());
   check('   the one it turned off stays off, once', !k8.includes('installer') && JSON.stringify(await ev(page, () => tabConfig.off)) === '["installer"]', JSON.stringify(await ev(page, () => tabConfig.off)));
   await page.close();
   // 8b) the Extra Settings tab (v7.12.12): a fresh phone has it right after Hidden Settings; so does a phone whose saved order is from before it existed
@@ -138,10 +138,10 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   const OLD = ['saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'store', 'logcat', 'taskmgr', 'devices', 'morphe', 'sdm'];
   page = await open({ tab_config: JSON.stringify({ order: OLD, off: ['store'] }) });
   const o8 = await keys(page);
-  check('   a saved order from before the tab existed (the thirteen old tabs, App Stores off): it is placed right after Hidden Settings, Console takes the place of the Command-Line Interface and the Logcat Viewer is gone, the rest keeps its order and App Stores stays off', o8.join() === 'apps,saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,taskmgr,devices,morphe,sdm,about', o8.join());
+  check('   a saved order from before the tab existed (the thirteen old tabs, App Stores off): it is placed right after Hidden Settings, Console takes the place of the Command-Line Interface and the Logcat Viewer is gone, the rest keeps its order and App Stores stays off', o8.join() === 'apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,taskmgr,devices,morphe,sdm,about', o8.join());
   await ev(page, () => switchView('prefs')); await page.waitForTimeout(200);
   const r8 = await rows(page);
-  check('   the Feature List (Settings) shows it in that place, with its switch on, named "Extra Settings"', r8.map(x => x.key).join() === 'saved-lists,debloater,installer,files,console,terminal,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm' && r8.find(x => x.key === 'extrasettings').on === true && r8.find(x => x.key === 'extrasettings').name === 'Extra Settings' && r8.find(x => x.key === 'store').on === false, JSON.stringify(r8.map(x => x.key + (x.on ? '' : ' (off)'))));
+  check('   the Feature List (Settings) shows it in that place, with its switch on, named "Extra Settings"', r8.map(x => x.key).join() === 'saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm' && r8.find(x => x.key === 'extrasettings').on === true && r8.find(x => x.key === 'extrasettings').name === 'Extra Settings' && r8.find(x => x.key === 'store').on === false, JSON.stringify(r8.map(x => x.key + (x.on ? '' : ' (off)'))));
   await page.close();
   page = await open({ tab_config: JSON.stringify({ order: ['settings', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'overlays', 'store', 'logcat', 'taskmgr', 'devices', 'morphe', 'sdm'], off: [] }) });
   const m8 = await keys(page);
@@ -209,13 +209,13 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   const ab11 = await ev(p11, () => ({ view: currentViewName(), bg: window.__bg.slice() }));
   check('    About > check for update: says where to switch the tab on, and stays on About', /APK Installer\/Updater is turned off/.test(await toast11(p11)) && ab11.view === 'about' && ab11.bg.length === 0, JSON.stringify(ab11));
   await p11.close();
-  p11 = await open11(['console']);
+  p11 = await open11(['logcat']);
   await ev(p11, () => openInspector('com.example.one'));
   await sleep(250);
   await ev(p11, () => openAppLog());
   const lg11 = await ev(p11, () => ({ view: currentViewName(), app: logcatApp, bg: window.__bg.slice() }));
-  check('    Console off: "Logs" in an app\'s sheet says so, keeps the sheet and does not set a filter for later', /Console is turned off/.test(await toast11(p11)) && await sheet11(p11) && lg11.view === 'apps' && !lg11.app && lg11.bg.length === 0, JSON.stringify(lg11));
-  await ev(p11, () => { closeInspector(); switchView('prefs'); featureToggle('console', true); switchView('console'); });
+  check('    Live Logcat off: "Logs" in an app\'s sheet says so, keeps the sheet and does not set a filter for later', /Live Logcat is turned off/.test(await toast11(p11)) && await sheet11(p11) && lg11.view === 'apps' && !lg11.app && lg11.bg.length === 0, JSON.stringify(lg11));
+  await ev(p11, () => { closeInspector(); switchView('prefs'); featureToggle('logcat', true); switchView('logcat'); });
   check('    and once the tab is on, the log shows everything (no app filter left behind)', !(await ev(p11, () => logcatApp)));
   await p11.close();
   p11 = await open11(['installer']);

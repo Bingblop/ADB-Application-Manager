@@ -20,7 +20,6 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -291,7 +290,8 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(false);
 
-        webView.setWebChromeClient(new WebChromeClient());
+        // alert(), confirm() and prompt() of the page as dialogs in the app's look, with a real title (PageDialogs); every one is answered exactly once
+        webView.setWebChromeClient(pageDialogs.client());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -3154,6 +3154,9 @@ public class MainActivity extends Activity {
         }
         return yes[0] ? BundleApprovals.Answer.ALLOW : BundleApprovals.Answer.DENY;
     }
+
+    /** The page's alert / confirm / prompt in the app's look (its colours come from the page); see PageDialogs. */
+    private final PageDialogs pageDialogs = new PageDialogs(this);
 
     /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
     private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
@@ -16217,6 +16220,18 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** The page's colours and the words of its dialogs (applyTheme sends them): the look of alert / confirm / prompt (PageDialogs). */
+        @JavascriptInterface
+        public void setDialogTheme(String json) {
+            pageDialogs.setTheme(json);
+        }
+
+        /** The title of the page's next alert / confirm / prompt (nextDialogTitle in the page); used once. */
+        @JavascriptInterface
+        public void setNextDialogTitle(String title) {
+            pageDialogs.setNextTitle(title);
+        }
+
         /** Tints the status and navigation bars to match the active theme background. */
         @JavascriptInterface
         public void setSystemBarColor(final String hex) {
@@ -16381,6 +16396,8 @@ public class MainActivity extends Activity {
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
+        // the page's own dialogs too: each one still open answers its page with Cancel, so nothing waits on a window that is gone
+        try { pageDialogs.dismissAll(); } catch (Throwable ignored) {}
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.

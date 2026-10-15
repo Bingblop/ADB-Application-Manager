@@ -1,7 +1,7 @@
 ok   1. the card is "Default Ask Agent" and says it is a research agent, not a coding agent: Default Ask Agent | The research agent behind every Ask agent button, and the one the Application Up
 ok   2. nothing chosen yet means Perplexity (web research); the first line of the list is the free web lookup: ["perplexity","perplexity","No default (free web lookup only)"]
 ok   3. the list: web research (Perplexity, Exa, Browser Use, Crawl4AI) first; no coding agent (Cursor, Copilot, OpenCode) anywhere: ["Web research (recommended):perplexity+exa+browseruse+crawl4ai","Chat models with an API key:gemini+claude+chatgpt+grok+muse+deepseek","Free Open-Source:jan+anythingllm+ollama+ownserver"]
-ok   4. without a key it says it reads the web for you until the agent is connected: Perplexity is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Terminal tab. Open it
+ok   4. without a key it says it reads the web for you until the agent is connected: Perplexity is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console > Terminal. Open it
 ok      so the Ask agent buttons fall back to the web lookup (not ready) while the default is Perplexity: {"ready":false,"def":"perplexity"}
 ok   5. choosing "No default" is kept (it does not go back to Perplexity) and the card says so: {"id":"","def":null,"val":"","note":"No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you."}
 ok   6. a coding agent cannot be chosen by id either

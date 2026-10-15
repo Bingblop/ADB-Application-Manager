@@ -287,8 +287,8 @@
 </section>
 
 <section id="tab-console" data-title="Console" data-group="The tabs">
-<p class="hg-lead">The Console runs one shell command at a time on your phone and keeps every answer on a card of its own, and it shows the phone's running log live. Two tabs at the top, <b>ADB Shell</b> and <b>Live Logcat</b>, switch between the two. For a terminal that stays open, with coding assistants, see <a href="#tab-terminal">Terminal</a>.</p>
-<p><b>Where to find it:</b> the tab named <b>Console</b> (it holds what used to be the ADB Console pane of the Command-Line Interface tab and the whole Logcat Viewer tab). The tab remembers which of the two parts you used last. A small <b>?</b> at the right end of the two tabs opens this guide at this page. If the tab is missing it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>. The details of Live Logcat are in <a href="#console-logcat">Live Logcat</a>.</p>
+<p class="hg-lead">The Console holds the app's two shells. <b>ADB Shell</b> runs one shell command at a time on your phone and keeps every answer on a card of its own; <b>Terminal</b> is a terminal that stays open, with coding assistants. Two tabs at the top switch between the two. The phone's running log has a tab of its own, <a href="#tab-logcat">Live Logcat</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b> (it holds what used to be the ADB Console pane of the Command-Line Interface tab and, since v7.14.0, the Terminal, which was a tab of its own before). The tab remembers which of the two parts you used last. A small <b>?</b> at the right end of the two tabs opens this guide at this page. If the tab is missing it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>. The details of the Terminal are in <a href="#tab-terminal">Terminal</a>.</p>
 
 <h4>ADB Shell</h4>
 <ul>
@@ -303,8 +303,8 @@
 <li>If the command takes long, you can leave the tab: when it ends elsewhere, a message says <i>Command finished: see the Console</i>.</li>
 </ul>
 
-<h4>Live Logcat</h4>
-<p>The second tab at the top is the phone's live log: the filter box with <b>Refresh</b> and <b>Clear</b>, a row of buttons (Play, level, lines, All apps, Record to file, Recordings, Copy, Save, Share), the colour key and one small card per log entry. It reads only while it is on screen: leaving it for ADB Shell or another tab stops the reading. Everything about it is in <a href="#console-logcat">Live Logcat</a>.</p>
+<h4>Terminal</h4>
+<p>The second tab at the top is the Terminal: shells that stay open (the sandbox, the working mode and Termux), the full-screen real terminal and the coding agents. It starts its shell when it is first shown. Everything about it is in <a href="#tab-terminal">Terminal</a>.</p>
 
 <h4>If it fails</h4>
 <ul>
@@ -314,8 +314,8 @@
 </section>
 
 <section id="tab-terminal" data-title="Terminal" data-group="The tabs">
-<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells, with a full-screen real terminal and coding assistants. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>. Single commands with a history of cards, and the phone's log, are in the <a href="#tab-console">Console</a> tab.</p>
-<p><b>Where to find it:</b> the tab named <b>Terminal</b> (before v7.12.12 the tab was called <b>Command-Line Interface</b> and held the ADB Console as its second pane; the ADB Console is now the ADB Shell of the Console tab).</p>
+<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells, with a full-screen real terminal and coding assistants. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>. Single commands with a history of cards are in the ADB Shell, the other part of the <a href="#tab-console">Console</a> tab, and the phone's log is in <a href="#tab-logcat">Live Logcat</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b>, then <b>Terminal</b> at the top. From v7.12.12 to v7.13 the Terminal was a tab of its own; before v7.12.12 the tab was called <b>Command-Line Interface</b> and held the ADB Console as its second pane (the ADB Console is now the ADB Shell of the Console tab).</p>
 
 <h4>Before you start</h4>
 <p>A command is a line of text that tells the phone to do one thing. A shell is the program that reads your lines and runs them. Which shell you pick decides what the commands may do. Pick it with <b>Shell</b> above the screen. Words such as ADB and root are explained in the <a href="#glossary">Glossary</a>.</p>
@@ -327,7 +327,7 @@
 <tr><td><b>Termux (bash and packages)</b></td><td>The Termux app, in its home folder</td><td>Termux from F-Droid or GitHub, and a one-time setup</td><td>Real bash, <code>pkg install</code>, git, python</td></tr>
 </tbody>
 </table>
-<p>Termux is a separate free app that gives you a full command line (bash is its shell, and <code>pkg</code> installs programs into it). The first time, the tab picks Termux if it is set up, otherwise the working mode if one is connected, otherwise the sandbox (you can change that in the gear, under <b>Shell when the Terminal opens</b>). Each shell has its own screen and stays open while you use other tabs, so <code>cd</code> (change folder) and variables carry over. <b>Restart shell</b> starts a fresh one.</p>
+<p>Termux is a separate free app that gives you a full command line (bash is its shell, and <code>pkg</code> installs programs into it). The first time, the Terminal picks Termux if it is set up, otherwise the working mode if one is connected, otherwise the sandbox (you can change that in the gear, under <b>Shell when the Terminal opens</b>). Each shell has its own screen and stays open while you use other tabs, so <code>cd</code> (change folder) and variables carry over. <b>Restart shell</b> starts a fresh one.</p>
 <p>Next to the drop-downs at the top (<b>Coding Agents</b>, <b>Model</b>, <b>Effort</b>) are three small buttons: the gear (<b>Terminal settings</b>, which holds your keys and defaults), <b>MCP</b> and <b>Help</b> (a short explanation of the Terminal inside the app).</p>
 
 <h4>Run your first command</h4>
@@ -516,12 +516,12 @@
 </ul>
 </section>
 
-<section id="console-logcat" data-title="Live Logcat" data-group="The tabs">
-<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. Live Logcat, the second part of the <a href="#tab-console">Console</a> tab, lets you read it as it is written, filter it and save or share it, which is the best way to find out why an app crashes.</p>
-<p><b>Where to find it:</b> the tab named <b>Console</b>, then <b>Live Logcat</b> at the top (before v7.12.12 this was the Logcat Viewer tab). An app's own menu also has a <b>Logs</b> button that opens Live Logcat for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
+<section id="tab-logcat" data-title="Live Logcat" data-group="The tabs">
+<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. Live Logcat, a tab of its own, lets you read it as it is written, filter it and save or share it, which is the best way to find out why an app crashes.</p>
+<p><b>Where to find it:</b> the tab named <b>Live Logcat</b>, right after Console. A small <b>?</b> at the right end of its title opens this guide at this page. From v7.12.12 to v7.13 it was the second part of the Console tab; before v7.12.12 it was the Logcat Viewer tab. An app's own menu also has a <b>Logs</b> button that opens Live Logcat for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
 
 <h4>Before you start</h4>
-<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening Live Logcat starts reading right away; leaving it (for <b>ADB Shell</b> or for another tab) stops it.</p>
+<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening Live Logcat starts reading right away; leaving it for another tab stops it.</p>
 
 <h4>How to read a line</h4>
 <p>Each entry is a small card. Its first line starts with the level letter and the tag in bold, both in the colour of the level (for example <i>E/AndroidRuntime</i>), then:</p>
@@ -586,7 +586,7 @@
 
 <h4>Example: why does my app crash?</h4>
 <ol class="hg-steps">
-<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Console, Live Logcat and use <b>All apps</b> to pick it. The log is now only that app's.</li>
+<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Live Logcat and use <b>All apps</b> to pick it. The log is now only that app's.</li>
 <li>Set the <b>Level</b> to <b>Warn</b> or <b>Error</b>, and <b>Lines</b> to 2000 so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b> so the log only holds what comes next. This empties the log for every app.</li>
 <li>Use the app until it crashes.</li>

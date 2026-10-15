@@ -137,6 +137,11 @@
 
             /* ---- Syntax colours of the file viewer and diff (dark; the light set is below, after html[data-appearance="light"]) [fixed palette] ---- */
             --syn-c: #6A9955; --syn-s: #CE9178; --syn-n: #B5CEA8; --syn-k: #C586C0; --syn-t: #4FC1FF; --syn-a: #9CDCFE; --syn-v: #DCDCAA; --syn-m: #D7BA7D; --syn-add: #4EC9B0; --syn-del: #F48771;
+
+            /* ---- The 16 ANSI colours of the Terminal (its screen and the real terminal) on the card colour: dark here, the light set after
+               html[data-appearance="light"]. Black and white are toned so they still read on the page's own surface. [fixed palette] ---- */
+            --ansi-0: #5C6370; --ansi-1: #E05561; --ansi-2: #23C47E; --ansi-3: #E5C07B; --ansi-4: #4D9EF0; --ansi-5: #C678DD; --ansi-6: #29B8DB; --ansi-7: #D7DAE0;
+            --ansi-8: #7F8794; --ansi-9: #FF6B6B; --ansi-10: #3EE09A; --ansi-11: #F5F543; --ansi-12: #6CB6FF; --ansi-13: #E08AF0; --ansi-14: #4FD6F0; --ansi-15: #FFFFFF;
         }
 
         @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -2883,6 +2888,8 @@
         .fm-edit-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
 
         /* syntax colours for code and markup in the file manager viewer, editor and archive preview */
+        html[data-appearance="light"] { --ansi-0: #1F2328; --ansi-1: #C41E1E; --ansi-2: #0B7A2E; --ansi-3: #7A5A00; --ansi-4: #0451A5; --ansi-5: #9A1FB0; --ansi-6: #0B6E8C; --ansi-7: #4B5563;
+            --ansi-8: #57606A; --ansi-9: #D12C2C; --ansi-10: #137F3B; --ansi-11: #866300; --ansi-12: #1A5FB4; --ansi-13: #A626A4; --ansi-14: #0A7A99; --ansi-15: #24292F; }
         html[data-appearance="light"] { --syn-c: #008000; --syn-s: #A31515; --syn-n: #098658; --syn-k: #AF00DB; --syn-t: #800000; --syn-a: #C50000; --syn-v: #795E26; --syn-m: #7A5A00; --syn-add: #067D17; --syn-del: #C62828; }
         .syn-c { color: var(--syn-c); font-style: italic; }
         .syn-s { color: var(--syn-s); }
@@ -4074,25 +4081,25 @@
             background-repeat: no-repeat;
         }
         /* The real terminal (full screen): xterm.js on a pseudo-terminal. It covers the whole app; its height follows the on-screen keyboard (--rt-vh). */
-        .rt-overlay { position: fixed; left: 0; top: 0; right: 0; height: var(--rt-vh, 100vh); z-index: 260; display: none; flex-direction: column; background: #000; color: #e6e6e6; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
+        .rt-overlay { position: fixed; left: 0; top: 0; right: 0; height: var(--rt-vh, 100vh); z-index: 260; display: none; flex-direction: column; background: var(--bg-card); color: var(--text-main); padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
         .rt-overlay.show { display: flex; }
         body.rt-open { overflow: hidden; }
-        .rt-bar { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: #101010; border-bottom: 1px solid #262626; overflow-x: auto; }
+        .rt-bar { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--bg-sheet); border-bottom: 1px solid var(--border-glass); overflow-x: auto; }
         .rt-bar .op-select { flex: 0 0 auto; width: auto; max-width: 190px; font-size: var(--fs-body); padding: var(--space-2) var(--space-2); }
-        .rt-bar button { flex: 0 0 auto; min-height: 34px; padding: var(--space-1) var(--space-3h); background: #1b1b1b; color: #e6e6e6; border: 1px solid #333; border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight:var(--fw-bold); }
-        .rt-bar button:active { background: #333; }
+        .rt-bar button { flex: 0 0 auto; min-height: 34px; padding: var(--space-1) var(--space-3h); background: var(--bg-surface); color: var(--accent); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight:var(--fw-bold); }
+        .rt-bar button:active { background: var(--accent); color: var(--on-accent); }
         .rt-bar .rt-sp { flex: 1 1 auto; }
-        .rt-bar .rt-x { color: #ff8a80; font-size: var(--fs-lead); padding: var(--space-1) var(--space-4); }
+        .rt-bar .rt-x { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); font-size: var(--fs-lead); padding: var(--space-1) var(--space-4); }
         .rt-term { flex: 1 1 auto; min-height: 0; padding: var(--space-1) var(--space-1) 0 var(--space-2); overflow: hidden; }
         .rt-term .xterm { height: 100%; }
-        .rt-term .xterm-viewport { background-color: #000 !important; }
-        .rt-note { position: absolute; left: 10px; right: 10px; top: 56px; padding: var(--space-3) var(--space-3h); border-radius: var(--radius-sm); background: rgba(255, 107, 107, 0.15); border: 1px solid #ff6b6b; color: #ffb4b4; font-size: var(--fs-body); display: none; }
-        .rt-keys { flex: 0 0 auto; background: #0b0b0b; border-top: 1px solid #262626; padding: var(--space-1) var(--space-1) var(--space-1); }
+        .rt-term .xterm-viewport { background-color: var(--bg-card) !important; }
+        .rt-note { position: absolute; left: 10px; right: 10px; top: 56px; padding: var(--space-3) var(--space-3h); border-radius: var(--radius-sm); background: var(--tint-bloat); border: 1px solid var(--line-bloat); color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); font-size: var(--fs-body); display: none; }
+        .rt-keys { flex: 0 0 auto; background: var(--bg-sheet); border-top: 1px solid var(--border-glass); padding: var(--space-1) var(--space-1) var(--space-1); }
         .rt-keys .rt-row { display: flex; gap: var(--space-1); margin-top: var(--space-1); }
         .rt-keys .rt-row.rt-scroll { overflow-x: auto; scrollbar-width: none; }
-        .rt-keys button { flex: 1 1 0; min-width: 0; min-height: 40px; background: #000; color: #e6e6e6; border: 0; border-radius: var(--radius-xs); font-family: monospace; font-size: var(--fs-item); font-weight:var(--fw-heavy); letter-spacing: -0.3px; padding: 0 2px; touch-action: manipulation; }
+        .rt-keys button { flex: 1 1 0; min-width: 0; min-height: 40px; background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-glass); border-radius: var(--radius-xs); font-family: monospace; font-size: var(--fs-item); font-weight:var(--fw-heavy); letter-spacing: -0.3px; padding: 0 2px; touch-action: manipulation; }
         .rt-keys .rt-row.rt-scroll button { flex: 0 0 38px; }
-        .rt-keys button:active { background: #2a2a2a; }
+        .rt-keys button:active { background: var(--fill-4); }
         .rt-keys button.on { background: var(--accent); color: var(--on-accent); }
         .rt-keys button.lock { box-shadow: inset 0 -3px 0 var(--on-accent); }
         /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
@@ -6056,7 +6063,7 @@
 
             <div class="color-card" id="agentCard">
                 <div class="color-card-title">Default Ask Agent</div>
-                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in the Terminal tab.</div>
+                <div class="color-card-subtitle clamp-2">The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console > Terminal.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default Ask Agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
                 <div class="mode-btn-row" style="margin-top:10px;">
@@ -7480,7 +7487,7 @@
             </div>
         </section>
 
-        <!-- VIEW: CONSOLE (the Kotlin console's structure: a two-tab row, ADB Shell | Live Logcat) -->
+        <!-- VIEW: CONSOLE (the Kotlin console's structure: a two-tab row, ADB Shell | Terminal; Live Logcat has its own tab since v7.14.0) -->
         <section id="view-console" class="view-content">
             <style>
                 /* The Kotlin console, in the WebView: a two-text-tab row (surface fill, accent text and underline, 1 px glass border, 8 px corners), outlined
@@ -7492,8 +7499,11 @@
                 .cn-tab[aria-selected="true"] { color: var(--accent); }
                 .cn-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
                 .cn-ind { position: absolute; inset-inline-start: 0; bottom: 0; width: 50%; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); pointer-events: none; transition: transform .25s; }
-                .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(100%); }
-                :root[dir="rtl"] .cn-tabs[data-seg="log"] .cn-ind { transform: translateX(-100%); }
+                .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(100%); }
+                :root[dir="rtl"] .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(-100%); }
+                /* the Live Logcat tab has one title in the same row (no segments): the underline spans it */
+                .cn-tabs.lc-title .cn-tab { display: flex; align-items: center; justify-content: center; margin: 0; cursor: default; }
+                .cn-tabs.lc-title .cn-ind, .cn-tabs.lc-title.has-help .cn-ind { width: calc(100% - var(--cn-help-w, 0px)); transform: none; }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
                 .cn-tabs .help-q { top: calc((48px - var(--ctl-h)) / 2); right: auto; inset-inline-end: var(--space-2); }
                 /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
@@ -7605,7 +7615,7 @@
             </defs></svg>
             <div class="cn-tabs" id="cnTabs" data-seg="shell" role="tablist" aria-label="Console">
                 <button class="cn-tab" id="cnTabShell" role="tab" aria-selected="true" aria-controls="cnSegShell" onclick="cnShowSeg('shell')">ADB Shell</button>
-                <button class="cn-tab" id="cnTabLog" role="tab" aria-selected="false" aria-controls="cnSegLog" onclick="cnShowSeg('log')">Live Logcat</button>
+                <button class="cn-tab" id="cnTabTerm" role="tab" aria-selected="false" aria-controls="cnSegTerm" onclick="cnShowSeg('term')">Terminal</button>
                 <span class="cn-ind" aria-hidden="true"></span>
             </div>
 
@@ -7653,51 +7663,21 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="cn-list" id="termOutput" translate="no"></div>
             </div>
 
-            <!-- Live Logcat: the Logcat Viewer, moved in whole -->
-            <div id="cnSegLog" class="cn-seg" role="tabpanel" aria-labelledby="cnTabLog" hidden>
-                <div class="cn-sticky">
-                    <div class="cn-row">
-                        <input type="text" class="cn-field" id="logcatFilter" placeholder="Filter tag / text..." autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
-                        <button class="cn-icon" onclick="logcatRefresh()" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
-                        <button class="cn-icon danger" onclick="logcatClear()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-                    </div>
-                </div>
-                <div class="cn-tools cn-scroll">
-                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">Play</button>
-                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()" aria-label="Level">
-                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
-                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
-                    </select>
-                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()" aria-label="Lines">
-                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
-                    </select>
-                    <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
-                    <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
-                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
-                    <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
-                    <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
-                    <button class="batch-tool-link" onclick="logcatSave()">Save</button>
-                    <button class="batch-tool-link" onclick="logcatShare()">Share</button>
-                </div>
-                <div id="logcatScope"></div>
-                <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
-                <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
-                <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
-            </div>
-        </section>
-
-        <!-- VIEW 4: TERMINAL (the real terminal and the Coding Agents; the ADB console and the log are in the Console tab) -->
-        <section id="view-terminal" class="view-content">
+            <!-- Terminal: the real terminal and the Coding Agents (the Terminal tab until v7.14.0; switchView('terminal') opens this segment) -->
+            <div id="cnSegTerm" class="cn-seg" role="tabpanel" aria-labelledby="cnTabTerm" hidden>
             <style>
                 .tx-switch { display: flex; gap: var(--space-3); margin: 2px 0 var(--space-4); }
                 .tx-switch-btn { flex: 1 1 0; min-width: 0; min-height: 50px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--fill-2); color: var(--text-muted); font-size: var(--fs-lead); font-weight:var(--fw-heavy); cursor: pointer; transition: background .15s; }
                 .tx-switch-btn.active { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); border-color: transparent; box-shadow: 0 2px 12px var(--accent-glow); }
+                /* The Terminal in the Console's look: the pickers on a card like the Active Mode card, the screen like the Console's output (the card colour, a 1px
+                   hairline, 16px corners), the input row like the ADB Shell's (outlined field, the accent Run button), the extra keys and the tools as its small chips. */
                 .tx-bar { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
                 .tx-field { display: flex; flex-direction: column; gap: var(--space-1); flex: 1 1 128px; min-width: 0; }
                 .tx-field-label { font-size: var(--fs-caption); font-weight:var(--fw-heavy); color: var(--text-muted); letter-spacing: .3px; text-transform: uppercase; }
                 .tx-select { width: 100%; min-width: 0; font-size: var(--fs-code); padding: var(--space-3) var(--space-2); }
                 .tx-bar-btns { display: flex; gap: var(--space-2); }
-                .tx-icon-btn { height: 38px; min-width: 42px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-main); font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--space-3); }
+                .tx-icon-btn { height: 38px; min-width: 42px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--accent); font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--space-3); }
+                .tx-icon-btn:active { background: var(--accent); color: var(--on-accent); }
                 .tx-icon-btn.tx-help-btn, .tx-icon-btn.tx-mcp-btn { font-size: var(--fs-body); font-weight:var(--fw-heavy); }
                 .tx-sub { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-3) 0; flex-wrap: wrap; }
                 .tx-shell-pick { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--text-muted); }
@@ -7716,45 +7696,48 @@ Type any command above (e.g. pm list packages -d)</div>
                 #txPaneTerminal.tx-full .tx-tools .term-icon-btn { flex: 0 0 auto; }
                 body.tx-full-on { overflow: hidden; }
                 /* --tx-screen-h (txFitScreen) makes the screen as tall as the window allows with the input line and the extra keys above the bottom bar; 160 px is the floor */
-                .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-md); padding: var(--space-3h) var(--space-3h) var(--space-4); height: var(--tx-screen-h, 50vh); min-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
+                .tx-screen { background: var(--bg-card); color: var(--text-main); font-family: ui-monospace, 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.45; border-radius: var(--radius-lg); padding: var(--space-3h) var(--space-3h) var(--space-4); height: var(--tx-screen-h, 50vh); min-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid var(--border-glass); -webkit-user-select: text; user-select: text; }
+                .tx-screen ::selection { background: var(--accent-glow); }
                 .tx-screen * { font-family: inherit; }
-                .tx-screen .tx-pp { color: #23d18b; }
-                .tx-screen .tx-ps { color: #ffffff; }
-                .tx-screen .tx-note { color: #8c8c8c; }
-                .tx-screen .tx-warn { color: #f5c542; }
-                .tx-screen .tx-err { color: #ff6b6b; }
-                .tx-screen .tx-ok { color: #23d18b; }
-                .tx-screen .tx-you { color: #29b8db; font-weight:var(--fw-bold); }
-                .tx-screen .tx-who { font-weight:var(--fw-bold); }
-                .tx-screen .tx-ai { color: #e6e6e6; }
-                .tx-screen .tx-code { display: block; background: #101010; border-left: 2px solid #3a3a3a; padding: var(--space-1) var(--space-3); margin: var(--space-1) 0; color: #d7d7d7; }
-                .tx-screen .tx-think { color: #8c8c8c; }
-                .tx-screen .tx-add { color: #23d18b; }
-                .tx-screen .tx-del { color: #ff6b6b; }
+                .tx-screen .tx-pp { color: var(--accent); font-weight: var(--fw-bold); }
+                .tx-screen .tx-ps { color: var(--text-main); }
+                .tx-screen .tx-note { color: var(--text-muted); }
+                .tx-screen .tx-warn { color: color-mix(in srgb, var(--status-suspended) 80%, var(--text-main)); }
+                .tx-screen .tx-err { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .tx-screen .tx-ok { color: color-mix(in srgb, var(--status-running) 72%, var(--text-main)); }
+                .tx-screen .tx-you { color: var(--accent); font-weight:var(--fw-bold); }
+                .tx-screen .tx-who { font-weight:var(--fw-bold); color: color-mix(in srgb, var(--tx-who-c, var(--text-main)) 78%, var(--text-main)); }          /* the agent's colour (--tx-who-c, set per line), leaning to the text colour so it reads on a light screen too */
+                .tx-screen .tx-ai { color: var(--text-main); }
+                .tx-screen .tx-code { display: block; background: var(--bg-surface); border-left: 2px solid var(--line-accent); padding: var(--space-1) var(--space-3); margin: var(--space-1) 0; color: var(--text-main); }
+                .tx-screen .tx-think { color: var(--text-muted); }
+                .tx-screen .tx-add { color: color-mix(in srgb, var(--status-running) 72%, var(--text-main)); }
+                .tx-screen .tx-del { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
                 .tx-screen .tx-btnrow { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-1) 0 var(--space-2); white-space: normal; }
-                .tx-screen .tx-b { font-family: inherit; font-size: var(--fs-body); font-weight:var(--fw-bold); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-4); border: 1px solid #444; background: #161616; color: #e6e6e6; cursor: pointer; }
-                .tx-screen .tx-b.go { background: #1b3a2a; border-color: #2e7d55; color: #b9f6ca; }
-                .tx-screen .tx-b.no { border-color: #5a2d2d; color: #ffb4b4; }
-                .tx-screen .tx-card { border: 1px solid #333; border-radius: var(--radius-md); background: #0b0b0b; margin: var(--space-2) 0; padding: var(--space-3) var(--space-3h); white-space: normal; }
-                .tx-screen .tx-card-head { color: #bdbdbd; font-size: var(--fs-body); margin-bottom: var(--space-1); }
-                .tx-screen .tx-card-body { white-space: pre-wrap; word-break: break-word; color: #f5f543; max-height: 40vh; overflow: auto; }
-                .tx-screen .tx-card-state { color: #8c8c8c; font-size: var(--fs-body); margin-top: var(--space-1); }
-                .tx-screen .tx-trim { color: #8c8c8c; }
-                .tx-cursor { display: inline-block; width: 7px; height: 1.1em; vertical-align: text-bottom; background: #e6e6e6; animation: txBlink 1s steps(1) infinite; }
+                .tx-screen .tx-b { font-family: var(--ui-font, var(--font-sans)); font-size: var(--fs-body); font-weight:var(--fw-bold); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-4); min-height: 32px; border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--accent); cursor: pointer; }
+                .tx-screen .tx-b.go { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+                .tx-screen .tx-b.no { border-color: var(--line-bloat); color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .tx-screen .tx-card { border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--bg-surface); margin: var(--space-2) 0; padding: var(--space-3) var(--space-3h); white-space: normal; }
+                .tx-screen .tx-card-head { color: var(--text-muted); font-size: var(--fs-body); margin-bottom: var(--space-1); }
+                .tx-screen .tx-card-body { white-space: pre-wrap; word-break: break-word; color: var(--accent); font-weight: var(--fw-bold); max-height: 40vh; overflow: auto; }
+                .tx-screen .tx-card-state { color: var(--text-muted); font-size: var(--fs-body); margin-top: var(--space-1); }
+                .tx-screen .tx-trim { color: var(--text-muted); }
+                .tx-cursor { display: inline-block; width: 7px; height: 1.1em; vertical-align: text-bottom; background: var(--accent); animation: txBlink 1s steps(1) infinite; }
                 @keyframes txBlink { 50% { opacity: 0; } }
                 @media (prefers-reduced-motion: reduce) { .tx-cursor { animation: none; } }
-                .tx-inputline { display: flex; gap: var(--space-2); align-items: flex-end; margin-top: var(--space-3); }
-                .tx-mode-btn { flex: 0 0 auto; width: 46px; height: 44px; border-radius: var(--radius-md); background: #000; color: #23d18b; font-family: monospace; font-weight:var(--fw-heavy); font-size: var(--fs-label); border: 1px solid #333; cursor: pointer; }
-                .tx-mode-btn.chat { color: #f5f543; }
+                .tx-inputline { display: flex; gap: var(--space-3); align-items: center; margin-top: var(--space-3); }
+                .tx-mode-btn { flex: 0 0 auto; width: 40px; height: 40px; padding: 0; border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--accent); font: var(--fw-heavy) var(--fs-item) ui-monospace, monospace; border: 1px solid var(--border-glass); cursor: pointer; }
+                .tx-mode-btn:focus-visible, .tx-send-btn:focus-visible, .tx-keys button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                .tx-mode-btn.chat { color: var(--secondary); border-color: var(--secondary); }
                 .tx-mode-btn:disabled { opacity: .55; }
-                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 56px; max-height: 170px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: var(--radius-md); font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: var(--fs-lead); line-height: 1.4; padding: var(--space-4) var(--space-3h); box-sizing: border-box; }
-                .tx-input:focus { outline: none; border-color: var(--accent); }
-                .tx-send-btn { flex: 0 0 auto; height: 44px; min-width: 70px; border-radius: var(--radius-md); border: none; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight:var(--fw-heavy); font-size: var(--fs-item); cursor: pointer; }
+                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 56px; max-height: 170px; resize: none; background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); font-family: ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; font-size: var(--fs-item); line-height: 1.4; padding: var(--space-4) var(--space-5); box-sizing: border-box; }
+                .tx-input::placeholder { color: var(--text-dim); font-family: var(--ui-font, var(--font-sans)); font-size: var(--fs-pkg); }
+                .tx-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+                .tx-send-btn { flex: 0 0 auto; height: 40px; min-width: 58px; padding: 0 var(--space-5); border-radius: var(--radius-sm); border: none; background: var(--accent); color: var(--on-accent); font-weight:var(--fw-heavy); font-size: var(--fs-item); cursor: pointer; }
                 .tx-send-btn.stop { background: var(--danger-solid); color: var(--on-danger); }
                 .tx-keys { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-1); margin-top: var(--space-2); }
-                .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: var(--radius-sm); min-height: 38px; font-family: monospace; font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
-                .tx-keys button:active { background: #2a2a2a; }
-                .tx-keys .tx-key-stop { color: #ff8a80; font-size: var(--fs-pill); letter-spacing: -0.6px; }
+                .tx-keys button { background: var(--bg-surface); color: var(--accent); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); min-height: 38px; font-family: ui-monospace, monospace; font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
+                .tx-keys button:active { background: var(--accent); color: var(--on-accent); }
+                .tx-keys .tx-key-stop { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); font-size: var(--fs-pill); letter-spacing: -0.6px; }
                 .tx-keys .tx-key-shift { font-size: var(--fs-pill); letter-spacing: -0.6px; }          /* five letters in a seventh of a 320 px row */
                 /* Shift swaps the first row's keys for a second row of symbols a phone keyboard often buries behind
                    its own symbols layer - Shift itself stays in both rows so it always toggles back. */
@@ -7765,6 +7748,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 /* The app's sheet subtitles break anywhere (they usually show package names); these are sentences */
                 #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p, #txMcpModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
                 .tx-tools { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+                /* the tools as the Console's small chips: surface fill, hairline, accent text */
+                .tx-tools .term-icon-btn { height: 32px; padding: 0 var(--space-4); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); }
+                .tx-tools .term-icon-btn:active { background: var(--accent); color: var(--on-accent); }
                 .tx-sheet-sec { font-size: var(--fs-pill); font-weight:var(--fw-heavy); color: var(--accent); text-transform: uppercase; letter-spacing: .3px; margin: var(--space-5) 0 var(--space-2); }
                 .tx-sheet-p { font-size: var(--fs-body); color: var(--text-main); line-height: 1.5; margin: var(--space-2) 0; }
                 .tx-sheet-p.muted { color: var(--text-muted); font-size: var(--fs-pill); }
@@ -7883,6 +7869,45 @@ Type any command above (e.g. pm list packages -d)</div>
                     <button class="term-icon-btn" id="txNewChatBtn" onclick="txNewChat()" style="display:none;">New chat</button>
                     <button class="term-icon-btn" id="txRestartBtn" onclick="txRestartShell()">Restart shell</button>
                 </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- VIEW: LIVE LOGCAT (its own tab again since v7.14.0; the pane keeps the id cnSegLog it had as a segment of Console, and the Console's look) -->
+        <section id="view-logcat" class="view-content">
+            <div class="cn-tabs lc-title" id="lcTitleRow">
+                <h2 class="cn-tab" id="lcTitle" aria-selected="true">Live Logcat</h2>
+                <span class="cn-ind" aria-hidden="true"></span>
+            </div>
+            <div id="cnSegLog" class="cn-seg lc-pane">
+                <div class="cn-sticky">
+                    <div class="cn-row">
+                        <input type="text" class="cn-field" id="logcatFilter" placeholder="Filter tag / text..." autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
+                        <button class="cn-icon" onclick="logcatRefresh()" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+                        <button class="cn-icon danger" onclick="logcatClear()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                    </div>
+                </div>
+                <div class="cn-tools cn-scroll">
+                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">Play</button>
+                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()" aria-label="Level">
+                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
+                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
+                    </select>
+                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()" aria-label="Lines">
+                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
+                    </select>
+                    <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
+                    <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
+                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
+                    <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
+                    <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
+                    <button class="batch-tool-link" onclick="logcatSave()">Save</button>
+                    <button class="batch-tool-link" onclick="logcatShare()">Share</button>
+                </div>
+                <div id="logcatScope"></div>
+                <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
+                <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
+                <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
             </div>
         </section>
 
@@ -10795,8 +10820,8 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'debloater', label: 'UAD-NG\nDebloater', name: 'UAD-NG Debloater' },
             { key: 'installer', label: 'Installer/\nUpdater', name: 'APK Installer/Updater' },
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
-            { key: 'console', label: 'Console', name: 'Console' },                        // the ADB shell and the live log (the former ADB Console pane and Logcat Viewer tab)
-            { key: 'terminal', label: 'Terminal', name: 'Terminal' },                     // the real terminal and the Coding Agents (the key of the former Command-Line Interface tab)
+            { key: 'console', label: 'Console', name: 'Console' },                        // the shells: ADB Shell and Terminal (the real terminal and the Coding Agents; the Terminal tab until v7.14.0)
+            { key: 'logcat', label: 'Live\nLogcat', name: 'Live Logcat' },                 // the live log, in the place the Terminal tab had (a segment of Console from v7.12.12 to v7.13.x)
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
             { key: 'extrasettings', label: 'Extra\nSettings', name: 'Extra Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
@@ -10808,7 +10833,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
-        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key === 'logcat' ? 'console' : key));          // the updater is a box of the APK Installer/Updater tab now, the log a segment of Console
+        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'installer' : key === 'terminal' ? 'console' : key));          // the updater is a box of the APK Installer/Updater tab now, the Terminal a segment of Console
         let tabConfig = { order: TAB_MOVABLE.slice(), off: [], pinned: ['apps'], shortcuts: {} };          // pinned: the tabs on the bottom bar (see Navigation below)
 
         // The saved choice (kv 'tab_config') is checked against the tabs this version has: unknown keys go, a tab it has never
@@ -10816,19 +10841,43 @@ Type any command above (e.g. pm list packages -d)</div>
         // v7.12.12: the Command-Line Interface tab ('terminal') became Console ('console': the ADB shell and the live log) plus Terminal ('terminal': the real
         // terminal and the Coding Agents), and the Logcat Viewer tab ('logcat') moved into Console. A choice saved before that has 'terminal' and no 'console':
         // Console takes the place of 'terminal' (and is off when 'terminal' was off, and is pinned on the bottom bar where 'terminal' was); what was saved for 'logcat' is dropped
-        // with the other unknown keys.
+        // with the other unknown keys (dropped here by name: 'logcat' is a tab again since v7.14.0, and an old Logcat Viewer entry must not decide where it goes).
         function tabMigrateConsole(saved) {
             if (!saved || !Array.isArray(saved.order) || saved.order.includes('console') || (Array.isArray(saved.off) && saved.off.includes('console'))) return saved;
-            const order = saved.order.slice(), off = Array.isArray(saved.off) ? saved.off.slice() : [];
+            const noLog = k => k !== 'logcat';
+            const order = saved.order.filter(noLog), off = Array.isArray(saved.off) ? saved.off.filter(noLog) : [];
+            const pinned = Array.isArray(saved.pinned) ? saved.pinned.filter(noLog).map(k => k === 'terminal' ? 'console' : k) : saved.pinned;
             const i = order.indexOf('terminal');
             if (i >= 0) order.splice(i, 0, 'console');
-            else if (!off.includes('terminal')) return saved;                              // neither in the list: the generic placing below puts Console in its default place
+            else if (!off.includes('terminal')) return Object.assign({}, saved, { order, off, pinned });          // neither in the list: the generic placing below puts Console in its default place
             if (off.includes('terminal')) off.push('console');
-            const pinned = Array.isArray(saved.pinned) ? saved.pinned.map(k => k === 'terminal' ? 'console' : k) : saved.pinned;
             return Object.assign({}, saved, { order, off, pinned });
         }
+        // v7.14.0: Terminal ('terminal') became the second segment of Console, and Live Logcat ('logcat') left Console for a tab of its own, in Terminal's place.
+        // A choice saved before that names 'terminal' and not 'logcat': Live Logcat takes over what was saved for Terminal (its place in the order, off, pinned on the
+        // bottom bar). The long-press shortcuts chosen for Terminal (full screen, Coding Agents, Termux setup, its settings) lead into Console now, so they join
+        // Console's own choice there (its old Live Logcat entry goes); Live Logcat starts with its default shortcuts.
+        function tabMigrateLogcat(saved) {
+            if (!saved || !Array.isArray(saved.order)) return saved;
+            const off = Array.isArray(saved.off) ? saved.off : [];
+            if (saved.order.includes('logcat') || off.includes('logcat') || !(saved.order.includes('terminal') || off.includes('terminal'))) return saved;
+            const swap = k => k === 'terminal' ? 'logcat' : k;
+            const out = Object.assign({}, saved, { order: saved.order.map(swap), off: off.map(swap) });
+            if (Array.isArray(saved.pinned)) out.pinned = saved.pinned.map(swap);
+            const sc = saved.shortcuts;
+            if (sc && typeof sc === 'object' && !Array.isArray(sc)) {
+                const next = Object.assign({}, sc);
+                delete next.terminal;
+                if (Array.isArray(sc.terminal)) {
+                    const mine = Array.isArray(sc.console) ? sc.console.filter(id => id !== 'log') : ['shell', 'term'];
+                    next.console = mine.concat(sc.terminal.filter(id => !mine.includes(id)));          // tabCleanShortcuts keeps the first four
+                } else if (Array.isArray(sc.console)) next.console = sc.console.filter(id => id !== 'log');
+                out.shortcuts = next;
+            }
+            return out;
+        }
         function tabLoadConfig() {
-            const saved = tabMigrateConsole(kvGet('tab_config', null));
+            const saved = tabMigrateLogcat(tabMigrateConsole(kvGet('tab_config', null)));
             let order = saved && Array.isArray(saved.order) ? saved.order.filter((k, i, a) => TAB_MOVABLE.includes(k) && a.indexOf(k) === i) : [];
             TAB_MOVABLE.forEach((k, i) => {
                 if (order.includes(k)) return;
@@ -10842,7 +10891,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The tabs on the bar, left to right
         function tabsShown() { return ['apps'].concat(tabConfig.order.filter(k => !tabConfig.off.includes(k)), ['about']); }
-        function tabIsOn(key) { if (key === 'updates') key = 'installer'; if (key === 'logcat') key = 'console'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
+        function tabIsOn(key) { if (key === 'updates') key = 'installer'; if (key === 'terminal') key = 'console'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
 
         function renderTabBar() {
             const bar = document.getElementById('tabBar');
@@ -10866,18 +10915,18 @@ Type any command above (e.g. pm list packages -d)</div>
         // The bar follows the Feature List order, so moving a tab there moves it here. It goes away (slides down) while the on-screen keyboard is up, while something covers the screen
         // (a sheet, the full-screen Terminal) and until the page has started; it stays on Settings, with no slot lit.
         const BNAV_MAX = 4;                                                          // pinned tabs, Application Manager included; More is the fifth slot
-        // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'console', 'terminal', 'taskmgr' ...). When a tab is added, renamed or replaced in TAB_DEFS, update them with it:
+        // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'console', 'logcat', 'taskmgr' ...). When a tab is added, renamed or replaced in TAB_DEFS, update them with it:
         // a key that TAB_DEFS does not have is skipped, so nothing breaks, but the default pinned tab and the shortcuts of that tab are lost until it is done (t260 checks that every tab has an icon).
-        const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'console'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings); Console: the ADB shell and the live log
-        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', terminal: 'Terminal', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', about: 'About' };
+        const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'console'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings); Console: the ADB shell and the Terminal
+        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', about: 'About' };
         const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
             apps: '<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',
             'saved-lists': '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>',
             debloater: '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>',
             installer: '<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>',
             files: '<path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>',
-            console: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/>',          // a window with a prompt: the ADB shell and the live log
-            terminal: '<path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>',          // code brackets: the real terminal and the Coding Agents
+            console: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/>',          // a window with a prompt: the ADB shell and the Terminal
+            logcat: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>',          // lines of a log: Live Logcat
             settings: '<path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>',
             extrasettings: '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
             overlays: '<path d="M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>',
@@ -11092,7 +11141,8 @@ Type any command above (e.g. pm list packages -d)</div>
             list: '<path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>',
             chip: BNAV_ICONS.taskmgr,
             shell: BNAV_ICONS.console,
-            log: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>',
+            log: BNAV_ICONS.logcat,
+            code: '<path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>',          // code brackets: the Terminal segment
             robot: '<path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/>',
             launch: '<path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>',
             battery: '<path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/>',
@@ -11113,7 +11163,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const bnavUpdatePending = () => updList.filter(u => updIsInstallable(u) && updCanStartAll(u)).length;          // what the Update All button counts
         const bnavSection = (tab, id, label, sel) => ({ id, label, icon: 'tune', when: () => tabIsOn(tab) && !!document.querySelector(sel), run: () => bnavGo(tab, () => bnavReveal(sel)) });
         const bnavTmSub = (id, label, icon) => ({ id, label, icon, when: () => typeof tmSetSub === 'function', run: () => bnavGo('taskmgr', () => tmSetSub(id)) });
-        // a segment of the Console tab (cnShowSeg chooses it first, so the tab opens on it at once: the same path as switchView('logcat') for old links)
+        // a segment of the Console tab (cnShowSeg chooses it first, so the tab opens on it at once: the same path as switchView('terminal') for old links)
         const bnavCnSeg = (id, label, icon) => ({ id, label, icon, when: () => typeof cnShowSeg === 'function' && !!document.getElementById('cnTabs'), run: () => { cnShowSeg(id); switchView('console'); } });
         const TAB_SHORTCUTS = {
             apps: [
@@ -11125,15 +11175,18 @@ Type any command above (e.g. pm list packages -d)</div>
                 { id: 'check', label: 'Check for updates', icon: 'check', run: () => { switchView('updates'); setTimeout(() => checkUpdatesUI(), 90); } },
                 { id: 'apks', label: 'Find APKs on storage', icon: 'folder', when: () => !!document.getElementById('apkScanBtn'), run: () => bnavGo('installer', () => { instPaneShow('install'); bnavReveal('#apkScanBtn'); }) }
             ],
-            console: [                                                // the two segments of the Console tab
+            console: [                                                // the two segments of the Console tab, then the Terminal's full screen, its agent picker and two of its sheets
                 bnavCnSeg('shell', 'ADB Shell', 'shell'),
-                bnavCnSeg('log', 'Live Logcat', 'log')
-            ],
-            terminal: [                                               // the real terminal and the Coding Agents: its full screen, the agent picker, and two of its sheets
+                bnavCnSeg('term', 'Terminal', 'code'),
                 { id: 'full', label: 'Full-screen terminal', icon: 'fullscreen', run: () => bnavGo('terminal', () => txFullToggle(true)) },
                 { id: 'agents', label: 'Coding Agents', icon: 'robot', when: () => !!document.getElementById('txAgent'), run: () => bnavGo('terminal', () => { bnavReveal('#txAgent'); bnavFocus('txAgent'); }) },
                 { id: 'termux', label: 'Termux setup', icon: 'launch', when: () => typeof txOpenTermuxSetup === 'function' && !!document.getElementById('txTermuxModal'), run: () => bnavGo('terminal', () => txOpenTermuxSetup()) },
                 { id: 'settings', label: 'Terminal settings', icon: 'tune', when: () => typeof txOpenSettings === 'function' && !!document.getElementById('txSettingsModal'), run: () => bnavGo('terminal', () => txOpenSettings()) }
+            ],
+            logcat: [                                                 // Live Logcat: its filter, the log of one app, the recordings
+                { id: 'filter', label: 'Filter the log', icon: 'search', when: () => !!document.getElementById('logcatFilter'), run: () => bnavGo('logcat', () => bnavFocus('logcatFilter')) },
+                { id: 'app', label: 'Log of one app', icon: 'list', when: () => typeof lcAppOpen === 'function', run: () => bnavGo('logcat', () => lcAppOpen()) },
+                { id: 'recordings', label: 'Recordings', icon: 'folder', when: () => typeof lcRecListOpen === 'function', run: () => bnavGo('logcat', () => lcRecListOpen()) }
             ],
             settings: [
                 { id: 'search', label: 'Search settings', icon: 'search', when: () => typeof sdbUsable === 'function' && sdbUsable() && !!document.getElementById('sdbSearch'), run: () => bnavGo('settings', () => bnavFocus('sdbSearch')) }
@@ -11405,16 +11458,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 instKeep = false;
                 return ok;
             }
-            if (viewName === 'logcat') {                                    // the Logcat Viewer is the Live Logcat segment of Console now: old links land there
+            if (viewName === 'terminal') {                                  // the Terminal is the second segment of Console since v7.14.0: every link to it lands there
                 if (!tabNeed('console')) return false;
-                cnApplySeg('log');
+                cnApplySeg('term');
                 viewName = 'console';
             }
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
-            if (txFullOn && viewName !== 'terminal') txFullToggle(false);
-            if (typeof rt === 'object' && rt && rt.open && viewName !== 'terminal') rtHide();
+            if (txFullOn && viewName !== 'console') txFullToggle(false);
+            if (typeof rt === 'object' && rt && rt.open && viewName !== 'console') rtHide();
             const fromView = currentViewName();
             if (fromView === 'apps' && viewName !== 'apps' && selectedPkgs.size) clearBatchSelectionNow();       // the selection (and the checkmark button, and the batch menu) goes with the tab, at once
             if (fromView === 'prefs' && viewName !== 'prefs') fontScanClear(false);          // the list of fonts found is emptied when Settings is left
@@ -11445,7 +11498,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 activeView.classList.add('active');
             }
             if (viewName !== 'files' && typeof arcOpenAbort === 'function') arcOpenAbort();       // an archive still being unpacked for its listing is not wanted any more
-            if (viewName !== 'console' && typeof logcatStop === 'function') logcatStop();          // the live log runs only while Console is open on Live Logcat
+            if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();          // the live log runs only while its tab is open
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName !== 'taskmgr' && typeof stLeave === 'function') stLeave();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
@@ -11453,6 +11506,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'installer') { if (!instKeep && fromView !== 'installer') instPane = 'install'; onInstallerShown(); instPaneShow(instPane, true); }
             if (viewName === 'files') onFilesShown();
             if (viewName === 'console') onConsoleShown();
+            if (viewName === 'logcat' && typeof onLogcatShown === 'function') onLogcatShown();
             if (viewName === 'taskmgr') onTaskMgrShown();
             if (viewName === 'devices') onDevicesShown();
             if (viewName === 'extrasettings') pdnsShow();
@@ -11462,7 +11516,6 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
-            if (viewName === 'terminal' && typeof onTerminalShown === 'function') onTerminalShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
@@ -11913,7 +11966,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const deliberate = gap >= BACK_EXIT_MIN_GAP;
             if (backExitArmedAt && deliberate && now - backExitArmedAt <= BACK_EXIT_WINDOW) {
                 const busy = backBusyReason();
-                if (busy && !confirm('Leave now? ' + busy.charAt(0).toUpperCase() + busy.slice(1) + ' and would be cut off.')) { backExitArmedAt = 0; return true; }
+                if (busy && (nextDialogTitle('Leave now'), true) && !confirm('Leave now? ' + busy.charAt(0).toUpperCase() + busy.slice(1) + ' and would be cut off.')) { backExitArmedAt = 0; return true; }
                 backExitArmedAt = 0;
                 return false;
             }
@@ -13264,7 +13317,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = askAgentDef();
             if (!ag) { el.textContent = 'No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you.'; return; }
             txRefreshVault();
-            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in the Terminal tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console > Terminal. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
             el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
         }
@@ -13291,7 +13344,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 out.style.display = 'none';
                 res.classList.add('is-err');
                 res.textContent = !ag ? txT('No Default Ask Agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
-                    : txF('{0} is not connected yet. Add its key or sign-in in the Terminal tab first.', ag.name);
+                    : txF('{0} is not connected yet. Add its key or sign-in in Console > Terminal first.', ag.name);
                 return;
             }
             if (txEngine(ag) === 'cli' || ag.api === 'cli') {
@@ -13612,6 +13665,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function saveUadSelectionToList() {
             if (!uadSelected.size) { showToast('Select packages first'); return; }
+            nextDialogTitle('Name this list');
             const name = prompt('Name for this list:', 'Debloat ' + new Date().toLocaleDateString(langLocale()));
             if (!name || !name.trim()) return;
             customLists.unshift({ id: 'list_' + Date.now(), name: name.trim(), description: 'From the UAD-NG debloater', packages: Array.from(uadSelected), updatedAt: Date.now() });
@@ -13852,6 +13906,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function clearHistory() {
             if (!getHistory().length) return;
+            nextDialogTitle('Clear history');
             if (!confirm('Clear the whole history? Undo will no longer be possible for these actions.')) return;
             debloatHistory = [];
             saveStoreJson('debloat_history', []);
@@ -14255,6 +14310,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function setUpdateSourceUI(pkg, name) {
             const b = updBridge();
             if (!b || !b.setUpdateSource) return;
+            nextDialogTitle('Update source');
             const url = prompt(`Where are ${name}'s releases?\n\ngithub.com/owner/repo, codeberg.org/owner/repo or an F-Droid package link`, 'https://github.com/');
             if (url === null) return;
             const res = b.setUpdateSource(pkg, url.trim() === 'https://github.com/' ? '' : url.trim());
@@ -14286,6 +14342,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const b = updBridge();
             if (!b || !b.setGithubToken) return;
             const has = b.hasGithubToken && b.hasGithubToken();
+            nextDialogTitle('GitHub token');
             const t = prompt((has ? 'A GitHub token is saved. ' : '') + 'Optional GitHub token (no permissions needed) raises the limit from 60 to 5,000 checks an hour. Leave empty to remove it.', '');
             if (t === null) return;
             const kept = b.setGithubToken(t.trim()) !== false;                 // false: the Keystore would not seal it
@@ -14433,6 +14490,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 B.approveUpdateAll(JSON.stringify(pending.map(u => u.pkg)));
                 return;
             }
+            nextDialogTitle('Update apps');
             if (!confirm(`Update ${pending.length} apps?`)) return;
             haptic();
             updStartQueue(pending.map(u => u.pkg));
@@ -18032,6 +18090,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function storeCustomRename(key) {
             const s = storeSrc[key]; if (!s || !s.custom) return;
             haptic();
+            nextDialogTitle('Rename store tab');
             const v = prompt('Name of this tab', s.def.title);
             if (v === null) return;
             if (!v.trim()) { showToast('A tab needs a name'); return; }
@@ -18041,6 +18100,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function storeCustomRemove(key) {
             const s = storeSrc[key]; if (!s || !s.custom) return;
             haptic();
+            nextDialogTitle('Remove store');
             if (!confirm('Remove the store "' + s.def.title + '"? Apps you installed from it stay installed.')) return;
             storeCustomSave(storeCustomList().filter(x => x.id !== key));
             const b = document.getElementById('subtab-' + key); if (b) b.remove();
@@ -18786,7 +18846,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 case 'launch': installLaunchApp(pkg, app.name); break;
                 case 'toggle': quickAction(app.isFrozen ? 'unfreeze' : 'freeze', pkg); break;
                 case 'uninstall':
-                    if (!app.isUninstalled && !confirm('Uninstall ' + app.name + '?')) return;
+                    if (!app.isUninstalled && (nextDialogTitle('Uninstall'), true) && !confirm('Uninstall ' + app.name + '?')) return;
                     quickAction(app.isUninstalled ? 'reinstall' : 'uninstall', pkg);
                     break;
                 case 'suspend': quickAction(app.isSuspended ? 'unsuspend' : 'suspend', pkg); break;
@@ -18991,6 +19051,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
             if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
             const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
+            nextDialogTitle('Change permissions');
             if (!confirm((grant ? 'Grant ' : 'Revoke ') + todo.length + ' permission' + (todo.length === 1 ? '' : 's') + ' ' + (grant ? 'to ' : 'from ') + app.name + '?')) return;
             if (!window.AndroidBridge || !window.AndroidBridge.setPermission) { showToast('Needs the app build'); return; }
             haptic();
@@ -19127,6 +19188,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
             if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
             if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' components')) return;
+            nextDialogTitle('Change activities');
             if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
             if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
             haptic();
@@ -19192,6 +19254,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function bopsSavePreset() {
             if (!bopsPick.size) { showToast('Tick some app ops first'); return; }
+            nextDialogTitle('Save preset');
             const name = (prompt('Name for this preset:', 'My preset') || '').trim().slice(0, 40);
             if (!name) return;
             haptic();
@@ -19291,6 +19354,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bopsRename(i) {
             const p = bopsSavedLoad()[i];
             if (!p) return;
+            nextDialogTitle('Rename preset');
             const name = (prompt('New name for this preset:', p.name) || '').trim().slice(0, 40);
             if (!name || name === p.name) return;
             if (bopsSavedLoad().some((x, j) => j !== i && x.name === name)) { showToast('Another preset is already called ' + name); return; }
@@ -19302,7 +19366,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function bopsDeletePreset(i) {
             const p = bopsSavedLoad()[i];
-            if (!p || !confirm('Delete the preset ' + p.name + '?')) return;
+            if (!p) return;
+            nextDialogTitle('Delete preset');
+            if (!confirm('Delete the preset ' + p.name + '?')) return;
             haptic();
             bopsSaved.splice(i, 1);
             kvSet('bops_presets', bopsSaved);
@@ -19441,6 +19507,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bcSave() {
             const cmd = (document.getElementById('bcInput').value || '').trim();
             if (!cmd) { showToast('Type a command first'); return; }
+            nextDialogTitle('Save command');
             const name = (prompt('Name for this command:', cmd.slice(0, 28)) || '').trim().slice(0, 40);
             if (!name) return;
             haptic();
@@ -19462,6 +19529,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bcRename(i) {
             const c = bcSavedLoad()[i];
             if (!c) return;
+            nextDialogTitle('Rename command');
             const name = (prompt('New name for this command:', c.name) || '').trim().slice(0, 40);
             if (!name || name === c.name) return;
             if (bcSavedLoad().some((x, j) => j !== i && x.name === name)) { showToast('Another saved command is already called ' + name); return; }
@@ -19473,7 +19541,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function bcDeleteSaved(i) {
             const c = bcSavedLoad()[i];
-            if (!c || !confirm('Delete the saved command ' + c.name + '?')) return;
+            if (!c) return;
+            nextDialogTitle('Delete command');
+            if (!confirm('Delete the saved command ' + c.name + '?')) return;
             haptic();
             bcSaved.splice(i, 1);
             kvSet('batch_cmds', bcSaved);
@@ -20883,6 +20953,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const files = apkShownFiles().filter(f => apkSel.has(f.path));
             if (!files.length) { showToast('Select something first'); return; }
             const bytes = files.reduce((a, f) => a + (f.size || 0), 0);
+            nextDialogTitle('Delete files');
             if (!confirm('Delete ' + files.length + ' file' + (files.length === 1 ? '' : 's') + (bytes ? ' (' + fmtInstallSize(bytes) + ')' : '') + ' from this phone? They go to a hidden folder first, with one Undo for all of them.')) return;
             haptic();
             apkTrashMany(files);
@@ -21824,6 +21895,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = fmSafRoots[i];
             if (!r) return;
             haptic();
+            nextDialogTitle('Remove storage');
             if (!confirm('Remove "' + (r.label || 'this storage') + '" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.')) return;
             try { window.AndroidBridge && window.AndroidBridge.removeStorageRoot && window.AndroidBridge.removeStorageRoot(r.uri); } catch (e) {}
             fmSafRoots.splice(i, 1);
@@ -22307,6 +22379,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!fmCanWork('Delete')) return;
             const paths = Array.from(fmSel);
             const names = paths.slice(0, 3).map(fmBase).join(', ') + (paths.length > 3 ? ', …' : '');
+            nextDialogTitle('Delete');
             if (!confirm('Delete ' + paths.length + ' item' + (paths.length === 1 ? '' : 's') + ' (' + names + ')? Folders go with everything in them. This can not be undone.')) return;
             haptic();
             if (fmBatchStart('rm', paths, '')) fmSelExit();
@@ -22913,7 +22986,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const policy = document.querySelector('input[name="exPolicy"]:checked').value;
             const del = ex.whole && ex.deletable && document.getElementById('exDel').checked;
             kvSet('ex_opts', { where: document.querySelector('input[name="exWhere"]:checked').value, policy, other: document.getElementById('exOtherInput').value });
-            if (del && !confirm('Delete ' + ex.name + ' after it was extracted?')) return;
+            if (del && (nextDialogTitle('Delete archive'), true) && !confirm('Delete ' + ex.name + ' after it was extracted?')) return;
             const o = ex;
             exClose();
             exStart(o, dest, policy, del);
@@ -23315,6 +23388,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             fmEditInput();
             if (d.changed) {
+                nextDialogTitle('File changed');
                 if (confirm('This file was changed by something else since you opened it. Save your version over it?')) fmEditSave(true);
                 return;
             }
@@ -23322,7 +23396,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function fmEditClose() {
             if (!fmEd) { document.getElementById('fmEditModal').classList.remove('show'); return; }
-            if (fmEditDirty() && !confirm('Close without saving your changes?')) return;
+            if (fmEditDirty() && (nextDialogTitle('Unsaved changes'), true) && !confirm('Close without saving your changes?')) return;
             haptic();
             fmEd = null;
             document.getElementById('fmEditModal').classList.remove('show');
@@ -24332,7 +24406,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!t || t.busy) return;
             const br = window.AndroidBridge;
             if (!br || !br.archiveSign) { showToast('Needs the app build'); return; }
-            if (mode === 'inplace' && t.info && t.info.signed === true && !confirm('“' + t.name + '” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?')) return;
+            if (mode === 'inplace' && t.info && t.info.signed === true && (nextDialogTitle('Replace signature'), true) && !confirm('“' + t.name + '” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?')) return;
             const r = br.archiveSign(t.path, mode);
             if (r === 'busy') { showToast('Another archive job is still running'); return; }
             signJob = t;
@@ -24389,6 +24463,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function signNewKey() {
             const t = signTarget;
             if (!t || t.busy) return;
+            nextDialogTitle('New signing key');
             if (!confirm('Make a new signing key? An app you signed with the old key can then only be replaced by uninstalling it first.')) return;
             if (window.AndroidBridge && window.AndroidBridge.signingKeyRegenerate) {
                 t.busy = true;
@@ -24424,14 +24499,14 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
-            apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
+            apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', logcat: 'tab-logcat', devices: 'tab-devices',
             settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
                 const sec = document.getElementById('view-' + view);
                 if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
-                const card = sec.querySelector('.color-card, .cn-tabs');          // Console has no card: its ? sits on the tab row
+                const card = sec.querySelector('.color-card, .cn-tabs');          // Console and Live Logcat have no card: the ? sits on the tab row
                 if (!card) return;
                 card.classList.add('has-help');
                 const b = document.createElement('button');
@@ -27086,7 +27161,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (clr) clr.style.display = logcatApp ? '' : 'none';
             const sub = document.getElementById('logcatScope');
             if (sub) sub.innerText = logcatApp ? txF('Only the lines written by {0} (every process it has run as).', logcatApp.pkg) : '';
-            if (currentViewName() === 'console' && cnSeg === 'log') logcatRefresh();
+            if (currentViewName() === 'logcat') logcatRefresh();
         }
 
         function lcAppOpen() {
@@ -27117,13 +27192,12 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // From the app sheet: the log of that app
         function openAppLog() {
-            if (!inspectedPkg || !tabNeed('console')) return;
+            if (!inspectedPkg || !tabNeed('logcat')) return;
             const a = inspectedApp();
             const app = { pkg: inspectedPkg, name: a ? a.name : inspectedPkg };
             closeInspector();
             logcatApp = null;
-            cnApplySeg('log');                    // Console opens on Live Logcat
-            switchView('console');
+            switchView('logcat');
             logcatSetApp(app);
         }
         logcatRenderKey();
@@ -29157,6 +29231,35 @@ Type any command above (e.g. pm list packages -d)</div>
         const PICKER_KEYS = [['Accent', 'accent'], ['Bg', 'bg'], ['Card', 'card'], ['Running', 'running'],
             ['Frozen', 'frozen'], ['System', 'system'], ['Bloat', 'bloat']];
 
+        // ---- The page's alert / confirm / prompt: drawn by the app (PageDialogs.java) in these colours, with a real title ----
+        // nextDialogTitle(title) names the title of the very next alert(), confirm() or prompt() (call it right before the dialog, and only
+        // when the dialog really comes: the app uses it once). Without one the app takes the first line of the message when a blank line
+        // follows it, else a plain word for the kind ("Confirm", "Enter a value"). In a plain browser (the tests) it does nothing.
+        function nextDialogTitle(title) {
+            try {
+                const b = window.AndroidBridge;
+                if (!title || !b || typeof b.setNextDialogTitle !== 'function') return;
+                const s = String(title);
+                b.setNextDialogTitle(window.I18N && I18N.active && typeof I18N.t === 'function' ? I18N.t(s) : s);
+            } catch (e) {}
+        }
+        // The colours (the ones applyTheme just set) and the words of the dialogs, in the language in use
+        function dialogThemeSync() {
+            try {
+                const b = window.AndroidBridge;
+                if (!b || typeof b.setDialogTheme !== 'function') return;
+                const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+                const tr = s => (window.I18N && I18N.active && typeof I18N.t === 'function' ? I18N.t(s) : s);
+                b.setDialogTheme(JSON.stringify({
+                    bg: v('--bg-base'), card: v('--bg-card'), surface: v('--bg-surface'), text: v('--text-main'), muted: v('--text-muted'),
+                    accent: v('--accent'), onAccent: v('--on-accent'), border: v('--border-glass'), radius: parseFloat(v('--radius-xl')) || 24,
+                    light: document.documentElement.getAttribute('data-appearance') === 'light',
+                    alertTitle: tr('ADB System Manager'), confirmTitle: tr('Confirm'), promptTitle: tr('Enter a value'), ok: tr('OK'), cancel: tr('Cancel')
+                }));
+            } catch (e) {}
+        }
+        document.addEventListener('i18nchange', () => dialogThemeSync());
+
         function applyTheme(save = true) {
             const mode = effectiveMode();
             const light = mode === 'light';
@@ -29225,6 +29328,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     window.AndroidBridge.setSystemBarColor(t.bg);
                 }
             }
+            dialogThemeSync();                            // the app's own dialogs (alert, confirm, prompt) wear the same colours
+            if (typeof rtApplyTheme === 'function') rtApplyTheme();          // and so does the real terminal's screen
         }
 
         // Preset swatches show each palette as it looks in the current mode
@@ -29454,10 +29559,11 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mtSave() {
             if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            nextDialogTitle('Save theme');
             const name = (prompt('Name for this theme:', mtDefaultName()) || '').trim().slice(0, 40);
             if (!name) return;
             const list = mtLoad(), at = list.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
-            if (at >= 0 && !confirm('A theme called ' + list[at].name + ' is saved already. Replace it with the look in use now?')) return;
+            if (at >= 0 && (nextDialogTitle('Replace theme'), true) && !confirm('A theme called ' + list[at].name + ' is saved already. Replace it with the look in use now?')) return;
             if (at < 0 && list.length >= MT_MAX) { showToast('Up to ' + MT_MAX + ' themes: delete one first'); return; }
             haptic();
             const t = mtCurrent(name);
@@ -29482,6 +29588,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function mtRename(i) {
             const list = mtLoad(), t = list[i];
             if (!t) return;
+            nextDialogTitle('Rename theme');
             const name = (prompt('New name for this theme:', t.name) || '').trim().slice(0, 40);
             if (!name || name === t.name) return;
             if (list.some((x, j) => j !== i && x.name.toLowerCase() === name.toLowerCase())) { showToast('Another theme is already called ' + name); return; }
@@ -29495,6 +29602,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const list = mtLoad(), t = list[i];
             if (!t) return;
             if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            nextDialogTitle('Update theme');
             if (!confirm('Replace the theme ' + t.name + ' with the look in use now?')) return;
             haptic();
             list[i] = mtCurrent(t.name);
@@ -29504,7 +29612,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function mtDelete(i) {
             const list = mtLoad(), t = list[i];
-            if (!t || !confirm('Delete the theme ' + t.name + '?')) return;
+            if (!t) return;
+            nextDialogTitle('Delete theme');
+            if (!confirm('Delete the theme ' + t.name + '?')) return;
             haptic();
             list.splice(i, 1);
             mtStore(list);
@@ -30056,32 +30166,37 @@ Type any command above (e.g. pm list packages -d)</div>
             } catch (e) {}
         }
 
-        // ---------- Console: the ADB Shell and Live Logcat segments, and the history cards ----------
+        // ---------- Console: the ADB Shell and Terminal segments, and the history cards ----------
         // The Console tab has two segments. ADB Shell is the command box with Run and a history of cards, newest first (`$ command`, how it ended, the output,
-        // Copy and Re-run). Live Logcat is the Logcat Viewer. The segment last used is kept ('console_seg'); the log streams only while it is on screen.
-        let cnSeg = kvGet('console_seg', 'shell') === 'log' ? 'log' : 'shell';
+        // Copy and Re-run). Terminal is the real terminal and the Coding Agents (the Terminal tab until v7.14.0). The segment last used is kept ('console_seg';
+        // a saved 'log' from when Live Logcat was the second segment means ADB Shell). Live Logcat has its own tab.
+        let cnSeg = kvGet('console_seg', 'shell') === 'term' ? 'term' : 'shell';
         function cnApplySeg(seg) {
-            cnSeg = seg === 'log' ? 'log' : 'shell';
+            cnSeg = seg === 'term' ? 'term' : 'shell';
             kvSet('console_seg', cnSeg);
             const tabs = document.getElementById('cnTabs');
             if (tabs) tabs.dataset.seg = cnSeg;
-            [['cnTabShell', 'shell', 'cnSegShell'], ['cnTabLog', 'log', 'cnSegLog']].forEach(([tid, k, sid]) => {
+            [['cnTabShell', 'shell', 'cnSegShell'], ['cnTabTerm', 'term', 'cnSegTerm']].forEach(([tid, k, sid]) => {
                 const t = document.getElementById(tid), p = document.getElementById(sid);
                 if (t) t.setAttribute('aria-selected', cnSeg === k ? 'true' : 'false');
                 if (p) p.hidden = cnSeg !== k;
             });
+            if (cnSeg !== 'term' && typeof txFullOn !== 'undefined' && txFullOn) txFullToggle(false);          // the Terminal's full screen goes with its segment
         }
         function cnShowSeg(seg) {
-            seg = seg === 'log' ? 'log' : 'shell';
+            seg = seg === 'term' ? 'term' : 'shell';
             if (seg === cnSeg && currentViewName() === 'console') return;
             cnApplySeg(seg);
             if (currentViewName() !== 'console') return;
-            if (cnSeg === 'log') onLogcatShown(); else logcatStop();
+            cnSegShown();
+        }
+        function cnSegShown() {
+            if (cnSeg === 'term') { if (typeof onTerminalShown === 'function') onTerminalShown(); }
+            else { termSyncRunBtn(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         }
         function onConsoleShown() {
             cnApplySeg(cnSeg);
-            termSyncRunBtn();
-            if (cnSeg === 'log') onLogcatShown(); else window.scrollTo({ top: 0, behavior: 'smooth' });
+            cnSegShown();
         }
 
         const CN_MAX_CARDS = 60;          // cards kept; the oldest go
@@ -30459,6 +30574,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (trimRun) { showToast('Already trimming. Wait for it to finish.'); return; }
             if (!guardPrivilege('Trim caches in all applications')) return;
             if (!window.AndroidBridge) { showToast('Needs the app build'); return; }
+            nextDialogTitle('Trim caches');
             if (!confirm('Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are.')) return;
             haptic();
             trimCachesStart();
@@ -30831,6 +30947,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function termHistClear() {
+            nextDialogTitle('Clear history');
             if (!confirm('Clear the whole command history?')) return;
             termHistory = [];
             kvSet('term_hist', termHistory);
@@ -30861,6 +30978,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function termEditDelete() {
             if (termEditIdx < 0) return;
+            nextDialogTitle('Delete command');
             if (!confirm('Delete “' + termSaved[termEditIdx].name + '”?')) return;
             termSaved.splice(termEditIdx, 1);
             kvSet('term_saved', termSaved);
@@ -30920,8 +31038,7 @@ Type any command above (e.g. pm list packages -d)</div>
             priv: { name: 'Working mode', long: 'Working mode (ADB, Shizuku, Root)' },
             termux: { name: 'Termux', long: 'Termux (bash and packages)' }
         };
-        const TX_ANSI = ['#000000', '#cd3131', '#0dbc79', '#e5e510', '#2472c8', '#bc3fbc', '#11a8cd', '#e5e5e5',
-            '#767676', '#f14c4c', '#23d18b', '#f5f543', '#3b8eea', '#d670d6', '#29b8db', '#ffffff'];
+        const TX_ANSI = Array.from({ length: 16 }, (_, i) => 'var(' + '--ansi-' + i + ')');          // the theme's 16 colours (--ansi-0 ... --ansi-15: dark and light sets)
         // Full-screen programs need a real terminal (Termux): they are offered there instead of hanging here. Editors and the like are
         // full-screen whatever follows them; prompts (python, node, the agents' own apps, a login over ssh) only when started bare.
         // (Pagers and man are fine: with no terminal attached they just print.)
@@ -30960,7 +31077,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // A sentence with changing parts ({0}, {1} ...): translated as a pattern, then filled in, so a model or key name is never looked up in a dictionary
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
-        // The Terminal tab is the real terminal and the Coding Agents only (the ADB console and the log are in the Console tab).
+        // The Terminal: the real terminal and the Coding Agents, the second segment of the Console tab (next to the ADB Shell; the log has its own tab).
         function onTerminalShown() { txOnShown(); txFitQueue(); }
 
         // ---------------------------------------------------------------- shells
@@ -31018,7 +31135,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const navH = nav && getComputedStyle(nav).display !== 'none' && !(typeof bnavWide === 'function' && bnavWide()) ? nav.offsetHeight : 0;
             const br = box.getBoundingClientRect();
             const below = keys.getBoundingClientRect().bottom - br.bottom;              // the input line and the extra keys, with their margins
-            const h = Math.floor(window.innerHeight - navH - (br.top + window.scrollY) - below - 8);
+            const h = Math.max(160, Math.floor(window.innerHeight - navH - (br.top + window.scrollY) - below - 8));          // never below the floor: a negative height is not valid CSS and the screen then grew to its content
             pane.style.setProperty('--tx-screen-h', h + 'px');
         }
         let txFitQueued = false;
@@ -31210,7 +31327,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function txStyleOf(sgr) {
             let fg = sgr.fg, bg = sgr.bg;
-            if (sgr.r) { const t = fg; fg = bg || '#000000'; bg = t || '#e6e6e6'; }
+            if (sgr.r) { const t = fg; fg = bg || 'var(--bg-card)'; bg = t || 'var(--text-main)'; }
             let css = '';
             if (fg) css += 'color:' + fg + ';';
             if (bg) css += 'background:' + bg + ';';
@@ -32199,7 +32316,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const wrap = document.createElement('div');
             const who = document.createElement('span');
             who.className = 'tx-who';
-            who.style.color = ag.color || '#e6e6e6';
+            if (ag.color) who.style.setProperty('--tx-who-c', ag.color);          // the agent's colour (the .tx-who rule mixes it with the text colour)
             who.textContent = ag.name.replace(/\s*\(.*\)$/, '').toLowerCase() + ' › ';
             const text = document.createElement('span');
             text.className = 'tx-ai';
@@ -33466,6 +33583,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = txAgentDef(txConnectAgent);
             if (!ag) return;
             haptic();
+            nextDialogTitle('Forget key');
             if (!confirm('Forget the saved ' + ag.name + ' key' + (ag.api === 'openai-compat' ? ' and server address' : '') + '?')) return;
             try { window.AndroidBridge.aiForgetKey(ag.provider); } catch (e) {}
             txRefreshVault();
@@ -34508,6 +34626,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function deleteBackupUI(ref) {
             haptic();
             const rec = backupList().find(r => r.ref === ref);
+            nextDialogTitle('Delete');
             if (!confirm('Delete “' + (rec ? (rec.label || rec.pkg || rec.name || '') + (rec.versionName ? ' ' + rec.versionName : '') : ref) + '”?')) return;
             const err = window.AndroidBridge.deleteBackup(ref);
             if (err) showToast(err);
@@ -35671,6 +35790,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function sdbJournalClear() {
+            nextDialogTitle('Clear history');
             if (!confirm('Forget the history of changes? The settings themselves stay as they are.')) return;
             sdbJournal = [];
             sdbEdited = new Set();
@@ -40863,11 +40983,26 @@ Type any command above (e.g. pm list packages -d)</div>
             document.documentElement.style.removeProperty('--rt-vh');
             try { if (document.activeElement) document.activeElement.blur(); } catch (e) {}
         }
+        // The real terminal wears the app theme: the background, text, cursor and selection of the Console's output area, and the 16 ANSI colours of the
+        // light or dark set (--ansi-*), so programs' colours stay readable on either. applyTheme() calls rtApplyTheme, so a theme change reaches an open terminal.
+        const RT_ANSI_NAMES = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'brightBlack', 'brightRed', 'brightGreen', 'brightYellow', 'brightBlue', 'brightMagenta', 'brightCyan', 'brightWhite'];
+        function rtTheme() {
+            const cs = getComputedStyle(document.documentElement), v = (n, d) => cs.getPropertyValue(n).trim() || d;
+            const bg = v('--bg-card', '#141A28'), fg = v('--text-main', '#FFFFFF'), accent = v('--accent', '#00E5FF');
+            const sel = /^#[0-9a-f]{6}$/i.test(accent) ? hexToRgba(accent, 0.35) : 'rgba(0, 229, 255, 0.35)';
+            const t = { background: bg, foreground: fg, cursor: accent, cursorAccent: bg, selectionBackground: sel, selectionInactiveBackground: sel };
+            RT_ANSI_NAMES.forEach((n, i) => { const c = v('--ansi-' + i, ''); if (c) t[n] = c; });
+            return t;
+        }
+        function rtApplyTheme() {
+            if (typeof rt !== 'object' || !rt || !rt.term) return;          // (applyTheme runs before this part of the script has, at start)
+            try { rt.term.options.theme = rtTheme(); } catch (e) {}
+        }
         function rtInit() {
             if (rt.term) return;
             const el = document.getElementById('rtTerm');
             rt.term = new window.Terminal({ fontSize: rt.font, fontFamily: '"DejaVu Sans Mono","Roboto Mono","Droid Sans Mono",monospace', cursorBlink: true, scrollback: 5000, allowProposedApi: true,
-                theme: { background: '#000000', foreground: '#e6e6e6', cursor: '#e6e6e6' } });
+                theme: rtTheme() });
             rt.fit = new window.FitAddon.FitAddon();
             rt.term.loadAddon(rt.fit);
             rt.term.open(el);

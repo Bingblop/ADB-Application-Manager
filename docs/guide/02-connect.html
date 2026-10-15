@@ -362,7 +362,7 @@
 <li>Freeze, enable, suspend, force stop, clear data, uninstall, reinstall, or launch an app through the menu.</li>
 <li>Run batch actions, apply profiles, or make or restore backups.</li>
 <li>Switch permissions, app ops or components on and off.</li>
-<li>Read the log in Live Logcat (Console tab), change Hidden Settings or overlays, or use the working-mode shell in the Console or the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
+<li>Read the log in Live Logcat, change Hidden Settings or overlays, or use the working-mode shell in the ADB Shell or the Terminal of the Console tab. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
 <li>Trim the caches of every app (<b>Trim Caches</b> in the SD Maid tab, see <a href="#tab-sdm">SD Maid</a>). The button shows a padlock.</li>
 <li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps" (it has its own row, <b>Install unknown apps</b>, in the <a href="#app-permissions">Permissions sheet</a>), and Android asks whether to allow it the first time an install is made this way.</li>
 </ul>
@@ -441,7 +441,7 @@
 <table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th><th>Optional?</th></tr></thead><tbody>
 <tr><td>Notifications (Android 13 and newer)</td><td>The code box for <b>Pair via Notification</b>; progress and a Cancel button for long file jobs; a reminder after a system update if you are Watching a profile.</td><td><b>Pair via Notification</b> cannot be used (the app asks again). The update reminder is skipped, though the banner inside the app still tells you.</td><td>Yes</td></tr>
 <tr><td>Nearby devices (Bluetooth, Android 12 and newer)</td><td>In <a href="#tab-devices">Connected Devices</a>, lists the Bluetooth devices this phone is paired with, to find a Wear OS watch, and sends files to one.</td><td>The Bluetooth part of Connected Devices cannot list devices. The Wi-Fi part works.</td><td>Yes</td></tr>
-<tr><td>Run commands in Termux</td><td>The Terminal tab's shell that uses your own Termux. Termux itself must also allow it (the setting <code>allow-external-apps</code> in its properties file).</td><td>That one shell is unavailable. The other shells work.</td><td>Yes</td></tr>
+<tr><td>Run commands in Termux</td><td>The Terminal's shell (in the Console tab) that uses your own Termux. Termux itself must also allow it (the setting <code>allow-external-apps</code> in its properties file).</td><td>That one shell is unavailable. The other shells work.</td><td>Yes</td></tr>
 <tr><td>Storage (Android 10 and older)</td><td>Android's ordinary storage question, the same as All files access above.</td><td>As All files access.</td><td>Yes</td></tr>
 </tbody></table>
 <p>On Android 11 and older, the Bluetooth permission is an ordinary one, and no question is asked.</p>
