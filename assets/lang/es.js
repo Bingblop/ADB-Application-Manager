@@ -4881,7 +4881,8 @@ x: {
 "The self-test needs the app build.": "El autodiagnóstico solo está disponible en la app.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Pide a Android que borre los archivos de caché de todas las apps, lo mismo que Ajustes > Liberar caché de todas las aplicaciones. Las apps, sus datos, los inicios de sesión y tus archivos se quedan. Libera almacenamiento, no RAM directamente, y puede tardar un minuto; el resultado se abre en su propia hoja.",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Activa el ahorro de batería de Android, el mismo interruptor que en Ajustes > Batería: la pantalla se atenúa, el trabajo en segundo plano, la sincronización y la ubicación se limitan y las animaciones se reducen. El teléfono muestra su icono de ahorro de batería.",
-"No patch could be applied": "No se pudo aplicar ningún parche"
+"No patch could be applied": "No se pudo aplicar ningún parche",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android no ha terminado después de 3 minutos. El resultado se abre en su propia hoja cuando termine."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],

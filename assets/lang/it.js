@@ -4881,7 +4881,8 @@ x: {
 "The self-test needs the app build.": "L’autotest richiede la build dell’app.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Chiede ad Android di eliminare i file di cache di tutte le app, come Impostazioni > Svuota la cache di tutte le app. Le app, i loro dati, gli accessi e i tuoi file restano. Libera spazio di archiviazione, non direttamente RAM, e può richiedere un minuto; il risultato si apre in un foglio a parte.",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Attiva il risparmio batteria di Android, lo stesso interruttore di Impostazioni > Batteria: lo schermo si scurisce, il lavoro in background, la sincronizzazione e la posizione sono limitati e le animazioni si accorciano. Il telefono mostra la sua icona del risparmio batteria.",
-"No patch could be applied": "Non è stato possibile applicare nessuna patch"
+"No patch could be applied": "Non è stato possibile applicare nessuna patch",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android non ha finito dopo 3 minuti. Il risultato si apre in un foglio a parte quando ha finito."
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» non è un numero di secondi."],

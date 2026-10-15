@@ -366,6 +366,7 @@
 {"k":"Android did not keep the new value","ctx":"built by the code of: pdns app text"},
 {"k":"Android documents most of its own settings, but phone makers and apps add many more. For those the editor says what the name and value suggest, as a guess. If you cannot tell what a setting does, leave it alone.","ctx":"in a sheet (sdb help)"},
 {"k":"Android does not describe this setting.","ctx":"built by the code of: sdb guess"},
+{"k":"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.","ctx":"built by the code of: xzr perform"},
 {"k":"Android is clearing the caches. This can take up to a minute or two; you can keep using the app.","ctx":"built by the code of: trim set busy"},
 {"k":"Android keeps its settings behind the shell. Connect one of them in Working Modes, then come back.","ctx":"in the Hidden Settings tab"},
 {"k":"Android lists this overlay as unavailable","ctx":"built by the code of: ovl toggle"},

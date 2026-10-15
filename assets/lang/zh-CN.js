@@ -4881,7 +4881,8 @@ x: {
 "The self-test needs the app build.": "自检需要应用的构建版本。",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "请求 Android 删除每个应用的缓存文件，与设置 > 清理所有应用的缓存相同。应用、其数据、登录信息和你的文件都会保留。它释放的是存储空间，而不是直接释放 RAM，可能需要一分钟；结果会在单独的面板中打开。",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "开启 Android 的省电模式，与设置 > 电池中的开关相同：屏幕变暗，后台工作、同步和定位受限，动画缩短。手机会显示省电模式图标。",
-"No patch could be applied": "没有任何补丁能够应用"
+"No patch could be applied": "没有任何补丁能够应用",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分钟后 Android 仍未完成。完成后结果会在单独的面板中打开。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],

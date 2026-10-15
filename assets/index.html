@@ -17136,9 +17136,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (a.via === 'trim') {
                 say(txT('Trimming the app caches… the result opens in its own sheet when Android is done.'));
                 if (typeof trimCachesStart === 'function' && trimCachesStart()) {
-                    const t0 = Date.now();
-                    while (typeof trimRun !== 'undefined' && trimRun && Date.now() - t0 < 180000) { await new Promise(done => setTimeout(done, 500)); if (gen !== xqGen) return null; }
-                    r = { ok: typeof trimRun === 'undefined' || !trimRun ? null : false, output: '' };
+                    const tid = 'trim' + trimSeq, t0 = Date.now();          // this trim (trimDone may already have ended it: a command that could not start)
+                    while (trimRun && trimRun.id === tid && Date.now() - t0 < 180000) { await new Promise(done => setTimeout(done, 500)); if (gen !== xqGen) return null; }
+                    const v = trimLast && trimLast.id === tid ? trimLast : null;          // what trimDone made of Android's answer
+                    if (trimRun && trimRun.id === tid) r = { ok: false, output: '', note: txT('Android has not finished after 3 minutes. The result opens in its own sheet when it is done.') };
+                    else if (!v || v.failed) r = { ok: false, output: v ? v.said : '' };
+                    else r = { ok: null, output: '' };
                 } else r = { ok: false, output: '', error: txT('The command could not be started.') };
             } else r = await xqRun(a.cmd);
             if (gen !== xqGen) return null;
@@ -17149,7 +17152,8 @@ Type any command above (e.g. pm list packages -d)</div>
             xzrRender();
             const said = (r.output || '').trim();
             let res;
-            if (r.ok === false) res = { ok: false, text: txF('It did not work: {0}', r.error || said || txT('the command reported an error.')), out: r.error ? '' : said };
+            if (r.note) res = { ok: false, text: r.note, out: '' };          // the trim is still running: not done, and not known to have failed
+            else if (r.ok === false) res = { ok: false, text: txF('It did not work: {0}', r.error || said || txT('the command reported an error.')), out: r.error ? '' : said };
             else if (after.err) res = { ok: false, text: txF('Could not read the numbers back: {0}', after.err), out: said };
             else {
                 const b = xzrBefore && xzrBefore.sum, s = after.sum;
@@ -29643,6 +29647,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // Runs off the page's thread (executeShellAsync); the free space of /data is read before and after so the report can say what was freed.
         const TRIM_CMD = 'pm trim-caches 128G';
         let trimRun = null;       // { id, before } while it runs
+        let trimLast = null;      // the verdict of the last trim that ended: { id, failed, said } (Extra Settings > Zram reports it)
         let trimSeq = 0;
 
         function trimSyncLock() {
@@ -29706,6 +29711,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const after = ri >= 0 && ri + 1 < lines.length ? trimFreeKb(lines.slice(ri + 1).filter(l => l.trim()).pop()) : null;
             const said = (bi >= 0 && ri > bi ? lines.slice(bi + 1, ri) : (bi < 0 ? lines : [])).join('\n').trim();
             const failed = (rc !== null && rc !== 0) || (rc === null && !said) || /\b(error|exception|failure|invalid|unknown|denied|not allowed|inaccessible|not configured)\b/i.test(said);
+            trimLast = { id, failed, said };
             let freed = '';
             if (before !== null && after !== null) {
                 freed = after >= before ? 'Free space on the phone: ' + trimFmt(before) + ' before, ' + trimFmt(after) + ' after (' + (after > before ? trimFmt(after - before) + ' freed' : 'nothing more could be freed') + ').'

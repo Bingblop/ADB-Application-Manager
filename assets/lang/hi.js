@@ -4881,7 +4881,8 @@ x: {
 "The self-test needs the app build.": "स्व-परीक्षण के लिए ऐप बिल्ड चाहिए।",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android से हर ऐप की कैश फ़ाइलें हटाने को कहता है, वही जो सेटिंग > सभी ऐप्स में कैश ट्रिम करें करता है। ऐप्स, उनका डेटा, लॉगिन और आपकी फ़ाइलें बनी रहती हैं। यह स्टोरेज खाली करता है, सीधे RAM नहीं, और इसमें एक मिनट लग सकता है; नतीजा अपनी अलग शीट में खुलता है।",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android का बैटरी सेवर चालू करता है, वही स्विच जो सेटिंग > बैटरी में है: स्क्रीन की चमक घटती है, पृष्ठभूमि काम, सिंक और स्थान सीमित होते हैं और एनिमेशन छोटे हो जाते हैं। फ़ोन अपना बैटरी-सेवर आइकन दिखाता है।",
-"No patch could be applied": "कोई भी पैच लागू नहीं हो सका"
+"No patch could be applied": "कोई भी पैच लागू नहीं हो सका",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],

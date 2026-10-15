@@ -4881,7 +4881,8 @@ x: {
 "The self-test needs the app build.": "セルフテストにはアプリ版が必要です。",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "すべてのアプリのキャッシュファイルを削除するよう Android に求めます。設定 > すべてのアプリのキャッシュを整理 と同じです。アプリ、そのデータ、ログイン情報、あなたのファイルはそのまま残ります。空くのはストレージで、RAM が直接空くわけではありません。1 分ほどかかることがあり、結果は別のシートで開きます。",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android のバッテリーセーバーをオンにします。設定 > バッテリー と同じスイッチです。画面が暗くなり、バックグラウンド処理、同期、位置情報が制限され、アニメーションが短くなります。スマートフォンにバッテリーセーバーのアイコンが表示されます。",
-"No patch could be applied": "適用できたパッチはありません"
+"No patch could be applied": "適用できたパッチはありません",
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
