@@ -642,6 +642,7 @@
                 justify-content: flex-start;
                 gap: var(--space-1);
                 overflow-y: auto;
+                touch-action: pan-y;                /* a short screen (a phone on its side) scrolls the rail to its last slots with a finger; a hold that has opened its menu still slides (bnavShortcutsInit) */
                 scrollbar-width: none;
                 border-top: 0;
                 border-right: 1px solid var(--border-glass);
@@ -11076,6 +11077,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function bnavShortcutsInit() {
             const nav = bnavEl();
             nav.addEventListener('pointerdown', bnavHoldStart);
+            nav.addEventListener('touchmove', e => { if (bnavLP && bnavLP.fired && e.cancelable) e.preventDefault(); }, { passive: false });          // the rail scrolls (pan-y): once a hold has opened the menu the finger slides onto an entry, the rail does not scroll
             nav.addEventListener('contextmenu', e => {                // a mouse's right button, the accessibility long-press gesture, a keyboard's menu key
                 const slot = e.target.closest && e.target.closest('.bn-item[data-tab]');
                 if (!slot) return;
