@@ -6009,6 +6009,45 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** adb -s serial, then these arguments (the ADB Stub's calls). */
+    private static List<String> cdStubArgs(String serial, String... rest) {
+        List<String> a = new ArrayList<String>();
+        a.add("-s");
+        a.add(serial);
+        java.util.Collections.addAll(a, rest);
+        return a;
+    }
+
+    /** The ADB Stub APK this build carries (assets/adb_stub.apk), copied out once per app version into the cache; null when there is none. */
+    private File cdStubApk() {
+        try {
+            int ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            File dir = new File(getCacheDir(), "adb_stub");
+            File f = new File(dir, "adb_stub_" + ver + "_" + WearStub.VERSION + ".apk");
+            if (f.length() > 0) return f;
+            dir.mkdirs();
+            File[] old = dir.listFiles();
+            if (old != null) for (File o : old) o.delete();
+            File tmp = new File(dir, "partial.tmp");
+            InputStream in = getAssets().open("adb_stub.apk");
+            try {
+                OutputStream out = new FileOutputStream(tmp);
+                try {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                } finally {
+                    out.close();
+                }
+            } finally {
+                in.close();
+            }
+            if (tmp.length() > 0 && tmp.renameTo(f)) return f;
+            tmp.delete();
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     /**
      * The file sent to another device to remove a system app there: the small jar built with the app (assets/uninstall_runner.jar, only the runner's
      * classes), kept per app version; or, with a build that has none, this app's own APK, which holds the same class. Null when neither can be found.
@@ -11029,6 +11068,78 @@ public class MainActivity extends Activity {
                             }, cdUninstallHelperPath(), Long.toString(System.nanoTime(), 36));
                             res.put("ok", r.ok);
                             res.put("out", r.text);
+                        } catch (Exception e) {
+                            try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /** The ADB Stub this build carries for Wear OS watches: {bundled, version}. */
+        @JavascriptInterface
+        public String cdStubInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("bundled", cdStubApk() != null);
+                o.put("version", WearStub.VERSION);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /**
+         * The ADB Stub on a connected watch (see WearStub). action: "status", "install" (the APK this build carries, with its permissions granted),
+         * "start" (phone: the name the stub's screen gives this phone; empty: its model) or "stop". Every action ends with a fresh status.
+         * Answer: window.onCdResult({tag, ok, out, installed, version, running}).
+         */
+        @JavascriptInterface
+        public void cdStub(final String tag, final String serial, final String action, final String phone) {
+            final String t = tag == null ? "" : tag;
+            final String a = action == null ? "" : action;
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("stop")) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: unknown action") + ")");
+                return;
+            }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            boolean ok = true;
+                            String out = "";
+                            if (a.equals("install")) {
+                                File apk = cdStubApk();
+                                if (apk == null) {
+                                    ok = false;
+                                    out = "Error: this build of the app does not carry the ADB Stub.";
+                                } else {
+                                    out = cdExec(t, cdStubArgs(serial, "install", "-r", "-g", apk.getAbsolutePath()), 180000);
+                                    ok = DeviceLink.installed(out);
+                                }
+                            } else if (a.equals("start")) {
+                                String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
+                                ok = WearStub.started(out);
+                            } else if (a.equals("stop")) {
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), 20000);
+                                ok = out.contains("stopped") && !out.startsWith("Error");
+                            }
+                            String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
+                            WearStub.Status s = WearStub.parseStatus(st);
+                            if (a.equals("status") && st.startsWith("Error")) { ok = false; out = st; }
+                            res.put("ok", ok);
+                            res.put("out", out.trim());
+                            res.put("installed", s.installed);
+                            res.put("version", s.version);
+                            res.put("running", s.running);
                         } catch (Exception e) {
                             try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
                         }

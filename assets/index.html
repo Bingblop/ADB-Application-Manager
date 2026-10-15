@@ -4745,6 +4745,8 @@
                 .cd-dev-sub { font-size: var(--fs-pill); color: var(--text-muted); margin-top: var(--space-1); overflow-wrap: anywhere; line-height: 1.4; }
                 .cd-dev-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
                 .cd-dev-more { flex: 0 0 auto; }
+                .cd-stub { margin-top: var(--space-2); }                     /* the ADB Stub row under a Wear OS watch */
+                .cd-stub .mode-action-btn { flex: 0 0 auto; }
                 .cd-empty { text-align: center; padding: 26px 18px 22px; border: 1px dashed var(--border-glass); border-radius: var(--radius-lg); background: var(--fill-1); margin-top: var(--space-2); }
                 .cd-empty-ico { width: 56px; height: 56px; margin: 0 auto var(--space-3h); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight:var(--fw-black);
                     background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); }
@@ -24381,7 +24383,8 @@ Type any command above (e.g. pm list packages -d)</div>
             set: { ns: 'global', data: {}, loaded: {}, busy: false },
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
             phone: { sel: new Set(), filter: 'user' },
-            up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {}
+            up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {},
+            stub: {}
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -24569,6 +24572,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cdRenderDevices();
             cdRenderInfo();
             if (cd.sub === 'display') cdDensRender();
+            if (cd.info.wear) cdStubOnConnect(serial);
         }
 
         function cdRenderInfo(problem) {
@@ -24596,7 +24600,8 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (d.state !== 'device') note = '<div class="cd-note">The device is in ' + escapeHtml(d.state) + ' mode. Most tools need it started normally.</div>';
             el.innerHTML = '<div class="cd-dev"><div class="cd-dev-ico">' + (i && i.wear ? 'W' : 'A') + '</div><div class="cd-dev-main"><div class="cd-dev-name" translate="no">' + escapeHtml(name) + '</div>' +
                 '<div class="cd-dev-sub" translate="no">' + escapeHtml(bits.join(' \u00b7 ') || d.serial) + (bits.length ? '<br>' + escapeHtml(d.serial) : '') + '</div>' +
-                '<div class="cd-dev-badges">' + badges + '</div></div><button class="btn-mini cd-dev-more" title="Device menu" onclick="cdDeviceMenu()">\u22ef</button></div>' + note;
+                '<div class="cd-dev-badges">' + badges + '</div></div><button class="btn-mini cd-dev-more" title="Device menu" onclick="cdDeviceMenu()">\u22ef</button></div>' +
+                (i && i.wear && d.state === 'device' ? cdStubRow(d.serial) : '') + note;
         }
 
         // Reconnect: the selected device's own button (also under the device card when it is offline and in its menu)
@@ -24647,6 +24652,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 delete cd.dropped[d.serial];
             });
             Object.keys(cd.skip).forEach(k => { if (!now.has(k)) delete cd.skip[k]; });
+            Object.keys(cd.stub).forEach(k => { if (!now.has(k) && !(cd.stub[k] || {}).busy) delete cd.stub[k]; });   // checked (and started) again when it is back
             if (changed) {
                 const keys = Object.keys(known);
                 if (keys.length > CD_SAVED_MAX) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - CD_SAVED_MAX).forEach(k => { if (!now.has(k)) delete known[k]; });
@@ -24889,8 +24895,87 @@ Type any command above (e.g. pm list packages -d)</div>
                 { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true })) || gone()) return; const out = await cdSh('reboot -p', { serial: d.serial }); showToast(cdFail(out) || 'Power off: sent'); } },
                 { label: 'Copy address', fn: () => copyText(d.serial) }
             ];
-            if (net) b.push({ label: 'Disconnect', fn: async () => { cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
+            if (cd.info && cd.info.serial === d.serial && cd.info.wear && cdStubBundled()) {
+                b.push({ label: cdStubAutoOn() ? 'Start ADB Stub on connect: On' : 'Start ADB Stub on connect: Off', fn: () => { kvSet('cd_stub_auto', !cdStubAutoOn()); showToast(cdStubAutoOn() ? 'The ADB Stub starts when the watch connects' : 'The ADB Stub no longer starts on its own'); } });
+            }
+            if (net) b.push({ label: 'Disconnect', fn: async () => { await cdStubStopFor(d.serial); cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
             cdSheetOpen({ title: cd.names[d.serial] || d.model || 'Device', sub: d.serial, buttons: b });
+        }
+
+        // ---- ADB Stub (Wear OS): a small app this phone installs on a watch. While it runs the watch keeps its screen on and its Wi-Fi connected, so the
+        // adb link over Wi-Fi does not drop, and its one screen shows the state of the connection. It is started when the watch connects (once per
+        // connection, when it is installed and Settings allows it) and stopped before Disconnect, which gives the watch back its normal Wi-Fi. ----
+        let cdStubInfoCache = null;
+        function cdStubBundled() {
+            if (!cdStubInfoCache) {
+                try { cdStubInfoCache = JSON.parse((window.AndroidBridge && window.AndroidBridge.cdStubInfo && window.AndroidBridge.cdStubInfo()) || '{}'); } catch (e) { cdStubInfoCache = {}; }
+            }
+            return cdStubInfoCache.bundled ? (cdStubInfoCache.version || 1) : 0;
+        }
+        function cdStubAutoOn() { return kvGet('cd_stub_auto', true) !== false; }
+        // one call: { ok, out, installed, version, running }
+        function cdStubCall(action, serial) {
+            return new Promise(res => {
+                const b = window.AndroidBridge;
+                if (!b || !b.cdStub) { res({ ok: false, out: 'Error: Connected Devices works in the app, not in a plain browser.' }); return; }
+                const tag = 'cd' + (++cdSeq);
+                cdWait[tag] = r => res(r || {});
+                try { b.cdStub(tag, serial, action, ''); } catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
+            });
+        }
+        function cdStubKeep(serial, r) {
+            const st = cd.stub[serial] = cd.stub[serial] || {};
+            if (r && typeof r.installed === 'boolean') { st.installed = r.installed; st.version = r.version || 0; st.running = !!r.running; }
+            if (cd.serial === serial) cdRenderInfo();
+            return st;
+        }
+        // once per connection: what the watch has, and start the stub when it is installed (and up to date) but not running
+        async function cdStubOnConnect(serial) {
+            if (!cdStubBundled()) return;
+            const st = cd.stub[serial] = cd.stub[serial] || {};
+            if (st.checked) return;
+            st.checked = true;
+            const r = await cdStubCall('status', serial);
+            cdStubKeep(serial, r);
+            if (r.installed && !r.running && (r.version || 0) >= cdStubBundled() && cdStubAutoOn() && cdIsUp(serial)) cdStubDo('start', serial, true);
+        }
+        async function cdStubDo(action, serial, auto) {
+            const st = cd.stub[serial] = cd.stub[serial] || {};
+            if (st.busy) return;
+            haptic();
+            st.busy = action === 'install' ? 'Installing...' : action === 'start' ? 'Starting...' : 'Stopping...';
+            if (cd.serial === serial) cdRenderInfo();
+            let r;
+            try { r = await cdStubCall(action, serial); } finally { st.busy = ''; }
+            cdStubKeep(serial, r);
+            if (!r.ok) { showToast(cdFail(r.out) || String(r.out || 'No answer from the watch').trim().split('\n')[0]); return; }
+            if (action === 'install') {
+                if (cdStubAutoOn()) { await cdStubDo('start', serial, true); return; }
+                showToast('ADB Stub installed');
+            } else if (action === 'start') showToast(auto ? 'ADB Stub started on the watch' : 'ADB Stub started');
+            else showToast('ADB Stub stopped');
+        }
+        // before this phone lets go of a watch: the stub closes and the watch's Wi-Fi goes back to normal
+        async function cdStubStopFor(serial) {
+            const st = cd.stub[serial];
+            if (!st || !st.installed || !cdIsUp(serial)) return;
+            const r = await cdStubCall('stop', serial);
+            cdStubKeep(serial, r);
+        }
+        function cdStubRow(serial) {
+            const top = cdStubBundled();
+            if (!top) return '';
+            const st = cd.stub[serial] || {};
+            let state = '', btn = null, badge = '';
+            if (st.busy) state = st.busy;
+            else if (st.installed === undefined) state = 'Checking...';
+            else if (!st.installed) { state = 'Keeps the watch screen on and its Wi-Fi connected while this phone is connected.'; btn = ['install', 'Install', true]; }
+            else if ((st.version || 0) < top) { state = 'A newer version comes with this app.'; btn = ['install', 'Update', true]; }
+            else if (st.running) { state = 'The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.'; btn = ['stop', 'Stop', false]; badge = '<span class="tag-badge tag-running">Running</span>'; }
+            else { state = 'Installed, not running.'; btn = ['start', 'Start', true]; }
+            return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub">' + escapeHtml(state) + '</div>' +
+                (badge ? '<div class="cd-dev-badges">' + badge + '</div>' : '') + '</div>' +
+                (btn ? '<button class="mode-action-btn' + (btn[2] ? ' primary' : '') + '" id="cdStubBtn" onclick="cdStubDo(\'' + btn[0] + '\', cd.serial, false)">' + btn[1] + '</button>' : '') + '</div>';
         }
 
         // ---- the sub-tabs ----
