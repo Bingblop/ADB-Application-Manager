@@ -128,6 +128,11 @@ public final class MorpheBridge {
             if (downloadList != null && pagePush != null) downloadList.removeListener(pagePush);
             pagePush = null;
         }
+        // the in-app browser is a dialog of this window: dismissed now (onDestroy, the UI thread), before Android tears its window down without a
+        // dismiss, so its WebView is destroyed and its download watcher leaves the process's list (a download it started goes on there)
+        final Runnable closer = browserCloser;
+        browserCloser = null;
+        if (closer != null) { try { closer.run(); } catch (RuntimeException ignored) {} }
     }
 
     /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */

@@ -255,6 +255,9 @@ public class HelperDownloadsTest {
                 is("release() stops this window's Helper downloads and VirusTotal uploads: both progress objects answer cancelled() with the closing flag release() sets",
                         rb.contains("closing = true;") && m.contains("private volatile boolean closing;") && cancelsOnClose == 2 && !m.contains("cancelled() { return false; }"), "release sets it=" + rb.contains("closing = true;") + " progress objects=" + cancelsOnClose);
                 is("...and it does not interrupt the bridge's threads (a patch or a catalog read on the same pool goes on)", !rb.contains("shutdownNow"), rb);
+                // MOR-4 (full main review): the in-app browser's dialog is closed with its window, so its WebView is destroyed and its watcher leaves the process's list
+                int bc = rb.indexOf("final Runnable closer = browserCloser;");
+                is("release() closes this window's in-app browser (takes the closer, clears it, runs it)", bc >= 0 && rb.indexOf("browserCloser = null;", bc) > bc && rb.indexOf("closer.run();", bc) > bc, rb);
                 is("what the process's list keeps holds no window: the folder rule and the service listener are static classes with the application context",
                         m.contains("private static final class HelperFolders") && m.contains("private static final class ServiceSync") && db.contains("getApplicationContext()") && db.contains("new HelperFolders(") && db.contains("new ServiceSync(app,"));
                 String main = new String(Files.readAllBytes(new File(src.getParentFile(), "MainActivity.java").toPath()), StandardCharsets.UTF_8);
