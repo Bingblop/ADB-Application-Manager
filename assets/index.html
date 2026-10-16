@@ -3368,13 +3368,14 @@
             opacity: 0.85;
         }
 
-        /* the Read-Only banner (Application Manager) can be put away with the X in its top right corner; it comes back the next time the app starts in read-only mode */
+        /* the Read-Only banner (Application Manager) can be put away with the X in its top right corner; it comes back the next time the app starts in read-only mode.
+           The corner is the line's end (top left in Arabic), above Set Up: a fixed right would put it on the title once the row is mirrored. */
         #modeAlertCard { position: relative; }
         #modeAlertCard .mode-alert-btn { margin-top: var(--space-5); }
         .mode-alert-x {
             position: absolute;
             top: 6px;
-            right: 8px;
+            inset-inline-end: 8px;
             width: 28px;
             height: 28px;
             border-radius: 50%;
