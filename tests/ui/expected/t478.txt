@@ -5,7 +5,7 @@ ok   an active pill is coloured as the Apps tab's active pill and says it is pre
 ok   Frozen shows the frozen app
 ok   Installed narrows within Frozen
 ok   Installed alone leaves out the uninstalled app
-ok   Installed and Uninstalled together are every app
+ok   Uninstalled takes the place of Installed (a pair, as in the Apps tab)
 ok   Uninstalled starts a clean list
 ok   System narrows the uninstalled apps
 ok   Enter on a pill works it (User takes System's place)

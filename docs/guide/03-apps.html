@@ -31,7 +31,7 @@
     <thead><tr><th>Pill</th><th>Shows the apps that...</th></tr></thead>
     <tbody>
       <tr><td><b>All Apps</b></td><td>...are in the list, installed or not. Tapping it turns every other filter off. It is lit while no other filter is on.</td></tr>
-      <tr><td><b>Installed</b></td><td>...are installed on the phone. It does not count the UNINSTALLED apps. Installed and Uninstalled together show every app.</td></tr>
+      <tr><td><b>Installed</b></td><td>...are installed on the phone. It does not count the UNINSTALLED apps. To see every app, tap All Apps.</td></tr>
       <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (by this app or by another tool) whose files are still in the system: the UNINSTALLED badge. Needs a working mode.</td></tr>
       <tr><td><b>System</b></td><td>...came with the phone.</td></tr>
       <tr><td><b>User</b></td><td>...you or a store installed. The row badge for these says USER. (Older versions called this pill 3rd Party.)</td></tr>
@@ -47,7 +47,7 @@
   <p>UNINSTALLED apps are counted in Uninstalled and in All Apps only, not in Installed, System, User, Enabled or Frozen.</p>
   <p><b>Uninstalled starts a clean list.</b> Tapping it turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
   <p><b>Clear what an uninstalled app left behind.</b> While the Uninstalled filter is on, each row has a small bin button next to its action button. It clears the data that one app kept after it was uninstalled (see <a href="#tab-sdm">Clear Data from Uninstalled Apps</a> in the SD Maid tab). It asks first, because it cannot be undone; in <b>Root</b> mode it names the size and says so if the app has no data left, and the result is checked afterwards like any batch.</p>
-  <p><b>A pair keeps one side.</b> System and User are a pair, and so are Enabled and Frozen. Only one half of such a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off. (Installed and Uninstalled share a frame but can both be on.)</p>
+  <p><b>A pair keeps one side.</b> Installed and Uninstalled are a pair, and so are System and User, and Enabled and Frozen. Only one half of such a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled; tap Installed, then Uninstalled, and only the uninstalled apps are listed. Tap the half that is on to turn it off. (Older versions let Installed and Uninstalled both be on, which showed every app. If <b>Remember my filters</b> kept both on, they come back with neither on.)</p>
   <p><b>Filters stack.</b> An app has to match every filter that is on. Running and User together show your own apps that are running now. System and Frozen show the system apps you have frozen. System, User, Enabled and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well.</p>
   <p><b>Clear filters.</b> When more than one filter is on, a line appears above the list saying what is combined, for example "Showing apps that are Running + User.", with a <b>Clear filters</b> chip. Tap the chip (or <b>All Apps</b>) to turn them all off.</p>
 
