@@ -39,6 +39,7 @@
             --status-frozen: #00E5FF;
             --status-system: #7C4DFF;
             --status-user: #FF9100;
+            --status-warn: #FFA726;                  /* the mode badge's text and dot while no working mode is ready (Read-Only, Setup, not ready) */
             --status-bloat: #FF5252;                 /* bloatware and every destructive or danger state */
             --status-suspended: #FFC400;             /* suspended apps and warnings */
             --status-mod: #19D3C5;                   /* the tag of an app a patch (Morphe, ReVanced) changed */
@@ -63,6 +64,7 @@
             --line-running: color-mix(in srgb, var(--status-running) 35%, transparent);
             --tint-frozen: color-mix(in srgb, var(--status-frozen) 12%, transparent);
             --tint-system: color-mix(in srgb, var(--status-system) 12%, transparent);
+            --line-system: color-mix(in srgb, var(--status-system) 35%, transparent);
             --tint-user: color-mix(in srgb, var(--status-user) 12%, transparent);
             --tint-user-strong: color-mix(in srgb, var(--status-user) 22%, transparent);
             --line-user: color-mix(in srgb, var(--status-user) 35%, transparent);
@@ -348,6 +350,13 @@
         @media (max-width: 360px) { #execModeBadge { max-width: 47vw; } #execModeBadge #execModeText { font-size: var(--fs-overline); letter-spacing: -0.2px; } }          /* "Setup Mode (Read-Only)", the first-run state, whole at 320 px (the smallest step of the type scale, a little tighter) */
         #execModeBadge #execModeText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; }
         #execModeBadge .status-dot { flex: 0 0 auto; }
+        /* its colours say what the working mode is (checkAllWorkingModes sets data-tone): "on" a mode is ready, "root" Root, "none" no mode is ready yet
+           (Read-Only, Setup, a chosen mode that is not ready). From the theme's status colours, so a light theme darkens them until they read */
+        #execModeBadge[data-tone="on"] { background: color-mix(in srgb, var(--status-running) 15%, transparent); border-color: color-mix(in srgb, var(--status-running) 40%, transparent); }
+        #execModeBadge[data-tone="root"] { background: color-mix(in srgb, var(--status-system) 15%, transparent); border-color: color-mix(in srgb, var(--status-system) 40%, transparent); color: var(--status-system); }
+        #execModeBadge[data-tone="root"] .status-dot { background: var(--status-system); }
+        #execModeBadge[data-tone="none"] { background: color-mix(in srgb, var(--status-user) 15%, transparent); border-color: color-mix(in srgb, var(--status-user) 40%, transparent); color: var(--status-warn); }
+        #execModeBadge[data-tone="none"] .status-dot { background: var(--status-warn); }
 
         /* the title: "ADB System" over "Manager", "ADB" and "Manager" in the accent and "System" in the text colour, heavy and tight. Solid colours only: a
            gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView, which left only "Full" and "System" */
@@ -4272,6 +4281,9 @@
            (computed in JS there). A translucent token laid over an opaque colour (linear-gradient(t, t), base) is the same mix. */
         @supports not (color: color-mix(in srgb, red 50%, blue)) {
             #prefsHeaderBtn { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--bg-card); border-color: var(--line-accent); }
+            #execModeBadge[data-tone="on"] { background: var(--tint-running); border-color: var(--line-running); }
+            #execModeBadge[data-tone="root"] { background: var(--tint-system); border-color: var(--line-system); }
+            #execModeBadge[data-tone="none"] { background: var(--tint-user); border-color: var(--line-user); }
             .bn-tile .bn-ico, .bn-tile.current, .bn-sc.fav { background: var(--tint-accent); }
             .nav-opt[aria-checked="true"] { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--input-bg); }
             .bn-menu { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line-accent); }
@@ -13113,8 +13125,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const pinnedButNotReady = configured !== 'auto' && configured !== 'unprivileged' && !d.modeAvailable;
 
                 // Update Header Badge
-                const badge = document.getElementById('execModeBadge');
-                const dot = document.getElementById('execModeDot');
+                const badge = document.getElementById('execModeBadge');          // its colours are the #execModeBadge[data-tone] rules
                 const text = document.getElementById('execModeText');
 
                 let label;
@@ -13132,28 +13143,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (configured === 'auto' && isPrivilegedActive) label = 'Auto • ' + label;
 
                 if (pinnedButNotReady) {
-                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
-                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
-                    badge.style.color = '#FFA726';
-                    dot.style.background = '#FFA726';
+                    badge.dataset.tone = 'none';
                     text.innerText = `${label} (not ready)`;
                 } else if (currentWorkingMode === 'root' && isPrivilegedActive) {
-                    badge.style.background = 'rgba(124, 77, 255, 0.15)';
-                    badge.style.borderColor = 'rgba(124, 77, 255, 0.4)';
-                    badge.style.color = 'var(--status-system)';
-                    dot.style.background = 'var(--status-system)';
+                    badge.dataset.tone = 'root';
                     text.innerText = label;
                 } else if (isPrivilegedActive) {
-                    badge.style.background = 'rgba(0, 230, 118, 0.15)';
-                    badge.style.borderColor = 'rgba(0, 230, 118, 0.4)';
-                    badge.style.color = 'var(--status-running)';
-                    dot.style.background = 'var(--status-running)';
+                    badge.dataset.tone = 'on';
                     text.innerText = label;
                 } else {
-                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
-                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
-                    badge.style.color = '#FFA726';
-                    dot.style.background = '#FFA726';
+                    badge.dataset.tone = 'none';
                     text.innerText = configured === 'unprivileged' ? 'Read-Only Mode' : 'Setup Mode (Read-Only)';
                 }
 
@@ -20706,8 +20705,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function usStatus(text, err) {
             const el = usEl('usStatus');
             if (!text) { el.style.display = 'none'; el.textContent = ''; return; }
-            el.style.display = ''; el.textContent = text; el.classList.toggle('is-err', !!err);
-            el.style.color = err ? '#FF5252' : '';
+            el.style.display = ''; el.textContent = text; el.classList.toggle('is-err', !!err);          // .is-err: the theme's danger colour
         }
         function usBar(pct) {
             const b = usEl('usBar');
@@ -20841,7 +20839,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const box = usEl('usV' + i);
             box.innerHTML = '<div class="us-pkg">' + escapeHtml(txT('Looking for versions...')) + '</div>';
             const r = await usList(c, cfg);
-            if (!r.ok) { box.innerHTML = '<div class="us-pkg" style="color:#FF5252;">' + escapeHtml(r.error || txT('The versions could not be read.')) + '</div>' + (r.browse ? '<div class="us-acts"><button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'\')">Open it here, in the app</button></div>' : ''); us.browse = r.browse || ''; return; }
+            if (!r.ok) { box.innerHTML = '<div class="us-pkg" style="color:var(--status-bloat);">' + escapeHtml(r.error || txT('The versions could not be read.')) + '</div>' + (r.browse ? '<div class="us-acts"><button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'\')">Open it here, in the app</button></div>' : ''); us.browse = r.browse || ''; return; }
             us.vers[i] = r.data;
             let items = r.data.versions || [];
             if (!cfg.split) items = items.filter(x => !/^(apkm|apks|xapk)$/i.test(x.format || ''));
@@ -30057,6 +30055,7 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--apps-uninstalled', ink('#FF5252'));
             css.setProperty('--apps-system', ink('#A33CFF'));
             css.setProperty('--status-user', ink('#FF9100'));
+            css.setProperty('--status-warn', ink('#FFA726'));
             css.setProperty('--status-suspended', ink(light ? '#FFAB00' : '#FFC400'));
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
