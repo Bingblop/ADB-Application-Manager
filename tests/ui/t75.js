@@ -19,6 +19,9 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   const open = async (opts, viewport, extra) => {
     const page = await b.newPage({ viewport: viewport || { width: 360, height: 800 } });
     page.on('pageerror', e => { bad++; console.log('FAIL page error:', e.message); });
+    // with a working mode the page asks once, 400 ms later, whether to grant the rest (perm_adb_offer_v714): answered "no" here, as Playwright would. Its own
+    // answer to a question that opens while a scenario closes the page fails with "session closed" and ends the script, so the answer's failure is ignored
+    page.on('dialog', d => d.dismiss().catch(() => {}));
     await page.addInitScript(inst.initScript, Object.assign({ kv: FLAG, perm: NONE, mode: { priv: false } }, opts || {}));
     await page.addInitScript(o => {
       // a script can wait for the first-launch check (the app runs it a little after opening, and again when What's new closes)
