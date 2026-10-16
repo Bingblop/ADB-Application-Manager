@@ -39783,7 +39783,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (mp.h.busy) return;
             mp.h.ver = x.version; mp.h.abi = x.abi || mp.h.abi;
             const h = mp.h;
-            h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
+            // another file is coming: the verdict of the one before is not its verdict
+            h.busy = true; h.got = null; h.vt = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
             const r = await mpCall('helperGet', { source: h.src, pkg: h.pkg, version: x.version, abi: x.abi || h.abi, policy: 'requested', sources: [h.src], save: mp.cfg.hSave, conn: mp.cfg.hConn, url: x.url || '', page: x.page || '' });
             h.busy = false;
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
@@ -39965,6 +39966,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
             vtLoadQuota(true);
             mp.h.vtBusy = false;
+            // another file arrived while this one was scanned: its answer must not label the new one
+            if (mp.h.got !== g) { mpHelperRender(); return; }
             if (!r.ok) { mpHMsg(r.error || 'The VirusTotal scan did not work', true); mpHelperRender(); return; }
             mp.h.vt = r.data; mpHelperRender();
             if (r.data && (r.data.verdict === 'malicious' || r.data.verdict === 'suspicious')) showToast('VirusTotal flags this file as ' + r.data.verdict);
