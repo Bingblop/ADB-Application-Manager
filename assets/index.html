@@ -2311,13 +2311,15 @@
             cursor: pointer;
         }
 
-        .saved-lists-toolbar {
+        .saved-lists-toolbar,
+        #appsSavedFallback {                         /* the same three on the Apps tab while Saved Applications is switched off */
             display: flex;
             flex-wrap: wrap;                         /* New List, Profiles, CSV, Backups: one row, two on a very narrow screen */
             gap: var(--space-2);
             margin-bottom: var(--space-4);
         }
-        .saved-lists-toolbar > .bs-btn { flex: 1 0 auto; white-space: nowrap; padding-inline: var(--space-3); }
+        .saved-lists-toolbar > .bs-btn,
+        #appsSavedFallback > .bs-btn { flex: 1 0 auto; white-space: nowrap; padding-inline: var(--space-3); }
 
         .saved-list-card {
             background: var(--bg-card);
@@ -4363,6 +4365,13 @@
                 </select>
                 <span class="apps-row-label apps-row-label-2" id="appsActionBtnPickTitle" aria-hidden="true">Button</span>
                 <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
+            </div>
+            <!-- Profiles, CSV and Backups belong to Saved Applications (v7.14). Only while that tab is switched off in the Feature List are they here
+                 too (tabsApplyConfig), so they can still be reached -->
+            <div id="appsSavedFallback" style="display:none;">
+                <button class="batch-tool-link bs-btn" onclick="openProfiles()">Profiles</button>
+                <button class="batch-tool-link bs-btn" onclick="exportAppList(true)" aria-label="Share the app list as CSV">CSV</button>
+                <button class="batch-tool-link bs-btn" onclick="openBackups()">Backups</button>
             </div>
 
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
@@ -11254,6 +11263,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // A tab that was switched off cannot be the Back target any more
         function tabsApplyConfig() {
             viewStack = viewStack.filter(tabIsOn);
+            const savedFallback = document.getElementById('appsSavedFallback');          // Profiles, CSV and Backups on the Apps tab while Saved Applications is off
+            if (savedFallback) savedFallback.style.display = tabIsOn('saved-lists') ? 'none' : '';
             renderTabBar();
             if (typeof featureRender === 'function') featureRender();
             if (typeof navScRender === 'function') navScRender();
