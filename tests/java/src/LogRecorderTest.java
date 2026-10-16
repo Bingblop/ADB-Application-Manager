@@ -20,6 +20,18 @@ public class LogRecorderTest {
 
   static String L(int i) { return String.format("10-08 12:00:%02d.000  1000  1001 E Tag: message %d", i % 60, i); }
 
+  /** Live recorder threads, after waiting up to a second for them to go. */
+  static int recorderThreads() throws InterruptedException {
+    int live = 0;
+    for (int i = 0; i < 50; i++) {
+      live = 0;
+      for (Thread t : Thread.getAllStackTraces().keySet()) if ("log-recorder".equals(t.getName()) && t.isAlive()) live++;
+      if (live == 0) break;
+      Thread.sleep(20);
+    }
+    return live;
+  }
+
   public static void main(String[] args) throws Exception {
     File dir = Files.createTempDirectory("logrec").toFile();
     Fake src = new Fake();
@@ -79,6 +91,26 @@ public class LogRecorderTest {
     for (int i = 0; i < 50 && small.status().running; i++) Thread.sleep(20);
     LogRecorder.Status ss = small.status();
     check("the size limit stops the recording and says why", !ss.running && ss.stopReason.contains("size limit") && ss.lines > 0);
+    // nobody calls stop() for a recording that stopped by itself (the next one is a new recorder): its thread used to live as long as the app (SYS-3)
+    check("a recording stopped by its size limit lets its thread go", recorderThreads() == 0);
+
+    // a write error stops the recording, and its thread goes too
+    Fake wf = new Fake();
+    LogRecorder broken = new LogRecorder(dir, wf, 10000, 1 << 20);
+    wf.next = L(1);
+    broken.start(null);
+    for (int i = 0; i < 50 && broken.status().lines < 1; i++) Thread.sleep(20);
+    java.lang.reflect.Field outField = LogRecorder.class.getDeclaredField("out");
+    outField.setAccessible(true);
+    synchronized (broken) {
+      ((java.io.OutputStream) outField.get(broken)).close();
+      outField.set(broken, new java.io.OutputStream() { public void write(int b) throws java.io.IOException { throw new java.io.IOException("No space left on device"); } });
+    }
+    wf.next = L(1) + "\n" + L(2);
+    broken.tick();
+    LogRecorder.Status bs = broken.status();
+    check("a write error stops the recording and says why", !bs.running && bs.stopReason.contains("could not be written") && bs.lastError.contains("No space"));
+    check("a recording stopped by a write error lets its thread go", recorderThreads() == 0);
 
     // the list
     Thread.sleep(1100);
@@ -86,7 +118,7 @@ public class LogRecorderTest {
     String n2 = two.start(null);
     two.stop("stopped");
     List<LogRecorder.Info> list = LogRecorder.list(dir);
-    check("the list holds the recordings, newest first", list.size() == 3 && list.get(0).name.equals(n2));
+    check("the list holds the recordings, newest first", list.size() == 4 && list.get(0).name.equals(n2));
     check("a recording started in the same second gets its own name", !n2.equals(name));
 
     // names that are not allowed
@@ -96,7 +128,7 @@ public class LogRecorderTest {
     Files.write(outside.toPath(), "x".getBytes("UTF-8"));
     check("delete refuses a path outside the folder", !LogRecorder.delete(dir, "../" + outside.getName()) && outside.exists());
     outside.delete();
-    check("delete removes a recording", LogRecorder.delete(dir, name) && LogRecorder.list(dir).size() == 2 && !LogRecorder.delete(dir, name));
+    check("delete removes a recording", LogRecorder.delete(dir, name) && LogRecorder.list(dir).size() == 3 && !LogRecorder.delete(dir, name));
 
     // unicode survives
     Fake u = new Fake();

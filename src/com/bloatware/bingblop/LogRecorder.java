@@ -91,6 +91,7 @@ public final class LogRecorder {
             closeQuietly();
             return "";
         }
+        if (out == null) return "";                                              // the header could not be written (the file is closed): no thread for a recording that is over
         ex = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override public Thread newThread(Runnable r) { Thread t = new Thread(r, "log-recorder"); t.setDaemon(true); return t; }
         });
@@ -145,8 +146,7 @@ public final class LogRecorder {
         lines += n;
         if (bytes >= maxBytes) {
             stopReason = "the file reached its size limit";
-            if (task != null) task.cancel(false);
-            closeQuietly();
+            halt();
         }
     }
 
@@ -160,10 +160,20 @@ public final class LogRecorder {
         } catch (IOException e) {
             lastError = String.valueOf(e.getMessage());
             stopReason = "the file could not be written";
-            if (task != null) task.cancel(false);
-            closeQuietly();
+            halt();
             return false;
         }
+    }
+
+    /**
+     * The recording stopped by itself (the size limit, a write error): the file is closed and the thread goes too, as nobody calls {@link #stop} for a
+     * recording that is no longer running (the next one is a new recorder). shutdown, not shutdownNow: this usually runs on that thread, inside its tick.
+     */
+    private void halt() {
+        if (task != null) task.cancel(false);
+        if (ex != null) ex.shutdown();
+        task = null; ex = null;
+        closeQuietly();
     }
 
     private void closeQuietly() {
