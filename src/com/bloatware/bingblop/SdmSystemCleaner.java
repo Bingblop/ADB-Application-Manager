@@ -41,7 +41,9 @@ import java.util.zip.ZipInputStream;
  *  - the filters whose upstream order was an unordered Dagger set run in settings order (spec 8.8 item 2); TempFilesFilter's path exclusions
  *    "backup/pending" and "cache/recovery" (which can never match absolute segments upstream) are applied to the path below the area root as Contain (8.8 item 1);
  *  - a directory is not descended when it is the root of another data area (what upstream's "peek-content-area" check does) and the three Android/* folders
- *    never belong to SDCARD; excluded directories are pruned while walking, and a result path that is an ancestor of an excluded path is dropped (the "nested rule");
+ *    never belong to SDCARD; the DATA walk does not descend into the per-user folders user, user_de, media, misc_ce and misc_de (app and user data of every
+ *    user, not only of the users whose areas are known); excluded directories are pruned while walking, and a result path that is an ancestor of an excluded
+ *    path is dropped (the "nested rule");
  *  - EmptyDirectoryFilter checks a candidate's emptiness after the walk, from what the walk saw plus one listing of the candidates (an excluded child blocks);
  *  - SuperfluousApksFilter reads the manifest of the archive itself (a small binary-XML reader) instead of PackageManager.getPackageArchiveInfo, and the
  *    installed version code is taken from Sdm.Pkg.versionCode when that field exists (version name equality otherwise);
@@ -906,6 +908,12 @@ public final class SdmSystemCleaner implements Sdm.ToolImpl {
                 foreign.add(Sdm.join(root, "Android/data"));
                 foreign.add(Sdm.join(root, "Android/media"));
                 foreign.add(Sdm.join(root, "Android/obb"));
+            }
+            if (ai.area == Sdm.Area.DATA) {
+                // the per-user folders hold app and user data (private app data, credential and device protected, shared storage, per-user system data): this
+                // user's under another name than its own area's (/data/user_de/0 is /data_mirror/data_de/null/0), every other user's too. An app's .tmp there is
+                // its own business, not a temporary system file
+                for (String n : new String[] { "user", "user_de", "media", "misc_ce", "misc_de" }) foreign.add(Sdm.join(root, n));
             }
             final List<F> fs = new ArrayList<F>();
             F empty = null;

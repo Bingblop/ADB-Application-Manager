@@ -294,6 +294,12 @@ public class SdmSystemCleanerTest {
         file(D + "other.tmp", 140); exp("tempfiles", D + "other.tmp");
         file(D + "backup/pending/p.tmp", 141); neg(D + "backup/pending/p.tmp");
         file(D + "readme", 142); neg(D + "readme");
+        // the per-user folders below /data are app and user data, whoever's they are: an app's own .tmp there is not a temporary system file
+        file(D + "user_de/0/com.bank.app/files/session.tmp", 147); neg(D + "user_de/0/com.bank.app/files/session.tmp");
+        file(D + "user/10/com.work.mail/files/draft.temp", 148); neg(D + "user/10/com.work.mail/files/draft.temp");
+        file(D + "media/10/Documents/thesis.docx.tmp", 149); neg(D + "media/10/Documents/thesis.docx.tmp");
+        file(D + "misc_ce/0/x.tmp", 147); neg(D + "misc_ce/0/x.tmp");
+        file(D + "misc_de/0/y.tmp", 148); neg(D + "misc_de/0/y.tmp");
         file(APP + "base.tmp", 143); neg(APP + "base.tmp");                                                    // /data/app is the APP_APP area, not DATA's
         file(SYS + "f.tmp", 144); exp("tempfiles", SYS + "f.tmp");
         file(SYSDE + "z.tmp", 145); exp("tempfiles", SYSDE + "z.tmp");
