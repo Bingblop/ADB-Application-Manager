@@ -1534,13 +1534,18 @@ public class MainActivity extends Activity {
             };
         }
         if ("adb".equals(kind)) {
-            final String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            final boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            final String target = tcp ? tcpTarget() : wirelessTarget();
+            final String host = tcp ? adbTcpHost : adbWirelessHost;
+            final int port = tcp ? adbTcpPort : adbWirelessPort;
             return new RishShell.Spawner() {
                 @Override
                 public Process spawn(String[] argv) throws Exception {
+                    if (argv.length >= 3 && "-c".equals(argv[1])) return buildAdbProcess("-s", target, "shell", argv[2]).start();   // a helper (Stop, ps) next to a shell that is up
+                    // the shell itself: a link that dropped (adbd restarted) is connected again first, as every other adb command does
+                    if (!isAdbTargetConnected(target)) performConnect(host, port, null);
                     // -T: no terminal on the phone's side; the shell reads the commands this app writes
-                    return (argv.length >= 3 && "-c".equals(argv[1]) ? buildAdbProcess("-s", target, "shell", argv[2])
-                            : buildAdbProcess("-s", target, "shell", "-T")).start();
+                    return buildAdbProcess("-s", target, "shell", "-T").start();
                 }
             };
         }
@@ -1636,7 +1641,9 @@ public class MainActivity extends Activity {
         }
         if ("adb".equals(kind)) {
             // adb's own client gets the terminal: it then asks the phone for a terminal of the same size and follows resizes
-            String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);   // a link that dropped is connected again first
             ProcessBuilder adb = buildAdbProcess("-s", target, "shell");
             ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, adb.command()));
             pb.environment().putAll(adb.environment());
