@@ -41271,7 +41271,16 @@ Type any command above (e.g. pm list packages -d)</div>
         async function sdDeleteAll() {
             const ready = SD_TOOLS.filter(t => sdTool(t.id).hasData && !sdBusy(sdTool(t.id)));
             if (!ready.length) { showToast('There is nothing to delete. Scan first.'); return; }
-            if (!await mpAsk({ title: 'Confirm deletion', text: 'Delete results in all tools?\n\n' + ready.map(t => t.name + ': ' + (sdTool(t.id).summary && sdTool(t.id).summary.primary || '')).join('\n'), ok: 'Delete', danger: true })) return;
+            // a tool whose review took something out deletes only what is still ticked: its line says that, not the whole scan. The closing
+            // sentence says why, and it keeps a translation from reading the whole question as one "{0}: {1} selected items" line.
+            let taken = false;
+            const lines = ready.map(t => {
+                const st = sdSelStats(t.id);
+                if (st.all) return t.name + ': ' + (sdTool(t.id).summary && sdTool(t.id).summary.primary || '');
+                taken = true;
+                return t.name + ': ' + st.count + ' selected item' + (st.count === 1 ? '' : 's') + (st.bytes ? ' (' + sdSizeStr(st.bytes) + ')' : '');
+            });
+            if (!await mpAsk({ title: 'Confirm deletion', text: 'Delete results in all tools?\n\n' + lines.join('\n') + (taken ? '\n\nWhat you took out in Details is kept.' : ''), ok: 'Delete', danger: true })) return;
             for (const t of ready) { const r = await sdCall('delete', { tool: t.id, selection: sdSelection(t.id, sdDeleteOptions(t.id)) }); if (!r.ok) { sdFail(r); break; } }
         }
 
