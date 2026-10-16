@@ -31264,11 +31264,15 @@ Type any command above (e.g. pm list packages -d)</div>
             termSyncModeUi();
         }
 
+        // a command is still running where runTerminalCmd would send a proposed one (the Rish shell or this console), so it would be refused
+        function termAiCmdBusy() { return rishActive ? rishRunning : !!termShellRun; }
+
         function termAiProposeRun(who, cmd) {
             const term = (termAiCard && termAiCard.out) || cnSink().out;
             const id = 'tac' + (++termAiSeq);
             termAiPending[id] = cmd;
-            if (!txSettings.askRun) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
+            // run at once only when it can start; otherwise it is offered with Run and Skip like any proposal, so it is not lost
+            if (!txSettings.askRun && !termAiCmdBusy()) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
             term.insertAdjacentHTML('beforeend', '<div id="' + id + '" style="margin:6px 0; border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; background:var(--input-bg);">'
                 + '<div style="color:var(--text-muted); font-size:11px;">' + escapeHtml(who) + ' wants to run this:</div>'
                 + '<div style="color:var(--text-main); word-break:break-all;" translate="no">' + escapeHtml(cmd) + '</div>'
@@ -31278,6 +31282,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function termAiRunProposed(id) {
             const cmd = termAiPending[id];
             if (cmd === undefined) return;
+            // before the proposal is let go: its Run and Skip stay, to be tapped once the running command is done
+            if (termAiCmdBusy()) { showToast(rishActive ? 'A command is still running. Tap STOP to end it.' : 'A command is still running. Wait for it to finish.'); return; }
             delete termAiPending[id];
             haptic();
             const card = document.getElementById(id);
