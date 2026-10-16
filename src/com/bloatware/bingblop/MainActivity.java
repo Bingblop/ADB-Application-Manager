@@ -6807,7 +6807,8 @@ public class MainActivity extends Activity {
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
                         String out = installApksIn(ordered, restoreMode);
                         if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
-                        res.put("install", "installed " + meta.optString("versionName"));
+                        // the version of the APK that was installed (the same one the question above showed), not backup.json's claim
+                        res.put("install", "installed " + (archiveInfo.versionName != null ? archiveInfo.versionName : String.valueOf(archiveVersionCode)));
                     }
 
                     // Permissions and app ops
