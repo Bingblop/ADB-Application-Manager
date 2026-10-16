@@ -2011,7 +2011,7 @@ x: {
 "Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.": "저장 공간에서 선택한 APK, APKS, XAPK 같은 패키지 파일을 이 앱이 설치할 수 있게 합니다.",
 "Lets this app open another app's screen from the background, such as an app you have just installed.": "이 앱이 백그라운드에서 방금 설치한 앱 등 다른 앱의 화면을 열 수 있게 합니다.",
 "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "배터리, 전원, 메모리 정보 같은 휴대전화 자체의 상태 보고서(dumpsys)를 매번 셸에 요청하지 않고 이 앱이 읽을 수 있게 합니다. 작동 모드를 통해 허용됩니다.",
-"Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.": "셸에 매번 요청하지 않고도 이 앱이 모든 앱의 시스템 로그(logcat)를 직접 읽을 수 있게 합니다. 작동 모드를 통해 부여됩니다.",
+"Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.": "모든 앱의 시스템 로그(logcat)를 읽는 Android 권한입니다. 실시간 Logcat은 이 권한을 쓰지 않고 작동 모드를 통해 로그를 읽습니다. 작동 모드를 통해 부여됩니다.",
 "Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.": "이 앱이 무선 디버깅 페어링 안내나 오래 걸리는 작업의 진행 상황 같은 알림을 표시할 수 있게 합니다.",
 "Level": "수준",
 "Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.": "등급 및 설명은 UAD-NG 프로젝트(GPL-3.0)에서 가져옵니다. 목록은 해당 GitHub에서 다운로드되어 이 휴대전화에 캐시됩니다.",

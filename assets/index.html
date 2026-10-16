@@ -30594,7 +30594,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'storage_legacy', name: 'Read/Write External Storage', perm: 'READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE', why: 'The older storage permission some apps still check for.', adbOnly: true },
             { key: 'secure_settings', name: 'Write Secure Settings', perm: 'WRITE_SECURE_SETTINGS', why: 'Lets this app change a few protected system settings used by some advanced features.', adbOnly: true },
             { key: 'dump', name: 'Dump system services (DUMP)', perm: 'DUMP', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true },
-            { key: 'read_logs', name: 'Read Logs', perm: 'READ_LOGS', why: "Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true }
+            { key: 'read_logs', name: 'Read Logs', perm: 'READ_LOGS', why: "Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.", adbOnly: true, known: true }
         ];
         // Every row the app build reports is listed, with or without a working mode (an adbOnly one is locked without it)
         function visiblePermDefs() { return PERM_DEFS.filter(d => !d.known || permStatus[d.key] !== undefined); }

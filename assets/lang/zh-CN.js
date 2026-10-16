@@ -2011,7 +2011,7 @@ x: {
 "Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.": "允许本应用安装你选择的软件包文件，例如存储空间中的 APK、APKS 和 XAPK 文件。",
 "Lets this app open another app's screen from the background, such as an app you have just installed.": "允许本应用在后台打开其他应用的界面，例如刚安装的应用。",
 "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "允许此应用读取手机自身的状态报告（dumpsys），例如电池、电源和内存详情，而无需每次都询问 shell。通过工作模式授予。",
-"Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.": "让本应用自行读取所有应用的系统日志（logcat），无需每次都通过 Shell。通过工作模式授予。",
+"Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.": "读取所有应用系统日志（logcat）的 Android 权限。实时 Logcat 不使用它：它通过工作模式读取日志。通过工作模式授予。",
 "Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.": "让本应用显示通知，例如无线调试的配对提示以及长时间任务的进度。",
 "Level": "电量",
 "Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.": "级别和说明来自 UAD-NG 项目（GPL-3.0）。列表从其 GitHub 下载并缓存在这部手机上。",

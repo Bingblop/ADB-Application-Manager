@@ -2011,7 +2011,7 @@ x: {
 "Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.": "ストレージ内のAPK、APKS、XAPKなど、あなたが選んだパッケージファイルをこのアプリがインストールできるようにします。",
 "Lets this app open another app's screen from the background, such as an app you have just installed.": "このアプリが、インストールしたばかりのアプリなど、他のアプリの画面をバックグラウンドから開けるようにします。",
 "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.": "バッテリー、電源、メモリの詳細など、スマートフォン自身のステータスレポート (dumpsys) を、そのつどシェルに問い合わせずにこのアプリが読めるようにします。動作モードを通じて許可されます。",
-"Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.": "このアプリが、そのつどシェルに問い合わせずに、すべてのアプリのシステムログ（logcat）を自分で読めるようにします。動作モードを通じて許可されます。",
+"Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.": "すべてのアプリのシステムログ（logcat）を読むための Android の権限です。ライブ Logcat はこれを使わず、動作モードを通じてログを読み取ります。動作モードを通じて許可されます。",
 "Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.": "ワイヤレスデバッグのペア設定の案内や時間のかかる処理の進行状況など、このアプリが通知を表示できるようにします。",
 "Level": "レベル",
 "Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.": "レベルと説明はUAD-NGプロジェクト（GPL-3.0）によるものです。リストはそのGitHubからダウンロードされ、この端末にキャッシュされます。",
