@@ -14013,20 +14013,13 @@ public class MainActivity extends Activity {
                 if (name == null) return "Could not read the source";
                 boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyInto(kidUri, newDir);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyInto(Uri.parse(k[0]), newDir);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -14043,10 +14036,14 @@ public class MainActivity extends Activity {
                 android.content.ContentResolver cr = getContentResolver();
                 String name = srcFile.getName();
                 if (srcFile.isDirectory()) {
+                    File[] kids = srcFile.listFiles();                    // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    File[] kids = srcFile.listFiles();
-                    if (kids != null) for (File k : kids) { String err = safCopyPosixIntoSaf(k, newDir); if (err != null) return err; }
+                    if (kids != null) for (File k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyPosixIntoSaf(k, newDir);
+                        if (err != null) return err;
+                    }
                     return null;
                 }
                 String mime = fmMime(name);
@@ -14084,19 +14081,12 @@ public class MainActivity extends Activity {
                 String canonRoot = destDir.getCanonicalPath();
                 if (!dest.getCanonicalPath().startsWith(canonRoot.endsWith(File.separator) ? canonRoot : canonRoot + File.separator)) return "Could not copy " + name;
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyIntoPosix(kidUri, dest);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyIntoPosix(Uri.parse(k[0]), dest);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -14175,6 +14165,91 @@ public class MainActivity extends Activity {
             return null;
         }
 
+        /** The children of a SAF folder, read once before anything is written into it: {document URI, name, MIME type}. A copy that
+         *  lists a folder after it created its own target folder there would find that folder and copy it into itself without end. */
+        private List<String[]> safKids(Uri dir) {
+            List<String[]> out = new ArrayList<String[]>();
+            Uri tree = safTreeUri(dir);
+            Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, safCurrentDocId(dir));
+            android.database.Cursor c = getContentResolver().query(kids, new String[]{
+                    android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null);
+            if (c == null) return out;
+            try {
+                while (c.moveToNext()) out.add(new String[]{ android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)).toString(), c.getString(1), c.getString(2) });
+            } finally { c.close(); }
+            return out;
+        }
+
+        /** Whether a SAF document is a folder (null when it cannot be read). */
+        private Boolean safIsDir(Uri doc) {
+            try {
+                android.database.Cursor c = getContentResolver().query(doc, new String[]{ android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE }, null, null, null);
+                if (c == null) return null;
+                try { return c.moveToFirst() ? android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(c.getString(0)) : null; } finally { c.close(); }
+            } catch (Throwable t) { return null; }
+        }
+
+        /** The plain path of a file manager item: the path itself, or for a document of Android's own storage provider the path it is
+         *  under /storage (see {@link FileOps#externalStoragePath}); null when it has none the app can know. */
+        private String fmPlainPathOf(String ref) {
+            if (!ref.startsWith("content://")) return ref;
+            try {
+                Uri u = Uri.parse(ref);
+                return FileOps.externalStoragePath(u.getAuthority(), safCurrentDocId(u), android.os.Process.myUid() / 100000);
+            } catch (Throwable t) { return null; }
+        }
+
+        /**
+         * Puts the children of the folder {@code src} (a SAF document URI or a plain path) into the SAF folder {@code destDir} that
+         * already holds a folder of the same name, the way two plain folders merge (FileOps.transfer): a folder meets a folder and is
+         * merged, a file meets a file and replaces it ("replace") or is left ("skip"), a file meets a folder or the reverse and is
+         * refused ("replace") or left ("skip"). For a move, what went across is removed from the source, and the source folder too
+         * when nothing was left in it. {@code left[0]} counts what was left alone. Returns null, or why it stopped.
+         */
+        private String safMergeInto(String src, Uri destDir, String policyName, boolean move, int[] left) throws Exception {
+            boolean srcSaf = src.startsWith("content://");
+            List<String[]> kids = new ArrayList<String[]>();              // {ref, name, isDir}
+            if (srcSaf) {
+                for (String[] k : safKids(Uri.parse(src))) kids.add(new String[]{ k[0], k[1], String.valueOf(android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(k[2])) });
+            } else {
+                File[] fs = new File(src).listFiles();
+                if (fs != null) for (File f : fs) kids.add(new String[]{ f.getPath(), f.getName(), String.valueOf(f.isDirectory() && !java.nio.file.Files.isSymbolicLink(f.toPath())) });
+            }
+            int leftBefore = left[0];
+            for (String[] k : kids) {
+                if (fmBatchCancel) return "Cancelled";
+                String ref = k[0], name = k[1];
+                if (name == null || FileOps.badName(name) != null) { left[0]++; continue; }
+                boolean kidDir = Boolean.parseBoolean(k[2]);
+                Uri clash = safChildNamed(destDir, name);
+                Boolean clashDir = clash == null ? null : safIsDir(clash);
+                if (clash != null && clashDir == null) return "Could not read " + name;
+                int action = FileOps.safClash(kidDir, clashDir, policyName);
+                if (action == FileOps.SAF_SKIP) { left[0]++; continue; }
+                if (action == FileOps.SAF_IN_THE_WAY) return (kidDir ? "A file with that name is in the way: " : "A folder with that name is in the way: ") + name;
+                String err;
+                if (action == FileOps.SAF_MERGE) {
+                    err = safMergeInto(ref, clash, policyName, move, left);
+                    if (err != null) return err;
+                    continue;                                              // the merge removed what it moved, and the folder when it was emptied
+                }
+                if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) return "Could not replace " + name;
+                err = srcSaf ? safCopyInto(Uri.parse(ref), destDir) : safCopyPosixIntoSaf(new File(ref), destDir);
+                if (err != null) return err;
+                if (move) {
+                    if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
+                    else FileOps.delete(java.util.Collections.singletonList(new File(ref)), null);
+                }
+            }
+            if (move && left[0] == leftBefore) {                          // everything in it went across: the emptied source folder goes too
+                if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(src));
+                else new File(src).delete();
+            }
+            return null;
+        }
+
         private String safDisplayName(String ref) {
             if (!ref.startsWith("content://")) return new File(ref).getName();
             try {
@@ -14214,19 +14289,41 @@ public class MainActivity extends Activity {
                             if (q.equals(dest)) throw new IOException("Can't put a folder inside itself");
                             if (q.startsWith("content://") && dest.startsWith("content://")) {
                                 try {
-                                    String sd = android.provider.DocumentsContract.getDocumentId(Uri.parse(q));
-                                    String dd = android.provider.DocumentsContract.getDocumentId(Uri.parse(dest));
-                                    if (safTreeUri(Uri.parse(q)).equals(safTreeUri(Uri.parse(dest))) && (dd.equals(sd) || dd.startsWith(sd + "/"))) throw new IOException("Can't put a folder inside itself");
+                                    Uri qu = Uri.parse(q), du = Uri.parse(dest);
+                                    // two added roots of one provider can reach the same folder: the ids decide, not the tree they were reached through
+                                    String sd = safCurrentDocId(qu), dd = safCurrentDocId(du);
+                                    if (String.valueOf(qu.getAuthority()).equals(du.getAuthority()) && FileOps.safDocInside(sd, dd)) throw new IOException("Can't put a folder inside itself");
                                 } catch (IllegalArgumentException ignored) {}
                             }
                             if (!dest.startsWith("content://") && (dest.equals(q) || dest.startsWith(q + "/"))) throw new IOException("Can't put a folder inside itself");
                             String name = safDisplayName(q);
+                            // the SD card added as storage and /storage/XXXX-XXXX are one place seen two ways: the same plain-path rules apply
+                            String qp = fmPlainPathOf(q), dp = fmPlainPathOf(dest);
+                            if (qp != null && dp != null) {
+                                if (FileOps.pathInside(qp, dp)) throw new IOException("Can't put a folder inside itself");
+                                if (!name.isEmpty() && FileOps.policyOf(policyName) != FileOps.KEEP_BOTH && qp.equals(dp + "/" + name)) { skipped++; kept.put(q); continue; }   // already there: the item itself
+                            }
                             if (dest.startsWith("content://") && !name.isEmpty()) {
                                 Uri clash = safChildNamed(Uri.parse(dest), name);
                                 if (clash != null) {
                                     if (clash.equals(Uri.parse(q))) { skipped++; kept.put(q); continue; }
-                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }
-                                    if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
+                                    Boolean qDir = q.startsWith("content://") ? safIsDir(Uri.parse(q)) : Boolean.valueOf(new File(q).isDirectory());
+                                    Boolean clashDir = safIsDir(clash);
+                                    if (qDir == null || clashDir == null) throw new IOException("Could not read " + name);
+                                    int action = FileOps.safClash(qDir, clashDir, policyName);
+                                    if (action == FileOps.SAF_SKIP) { skipped++; kept.put(q); continue; }
+                                    if (action == FileOps.SAF_IN_THE_WAY) throw new IOException(qDir ? "A file with that name is in the way" : "A folder with that name is in the way");
+                                    if (action == FileOps.SAF_MERGE) {
+                                        // folders merge, as the sheet says and as two plain folders do: nothing that is only in the old folder is lost
+                                        int[] left = new int[1];
+                                        String err = safMergeInto(q, clash, policyName, "mv".equals(op), left);
+                                        if (err != null && fmBatchCancel) { cancelled = true; break; }
+                                        if (err != null) failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
+                                        else if (left[0] > 0 && "mv".equals(op)) { skipped++; kept.put(q); }   // some of it was left in the source: it stays on the move clipboard
+                                        else done++;
+                                        continue;
+                                    }
+                                    if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) throw new IOException("Could not replace " + name);
                                 }
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
                                 // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
@@ -14238,6 +14335,7 @@ public class MainActivity extends Activity {
                         }
                         String err = fmOpSaf(op, q, dest, asName);
                         if (err.isEmpty()) done++;
+                        else if (fmBatchCancel) { cancelled = true; break; }      // stopped inside a folder: a cancel, not a failure
                         else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
                     } catch (Throwable t) {
                         try { failed.put(new JSONObject().put("p", q).put("error", errMsg(t))); } catch (Exception ignored) {}
