@@ -39774,6 +39774,8 @@ Type any command above (e.g. pm list packages -d)</div>
         async function mpHGetVersion(i) {
             const x = mp.h.versions && mp.h.versions.versions[i];
             if (!x) return;
+            // the list stays tappable while a download runs: a second tap (or another row of the same version) would write the same file
+            if (mp.h.busy) return;
             mp.h.ver = x.version; mp.h.abi = x.abi || mp.h.abi;
             const h = mp.h;
             h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
