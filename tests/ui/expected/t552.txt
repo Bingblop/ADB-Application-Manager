@@ -1,0 +1,66 @@
+1. the menu opens: true
+   a fourth row is there and it is the last one, after the regex row: true
+   the rows are Include application names, Include package names, Use regex matching, Row tints: true
+   its line under the name is "How strongly rows are tinted. Opens Settings." (one line of grey text, as in the regex row): true
+   it is drawn like the others: same row box, a hairline above, the divider before its end, not selectable text, a pointer: true
+   at its end is a chevron (hidden from a screen reader), not a switch: true
+   it is a button for a screen reader and a keyboard (role button, tabindex 0, named by its text): true
+   it is inside the menu and the screen, at least 44 px tall, and its name fits: true
+   the three rows above it are as before: labels with their switches, all on, the regex line unchanged: true
+2. the regex switch turns off and the menu stays open: true
+   the names switch turns off (packages stay on) and the menu stays open: true
+   turning the last one (packages) off turns names on instead, as before: true
+   all three are on again, and the new row did not move them: true
+   Space on a switch flips it (the keyboard is as before): true
+   a tap on a switch does not open Settings: true
+3. a tap on the row closes the menu at once (the button says closed, body.search-menu-open is gone): true
+   Settings is the current view and its gear is lit: true
+   the Row tints card is lit up for a moment (the highlight of the bottom bar's shortcuts): true
+   the slider of the card has the focus: true
+   the card is shown and fully in view, under the header and above the bottom of the screen: true
+   the highlight goes away by itself: true
+4. Back goes back to the Apps tab (the tab the shortcut was used on): true
+   with the search as it was (text and list), and the menu closed: true
+   and the Back after that is the usual one (the first tab: it is not spent on a menu or on Settings): true
+5. with Settings left scrolled to its end, the card is brought into view all the same: true
+   and from Settings scrolled to its top, where the card is not on the screen yet: true
+6. Enter on the menu button opens the menu: true
+   Tab from the last switch reaches the row, and it shows a focus ring: true
+   Enter closes the menu and opens Settings: true
+   and the row's handler took the Enter key (its default action is prevented): true
+   with the card in view and the slider focused (a keyboard goes on from there with the arrow keys): true
+   an arrow key changes Row tints right there: true
+   Back returns to the Apps tab: true
+   Space does the same as Enter: true
+   and the row's handler took the Space key too: its default action (scrolling the page) is prevented: true
+   the card is in view after Space too: true
+   other keys on the row do nothing (the menu is still open) and are left alone (not prevented): true
+   Escape still closes the menu and the focus goes back to its button: true
+7. used twice in a row it does the same again (one Back goes back to the Apps tab): true
+   and the menu is closed when you are back: true
+8. [320x568] the row is on screen under the tab bar, tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [360x640] the row is on screen under the tab bar, tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [360x520] the row is on screen under the tab bar, tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [412x915] the row is on screen under the tab bar, tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [320x568, bottom bar] the row is on screen above the bottom bar (the bar is really shown), tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [360x520, bottom bar] the row is on screen above the bottom bar (the bar is really shown), tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [360x640, bottom bar] the row is on screen above the bottom bar (the bar is really shown), tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [360x720, bottom bar] the row is on screen above the bottom bar (the bar is really shown), tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+8. [412x915, bottom bar] the row is on screen above the bottom bar (the bar is really shown), tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit: true
+   and it takes you to the card, in view: true
+   [360x480, bottom bar] the search box and its button stay under the header, and the row can still be tapped: true
+9. with the bottom bar on, the shortcut goes to Settings and the card is in view above the bar: true
+   Back comes back to the Apps tab: true
+10. in German the row says Zeilenfärbung with its German line (and still is the last row): true
+    and it still goes to the card: true
+    in Arabic (right to left) the row is translated and the chevron is turned to point left: true
+no page errors: true
+all checks passed

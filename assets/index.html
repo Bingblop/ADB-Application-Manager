@@ -879,6 +879,10 @@
         .sm-sub { display: block; margin-top: var(--space-1); font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); font-weight:var(--fw-semibold); }
         .sm-div { align-self: stretch; width: 1px; margin: 2px 0; background: var(--border-glass); flex: 0 0 auto; }
         .sm-row .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+        /* the last row opens something (Row tints in Settings) instead of turning something on: a chevron where the others have a switch, the same focus ring */
+        .sm-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+        .sm-chev { flex: 0 0 auto; display: block; color: var(--text-muted); }
+        [dir="rtl"] .sm-chev { transform: scaleX(-1); }
 
         .search-note {
             margin: -4px 4px 10px;
@@ -4413,6 +4417,11 @@
                         <span class="sm-div"></span>
                         <input type="checkbox" class="switch-input" id="searchOptRegex" checked onchange="setSearchOpt('regex', this.checked)"><span class="switch-track"></span>
                     </label>
+                    <div class="sm-row sm-go" id="searchMenuRowTints" role="button" tabindex="0" onclick="searchMenuRowTints()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();searchMenuRowTints();}">
+                        <span class="sm-text"><span class="sm-name">Row tints</span><span class="sm-sub">How strongly rows are tinted. Opens Settings.</span></span>
+                        <span class="sm-div"></span>
+                        <svg class="sm-chev" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                    </div>
                 </div>
             </div>
             <div class="search-note" id="searchNote" style="display:none;" role="status"></div>
@@ -18983,11 +18992,27 @@ Type any command above (e.g. pm list packages -d)</div>
             menu.style.display = '';
             document.getElementById('searchMenuBtn').setAttribute('aria-expanded', 'true');
             document.body.classList.add('search-menu-open');               // the batch button steps aside while the menu is open
-            // The menu hangs below the box: bring it all into view, but not so far that the box itself goes under the tabs
+            // The menu hangs below the box: bring it all into view (above the bottom bar when that is on the screen), but not so far that the box itself goes under the tabs
+            // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
             const r = menu.getBoundingClientRect(), box = document.getElementById('searchBox').getBoundingClientRect();
-            const tabs = document.getElementById('tabBar').getBoundingClientRect();
-            const need = r.bottom - (window.innerHeight - 10), room = box.top - (tabs.bottom + 8);
+            const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
+            const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
+            const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
+            const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
             if (need > 0 && room > 0) window.scrollBy({ top: Math.min(need, room), behavior: 'smooth' });
+        }
+
+        // The last row of the menu: Row tints is a setting of Settings, so the row closes the menu and goes there (Back comes back to the Apps tab, as from any other tab).
+        // Settings opens on the card, which is lit up for a moment like the sections the bottom bar's shortcuts go to (bnavReveal), and the slider has the focus for a keyboard.
+        function searchMenuRowTints() {
+            closeSearchMenu();
+            if (!switchView('prefs')) return;
+            setTimeout(() => {
+                if (currentViewName() !== 'prefs') return;                       // Back was pressed meanwhile
+                bnavReveal('#rowTintCard');
+                const r = document.getElementById('rowTintRange');
+                if (r) r.focus({ preventScroll: true });
+            }, 90);
         }
 
         // The box says what it searches, and the menu shows the options as they are now

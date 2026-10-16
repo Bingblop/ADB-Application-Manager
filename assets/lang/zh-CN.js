@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "手机已启动的次数",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "手机的压缩交换区（zram）腾出了多少 RAM，以及释放缓存所占内存的按钮。",
 "How much the ping varies": "延迟的波动程度",
+"How strongly rows are tinted. Opens Settings.": "行着色的强度。打开设置。",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "“应用”标签页为运行中（绿色）、已冻结（蓝色）或已卸载（红色）应用的行着色的强度，以及实时 Logcat（和“已连接设备”中的 Logcat）按级别颜色为每一行着色的强度。只有你选中的应用才会显示轮廓。",
 "How the Terminal works": "终端使用说明",
 "How the app itself moves, on top of its theme": "应用自身的动效表现，叠加在主题之上",

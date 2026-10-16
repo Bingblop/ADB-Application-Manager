@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "عدد مرات تشغيل الهاتف",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "كم من الذاكرة تعيدها المبادلة المضغوطة في الهاتف (zram)، وأزرار لتحرير الذاكرة التي تشغلها ذاكرات التخزين المؤقت.",
 "How much the ping varies": "مدى تفاوت قيمة Ping",
+"How strongly rows are tinted. Opens Settings.": "مدى قوة تلوين الصفوف. يفتح الإعدادات.",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "مدى قوة تلوين تبويب التطبيقات لصف التطبيق قيد التشغيل (أخضر) أو المجمَّد (أزرق) أو الملغى تثبيته (أحمر)، وتلوين Logcat مباشر (وLogcat في الأجهزة المتصلة) لكل سطر بلون مستواه. وحدها التطبيقات التي تحددها تحصل على إطار.",
 "How the Terminal works": "كيف تعمل الطرفية",
 "How the app itself moves, on top of its theme": "كيف يتحرك التطبيق نفسه، فوق سمته",

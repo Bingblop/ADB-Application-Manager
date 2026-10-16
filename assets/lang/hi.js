@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "फ़ोन कितनी बार चालू हुआ है",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "फ़ोन का संपीड़ित स्वैप (zram) कितनी RAM लौटाता है, और कैश द्वारा घेरी मेमोरी खाली करने के बटन।",
 "How much the ping varies": "पिंग कितना ऊपर-नीचे होता है",
+"How strongly rows are tinted. Opens Settings.": "पंक्तियों का रंग कितना गहरा हो। सेटिंग खोलता है।",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "ऐप्स टैब किसी चल रहे (हरा), फ़्रीज़ (नीला) या अनइंस्टॉल किए गए (लाल) ऐप की पंक्ति को कितना रंगे, और लाइव Logcat (और कनेक्टेड डिवाइस का Logcat) हर लाइन को उसके लेवल के रंग में कितना रंगे। सिर्फ़ आपके चुने हुए ऐप्स को आउटलाइन मिलती है।",
 "How the Terminal works": "टर्मिनल कैसे काम करता है",
 "How the app itself moves, on top of its theme": "ऐप की अपनी गति (मोशन), थीम से अलग",

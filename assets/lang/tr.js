@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "Telefonun kaç kez başlatıldığı",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "Telefonun sıkıştırılmış takas alanının (zram) ne kadar RAM geri verdiği ve önbelleklerin tuttuğu belleği boşaltacak düğmeler.",
 "How much the ping varies": "Ping’in ne kadar değiştiği",
+"How strongly rows are tinted. Opens Settings.": "Satırların ne kadar güçlü renklendirileceği. Ayarları açar.",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "Uygulamalar sekmesinin çalışan (yeşil), dondurulmuş (mavi) veya kaldırılmış (kırmızı) bir uygulamanın satırını, Canlı Logcat’in (ve Bağlı Cihazlar’daki Logcat’in) de her satırı kendi düzeyinin rengiyle ne kadar güçlü renklendirdiği. Yalnızca seçtiğiniz uygulamalar çerçeve alır.",
 "How the Terminal works": "Terminal nasıl çalışır",
 "How the app itself moves, on top of its theme": "Uygulamanın temasının üzerine, kendisinin nasıl hareket ettiği",
