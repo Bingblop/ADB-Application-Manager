@@ -32,6 +32,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 Live Updates: the Stop apps notification asks to be one (a chip in the status bar with how far it is); a normal permission, which the person can still turn off per app -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- Connected Devices: the Bluetooth devices this phone is paired with (Android 12+ asks), and sending files to one -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
@@ -200,6 +202,11 @@
              `adb pair` in the background, so the user can pair without leaving the pairing screen -->
         <receiver
             android:name=".PairReceiver"
+            android:exported="false" />
+
+        <!-- The Cancel button of the Stop apps notification (and it being swiped away); only this app's own PendingIntents reach it -->
+        <receiver
+            android:name=".QuickStopReceiver"
             android:exported="false" />
 
         <!-- Termux hands the result of a command back here, through the PendingIntent this app gave it (not exported) -->

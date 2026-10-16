@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "इस फ़ोन के इंटरनेट कनेक्शन को मापता है: पिंग, डाउनलोड और अपलोड, Cloudflare के सर्वरों से। परिणाम इसी फ़ोन पर रखे जाते हैं।",
 "Open speed test": "स्पीड टेस्ट खोलें",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android का बैटरी सेवर चालू करता है, वही स्विच जो सेटिंग > बैटरी में है: स्क्रीन की चमक घटती है, पृष्ठभूमि काम, सिंक और स्थान सीमित होते हैं और एनिमेशन छोटे हो जाते हैं। फ़ोन अपना बैटरी-सेवर आइकन दिखाता है।",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।"
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।",
+"Live updates": "लाइव अपडेट",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "“ऐप्स रोकें” सूचना की प्रगति को स्टेटस बार में लाइव अपडेट के रूप में दिखाता है (Android 16 और उसके बाद)। इसके लिए सूचनाएं और फ़ोन की सूचना सेटिंग में इस ऐप का स्विच भी चाहिए।",
+"Saved Applications was turned off. It is on again to show this list.": "सहेजे गए ऐप्स बंद था। इस सूची को दिखाने के लिए इसे फिर से चालू कर दिया गया है।",
+"That saved list is not there any more.": "वह सहेजी गई सूची अब मौजूद नहीं है।",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],

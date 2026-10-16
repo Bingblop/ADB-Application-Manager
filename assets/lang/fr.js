@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Mesure la connexion Internet de ce téléphone : ping, téléchargement et envoi, avec les serveurs de Cloudflare. Les résultats sont conservés sur ce téléphone.",
 "Open speed test": "Ouvrir le test de vitesse",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Active l’économiseur de batterie d’Android, le même interrupteur que dans Paramètres > Batterie : l’écran s’assombrit, le travail en arrière-plan, la synchronisation et la localisation sont limités et les animations raccourcies. Le téléphone affiche son icône d’économiseur de batterie.",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android n’a pas fini au bout de 3 minutes. Le résultat s’ouvre dans sa propre feuille quand il a fini."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android n’a pas fini au bout de 3 minutes. Le résultat s’ouvre dans sa propre feuille quand il a fini.",
+"Live updates": "Mises à jour en direct",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Affiche la progression de la notification Arrêter les applications dans la barre d’état sous forme de mise à jour en direct (Android 16 et versions ultérieures). Elle demande aussi les Notifications et l’interrupteur de cette application dans les réglages de notification du téléphone.",
+"Saved Applications was turned off. It is on again to show this list.": "Applications enregistrées était désactivé. Il est de nouveau activé pour afficher cette liste.",
+"That saved list is not there any more.": "Cette liste enregistrée n’existe plus.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],

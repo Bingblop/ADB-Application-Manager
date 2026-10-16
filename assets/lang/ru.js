@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Измеряет интернет-соединение этого телефона: пинг, скачивание и отправку, через серверы Cloudflare. Результаты хранятся на этом телефоне.",
 "Open speed test": "Открыть тест скорости",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Включает энергосбережение Android — тот же переключатель, что в «Настройки > Батарея»: экран тускнеет, фоновая работа, синхронизация и геолокация ограничиваются, анимации сокращаются. Телефон показывает значок энергосбережения.",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android не закончил за 3 минуты. Результат откроется на отдельной панели, когда он закончит."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android не закончил за 3 минуты. Результат откроется на отдельной панели, когда он закончит.",
+"Live updates": "Живые обновления",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Показывает ход уведомления «Остановить приложения» в строке состояния как живое обновление (Android 16 и новее). Также нужны Уведомления и переключатель для этого приложения в настройках уведомлений телефона.",
+"Saved Applications was turned off. It is on again to show this list.": "«Сохранённые приложения» были отключены. Они снова включены, чтобы показать этот список.",
+"That saved list is not there any more.": "Этого сохранённого списка больше нет.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],

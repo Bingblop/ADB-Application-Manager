@@ -5072,7 +5072,11 @@ x: {
 "Open speed test": "Apri test di velocità",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Attiva il risparmio batteria di Android, lo stesso interruttore di Impostazioni > Batteria: lo schermo si scurisce, il lavoro in background, la sincronizzazione e la posizione sono limitati e le animazioni si accorciano. Il telefono mostra la sua icona del risparmio batteria.",
 "No patch could be applied": "Non è stato possibile applicare nessuna patch",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android non ha finito dopo 3 minuti. Il risultato si apre in un foglio a parte quando ha finito."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android non ha finito dopo 3 minuti. Il risultato si apre in un foglio a parte quando ha finito.",
+"Live updates": "Aggiornamenti live",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra l’avanzamento della notifica di Arresta app nella barra di stato come aggiornamento live (Android 16 e successivi). Servono anche le Notifiche e l’interruttore per questa app nelle impostazioni delle notifiche del telefono.",
+"Saved Applications was turned off. It is on again to show this list.": "App salvate era disattivato. Ora è di nuovo attivo per mostrare questo elenco.",
+"That saved list is not there any more.": "Quell’elenco salvato non esiste più.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} non è ancora collegato, quindi un pulsante Ask agent legge il web per te (gratis, senza chiave) finché non lo sarà. Aggiungi la sua chiave in Console → Terminale."],

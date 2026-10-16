@@ -12891,6 +12891,22 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('listEditorModal').classList.remove('show');
         }
 
+        // The Stop apps notification was tapped (QuickStopNotice): Saved Applications, with the sheet of the quick list (the list marked for the tile) up.
+        // The run that the notification shows goes on; nothing here touches it.
+        function onQuickStopOpen(listId) {
+            if (!tabIsOn('saved-lists')) {                                   // a tap on the notification is not turned away by a switch: the tab comes back
+                tabConfig.off = tabConfig.off.filter(k => k !== 'saved-lists');
+                tabSaveConfig();
+                tabsApplyConfig();
+                showToast('Saved Applications was turned off. It is on again to show this list.');
+            }
+            switchView('saved-lists');
+            const l = customLists.find(x => x.id === listId) || customLists.find(x => x.id === quickListId);
+            if (!l) { showToast('That saved list is not there any more.'); return; }
+            openListEditorModal(l.id);
+        }
+        window.onQuickStopOpen = onQuickStopOpen;
+
         function saveListFromEditor() {
             const id = document.getElementById('listEditorId').value.trim();
             const name = document.getElementById('listEditorName').value.trim();
@@ -30771,6 +30787,8 @@ Type any command above (e.g. pm list packages -d)</div>
             // runtime permissions with Android's own dialog (Android 12 and 13 on); below that they are not needed and the row says so
             { key: 'bluetooth', name: 'Bluetooth Connect', perm: 'BLUETOOTH_CONNECT', why: 'Lists the Bluetooth devices this phone is paired with (Connected Devices) and sends files to one.', known: true },
             { key: 'notifications', name: 'Notifications', perm: 'POST_NOTIFICATIONS', why: 'Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.', known: true },
+            // Android 16 and later only (the app reports the row there). No command sets it: the permission is in the manifest, and what can be missing is Notifications and the switch for this app in the phone's own notification settings (`noCommand`)
+            { key: 'live_updates', name: 'Live updates', perm: 'POST_PROMOTED_NOTIFICATIONS', why: "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.", known: true, noCommand: true },
             { key: 'storage_legacy', name: 'Read/Write External Storage', perm: 'READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE', why: 'The older storage permission some apps still check for.', adbOnly: true },
             { key: 'secure_settings', name: 'Write Secure Settings', perm: 'WRITE_SECURE_SETTINGS', why: 'Lets this app change a few protected system settings used by some advanced features.', adbOnly: true },
             { key: 'dump', name: 'Dump system services (DUMP)', perm: 'DUMP', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true },
@@ -30779,10 +30797,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // Every row the app build reports is listed, with or without a working mode (an adbOnly one is locked without it)
         function visiblePermDefs() { return PERM_DEFS.filter(d => !d.known || permStatus[d.key] !== undefined); }
         function permLocked(d) { return !!d.adbOnly && !isPrivilegedActive; }
-        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings, read_logs, bluetooth, notifications }: true when allowed
+        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, dump, restricted_settings, read_logs, bluetooth, notifications, live_updates }: true when allowed
         let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'full' (Settings > Application Permissions) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
+        let permThen = '';                // Live updates asked for Notifications first (Android's dialog is up): once that is allowed, its own screen opens
         let permRetry = null;             // what to do once file access is allowed (the action that asked for it)
         let permRetryAt = 0;              // when it was asked for: an old one is left alone (the access may come from another place, much later)
         function setPermRetry(fn) { permRetry = fn || null; permRetryAt = fn ? Date.now() : 0; }
@@ -30800,7 +30819,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         let permOpenSnap = '';            // the state of every access when the sheet opened: a change by the time it closes starts the app again
         let permAllUsed = false;          // "Allow all" was pressed in this sheet
-        function permSnap() { return PERM_DEFS.map(d => (permStatus[d.key] ? '1' : '0')).join(''); }
+        function permSnap() { return PERM_DEFS.filter(d => !d.noCommand).map(d => (permStatus[d.key] ? '1' : '0')).join(''); }          // Live updates (noCommand) needs no restart: the next notification just uses it
         // Starts the app again so that what was just allowed takes effect everywhere (only where the app can do it)
         function permReload() {
             try { if (window.AndroidBridge && window.AndroidBridge.reloadApp) { showToast('Reloading the app'); setTimeout(() => window.AndroidBridge.reloadApp(), 350); } } catch (e) {}
@@ -30877,6 +30896,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = PERM_DEFS.find(x => x.key === key);
             if (d && permLocked(d) && !permStatus[key]) { showToast('Needs ADB, Shizuku or root'); return; }
             permWaiting = key;
+            permThen = '';
             let answer = 'settings';
             try {
                 if (key === 'files') { if (b.grantAllFilesAccess) answer = String(b.grantAllFilesAccess()); else if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
@@ -30889,6 +30909,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (key === 'read_logs') { if (b.requestReadLogsAccess) answer = String(b.requestReadLogsAccess()); }
                 else if (key === 'bluetooth') { if (b.requestBluetoothAccess) answer = String(b.requestBluetoothAccess()); }
                 else if (key === 'notifications') { if (b.requestNotificationAccess) answer = String(b.requestNotificationAccess()); }
+                else if (key === 'live_updates') {          // Notifications first (a working mode grants it by command, otherwise Android's dialog), then the phone's Live updates screen for this app
+                    if (b.requestLiveUpdatesAccess) answer = String(b.requestLiveUpdatesAccess());
+                    if (answer === 'dialog') permThen = key;
+                }
                 else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
             } catch (e) {}
             if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }
@@ -30933,8 +30957,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 else permRender();
             }
             if (permWaiting) {
+                const waited = permWaiting, then = permThen;
                 permWaiting = '';
-                if (permWalk.length) setTimeout(permNext, 300);               // "Allow all": the next screen
+                permThen = '';
+                if (then && then === waited && permStatus.notifications && !permStatus[waited]) setTimeout(() => permAllow(waited), 300);          // Notifications was allowed: Live updates' own screen opens now (the walk goes on when the person is back)
+                else if (permWalk.length) setTimeout(permNext, 300);          // "Allow all": the next screen
             }
             if (permStatus.files && permRetry) {
                 const fn = permRetry, fresh = Date.now() - permRetryAt < 300000;
@@ -31023,7 +31050,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const m = document.getElementById('permModal');
             if (m && m.classList.contains('show')) return;                    // the sheet is open: its "Allow all" is the offer
             permRefresh();
-            if (visiblePermDefs().every(d => permStatus[d.key])) return;      // nothing missing: nothing to offer (yet)
+            if (visiblePermDefs().every(d => permStatus[d.key] || d.noCommand)) return;      // nothing missing that a command can grant: nothing to offer (yet)
             permOfferDone = true;
             try { b.saveSetting(PERM_OFFER_KEY, '1'); } catch (e) {}
             setTimeout(() => {

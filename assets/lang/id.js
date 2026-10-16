@@ -5072,7 +5072,11 @@ x: {
 "Open speed test": "Buka uji kecepatan",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Menyalakan penghemat baterai Android, sakelar yang sama seperti di Pengaturan > Baterai: layar meredup, kerja latar belakang, sinkronisasi, dan lokasi dibatasi, dan animasi dipersingkat. Ponsel menampilkan ikon penghemat baterainya.",
 "No patch could be applied": "Tidak ada patch yang dapat diterapkan",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android belum selesai setelah 3 menit. Hasilnya terbuka di lembarnya sendiri saat selesai."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android belum selesai setelah 3 menit. Hasilnya terbuka di lembarnya sendiri saat selesai.",
+"Live updates": "Pembaruan langsung",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Hentikan aplikasi di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
+"Saved Applications was turned off. It is on again to show this list.": "Aplikasi Tersimpan tadinya nonaktif. Kini aktif lagi untuk menampilkan daftar ini.",
+"That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
