@@ -11,8 +11,9 @@ name: Build, sign and publish release
 # Without KEYSTORE_BASE64 the run fails: an APK signed with a throwaway key will not install over an existing
 # install. For a test run only, start it by hand with "allow_throwaway_key" ticked: such a run is published as a draft
 # prerelease (no tag, not public until someone publishes it), so the throwaway-key APKs are never offered as an update.
-# The version (the tag without its "v", or the one typed for a manual run) must be the version in AndroidManifest.xml and in a CHANGELOG.md
-# heading of the commit being built (tools/check-release-version.sh), or the run stops before it builds; a throwaway-key test run only warns.
+# The version (the tag without its "v", or the one typed for a manual run) must be the version in AndroidManifest.xml and the newest
+# CHANGELOG.md heading of the commit being built, with a versionCode above the release before's (tools/check-release-version.sh), or the
+# run stops before it builds; a throwaway-key test run only warns.
 on:
   push:
     tags: ['v*']

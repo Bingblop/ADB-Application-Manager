@@ -65,5 +65,5 @@ stricter is fine.
 
 A release is a pull request (version, changelog, README, goldens) → CI green → merge → `release.yml` with the version → verify the three
 APKs, their checksums and the signing certificate. `release.yml` stops before it builds when the version is not the manifest's `versionName`
-and a `CHANGELOG.md` heading with the manifest's `versionCode`, so tag the merged release commit. Do not publish a release without the
+and the newest `CHANGELOG.md` heading, with the manifest's `versionCode` above the release before's, so tag the merged release commit. Do not publish a release without the
 on-device checklist in `docs/DEVICE-TEST-CHECKLIST.md` being offered to the owner.

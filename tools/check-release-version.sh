@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Fails when the version about to be released is not the version the app and its changelog carry:
 #   * AndroidManifest.xml's android:versionName is <version> or <version>-Pro;
-#   * CHANGELOG.md has the heading "## v<version>" or "## v<version>-Pro", and the "(versionCode N)" on it is the manifest's android:versionCode.
+#   * the newest heading of CHANGELOG.md is "## v<version>" or "## v<version>-Pro", the "(versionCode N)" on it is the manifest's
+#     android:versionCode, and that is above the versionCode of the heading under it (the release before: phones and the app's own copies
+#     of its assets go by the versionCode, so one left at the old value would not reach them as an update).
 #
 #   tools/check-release-version.sh <version> [repository root]      (the root defaults to the current folder)
 #
@@ -33,10 +35,23 @@ if [ -z "$name" ]; then echo "FAIL AndroidManifest.xml has no android:versionNam
 elif [ "$name" != "$version" ] && [ "$name" != "$version-Pro" ]; then echo "FAIL AndroidManifest.xml has versionName $name, not $version"; bad=1
 else echo "ok   AndroidManifest.xml has versionName $name"; fi
 
-heading="$(awk -v v="$version" '{ sub(/\r$/, "") } $1 == "##" && ($2 == "v" v || $2 == "v" v "-Pro") { print; exit }' "$changelog")"
-logged="$(printf '%s\n' "$heading" | sed -n 's/.*(versionCode \([0-9][0-9]*\)).*/\1/p')"
+# The version's heading and where it stands, the newest heading, and the one under the newest.
+{ read -r at; read -r heading; read -r first; read -r previous; } < <(awk -v v="$version" '
+  { sub(/\r$/, "") }
+  $1 == "##" && $2 ~ /^v[0-9]/ {
+    n++
+    if (n == 1) first = $0; else if (n == 2) previous = $0
+    if (!at && ($2 == "v" v || $2 == "v" v "-Pro")) { at = n; heading = $0 }
+  }
+  END { print at + 0; print heading; print first; print previous }' "$changelog")
+versioncode() { printf '%s\n' "$1" | sed -n 's/.*(versionCode \([0-9][0-9]*\)).*/\1/p'; }
+logged="$(versioncode "$heading")"
+before="$(versioncode "$previous")"
 if [ -z "$heading" ]; then echo "FAIL CHANGELOG.md has no heading \"## v$version\" (or \"## v$version-Pro\")"; bad=1
+elif [ "$at" != "1" ]; then echo "FAIL CHANGELOG.md's newest heading is \"$first\", not the one for $version (\"$heading\")"; bad=1
 elif [ -z "$logged" ]; then echo "FAIL CHANGELOG.md's heading \"$heading\" does not say (versionCode N)"; bad=1
 elif [ "$logged" != "$code" ]; then echo "FAIL CHANGELOG.md's heading \"$heading\" names versionCode $logged, AndroidManifest.xml has ${code:-none}"; bad=1
-else echo "ok   CHANGELOG.md has \"$heading\""; fi
+elif [ -n "$previous" ] && [ -z "$before" ]; then echo "FAIL CHANGELOG.md's heading \"$previous\" (the release before) does not say (versionCode N)"; bad=1
+elif [ -n "$before" ] && [ "$logged" -le "$before" ]; then echo "FAIL versionCode $logged is not above $before, the versionCode of the release before (\"$previous\")"; bad=1
+else echo "ok   CHANGELOG.md has \"$heading\"${before:+, above versionCode $before}"; fi
 exit "$bad"

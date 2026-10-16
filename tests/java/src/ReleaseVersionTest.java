@@ -95,7 +95,22 @@ public class ReleaseVersionTest {
 
       out = run(script, new File(work, "older"), "7.13.4", manifest("859", "7.14.0-Pro"), LOG);
       check("a tag of an older version on a newer commit fails, although the changelog has that version", status == 1 && out.contains("not 7.13.4"), "exit " + status + "\n" + out);
-      check("... and its heading's versionCode is compared with the manifest's", out.contains("names versionCode 858, AndroidManifest.xml has 859"), out);
+      check("... and its heading is not the changelog's newest", out.contains("newest heading is \"## v7.14.0-Pro (versionCode 859)\", not the one for 7.13.4"), out);
+
+      out = run(script, new File(work, "below"), "7.13.4", manifest("858", "7.13.4-Pro"), LOG);
+      check("a manifest set back to an older version whose section is not the newest fails (the newer section above it)", status == 1 && out.contains("newest heading is") && out.contains("ok   AndroidManifest.xml"), "exit " + status + "\n" + out);
+
+      out = run(script, new File(work, "samecode"), "7.14.1", manifest("859", "7.14.1-Pro"), "## v7.14.1-Pro (versionCode 859)\n\n- Fixes.\n\n" + LOG);
+      check("a versionCode left at the release before's value in both the manifest and the new heading fails (a copied heading line)", status == 1 && out.contains("versionCode 859 is not above 859"), "exit " + status + "\n" + out);
+
+      out = run(script, new File(work, "lowercode"), "7.14.1", manifest("858", "7.14.1-Pro"), "## v7.14.1-Pro (versionCode 858)\n\n" + LOG);
+      check("... and so does one below it", status == 1 && out.contains("versionCode 858 is not above 859"), "exit " + status + "\n" + out);
+
+      out = run(script, new File(work, "raised"), "7.14.1", manifest("860", "7.14.1-Pro"), "## v7.14.1-Pro (versionCode 860)\n\n- Fixes.\n\n" + LOG);
+      check("a new section with a raised versionCode passes and names the one before", status == 0 && out.contains("above versionCode 859"), "exit " + status + "\n" + out);
+
+      out = run(script, new File(work, "prevnocode"), "7.14.1", manifest("860", "7.14.1-Pro"), "## v7.14.1-Pro (versionCode 860)\n\n## v7.14.0-Pro\n");
+      check("a release before without (versionCode N) fails in words (cannot tell that the code went up)", status == 1 && out.contains("(the release before) does not say (versionCode N)"), "exit " + status + "\n" + out);
 
       out = run(script, new File(work, "nolog"), "7.14.1", manifest("860", "7.14.1-Pro"), LOG);
       check("a manifest bumped without a changelog section fails", status == 1 && out.contains("no heading \"## v7.14.1\"") && out.contains("ok   AndroidManifest.xml"), "exit " + status + "\n" + out);
@@ -134,6 +149,7 @@ public class ReleaseVersionTest {
 
       // release.yml runs the check before the build, and only a throwaway-key test run may go on after it fails.
       File yml = new File(repo, ".github/workflows/release.yml");
+      check("release.yml is there", yml.isFile(), null);
       if (yml.isFile()) {
         String wf = new String(Files.readAllBytes(yml.toPath()), StandardCharsets.UTF_8);
         int at = wf.indexOf("bash tools/check-release-version.sh \"$V\"");
@@ -142,6 +158,7 @@ public class ReleaseVersionTest {
         check("... before it builds anything", at >= 0 && build > at, null);
         String step = at < 0 ? "" : wf.substring(wf.lastIndexOf("- name:", at), build < 0 ? wf.length() : wf.lastIndexOf("- name:", build));
         check("... and stops the run when it fails, unless this is a throwaway-key test run", step.contains("steps.key.outputs.throwaway") && step.contains("::error::") && step.contains("exit 1"), step);
+        check("... on every run: the step has no if: and no continue-on-error", !step.matches("(?s).*\\n\\s+(if|continue-on-error):.*"), step);
       }
     } finally {
       deleteTree(work);
