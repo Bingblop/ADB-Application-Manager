@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * types upstream calls common); the media-provider criterion of the arbiter cannot be asked without android.* and keeps the order unchanged.
  * Quirk fixes: an unreadable file leaves only itself out of its size bucket (upstream drops the whole bucket); before a delete every file is looked at again,
  * and a file that changed since the scan (size or date) is left alone, as is a whole set that has no intact copy left to keep; a path can only be a candidate
- * once, so two walks that meet cannot make a file its own duplicate.
+ * once (whatever its case: shared storage does not tell "DCIM" from "dcim"), so two walks that meet cannot make a file its own duplicate.
  *
  * What it does: walks public storage (or the chosen search locations), keeps the files of at least the minimum size (and of a common type), groups them by size,
  * reads the first 64 KiB of the files of every size that occurs twice or more, hashes (SHA-256) those whose start is equal, and every hash that occurs twice or more
@@ -413,7 +413,12 @@ public final class SdmDedup implements Sdm.ToolImpl {
             return a == null ? null : Boolean.valueOf(a.primary);
         }
 
-        /** The candidates: files of at least minSize (and of a common type), found below the search locations, by path. */
+        /**
+         * The candidates: files of at least minSize (and of a common type), found below the search locations, by path in lower case. Every area searched here is
+         * case-insensitive storage (FUSE / sdcardfs, vfat, exfat), so two locations that name one folder in another case ("DCIM" and "dcim") reach the same file
+         * under two spellings: the first one found is the candidate, the other is the same file, never a copy of it. On a case-sensitive disk this can only miss a
+         * duplicate, never delete one.
+         */
         Map<String, Sdm.Entry> search(List<String> custom, final long minSize, final boolean skipUncommon) throws IOException {
             final Map<String, Sdm.Entry> found = new LinkedHashMap<String, Sdm.Entry>();
             final String[] where = { "" };
@@ -463,8 +468,8 @@ public final class SdmDedup implements Sdm.ToolImpl {
                             if ((++seen[0] & 63) == 0) progress("Searching", e.path, seen[0], -1);
                             return true;
                         }
-                        if (e.type == Sdm.FILE && e.size >= minSize && (!skipUncommon || isCommon(e.name)) && !found.containsKey(e.path)) {
-                            found.put(e.path, e);
+                        if (e.type == Sdm.FILE && e.size >= minSize && (!skipUncommon || isCommon(e.name)) && !found.containsKey(key(e.path))) {
+                            found.put(key(e.path), e);
                             candidateBytes += e.size;
                         }
                         return true;
@@ -474,6 +479,8 @@ public final class SdmDedup implements Sdm.ToolImpl {
             progress("Searching", where[0], seen[0], -1);
             return found;
         }
+
+        private static String key(String path) { return path.toLowerCase(Locale.ROOT); }
 
         /** The ChecksumSleuth: size buckets of two or more, a 64 KiB prefix check, SHA-256 of what is left, hashes seen twice or more. */
         List<List<Group>> checksums(Map<String, Sdm.Entry> candidates) throws Exception {

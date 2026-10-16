@@ -224,6 +224,7 @@ public class SdmDedupTest {
             scanBasics();
             filters();
             locations();
+            aliasSpelling();
             arbiterChoice();
             exclusionsAndLinks();
             progressAndCancel();
@@ -427,6 +428,37 @@ public class SdmDedupTest {
         Env e8 = new Env();
         e8.areas.list.add(new Sdm.AreaInfo(Sdm.Area.PORTABLE, sd + "/Music2", false, "java", ""));
         is("a path that two areas reach is a candidate once", files(new SdmDedup().scan(e8.ctx()), sha(B)).size() == new HashSet<String>(files(new SdmDedup().scan(e8.ctx()), sha(B))).size(), true);
+    }
+
+    /**
+     * Shared storage is case-insensitive: two search locations that name one folder in another case ("DCIM" and "dcim") find every file in it twice. The second
+     * spelling is the same file, not a copy, and must never be offered or deleted. A link "alias" -> "Alias" stands in for the case-insensitive lookup here (on a
+     * case-insensitive test disk the second spelling already exists).
+     */
+    static void aliasSpelling() throws Exception {
+        new File(root, "sd/Alias").mkdirs();
+        File link = new File(root, "sd/alias");
+        boolean made = false;
+        if (!Files.exists(link.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) { Files.createSymbolicLink(link.toPath(), new File(root, "sd/Alias").toPath()); made = true; }
+        try {
+            String[][] spellings = { { sd + "/Alias", sd + "/alias" }, { sd, sd + "/alias" } };
+            for (String[] locs : spellings) {
+                write("sd/Alias/Camera/one.jpg", content("ALIAS", 900), T0);
+                Env e = new Env();
+                e.settings.put("scan.location.paths", new JSONArray(Arrays.asList(locs)));
+                Sdm.Result r = new SdmDedup().scan(e.ctx());
+                boolean offered = false;
+                JSONArray g = r.groups(0, 1000);
+                for (int i = 0; i < g.length(); i++) for (String f : files(r, g.getJSONObject(i).getString("id"))) if (f.toLowerCase(java.util.Locale.ROOT).endsWith("/camera/one.jpg")) offered = true;
+                is("locations " + rel(locs[0]) + " and " + rel(locs[1]) + ": one file under two spellings is not a duplicate set", offered, false);
+                if (locs[0].equals(sd)) continue;                   // the whole card: no delete, the other tests need their files
+                new SdmDedup().delete(r, new Sdm.Selection(), e.ctx());
+                is("locations " + rel(locs[0]) + " and " + rel(locs[1]) + ": the only copy is still there after the delete", exists("sd/Alias/Camera/one.jpg"), true);
+            }
+        } finally {
+            if (made) Files.delete(link.toPath());
+            new SdmFsJava().delete(new File(root, "sd/Alias").getPath());
+        }
     }
 
     static void arbiterChoice() throws Exception {
