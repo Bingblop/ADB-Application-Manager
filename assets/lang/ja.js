@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "この端末のインターネット接続（Ping、ダウンロード、アップロード）を Cloudflare のサーバーで測定します。結果はこの端末に保存されます。",
 "Open speed test": "速度テストを開く",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android のバッテリーセーバーをオンにします。設定 > バッテリー と同じスイッチです。画面が暗くなり、バックグラウンド処理、同期、位置情報が制限され、アニメーションが短くなります。スマートフォンにバッテリーセーバーのアイコンが表示されます。",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。"
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。",
+"Live updates": "ライブアップデート",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "「アプリを停止」の通知の進行状況を、ステータスバーにライブアップデートとして表示します（Android 16 以降）。通知の許可と、スマートフォンの通知設定にあるこのアプリのスイッチも必要です。",
+"Saved Applications was turned off. It is on again to show this list.": "「保存したアプリ」はオフになっていました。このリストを表示するため、再びオンにしました。",
+"That saved list is not there any more.": "その保存リストはもうありません。",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],

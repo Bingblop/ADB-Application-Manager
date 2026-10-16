@@ -5072,7 +5072,11 @@ x: {
 "Open speed test": "Geschwindigkeitstest öffnen",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Schaltet den Energiesparmodus von Android ein, derselbe Schalter wie unter Einstellungen > Akku: Der Bildschirm wird dunkler, Hintergrundarbeit, Synchronisierung und Standort werden eingeschränkt und Animationen verkürzt. Das Telefon zeigt sein Energiespar-Symbol.",
 "No patch could be applied": "Kein Patch konnte angewendet werden",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android ist nach 3 Minuten noch nicht fertig. Das Ergebnis öffnet sich in einem eigenen Blatt, wenn es fertig ist."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android ist nach 3 Minuten noch nicht fertig. Das Ergebnis öffnet sich in einem eigenen Blatt, wenn es fertig ist.",
+"Live updates": "Live-Updates",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Zeigt den Fortschritt der Benachrichtigung „Apps beenden“ in der Statusleiste als Live-Update an (Android 16 und neuer). Dazu braucht es auch Benachrichtigungen und den Schalter für diese App in den Benachrichtigungseinstellungen des Telefons.",
+"Saved Applications was turned off. It is on again to show this list.": "„Gespeicherte Apps“ war ausgeschaltet. Es wurde wieder eingeschaltet, um diese Liste zu zeigen.",
+"That saved list is not there any more.": "Diese gespeicherte Liste gibt es nicht mehr.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ist noch nicht verbunden, daher liest eine Ask-Agent-Schaltfläche für dich das Web (kostenlos, ohne Schlüssel), bis es so weit ist. Füge den Schlüssel unter Konsole → Terminal hinzu."],

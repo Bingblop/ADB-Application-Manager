@@ -71,6 +71,8 @@ public class MainActivity extends Activity {
     private boolean pageReady = false;
     // An APK opened from outside (default-installer intent) waiting to be handed to the Installer tab.
     private String pendingInstallRef = null;
+    // The Stop apps notification was tapped: the id of the quick list whose sheet the page opens once it is ready (takeQuickOpen).
+    private String pendingQuickOpen = null;
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -299,6 +301,7 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
                 deliverPendingInstall();
+                deliverPendingQuickOpen();
             }
 
             // The page holds a powerful bridge (shell, files, installs), so it never navigates away from the
@@ -375,6 +378,8 @@ public class MainActivity extends Activity {
         }
         Intent launch = getIntent();
         if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
+        // a tap on the Stop apps notification that starts the window: handed over once, not again by a recreate or a start from Recents
+        if (launch != null && QuickStopRun.openAtCreate(savedInstanceState != null, launch.getFlags())) takeQuickOpen(launch);
         maybeRequestFirstLaunchPermissions();
         // A package file deleted with an Undo whose few seconds ran out while the app was closed: it is deleted for good now
         if (prefs != null && prefs.getBoolean("apk_trash_pending", false)) {
@@ -464,6 +469,28 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIncomingIntent(intent);
+        takeQuickOpen(intent);
+    }
+
+    /**
+     * The Stop apps notification was tapped (QuickStopNotice): remembers which quick list's sheet to show. The extra is taken out of the intent, so a
+     * window that is created again from it does not open the sheet a second time.
+     */
+    private void takeQuickOpen(Intent intent) {
+        if (intent == null || isHeadless()) return;
+        String id = intent.getStringExtra(QuickActions.EXTRA_OPEN_QUICK_LIST);
+        if (id == null) return;
+        intent.removeExtra(QuickActions.EXTRA_OPEN_QUICK_LIST);
+        pendingQuickOpen = id;
+        deliverPendingQuickOpen();
+    }
+
+    /** Hands the tap on the Stop apps notification to the page once it is ready: Saved Applications, with the quick list's sheet. */
+    private void deliverPendingQuickOpen() {
+        if (!pageReady || pendingQuickOpen == null) return;
+        final String id = pendingQuickOpen;
+        pendingQuickOpen = null;
+        notifyJs("window.onQuickStopOpen && window.onQuickStopOpen(" + JSONObject.quote(id) + ")");
     }
 
     /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
@@ -846,23 +873,59 @@ public class MainActivity extends Activity {
         return sdmHostInstance;
     }
 
-    /** Force-stops every app in the quick list. */
+    /**
+     * Force-stops every app in the quick list, except this app, the WebView provider and Media Picker (QuickStopRun.protectedPackages): stopping those
+     * would end this run or the window it is shown in. A notification shows how far it is and has Cancel (QuickStopNotice); it goes when the run ends.
+     */
     private String quickStopList() throws Exception {
         JSONObject list = QuickActions.quickList(this);
         if (list == null) return "No quick list set. Open Saved Applications in the app and tap Quick list.";
         if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
+        List<String> listed = new ArrayList<String>();
         org.json.JSONArray pkgs = list.optJSONArray("packages");
-        AndroidBridge bridge = new AndroidBridge();
-        int ok = 0, failed = 0;
-        for (int i = 0; pkgs != null && i < pkgs.length(); i++) {
-            String out = bridge.executeAppAction("force_stop", pkgs.optString(i));
-            // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
-            // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
-            if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') { if (out.charAt(1) == '1') ok++; else failed++; }
-            else if (launchOutputFailed(out)) failed++;
-            else ok++;
+        for (int i = 0; pkgs != null && i < pkgs.length(); i++) listed.add(pkgs.optString(i));
+        final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
+        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
+        if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Stop apps is already running. Tap Cancel in its notification to stop it.";
+        try {
+            AndroidBridge bridge = new AndroidBridge();
+            for (String pkg : run.targets()) {
+                if (run.cancelled()) break;                          // Cancel: the apps not reached yet are left as they are
+                run.starting(appLabel(pkg));
+                if (run.shouldPost(android.os.SystemClock.elapsedRealtime())) QuickStopNotice.show(app, run);
+                String out = bridge.executeAppAction("force_stop", pkg);
+                // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
+                // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
+                boolean stopped;
+                if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') stopped = out.charAt(1) == '1';
+                else stopped = !launchOutputFailed(out);
+                run.finished(stopped);
+            }
+        } finally {
+            QuickStopRun.end(run);
+            QuickStopNotice.clear(app, run);
         }
-        return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
+        return run.summary();
+    }
+
+    /** The package of the WebView this phone uses (Android System WebView, or Chrome on a phone that uses it), or "" when the phone does not say. */
+    private static String webViewPackageName() {
+        try {
+            PackageInfo pi = WebView.getCurrentWebViewPackage();
+            return pi == null || pi.packageName == null ? "" : pi.packageName;
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** The name people know an app by, or its package name when the phone has none to give. */
+    private String appLabel(String pkg) {
+        try {
+            PackageManager pm = getPackageManager();
+            CharSequence label = pm.getApplicationLabel(pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES));
+            if (label != null && label.length() > 0) return label.toString();
+        } catch (Exception ignored) {}
+        return pkg;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -13260,6 +13323,7 @@ public class MainActivity extends Activity {
                 o.put("read_logs", hasReadLogsAccess());
                 o.put("bluetooth", hasBluetoothConnectAccess());
                 o.put("notifications", hasNotificationAccess());
+                if (QuickStopNotice.liveSupported()) o.put("live_updates", QuickStopNotice.liveAllowed(MainActivity.this));          // Android 16 and later only: an older phone has no such row
                 // runtime permissions this Android version does not have yet: held without asking, and the sheet says "Not needed"
                 o.put("bluetooth_na", Build.VERSION.SDK_INT < 31);
                 o.put("notifications_na", Build.VERSION.SDK_INT < 33);
@@ -13382,6 +13446,35 @@ public class MainActivity extends Activity {
             return requestRuntimeForSheet("android.permission.POST_NOTIFICATIONS", 33);
         }
 
+        /**
+         * Live updates (Android 16 and later) for the permissions sheet. No command sets it: the permission is in the manifest, so what can be missing is Notifications
+         * (asked for first, the way the Notifications row asks: a working mode grants it by command, otherwise Android's own dialog comes up) and the switch for this app on
+         * the phone's own Live updates screen, which opens. Answer: "granted", "dialog" or "settings".
+         */
+        @JavascriptInterface
+        public String requestLiveUpdatesAccess() {
+            if (!QuickStopNotice.liveSupported() || QuickStopNotice.liveAllowed(MainActivity.this)) return "granted";
+            if (!hasNotificationAccess()) {
+                String asked = requestNotificationAccess();
+                if (!"granted".equals(asked)) return asked;              // Android's dialog is up: the page asks again once it is answered (permThen), and then the screen below opens
+                if (QuickStopNotice.liveAllowed(MainActivity.this)) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent in = QuickStopNotice.liveSettingsIntent(MainActivity.this);
+                        if (in == null) {
+                            in = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        }
+                        startActivity(in);
+                    } catch (Exception e) { openOwnAppInfo(); }
+                }
+            });
+            return "settings";
+        }
+
         private String requestRuntimeForSheet(final String perm, int fromSdk) {
             if (Build.VERSION.SDK_INT < fromSdk) return "granted";
             if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
@@ -13449,7 +13542,7 @@ public class MainActivity extends Activity {
 
         /**
          * "Allow all" through the working mode: everything that has a command is granted at once ({@code appops set} and {@code pm grant}), restricted settings first,
-         * because Usage access needs it. Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
+         * because Usage access needs it. (Live updates has no command: see {@link #requestLiveUpdatesAccess}.) Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
          * its Android screen.
          */
         @JavascriptInterface

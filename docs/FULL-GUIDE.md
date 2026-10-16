@@ -955,11 +955,28 @@ Two tiles and one widget run **without opening the app**:
 | | Does |
 |---|---|
 | **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode |
-| **Stop apps** tile / **🛑 Stop apps** widget button | Force-stops every app in your **quick list** |
+| **Stop apps** tile / **🛑 Stop apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
 
 Choose the quick list in **Saved Lists** with **🛑 Quick list** on a card. To add the tiles, swipe down twice,
 tap ✏️ and drag **Working mode** and **Stop apps** into your panel. For the widget, long-press the home
 screen → Widgets → ADB App Manager.
+
+**The Stop apps notification.** While the run goes on, a notification *Stopping apps* shows the place it has
+reached (*3 of 12 · Chrome*), the list's name and a progress bar. It goes away when the run ends, and the usual
+short message follows (*Force-stopped 5 apps*, with *, 1 failed* and *, 2 left alone* when they apply).
+
+- **Cancel** stops the run after the app it is on, leaves the apps it did not reach as they are, and clears the
+  notification (*Cancelled after 3 of 12 apps*).
+- **Tapping the notification** opens the app on **Saved Lists** with the *Edit Saved List* sheet of the quick
+  list. The run is not touched: it goes on while you look.
+- On **Android 16 and newer** it asks to be a *Live Update* (a small chip in the status bar, *3/12*). That needs
+  the **Live updates** row of the Permissions sheet (and Notifications); no command can switch it on, so its
+  **Allow** asks for Notifications first and then opens the phone's Live updates screen for this app. Where the
+  phone does not show a Live Update, you get the same notification without the chip.
+- A second tap while a run goes on does not start another one.
+- **Never stopped, whatever the list says:** this app, the phone's WebView app (the one that draws this
+  app's window) and Media Picker (`com.google.android.providers.media.module`). They stay in the list and the
+  message counts them as *left alone*.
 
 Both go through `QuickActionActivity`, which is `MainActivity` without its UI, so the ADB, Shizuku and Root
 code is shared instead of duplicated:

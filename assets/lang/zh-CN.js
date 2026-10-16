@@ -5072,7 +5072,11 @@ x: {
 "Open speed test": "打开速度测试",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "开启 Android 的省电模式，与设置 > 电池中的开关相同：屏幕变暗，后台工作、同步和定位受限，动画缩短。手机会显示省电模式图标。",
 "No patch could be applied": "没有任何补丁能够应用",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分钟后 Android 仍未完成。完成后结果会在单独的面板中打开。"
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分钟后 Android 仍未完成。完成后结果会在单独的面板中打开。",
+"Live updates": "实时更新",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "在状态栏中以实时更新的形式显示“停止应用”通知的进度（Android 16 及更高版本）。还需要“通知”权限，以及手机通知设置中此应用的开关。",
+"Saved Applications was turned off. It is on again to show this list.": "“已保存应用”已关闭，现已重新开启以显示此列表。",
+"That saved list is not there any more.": "该已保存列表已不存在。",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} 尚未连接，因此在连接之前，询问代理按钮会为你读取网页（免费，无需密钥）。请在“控制台 → 终端”中添加其密钥。"],

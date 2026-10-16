@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "يقيس اتصال هذا الهاتف بالإنترنت: Ping والتنزيل والرفع، مقابل خوادم Cloudflare. تُحفظ النتائج على هذا الهاتف.",
 "Open speed test": "فتح اختبار السرعة",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "يشغّل توفير البطارية في Android، وهو المفتاح نفسه الموجود في الإعدادات > البطارية: تخفت الشاشة، ويُقيَّد العمل في الخلفية والمزامنة والموقع، وتتقلّص الرسوم المتحركة. يعرض الهاتف أيقونة توفير البطارية.",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "لم ينتهِ Android بعد 3 دقائق. تُفتح النتيجة في لوحتها الخاصة عندما ينتهي."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "لم ينتهِ Android بعد 3 دقائق. تُفتح النتيجة في لوحتها الخاصة عندما ينتهي.",
+"Live updates": "التحديثات المباشرة",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "يعرض تقدّم إشعار «إيقاف التطبيقات» في شريط الحالة كتحديث مباشر (Android 16 والإصدارات الأحدث). ويحتاج أيضًا إلى الإشعارات وإلى مفتاح هذا التطبيق في إعدادات الإشعارات بالهاتف.",
+"Saved Applications was turned off. It is on again to show this list.": "كانت «التطبيقات المحفوظة» متوقفة. تم تشغيلها مجددًا لعرض هذه القائمة.",
+"That saved list is not there any more.": "هذه القائمة المحفوظة لم تعد موجودة.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],

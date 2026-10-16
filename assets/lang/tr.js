@@ -5072,7 +5072,11 @@ x: {
 "Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Bu telefonun internet bağlantısını Cloudflare sunucularıyla ölçer: ping, indirme ve yükleme. Sonuçlar bu telefonda saklanır.",
 "Open speed test": "Hız testini aç",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android'in pil tasarrufunu açar; Ayarlar > Pil'deki anahtarın aynısıdır: ekran kararır, arka plan işi, eşitleme ve konum sınırlanır, animasyonlar kısalır. Telefon pil tasarrufu simgesini gösterir.",
-"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android 3 dakika sonra hâlâ bitirmedi. Bittiğinde sonuç kendi sayfasında açılır."
+"Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android 3 dakika sonra hâlâ bitirmedi. Bittiğinde sonuç kendi sayfasında açılır.",
+"Live updates": "Canlı güncellemeler",
+"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Uygulamaları durdur bildiriminin ilerleyişini durum çubuğunda Canlı Güncelleme olarak gösterir (Android 16 ve sonrası). Bildirimler ile telefonun bildirim ayarlarındaki bu uygulamaya ait anahtar da gerekir.",
+"Saved Applications was turned off. It is on again to show this list.": "Kayıtlı Uygulamalar kapalıydı. Bu listeyi göstermek için yeniden açıldı.",
+"That saved list is not there any more.": "Bu kayıtlı liste artık yok.",
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
