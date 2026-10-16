@@ -32299,9 +32299,12 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function txCopyScreen() {
             const sc = txScreen(txCurShell());
-            const sel = String(window.getSelection ? window.getSelection() : '');
-            copyText(sel && sc.el.contains(window.getSelection().anchorNode) ? sel : sc.el.innerText);
-            showToast(sel ? 'Copied the selection' : 'Copied the screen');
+            const s = window.getSelection ? window.getSelection() : null;
+            const sel = s ? String(s) : '';
+            // text selected elsewhere (the input line, a label) is not copied: the screen is, and the toast says so
+            const inScreen = !!sel && sc.el.contains(s.anchorNode);
+            copyText(inScreen ? sel : sc.el.innerText);
+            showToast(inScreen ? 'Copied the selection' : 'Copied the screen');
         }
 
         // ---------------------------------------------------------------- running commands
