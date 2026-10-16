@@ -5631,7 +5631,6 @@
 {"k":"Your {0} list is removed first. Back up now if you may want them.","ctx":"built by the code of: lists restore from"},
 {"k":"Your {0} lists are removed first. Back up now if you may want them.","ctx":"built by the code of: lists restore from"},
 {"k":"You’re on the latest version ({0}). ✓","ctx":"built by the code of: on self update"},
-{"k":"^(?:\\S+\\s+){{0}}\\S+\\s","ctx":"built by the code of: parse ls line"},
 {"k":"agents: {0}","ctx":"built by the code of: tx slash"},
 {"k":"am force-stop {0}","ctx":"built by the code of: stop"},
 {"k":"am get-standby-bucket {0}","ctx":"built by the code of: open standby modal"},

@@ -22515,7 +22515,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sz = parseInt(parts[4], 10); if (!isNaN(sz)) size = sz;
             // the name is cut from the line as ls printed it (one space after the time), not put together again from its words:
             // "a  b.txt", a tab or a leading space in a name is kept, so the row's actions reach that file and not a near twin
-            const at = timeIdx >= 0 ? ln.match(new RegExp('^(?:\\S+\\s+){' + timeIdx + '}\\S+\\s')) : null;
+            const at = timeIdx >= 0 ? ln.match(new RegExp('^(\\S+\\s+){' + timeIdx + '}\\S+\\s')) : null;          // a plain group: tests/i18n/extract.js would take '(?:' for text
             if (at && at[0].length < ln.length) name = ln.slice(at[0].length);
             else name = parts[parts.length - 1];
             let link = null;
