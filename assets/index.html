@@ -21785,6 +21785,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (typeof mp === 'object' && mp && mp.h && mp.h.tab === 'set' && document.getElementById('mpSheetBody') && typeof mpHelperRender === 'function') { try { mpHelperRender(); } catch (e) {} }
         }
         let vtBusyScan = false;
+        let vtScanPath = '';           // the file the last scan was sent for; an answer for any other file is dropped
 
         function vtBaseApkPath() {
             if (!installData || !installData.splits) return '';
@@ -21795,7 +21796,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function resetVtScan() {
             const box = document.getElementById('vtResultBox');
             if (box) { box.style.display = 'none'; box.innerHTML = ''; }
-            vtBusyScan = false;
+            vtBusyScan = false; vtScanPath = '';
             vtRefreshUi();
         }
 
@@ -21808,13 +21809,15 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             const box = document.getElementById('vtResultBox');
             box.style.display = ''; box.innerHTML = upload ? 'Uploading to VirusTotal…' : 'Checking VirusTotal…';
-            document.getElementById('vtScanBtn').disabled = true; vtBusyScan = true;
+            document.getElementById('vtScanBtn').disabled = true; vtBusyScan = true; vtScanPath = path;
             if (upload) window.AndroidBridge.virusTotalUpload(key, path);
             else window.AndroidBridge.virusTotalScan(key, path);
         }
 
         function onVtResult(json) {
             let d; try { d = JSON.parse(json); } catch (e) { return; }
+            // the app names the file each answer is for: a late answer for a package that was replaced since, or for an earlier scan, is not this package's verdict
+            if (d.path != null && d.path !== vtScanPath) return;
             const box = document.getElementById('vtResultBox');
             const btn = document.getElementById('vtScanBtn');
             if (!box) return;

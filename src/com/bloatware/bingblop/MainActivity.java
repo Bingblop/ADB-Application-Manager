@@ -3708,7 +3708,8 @@ public class MainActivity extends Activity {
 
     /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
-     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
+     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json), each with the
+     * path it is for, so the page can drop a late answer for a package that was replaced while the scan ran.
      */
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
         executor.submit(new Runnable() {
@@ -3730,17 +3731,19 @@ public class MainActivity extends Activity {
                     f = staged;
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
-                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
+                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…")
+                            .put("path", path));
                     String sha = VirusTotal.sha256(f);
                     JSONObject res = upload
                             ? VirusTotal.uploadAndWait(apiKey.trim(), f, sha, 180000)
                             : VirusTotal.lookup(apiKey.trim(), sha);
                     res.put("stage", "done");
                     res.put("size", f.length());
+                    res.put("path", path);
                     notifyUpdates("onVtResult", res);
                 } catch (Exception e) {
                     try {
-                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
+                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)).put("path", path));
                     } catch (Exception ignored) {}
                 } finally {
                     if (staged != null) staged.delete();
