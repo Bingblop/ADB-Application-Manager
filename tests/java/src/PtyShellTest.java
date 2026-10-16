@@ -190,6 +190,28 @@ public class PtyShellTest {
         type(r, "exit 9\n");
         is("the exit status of the program is reported", r.done.await(4, TimeUnit.SECONDS) && r.code == 9, "code " + r.code);
 
+        // ---- the shell ends while a job it left in the background still has the terminal (SYS-2) ----
+        // The job keeps the terminal open, so its output never ends: the helper used to wait for that, and the page showed an open, dead terminal.
+        String jmark = "sleep " + (40000 + new java.util.Random().nextInt(20000));
+        Rec j = start(h, 24, 80, "/bin/bash", "--norc", "-i");
+        is("a shell for a background job", j.waitFor("bash-", 3000), j.text());
+        type(j, jmark + " &\n");
+        long j0 = System.currentTimeMillis();
+        int jPid = -1;
+        while (jPid < 0 && System.currentTimeMillis() - j0 < 3000) { jPid = pidOf(jmark); if (jPid < 0) Thread.sleep(20); }
+        type(j, "exit 3\n");
+        long j1 = System.currentTimeMillis();
+        boolean jEnded = j.done.await(3, TimeUnit.SECONDS);
+        long jMs = System.currentTimeMillis() - j1;
+        is("the shell exits while its background job runs: the end is reported at once, with the shell's status",
+                jPid > 0 && pidOf(jmark) == jPid && jEnded && j.code == 3 && jMs < 1500, "job " + jPid + ", ended " + jEnded + " after " + jMs + " ms, code " + j.code);
+        if (!jEnded) j.sh.close();
+        if (pidOf(jmark) > 0) new ProcessBuilder("kill", "-9", String.valueOf(pidOf(jmark))).start().waitFor();
+        // the helper holds SIGCHLD back to notice the end: the program must not inherit that (a shell would not see its own jobs end)
+        Rec sb = start(h, 24, 80, "/bin/sh", "-c", "grep SigBlk /proc/self/status");
+        java.util.regex.Matcher sbm = java.util.regex.Pattern.compile("SigBlk:\\s*([0-9a-f]+)").matcher(sb.done.await(4, TimeUnit.SECONDS) ? sb.text() : "");
+        is("the program starts with SIGCHLD not blocked", sbm.find() && (Long.parseUnsignedLong(sbm.group(1), 16) & (1L << 16)) == 0, sb.text());
+
         // ---- other endings ----
         Rec q = start(h, 24, 80, "/bin/sh", "-c", "echo bye; exit 3");
         is("a short program: output and status 3", q.done.await(4, TimeUnit.SECONDS) && q.code == 3 && q.text().contains("bye"), q.text() + " " + q.code);

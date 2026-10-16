@@ -47,5 +47,21 @@ for arch,qemu,helper,prog in (('aarch64','qemu-aarch64','arm64-v8a/libptyexec.so
         for q in left:
             try: os.kill(q,9)
             except OSError: pass
+    # the program ends while a child it left in a process group of its own (a shell's `job &`, then `exit`) still has the terminal open: the
+    # helper ends with the program all the same (it used to wait for the terminal to close, that is for the child), with its status and its output
+    p=subprocess.Popen(cmd+['bg'],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+    t0=time.time()
+    try: rc=p.wait(timeout=3)
+    except subprocess.TimeoutExpired: p.kill(); rc=p.wait()
+    dt=time.time()-t0
+    out=p.stdout.read()
+    kids=[int(x) for x in re.findall(rb'child (\d+)',out)]
+    held=[q for q in kids if alive(q)]
+    good=(b'ready' in out and rc==7 and dt<1.5 and len(held)==1)
+    print(('ok   ' if good else 'FAIL ')+arch+': the program ends, a background job keeps the terminal: status %d after %.2f s, job still running %s'%(rc,dt,held), '' if good else out); ok=ok and good
+    for q in held:
+        try: os.kill(q,9)
+        except OSError: pass
+    p.stdin.close()
 sys.exit(0 if ok else 1)
 PY
