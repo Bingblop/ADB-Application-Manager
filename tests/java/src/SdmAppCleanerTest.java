@@ -99,7 +99,12 @@ public class SdmAppCleanerTest {
     static final class FakeExcl implements Sdm.Exclusions {
         final Set<String> pkgs = new HashSet<String>();
         final TreeSet<String> paths = new TreeSet<String>();
-        @Override public boolean excludesPath(Sdm.Tool t, String path) { return SdmAppCleaner.pathExcluded(paths, path); }
+        final List<String[]> segments = new ArrayList<String[]>();      // segment exclusions: they match by name, and paths() does not list them (as in SdmExclusions)
+        @Override public boolean excludesPath(Sdm.Tool t, String path) {
+            if (SdmAppCleaner.pathExcluded(paths, path)) return true;
+            for (String[] s : segments) if (SdmExclusions.containsSegments(Sdm.segments(path), s, false, false)) return true;
+            return false;
+        }
         @Override public boolean excludesPackage(Sdm.Tool t, String pkg) { return pkgs.contains(pkg); }
         @Override public List<String> paths(Sdm.Tool t) { return new ArrayList<String>(paths); }
     }
@@ -826,6 +831,26 @@ public class SdmAppCleanerTest {
             p.delete(r, sel("{\"options\":{\"includeInaccessible\":false}}"));
             is("it is still there after the delete", exists(p.pubData + "/com.alpha/files/.thumbnails/keep/k.jpg"), true);
         } finally { p.cleanup(); }
+
+        // ... and so is a folder that holds what a segment exclusion matches (paths() does not list segment exclusions): found in the walk, or made after the scan
+        for (int after = 0; after < 2; after++) {
+            p = deletePhone();
+            try {
+                String dir = p.pubData + "/com.alpha/cache/offline";
+                p.file(dir + "/keep.dat", 5);
+                p.file(dir + "/junk.tmp", 6);
+                String[] seg = { "offline", "keep.dat" };
+                if (after == 0) p.excl.segments.add(seg);
+                SdmAppCleaner.AppResult r = p.scan();
+                String when = after == 0 ? "segment exclusion before the scan: " : "segment exclusion after the scan: ";
+                if (after == 0) is(when + "the folder that holds the excluded file is not in the result", pathsOf(r, "com.alpha").contains(dir), false);
+                is(when + "the file next to it is", pathsOf(r, "com.alpha").contains(dir + "/junk.tmp"), true);
+                if (after == 1) p.excl.segments.add(seg);
+                p.delete(r, sel("{\"options\":{\"includeInaccessible\":false}}"));
+                is(when + "the excluded file is still there after the delete", exists(dir + "/keep.dat"), true);
+                is(when + "the file next to it is deleted", exists(dir + "/junk.tmp"), false);
+            } finally { p.cleanup(); }
+        }
 
         // cancel: what was deleted is reported, the rest stays
         p = deletePhone();

@@ -881,9 +881,10 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
 
         // ---- the walks
         final Map<String, Junk> junks = new LinkedHashMap<String, Junk>();
+        final TreeSet<String> excludedSeen = new TreeSet<String>();     // what an exclusion kept out of the walks, segment exclusions too (paths() lists path exclusions only)
         Map<String, Sdm.Pkg> pkgByName = new HashMap<String, Sdm.Pkg>();
         for (Sdm.Pkg p : scanPkgs) pkgByName.put(p.pkg, p);
-        readAppDirs(ctx, filters, searchMap, pkgByName, limitedPkgs, minAgeMs, adbNoRoot, junks);
+        readAppDirs(ctx, filters, searchMap, pkgByName, limitedPkgs, minAgeMs, adbNoRoot, junks, excludedSeen);
 
         // ---- inaccessible caches
         Map<String, Inacc> inaccessible = Collections.emptyMap();
@@ -914,7 +915,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         res.pruneOrphanedLimited();
 
         // ---- post processing
-        postProcess(ctx, res, minSize, adbNoRoot);
+        postProcess(ctx, res, minSize, adbNoRoot, excludedSeen);
         res.sort();
         return res;
     }
@@ -1023,7 +1024,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
     }
 
     private void readAppDirs(final Sdm.Ctx ctx, final Filters filters, Map<String, SearchPath> map, final Map<String, Sdm.Pkg> pkgs, final Set<String> limited, final long minAgeMs,
-                             final boolean adbNoRoot, final Map<String, Junk> junks) throws IOException {
+                             final boolean adbNoRoot, final Map<String, Junk> junks, final Set<String> excludedSeen) throws IOException {
         final long cutOffMs = ctx.nowSec * 1000L - minAgeMs;
         final long[] bytes = { 0 };
         int total = map.size(), done = 0;
@@ -1045,7 +1046,7 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
                     if (dir ? (path + "/").contains("/org.winehq.wine/files/prefix/") || (path + "/").contains("/.wine/") : false) return false;
                     if (ctx.exclusions != null && ctx.exclusions.excludesPath(Sdm.Tool.APPCLEANER, path)) {
                         boolean keepForTrim = adbNoRoot && hasPkgCache(path, owners);
-                        if (!keepForTrim) return false;
+                        if (!keepForTrim) { excludedSeen.add(path); return false; }
                     }
                     if (minAgeMs != 0 && e.mtime * 1000L >= cutOffMs) return true;
                     String[] pfp = ai.pfp(path);
@@ -1108,8 +1109,8 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
     }
 
     /** PostProcessorModule: aliases, exclusions, the ADB manager app, packages of the Google modules, the minimum size, empty apps. */
-    private void postProcess(Sdm.Ctx ctx, AppResult res, long minSize, boolean adbNoRoot) {
-        TreeSet<String> exclPaths = new TreeSet<String>();
+    private void postProcess(Sdm.Ctx ctx, AppResult res, long minSize, boolean adbNoRoot, Set<String> excludedSeen) {
+        TreeSet<String> exclPaths = new TreeSet<String>(excludedSeen);     // a folder that holds what a segment exclusion kept out of the walk goes too
         if (ctx.exclusions != null) exclPaths.addAll(ctx.exclusions.paths(Sdm.Tool.APPCLEANER));
         for (Iterator<Junk> it = res.junks.iterator(); it.hasNext(); ) {
             Junk j = it.next();
@@ -1240,9 +1241,10 @@ public final class SdmAppCleaner implements Sdm.ToolImpl {
         // ---- files
 
         private void deleteFiles(Junk j) {
-            // what the user kept inside a selected folder keeps the folder, and so does what an exclusion holds
+            // what the user kept inside a selected folder keeps the folder, and so does what an exclusion holds (one made since the scan, a segment one too:
+            // what is below a matched folder is in the result as a match of its own)
             TreeSet<String> kept = new TreeSet<String>();
-            for (List<Match> l : j.exp.values()) for (Match m : l) if (sel.dropItems.contains(m.path)) kept.add(m.path);
+            for (List<Match> l : j.exp.values()) for (Match m : l) if (sel.dropItems.contains(m.path) || excludesPath(ctx, m.path)) kept.add(m.path);
             List<String> selectedPaths = new ArrayList<String>();
             for (List<Match> l : j.exp.values()) for (Match m : l) {
                 if (sel.dropItems.contains(m.path)) continue;
