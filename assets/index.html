@@ -6541,6 +6541,7 @@
                     <div class="xs-chips" id="extraSettingsChips">
                         <button type="button" class="xs-chip" id="xsChipDns" data-target="extraDnsSection" onclick="xsGoto('extraDnsSection')"><span class="xs-chip-k">Private DNS</span><span class="xs-chip-v" id="xsChipDnsV">…</span></button>
                         <button type="button" class="xs-chip" id="xsChipFast" data-target="extraDnsSection" onclick="xsGoto('extraDnsSection')" style="display:none;"><span class="xs-chip-k">Fastest</span><span class="xs-chip-v" id="xsChipFastV"></span></button>
+                        <button type="button" class="xs-chip" id="xsChipSpeed" data-target="extraSpeedSection" onclick="xsGoto('extraSpeedSection')" style="display:none;"><span class="xs-chip-k">Speed test</span><span class="xs-chip-v" id="xsChipSpeedV" translate="no"></span></button>
                         <button type="button" class="xs-chip" id="xsChipAnim" data-target="extraAnimSection" onclick="xsGoto('extraAnimSection')"><span class="xs-chip-k">Animations</span><span class="xs-chip-v" id="xsChipAnimV">…</span></button>
                         <button type="button" class="xs-chip" id="xsChipBatt" data-target="extraTelemetrySection" onclick="xsGoto('extraTelemetrySection')"><span class="xs-chip-k">Battery</span><span class="xs-chip-v" id="xsChipBattV">…</span></button>
                         <!-- extra: chips B (Doze, Zram) -->
@@ -6661,6 +6662,37 @@
                                 <p>Private DNS needs a host name, never an IP address. Some Wi-Fi networks and hotspots block it, and then pages may stop loading.</p>
                                 <p>The short line under each name says what the service filters. A service that filters can also block a site you want.</p>
                                 <p>If the host name is wrong or the service is down, this phone can lose its internet. The way back is Automatic or Off here, or Private DNS in Android’s network settings: both bring normal DNS back.</p>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+                <!-- Speed test (of the internet connection): a second way into the speed test of Task Manager > Network (the same full screen, stOpen); the pill and the header chip show the
+                     download speed of the last result in its history, if there is one. Leaving this tab, Back and the app going to the background stop a running test. -->
+                <section id="extraSpeedSection" class="xs-sec" aria-label="Speed test">
+                    <style>
+                        #extraSpeedCard .xsp-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+                        #extraSpeedCard .xsp-actions .xs-btn { flex: 1 1 auto; min-width: 0; }
+                        #extraSpeedCard .xs-notes p { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin: var(--space-3) 0 0; }
+                        /* the head as in Power, Doze and Zram: the pill keeps its own width (a speed, "Not tested"), the title gives way and may wrap ("Geschwindigkeitstest") */
+                        #extraSpeedSection .xs-sec-line .xs-pill { flex: 0 0 auto; max-width: 52%; }
+                        #extraSpeedSection .xs-sec-line .color-card-title { white-space: normal; line-height: 1.2; overflow-wrap: anywhere; }
+                    </style>
+                    <div class="color-card xs-card" id="extraSpeedCard">
+                        <div class="xs-sec-head">
+                            <span class="xs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/></svg></span>
+                            <div class="xs-sec-line">
+                                <div class="color-card-title">Speed test</div>
+                                <span class="xs-pill" id="xspPill"><span id="xspPillIc" aria-hidden="true"></span><span id="xspPillT">…</span></span>
+                            </div>
+                        </div>
+                        <div class="color-card-subtitle">Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.</div>
+                        <div class="xsp-actions">
+                            <button type="button" class="xs-btn is-primary" id="xspOpen" onclick="stOpen()">Open speed test</button>
+                        </div>
+                        <details class="xs-more" id="xspMore">
+                            <summary>What does this do?</summary>
+                            <div class="xs-notes">
+                                <p>Measured against Cloudflare's public speed test servers (speed.cloudflare.com), at the data centre nearest to you. Cloudflare sees this phone's IP address, as any website does. The result is this phone, its radio and its network, not your plan's speed; Wi-Fi signal and other apps using the network change it.</p>
                             </div>
                         </details>
                     </div>
@@ -8366,7 +8398,7 @@ Type any command above (e.g. pm list packages -d)</div>
     </div>
 
     <!-- Backup and restore -->
-    <!-- Internet speed test (Task Manager > Network > Speed test): a full screen of its own, closed with Back, the arrow or the X. SpeedTest.java does the measuring. -->
+    <!-- Internet speed test (Task Manager > Network > Speed test, and Extra Settings > Speed test): a full screen of its own, closed with Back, the arrow or the X. SpeedTest.java does the measuring. -->
     <div class="modal-overlay st-overlay" id="stModal" onclick="if(event.target===this) stClose()" role="dialog" aria-modal="true" aria-labelledby="stTitle">
         <style>
             .st-overlay { align-items: stretch; justify-content: center; background: var(--bg-base); }
@@ -11693,6 +11725,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ],
             extrasettings: [                                          // one entry per section that is on the page: <section id="extra...Section" class="xs-sec"> of the Extra Settings tab
                 bnavSection('extrasettings', 'dns', 'Private DNS', '#extraDnsSection'),
+                bnavSection('extrasettings', 'speed', 'Speed test', '#extraSpeedSection'),
                 bnavSection('extrasettings', 'animations', 'Animations', '#extraAnimSection'),
                 bnavSection('extrasettings', 'brightness', 'Brightness', '#extraBrightnessSection'),
                 bnavSection('extrasettings', 'telemetry', 'Telemetry', '#extraTelemetrySection'),
@@ -11709,7 +11742,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const bnavScName = it => it.name || (typeof it.label === 'function' ? it.label() : it.label);
         let bnavScOn = true;                                          // Settings > Navigation > Long-press shortcuts (kv 'bnav_shortcuts')
 
-        // The saved choice of what a slot's menu lists: only tabs and entries this version has, no repeats, at most four; a tab with no choice shows the first four entries
+        // The saved choice of what a slot's menu lists: only tabs and entries this version has, no repeats, at most four; a tab with no choice shows the first four entries (or its BNAV_SC_DEFAULT)
         function tabCleanShortcuts(o) {
             const out = {};
             if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(k => {
@@ -11719,7 +11752,9 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             return out;
         }
-        const bnavScChosen = k => tabConfig.shortcuts[k] || (TAB_SHORTCUTS[k] || []).slice(0, BNAV_SC_MAX).map(i => i.id);
+        // A tab whose default menu is not its first four entries: Extra Settings keeps the four it had before Speed test joined its list (in page order, second)
+        const BNAV_SC_DEFAULT = { extrasettings: ['dns', 'animations', 'brightness', 'telemetry'] };
+        const bnavScChosen = k => tabConfig.shortcuts[k] || (BNAV_SC_DEFAULT[k] ? BNAV_SC_DEFAULT[k].slice() : (TAB_SHORTCUTS[k] || []).slice(0, BNAV_SC_MAX).map(i => i.id));
         // What the menu of a slot lists now: the chosen entries whose target is there, the "first" one (Update All) on top, at most four
         function bnavScList(k) {
             if (!bnavScOn) return [];
@@ -12001,7 +12036,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName !== 'files' && typeof arcOpenAbort === 'function') arcOpenAbort();       // an archive still being unpacked for its listing is not wanted any more
             if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();          // the live log runs only while its tab is open
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
-            if (viewName !== 'taskmgr' && typeof stLeave === 'function') stLeave();
+            if (typeof stLeave === 'function') stLeave(viewName);                              // the speed test goes with the tab it was opened from (Task Manager or Extra Settings)
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'installer') { if (!instKeep && fromView !== 'installer') instPane = 'install'; onInstallerShown(); instPaneShow(instPane, true); }
@@ -12013,7 +12048,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'extrasettings') pdnsShow();
             if (typeof xqShow === 'function') { if (viewName === 'extrasettings') xqShow(); else xqLeave(); }       // Power & reboot, Doze, Zram: read when shown, the zram timer stops when left
             if (viewName !== 'extrasettings' && typeof pdnsLeave === 'function') pdnsLeave();       // a speed test still running is stopped when the tab is left
-            if (viewName === 'extrasettings') { animShow(); brShow(); telShow(); }
+            if (viewName === 'extrasettings') { animShow(); brShow(); telShow(); if (typeof xspRender === 'function') xspRender(); }
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
@@ -17037,7 +17072,7 @@ Type any command above (e.g. pm list packages -d)</div>
         let telTimer = 0, telData = null, telBusyTimer = 0;
         const TEL_HEALTH = { 2: 'Good', 3: 'Overheat', 4: 'Dead', 5: 'Over voltage', 6: 'Failure', 7: 'Cold' };
         function telBridgeOk() { return !!(window.AndroidBridge && typeof window.AndroidBridge.getTelemetry === 'function'); }
-        function telOnScreen() { return currentViewName() === 'extrasettings' && !document.hidden; }
+        function telOnScreen() { return currentViewName() === 'extrasettings' && !document.hidden && !stCovering(); }          // not under the full-screen speed test (stOpen)
         function telNA() { return txT('Not available'); }
         function telOfText(used, total) {                                           // "8.5 of 15.8 GB" (one unit when both share it), else "900 MB of 15.8 GB"
             const a = formatBytes(used), b = formatBytes(total);
@@ -17910,7 +17945,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 else { xqPill('xzrPill', '…', ''); xqChip('xsChipZram', '…'); }
             }
         }
-        function xzrVisible() { return currentViewName() === 'extrasettings' && !document.hidden; }
+        function xzrVisible() { return currentViewName() === 'extrasettings' && !document.hidden && !stCovering(); }           // not under the full-screen speed test (stOpen)
         // The timer runs only while the tab is on the screen and the numbers can be read; it is checked again every time the tab, the page or the mode changes.
         function xzrSync() {
             const want = xzrVisible() && xqCanRun();
@@ -28605,11 +28640,13 @@ Type any command above (e.g. pm list packages -d)</div>
             infoEl.innerHTML = tmInfoGrid('Network Statistics', infoRows);
         }
 
-        // ---- Internet speed test (Task Manager > Network > Speed test) ----
-        // A full screen of its own over the Task Manager (Back, the arrow and the X close it). SpeedTest.java measures (latency, then download,
+        // ---- Internet speed test (Task Manager > Network > Speed test, and Extra Settings > Speed test) ----
+        // A full screen of its own over the tab it was opened from (Back, the arrow and the X close it). SpeedTest.java measures (latency, then download,
         // then upload against Cloudflare) and streams events to window.onSpeedTest; this part only shows them. While the screen is open the
-        // Task Manager's own poll is paused (it would compete with the test for the CPU and the radio) and it resumes on closing. A test stops
-        // on Stop, on closing the screen, on leaving the tab, when the app goes to the background and when the network changes; the app stops it in onDestroy.
+        // Task Manager's own poll is paused (it would compete with the test for the CPU and the radio) and it resumes on closing when the Task Manager
+        // is the tab under it; under Extra Settings a Private DNS speed test still running is stopped and the telemetry poll and the zram timer wait,
+        // and they run again on closing. A test stops on Stop, on closing the screen, on leaving the tab it was opened from (spd.from, see stLeave), when the app
+        // goes to the background and when the network changes; the app stops it in onDestroy.
         const ST_TICKS = [0, 1, 5, 10, 20, 50, 100, 250, 500, 1000];           // the gauge's scale: equal steps between these, so 3 Mbps and 300 both move the needle
         const ST_HIST_KEY = 'speedtest_history', ST_HIST_MAX = 10;
         const ST_COLOS = { AMS: 'Amsterdam', ARN: 'Stockholm', ATL: 'Atlanta', ATH: 'Athens', BCN: 'Barcelona', BKK: 'Bangkok', BNE: 'Brisbane', BOG: 'Bogotá', BOM: 'Mumbai', BOS: 'Boston',
@@ -28620,7 +28657,7 @@ Type any command above (e.g. pm list packages -d)</div>
             OSL: 'Oslo', OTP: 'Bucharest', PDX: 'Portland', PHX: 'Phoenix', PRG: 'Prague', SCL: 'Santiago', SEA: 'Seattle', SFO: 'San Francisco', SIN: 'Singapore', SJC: 'San Jose',
             SOF: 'Sofia', SYD: 'Sydney', TLV: 'Tel Aviv', TPE: 'Taipei', VIE: 'Vienna', WAW: 'Warsaw', YUL: 'Montreal', YVR: 'Vancouver', YYZ: 'Toronto', ZRH: 'Zurich' };
         const ST_NET_LABEL = { wifi: 'Wi-Fi', cellular: 'Mobile data', ethernet: 'Ethernet', vpn: 'VPN', other: 'Other network', none: 'No connection' };
-        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, netStart: null, netAt: 0, ping: null, jitter: null, down: null, up: null, colo: '',
+        let spd = { open: false, from: '', id: '', running: false, seq: 0, phase: '', net: null, netStart: null, netAt: 0, ping: null, jitter: null, down: null, up: null, colo: '',
             samples: { download: [], upload: [] }, phaseMs: { download: 10000, upload: 10000 }, rampMs: { download: 2000, upload: 2000 },
             target: 0, targetV: 0, shown: 0, gaugeKey: '', frame: 0, lastT: 0, graphFrame: 0, dirty: {}, colors: null, ticks: false, result: null };
 
@@ -28791,7 +28828,13 @@ Type any command above (e.g. pm list packages -d)</div>
             stDrawTicks();
             m.classList.add('show');
             spd.open = true;
+            spd.from = currentViewName();                                  // the tab under the screen: leaving it closes the screen (stLeave)
             if (typeof tmStop === 'function') tmStop();                    // the Task Manager's poll waits while the test has the screen
+            if (spd.from === 'extrasettings') {                            // and so does Extra Settings' own work: a Private DNS speed test still running stops (as leaving the tab
+                if (typeof pdnsLeave === 'function') pdnsLeave();          // stops it), the telemetry poll and the zram timer wait (telOnScreen and xzrVisible are false now)
+                if (typeof telStop === 'function') telStop();
+                if (typeof xzrSync === 'function') xzrSync();
+            }
             stNetRefresh();
             stHistRender();
             if (!spd.running) { stButton(); spd.gaugeKey = ''; stGaugeNow(); }
@@ -28805,10 +28848,17 @@ Type any command above (e.g. pm list packages -d)</div>
             spd.open = false;
             if (spd.frame) { cancelAnimationFrame(spd.frame); spd.frame = 0; spd.shown = spd.target; spd.gaugeKey = ''; }
             if (spd.graphFrame) { cancelAnimationFrame(spd.graphFrame); spd.graphFrame = 0; }
-            if (currentViewName() === 'taskmgr' && !document.hidden && typeof onTaskMgrShown === 'function') onTaskMgrShown();
+            const from = spd.from; spd.from = '';
+            if (from === 'taskmgr' && currentViewName() === 'taskmgr' && !document.hidden && typeof onTaskMgrShown === 'function') onTaskMgrShown();
+            if (from === 'extrasettings' && currentViewName() === 'extrasettings' && !document.hidden) {        // back on Extra Settings: its telemetry poll and zram timer run again
+                if (typeof telStart === 'function') telStart();
+                if (typeof xzrSync === 'function') xzrSync();
+            }
         }
-        // Leaving the Task Manager while the screen is open (switchView): the test ends with it.
-        function stLeave() { try { if (spd.open) stClose(); } catch (e) {} }
+        // Leaving the tab the screen was opened from while it is open (switchView, to any other tab): the test ends with it.
+        function stLeave(to) { try { if (spd.open && to !== spd.from) stClose(); } catch (e) {} }
+        // True while the screen is open: the polls of the tab under it wait (telOnScreen, xzrVisible). try: spd does not exist yet while the script is still loading.
+        function stCovering() { try { return !!spd.open; } catch (e) { return false; } }
         function stGo() {
             haptic();
             if (spd.running) { stStop('Stopped'); return; }
@@ -28948,7 +28998,21 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function stHistAdd(r) { const h = stHistLoad(); h.unshift(r); kvSet(ST_HIST_KEY, h.slice(0, ST_HIST_MAX)); stHistRender(); }
         function stHistClear() { haptic(); kvSet(ST_HIST_KEY, []); stHistRender(); showToast('History cleared'); }
+        // Extra Settings > Speed test: its pill and the header chip show the download speed of the newest saved result (the chip only when there is one).
+        function xspRender() {
+            try {
+                if (!stEl('xspPill')) return;
+                const h = window.AndroidBridge && window.AndroidBridge.speedTestStart ? stHistLoad() : null;
+                const last = h && h.length ? h[0] : null, v = last ? stFmtMbps(last.down) + ' Mbps' : '';
+                if (!h) xsSetPill('xspPill', 'xspPillIc', 'xspPillT', txT('Needs the app'), 'warn', '●', false);
+                else if (last) xsSetPill('xspPill', 'xspPillIc', 'xspPillT', v, '', '↓', true);
+                else xsSetPill('xspPill', 'xspPillIc', 'xspPillT', txT('Not tested'), '', '●', false);
+                const chip = stEl('xsChipSpeed'), cv = stEl('xsChipSpeedV');
+                if (chip && cv) { cv.textContent = last ? '↓ ' + v : ''; chip.style.display = last ? '' : 'none'; }
+            } catch (e) {}
+        }
         function stHistRender() {
+            xspRender();
             const el = stEl('stHist'); if (!el) return;
             const h = stHistLoad();
             stEl('stHistClear').style.display = h.length ? '' : 'none';
@@ -28967,6 +29031,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (spd.running) stStop('Stopped: the app went to the background');
             if (spd.frame) { cancelAnimationFrame(spd.frame); spd.frame = 0; spd.shown = spd.target; }
         });
+        xspRender();
 
         // ---- Play Store / Aurora update routing (lightweight) ----
         function refreshStoreStatus() {

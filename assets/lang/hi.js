@@ -5069,6 +5069,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram RAM का एक हिस्सा है जो संपीड़ित स्वैप की तरह काम करता है: मेमोरी कम होने पर Android निष्क्रिय ऐप्स की मेमोरी को बंद करने के बजाय लगभग एक-तिहाई आकार में दबाकर वहाँ भेज देता है। यह खंड कार्य मोड के ज़रिए <1/> (असंपीड़ित डेटा, संपीड़ित आकार, असल में इस्तेमाल RAM), <2/> और <3/> पढ़ता है। संपीड़न = असंपीड़ित डेटा ÷ संपीड़ित आकार; RAM बचाई = असंपीड़ित डेटा − वह RAM जो संपीड़ित प्रति लेती है।",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android से हर ऐप की कैश फ़ाइलें हटाने को कहता है, वही जो सेटिंग > सभी ऐप्स में कैश ट्रिम करें करता है। ऐप्स, उनका डेटा, लॉगिन और आपकी फ़ाइलें बनी रहती हैं। यह स्टोरेज खाली करता है, सीधे RAM नहीं, और इसमें एक मिनट लग सकता है; नतीजा अपनी अलग शीट में खुलता है।",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "इस फ़ोन के इंटरनेट कनेक्शन को मापता है: पिंग, डाउनलोड और अपलोड, Cloudflare के सर्वरों से। परिणाम इसी फ़ोन पर रखे जाते हैं।",
+"Open speed test": "स्पीड टेस्ट खोलें",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android का बैटरी सेवर चालू करता है, वही स्विच जो सेटिंग > बैटरी में है: स्क्रीन की चमक घटती है, पृष्ठभूमि काम, सिंक और स्थान सीमित होते हैं और एनिमेशन छोटे हो जाते हैं। फ़ोन अपना बैटरी-सेवर आइकन दिखाता है।",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 मिनट बाद भी Android ने काम पूरा नहीं किया है। पूरा होने पर नतीजा अपनी अलग शीट में खुलता है।"
 },
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} एक्सपर्ट/असुरक्षित पैकेज: ये ज़रूरी सुविधाएं बिगाड़ सकते हैं।"],
 ["{0} GRANTED", "{0} दी गई"],
 ["{0} MP · Flash", "{0} MP · फ़्लैश"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} दी नहीं गई"],
 ["{0} Selected", "{0} चुने गए"],
 ["{0} Set it up now?", "{0} अभी सेट करें?"],

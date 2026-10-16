@@ -5068,6 +5068,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "현재 <1>읽기 전용 모드</1>로 실행 중입니다. 동결, 사용 설정, 강제 중지, 데이터 삭제, 삭제 같은 시스템 패키지 작업에는 <2>ADB TCP (5555)</2>, <3>무선 디버깅</3>, <4>Shizuku</4> 또는 <5>Root</5>를 통한 상위 권한이 필요합니다.",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram은 압축 스왑으로 동작하는 RAM의 일부입니다. 메모리가 부족하면 Android는 유휴 앱의 메모리를 닫는 대신 약 3분의 1로 압축해 그곳으로 옮깁니다. 이 섹션은 작업 모드를 통해 <1/>(비압축 데이터, 압축 크기, 실제 사용 RAM), <2/>, <3/>을 읽습니다. 압축률은 비압축 데이터를 압축 크기로 나눈 값이고, 절약된 RAM은 비압축 데이터에서 압축 사본이 차지하는 RAM을 뺀 값입니다.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "모든 앱의 캐시 파일을 삭제하도록 Android에 요청합니다. 설정 > 모든 앱의 캐시 정리와 같습니다. 앱, 앱 데이터, 로그인 정보와 사용자 파일은 그대로 남습니다. RAM이 아니라 저장공간을 확보하며 1분 정도 걸릴 수 있습니다. 결과는 별도 시트에서 열립니다.",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Cloudflare 서버로 이 휴대전화의 인터넷 연결(핑, 다운로드, 업로드)을 측정합니다. 결과는 이 휴대전화에 보관됩니다.",
+"Open speed test": "속도 테스트 열기",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android의 배터리 세이버를 켭니다. 설정 > 배터리에 있는 것과 같은 스위치입니다. 화면이 어두워지고 백그라운드 작업, 동기화, 위치가 제한되며 애니메이션이 줄어듭니다. 휴대전화에 배터리 세이버 아이콘이 표시됩니다.",
 "No patch could be applied": "패치를 하나도 적용하지 못했습니다",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3분이 지나도 Android가 끝나지 않았습니다. 끝나면 결과가 별도 시트에서 열립니다."
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} 전문가/위험 패키지: 중요한 기능이 고장 날 수 있습니다."],
 ["{0} GRANTED", "{0} 부여됨"],
 ["{0} MP · Flash", "{0} MP · 플래시"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} 부여되지 않음"],
 ["{0} Selected", "{0}개 선택됨"],
 ["{0} Set it up now?", "{0} 지금 설정할까요?"],

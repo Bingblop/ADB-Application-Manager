@@ -5068,6 +5068,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "你当前处于<1>只读模式</1>。系统软件包操作（如冻结、启用、强行停止、清除数据或卸载）需要通过 <2>ADB TCP (5555)</2>、<3>无线调试</3>、<4>Shizuku</4> 或 <5>Root</5> 获得更高权限。",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram 是一块作为压缩交换区使用的 RAM：内存不足时，Android 把空闲应用的内存压缩到约三分之一后移入其中，而不是关闭它们。本区块通过工作模式读取 <1/>（未压缩数据、压缩后大小、实际占用的 RAM）、<2/> 和 <3/>。压缩率为未压缩数据除以压缩后大小；节省的 RAM 为未压缩数据减去压缩副本占用的 RAM。",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "请求 Android 删除每个应用的缓存文件，与设置 > 清理所有应用的缓存相同。应用、其数据、登录信息和你的文件都会保留。它释放的是存储空间，而不是直接释放 RAM，可能需要一分钟；结果会在单独的面板中打开。",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "通过 Cloudflare 的服务器测量这部手机的网络连接：延迟、下载和上传。结果会保存在这部手机上。",
+"Open speed test": "打开速度测试",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "开启 Android 的省电模式，与设置 > 电池中的开关相同：屏幕变暗，后台工作、同步和定位受限，动画缩短。手机会显示省电模式图标。",
 "No patch could be applied": "没有任何补丁能够应用",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分钟后 Android 仍未完成。完成后结果会在单独的面板中打开。"
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} 个专家级/不安全软件包：这些可能会破坏重要功能。"],
 ["{0} GRANTED", "{0} 项已授予"],
 ["{0} MP · Flash", "{0} MP · 闪光灯"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} 项未授予"],
 ["{0} Selected", "已选择 {0} 项"],
 ["{0} Set it up now?", "{0} 现在设置吗？"],

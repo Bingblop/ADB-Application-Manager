@@ -5069,6 +5069,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram, sıkıştırılmış takas olarak çalışan bir RAM parçasıdır: bellek azaldığında Android, boştaki uygulamaların belleğini kapatmak yerine yaklaşık üçte birine sıkıştırarak oraya taşır. Bölüm, çalışma modu üzerinden <1/> (sıkıştırılmamış veri, sıkıştırılmış boyut, gerçekten kullanılan RAM), <2/> ve <3/> okur. Sıkıştırma, sıkıştırılmamış verinin sıkıştırılmış boyuta bölümüdür; kazanılan RAM, sıkıştırılmamış veri eksi sıkıştırılmış kopyanın kapladığı RAM'dir.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Android'den her uygulamanın önbellek dosyalarını silmesini ister; Ayarlar > Tüm uygulamalardaki önbellekleri temizle ile aynıdır. Uygulamalar, verileri, oturum açma bilgileri ve dosyalarınız kalır. Doğrudan RAM değil depolama alanı boşaltır ve bir dakika sürebilir; sonuç kendi sayfasında açılır.",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Bu telefonun internet bağlantısını Cloudflare sunucularıyla ölçer: ping, indirme ve yükleme. Sonuçlar bu telefonda saklanır.",
+"Open speed test": "Hız testini aç",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android'in pil tasarrufunu açar; Ayarlar > Pil'deki anahtarın aynısıdır: ekran kararır, arka plan işi, eşitleme ve konum sınırlanır, animasyonlar kısalır. Telefon pil tasarrufu simgesini gösterir.",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android 3 dakika sonra hâlâ bitirmedi. Bittiğinde sonuç kendi sayfasında açılır."
 },
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} Uzman/Güvensiz paket: önemli özellikleri bozabilir."],
 ["{0} GRANTED", "{0} VERİLDİ"],
 ["{0} MP · Flash", "{0} MP · Flaş"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} VERİLMEDİ"],
 ["{0} Selected", "{0} seçili"],
 ["{0} Set it up now?", "{0} Şimdi kurulsun mu?"],
