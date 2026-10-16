@@ -5922,7 +5922,8 @@ public class MainActivity extends Activity {
                 long t0 = System.currentTimeMillis();
                 try {
                     boolean fsAccess = hasStorageAccess();
-                    boolean privileged = !"standard".equals(resolveExecMode());
+                    String mode = resolveExecMode();
+                    boolean privileged = !"standard".equals(mode);
                     res.put("fs", fsAccess);
                     res.put("shell", privileged);
                     if (!fsAccess && !privileged) {
@@ -5973,8 +5974,11 @@ public class MainActivity extends Activity {
                         }
                         AndroidBridge sh = new AndroidBridge();
                         sendApkScanProgress(scanId, -1, fsAccess ? "Searching Android/data and Android/obb with the privileged mode…" : "Searching storage with the privileged mode…", found.size(), true);
-                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
-                                + " 2>/dev/null | head -n 2500");
+                        // find gets a time of its own: executeShell's 8-10 s cut a search of a full storage short, and what it had read so far
+                        // looked complete. No end line means a partial list, and the page says the search stopped early.
+                        String out = runPrivilegedShell(mode, "find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
+                                + " 2>/dev/null | head -n 2500; echo " + ApkScan.FIND_END, 25000);
+                        if (!ApkScan.findComplete(out)) lim.hitLimit = true;
                         List<String> unreadable = new ArrayList<String>();
                         for (String path : ApkScan.parseFindOutput(out, 2500)) {
                             if (found.size() >= lim.maxResults) { lim.hitLimit = true; break; }

@@ -21095,6 +21095,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Find package files on storage (automatic search) ----
         let apkScanFiles = [];
+        let apkScanCutEmpty = false;         // the last search stopped early before it found anything: that is not "no files on this device"
         let apkScanDone = false;
         let apkScanning = false;
         let apkScanTimer = null;
@@ -21195,6 +21196,7 @@ Type any command above (e.g. pm list packages -d)</div>
             apkScanDone = true;
             apkScanFiles = Array.isArray(d.files) ? d.files : [];
             apkScanFiles.forEach(f => { f._trunc = !!d.truncated; });
+            apkScanCutEmpty = !!d.truncated && !apkScanFiles.length;
             apkSel.clear();
             renderApkScan();
             apkSelRender();
@@ -21218,7 +21220,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const shown = apkScanFiles.map((f, i) => ({ f: f, i: i }))
                 .filter(x => (!kind || x.f.kind === kind) && (!q || (x.f.name + ' ' + x.f.path).toLowerCase().includes(q)));
             if (!apkScanFiles.length) {
-                st.style.display = ''; st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
+                st.style.display = '';
+                if (apkScanCutEmpty) errNote(st, 'The search took too long. Tap Find APKs to try again.');
+                else st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
                 document.getElementById('apkScanTip').style.display = 'none';
                 list.innerHTML = '';
                 return;
