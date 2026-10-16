@@ -5069,6 +5069,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>.",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram جزء من الذاكرة يعمل كمبادلة مضغوطة: عندما تشحّ الذاكرة ينقل Android إليه ذاكرة التطبيقات الخاملة، مضغوطةً إلى نحو ثلث حجمها، بدل إغلاقها. يقرأ القسم <1/> (البيانات غير المضغوطة، الحجم المضغوط، الذاكرة المستخدمة فعلًا) و<2/> و<3/> عبر وضع العمل. الضغط هو البيانات غير المضغوطة مقسومة على الحجم المضغوط؛ والذاكرة الموفَّرة هي البيانات غير المضغوطة ناقص الذاكرة التي تشغلها النسخة المضغوطة.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "يطلب من Android حذف ملفات الذاكرة المؤقتة لكل تطبيق، وهو نفسه الإعدادات > تقليص الذاكرة المؤقتة في كل التطبيقات. تبقى التطبيقات وبياناتها وتسجيلات الدخول وملفاتك. يحرّر مساحة التخزين لا الذاكرة مباشرةً، وقد يستغرق دقيقة؛ وتُفتح النتيجة في لوحتها الخاصة.",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "يقيس اتصال هذا الهاتف بالإنترنت: Ping والتنزيل والرفع، مقابل خوادم Cloudflare. تُحفظ النتائج على هذا الهاتف.",
+"Open speed test": "فتح اختبار السرعة",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "يشغّل توفير البطارية في Android، وهو المفتاح نفسه الموجود في الإعدادات > البطارية: تخفت الشاشة، ويُقيَّد العمل في الخلفية والمزامنة والموقع، وتتقلّص الرسوم المتحركة. يعرض الهاتف أيقونة توفير البطارية.",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "لم ينتهِ Android بعد 3 دقائق. تُفتح النتيجة في لوحتها الخاصة عندما ينتهي."
 },
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} حزم خبير/غير آمنة: قد تعطّل ميزات مهمة."],
 ["{0} GRANTED", "{0} ممنوح"],
 ["{0} MP · Flash", "{0} MP · فلاش"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} غير ممنوح"],
 ["{0} Selected", "المحدد: {0}"],
 ["{0} Set it up now?", "{0} هل تُعدّه الآن؟"],

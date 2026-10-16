@@ -5069,6 +5069,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "現在は<1>読み取り専用モード</1>で動作しています。システムパッケージの操作（凍結、有効化、強制停止、データを消去、アンインストールなど）には、<2>ADB TCP（5555）</2>、<3>ワイヤレスデバッグ</3>、<4>Shizuku</4>、<5>Root</5>のいずれかによる昇格した権限が必要です。",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram は圧縮スワップとして働く RAM の一部です。メモリが不足すると、Android はアイドル状態のアプリのメモリを閉じる代わりにおよそ3分の1に圧縮してそこへ移します。このセクションは動作モード経由で <1/>（非圧縮データ、圧縮後サイズ、実際に使用する RAM）、<2/>、<3/> を読みます。圧縮率は非圧縮データ÷圧縮後サイズ、節約した RAM は非圧縮データから圧縮コピーが占める RAM を引いた値です。",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "すべてのアプリのキャッシュファイルを削除するよう Android に求めます。設定 > すべてのアプリのキャッシュを整理 と同じです。アプリ、そのデータ、ログイン情報、あなたのファイルはそのまま残ります。空くのはストレージで、RAM が直接空くわけではありません。1 分ほどかかることがあり、結果は別のシートで開きます。",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "この端末のインターネット接続（Ping、ダウンロード、アップロード）を Cloudflare のサーバーで測定します。結果はこの端末に保存されます。",
+"Open speed test": "速度テストを開く",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android のバッテリーセーバーをオンにします。設定 > バッテリー と同じスイッチです。画面が暗くなり、バックグラウンド処理、同期、位置情報が制限され、アニメーションが短くなります。スマートフォンにバッテリーセーバーのアイコンが表示されます。",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。"
 },
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "{0} エキスパート/危険なパッケージ：重要な機能が壊れるおそれがあります。"],
 ["{0} GRANTED", "{0} 許可済み"],
 ["{0} MP · Flash", "{0} MP · フラッシュ"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "{0} 未許可"],
 ["{0} Selected", "{0}件選択中"],
 ["{0} Set it up now?", "{0} 今すぐ設定しますか？"],

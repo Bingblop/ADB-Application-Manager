@@ -233,13 +233,14 @@
   </ul>
 </section>
 <section id="tab-extrasettings" data-title="Extra Settings" data-group="The tabs">
-  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other: Private DNS with its speed test, the animation speed, the adaptive brightness bias, and a live telemetry card with the phone's numbers.</p>
+  <p class="hg-lead">Tweaks and controls that Android hides, in one tab. It is a stack of sections, one under the other: Private DNS with its speed test, the internet speed test, the animation speed, the adaptive brightness bias, and a live telemetry card with the phone's numbers.</p>
   <p><b>Where to find it:</b> the tab named <b>Extra Settings</b> (two lines on the tab bar: Extra and Settings), right after <a href="#tab-settings">Hidden Settings</a> in the default order. It is not the gear icon, and it is not Hidden Settings: Hidden Settings edits Android's own settings tables one by one, Extra Settings has ready-made controls. If the tab is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
   <h4>The top of the tab</h4>
-  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>, <i>Animations  1&times;</i>, <i>Doze  Active</i> or <i>RAM saved  1.2 GB</i>; and <i>Battery  49%</i>. Tap a chip and the page scrolls to its section. After a speed test another chip, <i>Fastest</i>, names the quickest service. The chips follow what the sections read from the phone.</p>
+  <p>A card with the name of the tab and a row of small chips that say what is set now, for example <i>Private DNS  Automatic</i>, <i>Animations  1&times;</i>, <i>Doze  Active</i> or <i>RAM saved  1.2 GB</i>; and <i>Battery  49%</i>. Tap a chip and the page scrolls to its section. After a speed test another chip, <i>Fastest</i>, names the quickest service, and once an internet speed test has a result, <i>Speed test  &darr; 93.8 Mbps</i> shows its download speed. The chips follow what the sections read from the phone.</p>
   <h4>The sections</h4>
   <ul>
     <li><a href="#extra-dns">Private DNS</a>: choose a Private DNS service for the whole phone and test how fast each one answers on your network.</li>
+    <li><b>Speed test</b>: <b>Open speed test</b> opens the same internet speed test as the <a href="#tab-taskmgr">Task Manager</a> (ping, download and upload, measured against Cloudflare). Its status shows the download speed of the last result, or <i>Not tested</i>. Needs no working mode. Back, leaving the tab or the app going to the background stops a test that is running.</li>
     <li><a href="#extra-anim">Animation speed</a>: the three animation scales of Developer options, with a live preview dot for each, one Apply and one Reset to 1&times;.</li>
     <li><a href="#extra-brightness">Brightness bias</a>: make adaptive brightness a little darker or brighter than Android would choose, without switching it off.</li>
     <li><a href="#extra-telemetry">Device telemetry</a>: RAM, storage and battery as rings, the model, Android and One UI versions, kernel, uptime, battery temperature and swap, refreshed every five seconds, with a Copy report button. Needs no working mode.</li>

@@ -1,0 +1,41 @@
+ok   1. the tab has a section #extraSpeedSection right after Private DNS (#extraDnsSection) and before Animation speed
+ok      in the tab's look: <section class="xs-sec"> with a .color-card.xs-card, the head with the icon tile, the title "Speed test" and ONE pill
+ok      a sentence of what it measures, the button "Open speed test" (primary, at least 44 px tall) and a "What does this do?" note (the screen's own note: Cloudflare sees the IP address)
+ok   2. no saved result yet: the pill says "Not tested", the header has no speed chip
+ok   3. "Open speed test" opens the same full screen as the Task Manager button (#stModal: Speed test, Ready, Start), over the bottom bar
+ok      the tab under it stays Extra Settings; the Task Manager poll is not started
+ok   4. X closes it: back on Extra Settings, the Task Manager poll still not started
+ok   5. a test started from Extra Settings runs and is saved in the same history
+ok      closed: the pill shows the new download speed, and a header chip "Speed test ↓ 93.8 Mbps" points at the section
+ok      the chips keep the order of the sections (Private DNS, Speed test, Animations, ...)
+ok      the chip scrolls to the section
+ok   6. Back closes the screen and stops the running test; Extra Settings stays
+ok   7. the app going to the background stops the test and says why; coming back starts no Task Manager poll
+ok   8. leaving the tab closes the screen and stops the test
+ok      leaving it for the Task Manager closes it too (the screen belongs to Extra Settings), and the Task Manager poll starts once
+ok   9. Task Manager > Network > Speed test still opens the screen and pauses the Task Manager poll
+ok      closing it there resumes the poll (once)
+ok      and leaving the Task Manager (for Extra Settings) closes it and stops the test
+ok   10. the tab's shortcut list names the section in page order ("Speed test" after "Private DNS"), one entry per section
+ok       "Speed test" opens the tab and lights the section up
+ok       the slot's default menu stays Private DNS, Animations, Brightness, Telemetry; Settings > Navigation lists Speed test (off) to switch on
+ok   11. a saved history: the pill and the chip show the newest download speed
+ok       Clear in the screen's history: the pill says "Not tested" again and the chip goes
+ok       without the app's speed test: the pill says "Needs the app" (a warning), no chip
+ok   12. [320 px] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [360 px] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [412 px] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [320 px, de] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [360 px, de] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [320 px, es] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [360 px, es] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   12. [360 px, pt-BR] no sideways scroll, nothing outside the card, the pill ("↓ 941 Mbps") and the chip on one line and not cut, the title not cut (two lines at most), the button 44 px or taller
+ok   13. in German the section speaks German (title, sentence, button, pill)
+ok   14. a Private DNS speed test still running when "Open speed test" is tapped is stopped (dnsProbeCancel), the telemetry poll and the zram timer stop
+ok       while the screen is open (a test running, the app going to the background and back) no zram read and no telemetry read is sent, and neither timer starts again
+ok       closing it, back on Extra Settings: the telemetry poll and the zram timer run again (the zram numbers are read again)
+ok       leaving Extra Settings while the screen is open closes it, and closing it on the way out does not start the telemetry poll or the zram timer (no read follows)
+ok       back on Extra Settings they run once more
+ok       opened and closed from the Task Manager, it starts neither of them
+ok   no page errors
+all passed

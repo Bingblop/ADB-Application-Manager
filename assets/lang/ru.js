@@ -5069,6 +5069,8 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
 "Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <1/> (uncompressed data, compressed size, RAM really used), <2/> and <3/> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.": "Zram — это часть ОЗУ, работающая как сжатый swap: когда памяти не хватает, Android переносит туда память простаивающих приложений, сжатую примерно до трети, вместо того чтобы их закрывать. Раздел читает <1/> (несжатые данные, сжатый размер, реально занятое ОЗУ), <2/> и <3/> через рабочий режим. Сжатие — это несжатые данные, делённые на сжатый размер; сэкономленное ОЗУ — несжатые данные минус ОЗУ, которое занимает сжатая копия.",
 "Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.": "Просит Android удалить файлы кэша всех приложений — то же, что «Настройки > Очистка кэшей во всех приложениях». Приложения, их данные, входы в аккаунты и ваши файлы остаются. Освобождает место в хранилище, а не ОЗУ напрямую, и может занять минуту; результат откроется на отдельной панели.",
+"Measures this phone’s internet connection: ping, download and upload, against Cloudflare’s servers. Results are kept on this phone.": "Измеряет интернет-соединение этого телефона: пинг, скачивание и отправку, через серверы Cloudflare. Результаты хранятся на этом телефоне.",
+"Open speed test": "Открыть тест скорости",
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Включает энергосбережение Android — тот же переключатель, что в «Настройки > Батарея»: экран тускнеет, фоновая работа, синхронизация и геолокация ограничиваются, анимации сокращаются. Телефон показывает значок энергосбережения.",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android не закончил за 3 минуты. Результат откроется на отдельной панели, когда он закончит."
 },
@@ -5892,6 +5894,7 @@ p: [
 ["{0} Expert/Unsafe packages: these can break important features.", "Пакеты Expert/Unsafe: {0}. Они могут нарушить работу важных функций."],
 ["{0} GRANTED", "РАЗРЕШЕНО: {0}"],
 ["{0} MP · Flash", "{0} MP · вспышка"],
+["{0} Mbps", "{0} Mbps"],
 ["{0} NOT GRANTED", "НЕ РАЗРЕШЕНО: {0}"],
 ["{0} Selected", "Выбрано: {0}"],
 ["{0} Set it up now?", "{0} Настроить сейчас?"],
