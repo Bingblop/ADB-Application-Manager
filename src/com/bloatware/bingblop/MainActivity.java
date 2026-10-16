@@ -16695,7 +16695,10 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
+        // the tracker scan: stop its pool FIRST (a trackerScan that comes in now is rejected), then the scan that runs, which would read
+        // every app's dex for minutes and keep this activity alive; it ends after the app it is reading and saves what it found to the cache
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        trackerCancel = true;
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}

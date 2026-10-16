@@ -199,6 +199,14 @@ public class ActivityGuardsTest {
     List<String> loose = executorsNotStopped(main, pools);
     check("MainActivity: every executor field is shut down in onDestroy (found " + pools + "); not stopped: " + loose, pools.size() >= 8 && loose.isEmpty());
 
+    // MA3-5: shutdown() lets a running job finish, and a tracker scan of a few hundred apps runs for minutes, keeping the destroyed activity
+    // alive while the next window starts a second scan of the same apps: onDestroy stops the pool, then sets the flag the scan stops on
+    // (in that order, so a scan accepted just before the pool stopped is still told to stop)
+    String destroy = bodyOf(b, "void onDestroy()");
+    int trackerPool = destroy == null ? -1 : destroy.indexOf("trackerExecutor.shutdown");
+    check("MainActivity: onDestroy stops a running tracker scan (trackerCancel = true after trackerExecutor.shutdown)",
+        trackerPool >= 0 && Pattern.compile("\\btrackerCancel\\s*=\\s*true\\s*;").matcher(destroy).find(trackerPool));
+
     // MA1-2: the activity's own monitor is taken on the UI thread (onDestroy, the Morphe picker) and by the lazy getters, so no method that
     // holds it may run a shell command (which can wait minutes on a backend that does not answer)
     List<String> slow = new ArrayList<String>();
