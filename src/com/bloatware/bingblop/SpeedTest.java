@@ -34,8 +34,10 @@ import org.json.JSONObject;
  *
  * WHAT IT DOES, in this order (each phase only after the one before):
  *   latency   1 warm-up request (opens the connection; not counted), then `pings` requests of 0 bytes, one after another on the kept-alive
- *             connection; each sample is the time from sending the request to having the answer's headers. Latency = the median, jitter =
- *             the mean absolute difference of consecutive samples (SpeedMath). More than half failed: the test stops with an error.
+ *             connection; each sample is the time from sending the request to having the answer's headers, less the time the server says
+ *             it spent on the answer (Server-Timing cfSpeed*, SpeedMath.serverMs; kept as measured when it says nothing). Latency = the
+ *             median, jitter = the mean absolute difference of consecutive samples (SpeedMath). More than half failed: the test stops with
+ *             an error.
  *   download  `downStreams` connections at once, each fetching `downChunk` bytes again and again, for `phaseMs`; the first `rampMs` are a
  *             ramp-up (TCP growing its window) and are left out of the result. Stops early at `downCap` bytes.
  *   upload    the same with `upStreams` POSTs of `upChunk` bytes each (random bytes, so nothing on the way can compress them), cap `upCap`.
@@ -267,13 +269,26 @@ public final class SpeedTest {
                 int code = c.getResponseCode();
                 if (code != 200) throw new IOException("HTTP " + code);
                 noteColo(c);
+                double serverMs = SpeedMath.serverMs(serverTiming(c));
                 drain(c.getInputStream(), -1);
                 clean = true;
-                return (t1 - t0) / 1e6;
+                double ms = (t1 - t0) / 1e6;
+                return serverMs > 0 ? Math.max(0.01, ms - serverMs) : ms;   // the server's own work is not the line's latency (as Cloudflare's client counts it)
             } finally {
                 open.remove(c);
                 if (!clean || stopped.get()) { try { c.disconnect(); } catch (Throwable ignored) {} }   // an error answer or a failed read: close the socket, it cannot be reused
             }
+        }
+
+        /** Every Server-Timing header's value: Cloudflare sends two (cfSpeed* and cfL4), and getHeaderField would return only the last one. */
+        private static List<String> serverTiming(HttpURLConnection c) {
+            List<String> out = new ArrayList<String>();
+            Map<String, List<String>> h = c.getHeaderFields();
+            if (h == null) return out;
+            for (Map.Entry<String, List<String>> e : h.entrySet()) {
+                if (e.getKey() != null && e.getKey().equalsIgnoreCase("server-timing") && e.getValue() != null) out.addAll(e.getValue());
+            }
+            return out;
         }
 
         private void noteColo(HttpURLConnection c) {

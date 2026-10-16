@@ -1,5 +1,6 @@
 package com.bloatware.bingblop;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -24,9 +26,10 @@ import org.json.JSONObject;
 
 /**
  * The internet speed test's runner against a local server that stands in for speed.cloudflare.com (GET /__down?bytes=N, POST /__up, a colo
- * header): the order and shape of the events, live progress several times a second, the byte cap, Stop at once (connections closed, nothing
- * after "done"), a new start stopping the old test, failures in words, request checks, the pool's threads ending, HttpSafe.post (a streamed
- * body of a fixed length, no redirect followed), and a scan of the bridge and onDestroy in MainActivity.
+ * header): the order and shape of the events, live progress several times a second, the byte cap, the server's reported time (Server-Timing)
+ * taken off the latency, Stop at once (connections closed, nothing after "done"), a new start stopping the old test, failures in words,
+ * request checks, the pool's threads ending, HttpSafe.post (a streamed body of a fixed length, no redirect followed), and a scan of the
+ * bridge and onDestroy in MainActivity.
  */
 public class SpeedTestTest {
   static int fails = 0, n = 0;
@@ -38,6 +41,7 @@ public class SpeedTestTest {
   static final AtomicLong postBytes = new AtomicLong();
   static final AtomicInteger okHits = new AtomicInteger();
   static final AtomicInteger failPingsLeft = new AtomicInteger(), pingHits = new AtomicInteger();
+  static final AtomicBoolean slowTiming = new AtomicBoolean(false);
 
   static final class Events implements SpeedTest.Sink {
     final List<JSONObject> list = Collections.synchronizedList(new ArrayList<JSONObject>());
@@ -55,11 +59,19 @@ public class SpeedTestTest {
     final HttpServer srv = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     srv.setExecutor(java.util.concurrent.Executors.newCachedThreadPool(r -> { Thread t = new Thread(r); t.setDaemon(true); return t; }));
     final int port = srv.getAddress().getPort();
-    srv.createContext("/__down", ex -> {
+    HttpHandler down = ex -> {
       String q = ex.getRequestURI().getQuery();
       long want = Long.parseLong(q.substring(q.indexOf('=') + 1));
       if (want == 0) pingHits.incrementAndGet();
       if ((want == 0 && (failPing.get() || failPingsLeft.getAndUpdate(k -> Math.max(0, k - 1)) > 0)) || (want > 0 && failDown.get())) { ex.sendResponseHeaders(500, -1); ex.close(); return; }
+      if (want == 0 && ex.getRequestURI().getPath().startsWith("/slow/")) {   // under /slow/ the answer takes 40 ms of server work, as Cloudflare's Worker does
+        long s0 = System.nanoTime();
+        try { Thread.sleep(40); } catch (InterruptedException e) { /* the test is ending */ }
+        if (slowTiming.get()) {   // and says so as Cloudflare does: two Server-Timing headers, the cfL4 one (no server time) last, which is all getHeaderField would read
+          ex.getResponseHeaders().add("Server-Timing", "cfSpeedEdge;dur=0, cfSpeedWorker;dur=" + String.format(Locale.ROOT, "%.1f", (System.nanoTime() - s0) / 1e6));
+          ex.getResponseHeaders().add("server-timing", "cfL4;desc=\"?proto=TCP&rtt=250\"");
+        }
+      }
       ex.getResponseHeaders().add("colo", "TST");
       ex.sendResponseHeaders(200, want == 0 ? -1 : want);
       if (want > 0) {
@@ -71,14 +83,18 @@ public class SpeedTestTest {
         } catch (Exception e) { /* the client closed it */ } finally { openDown.decrementAndGet(); }
       }
       ex.close();
-    });
-    srv.createContext("/__up", ex -> {
+    };
+    srv.createContext("/__down", down);
+    srv.createContext("/slow/__down", down);
+    HttpHandler up = ex -> {
       byte[] b = new byte[32 * 1024];
       try (InputStream in = ex.getRequestBody()) { int k; while ((k = in.read(b)) >= 0) { upBytes.addAndGet(k); Thread.sleep(1); } } catch (IOException | InterruptedException e) { /* closed */ }   // about 30 MB/s a stream, like the download: unthrottled, a fast machine fills the 100 MB cap before the page gets its live progress
       ex.getResponseHeaders().add("cf-meta-colo", "TST");
       try { ex.sendResponseHeaders(200, -1); } catch (IOException ignored) {}
       ex.close();
-    });
+    };
+    srv.createContext("/__up", up);
+    srv.createContext("/slow/__up", up);
     srv.createContext("/post", ex -> {
       byte[] b = new byte[8192]; long got = 0;
       try (InputStream in = ex.getRequestBody()) { int k; while ((k = in.read(b)) >= 0) got += k; }
@@ -195,6 +211,25 @@ public class SpeedTestTest {
       check("a failed first request: still " + cw.pings + " samples, after one failure and one warm-up (" + (cw.pings + 2) + " requests, got " + pingHits.get() + ")",
           warmDone && latW.optInt("samples") == cw.pings && evWarm.of("ping").size() == cw.pings && pingHits.get() == cw.pings + 2);
       failPingsLeft.set(0);
+
+      // ---------------------------------------------------------------- the server's own time is not latency
+      slowTiming.set(true);
+      Events evSrv = new Events();
+      new SpeedTest.Runner(cfg(base + "/slow")).start("{\"id\":\"s1\"}", pool, evSrv);
+      boolean srvDone = evSrv.waitDone(15000);
+      JSONObject latS = evSrv.of("latency").isEmpty() ? new JSONObject() : evSrv.of("latency").get(0);
+      check("a server that spends 40 ms on each answer and says so in Server-Timing (two headers, cfL4 last): that time is taken off, ping "
+          + latS.optDouble("pingMs") + " ms, under 20, in the latency event and in done", srvDone && evSrv.done().optBoolean("ok")
+          && latS.optDouble("pingMs", 99) < 20 && evSrv.done().optDouble("pingMs", 99) < 20);
+      slowTiming.set(false);
+      Events evRaw = new Events();
+      SpeedTest.Runner rawRunner = new SpeedTest.Runner(cfg(base + "/slow"));
+      rawRunner.start("{\"id\":\"s2\"}", pool, evRaw);
+      boolean rawLat = waitFor(() -> !evRaw.of("latency").isEmpty(), 10000);
+      rawRunner.cancel("s2");
+      double rawPing = rawLat ? evRaw.of("latency").get(0).optDouble("pingMs") : -1;
+      check("the same server without Server-Timing: the time is kept as measured (ping " + rawPing + " ms, 40 or more)", rawLat && rawPing >= 40);
+      evRaw.waitDone(5000);
 
       // ---------------------------------------------------------------- failures in words
       failPing.set(true);
