@@ -7674,7 +7674,7 @@
                     <li><b>File Manager → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>Sign</b>, then install it.</li>
                     <li>Installs started from <b>File Manager</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
                     <li><b>Console → ADB Shell → Rish mode</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
-                    <li><b>Console → Live Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
+                    <li><b>Live Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
                 </ul>
             </div>
 
@@ -27565,7 +27565,7 @@ Type any command above (e.g. pm list packages -d)</div>
             lcRecItems = items;
             box.innerHTML = items.length
                 ? items.map((it, i) => `<div class="lc-rec-row" onclick="lcvOpen(lcRecItems[${i}].name)" role="button" tabindex="0"><div class="lc-rec-main"><div class="lc-rec-name" translate="no">${escapeHtml(lcRecWhen(it.name, it.modified))}</div><div class="lc-rec-sub" translate="no">${escapeHtml(it.name)} · ${lcRecSize(it.size)}</div></div><div class="lc-rec-del" onclick="event.stopPropagation(); lcRecDelete(${i})" role="button" aria-label="Delete">✕</div></div>`).join('')
-                : emptyStateHtml({ key: 'lcrec-none', icon: 'log', title: 'No recordings yet.', hint: 'Tap Record to file in Console, Live Logcat to make one.', compact: true });
+                : emptyStateHtml({ key: 'lcrec-none', icon: 'log', title: 'No recordings yet.', hint: 'Tap Record to file in Live Logcat to make one.', compact: true });
         }
         let lcRecItems = [];
         function lcRecDelete(i) {
