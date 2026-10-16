@@ -477,6 +477,18 @@ public class SdmDedupTest {
         eq("preferred path wins over depth", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
         e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd/Android:sd/Music"));
         eq("a preferred folder, any file below it", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Android/data/com.x/dup.jpg");
+        e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd/Backup/", "NESTING:PREFER_SHALLOW"));
+        eq("a preferred folder typed with a trailing slash", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
+        e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd//Backup/./", "NESTING:PREFER_SHALLOW"));
+        eq("…with a doubled slash and a dot", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
+        // the spellings of shared storage a person types: /sdcard, another case, a trailing slash (decide() itself: the test tree is not below /storage)
+        List<SdmDedup.Dup> two = Arrays.asList(dup("/storage/emulated/0/DCIM/Camera/IMG_1.jpg"), dup("/storage/emulated/0/Download/IMG_1.jpg"));
+        for (String typed : new String[] { "/storage/emulated/0/DCIM", "/storage/emulated/0/DCIM/", "/sdcard/DCIM", "/sdcard/DCIM/", "/storage/emulated/0/dcim", "/storage/self/primary/DCIM" }) {
+            eq("preferred " + typed + ": the DCIM copy is kept", SdmDedup.decide(two, preferThenShallow(typed)).get(0).path, "/storage/emulated/0/DCIM/Camera/IMG_1.jpg");
+        }
+        for (String typed : new String[] { "/storage/emulated/0/DCI", "DCIM" }) {
+            eq("preferred " + typed + " names no folder of the copies: the shallowest is kept", SdmDedup.decide(two, preferThenShallow(typed)).get(0).path, "/storage/emulated/0/Download/IMG_1.jpg");
+        }
         e.settings.put("arbiter.config", arbiter("LOCATION:PREFER_SECONDARY"));
         eq("secondary storage", keeper(new SdmDedup().scan(e.ctx()), hA), "vol2/photo1.jpg");
         e.settings.put("arbiter.config", arbiter("LOCATION:PREFER_PRIMARY", "MODIFIED:PREFER_NEWER"));
@@ -495,6 +507,15 @@ public class SdmDedupTest {
         eq("the setting as JSON text", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Android/data/com.x/dup.jpg");
         eq("default criteria", SdmDedup.defaultCriteria().size(), 7);
         eq("default order", SdmDedup.defaultCriteria().get(0).type + "," + SdmDedup.defaultCriteria().get(6).type, "DUPLICATE_TYPE,SIZE");
+    }
+
+    static SdmDedup.Dup dup(String path) { return new SdmDedup.Dup(new Sdm.Entry(path, 1000, T0, Sdm.FILE, -1), Boolean.TRUE); }
+
+    /** PREFERRED_PATH with one folder as the page saves it, then the shallowest copy. */
+    static List<SdmDedup.Criterium> preferThenShallow(String typed) throws Exception {
+        return SdmDedup.parseCriteria(new JSONObject().put("criteria", new JSONArray()
+                .put(new JSONObject().put("criteriumType", "PREFERRED_PATH").put("keepPreferPaths", new JSONArray().put(typed)))
+                .put(new JSONObject().put("criteriumType", "NESTING").put("mode", "PREFER_SHALLOW"))));
     }
 
     static void exclusionsAndLinks() throws Exception {

@@ -130,18 +130,30 @@ public final class SdmDedup implements Sdm.ToolImpl {
      * Orders the copies so that the one to keep is first: from the LAST criterium to the first, a stable sort moves the preferred files to the front, so the top
      * criterium has the final say and the ones below break its ties. The incoming order is by path, so the result does not depend on how the files were found.
      */
-    static List<Dup> decide(Collection<Dup> litigants, List<Criterium> crits) {
+    static List<Dup> decide(Collection<Dup> litigants, List<Criterium> crits) { return decide(litigants, crits, 0); }
+
+    /** @param user the Android user whose shared storage the scan read (Sdm.Areas.storageUserId): a preferred path typed as /sdcard/... is that storage */
+    static List<Dup> decide(Collection<Dup> litigants, List<Criterium> crits, final int user) {
         List<Dup> work = new ArrayList<Dup>(litigants);
         Collections.sort(work, new Comparator<Dup>() { @Override public int compare(Dup a, Dup b) { return a.path.compareTo(b.path); } });
         for (int i = crits.size() - 1; i >= 0; i--) {
             final Criterium c = crits.get(i);
             Comparator<Dup> cmp = null;
             if (c.type.equals("PREFERRED_PATH")) {
-                if (c.paths.isEmpty()) continue;
-                final List<String> keep = c.paths;
+                // the folders are typed by hand: compared the way an exclusion compares a path ("/sdcard", "//", "/./" and a trailing "/" resolved, the case
+                // ignored below /storage), so "/sdcard/DCIM/" keeps the copy in /storage/emulated/0/DCIM; a path that is not absolute names no folder
+                final List<String> keep = new ArrayList<String>();
+                for (String p : c.paths) {
+                    try { keep.add(SdmExclusions.matchKey(SdmExclusions.cleanPath(p.trim()), user)); } catch (IllegalArgumentException e) { /* left out */ }
+                }
+                if (keep.isEmpty()) continue;
                 cmp = new Comparator<Dup>() {
                     @Override public int compare(Dup a, Dup b) { return rank(a) - rank(b); }
-                    int rank(Dup d) { for (String p : keep) if (d.path.equals(p) || SdmSieve.isAncestorOf(p, d.path)) return 0; return 1; }
+                    int rank(Dup d) {
+                        String k = SdmExclusions.matchKey(d.path, user);
+                        for (String p : keep) if (k.equals(p) || SdmSieve.isAncestorOf(p, k)) return 0;
+                        return 1;
+                    }
                 };
             } else if (c.type.equals("LOCATION")) {
                 final boolean primary = !c.mode.equals("PREFER_SECONDARY");
@@ -230,8 +242,9 @@ public final class SdmDedup implements Sdm.ToolImpl {
     public static final class DedupResult implements Sdm.Result {
         private List<Cluster> clusters;
         private final List<Criterium> criteria;
+        private final int user;              // whose shared storage the scan read (a preferred path typed as /sdcard/...)
 
-        DedupResult(List<Cluster> clusters, List<Criterium> criteria) { this.clusters = new ArrayList<Cluster>(clusters); this.criteria = criteria; }
+        DedupResult(List<Cluster> clusters, List<Criterium> criteria, int user) { this.clusters = new ArrayList<Cluster>(clusters); this.criteria = criteria; this.user = user; }
 
         @Override public Sdm.Tool tool() { return Sdm.Tool.DEDUPLICATOR; }
         @Override public synchronized int groupCount() { return clusters.size(); }
@@ -243,7 +256,7 @@ public final class SdmDedup implements Sdm.ToolImpl {
         public synchronized int redundantCount() { int n = 0; for (Cluster c : clusters) n += c.redundantCount(); return n; }
         public synchronized List<Cluster> clusters() { return new ArrayList<Cluster>(clusters); }
         public List<Criterium> criteria() { return criteria; }
-        public synchronized DedupResult snapshot() { return new DedupResult(clusters, criteria); }
+        public synchronized DedupResult snapshot() { return new DedupResult(clusters, criteria, user); }
         public synchronized void restore(DedupResult other) { this.clusters = new ArrayList<Cluster>(other.clusters()); }
 
         synchronized Cluster find(String id) { for (Cluster c : clusters) if (c.id.equals(id)) return c; return null; }
@@ -283,7 +296,7 @@ public final class SdmDedup implements Sdm.ToolImpl {
                 if (!changed) { keep.add(c); continue; }
                 if (rest.size() < 2) continue;
                 boolean keeperStays = rest.get(0) == c.files.get(0);
-                keep.add(new Cluster(c.hash, keeperStays ? rest : decide(rest, criteria)));
+                keep.add(new Cluster(c.hash, keeperStays ? rest : decide(rest, criteria, user)));
             }
             clusters = keep;
         }
@@ -311,11 +324,12 @@ public final class SdmDedup implements Sdm.ToolImpl {
         boolean checksum = ctx.bool(K_CHECKSUM, true);
         List<Criterium> criteria = parseCriteria(ctx.settings.opt(K_ARBITER));
         List<String> custom = parsePaths(ctx.settings.opt(K_PATHS));
+        int user = ctx.areas == null ? 0 : ctx.areas.storageUserId();
 
         Run run = new Run(ctx);
         Map<String, Sdm.Entry> files = run.search(custom, minSize, skipUncommon);
         run.check();
-        if (!checksum) return new DedupResult(new ArrayList<Cluster>(), criteria);
+        if (!checksum) return new DedupResult(new ArrayList<Cluster>(), criteria, user);
 
         List<List<Group>> perBucket = run.checksums(files);
         List<Group> groups = new ArrayList<Group>();
@@ -330,7 +344,7 @@ public final class SdmDedup implements Sdm.ToolImpl {
             Group g = groups.get(i);
             List<Dup> dups = new ArrayList<Dup>();
             for (Sdm.Entry e : g.files) dups.add(new Dup(e, run.primaryOf(e.path)));
-            List<Dup> ordered = decide(dups, criteria);
+            List<Dup> ordered = decide(dups, criteria, user);
             clusters.add(new Cluster(g.hash, ordered));
             run.progress("Preparing", ordered.get(0).path, i + 1, groups.size());
         }
@@ -341,7 +355,7 @@ public final class SdmDedup implements Sdm.ToolImpl {
                 return a.hash.compareTo(b.hash);
             }
         });
-        return new DedupResult(clusters, criteria);
+        return new DedupResult(clusters, criteria, user);
     }
 
     /** The search locations from the setting: a JSON array of paths, {"paths": [...]}, or lines of text. */
