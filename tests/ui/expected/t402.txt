@@ -1,9 +1,9 @@
 ok   1. APK Installer off, App Updater on: the APK Installer/Updater tab stays on
 ok      the updater opens
-ok   2. Command-Line Interface off, Logcat Viewer on: Console stays on (the log is in it)
-ok      the new Terminal tab follows the Command-Line Interface and stays off
-ok   3. both old tabs off as well: APK Installer/Updater and Console stay off
+ok   2. Command-Line Interface off, Logcat Viewer on: Live Logcat stays on (the log is in it)
+ok      Console (the shells and the Terminal) follows the Command-Line Interface and stays off
+ok   3. both old tabs off as well: APK Installer/Updater, Console and Live Logcat stay off
 ok   4. only the old tabs off: the tabs that took them in are on (as before)
-ok   5. a current record: APK Installer/Updater and Console switched off stay off
+ok   5. a v7.13 record: APK Installer/Updater and Console switched off stay off
 ok   no page errors
 all passed

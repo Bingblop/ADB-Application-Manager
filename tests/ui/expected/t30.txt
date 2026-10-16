@@ -11,6 +11,6 @@
 9. logcat loaded on open: [ 'logcat:I::300' ]
    output shown: LOG level=I lines=300
 No log lines.
-10. logcat refresh with level E + filter: [ 'logcat:E:ActivityManager:500' ]
+10. logcat refresh with level E + filter: [ 'logcat:E:ActivityManager:1000' ]
 11. logcat clear called: true
 errors: []

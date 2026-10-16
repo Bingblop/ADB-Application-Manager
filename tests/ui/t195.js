@@ -1,6 +1,7 @@
-// Console tab (v7.12.12): the ADB Console pane and the Logcat Viewer tab in one tab, in the look of the Kotlin console. This script checks:
-//   - the two-tab row (ADB Shell | Live Logcat): the segment in use is marked and kept, the underline moves, the page opens on the last one used,
-//   - Live Logcat reads only while it is on screen (starts when it is shown, stops on ADB Shell and on leaving the tab, starts again on coming back),
+// Console tab (v7.12.12): the ADB Console pane and the Logcat Viewer tab in one tab, in the look of the Kotlin console; since v7.14.0 the Terminal is
+// Console's second segment and Live Logcat is its own tab again. This script checks:
+//   - the two-tab row (ADB Shell | Terminal): the segment in use is marked and kept, the underline moves, the page opens on the last one used,
+//   - Live Logcat reads only while its tab is open (starts when it is shown, stops on leaving the tab, starts again on coming back),
 //   - the ADB Shell history: one card per command, newest first, `$ command`, Running... then Finished / Looks like a failure, never an invented exit number,
 //     the result line, Copy, Run again, fold of long output, the cap on the number of cards, Clear, the Run button states (idle, spinner, STOP),
 //   - Rish mode cards: the exit number only where the shell gave one, Stopped,
@@ -27,60 +28,61 @@ const mock = require('./lib/console_mock');
 
   const src = fs.readFileSync(path.join(REPO, 'assets', 'index.html'), 'utf8');
   check('the history as text (Copy, Share, Find) has one declaration: termText', (src.match(/function termText\(/g) || []).length === 1 && (src.match(/function copyTerminal\(/g) || []).length === 1);
-  // ---- 1) the tab and its two segments ----
+  // ---- 1) the tab and its two segments (v7.14.0: ADB Shell | Terminal; Live Logcat is its own tab again, right after Console) ----
   let page = await open();
   const bar = await ev(page, () => [...document.querySelectorAll('.tab-btn')].map(x => x.dataset.tab + ':' + x.innerText.replace('\n', ' ')));
-  check('the tab bar has Console and Terminal side by side and no Logcat Viewer', bar.indexOf('console:Console') >= 0 && bar.indexOf('terminal:Terminal') === bar.indexOf('console:Console') + 1 && !bar.some(x => /logcat/i.test(x)), JSON.stringify(bar));
+  check('the tab bar has Console and Live Logcat side by side and no Terminal tab', bar.indexOf('console:Console') >= 0 && bar.indexOf('logcat:Live Logcat') === bar.indexOf('console:Console') + 1 && !bar.some(x => /^terminal:/.test(x)), JSON.stringify(bar));
   await ev(page, () => switchView('console')); await sleep(300);
   let s = await ev(page, () => ({
-    shell: !document.getElementById('cnSegShell').hidden, log: !document.getElementById('cnSegLog').hidden, seg: cnSeg,
+    shell: !document.getElementById('cnSegShell').hidden, term: !document.getElementById('cnSegTerm').hidden, seg: cnSeg,
     tabs: [...document.querySelectorAll('#cnTabs .cn-tab')].map(t => t.textContent + ':' + t.getAttribute('aria-selected')), role: document.getElementById('cnTabs').getAttribute('role'),
     timer: !!logcatTimer, ph: document.getElementById('termCmd').placeholder }));
-  check('Console opens on ADB Shell: the shell part shows, the log part is hidden, the tab is marked selected', s.shell && !s.log && s.seg === 'shell' && s.tabs.join() === 'ADB Shell:true,Live Logcat:false' && s.role === 'tablist', JSON.stringify(s));
-  check('the log is not read while ADB Shell shows (no poll, no bridge call)', !s.timer && (await ev(page, () => window.__calls.logcat.length)) === 0);
+  check('Console opens on ADB Shell: the shell part shows, the Terminal part is hidden, the tab is marked selected', s.shell && !s.term && s.seg === 'shell' && s.tabs.join() === 'ADB Shell:true,Terminal:false' && s.role === 'tablist', JSON.stringify(s));
+  check('the log is not read in Console (no poll, no bridge call)', !s.timer && (await ev(page, () => window.__calls.logcat.length)) === 0);
   check('the command box says "Enter shell command..."', s.ph === 'Enter shell command...');
   const ind0 = await ev(page, () => { const i = document.querySelector('.cn-ind').getBoundingClientRect(), t = document.getElementById('cnTabs').getBoundingClientRect(), f = document.getElementById('cnTabShell').getBoundingClientRect(); return { left: Math.round(i.left - t.left), w: Math.round(i.width), fw: Math.round(f.width) }; });
   check('the underline is under the first tab (as wide as the tab; the "?" keeps its own room at the end of the row)', ind0.left <= 1 && Math.abs(ind0.w - ind0.fw) <= 2, JSON.stringify(ind0));
 
-  await page.click('#cnTabLog'); await sleep(900);
-  s = await ev(page, () => ({ shell: !document.getElementById('cnSegShell').hidden, log: !document.getElementById('cnSegLog').hidden, kv: window.__kv.console_seg, timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length,
-    ph: document.getElementById('logcatFilter').placeholder, tabs: [...document.querySelectorAll('#cnTabs .cn-tab')].map(t => t.getAttribute('aria-selected')).join(),
-    rows: document.querySelectorAll('#logcatOutput .lc-row').length, ind: Math.round(document.querySelector('.cn-ind').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left), half: Math.round(document.getElementById('cnTabLog').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left) }));
-  check('Live Logcat shows, is remembered, and starts reading at once (Pause shown, polling, the lines drawn)', s.log && !s.shell && s.kv === '"log"' && s.timer && s.play === 'Pause' && s.n >= 1 && s.rows === 2 && s.tabs === 'false,true', JSON.stringify(s));
+  await page.click('#cnTabTerm'); await sleep(900);
+  s = await ev(page, () => ({ shell: !document.getElementById('cnSegShell').hidden, term: !document.getElementById('cnSegTerm').hidden, kv: window.__kv.console_seg, timer: !!logcatTimer,
+    tabs: [...document.querySelectorAll('#cnTabs .cn-tab')].map(t => t.getAttribute('aria-selected')).join(),
+    ind: Math.round(document.querySelector('.cn-ind').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left), half: Math.round(document.getElementById('cnTabTerm').getBoundingClientRect().left - document.getElementById('cnTabs').getBoundingClientRect().left) }));
+  check('Terminal shows and is remembered; the log is still not read', s.term && !s.shell && s.kv === '"term"' && !s.timer && s.tabs === 'false,true', JSON.stringify(s));
   check('the underline moved under the second tab', Math.abs(s.ind - s.half) <= 3, JSON.stringify({ ind: s.ind, half: s.half }));
-  check('the filter box has the Kotlin console\'s hint, with "text" (the filter is plain text, not a regex)', s.ph === 'Filter tag / text...');
-  const kinds = await ev(page, () => ['logcatLevel', 'logcatLines', 'logcatAppBtn', 'logcatPlayBtn', 'logcatRecBtn', 'logcatRecListBtn', 'logcatKey', 'logcatOutput', 'logcatScope'].map(i => !!document.getElementById(i) && document.getElementById('cnSegLog').contains(document.getElementById(i))).every(Boolean)
-    && ['Copy', 'Save', 'Share'].every(t => [...document.querySelectorAll('#cnSegLog button')].some(x => x.textContent.trim() === t)));
-  check('everything of the old Logcat Viewer is in the segment (level, lines, app picker, Play, Record to file, Recordings, key, Copy, Save, Share)', kinds);
-
-  // stops on ADB Shell
   await page.click('#cnTabShell'); await sleep(200);
+  check('ADB Shell again: remembered', await ev(page, () => window.__kv.console_seg === '"shell"' && !document.getElementById('cnSegShell').hidden));
+
+  // Live Logcat, its own tab: reads only while it is open
+  await ev(page, () => switchView('logcat')); await sleep(900);
+  s = await ev(page, () => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length, ph: document.getElementById('logcatFilter').placeholder, rows: document.querySelectorAll('#logcatOutput .lc-row').length }));
+  check('Live Logcat starts reading at once (Stop shown, polling, the lines drawn)', s.timer && s.play === 'Stop' && s.n >= 1 && s.rows === 2, JSON.stringify(s));
+  check('the filter box has the Kotlin console\'s hint, with "text" (the filter is plain text, not a regex)', s.ph === 'Filter tag / text...');
+  const kinds = await ev(page, () => ['logcatLevel', 'logcatLines', 'logcatAppBtn', 'logcatPlayBtn', 'logcatRecBtn', 'logcatRecListBtn', 'logcatKey', 'logcatOutput', 'logcatScope'].map(i => !!document.getElementById(i) && document.querySelector('#view-logcat #cnSegLog').contains(document.getElementById(i))).every(Boolean)
+    && ['Copy', 'Save', 'Share'].every(t => [...document.querySelectorAll('#cnSegLog button')].some(x => x.textContent.trim() === t)));
+  check('everything of the old Logcat Viewer is in the tab (level, lines, app picker, Play, Record to file, Recordings, key, Copy, Save, Share)', kinds);
+  // stops on leaving the tab, starts again on coming back
+  await ev(page, () => switchView('console')); await sleep(200);
   const n1 = await ev(page, () => window.__calls.logcat.length);
   await sleep(1500);
-  s = await ev(page, () => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length, kv: window.__kv.console_seg }));
-  check('ADB Shell stops the log: no timer, Play is back, and no more reads for a second and a half', !s.timer && s.play === 'Play' && s.n === n1 && s.kv === '"shell"', JSON.stringify(s));
-  // stops on leaving the tab, starts again on coming back
-  await page.click('#cnTabLog'); await sleep(400);
-  await ev(page, () => switchView('apps')); await sleep(200);
-  const n2 = await ev(page, () => window.__calls.logcat.length);
-  await sleep(1400);
-  check('leaving the tab while Live Logcat shows stops the reading', !(await ev(page, () => !!logcatTimer)) && (await ev(page, () => window.__calls.logcat.length)) === n2);
-  await ev(page, () => switchView('console')); await sleep(500);
-  s = await ev(page, () => ({ seg: cnSeg, timer: !!logcatTimer, log: !document.getElementById('cnSegLog').hidden, n: window.__calls.logcat.length }));
-  check('coming back opens on Live Logcat again (the part used last) and it reads again', s.seg === 'log' && s.timer && s.log && s.n > n2, JSON.stringify(s));
-  await ev(page, () => switchView('console')); await sleep(100);
+  s = await ev(page, () => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length }));
+  check('leaving it (here for Console) stops the log: no timer, Play is back, and no more reads for a second and a half', !s.timer && s.play === 'Play' && s.n === n1, JSON.stringify(s));
+  await ev(page, () => switchView('logcat')); await sleep(500);
+  check('coming back reads again', await ev(page, n => !!logcatTimer && window.__calls.logcat.length > n, n1));
+  await ev(page, () => switchView('logcat')); await sleep(100);
   check('opening the tab that is already open does not stop the log', await ev(page, () => !!logcatTimer));
   await page.close();
 
-  // the saved part is used at the next start, and an unknown value means ADB Shell
-  page = await open({ kv: { console_seg: '"log"' } });
+  // the saved part is used at the next start, and an unknown value (or the old "log") means ADB Shell
+  page = await open({ kv: { console_seg: '"term"' } });
   await ev(page, () => switchView('console')); await sleep(500);
-  check('after a restart Console opens on the part saved last (Live Logcat) and reads at once', await ev(page, () => !document.getElementById('cnSegLog').hidden && !!logcatTimer && cnSeg === 'log'));
+  check('after a restart Console opens on the part saved last (Terminal)', await ev(page, () => !document.getElementById('cnSegTerm').hidden && cnSeg === 'term' && !logcatTimer));
   await page.close();
-  page = await open({ kv: { console_seg: '"bogus"' } });
-  await ev(page, () => switchView('console')); await sleep(300);
-  check('a saved value that is not one of the two means ADB Shell', await ev(page, () => cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && !logcatTimer));
-  await page.close();
+  for (const v of ['"bogus"', '"log"']) {
+    page = await open({ kv: { console_seg: v } });
+    await ev(page, () => switchView('console')); await sleep(300);
+    check('a saved value that is not one of the two (' + v + ') means ADB Shell', await ev(page, () => cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && !logcatTimer));
+    await page.close();
+  }
 
   // ---- 2) the ADB Shell history ----
   page = await open();

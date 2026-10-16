@@ -7,7 +7,7 @@
 2. every change is recorded, newest first, with the old and new value: true [["global","device_name","Sam's phone","Renamed"],["global","stay_on_while_plugged_in","7","3"]]
    and kept in the app's settings store: true
    the Edited filter lists exactly those, each with a dot: true [{"k":"device_name","dot":true},{"k":"stay_on_while_plugged_in","dot":true}]
-   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now Sam's phone → Renamed Revert","stay_on_while_plugged_in Global · just now 7 → 3 Revert"]
+   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now · Oct 3, 04:00 AM Sam's phone → Renamed Revert","stay_on_while_plugged_in Global · just now · Oct 3, 04:00 AM 7 → 3 Revert"]
    Revert puts the old value back: true
    and the revert is itself recorded: true
    reverting something that has changed since asks first: true ["stay_on_while_plugged_in has changed since: it is now “5” (this change left it “3”).\n\nPut the old value back anyway?"]

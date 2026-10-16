@@ -47,7 +47,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('recent apps:', await names());
   await page.click('#filterScroll .filter-pill[data-filter="all"]');
   // Share CSV (the Export button is gone)
-  await page.click('#view-apps >> text=Share CSV');
+  await page.evaluate(() => switchView('saved-lists')); await page.click('#savedCsvBtn'); await page.evaluate(() => switchView('apps'));   // v7.14: CSV lives in Saved Applications
   const saved = await page.evaluate(() => window.__st.saved);
   console.log('shared file:', saved.name, '| Export button gone:', (await page.locator('#view-apps button', { hasText: /^Export$/ }).count()) === 0);
   console.log(saved.text.split('\n').filter(l => l.startsWith('"Whats')).join(''));

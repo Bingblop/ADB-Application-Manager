@@ -1,4 +1,4 @@
-ok   Settings has a My Themes card right after Palette Style
+ok   Settings has My Themes in the Palette Style card, at its end, and the Curated Theme Palettes card next
 ok   empty: no themes, and the note says how to make one
 ok   the card says what a theme holds and that Appearance is not part of it
 ok   Save asks for a name, suggesting the style and its source color

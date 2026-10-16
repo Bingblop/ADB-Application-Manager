@@ -1,6 +1,7 @@
 package com.bloatware.bingblop;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedHashMap;
@@ -11,6 +12,9 @@ import java.util.Map;
  * A GET that follows redirects itself, so each hop can be judged: an address is never downgraded from https to http, an http
  * address never leads to a loopback service, and a key or cookie stays with the host it was meant for. (The platform's own redirect
  * handling does none of this reliably, and sends the request headers along wherever the answer points.)
+ *
+ * {@link #post} uploads a body of a known length, streamed (never held in memory whole). An upload is never sent on to another address: a
+ * redirect in answer to it is an error, so the body (and the headers) only ever reach the address the caller named.
  */
 final class HttpSafe {
     private HttpSafe() {}
@@ -139,13 +143,9 @@ final class HttpSafe {
         String cur = url;
         Map<String, String> hdr = headers == null ? new LinkedHashMap<String, String>() : headers;
         for (int hop = 0; hop <= MAX_HOPS; hop++) {
-            HttpURLConnection c = (HttpURLConnection) new URL(cur).openConnection();
+            HttpURLConnection c = connection(cur, connectMs, readMs, hdr);
             boolean keep = false;
             try {
-                c.setInstanceFollowRedirects(false);
-                c.setConnectTimeout(connectMs);
-                c.setReadTimeout(readMs);
-                for (Map.Entry<String, String> e : hdr.entrySet()) c.setRequestProperty(e.getKey(), e.getValue());
                 int code = c.getResponseCode();
                 if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
                     String loc = c.getHeaderField("Location");
@@ -167,5 +167,52 @@ final class HttpSafe {
             }
         }
         throw new IOException("too many redirects from " + new URL(url).getHost());
+    }
+
+    /** An upload's body. */
+    interface Body {
+        /** Called with the connection before anything is sent, so a caller can disconnect it from another thread (a cancel) while it writes. */
+        void opened(HttpURLConnection c);
+        /** Writes the body into the connection's stream (the stream is closed by {@link #post}). */
+        void writeTo(OutputStream out) throws IOException;
+    }
+
+    /**
+     * POSTs {@code length} bytes that {@code body} writes, in fixed-length streaming mode (nothing is buffered whole), and returns the
+     * connection with its status already read; the caller reads the answer and disconnects. Any redirect (3xx) is an IOException: the upload
+     * is not re-sent anywhere. A body that writes a different number of bytes than {@code length} fails as the platform makes it fail.
+     */
+    static HttpURLConnection post(String url, int connectMs, int readMs, Map<String, String> headers, long length, Body body) throws IOException {
+        if (length < 0) throw new IOException("an upload needs its length");
+        HttpURLConnection c = connection(url, connectMs, readMs, headers == null ? new LinkedHashMap<String, String>() : headers);
+        boolean keep = false;
+        try {
+            c.setRequestMethod("POST");
+            c.setDoOutput(true);
+            c.setFixedLengthStreamingMode(length);
+            body.opened(c);
+            OutputStream out = c.getOutputStream();
+            try {
+                body.writeTo(out);
+            } finally {
+                out.close();
+            }
+            int code = c.getResponseCode();
+            if (code >= 300 && code < 400) throw new IOException("refused a redirect of an upload to " + new URL(url).getHost());
+            keep = true;
+            return c;
+        } finally {
+            if (!keep) c.disconnect();
+        }
+    }
+
+    /** One connection with automatic redirects off, the timeouts and the headers set; nothing is sent yet. The only place this class opens one. */
+    private static HttpURLConnection connection(String url, int connectMs, int readMs, Map<String, String> headers) throws IOException {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setInstanceFollowRedirects(false);
+        c.setConnectTimeout(connectMs);
+        c.setReadTimeout(readMs);
+        for (Map.Entry<String, String> e : headers.entrySet()) c.setRequestProperty(e.getKey(), e.getValue());
+        return c;
     }
 }

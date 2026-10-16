@@ -6,7 +6,7 @@
    with two sheets open only one (the top) closes: true {"results":false,"modes":true}
    next Back closes the one below: true
 3. Back collapses the panel first, then clears the selection: true [{"panel":false,"sel":2},0]
-4. Back retraces terminal -> console (Live Logcat) -> files -> apps: true ["true:console","true:files","true:apps"]
+4. Back retraces console (Terminal) -> Live Logcat -> files -> apps: true ["true:logcat","true:files","true:apps"]
    at the first tab it asks before exiting: true
    revisiting a tab does not stack duplicates: true ["apps"]
 5. from a tab with no history Back returns to Applications: true

@@ -1,0 +1,30 @@
+ok   1. four groups, each under a heading: OPEN|CONTROL|MAINTENANCE|PACKAGE
+     com.example.installed: Launch, App Info, Logs, Force Stop, Freeze, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall
+     com.example.gone: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall
+     com.example.disabled: Launch, App Info, Logs, Force Stop, Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall
+     com.example.suspended: Launch, App Info, Logs, Force Stop, Freeze, Unsuspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates(dimmed), Uninstall
+     com.example.gonesus: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Unsuspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall
+ok   2. twelve buttons, three to a row, in four rows: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      com.example.installed: every button in the same cell as for the installed app: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      com.example.gone: every button in the same cell as for the installed app: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      com.example.disabled: every button in the same cell as for the installed app: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      com.example.suspended: every button in the same cell as for the installed app: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      com.example.gonesus: every button in the same cell as for the installed app: 0,17,102x44 110,17,102x44 220,17,102x44 0,86,102x44 110,86,102x44 220,86,102x44 0,156,102x44 110,156,102x44 220,156,102x44 0,225,102x44 110,225,102x44 220,225,102x44
+ok      the installed app: Launch, App Info, Logs | Force Stop, Freeze, Suspend | Clear Data, Optimize, Standby | Extract APK, Rem Updates, Uninstall: Launch,App Info,Logs,Force Stop,Freeze,Suspend,Clear Data,Optimize,Standby,Extract APK,Rem Updates,Uninstall
+ok      the uninstalled app: Reinstall in Uninstall's cell, Suspend kept in its cell (not suspended): Launch,App Info,Logs,Force Stop,Enable,Suspend,Clear Data,Optimize,Standby,Extract APK,Rem Updates,Reinstall
+ok      the uninstalled app that is suspended: Unsuspend in that cell: Launch,App Info,Logs,Force Stop,Enable,Unsuspend,Clear Data,Optimize,Standby,Extract APK,Rem Updates,Reinstall
+ok      the disabled app: Enable in Freeze's cell
+ok      the suspended app: Unsuspend in Suspend's cell
+ok   3. a button that does not apply stays, dimmed, with its reason: Launch and Force Stop of an uninstalled app: Launch (Not installed for this user), Force Stop (Not installed for this user)
+ok      Rem Updates of a user app: Rem Updates (Only a system app has updates to remove)
+ok      nothing is dimmed for an installed system app:
+ok      a tap on the dimmed Launch runs nothing and says why: Not installed for this user []
+ok   4. Uninstall while the menu is open: Reinstall comes in its cell, nothing else moves: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall | top 508→508
+ok      Launch and Force Stop are dimmed now, in their places: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall
+ok      Reinstall: Uninstall is back in the same cell, nothing moves: Launch, App Info, Logs, Force Stop, Freeze, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall
+ok      Suspend: Unsuspend in the same cell, nothing moves: Launch, App Info, Logs, Force Stop, Freeze, Unsuspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall
+ok   5. Unsuspend of an uninstalled, suspended app runs the checked action and the cell then says Suspend: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall
+ok      where Android refuses Suspend for it, the check afterwards says so and the button is still there, still Suspend: Command Result SUSPEND ✕ Gone Suspended NOT SUSPENDED com.example.gonesus Checked afterwards: not suspended, although the command reported success. Done
+ok      where Android allows it, the cell says Unsuspend
+ok   no page errors: []
+all checks passed

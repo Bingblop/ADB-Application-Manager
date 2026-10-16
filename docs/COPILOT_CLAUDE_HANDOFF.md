@@ -194,6 +194,25 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.14.0 (cut from `main`; written 2026-10-15)
+
+A feature release: the owner's v7.14 change list and follow-ups, the ADB Stub for Wear OS watches and the Self-test. The app is renamed ADB System Manager (package, folders and certificate unchanged). The manifest gains `READ_LOGS`, approved by the owner in the project thread. The owner waived the phone test before the release; `docs/PHONE-SCRIPT-v7.14.0.md` is the script to run after it.
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #229, #232 | Self-test in About (27 read-only checks, redacted report); the package-record check finds the record with grep | selftest suite | PHONE-SCRIPT-v7.14.0 step 26 |
+| #233 | ADB Stub for Wear OS watches (wearstub/, carried as assets/adb_stub.apk) | wearstub suite, t350 | PHONE-SCRIPT-v7.14.0 steps 22 to 25 |
+| #235 | the 42 fixes of the v7.12 to v7.14 review (`/mnt/project-files/reviews/code-review-v7.12-v7.14.md` in the project), among them the ADB Stub's 5-minute lease | one test per finding (Java suites, t400 to t407 on main, t455, t463; main's t400 is t481 after the merge) | PHONE-SCRIPT-v7.14.0 step 25a |
+| #236 | `release.yml`: a throwaway-key test run is a draft prerelease | none | none |
+| #234 | the v7.14 change list (rename, speed test, permissions by command, page dialogs, Task Manager rates, ANGLE, filled buttons, Row tints, Live Logcat tab, Connected Devices parity, folding Settings, Undo 3 s, 100-change history) and the review fixes | speedmath, speedtest, pagedialogs suites; t400 to t480 (new ones listed in the changelog) | PHONE-SCRIPT-v7.14.0 steps 1 to 21 |
+| bump | Version 7.14.0 (859), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.14.0.md`, `docs/PHONE-SCRIPT-v7.14.0.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device or a watch.** The speed test's numbers, the ANGLE switch, the grant-by-command read-back and the watch's Wi-Fi after Disconnect can only be judged on hardware.
+- **Deliberate limits:** Task Manager offers nothing faster than 50 ms (graph) and 0.5 s (poll); ANGLE needs Root; a device's app list shows only the states a device can report, and its Logcat has no app picker or Record to file.
+- **Paused after this release** (owner, 2026-10-15): no privileged-features work until he asks.
+
 ## v7.13.4 (cut from `main`; written 2026-10-15)
 
 A small release: Backup moved from the single-app menu to the batch menu (owner's request, 2026-10-15). No setting or permission changes, and no Java change: the page loops over the existing `backupApp` bridge call (the phone runs one backup at a time and reports each result through `onBackupDone`).

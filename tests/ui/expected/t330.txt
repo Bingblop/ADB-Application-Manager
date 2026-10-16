@@ -8,13 +8,13 @@ ok   Select shown: on
 ok   Clear: off
 ok   en: the "?" covers neither tab nor its text, and stays inside the row
 ok   en: both tab labels fit
-ok   en: the underline lines up with the selected tab (ADB Shell, then Live Logcat)
+ok   en: the underline lines up with the selected tab (ADB Shell, then Terminal)
 ok   de: the "?" covers neither tab nor its text, and stays inside the row
 ok   de: both tab labels fit
-ok   de: the underline lines up with the selected tab (ADB Shell, then Live Logcat)
+ok   de: the underline lines up with the selected tab (ADB Shell, then Terminal)
 ok   ar: the "?" covers neither tab nor its text, and stays inside the row
 ok   ar: both tab labels fit
-ok   ar: the underline lines up with the selected tab (ADB Shell, then Live Logcat)
+ok   ar: the underline lines up with the selected tab (ADB Shell, then Terminal)
 ok   light: the toast is filled with the text colour and written in the page colour
 ok   light: it stands out from the cards (contrast at least 7:1) and its text reads (at least 7:1)
 ok   light: the toast is dark (luminance under 0.2)

@@ -1,0 +1,3 @@
+ok   360px: Share, Copy package and Copy name have their label centred (within 1.5 px both ways) and are at least 36 px high
+ok   412px: Share, Copy package and Copy name have their label centred (within 1.5 px both ways) and are at least 36 px high
+errors: []

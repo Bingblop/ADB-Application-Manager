@@ -68,11 +68,11 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
   // 2) buttons that were told apart by a picture
   const bt = await ev(() => {
     const css = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e) : null; };
-    const plain = css('.batch-grid-btn:not(.danger):not(.accent)'), danger = css('.batch-grid-btn.danger'), accent = css('.batch-grid-btn.accent');
+    const plain = css('.batch-grid-btn:not(.danger):not(.accent):not(.blue):not(.green)'), danger = css('.batch-grid-btn.danger'), accent = css('.batch-grid-btn.accent');
     const ref = document.createElement('span'); ref.className = 'upd-msg error'; document.body.appendChild(ref); const bloat = getComputedStyle(ref).color; ref.remove();
-    return { plain: plain.color, danger: danger.color, dangerBorder: danger.borderColor, bloat, accentBg: accent.backgroundColor, accentColor: accent.color, plainBg: plain.backgroundColor, accentVar: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() };
+    return { plain: plain.color, danger: danger.color, dangerBorder: danger.borderColor, dangerImg: danger.backgroundImage, plainImg: plain.backgroundImage, bloat, accentBg: accent.backgroundColor, accentColor: accent.color, plainBg: plain.backgroundColor, accentVar: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() };
   });
-  check('2. Uninstall and Delete (the danger buttons) are in the failed color, the others are not', bt.danger === bt.bloat && bt.plain !== bt.danger && bt.dangerBorder === bt.bloat, JSON.stringify(bt));
+  check('2. Uninstall and Delete (the danger buttons) are filled red (a gradient, black text; v7.14 filled the coloured buttons), the others are not', /linear-gradient/.test(bt.dangerImg) && bt.danger === 'rgb(0, 0, 0)' && bt.plainImg === 'none' && bt.plain !== bt.danger, JSON.stringify(bt));
   check('   the main action (the accent buttons: Install, Restore, Reinstall) is tinted and in the accent color', bt.accentBg !== bt.plainBg && bt.accentColor !== bt.plain, JSON.stringify(bt));
   await ev(() => { termSaved = [{ name: 'Connect', cmd: 'adb connect 192.168.1.5', pinned: true }]; termRenderPins(); });
   const pin = await ev(() => { const p = document.querySelector('#view-console .term-pin'), o = document.querySelector('#view-console .apps-tool-btn:not(.term-pin)'); return { pinned: p && getComputedStyle(p).borderColor, other: o && getComputedStyle(o).borderColor, accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), pinColor: p && getComputedStyle(p).color, text: p && p.textContent }; });

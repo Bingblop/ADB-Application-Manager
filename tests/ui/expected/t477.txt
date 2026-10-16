@@ -1,0 +1,16 @@
+ok   dark, Row tints step 1: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   dark: every row's badge and bar are in its level's dot colour, the badge text at 4.5:1 or more
+ok   dark, Row tints step 2: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   dark, Row tints step 3: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   dark, Row tints step 4: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   dark: Off draws no tint and each step more than the one before
+ok   light, Row tints step 1: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   light: every row's badge and bar are in its level's dot colour, the badge text at 4.5:1 or more
+ok   light, Row tints step 2: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   light, Row tints step 3: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   light, Row tints step 4: each row tinted in its dot colour (no fixed wash) and its text at 4.5:1 or more where the tint is strongest
+ok   light: Off draws no tint and each step more than the one before
+ok   Play is filled with the green gradient, black text and outline
+ok   while following it says Stop, filled with the red gradient, black text and outline
+ok      and back to Play when stopped
+errors: []

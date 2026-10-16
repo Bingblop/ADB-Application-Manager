@@ -85,9 +85,9 @@ const { chromium, PAGE } = require('./lib/pw');
   // ---- the "?" ----
   const helps = await ev(() => Object.keys(HELP_LINKS).map(v => { const q = document.querySelector('#view-' + v + ' .help-q'); return [v, q ? q.dataset.help : null]; }));
   const missing = helps.filter(h => !h[1]).map(h => h[0]).sort().join();
-  check('every tab with a card has one; Apps and the Terminal have no card to hold it', missing === 'apps,terminal', missing);
+  check('every tab with a card has one; Apps has no card to hold it (the Terminal is a segment of Console since v7.14.0)', missing === 'apps', missing);
   check('each points at its own topic', helps.filter(h => h[1]).every(h => h[1] === (h[0] === 'prefs' ? 'prefs' : 'tab-' + h[0])), JSON.stringify(helps));
-  check('they sit inside the first card (Console: on its tab row), not inside its title', await ev(() => Array.from(document.querySelectorAll('.help-q')).every(q => (q.parentNode.classList.contains('color-card') || q.parentNode.id === 'cnTabs') && q.parentNode.classList.contains('has-help') && !q.closest('.color-card-title'))));
+  check('they sit inside the first card (Console: on its tab row, Live Logcat: on its title row), not inside its title', await ev(() => Array.from(document.querySelectorAll('.help-q')).every(q => (q.parentNode.classList.contains('color-card') || q.parentNode.id === 'cnTabs' || q.parentNode.id === 'lcTitleRow') && q.parentNode.classList.contains('has-help') && !q.closest('.color-card-title'))));
   check('and nothing is doubled', await ev(() => Array.from(document.querySelectorAll('.color-card')).every(c => c.querySelectorAll(':scope > .help-q').length <= 1)));
   await ev(() => switchView('debloater')); await wait(300);
   await page.screenshot({ path: 'help_q.png' });

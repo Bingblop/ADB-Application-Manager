@@ -105,11 +105,12 @@ public class DumpPermissionTest {
         int end = page.indexOf("];", dmp);
         String row = dmp > 0 ? page.substring(dmp, page.indexOf("}", dmp) + 1) : "";
         int next = page.indexOf("{ key:", dmp + 5);
-        check("page: PERM_DEFS has the dump row right after secure_settings and it is the last one", sec > 0 && dmp > sec && page.indexOf("{ key:", sec + 5) == dmp && (next < 0 || next > end), row);
-        check("   it is privOnly (a working mode) and known (only when the build reports it)", has(row, "privOnly: true", "known: true"), row);
+        int logs = page.indexOf("{ key: 'read_logs'");
+        check("page: PERM_DEFS has the dump row right after secure_settings, then read_logs as the last one", sec > 0 && dmp > sec && page.indexOf("{ key:", sec + 5) == dmp && next == logs && page.indexOf("{ key:", logs + 5) > end, row);
+        check("   it is adbOnly (granted through a working mode) and known (only when the build reports it)", has(row, "adbOnly: true", "known: true"), row);
         check("   its name and reason", has(row, "name: 'Dump system services (DUMP)'", "dumpsys", "battery, power and memory", "working mode"), row);
         check("   Allow calls the bridge's requestDumpAccess", page.contains("else if (key === 'dump') { if (b.requestDumpAccess) answer = String(b.requestDumpAccess()); }"));
-        check("   the filter that hides it: privOnly needs isPrivilegedActive, known needs a reported status", page.contains("(!d.privOnly || isPrivilegedActive) && (!d.known || permStatus[d.key] !== undefined)"));
+        check("   the filter that hides it: known needs a reported status; without a working mode an adbOnly row is shown locked", page.contains("function visiblePermDefs() { return PERM_DEFS.filter(d => !d.known || permStatus[d.key] !== undefined); }") && page.contains("function permLocked(d) { return !!d.adbOnly && !isPrivilegedActive; }"));
 
         // ---- the languages: the name and the reason are translated in every dictionary
         File[] langs = new File(repo, "assets/lang").listFiles((d, n) -> n.endsWith(".js"));
