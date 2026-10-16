@@ -1,0 +1,14 @@
+ok   1. the Application Manager's pills are All Apps, Installed | Uninstalled, System | User, Enabled | Frozen, Running, Suspended, Trackers, Patched: no Updated 7d: all,installed,uninstalled,system,user,enabled,frozen,running,suspended,trackers,patched
+ok      no pill, no count element, no word in the tab, no name in the filter table, no helper left: {"pill":false,"count":false,"text":false,"names":false,"fn":"undefined","days":"undefined"}
+ok      every other filter still works and the list reloads with no page error:
+ok   2. Sort by Last updated is still in the sort menu: name=Name (A–Z),updated=Last updated,installed=Install date,size=Size,updates=Updates first
+ok      it lists the newest update first and each row shows the date of its update (what the pill used to count): {"names":["Fresh Update","System Thing","Week Old","Old Timer","Gone"],"metas":["• updated Oct 2, 2026","• updated Oct 1, 2026","• updated Sep 27, 2026","• updated Dec 7, 2025"],"opt":["name=Name (A–Z)","updated=Last updated","installed=Install date","size=Size","updates=Updates first"]}
+ok      no page error:
+ok   3. Saved Applications has All, Uninstalled, System, User, Enabled, Frozen, Running, Suspended, Patched: no Updated 7d: all,uninstalled,system,user,enabled,frozen,running,suspended,patched
+ok      the Debloater's "Also show only" row has All, System, User, Running, Suspended, Patched: no Updated 7d: all,system,user,running,suspended,patched
+ok      Connected Devices never had it: its filters are Installed, Uninstalled, System, User, Enabled, Frozen
+ok      none of the three pill rows says Updated 7d
+ok   4. remembered filters from before (Updated 7d among them) load without it and keep the rest: {"apps":["running"],"uad":["system"],"saved":[],"lit":["running"]}
+ok      a set that held only Updated 7d comes back as All Apps and lists every app
+ok   5. the Help Guide no longer lists Updated 7d, and tells how to see what changed lately: sort by Last updated: has Updated 7d: false
+all passed

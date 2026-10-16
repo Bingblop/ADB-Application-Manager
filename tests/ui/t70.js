@@ -46,9 +46,6 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await page.click('#filterScroll .filter-pill[data-filter="suspended"]');
   check('   a filter with no card (Suspended) lights none', (await active(page)) === 'none', await active(page));
   await page.click('#filterScroll .filter-pill[data-filter="all"]');
-  await page.click('#filterScroll .filter-pill[data-filter="recent"]');
-  check('   same for Updated 7d', (await active(page)) === 'none', await active(page));
-  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   check('   tapping All Apps is back to the start', (await active(page)) === 'none' && (await pill(page)) === 'all', await active(page));
   for (const f of ['frozen', 'user', 'uninstalled']) {
     await page.click('#filterScroll .filter-pill[data-filter="all"]');

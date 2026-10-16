@@ -4264,8 +4264,6 @@ x: {
 "Update the package lists": "Perbarui daftar paket",
 "Update theme": "Perbarui tema",
 "Updated": "Diperbarui",
-"Updated 7d": "Diperbarui 7 hari",
-"Updated 7d (": "Diperbarui 7 hr (",
 "Updated. The app will restart.": "Diperbarui. Aplikasi akan dimulai ulang.",
 "Updater": "Pembaru",
 "Updates Available": "Pembaruan Tersedia",

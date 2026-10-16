@@ -26,7 +26,7 @@
 
   <h4>The filter pills</h4>
   <p>Under the Sort row is one strip of filter pills that scrolls sideways. A tip says so; tap its arrow to scroll, or its X to hide it, or just scroll the strip once. Tap a pill to turn it on or off. The number in brackets is how many apps are in that group. A pill lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for User, purple for System and red for Uninstalled, so you can tell at a glance which one is in use.</p>
-  <p>The pills, from left to right: <b>All Apps</b>, then three pairs that share one frame (<b>Installed | Uninstalled</b>, <b>System | User</b>, <b>Enabled | Frozen</b>), then <b>Running</b>, <b>Updated 7d</b>, <b>Suspended</b>, <b>Trackers</b> and <b>Patched</b>.</p>
+  <p>The pills, from left to right: <b>All Apps</b>, then three pairs that share one frame (<b>Installed | Uninstalled</b>, <b>System | User</b>, <b>Enabled | Frozen</b>), then <b>Running</b>, <b>Suspended</b>, <b>Trackers</b> and <b>Patched</b>. To see what changed lately, sort by <b>Last updated</b> instead: the newest updates come first, and each row shows the date it was updated.</p>
   <table class="hg-table">
     <thead><tr><th>Pill</th><th>Shows the apps that...</th></tr></thead>
     <tbody>
@@ -38,7 +38,6 @@
       <tr><td><b>Enabled</b></td><td>...are on: not frozen and not uninstalled. A suspended app is still Enabled.</td></tr>
       <tr><td><b>Frozen</b></td><td>...are disabled.</td></tr>
       <tr><td><b>Running</b></td><td>...have a live process now. Needs a working mode. Turning it on turns Uninstalled off (a running app is installed).</td></tr>
-      <tr><td><b>Updated 7d</b></td><td>...were installed or updated in the last 7 days.</td></tr>
       <tr><td><b>Suspended</b></td><td>...are paused with Suspend.</td></tr>
       <tr><td><b>Trackers</b></td><td>...contain at least one known tracker library (advertising, analytics, crash reporting). The first time you tap it the app reads the code of every installed app once (it says how many, and the pill counts them as it goes); later taps are instant, and only new or updated apps are read again. See <a href="#apps-menu">The Trackers chip</a>.</td></tr>
       <tr><td><b>Patched</b></td><td>...look patched or repackaged, for example by ReVanced, or Xposed/LSPosed modules. They carry a teal tag.</td></tr>
@@ -699,7 +698,7 @@
   <div class="hg-note"><b>Tip.</b> Choose a folder that your cloud app syncs (or an SD card), switch <b>Back up automatically</b> on, and your lists survive losing the phone. If Android says it no longer lets the app use the folder (<i>choose it again</i>), press <b>Choose folder…</b> once more.</div>
 
   <h4>The filters of this tab</h4>
-  <p>Under the heading "Show only the apps in each list that match (combine as many as you like)" is a row of pills: <b>All</b>, <b>Uninstalled</b>, <b>System</b>, <b>User</b>, <b>Enabled</b>, <b>Frozen</b>, <b>Running</b>, <b>Updated 7d</b>, <b>Suspended</b> and <b>Patched</b>. They are the same filters as in the <a href="#tab-apps">Application Manager</a>, including the rule that System / User and Enabled / Frozen are pairs that keep only one side.</p>
+  <p>Under the heading "Show only the apps in each list that match (combine as many as you like)" is a row of pills: <b>All</b>, <b>Uninstalled</b>, <b>System</b>, <b>User</b>, <b>Enabled</b>, <b>Frozen</b>, <b>Running</b>, <b>Suspended</b> and <b>Patched</b>. They are the same filters as in the <a href="#tab-apps">Application Manager</a>, including the rule that System / User and Enabled / Frozen are pairs that keep only one side.</p>
   <ul>
     <li>With a filter on, each card shows only the apps that match, the count reads "(number) of (total) apps", and <b>Recall</b> becomes "Recall (number)": only the matching apps are selected.</li>
     <li>A list with no matching app is hidden. If every list is hidden, the tab says "No saved list has apps that match these filters."</li>

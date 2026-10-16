@@ -8,7 +8,6 @@
    the list below shows what the lit card counts: true
    choosing the System pill lights System: true system:true
    a filter with no card (Suspended) lights none: true none
-   same for Updated 7d: true none
    tapping All Apps is back to the start: true none
    frozen card lights frozen and the pill follows: true frozen:true
    user card lights user and the pill follows: true user:true

@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "Обновить списки пакетов",
 "Update theme": "Обновить тему",
 "Updated": "Обновлено",
-"Updated 7d": "Обновлены за 7 дн.",
-"Updated 7d (": "Обновлено за 7 дн. (",
 "Updated. The app will restart.": "Обновлено. Приложение перезапустится.",
 "Updater": "Обновления",
 "Updates Available": "Доступные обновления",

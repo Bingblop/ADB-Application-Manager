@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "パッケージリストを更新",
 "Update theme": "テーマを更新",
 "Updated": "更新しました",
-"Updated 7d": "7日以内に更新",
-"Updated 7d (": "7日以内に更新(",
 "Updated. The app will restart.": "更新しました。アプリが再起動します。",
 "Updater": "アップデーター",
 "Updates Available": "利用可能な更新",
