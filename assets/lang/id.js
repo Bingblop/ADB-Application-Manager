@@ -3915,6 +3915,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "Manifest tidak meminta pustaka tambahan apa pun (tanpa entri uses-library).",
 "The marked card comes from reading the phone back, not from this tap.": "Kartu yang ditandai berasal dari pembacaan kembali ponsel, bukan dari ketukan ini.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "Nama pada jenis kode adalah kuncinya. Sama di setiap ponsel yang memiliki pengaturan itu.",
+"The network changed during the test.": "Jaringan berubah selama tes.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "Angka diperbarui setiap lima detik selama tab ini di layar dan berhenti saat kamu meninggalkannya. Tidak ada yang memerlukan mode kerja, dan tidak ada yang diubah. Salin laporan menaruh angka yang sama sebagai teks biasa di papan klip.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "Kode lama sudah tidak ada. Semua yang pernah Anda beri kode itu harus diberi kode yang baru.",
 "The older storage permission some apps still check for.": "Izin penyimpanan lama yang masih diperiksa sebagian aplikasi.",

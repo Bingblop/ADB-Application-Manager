@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "لا يطلب ملف manifest أي مكتبة إضافية (لا يوجد إدخال uses-library).",
 "The marked card comes from reading the phone back, not from this tap.": "البطاقة المعلّمة تأتي من قراءة الهاتف مجددًا، لا من هذه النقرة.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "الاسم في نوع الشيفرة هو المفتاح. وهو نفسه على كل هاتف يحتوي هذا الإعداد.",
+"The network changed during the test.": "تغيّرت الشبكة أثناء الاختبار.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "تتحدث الأرقام كل خمس ثوانٍ ما دام هذا التبويب على الشاشة وتتوقف عندما تغادره. لا شيء يحتاج إلى وضع تشغيل، ولا يتغير شيء. «نسخ التقرير» يضع الأرقام نفسها كنص عادي في الحافظة.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "الرمز القديم لم يعد موجودًا. كل ما منحته إياه يحتاج إلى الرمز الجديد.",
 "The older storage permission some apps still check for.": "إذن التخزين القديم الذي لا تزال بعض التطبيقات تتحقق منه.",

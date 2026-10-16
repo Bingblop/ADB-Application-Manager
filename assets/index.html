@@ -28517,7 +28517,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // A full screen of its own over the Task Manager (Back, the arrow and the X close it). SpeedTest.java measures (latency, then download,
         // then upload against Cloudflare) and streams events to window.onSpeedTest; this part only shows them. While the screen is open the
         // Task Manager's own poll is paused (it would compete with the test for the CPU and the radio) and it resumes on closing. A test stops
-        // on Stop, on closing the screen, on leaving the tab and when the app goes to the background; the app stops it in onDestroy.
+        // on Stop, on closing the screen, on leaving the tab, when the app goes to the background and when the network changes; the app stops it in onDestroy.
         const ST_TICKS = [0, 1, 5, 10, 20, 50, 100, 250, 500, 1000];           // the gauge's scale: equal steps between these, so 3 Mbps and 300 both move the needle
         const ST_HIST_KEY = 'speedtest_history', ST_HIST_MAX = 10;
         const ST_COLOS = { AMS: 'Amsterdam', ARN: 'Stockholm', ATL: 'Atlanta', ATH: 'Athens', BCN: 'Barcelona', BKK: 'Bangkok', BNE: 'Brisbane', BOG: 'Bogotá', BOM: 'Mumbai', BOS: 'Boston',
@@ -28528,7 +28528,7 @@ Type any command above (e.g. pm list packages -d)</div>
             OSL: 'Oslo', OTP: 'Bucharest', PDX: 'Portland', PHX: 'Phoenix', PRG: 'Prague', SCL: 'Santiago', SEA: 'Seattle', SFO: 'San Francisco', SIN: 'Singapore', SJC: 'San Jose',
             SOF: 'Sofia', SYD: 'Sydney', TLV: 'Tel Aviv', TPE: 'Taipei', VIE: 'Vienna', WAW: 'Warsaw', YUL: 'Montreal', YVR: 'Vancouver', YYZ: 'Toronto', ZRH: 'Zurich' };
         const ST_NET_LABEL = { wifi: 'Wi-Fi', cellular: 'Mobile data', ethernet: 'Ethernet', vpn: 'VPN', other: 'Other network', none: 'No connection' };
-        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, ping: null, jitter: null, down: null, up: null, colo: '',
+        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, netStart: null, netAt: 0, ping: null, jitter: null, down: null, up: null, colo: '',
             samples: { download: [], upload: [] }, phaseMs: { download: 10000, upload: 10000 }, rampMs: { download: 2000, upload: 2000 },
             target: 0, targetV: 0, shown: 0, gaugeKey: '', frame: 0, lastT: 0, graphFrame: 0, dirty: {}, colors: null, ticks: false, result: null };
 
@@ -28643,13 +28643,17 @@ Type any command above (e.g. pm list packages -d)</div>
             ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
         }
 
-        function stNetRefresh() {
+        function stNetRead() {
             let n = null;
             try { if (window.AndroidBridge && window.AndroidBridge.speedTestNetInfo) n = JSON.parse(window.AndroidBridge.speedTestNetInfo()); } catch (e) { n = null; }
             if (!n || typeof n !== 'object') n = { type: 'other', metered: false };
             if (!ST_NET_LABEL[n.type]) n.type = 'other';
             n.metered = !!n.metered;
             n.maxBytes = +n.maxBytes > 0 ? +n.maxBytes : 350e6;
+            return n;
+        }
+        function stNetRefresh() {
+            const n = stNetRead();
             spd.net = n;
             const label = txT(ST_NET_LABEL[n.type]);
             stText('stNetText', n.metered ? label + ' · ' + txT('metered') : label);
@@ -28737,6 +28741,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { r = JSON.parse(window.AndroidBridge.speedTestStart(JSON.stringify({ id: id }))); } catch (e) { r = null; }
             if (!r || !r.ok) { stErr(r && r.error ? txT('Could not start:') + ' ' + r.error : 'Could not start the test.'); stButton(); return; }
             spd.id = id; spd.running = true; spd.phase = 'starting';
+            spd.netStart = spd.net; spd.netAt = Date.now();                // the network shown (and agreed to) at Start: see stNetMoved
             stText('stPhase', txT('Connecting…'));
             stButton();
         }
@@ -28753,11 +28758,25 @@ Type any command above (e.g. pm list packages -d)</div>
             stButton();
         }
 
+        // The app opens each connection of the test on whatever network Android uses at that moment, so a test begun on Wi-Fi would go on over
+        // mobile data if the Wi-Fi dropped, without the warning, and save a result measured on two networks under the first. While a test runs the
+        // network is read again (at each phase, at the end, and about once a second in between): another type of network, or one that became
+        // metered, ends the test.
+        function stNetMoved(force) {
+            const a = spd.netStart; if (!a) return false;
+            const now = Date.now();
+            if (!force && now - spd.netAt < 1000) return false;
+            spd.netAt = now;
+            const n = stNetRead();
+            return n.type !== a.type || (n.metered && !a.metered);
+        }
+
         window.onSpeedTest = function (raw) {
             let e;
             try { e = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (x) { return; }
             if (!e || !spd.running || e.id !== spd.id) return;                 // another (stopped) test, or none running
             const type = e.type;
+            if (stNetMoved(type === 'phase' || (type === 'done' && e.ok))) { stStop('Failed'); stErr('The network changed during the test.'); stNetRefresh(); return; }
             if (type === 'phase') {
                 spd.phase = e.phase;
                 if (e.phase === 'latency') { stText('stPhase', txT('Ping')); stText('stUnit', 'ms'); stText('stNum', '—'); stLive('stCardPing'); }

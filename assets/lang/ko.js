@@ -3915,6 +3915,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "매니페스트에서 추가 라이브러리를 요구하지 않습니다(uses-library 항목 없음).",
 "The marked card comes from reading the phone back, not from this tap.": "선택된 카드는 이 탭이 아니라 휴대전화를 다시 읽은 결과입니다.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "코드 형식의 이름이 키입니다. 그 설정이 있는 모든 휴대폰에서 같습니다.",
+"The network changed during the test.": "테스트 중에 네트워크가 바뀌었습니다.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "숫자는 이 탭이 화면에 있는 동안 5초마다 새로 고쳐지고 탭을 떠나면 멈춥니다. 작동 모드가 필요 없고 아무것도 바뀌지 않습니다. 보고서 복사는 같은 숫자를 일반 텍스트로 클립보드에 넣습니다.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "이전 코드는 사라졌습니다. 이전 코드를 건넸던 곳에는 새 코드를 다시 건네야 합니다.",
 "The older storage permission some apps still check for.": "일부 앱이 아직 확인하는 이전 방식의 저장 공간 권한입니다.",

@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "Манифест не запрашивает дополнительных библиотек (записей uses-library нет).",
 "The marked card comes from reading the phone back, not from this tap.": "Отмеченная карточка берётся из считывания с телефона, а не из этого нажатия.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "Имя в типе «код» — это ключ. Оно одинаково на каждом телефоне, где есть эта настройка.",
+"The network changed during the test.": "Сеть изменилась во время теста.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "Числа обновляются каждые пять секунд, пока эта вкладка на экране, и останавливаются, когда вы её покидаете. Режим работы не нужен, ничего не меняется. «Копировать отчёт» помещает те же числа простым текстом в буфер обмена.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "Старого кода больше нет. Всему, чему вы его дали, нужно выдать новый.",
 "The older storage permission some apps still check for.": "Старое разрешение на хранилище, которое всё ещё проверяют некоторые приложения.",

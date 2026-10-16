@@ -3910,6 +3910,7 @@
 {"k":"The manifest does not ask for any extra library (no uses-library entry).","ctx":"built by the code of: render libraries"},
 {"k":"The marked card comes from reading the phone back, not from this tap.","ctx":"built by the code of: xdz prof tap"},
 {"k":"The name in code type is the key. It is the same on every phone that has the setting.","ctx":"in a sheet (sdb help)"},
+{"k":"The network changed during the test.","ctx":"built by the code of: on speed test"},
 {"k":"The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.","ctx":"in the view-extrasettings"},
 {"k":"The old code is gone. Anything you gave it to has to be given the new one.","ctx":"built by the code of: auth refresh"},
 {"k":"The older storage permission some apps still check for.","ctx":"built by the code of: top level"},

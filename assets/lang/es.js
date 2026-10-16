@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "El manifiesto no solicita ninguna biblioteca adicional (sin entrada uses-library).",
 "The marked card comes from reading the phone back, not from this tap.": "La tarjeta marcada viene de leer el teléfono de vuelta, no de este toque.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "El nombre en tipo código es la clave. Es el mismo en todos los teléfonos que tienen el ajuste.",
+"The network changed during the test.": "La red cambió durante la prueba.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "Los números se actualizan cada cinco segundos mientras esta pestaña está en pantalla y se detienen cuando la dejas. Nada necesita un modo de operación y nada se cambia. Copiar informe pone los mismos números en texto plano en el portapapeles.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "El código anterior ya no existe. Todo aquello a lo que se lo diste necesita el nuevo.",
 "The older storage permission some apps still check for.": "El permiso de almacenamiento antiguo que algunas apps aún comprueban.",

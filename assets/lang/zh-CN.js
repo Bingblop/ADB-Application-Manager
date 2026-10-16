@@ -3915,6 +3915,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "清单没有请求任何额外的库（没有 uses-library 条目）。",
 "The marked card comes from reading the phone back, not from this tap.": "选中的卡片来自对手机的回读，而不是这次点按。",
 "The name in code type is the key. It is the same on every phone that has the setting.": "代码形式的名称就是键。在有此设置的每部手机上都相同。",
+"The network changed during the test.": "测试期间网络发生了变化。",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "此标签页在屏幕上时，数字每五秒刷新一次，离开后停止。不需要工作模式，也不会更改任何内容。“复制报告”会把同样的数字以纯文本放入剪贴板。",
 "The old code is gone. Anything you gave it to has to be given the new one.": "旧授权码已失效。凡是给过旧授权码的地方，都需要重新给予新授权码。",
 "The older storage permission some apps still check for.": "一些应用仍会检查的旧版存储权限。",

@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "Manifest herhangi bir ek kitaplık istemiyor (uses-library girdisi yok).",
 "The marked card comes from reading the phone back, not from this tap.": "İşaretli kart bu dokunuştan değil, telefonun geri okunmasından gelir.",
 "The name in code type is the key. It is the same on every phone that has the setting.": "Kod türündeki ad anahtardır. Ayarın bulunduğu her telefonda aynıdır.",
+"The network changed during the test.": "Test sırasında ağ değişti.",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "Sayılar bu sekme ekrandayken her beş saniyede bir yenilenir ve sekmeden ayrılınca durur. Hiçbir şey çalışma modu gerektirmez ve hiçbir şey değiştirilmez. Raporu kopyala aynı sayıları düz metin olarak panoya koyar.",
 "The old code is gone. Anything you gave it to has to be given the new one.": "Eski kod artık yok. Onu verdiğiniz her şeye yeni kod verilmelidir.",
 "The older storage permission some apps still check for.": "Bazı uygulamaların hâlâ kontrol ettiği eski depolama izni.",

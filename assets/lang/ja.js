@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "マニフェストは追加のライブラリを要求していません（uses-libraryエントリなし）。",
 "The marked card comes from reading the phone back, not from this tap.": "選択されたカードはこのタップではなく、スマートフォンからの読み戻しに基づきます。",
 "The name in code type is the key. It is the same on every phone that has the setting.": "コード形式の名前がキーです。その設定がある端末ならどれでも同じです。",
+"The network changed during the test.": "テスト中にネットワークが変わりました。",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "数値はこのタブが画面にある間 5 秒ごとに更新され、離れると止まります。動作モードは不要で、何も変更しません。「レポートをコピー」は同じ数値をプレーンテキストでクリップボードに入れます。",
 "The old code is gone. Anything you gave it to has to be given the new one.": "古いコードは無効になりました。古いコードを渡していたものには、新しいコードを渡し直す必要があります。",
 "The older storage permission some apps still check for.": "一部のアプリが今も確認する、従来のストレージ権限です。",

@@ -3916,6 +3916,7 @@ x: {
 "The manifest does not ask for any extra library (no uses-library entry).": "मैनिफ़ेस्ट कोई अतिरिक्त लाइब्रेरी नहीं मांगता (कोई uses-library एंट्री नहीं)।",
 "The marked card comes from reading the phone back, not from this tap.": "चिह्नित कार्ड फ़ोन को वापस पढ़ने से आता है, इस टैप से नहीं।",
 "The name in code type is the key. It is the same on every phone that has the setting.": "कोड प्रकार में दिया नाम ही कुंजी है। यह हर उस फ़ोन पर एक जैसा है जिसमें यह सेटिंग है।",
+"The network changed during the test.": "टेस्ट के दौरान नेटवर्क बदल गया।",
 "The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.": "जब तक यह टैब स्क्रीन पर है, संख्याएँ हर पाँच सेकंड में ताज़ा होती हैं और इसे छोड़ने पर रुक जाती हैं। किसी चीज़ को वर्किंग मोड नहीं चाहिए, और कुछ नहीं बदलता। रिपोर्ट कॉपी करें वही संख्याएँ सादे टेक्स्ट में क्लिपबोर्ड पर रख देता है।",
 "The old code is gone. Anything you gave it to has to be given the new one.": "पुराना कोड अब नहीं रहा। जिसे भी आपने वह दिया था, उसे नया कोड देना होगा।",
 "The older storage permission some apps still check for.": "स्टोरेज की पुरानी अनुमति, जिसे कुछ ऐप्स अब भी जांचते हैं।",
