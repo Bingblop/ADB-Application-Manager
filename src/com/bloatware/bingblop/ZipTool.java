@@ -887,6 +887,7 @@ public final class ZipTool {
         final int total = wanted.size();
         final int[] seen = {0};
         final java.util.HashMap<String, File> extracted = new java.util.HashMap<String, File>();      // archive name -> where it was written, for the hard links that follow
+        final java.util.HashSet<String> leftAlone = new java.util.HashSet<String>(), failed = new java.util.HashSet<String>();     // and why one was not: a hard link says so
         a.src.walk(a, a.password(), new Walker() {
             @Override
             public boolean entry(Entry e, InputStream data) throws IOException {
@@ -901,17 +902,21 @@ public final class ZipTool {
                 if (cb != null && !cb.onProgress(st[0], (int) st[1], e.name)) throw new IOException("Cancelled");
                 if (e.linkTarget != null) { st[2]++; note(problems, e.name + ": symbolic link (not extracted)"); return true; }
                 if (FileOps.exists(out)) {
-                    if (policy == FileOps.SKIP) { st[3]++; return true; }
+                    if (policy == FileOps.SKIP) { leftAlone.add(linkKey(e.name)); st[3]++; return true; }
                     if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
                 }
                 try {
                     checkTarget(a, out, protect);
                     if (e.hardLink != null) {
                         // a hard link has no data in the archive: it is the same file as an earlier entry, so it is copied from where that one was written
+                        // (never from a file Skip left alone: that may not be this archive's version of it)
                         File from = extracted.get(linkKey(e.hardLink));
                         if (from == null || !from.isFile()) {
+                            String key = linkKey(e.hardLink);
+                            String why = leftAlone.contains(key) ? "that file was already there and was left as it was"
+                                    : failed.contains(key) ? "that file could not be extracted" : "that file is not part of this extraction";
                             st[2]++;
-                            note(problems, e.name + ": hard link to " + e.hardLink + " (not extracted: that file is not part of this extraction)");
+                            note(problems, e.name + ": hard link to " + e.hardLink + " (not extracted: " + why + ")");
                             return true;
                         }
                         Entry copy = new Entry(e.name, false, from.length(), from.length(), e.mtime(), e.mode, false, null);
@@ -927,6 +932,7 @@ public final class ZipTool {
                 } catch (IOException ex) {
                     String m = ex.getMessage() == null ? "failed" : ex.getMessage();
                     if (m.startsWith("Cancelled")) throw ex;
+                    failed.add(linkKey(e.name));
                     st[2]++;
                     note(problems, e.name + ": " + m);
                 }
