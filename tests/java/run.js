@@ -299,6 +299,9 @@ function exec(cmd, args, opts, timeoutS) {
   return new Promise(resolve => {
     const child = spawn(cmd, args, opts);
     let out = '', timedOut = false;
+    // Decoded as text here, not piece by piece: a character cut in two by a 64 KiB pipe read would become two U+FFFD marks
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
     child.stdout.on('data', d => { out += d; });
     child.stderr.on('data', d => { out += d; });
     const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutS * 1000);
@@ -389,4 +392,5 @@ async function main() {
   return bad.length ? 1 : 0;
 }
 
-main().then(code => process.exit(code), e => { console.error(e); process.exit(2); });
+module.exports = { exec };          // for ui/t505, which checks how the output of a suite is collected
+if (require.main === module) main().then(code => process.exit(code), e => { console.error(e); process.exit(2); });
