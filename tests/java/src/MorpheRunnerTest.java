@@ -308,6 +308,8 @@ public class MorpheRunnerTest {
             int c = m.indexOf("private JSONObject catalog(");
             String cat = c < 0 ? "" : m.substring(c, Math.min(m.length(), c + 400));
             check("catalog reads run one at a time (the second finds the first one's answer in the cache)", cat.contains("synchronized (catalogLock)") && cat.contains("catalogLocked("), cat);
+            // MOR-2 (full main review): every window has a bridge of its own on the same jobs/list folder, so the lock is the process's, not the bridge's
+            check("the catalog lock is one for the process (two windows' reads do not delete each other's bundle copies and answer)", m.contains("private static final Object catalogLock = new Object();"), null);
             check("the bridge runs the engine through MorpheRunner and keeps no engine semaphore of its own", m.contains("runner.run(") && !m.contains("engine.acquire()"), null);
             File svcSrc = new File(src.getParentFile(), "MorpheService.java");
             String sv = new String(java.nio.file.Files.readAllBytes(svcSrc.toPath()), "UTF-8");

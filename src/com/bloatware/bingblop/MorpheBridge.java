@@ -75,7 +75,7 @@ public final class MorpheBridge {
     private final MorpheStore store;
     private final MorpheLibrary library;
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private final Object catalogLock = new Object();                                // one catalog read at a time (they share jobs/list)
+    private static final Object catalogLock = new Object();                         // one catalog read at a time in the process: every window's bridge shares jobs/list
     private final MorpheShared shared;                                                   // what every window of the app shares: the runner, the slot, the events of the patch that is going
     private final MorpheRunner runner;                                                  // the one engine lock of the process (see MorpheShared)
     private final MorpheRunner.EventSink sink;                                          // this window's side of the patch's events
