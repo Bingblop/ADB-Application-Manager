@@ -697,6 +697,9 @@ public final class ZipTool {
     }
 
     private static long extractTo(Archive a, Entry e, File dest, File protect, Pulse pulse) throws IOException {
+        // a symbolic link has no file data (a tar's reads as empty, a RAR5's as nothing at all): writing it would leave an empty file, or
+        // empty one that is there, so it is refused in words, as an extraction of its folder skips it
+        if (e.linkTarget != null) throw new IOException("\"" + e.name + "\" is a symbolic link" + (e.linkTarget.isEmpty() ? "" : " to \"" + e.linkTarget + "\"") + " and is not extracted");
         checkTarget(a, dest, protect);
         if (e.hardLink != null) throw new IOException("\"" + e.name + "\" is a hard link to \"" + e.hardLink + "\" and holds no data of its own: extract that one");
         InputStream in = a.open(e);
