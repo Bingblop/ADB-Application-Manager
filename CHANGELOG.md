@@ -1,5 +1,84 @@
 # Changelog
 
+## v7.14.1-Pro (versionCode 860)
+
+A release on top of v7.14.0, cut from `main`: the 57 fixes of a full review of `main` and of the v7.14.0 changes (#238), a check in the release workflow (#239), two unused leftovers taken out of the repository (#240, #241), and seven changes the owner asked for after v7.14.0 (#242 to #248): a progress notification for the Stop apps tile, a Speed test section in Extra Settings, a Refresh button in the File Manager, Installed | Uninstalled as one choice, a Gradient switch and a shortcut for Row tints, and the Updated 7d filter taken out. Each fix and each change comes with a Java suite or a UI script that fails on the old code, except the two CI workflow changes (BLD-4, BLD-6), which were checked by parsing the YAML and running their steps on a computer. **Nothing in it has been run on a phone** by the people and tools that wrote it; the Live Update part of the Stop apps notification calls Android 16's documented API and has not run on any phone. `docs/PHONE-SCRIPT-v7.14.1.md` is one phone step per change.
+
+**New**
+
+- **Stop apps shows its progress** (#246). The Quick Settings tile and the widget button now start a notification, *Stopping apps*: the list's name, how far the run is (*3 of 12 · Chrome*) and a progress bar. It is cleared when the run ends. **Cancel** in the notification stops the run after the app it is on, leaves the apps it did not reach as they are and clears the notification (*Cancelled after 3 of 12 apps*). A tap on the notification opens the app on Saved Applications with the *Edit Saved List* sheet of the quick list; the run goes on and nothing is stopped, saved or changed by the tap. On Android 16 and newer the notification asks to be a Live Update (a chip like *3/12* in the status bar); where the phone does not show it as one, and before Android 16, it is the same notification without the chip. Whatever the list says, this app, the phone's WebView app (and Android System WebView) and Media Picker (`com.google.android.providers.media.module`) are never stopped; the message counts them as *left alone*. A second tap while a run goes on does not start another one.
+- **Live updates** is a new row of the permissions sheet on Android 16 and newer, and the manifest declares `android.permission.POST_PROMOTED_NOTIFICATIONS` (the only new permission). No command can switch it on, so **Allow** asks for Notifications first (by command with a working mode, otherwise with Android's own question) and then opens the phone's Live updates screen for this app by itself; **Allow all** ends there. Closing the sheet after only Live updates changed no longer starts the app again.
+- **Extra Settings has a Speed test section** (#245), right after Private DNS, that opens the same full-screen test as Task Manager > Network > Speed test. Its pill shows the download speed of the newest saved result, and a chip in the header shows it once there is one.
+- **The File Manager has a round Refresh button** (#247) in its title row, the same one as the Apps tab: one tap reads the open folder (or the search results) again, and the arrow turns while it does.
+- **Installed | Uninstalled is one choice** (#242), like System | User and Enabled | Frozen, in the Apps tab, Saved Applications and Connected Devices: tapping one turns the other off.
+- **Row tints:** a **Gradient** switch under the slider (#244; off: each tinted row is one even colour, in the Apps tab, Connected Devices and both Logcats), and a last row in the three-dot menu of the Apps search bar that opens Settings on the Row tints card (#243).
+- **Updated 7d is no longer a filter** (#248) in the Apps tab, Saved Applications or the Debloater: sort by **Last updated** to see what changed lately. Connected Devices never had the filter.
+
+**Files and archives**
+
+- **Replace onto an SD card or a USB drive merges.** Copying or moving a folder onto added storage where a folder of that name was already there deleted that folder, with everything in it, before copying. Now folders merge, a file replaces a file and a file meeting a folder is refused, as on internal storage. The same place seen two ways (the card added as storage and `/storage/<card>`) is recognised, so nothing is copied into itself or replaced by itself; a copy into the source's own subfolder ends, and Cancel stops it.
+- **Names are kept exactly** in the Files tab's shell listing and in Connected Devices > Files: two spaces, a tab, a leading or trailing space, or " -> " in a plain file's name no longer send View, Rename or Delete to another file.
+- **A tar or a stored 7z that holds an APK opens as itself**, not as the APK inside it (and a tar holding a RAR as the tar), so "Delete the archive afterwards" no longer deletes the tar and its other files after extracting only that APK's contents.
+- **File search inside archives** goes on past a zip entry it cannot read (a password, an unsupported method, damage), so a later entry holding the text is found.
+- **Extracting one symbolic link on its own** is refused in words instead of writing an empty file (with Replace it emptied the file of that name). A hard link that is left out says why: the file it shares was already there and left as it was, or could not be extracted.
+
+**SD Maid**
+
+- **AppCleaner** keeps a file that a Segment exclusion protects inside a cache folder it otherwise deletes whole.
+- **Deduplicator:** one folder found under two spellings ("DCIM" and "dcim") is no longer its own duplicate (keep one deleted the only copy). **Preferred locations** also matches `/sdcard/...`, a trailing slash or another case.
+- **An exclusion typed as `/sdcard/...`** now protects that path in `/storage/emulated/0`, the storage the scans read, when the app runs in a work profile or as a second user (it used to point at `/storage/emulated/<user>`, which no scan visits).
+- **SystemCleaner's Temporary system files** stays out of app and user data (`/data/user`, `/data/user_de`, `/data/media/<user>`, `/data/misc_ce`, `/data/misc_de`).
+- **Delete all** names what is left after Details took groups or items out, and says that what was taken out is kept.
+
+**Installer, backups and updates**
+
+- **A failed or cancelled install keeps its files**, so Install works again after following the advice (for example Allow downgrade) instead of asking to pick the package again.
+- **A package whose manifest.json unpacks to gigabytes** no longer leaves the Installer on "Reading package…".
+- **The package-file search says when it stopped early** on a large storage instead of reporting the list as complete or "No APK, APKS, APKM or XAPK files found".
+- **A VirusTotal verdict** is shown only for the package it was scanned for.
+- **A 32-bit app's data backup can be restored again** (the restore refused its `lib` link); new backups leave that link out. Restore names the version read from the APK it installed.
+- **Read-Only mode** no longer leaves a self-update or a Store download in the cache.
+- **Updates:** an update an open-source source found for a Galaxy Store app is kept when the Galaxy Store check times out.
+- **Connected Devices:** a feature module sent to a device keeps its own CPU and density splits.
+- **App menu:** opening the menu of an app that only mentions ReVanced or Morphe (this app included) no longer puts a ReVanced or Morphe tag on its row or lists it under the Patched filter. In the app's code, only classes it defines under `app.revanced.*` or `app.morphe.*` count, and the patcher library does not; the package name, the installer and the APK's file names are checked as before.
+
+**Terminal and Console**
+
+- **The full-screen terminal in Shizuku mode no longer ends the app**, and it ends when its shell exits even with a job left in the background.
+- **With ADB TCP or Wireless Debugging as the working mode**, the Terminal connects again before opening the shell (after adbd restarted it said "the shell ended right after it started").
+- **The Shizuku fallback** writes rish and its dex whole and replaces an older copy when the app is updated.
+- **A coding agent's answer that mentions "not installed"** is no longer taken for a missing CLI; **Copy** says "Copied the screen" when the selection was outside the screen; in the **ADB Console** the agent's proposed command is kept while a typed command still runs.
+
+**Morphe Helper**
+
+- A second **Download** tap in All versions starts nothing while a download runs, and a new version no longer shows the previous file's VirusTotal verdict.
+- Helper downloads and VirusTotal uploads stop with the window that started them, and the in-app browser closes with it (a download the browser started goes on in the downloads list); two windows reading the patch list no longer break each other.
+- A browser download whose name carries a language tag (`filename*=UTF-8'en'app.apk`) is saved as named, and the downloads notification no longer counts a retried download as stopped.
+
+**Speed test, Task Manager and permissions**
+
+- **Speed test:** ping and jitter no longer include Cloudflare's server time (a 10 ms line showed about 40 ms). A change of network during a test (Wi-Fi dropped, a metered network) stops it with "The network changed during the test." and nothing is saved.
+- **Task Manager:** a working mode that stopped answering falls back to what Standard mode reads (the phone's RAM, and CPU and network where Android lets the app read them); Processes shows its lock and GPU says "Needs a working mode", instead of an empty list and zeros.
+- **Trackers:** a running scan stops when its window closes. **Logcat:** a recording that stops by itself (25 MB, a write error) no longer leaves a thread behind.
+- **Permissions sheet:** dismissing the Bluetooth or Notifications dialog the first time the sheet asks for it no longer sends you to App info (a second refusal or dismissal still does), and the Read Logs row says what the grant does today.
+
+**Screens**
+
+- **Hidden Settings:** Revert reads a table it has not read yet before it writes (it could delete the setting).
+- **Apps tab:** a patch tag found by the app menu's deeper check stays on the row and in the Patched filter; Profiles, CSV and Backups appear under Sort and Button while Saved Applications is switched off; rows added by "Show more" during a batch show "Working…" too.
+- **History** labels the Updater's entries "Updater". **Live Logcat's** texts and the Help Guide name its own tab.
+- **Colours:** the Read-Only banner's X no longer covers the Arabic title; the Delete links of the Installer and the File Manager, the mode badge and the Updater's error lines take the theme's colours, and "Delete from this device" is the solid red with white text of the other delete confirmations.
+
+**Build and release**
+
+- `build.sh` stops when the 64-bit adb is missing. CI builds against android-34 and build-tools 35.0.0, like the release, and runs the docs shell-block check.
+- `release.yml` stops before it builds when the version is not the one in `AndroidManifest.xml` and `CHANGELOG.md` (#239).
+- `metadata.json` (an AI Studio leftover) and `app/` (the unused Kotlin copy) are gone from the repository, together with the root Gradle files that only served `app/` (`settings.gradle.kts`, `build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`; `engine/` keeps its own) (#240, #241); none of them was ever part of the APK.
+
+**Tests**
+
+- New UI scripts t490, t495, t505, t535 to t537, t540 to t543, t546, t549 and t552 to t555; new Java suites assetcopy, backupscripts, patchclasses, permrefusal, quickstop, taskmgrblob and releaseversion; t13, t17, t31, t37, t70, t77, t91, t104, t110, t119, t121, t125, t140, t171, t250, t296, t331, t337 and t478 extended, t105, t217, t251, t263 and t325 re-recorded for the screens that changed, t150 re-recorded (the Updater's error colour under Material 3 dark), t75 and t412 adjusted.
+
 ## v7.14.0-Pro (versionCode 859)
 
 A feature release on top of v7.13.4, cut from `main`. It carries the owner's v7.14 change list and the follow-ups he asked for (#234), the ADB Stub for Wear OS watches (#233), the on-device Self-test (#229, with its fix #232), the 42 fixes of the v7.12 to v7.14 code review (#235), and the fixes from a code review of the #234 changes. The app is now called **ADB System Manager**; the package name (`com.bloatware.bingblop`), the `Download/ADB App Manager` folders and the signing certificate are unchanged, so it installs over every earlier version. Each change is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone or a watch by the people and tools that wrote it.** `docs/PHONE-SCRIPT-v7.14.0.md` is one phone step per change.

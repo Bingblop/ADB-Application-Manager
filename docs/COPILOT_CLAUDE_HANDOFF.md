@@ -194,6 +194,29 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.14.1 (cut from `main`; written 2026-10-16)
+
+The 57 fixes of a full review of `main` (after #235) and of the v7.14.0 changes, plus seven changes the owner asked for after v7.14.0 (a Stop apps progress notification, a Speed test section, a File Manager Refresh button, Installed | Uninstalled as one choice, a Gradient switch and a Row tints shortcut, and the Updated 7d filter taken out). The full list of the review with every verdict, including the findings that were rejected or judged not worth the code, is `/mnt/project-files/reviews/code-review-full-main-2026-10-16.md` in the project. The owner asked for this release in the project thread on 2026-10-16, and asked for a debug `arm64-v8a` APK to check on his own phone before it is published (`docs/RELEASE-CHECKLIST-v7.14.1.md` step 5b).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #238 | 57 fixes in 56 commits (MA3-1 and MA3-2 share one), each with a Java suite or UI script except the two CI changes BLD-4 and BLD-6 (YAML parsed, workflows not run) (Replace onto added storage merges, the Shizuku full-screen terminal, SD Maid exclusions, archives, installs, Morphe Helper, the speed test's ping, CI on android-34) | new Java suites assetcopy, backupscripts, patchclasses, permrefusal, taskmgrblob; UI t490, t495, t505, t535 to t537, t540 to t542; many extended | PHONE-SCRIPT-v7.14.1 steps 2 to 17 |
+| #239 | `release.yml` stops before it builds when the version is not the manifest's and the changelog's (BLD-5, approved by the owner) | releaseversion suite | RELEASE-CHECKLIST-v7.14.1 step 7 |
+| #240, #241 | `metadata.json` and the unused `app/` Gradle tree with its root Gradle files removed (BLD-8, BLD-9, approved by the owner) | build, i18n and docs checks | none |
+| #242 | Installed \| Uninstalled is one choice in the Apps tab, Saved Applications and Connected Devices | UI t543 | PHONE-SCRIPT-v7.14.1 step 25 |
+| #243 | The Apps search bar's three-dot menu gets a last row, Row tints, that opens Settings on that card | UI t552 | step 26 |
+| #244 | Settings > Row tints > Gradient switch (off: one even colour per tinted row, in the Apps tab, Connected Devices and both Logcats) | UI t549 | step 26 |
+| #245 | Extra Settings > Speed test section after Private DNS (opens the Task Manager speed test) | UI t546 | step 23 |
+| #246 | Stop apps: a progress notification with Cancel (a Live Update on Android 16 and newer), a tap opens the quick list's Edit Saved List sheet, this app, the WebView app and Media Picker are never stopped; a Live updates row in the permissions sheet and `POST_PROMOTED_NOTIFICATIONS` in the manifest (approved by the owner in writing) | Java suite quickstop; UI t555 | steps 18 to 22 |
+| #247 | A round Refresh button in the File Manager's title row | UI t554 | step 24 |
+| #248 | The Updated 7d filter is removed from the Apps tab, Saved Applications and the Debloater (Connected Devices never had it) | UI t553 (t17, t70, t331 and their goldens changed) | step 27 |
+| bump | Version 7.14.1 (860), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.14.1.md`, `docs/PHONE-SCRIPT-v7.14.1.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device.** The Live Update part of the Stop apps notification is Android 16's documented API called by reflection (the app is built against Android 14's SDK); no phone with Android 16 has run it, and which phones show the chip is up to the phone. No command is known for the Live updates switch (Android's reference lists the permission's protection level as normal|appops, and no app op or shell command for it could be confirmed), so the row opens the phone's own Live updates screen. A Cancel stops after the app that is being force-stopped (a command in flight cannot be interrupted). The phone script picks the fixes only a phone can show: the Real terminal (SYS-1, SYS-2) and the Terminal's ADB reconnect (MA1-2), Replace onto an SD card (MA3-1, MA3-2), a tar holding an APK (ARC-1), SD Maid (SDM-1 to SDM-5), a retried install after a refused downgrade (MA1-1), a 32-bit app's backup (INS-1), the speed test (V1-1, V1-2), Task Manager with a stopped working mode (MA3-3) and the permission dialogs (V2-2).
+- **Left as they are on purpose:** MA3-6, ARC-3 and V1-3 (real, not worth the code) and V4-1 (intended; t196 tests it); reasons in the review file.
+
 ## v7.14.0 (cut from `main`; written 2026-10-15)
 
 A feature release: the owner's v7.14 change list and follow-ups, the ADB Stub for Wear OS watches and the Self-test. The app is renamed ADB System Manager (package, folders and certificate unchanged). The manifest gains `READ_LOGS`, approved by the owner in the project thread. The owner waived the phone test before the release; `docs/PHONE-SCRIPT-v7.14.0.md` is the script to run after it.
