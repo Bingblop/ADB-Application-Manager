@@ -457,6 +457,35 @@ public final class ZipTool {
         }
     }
 
+    /**
+     * Opens an archive of any format this app reads; the first bytes decide. A file that starts as a RAR, a 7z, a tar or a compressed file
+     * is opened as that, never as a zip (or RAR) further in: a plain tar or a stored 7z keeps a member APK byte for byte, so that member's
+     * end record can sit near the end of the file, and the zip scan would take the one member for the whole archive (and "Delete the
+     * archive afterwards" would then delete everything else in it). Anything else is tried as a zip first (a bounded scan for its end
+     * record, cheap even to rule a huge non-zip file out; a self-extractor stub or a CRX header in front is fine), then as a RAR behind a
+     * self-extractor stub, then as what {@link ArchiveIo} makes of its name. {@code password} opens an encrypted RAR or 7z; {@code cb}
+     * (may be null) can stop the listing of a compressed tar.
+     */
+    static Archive openAny(File f, char[] password, ArchiveIo.Progress cb) throws IOException {
+        String lead = ArchiveIo.magicOf(f);
+        if ("rar".equals(lead)) return RarSource.open(f, password);
+        if (lead != null && !"zip".equals(lead)) {
+            String fmt = ArchiveIo.detect(f);
+            if (!ArchiveIo.supportsRead(fmt)) throw new IOException("This ." + fmt + " archive can't be opened on this phone");
+            return ArchiveIoSource.open(f, fmt, password, cb);
+        }
+        IOException zipErr;
+        try {
+            return open(f);
+        } catch (IOException e) {
+            zipErr = e;
+        }
+        if (RarReader.isRar(f)) return RarSource.open(f, password);
+        String fmt = ArchiveIo.detect(f);
+        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(f, fmt, password, cb);
+        throw zipErr;
+    }
+
     /** The name as UTF-8, or null when the bytes are not valid UTF-8 (older tools write the local code page). */
     private static String decodeName(byte[] raw) {
         try {

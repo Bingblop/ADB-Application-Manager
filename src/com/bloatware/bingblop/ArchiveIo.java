@@ -227,13 +227,7 @@ public final class ArchiveIo {
     /** The format of a file by its first bytes, its name as the fallback; null when it is nothing known. */
     public static String detect(File f) {
         String ext = byExt(f.getName());
-        byte[] h = new byte[512];
-        int n = 0;
-        try {
-            InputStream in = new FileInputStream(f);
-            try { n = readFully(in, h, 0, h.length); } finally { in.close(); }
-        } catch (IOException e) { n = 0; }
-        String c = n > 0 ? byMagic(h, n) : null;
+        String c = magicOf(f);
         if (c == null) return ext;
         if (isCompressor(c)) {
             try {
@@ -245,6 +239,20 @@ public final class ArchiveIo {
             }
         }
         return c;
+    }
+
+    /**
+     * The format the first bytes of a file name ("zip", "7z", "rar", "tar", "gz", "bz2", "xz", "zst", "lz4"), never its name; null when they
+     * name nothing known or the file can't be read. A compressed tar reads as its compressor here ("gz", not "tar.gz"): {@link #detect} tells.
+     */
+    static String magicOf(File f) {
+        byte[] h = new byte[512];
+        int n = 0;
+        try {
+            InputStream in = new FileInputStream(f);
+            try { n = readFully(in, h, 0, h.length); } finally { in.close(); }
+        } catch (IOException e) { n = 0; }
+        return n > 0 ? byMagic(h, n) : null;
     }
 
     private static String byMagic(byte[] b, int n) {

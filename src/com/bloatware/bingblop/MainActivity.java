@@ -5418,19 +5418,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens a zip first (a bounded scan for its end record, cheap even to rule a huge non-zip file out); a file that isn't one is tried
-     *  as a RAR, then as whatever {@link ArchiveIo} recognises (7z, the tar family, or a single compressed file). */
+    /** Opens any archive format this app reads, decided by the file's first bytes (a tar of APKs is a tar, not its last APK); see {@link ZipTool#openAny}. */
     private ZipTool.Archive openAnyArchive(File use, char[] password, ArchiveIo.Progress cb) throws IOException {
-        IOException zipErr;
-        try {
-            return ZipTool.open(use);
-        } catch (IOException e) {
-            zipErr = e;
-        }
-        if (RarReader.isRar(use)) return RarSource.open(use, password);
-        String fmt = ArchiveIo.detect(use);
-        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password, cb);
-        throw zipErr;
+        return ZipTool.openAny(use, password, cb);
     }
 
     /** Forgets an archive that changed on disk, and removes the shell-staged copy it was read from. */
