@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "Wie oft das Telefon gestartet wurde",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "Wie viel RAM der komprimierte Swap des Telefons (zram) zurückgibt, und Schaltflächen, um Speicher freizugeben, den Caches halten.",
 "How much the ping varies": "Wie stark der Ping schwankt",
+"How strongly rows are tinted. Opens Settings.": "Wie stark Zeilen gefärbt werden. Öffnet die Einstellungen.",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "Wie stark der Apps-Tab die Zeile einer laufenden (grün), eingefrorenen (blau) oder deinstallierten (rot) App einfärbt und Live-Logcat (und der Logcat von Verbundene Geräte) jede Zeile in der Farbe ihres Levels. Nur die Apps, die Sie auswählen, erhalten einen Rahmen.",
 "How the Terminal works": "So funktioniert das Terminal",
 "How the app itself moves, on top of its theme": "Wie sich die App selbst bewegt, zusätzlich zu ihrem Design",

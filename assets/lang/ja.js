@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "端末の起動回数",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "スマートフォンの圧縮スワップ（zram）がどれだけ RAM を取り戻しているかと、キャッシュが占めるメモリを解放するボタン。",
 "How much the ping varies": "Ping のばらつき",
+"How strongly rows are tinted. Opens Settings.": "行の色付けの強さ。設定を開きます。",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "「アプリ管理」タブが実行中（緑）、凍結中（青）、アンインストール済み（赤）のアプリの行をどれだけ強く色付けするか、またライブ Logcat（と接続済みの端末の Logcat）が各行をそのレベルの色でどれだけ強く色付けするかを決めます。枠線が付くのは選択したアプリだけです。",
 "How the Terminal works": "ターミナルの使い方",
 "How the app itself moves, on top of its theme": "テーマとは別に、アプリ自体の動き方を設定します",

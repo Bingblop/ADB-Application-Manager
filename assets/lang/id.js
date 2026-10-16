@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "Berapa kali ponsel telah dinyalakan",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "Berapa banyak RAM yang dikembalikan swap terkompresi ponsel (zram), dan tombol untuk membebaskan memori yang dipegang cache.",
 "How much the ping varies": "Seberapa besar variasi ping",
+"How strongly rows are tinted. Opens Settings.": "Seberapa kuat baris diberi warna. Membuka Pengaturan.",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "Seberapa kuat tab Aplikasi mewarnai baris aplikasi yang berjalan (hijau), dibekukan (biru), atau diuninstal (merah), dan Logcat Langsung (serta Logcat di Perangkat Terhubung) mewarnai setiap baris sesuai levelnya. Hanya aplikasi yang Anda pilih yang diberi garis tepi.",
 "How the Terminal works": "Cara kerja Terminal",
 "How the app itself moves, on top of its theme": "Cara aplikasi bergerak, di atas temanya",

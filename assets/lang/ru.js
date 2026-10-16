@@ -1727,6 +1727,7 @@ x: {
 "How many times the phone has started": "Сколько раз запускался телефон",
 "How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.": "Сколько ОЗУ возвращает сжатый swap телефона (zram), и кнопки для освобождения памяти, занятой кэшами.",
 "How much the ping varies": "Насколько меняется пинг",
+"How strongly rows are tinted. Opens Settings.": "Насколько сильно подсвечиваются строки. Открывает настройки.",
 "How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.": "Насколько сильно вкладка «Приложения» подкрашивает строку работающего (зелёный), замороженного (синий) или удалённого (красный) приложения, а Logcat онлайн (и Logcat в «Подключённых устройствах») — каждую строку цветом её уровня. Обводку получают только выбранные вами приложения.",
 "How the Terminal works": "Как работает Терминал",
 "How the app itself moves, on top of its theme": "Как анимируется само приложение, помимо темы",
