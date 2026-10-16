@@ -191,14 +191,14 @@ public final class SdmExclusions implements Sdm.Exclusions {
     private final LinkedHashSet<String> removedDefaults = new LinkedHashSet<String>();
     private volatile Map<Sdm.Tool, Index> indexes = new EnumMap<Sdm.Tool, Index>(Sdm.Tool.class);
 
-    private final int androidUser;          // the Android user this app runs as
+    private final int androidUser;          // the Android user whose shared storage the scans read (Sdm.Areas.storageUserId)
 
     /** @param dir the data folder ({@code exclusions.json} lives there); null keeps everything in memory only */
     public SdmExclusions(File dir) {
         this(dir, 0);
     }
 
-    /** @param user the Android user this app runs as: /sdcard is that user's /storage/emulated/&lt;user&gt; */
+    /** @param user the Android user whose shared storage the scans read: /sdcard is that user's /storage/emulated/&lt;user&gt; */
     public SdmExclusions(File dir, int user) {
         this.file = dir == null ? null : new File(dir, "exclusions.json");
         this.androidUser = Math.max(0, user);
