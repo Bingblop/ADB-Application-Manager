@@ -630,20 +630,20 @@ public class MainActivity extends Activity {
         return o;
     }
 
-    private void extractAsset(String assetName, File destFile) {
+    /** Copies an asset into the app's files once per app version, whole or not at all (a copy cut short is not kept; see AssetCopy). */
+    private void extractAsset(final String assetName, File destFile) {
+        String stamp;
         try {
-            if (destFile.exists() && destFile.length() > 0) return;
-            InputStream in = getAssets().open(assetName);
-            OutputStream out = new FileOutputStream(destFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
+            stamp = String.valueOf(versionCodeOf(getPackageManager().getPackageInfo(getPackageName(), 0)));
+        } catch (Exception e) {
+            stamp = "0";
+        }
+        AssetCopy.copy(new AssetCopy.Source() {
+            @Override
+            public InputStream open() throws IOException {
+                return getAssets().open(assetName);
             }
-            in.close();
-            out.flush();
-            out.close();
-        } catch (Exception ignored) {}
+        }, destFile, stamp);
     }
 
     /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
