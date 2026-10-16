@@ -35,6 +35,11 @@ const sp = offenders((p, v) => /^(padding|margin)(-(top|right|bottom|left|inline
 check('2d. padding, margin and gap use --space-* between 3px and 17px', sp.length === 0, sp.slice(0, 5).join(' | '));
 const statusHex = offenders((p, v, sel) => !p.startsWith('--') && !/\.lc-|lvl-|mark|\.hg-hit/.test(sel) && /rgba\(\s*(255,\s*82,\s*82|0,\s*230,\s*118|255,\s*145,\s*0|255,\s*196,\s*0|0,\s*229,\s*255)\s*,/.test(v));
 check('2e. no hand-written rgba() of a status colour (use --tint-* / --line-*)', statusHex.length === 0, statusHex.slice(0, 5).join(' | '));
+// the markup's inline style="" attributes (outside the scripts) do not hard-code a status colour either: a Delete in #FF5252 stays bright red in a light
+// or Material 3 theme and ignores the user's bloat colour. The theme pickers' swatches show the presets' own colours and are the exception.
+const markup = html.replace(/<script\b[\s\S]*?<\/script>/g, '');
+const inlineHex = [...markup.matchAll(/<[a-z][^>]*\sstyle="([^"]*)"[^>]*>/gi)].filter(m => !/class="(preset-swatch|bubble-circle)"/.test(m[0]) && /#(FF5252|00E676|FF9100|FFC400|00E5FF)\b/i.test(m[1])).map(m => m[0].slice(0, 90));
+check('2f. no status colour written as a hex in an inline style of the markup (use var(--status-*))', inlineHex.length === 0, inlineHex.slice(0, 5).join(' | '));
 
 // 3. the tints follow the theme
 (async () => {
@@ -61,6 +66,18 @@ check('2e. no hand-written rgba() of a status colour (use --tint-* / --line-*)',
   check('3b. and a cyan accent still gives cyan', cyan.pill === cyan.ref && cyan.pill !== pink.pill);
   const dark = await probe('#00E5FF', 'dark'), light = await probe('#00E5FF', 'light');
   check('3c. --fill-2 is a white veil in dark and a black veil in light', /255, 255, 255|srgb 1 1 1/.test(dark.fill) && /rgba\(0, 0, 0|srgb 0 0 0/.test(light.fill), dark.fill + ' / ' + light.fill);
+  // the Delete controls of the Installer and the File Manager take the theme's danger colour: Material 3's error colour, dark and light
+  const del = (appearance) => page.evaluate((appearance) => {
+    document.documentElement.removeAttribute('style');
+    themeState.preset = 'material3'; themeState.appearance = appearance; applyTheme(false);
+    const probe = (decl) => { const e = document.createElement('div'); e.style.cssText = decl; document.body.appendChild(e); const cs = getComputedStyle(e), out = { color: cs.color, bg: cs.backgroundColor }; e.remove(); return out; };
+    const sel = getComputedStyle(document.getElementById('apkSelDelBtn')), fm = getComputedStyle(document.querySelector('#view-files button[onclick="fmDeleteSelected()"]')), go = getComputedStyle(document.getElementById('apkDeleteBtn'));
+    return { bloat: probe('color: var(--status-bloat)').color, danger: probe('background: var(--danger-solid); color: var(--on-danger)'), sel: sel.color, fm: fm.color, goBg: go.backgroundColor, goImg: go.backgroundImage, goColor: go.color };
+  }, appearance);
+  for (const appearance of ['dark', 'light']) {
+    const d = await del(appearance);
+    check('3d. Material 3 ' + appearance + ': "Delete selected" (Installer) and "Delete" (File Manager) are in --status-bloat, "Delete from this device" is the solid danger red', d.sel === d.bloat && d.fm === d.bloat && d.bloat !== 'rgb(255, 82, 82)' && d.goBg === d.danger.bg && d.goImg === 'none' && d.goColor === d.danger.color, JSON.stringify(d));
+  }
   check('4. no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

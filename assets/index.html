@@ -4524,7 +4524,7 @@
                         <button class="batch-tool-link" id="apkSelBtn" onclick="apkSelToggle()">Select</button>
                         <button class="batch-tool-link" id="apkSelCleanBtn" style="display:none;" onclick="apkSelCleanup()">Select duplicates and older versions</button>
                         <button class="batch-tool-link" id="apkSelAllBtn" style="display:none;" onclick="apkSelAll()">All</button>
-                        <button class="batch-tool-link" id="apkSelDelBtn" style="display:none; color:#FF5252;" onclick="apkSelDelete()">Delete selected</button>
+                        <button class="batch-tool-link" id="apkSelDelBtn" style="display:none; color:var(--status-bloat);" onclick="apkSelDelete()">Delete selected</button>
                     </div>
                     <div id="apkScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
                     <div id="apkScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="apkScanBarFill"></div></div>
@@ -4925,7 +4925,7 @@
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
                     <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
-                    <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
+                    <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
                 <div class="fm-selbar" id="fmClipBar" style="display:none;">
@@ -9278,7 +9278,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
             <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.</div>
             <div style="display:flex; gap:10px; margin-top:12px;">
-                <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:linear-gradient(135deg,#FF5252,#FF8A65);" onclick="confirmApkDelete()">Delete from this device</button>
+                <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:var(--danger-solid); color:var(--on-danger);" onclick="confirmApkDelete()">Delete from this device</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeApkDelete()">Cancel</button>
             </div>
         </div>
