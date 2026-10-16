@@ -4931,7 +4931,9 @@ public class MainActivity extends Activity {
                 try { res.put("sourceDeleted", deleted); } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
-        endInstallStage(snap, true);           // its own files only: a package read since keeps its folder
+        // Its own files only (a package read since keeps its folder), and only a successful install uses them up: after a failure or a
+        // Cancel in the system installer they stay, so "turn on Allow downgrade and install again" does not need the package picked again.
+        endInstallStage(snap, res.optBoolean("ok", false));
         notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
     }
 

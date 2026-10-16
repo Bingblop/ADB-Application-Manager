@@ -127,7 +127,8 @@ public class InstallerStageTest {
     check("the install hands its snapshot to the end (and to the no-privilege install)", run.contains("finishInstall(res, opts, mode, snap)") && run.contains("installNoPrivilege(files, opts, snap)"));
     check("the end copies the snapshot's data files, not the package loaded now", finish.contains("copyInstallExtras(mode, snap)") && copy.contains("snap.extras") && copy.contains("snap.zip")
         && !m.contains("installExtras") && !m.contains("installSourceZip"));
-    check("the end removes only the install's own folder", finish.contains("endInstallStage(snap, true)"));
+    check("the end removes only the install's own folder, and only a successful install uses it up (a failed or cancelled one keeps its files for another try)",
+        finish.contains("endInstallStage(snap, res.optBoolean(\"ok\", false))") && !finish.contains("endInstallStage(snap, true)"));
     String np = body(m, "private void installNoPrivilege(");
     String fin = body(m, "private void finishInstall(");
     check("INS-3: the no-privilege install's result receiver lives on the application (a re-created window keeps the result), and its end runs even after the window's executor stopped",
