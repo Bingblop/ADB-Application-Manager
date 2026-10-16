@@ -10671,6 +10671,9 @@ Type any command above (e.g. pm list packages -d)</div>
     <script>
         // Global State
         let allApps = [];
+        // what the app sheet's deeper check (the app's file, its signing key) found, by package: { mods, at } with at = the app's last update time.
+        // The list itself only runs the cheap check, so a reload of it puts these back while the app is the same install (see loadPackageData)
+        const deepMods = new Map();
         let filteredApps = [];
         let selectedPkgs = new Set();
         let batchPanelExpanded = false;
@@ -18852,6 +18855,15 @@ Type any command above (e.g. pm list packages -d)</div>
                 const jsonStr = window.AndroidBridge.loadPackages();
                 allApps = JSON.parse(jsonStr);
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                // the sheet's deeper finding stays on the row while the app is the same install; an update, a reinstall or an uninstall drops it
+                if (deepMods.size) {
+                    const byPkg = new Map(allApps.map(a => [a.pkg, a]));
+                    deepMods.forEach((k, pkg) => {
+                        const a = byPkg.get(pkg);
+                        if (!a || a.updatedAt !== k.at) { deepMods.delete(pkg); return; }
+                        a.mods = Array.from(new Set((a.mods || []).concat(k.mods)));
+                    });
+                }
                 trackersLoadCached();
                 renderApps();
                 if (activeFilters.has('trackers')) trackersEnsure(false);
@@ -29046,9 +29058,13 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             renderInspectorDates(d);
             // the sheet shows no "Patched / modified" box any more (the owner's choice, v7.14); what its deeper check (the app's file, its signing key) finds goes to the
-            // list instead, so the row's tag and the Patched filter carry it from the next time the list is drawn
-            const listed = d && inspectedPkg ? allApps.find(a => a.pkg === inspectedPkg) : null;
-            if (listed && Array.isArray(d.mods) && d.mods.length > ((listed.mods && listed.mods.length) || 0)) listed.mods = d.mods.slice();
+            // list instead: the row's tag and the Patched filter show it at once, and a reload of the list keeps it (deepMods) while the app is the same install
+            if (d && inspectedPkg && Array.isArray(d.mods)) {
+                if (d.mods.length) deepMods.set(inspectedPkg, { mods: d.mods.slice(), at: d.lastUpdateTime }); else deepMods.delete(inspectedPkg);
+                const listed = allApps.find(a => a.pkg === inspectedPkg);
+                const mods = listed ? Array.from(new Set((listed.mods || []).concat(d.mods))) : [];
+                if (listed && mods.length > ((listed.mods && listed.mods.length) || 0)) { listed.mods = mods; renderApps(); }
+            }
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();
