@@ -4356,6 +4356,8 @@ x: {
 "VirusTotal scan needs the app build": "VirusTotal 扫描需要应用的构建版本",
 "VirusTotal was skipped: add your API key in Settings.": "已跳过 VirusTotal：请在设置中添加你的 API 密钥。",
 "Vivid": "鲜艳",
+"Gradient": "渐变",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "开启时：着色从应用图标后的光晕或 Logcat 行的开头沿整行逐渐淡出。关闭时：整行为均匀的单一颜色。默认开启。",
 "Vivo": "Vivo",
 "Voice assistant service": "语音助手服务",
 "Voltage": "电压",

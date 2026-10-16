@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "VirusTotal स्कैन के लिए ऐप बिल्ड चाहिए",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotal छोड़ा गया: सेटिंग में अपनी API कुंजी जोड़ें।",
 "Vivid": "चटक",
+"Gradient": "ग्रेडिएंट",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "चालू होने पर: हर रंगत पंक्ति में धीरे-धीरे फीकी होती जाती है, ऐप के आइकन के पीछे की चमक से या Logcat लाइन की शुरुआत से। बंद होने पर: पूरी पंक्ति एक ही समान रंग की होती है। डिफ़ॉल्ट रूप से चालू।",
 "Vivo": "Vivo",
 "Voice assistant service": "वॉइस असिस्टेंट सेवा",
 "Voltage": "वोल्टेज",

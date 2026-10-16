@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "VirusTotal taraması için uygulama sürümü gerekir",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotal atlandı: Ayarlar'a API anahtarınızı ekleyin.",
 "Vivid": "Canlı",
+"Gradient": "Renk geçişi",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "Açıkken: her renk tonu, uygulama simgesinin arkasındaki bir parıltıdan ya da bir Logcat satırının başından başlayarak satır boyunca solar. Kapalıyken: satırın tamamı tek ve düz bir renktir. Varsayılan olarak açık.",
 "Vivo": "Vivo",
 "Voice assistant service": "Sesli yardımcı hizmeti",
 "Voltage": "Voltaj",

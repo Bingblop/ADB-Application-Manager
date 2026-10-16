@@ -258,6 +258,7 @@
         #cdLcOut .lc-row, #cdLcOut .lc-row.lvl-W, #cdLcOut .lc-row.lvl-E, #cdLcOut .lc-row.lvl-F { background: var(--bg-card); }          /* on the card colour, as Live Logcat's rows */
         #cdLcOut .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
             background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: calc(var(--rt-o) * 0.8); }
+        html[data-row-grad="off"] #cdLcOut .lc-row::before { background: var(--lc-dot, var(--lc)); opacity: calc(var(--rt-o) * 0.4); }          /* Row tints > Gradient off: one even colour, at half the wash's leading edge (as Live Logcat's, see there) */
         #cdLcOut .lc-badge { background: var(--lc-dot, var(--lc)); }
         #cdLcOut .lc-row.lvl-I .lc-badge { color: var(--on-accent); }
         /* the text as in Live Logcat: the tag in the level's colour (inked darker on a light page), the message muted, so it reads on the tint */
@@ -988,6 +989,23 @@
                 linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 45%),
                 linear-gradient(105deg, var(--accent), var(--secondary));
         }
+        /* Settings > Row tints > Gradient switched off (kv 'row_tint_grad', html[data-row-grad="off"]; the owner's wish): the layer is one even colour
+           over the whole row, no shine, glow or wash. A plain colour (no color-mix(), so an old WebView draws it too), as strong as the slider says,
+           Off still none. An even fill lies under all of the row's text, also where the wash had faded, so it is laid at 0.4 of the slider's strength
+           (Vivid 9.6%, about the 9% of a state colour the status inks are made to read on): the badges, the name, the package and the menu button
+           keep 4.5:1 at Vivid in dark and light (t549 measures them; at the full strength some fell to 3.5). The selected row: the accent alone, at 0.1 (0.13
+           of the bright Nordic Emerald green under the row's menu button gave 4.3); the selection's rule comes last, so it still wins on a
+           running, frozen or uninstalled row */
+        html[data-row-grad="off"] .app-card.running::before, html[data-row-grad="off"] .app-card.frozen::before, html[data-row-grad="off"] .app-card.uninstalled::before {
+            background: var(--rt-c);
+            opacity: calc(var(--rt-o) * 0.4);
+        }
+        html[data-row-grad="off"] .app-card.selected::before { background: var(--accent); opacity: 0.1; }
+        /* ...and on that even colour the package line leans a tenth toward the main text: Blood Moon's dark one, 4.67:1 untinted, fell to 4.14 on the
+           even green (4.4 on the gradient), now 4.8. Only while a row has an even fill; with the gradient or Row tints Off it keeps its colour.
+           (Without color-mix() the declaration is dropped and the line keeps the muted grey it has there.) */
+        html[data-row-grad="off"]:not([data-row-tint="off"]) .app-card.running .app-pkg, html[data-row-grad="off"]:not([data-row-tint="off"]) .app-card.frozen .app-pkg,
+        html[data-row-grad="off"]:not([data-row-tint="off"]) .app-card.uninstalled .app-pkg { color: color-mix(in srgb, var(--pkg-color) 90%, var(--text-main)); }
         /* The moment a row is selected by a tap, a band of light sweeps across it once (not when a whole list is drawn selected) */
         @media (prefers-reduced-motion: no-preference) {
             .app-card.selected.sel-shine::after {
@@ -6350,6 +6368,14 @@
                     <input type="range" id="rowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
                     <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
                 </div>
+                <label class="switch-row" id="rowTintGradRow">
+                    <div>
+                        <div class="switch-title">Gradient</div>
+                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" checked onchange="setRowTintGrad(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
             </div>
 
             <div class="color-card" id="hapticCard">
@@ -7826,6 +7852,10 @@
                 [dir="rtl"] #cnSegLog .lc-row { --lc-dir: 270deg; }
                 #cnSegLog .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
                     background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: calc(var(--rt-o) * 0.8); }          /* a little under the Apps rows: small monospaced text lies on it */
+                /* Row tints > Gradient off: one even colour over the whole row. The wash is strongest only at the leading edge and the time, pid and message
+                   lie where it has faded; an even fill lies under all of them, so it is laid at half the edge's strength, 0.4 of the slider's (Vivid 9.6%,
+                   as the app rows): every text keeps 4.5:1 at Vivid in every palette, dark and light (t549; at 0.8 the dim Debug line fell to 3.5) */
+                html[data-row-grad="off"] #cnSegLog .lc-row::before { background: var(--lc-dot, var(--lc)); opacity: calc(var(--rt-o) * 0.4); }
                 /* on a light page the level-coloured badge and tag are inked darker, so they keep 4.5:1 on the tint (they were under it even untinted) */
                 html[data-appearance="light"] #cnSegLog .lc-badge, html[data-appearance="light"] #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
@@ -13741,11 +13771,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (old >= 0 && old <= 2) kvSet('row_tint_lv', v);
             return v;
         }
+        // The Gradient switch under the slider (kv 'row_tint_grad', on by default): off makes each tinted row one even colour (html[data-row-grad="off"])
+        function rowTintGradOn() { return kvGet('row_tint_grad', true) !== false; }
         function rowTintApply() {
-            const v = rowTintLevel();
+            const v = rowTintLevel(), grad = rowTintGradOn();
             document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
+            document.documentElement.setAttribute('data-row-grad', grad ? 'on' : 'off');
             const r = document.getElementById('rowTintRange');
             if (r) r.value = String(v);
+            const g = document.getElementById('rowTintGradToggle');
+            if (g) g.checked = grad;
             return v;
         }
         function setRowTint(v) {
@@ -13754,6 +13789,10 @@ Type any command above (e.g. pm list packages -d)</div>
             kvSet('row_tint_lv', v);
             rowTintApply();
             haptic();
+        }
+        function setRowTintGrad(on) {
+            kvSet('row_tint_grad', !!on);
+            rowTintApply();
         }
         rowTintApply();
         let askAgentId = String(kvGet('ask_agent', 'perplexity') || '');          // Perplexity until the person chooses (or chooses none): it searches the web itself and cites what it found

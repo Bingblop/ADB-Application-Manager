@@ -1,0 +1,56 @@
+ok   Settings > Row tints has a Gradient switch right under the slider, inside the card, in the switch-row style of the other cards
+ok      it is on by default (html data-row-grad="on")
+ok      with it on, every tinted row is a gradient (apps selected, apps frozen, apps uninstalled, apps running, device frozen, device uninstalled, live logcat, device logcat)
+ok   a tap turns it off: html data-row-grad="off", kept as row_tint_grad false
+ok   Row tints Off, Gradient off: every tinted row is one even colour, its state's, the accent or its level dot's (19 rows)
+ok      the app rows (Apps and Connected Devices) and the Logcat rows at 0.4 of the step's strength, the selected rows at 0.1
+ok   Row tints Faint, Gradient off: every tinted row is one even colour, its state's, the accent or its level dot's (19 rows)
+ok      the app rows (Apps and Connected Devices) and the Logcat rows at 0.4 of the step's strength, the selected rows at 0.1
+ok   Row tints Subtle, Gradient off: every tinted row is one even colour, its state's, the accent or its level dot's (19 rows)
+ok      the app rows (Apps and Connected Devices) and the Logcat rows at 0.4 of the step's strength, the selected rows at 0.1
+ok   Row tints Normal, Gradient off: every tinted row is one even colour, its state's, the accent or its level dot's (19 rows)
+ok      the app rows (Apps and Connected Devices) and the Logcat rows at 0.4 of the step's strength, the selected rows at 0.1
+ok   Row tints Vivid, Gradient off: every tinted row is one even colour, its state's, the accent or its level dot's (19 rows)
+ok      the app rows (Apps and Connected Devices) and the Logcat rows at 0.4 of the step's strength, the selected rows at 0.1
+ok   on the even colour the package line leans toward the main text (Faint to Vivid); with the gradient, or at Off, it keeps the colour of a plain row
+ok   the strength still follows the slider: Off none, each step more than the one before
+ok   on again, every row is drawn exactly as before (the same gradients, the same strength)
+ok   after a reload the switch is still off and a running app's row is still one even colour
+ok   dark material3, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark materialyou, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark amoled, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark cyberpunk, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark emerald, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark amber, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark slate, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark crimson, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light material3, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light materialyou, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light amoled, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light cyberpunk, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light emerald, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light amber, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light slate, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   light crimson, Vivid, Gradient off: every text of both Logcats (badge, tag, time, pid, message) that reads at 4.5:1 untinted still does on the even colour (60 texts)
+ok   dark, no color-mix(), Gradient off (kept from before): the app rows and Live Logcat's rows are one even colour, in their colours (10 rows)
+ok   light, no color-mix(), Gradient off (kept from before): the app rows and Live Logcat's rows are one even colour, in their colours (10 rows)
+ok   dark material3, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark materialyou, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark amoled, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark cyberpunk, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+note dark cyberpunk: under 4.5:1 already with Row tints Off (not the switch's doing): Amazon Shopping (selected) app-pkg, Bixby Voice (frozen) app-pkg, Chrome (selected running) app-pkg, OneDrive (uninstalled) app-pkg, WhatsApp (running) app-pkg
+ok   dark emerald, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark amber, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark slate, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   dark crimson, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+note dark crimson: under 4.5:1 already with Row tints Off (not the switch's doing): Amazon Shopping (selected) app-pkg, Chrome (selected running) app-pkg
+ok   light material3, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light materialyou, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light amoled, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+note light amoled: under 4.5:1 already with Row tints Off (not the switch's doing): Amazon Shopping (selected) app-checkbox, Chrome (selected running) app-checkbox
+ok   light cyberpunk, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light emerald, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light amber, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light slate, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+ok   light crimson, Vivid, Gradient off: every badge, and every other text of a tinted or selected row that reads at 4.5:1 with Row tints Off, still does on the even colour (26 texts)
+errors: []

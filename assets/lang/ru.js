@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "Проверка VirusTotal работает только в приложении",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotal пропущен: добавьте ключ API в настройках.",
 "Vivid": "Яркая",
+"Gradient": "Градиент",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "Включено: подсветка плавно затухает вдоль строки — от свечения за значком приложения или от начала строки Logcat. Выключено: вся строка окрашена одним ровным цветом. Включено по умолчанию.",
 "Vivo": "Vivo",
 "Voice assistant service": "Служба голосового ассистента",
 "Voltage": "Напряжение",
