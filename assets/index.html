@@ -1309,6 +1309,9 @@
         #fmTopCard .fm-head { display: flex; align-items: center; gap: var(--space-3); min-height: var(--ctl-h); margin-top: calc(var(--space-2) - var(--space-5)); padding-right: var(--ctl-h); }
         #fmTopCard .fm-head .color-card-title { flex: 1 1 auto; min-width: 0; margin: 0; }
         #fmTopCard .fm-more-btn { flex: none; }
+        /* the round Refresh button of the Apps search bar (same look, spin and pressed state), here in the title row before ⋯ More instead of at the end of a bar;
+           its 40px circle is drawn over the row's edges (a negative margin of half the difference) so the row, and the list below it, stay where they were */
+        #fmTopCard .fm-refresh-btn { position: static; flex: none; margin: calc((var(--ctl-h) - 40px) / 2) 0; }
         /* closed, the sheet is not just see-through but hidden, so its controls take no taps and are not read out */
         #fmMoreModal { visibility: hidden; transition: opacity 0.25s ease, visibility 0s linear 0.25s; }
         #fmMoreModal.show { visibility: visible; transition: opacity 0.25s ease; }
@@ -4907,6 +4910,7 @@
             <div class="color-card" id="fmTopCard">
                 <div class="fm-head">
                     <div class="color-card-title">File Manager</div>
+                    <button type="button" class="search-refresh-btn fm-refresh-btn" id="fmRefreshIconBtn" aria-label="Refresh" title="Refresh" onclick="fmRefreshClick()"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
                     <button class="batch-tool-link fm-more-btn" id="fmMoreBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="fmMoreModal" onclick="fmMoreOpen()">⋯ More</button>
                 </div>
                 <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:var(--radius-md); background:var(--tint-user);">
@@ -22649,6 +22653,26 @@ Type any command above (e.g. pm list packages -d)</div>
         function fmRefresh() {
             fmGo(fmPath, false, true);
             if (fmSearchMode && !fmSearchRunning && fmSearchQuery) { document.getElementById('fmSearchInput').value = fmSearchQuery; fmSearchGo(); }       // something was renamed, deleted or extracted: the results are made again
+        }
+        // The round Refresh button in the title row: the same as Refresh in the ⋯ More sheet, once at a time. The folder (or the search results) is read again; the button
+        // spins (and is off) until it is done, and for at least a moment, so a quick answer still shows that something happened - as on the Apps tab.
+        let fmRefreshing = false;
+        function fmRefreshClick() {
+            if (fmRefreshing) return;
+            fmRefreshing = true;
+            const btn = document.getElementById('fmRefreshIconBtn');
+            const hadFocus = !!btn && document.activeElement === btn;                     // a button that is off loses the focus: a keyboard or a switch user gets it back
+            if (btn) { btn.disabled = true; btn.classList.add('busy'); btn.setAttribute('aria-busy', 'true'); }
+            const t0 = Date.now();
+            const done = () => {
+                fmRefreshing = false;
+                if (btn) { btn.disabled = false; btn.classList.remove('busy'); btn.removeAttribute('aria-busy'); if (hadFocus) btn.focus(); }
+            };
+            // the read is one call that holds the page up: draw the busy button first
+            setTimeout(() => {
+                try { fmRefresh(); } catch (e) {}
+                setTimeout(done, Math.max(0, 450 - (Date.now() - t0)));
+            }, 50);
         }
         function fmUp() {
             if (fmPath.startsWith('content://')) {
