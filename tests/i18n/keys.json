@@ -4270,8 +4270,6 @@
 {"k":"Update the package lists","ctx":"built by the code of: tx tools steps"},
 {"k":"Update theme","ctx":"built by the code of: mt update"},
 {"k":"Updated","ctx":"built by the code of: top level"},
-{"k":"Updated 7d","ctx":"in the Saved Applications tab"},
-{"k":"Updated 7d (","ctx":"in the Application Manager tab"},
 {"k":"Updated. The app will restart.","ctx":"built by the code of: on self update progress"},
 {"k":"Updater","ctx":"in the the tab bar / Settings (the gear in the header)"},
 {"k":"Updates Available","ctx":"in the APK Installer tab"},

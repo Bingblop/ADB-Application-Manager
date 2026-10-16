@@ -54,8 +54,8 @@ const initMock = () => {
   // 2) every filter is still there, each with its count
   const row = await ev(() => Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(p => p.getAttribute('data-filter') + '=' + p.innerText.replace(/\s+/g, ' ').trim()));
   console.log('   the row:', JSON.stringify(row));
-  const want = ['all', 'installed', 'uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'recent', 'suspended', 'trackers', 'patched'];   // the owner's order (v7.14)
-  check('2. every filter has its pill, each once, in the owner\'s order (v7.14): All Apps, Installed / Uninstalled, System / User, Enabled / Frozen, Running, Updated 7d, Suspended, Trackers, Patched', row.map(r => r.split('=')[0]).join() === want.join(), row.map(r => r.split('=')[0]).join());
+  const want = ['all', 'installed', 'uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'suspended', 'trackers', 'patched'];   // the owner's order (v7.14; no Updated 7d since v7.14.1: Last updated sorts them)
+  check('2. every filter has its pill, each once, in the owner\'s order (v7.14): All Apps, Installed / Uninstalled, System / User, Enabled / Frozen, Running, Suspended, Trackers, Patched (no Updated 7d)', row.map(r => r.split('=')[0]).join() === want.join(), row.map(r => r.split('=')[0]).join());
   const counts = await ev(() => {
     const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0 };
     allApps.forEach(a => { if (a.isRunning) n.running++; if (a.isFrozen && !a.isUninstalled) n.frozen++; if (!a.isFrozen && !a.isUninstalled) n.enabled++; if (a.isUninstalled) n.uninstalled++; else { n.installed++; if (a.isSystem) n.system++; else n.user++; } });

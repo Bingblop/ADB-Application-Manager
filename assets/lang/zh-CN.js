@@ -4264,8 +4264,6 @@ x: {
 "Update the package lists": "更新软件包列表",
 "Update theme": "更新主题",
 "Updated": "已更新",
-"Updated 7d": "7 天内更新",
-"Updated 7d (": "7 天内更新 (",
 "Updated. The app will restart.": "已更新。应用将重新启动。",
 "Updater": "更新",
 "Updates Available": "有可用更新",

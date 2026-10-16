@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "تحديث قوائم الحزم",
 "Update theme": "تحديث السمة",
 "Updated": "تم التحديث",
-"Updated 7d": "محدّث خلال 7 أيام",
-"Updated 7d (": "المحدّثة خلال 7 أيام (",
 "Updated. The app will restart.": "تم التحديث. سيُعاد تشغيل التطبيق.",
 "Updater": "المحدّث",
 "Updates Available": "التحديثات المتاحة",

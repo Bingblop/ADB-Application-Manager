@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "पैकेज सूचियाँ अपडेट करें",
 "Update theme": "थीम अपडेट करें",
 "Updated": "अपडेट हो गया",
-"Updated 7d": "7 दिन में अपडेट",
-"Updated 7d (": "7 दिन में अपडेट (",
 "Updated. The app will restart.": "अपडेट हो गया। ऐप रीस्टार्ट होगा।",
 "Updater": "अपडेटर",
 "Updates Available": "अपडेट उपलब्ध हैं",

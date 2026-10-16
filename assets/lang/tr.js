@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "Paket listelerini güncelle",
 "Update theme": "Temayı güncelle",
 "Updated": "Güncellendi",
-"Updated 7d": "7 günde güncellenen",
-"Updated 7d (": "7 günde güncellenen (",
 "Updated. The app will restart.": "Güncellendi. Uygulama yeniden başlatılacak.",
 "Updater": "Güncelleme",
 "Updates Available": "Güncellemeler var",

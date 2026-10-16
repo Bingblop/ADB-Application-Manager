@@ -4408,7 +4408,6 @@
                 <div class="stat-split"><div class="filter-pill stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">System (<span class="stat-num" id="statSystem">--</span>)</div><div class="filter-pill stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">User (<span class="stat-num" id="statUser">--</span>)</div></div>
                 <div class="stat-split"><div class="filter-pill stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Enabled (<span class="stat-num" id="statEnabled">--</span>)</div><div class="filter-pill stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Frozen (<span class="stat-num" id="statFrozen">--</span>)</div></div>
                 <div class="filter-pill stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Running (<span class="stat-num" id="statRunning">--</span>)</div>
-                <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="trackers" onclick="setFilter('trackers', this)">Trackers (<span id="countTrackers">?</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
@@ -10769,7 +10768,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // user apps). None on is "All Apps". Three pairs can only have one member on, or none: Installed / Uninstalled, System / User, and Enabled / Frozen.
         const activeFilters = new Set();
         const FILTER_GROUPS = [['installed', 'uninstalled'], ['user', 'system'], ['enabled', 'frozen']];
-        const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: 'User', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
+        const FILTER_NAMES = { installed: 'Installed', running: 'Running', user: 'User', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -12798,7 +12797,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The Saved Applications filters: the same pills as the Application Manager, applied to the apps inside each list
         const savedFilters = new Set();
-        const SAVED_FILTER_KEYS = ['uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'recent', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
+        const SAVED_FILTER_KEYS = ['uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
         function setSavedFilter(k) {
             toggleFilterIn(savedFilters, k);
             haptic();
@@ -13610,7 +13609,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The Debloater's combining filters, the same pills as the Application Manager (the On device / Enabled / Disabled row above covers state)
         const uadExtra = new Set();
-        const UAD_EXTRA_KEYS = ['system', 'user', 'running', 'recent', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
+        const UAD_EXTRA_KEYS = ['system', 'user', 'running', 'suspended', 'patched'];   // the Apps tab's order (v7.14, the owner's)
         function renderUadExtra() {
             const row = document.getElementById('uadExtraRow');
             if (!row) return;
@@ -15220,14 +15219,9 @@ Type any command above (e.g. pm list packages -d)</div>
             updateOneUI(pkg);
         }
 
-        // ---------- Sorting, recent filter, sizes, export, extract ----------
-        const RECENT_DAYS = 7;
+        // ---------- Sorting, sizes, export, extract ----------
         let appSort = 'name';
         let allSizes = null; // {pkg: bytes} when sorting by size
-
-        function isRecentlyUpdated(app) {
-            return !!app.updatedAt && !app.isUninstalled && Date.now() - app.updatedAt < RECENT_DAYS * 86400000;
-        }
 
         function formatBytes(n) {
             if (!n && n !== 0) return '';
@@ -19154,7 +19148,6 @@ Type any command above (e.g. pm list packages -d)</div>
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('installed') && app.isUninstalled) return false;       // Installed leaves the uninstalled apps out (Installed / Uninstalled are a pair: only one is ever on)
             if (f.has('uninstalled') && !app.isUninstalled) return false;
-            if (f.has('recent') && !isRecentlyUpdated(app)) return false;
             if (f.has('patched') && !(app.mods && app.mods.length)) return false;
             if (f.has('trackers') && !trackerCount(app.pkg)) return false;
             return true;
@@ -19212,7 +19205,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
+            const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, suspended: 0, patched: 0, trackers: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen && !a.isUninstalled) n.frozen++;
@@ -19222,7 +19215,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (a.isSuspended) n.suspended++;
                 if (a.mods && a.mods.length) n.patched++;
                 if (trackerCount(a.pkg)) n.trackers++;
-                if (isRecentlyUpdated(a)) n.recent++;
             });
             document.getElementById('statTotal').innerText = n.installed;
             document.getElementById('statRunning').innerText = n.running;
@@ -19233,7 +19225,6 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('statUninstalled').innerText = n.uninstalled;
 
             document.getElementById('countAll').innerText = allApps.length;          // the pills with a colour show the counts above (statTotal, statRunning, ...)
-            document.getElementById('countRecent').innerText = n.recent;
             document.getElementById('countSuspended').innerText = n.suspended;
             document.getElementById('countPatched').innerText = n.patched;
             document.getElementById('countTrackers').innerText = trackersCountLabel(n.trackers);

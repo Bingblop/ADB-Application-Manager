@@ -4264,8 +4264,6 @@ x: {
 "Update the package lists": "패키지 목록 업데이트",
 "Update theme": "테마 업데이트",
 "Updated": "업데이트됨",
-"Updated 7d": "7일 내 업데이트",
-"Updated 7d (": "7일 내 업데이트됨 (",
 "Updated. The app will restart.": "업데이트되었습니다. 앱이 다시 시작됩니다.",
 "Updater": "업데이트",
 "Updates Available": "사용 가능한 업데이트",

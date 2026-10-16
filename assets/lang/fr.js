@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "Mettre à jour les listes de paquets",
 "Update theme": "Mettre à jour le thème",
 "Updated": "Mis à jour",
-"Updated 7d": "Mise à jour 7 j",
-"Updated 7d (": "Màj 7 j (",
 "Updated. The app will restart.": "Mise à jour effectuée. L’application va redémarrer.",
 "Updater": "Mise à jour",
 "Updates Available": "Mises à jour disponibles",

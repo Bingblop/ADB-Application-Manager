@@ -4265,8 +4265,6 @@ x: {
 "Update the package lists": "Atualizar as listas de pacotes",
 "Update theme": "Atualizar tema",
 "Updated": "Atualizado",
-"Updated 7d": "Atualizado em 7d",
-"Updated 7d (": "Atualizados 7d (",
 "Updated. The app will restart.": "Atualizado. O app será reiniciado.",
 "Updater": "Atualizador",
 "Updates Available": "Atualizações disponíveis",
