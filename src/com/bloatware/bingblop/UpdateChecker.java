@@ -407,6 +407,7 @@ public final class UpdateChecker {
         boolean osNeeded, gxNeeded;
         Failure osErr, gxErr;
         boolean osFresh, gxFresh;                    // answered by the network in this run (not read from the saved results)
+        boolean osKept;                              // the open-source lane answered before the run closed, the Galaxy Store lane still had to; guarded by lock
 
         Job(App app) {
             this.app = app;
@@ -654,17 +655,32 @@ public final class UpdateChecker {
 
         // 4. Everything that was not finished is accounted for. The "no internet" verdict is drawn here from the whole run's tally (no answer anywhere,
         //    several hosts failed), whatever the order in which the workers' failures landed; mid-run the same rule only ends the run early.
+        //    An app checked in both lanes whose open-source answer is in (from this run, or saved) only waited for the Galaxy Store: that answer is
+        //    listed and saved as a commit would, and only the Galaxy Store lane is reported.
         JSONObject summary;
+        List<JSONObject> lateRows = new ArrayList<JSONObject>();
+        List<Job> lateSaves = new ArrayList<Job>();
         synchronized (lock) {
             if (!cancelled && guard.noInternet()) offline = true;
             for (Job j : jobs) {
                 if (finished.contains(j.app.pkg)) continue;
                 if (cancelled) continue;                               // the person stopped it: counted as not checked below
                 String lane = (j.app.openSource ? LANE_OS : "") + (j.app.openSource && j.app.galaxy ? "+" : "") + (j.app.galaxy ? LANE_GX : "");
+                if (j.app.galaxy && (j.osKept || (j.app.openSource && !j.osNeeded && j.os != null))) {
+                    JSONObject row = takeOpenSource(j);
+                    if (row != null) {
+                        updates.put(j.app.pkg, row);
+                        lateRows.add(row);
+                    }
+                    if (j.osFresh) lateSaves.add(j);
+                    lane = LANE_GX;
+                }
                 addFailure(j.app, offline ? new Failure("offline", "no internet", "", lane) : new Failure("deadline", "timed out", "", lane));
             }
             summary = buildSummary(jobs, clock.monotonicMs() - t0);
         }
+        for (Job j : lateSaves) cache.put(j.app.pkg, j.app.versionCode, LANE_OS, osTag(j.app), j.os.kind, j.os.row);
+        for (JSONObject row : lateRows) emitUpdate(row);            // before "done" and before the check returns, like every other update
         cache.save();
         progress("done");
         return new Result(summary);
@@ -690,6 +706,12 @@ public final class UpdateChecker {
                             return;
                         } catch (Exception e) {
                             j.osErr = classify(e, LANE_OS);
+                        }
+                        if (j.gxNeeded && j.os != null) {
+                            // the Galaxy Store lane may still run into the end of the run: what this lane found is then listed by step 4, not lost with it
+                            synchronized (lock) {
+                                if (!closed) j.osKept = true;
+                            }
                         }
                     }
                     if (j.gxNeeded) {
@@ -738,6 +760,16 @@ public final class UpdateChecker {
         } catch (Exception ignored) {}
     }
 
+    /** Puts the open-source lane's answer into the lists (caller holds the lock); returns its update row, or null when it is not an update. */
+    private JSONObject takeOpenSource(Job j) {
+        if (j.os == null) return null;
+        if (UpdateCache.UPDATE.equals(j.os.kind)) return j.os.row;
+        if (UpdateCache.EXTERNAL.equals(j.os.kind)) external.add(j.os.row);
+        else if (UpdateCache.UNTRACKED.equals(j.os.kind)) untracked.add(untrackedRow(j.app));
+        else upToDate++;
+        return null;
+    }
+
     /** Puts what a job found into the run, saves it for next time and tells the listener. */
     private void commit(Job j) {
         JSONObject toSend = null;
@@ -750,13 +782,7 @@ public final class UpdateChecker {
                 if (j.osErr != null && j.gxErr != null) f = new Failure(f.code, f.reason, f.host, LANE_OS + "+" + LANE_GX);
                 addFailure(a, f);
             }
-            JSONObject row = null;
-            if (j.os != null) {
-                if (UpdateCache.UPDATE.equals(j.os.kind)) row = j.os.row;
-                else if (UpdateCache.EXTERNAL.equals(j.os.kind)) external.add(j.os.row);
-                else if (UpdateCache.UNTRACKED.equals(j.os.kind)) untracked.add(untrackedRow(a));
-                else upToDate++;
-            }
+            JSONObject row = takeOpenSource(j);
             if (j.gx != null && UpdateCache.UPDATE.equals(j.gx.kind)) row = j.gx.row;           // the Galaxy Store's answer wins, as it always has
             if (row != null) {
                 updates.put(a.pkg, row);
