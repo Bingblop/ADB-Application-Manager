@@ -247,9 +247,14 @@ public class HelperDownloadsTest {
                 int dp = m.indexOf("private synchronized HelperDownloads downloads()");
                 String db = dp < 0 ? "" : m.substring(dp, Math.min(m.length(), dp + 2500));
                 is("the bridge takes the process's download list (HelperDownloads.shared), never a list of its own", db.contains("HelperDownloads.shared(") && !m.contains("new HelperDownloads("), db.length() + "");
-                int rl = m.indexOf("public void release()");
-                String rb = rl < 0 ? "" : m.substring(rl, Math.min(m.length(), rl + 600));
+                int rl = m.indexOf("public void release()"), re = rl < 0 ? -1 : m.indexOf("\n    }\n", rl);
+                String rb = rl < 0 ? "" : m.substring(rl, re < 0 ? Math.min(m.length(), rl + 600) : re);
                 is("release() takes this window's page listener off the process's list", rb.contains("downloadList.removeListener(pagePush)"), rb);
+                // MOR-3 (full main review): a Helper download or VirusTotal upload of a window that is gone stops; a patch (same pool) goes on
+                int cancelsOnClose = m.split("public boolean cancelled\\(\\) \\{ return closing; \\}", -1).length - 1;
+                is("release() stops this window's Helper downloads and VirusTotal uploads: both progress objects answer cancelled() with the closing flag release() sets",
+                        rb.contains("closing = true;") && m.contains("private volatile boolean closing;") && cancelsOnClose == 2 && !m.contains("cancelled() { return false; }"), "release sets it=" + rb.contains("closing = true;") + " progress objects=" + cancelsOnClose);
+                is("...and it does not interrupt the bridge's threads (a patch or a catalog read on the same pool goes on)", !rb.contains("shutdownNow"), rb);
                 is("what the process's list keeps holds no window: the folder rule and the service listener are static classes with the application context",
                         m.contains("private static final class HelperFolders") && m.contains("private static final class ServiceSync") && db.contains("getApplicationContext()") && db.contains("new HelperFolders(") && db.contains("new ServiceSync(app,"));
                 String main = new String(Files.readAllBytes(new File(src.getParentFile(), "MainActivity.java").toPath()), StandardCharsets.UTF_8);
