@@ -57,11 +57,13 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
 ## What needs a human
 
 Do not change these without the owner's explicit approval, and do not read general autonomy as permission to weaken them: release policy
-(`release.yml`, the pinned signing certificate, `tools/check-signing-cert.sh`), workflow permissions and secrets, the app's permissions in
-`AndroidManifest.xml`, and anything that publishes outside the repository. A new check that only makes CI stricter is fine.
+(`release.yml`, the pinned signing certificate, `tools/check-signing-cert.sh`, `tools/check-release-version.sh`), workflow permissions and
+secrets, the app's permissions in `AndroidManifest.xml`, and anything that publishes outside the repository. A new check that only makes CI
+stricter is fine.
 
 ## Releasing
 
 A release is a pull request (version, changelog, README, goldens) → CI green → merge → `release.yml` with the version → verify the three
-APKs, their checksums and the signing certificate. Do not publish a release without the on-device checklist in `docs/DEVICE-TEST-CHECKLIST.md`
-being offered to the owner.
+APKs, their checksums and the signing certificate. `release.yml` stops before it builds when the version is not the manifest's `versionName`
+and a `CHANGELOG.md` heading with the manifest's `versionCode`, so tag the merged release commit. Do not publish a release without the
+on-device checklist in `docs/DEVICE-TEST-CHECKLIST.md` being offered to the owner.
