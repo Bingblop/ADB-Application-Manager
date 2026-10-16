@@ -33772,7 +33772,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 txNote('[' + cli.name + ' in Termux' + (useKey ? ', with your saved key' : ', with its own sign-in') + ']', 'termux');
                 const r = await txExec('termux', txCliWrap(cli, inner, useKey), 'agent', { env: useKey ? { [cli.env]: ag.provider } : null });
                 const out = txStripAnsi(r.output || '');
-                if (r.exit === 127 || /command not found|No such file or directory.*(claude|gemini|codex|copilot|agent|opencode)|proot-distro: command not found|not installed/i.test(out)) {
+                // the answer itself may say "not installed" or "command not found": only a run that failed is read as a missing CLI
+                if (r.exit === 127 || (r.exit !== 0 && /command not found|No such file or directory.*(claude|gemini|codex|copilot|agent|opencode)|proot-distro: command not found|not installed/i.test(out))) {
                     txNote('[' + cli.name + ' does not seem to be installed yet]', 'termux', 'tx-err');
                     txButtons('termux', [{ label: 'Install ' + cli.name, go: true, on: () => txInstallCli(ag) }, { label: 'Connect sheet', on: () => txOpenConnect(ag.id) }]);
                 } else {
