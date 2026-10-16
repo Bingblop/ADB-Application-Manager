@@ -36529,9 +36529,18 @@ Type any command above (e.g. pm list packages -d)</div>
                 + (e.lf ? '' : '<button class="batch-tool-link" style="padding:6px 0 0;" onclick="sdbRevert(' + e.n + ')">Revert</button>') + '</div>').join('');
         }
 
-        function sdbRevert(n) {
+        function sdbRevert(n, tried) {
             const e = sdbJournal.find(x => x.n === n);
             if (!e || e.lf) return;
+            // a table not read yet (still reading, or the read failed) is read first, as for a restore: without it the setting would look "not set",
+            // and the value put back would be journaled as new, so a Revert of that entry would delete the setting
+            if (!sdbData[e.ns]) {
+                if (tried) { showToast('Could not read the settings'); return; }
+                sdbReadTable(e.ns);              // a read already running is waited for
+                const wait = () => { if (sdbLoading[e.ns]) setTimeout(wait, 100); else sdbRevert(n, true); };
+                setTimeout(wait, 100);
+                return;
+            }
             const cur = sdbData[e.ns] && sdbData[e.ns].has(e.k) ? sdbData[e.ns].get(e.k) : null;
             const say = v => v === null ? 'not set' : '“' + sdbClip(v, 60) + '”';
             if (!e.lv && cur !== e.v && !confirm(e.k + ' has changed since: it is now ' + say(cur) + ' (this change left it ' + say(e.v) + ').\n\nPut the old value back anyway?')) return;
