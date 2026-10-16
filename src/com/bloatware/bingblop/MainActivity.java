@@ -390,6 +390,9 @@ public class MainActivity extends Activity {
     private static final int REQ_STORAGE_PERM = 9301;
     /** A runtime permission asked for from the permissions sheet (Bluetooth Connect, Notifications): a refusal for good sends the person to the app's settings page too */
     private static final int REQ_SHEET_RUNTIME_PERM = 9304;
+    /** The sheet's last request as it stood before Android's dialog (for PermRefusal): the permission, its rationale, and whether the sheet had asked for it before. UI thread only. */
+    private String sheetAskPerm = "";
+    private boolean sheetRationaleBefore, sheetAskedBefore;
 
     /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
     @Override
@@ -399,7 +402,12 @@ public class MainActivity extends Activity {
             if (requestCode == REQ_STORAGE_PERM || requestCode == REQ_SHEET_RUNTIME_PERM) {
                 boolean never = false;
                 for (String p : permissions) {
-                    if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
+                    boolean granted = checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED, rationale = shouldShowRequestPermissionRationale(p);
+                    if (requestCode == REQ_SHEET_RUNTIME_PERM) {
+                        // a dialog dismissed on a first ask (Back, a tap outside) leaves no rationale either: only an earlier answer makes it a refusal for good
+                        boolean same = p.equals(sheetAskPerm);
+                        if (PermRefusal.forGood(granted, same && sheetRationaleBefore, rationale, same && sheetAskedBefore)) never = true;
+                    } else if (!granted && !rationale) never = true;
                 }
                 if (never) {
                     Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
@@ -13384,7 +13392,14 @@ public class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try { requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM); } catch (Exception e) { openOwnAppInfo(); }
+                    try {
+                        // read before asking: afterwards a dismissed dialog and a refusal for good look the same (PermRefusal)
+                        sheetAskPerm = perm;
+                        sheetRationaleBefore = shouldShowRequestPermissionRationale(perm);
+                        sheetAskedBefore = prefs != null && prefs.getBoolean("sheet_perm_asked_" + perm, false);
+                        if (prefs != null) prefs.edit().putBoolean("sheet_perm_asked_" + perm, true).apply();
+                        requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM);
+                    } catch (Exception e) { openOwnAppInfo(); }
                 }
             });
             return "dialog";
