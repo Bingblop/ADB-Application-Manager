@@ -35,6 +35,10 @@ jobs:
           node docs/guide/build.js --strict
           git diff --exit-code -- assets/guide.js || { echo "::error::assets/guide.js is out of date. Run: node docs/guide/build.js, and commit it."; exit 1; }
 
+      - name: Check the shell blocks in the docs
+        # bash -n on every fenced sh/bash/shell block of the Markdown docs (an unquoted <placeholder> fails); see tests/README.md
+        run: node tests/docs/check-shell-blocks.js --self-test && node tests/docs/check-shell-blocks.js
+
       - name: Locate Android SDK tools
         run: |
           # The platform and build-tools release.yml builds with (not the newest on the runner), so a change that needs a newer API fails here
