@@ -19123,6 +19123,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const from = Math.min(filteredApps.length, appsShown);
             appsShown += APPS_PAGE;
             container.insertAdjacentHTML('beforeend', filteredApps.slice(from, appsShown).map(appCardHtml).join('') + appsMoreHtml());
+            rowBusyApply();          // a batch may already be working on the apps of this page: their rows say so too
             appsLoadIcons();
             appsWatchMore();
         }
