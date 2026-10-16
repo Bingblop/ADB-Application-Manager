@@ -5229,9 +5229,6 @@ public class MainActivity extends Activity {
     private volatile JSONObject tmGpuInfoCache;
     private volatile long[] tmCpuMinHz, tmCpuMaxHz;
     private volatile String tmThermalPath;              // "" when no zone was readable
-    private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
-            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
-            TM_M10 = "@@TM10-THREADS@@";
 
     private static final class ArcSlot {
         final ZipTool.Archive archive;
@@ -12607,30 +12604,38 @@ public class MainActivity extends Activity {
                 if (havePriv) {
                     try {
                         blob = executeShell(
-                                "cat /proc/stat 2>/dev/null; echo " + TM_M1 + "; "
-                                        + "cat /proc/meminfo 2>/dev/null; echo " + TM_M2 + "; "
-                                        + "cat /proc/net/dev 2>/dev/null; echo " + TM_M3 + "; "
-                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TM_M4 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TM_M5 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TM_M6 + "; "
-                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
-                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TM_M10);
+                                "cat /proc/stat 2>/dev/null; echo " + TaskMgrBlob.M1 + "; "
+                                        + "cat /proc/meminfo 2>/dev/null; echo " + TaskMgrBlob.M2 + "; "
+                                        + "cat /proc/net/dev 2>/dev/null; echo " + TaskMgrBlob.M3 + "; "
+                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TaskMgrBlob.M4 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TaskMgrBlob.M5 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TaskMgrBlob.M6 + "; "
+                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TaskMgrBlob.M7 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TaskMgrBlob.M8 + "; "
+                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TaskMgrBlob.M9 + "; "
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TaskMgrBlob.M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
-                } else {
+                    // a backend that is down (adb lost the device, Shizuku stopped after a reboot, su refused) answers with its error
+                    // text, not an exception, and that text parsed as it is reads as 0 % CPU, no RAM, no network and no processes. This
+                    // tick then reads CPU, RAM and network itself, as below, and says it is unprivileged, so Processes and GPU show
+                    // their lock instead of an empty list.
+                    if (!TaskMgrBlob.scriptRan(blob)) {
+                        havePriv = false;
+                        res.put("privileged", false);
+                    }
+                }
+                if (!havePriv) {
                     // no privileged backend: /proc/stat, /proc/meminfo and /proc/net/dev are world-readable, so this app can read
                     // them itself with no shell at all; only the process list and GPU need a privileged shell and stay empty.
                     try {
-                        blob = readWorldReadable("/proc/stat") + TM_M1 + readWorldReadable("/proc/meminfo") + TM_M2
-                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9 + TM_M10;
+                        blob = TaskMgrBlob.direct(readWorldReadable("/proc/stat"), readWorldReadable("/proc/meminfo"), readWorldReadable("/proc/net/dev"));
                     } catch (Throwable t) {
                         blob = null;
                     }
                 }
-                String[] parts = blob == null ? new String[0] : splitTm(blob);
+                String[] parts = blob == null ? new String[0] : TaskMgrBlob.split(blob);
                 long now = System.currentTimeMillis();
 
                 // CPU
@@ -12770,19 +12775,6 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "";
             }
-        }
-
-        private String[] splitTm(String blob) {
-            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9, TM_M10};
-            String[] out = new String[markers.length];
-            int from = 0;
-            for (int i = 0; i < markers.length; i++) {
-                int at = blob.indexOf(markers[i], from);
-                if (at < 0) { out[i] = ""; continue; }
-                out[i] = blob.substring(from, at);
-                from = at + markers[i].length();
-            }
-            return out;
         }
 
         /** Battery level, temperature, voltage, current, charge state and health: the public BatteryManager API and the
