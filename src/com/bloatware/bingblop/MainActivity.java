@@ -2759,9 +2759,9 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     selfUpdateProgress("error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 } finally {
-                    // The system installer reads the file asynchronously, so keep it in that path; the
-                    // privileged path has already consumed it and can clean up.
-                    if (!standard) apk.delete();
+                    // Used up either way: launchSystemInstaller hands the system installer a copy of its own (in cache/share, swept
+                    // by ShareProvider), and the privileged install has read it. Kept, it stayed in the cache for good.
+                    apk.delete();
                     installingUpdates.remove("self");
                 }
             }
@@ -3085,7 +3085,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard && apk != null) apk.delete();
+                    if (apk != null) apk.delete();         // the system installer reads its own copy (launchSystemInstaller)
                     storeInstalling.remove(key);
                 }
             }

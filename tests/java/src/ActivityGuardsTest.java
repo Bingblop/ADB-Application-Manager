@@ -181,6 +181,19 @@ public class ActivityGuardsTest {
     }
     check("MainActivity: every write of backups_index is under backupIndexLock, after a read under it (" + locked + " of " + writes + ")", writes >= 3 && locked == writes);
 
+    // MA1-4: a download for the system installer (Read-Only mode) was kept "because the installer reads it later", but the installer is
+    // handed a copy in cache/share (launchSystemInstaller): the self-update and Store downloads are deleted in every mode
+    String launch = bodyOf(b, "private void launchSystemInstaller(");
+    check("launchSystemInstaller gives the installer a copy of its own (a share file), not the downloaded file", launch != null && launch.contains("ShareProvider.newShareFile(") && launch.contains("ShareProvider.uriFor(shareApk)"));
+    for (String sig : new String[] {"private void runInstallSelfUpdate(", "private void downloadAndInstall("}) {
+      String body = bodyOf(b, sig);
+      Matcher fin = Pattern.compile("finally\\s*\\{([^{}]*)\\}").matcher(body == null ? "" : body);
+      String last = null;
+      while (fin.find()) last = fin.group(1);
+      check(sig.trim() + ": the downloaded APK is deleted in its finally block in every mode (found: " + (last == null ? null : last.trim().replaceAll("\\s+", " ")) + ")",
+          last != null && last.contains("apk.delete()") && !last.contains("standard"));
+    }
+
     System.out.println(fails == 0 ? "PASS ActivityGuardsTest: " + n + " checks" : "FAILED ActivityGuardsTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);
   }
