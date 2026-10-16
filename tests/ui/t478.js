@@ -1,6 +1,6 @@
 // v7.14.0: Connected Devices' Apps list takes the Apps tab's filters and row tints (the owner's wish). The pills are the Apps tab's pills in its order and pairs
 // (All Apps, Installed | Uninstalled, System | User, Enabled | Frozen) with the same colours; a device knows no running, updated, suspended, tracker or patched
-// state, so those pills are not there. Installed and Uninstalled together are every app; Uninstalled starts a clean list. A frozen or uninstalled app's row is
+// state, so those pills are not there. Each pair keeps one member (Installed | Uninstalled too, since the owner's request after v7.14.0; t543); Uninstalled starts a clean list. A frozen or uninstalled app's row is
 // tinted as in the Apps tab, as strongly as Row tints says. The row itself is the Apps tab's: the icon is the selection box with the check badge on its corner, and its Action Button
 // (chosen in the Apps tab's Sort / Button row, which the list has too) is the same icon button with the choices a device allows.
 const { chromium, PAGE } = require('./lib/pw');
@@ -57,7 +57,7 @@ const APPS = [
   await ev(() => { cd.filters.clear(); cdFilter('installed'); });
   check('Installed alone leaves out the uninstalled app', await shown() === 'Clock,Fit,Maps,Weather', await shown());
   await ev(() => cdFilter('uninstalled'));
-  check('Installed and Uninstalled together are every app', await shown() === 'Clock,Fit,Gone,Maps,Weather', await shown());
+  check('Uninstalled takes the place of Installed (a pair, as in the Apps tab)', await shown() === 'Gone' && await pills() === 'All Apps 5|Installed 4|Uninstalled 1*|System 2|User 2|Enabled 3|Frozen 1', await shown() + ' / ' + await pills());
   await ev(() => { cd.filters.clear(); cdFilter('user'); cdFilter('uninstalled'); });
   check('Uninstalled starts a clean list', await shown() === 'Gone' && await pills() === 'All Apps 5|Installed 4|Uninstalled 1*|System 2|User 2|Enabled 3|Frozen 1', await pills());
   await ev(() => cdFilter('system'));

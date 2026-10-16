@@ -290,8 +290,8 @@ These came before the rest of this list and were only checked in the browser. Th
 ## 17. The Installed box (v7.12.5)
 
 - [ ] The first box reads **Installed** and its count leaves out the uninstalled apps. The **All Apps** pill still counts every app.
-- [ ] Tap **Installed**: only installed apps are listed. Also tap **Bloatware (Uninstalled)**: every app on the phone is listed and both boxes are lit. Tap **Installed** again: only the uninstalled apps remain.
-- [ ] With Installed and Bloatware (Uninstalled) lit, tap **Running**: Bloatware (Uninstalled) turns off (a running app is installed).
+- [ ] Tap **Installed**: only installed apps are listed. Then tap **Uninstalled**: Installed turns off and only the uninstalled apps are listed (Installed | Uninstalled are one choice after v7.14.0, like System | User). Tap **Installed** again: Uninstalled turns off and only installed apps are listed. Connected Devices > Apps does the same.
+- [ ] With Uninstalled lit, tap **Running**: Uninstalled turns off (a running app is installed).
 
 - [ ] App menu buttons (v7.12.5): **App Info** now stands right after **Clear Data** and **Uninstall** right after **Rem Updates**; **Uninstall** is tinted red and **Freeze** blue.
 

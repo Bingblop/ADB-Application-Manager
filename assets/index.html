@@ -10691,9 +10691,9 @@ Type any command above (e.g. pm list packages -d)</div>
         let batchKeepSelection = true;          // on every time: it is put back on whenever a new selection starts (the switch is not remembered)
         let rememberFilters = false;   // off by default: the Apps tab opens on All Apps unless the user asks for the filters to be kept
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + User = your running
-        // user apps). None on is "All Apps". Two pairs can only have one member on, or none: System / User, and Enabled / Frozen.
+        // user apps). None on is "All Apps". Three pairs can only have one member on, or none: Installed / Uninstalled, System / User, and Enabled / Frozen.
         const activeFilters = new Set();
-        const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
+        const FILTER_GROUPS = [['installed', 'uninstalled'], ['user', 'system'], ['enabled', 'frozen']];
         const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: 'User', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
@@ -14242,7 +14242,13 @@ Type any command above (e.g. pm list packages -d)</div>
                 // last time is not brought back, so the whole list is what you see first.
                 activeFilters.clear();
                 if (rememberFilters && st.filters && typeof st.filters === 'object') {
-                    const keep = (set, arr, allowed) => { set.clear(); if (Array.isArray(arr)) arr.forEach(k => { if (allowed.includes(k)) toggleFilterIn(set, k); }); };
+                    // a set saved before Installed / Uninstalled became a pair can hold both: together they showed every app, so it comes back as neither
+                    const keep = (set, arr, allowed) => {
+                        set.clear();
+                        if (!Array.isArray(arr)) return;
+                        const both = arr.includes('installed') && arr.includes('uninstalled');
+                        arr.forEach(k => { if (allowed.includes(k) && !(both && (k === 'installed' || k === 'uninstalled'))) toggleFilterIn(set, k); });
+                    };
                     keep(activeFilters, st.filters.apps, Object.keys(FILTER_NAMES));
                     keep(uadExtra, st.filters.uad, UAD_EXTRA_KEYS);
                     keep(savedFilters, st.filters.saved, SAVED_FILTER_KEYS);
@@ -19027,8 +19033,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (f.has('suspended') && !app.isSuspended) return false;
             if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
-            if (f.has('installed') && app.isUninstalled && !f.has('uninstalled')) return false;       // Installed leaves the uninstalled apps out, unless Uninstalled is on too: both together are every app on the phone
-            if (f.has('uninstalled') && !app.isUninstalled && !f.has('installed')) return false;
+            if (f.has('installed') && app.isUninstalled) return false;       // Installed leaves the uninstalled apps out (Installed / Uninstalled are a pair: only one is ever on)
+            if (f.has('uninstalled') && !app.isUninstalled) return false;
             if (f.has('recent') && !isRecentlyUpdated(app)) return false;
             if (f.has('patched') && !(app.mods && app.mods.length)) return false;
             if (f.has('trackers') && !trackerCount(app.pkg)) return false;
@@ -19036,7 +19042,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function appMatchesFilters(app) { return appMatchesFilterSet(app, activeFilters); }
 
-        // A tap on a filter turns it on or off in the set ("all" empties it); a pair (System / User, Enabled / Frozen) keeps one member
+        // A tap on a filter turns it on or off in the set ("all" empties it); a pair (Installed / Uninstalled, System / User, Enabled / Frozen) keeps one member
         function toggleFilterIn(set, filter, groups) {
             if (filter === 'all') { set.clear(); return; }
             if (set.has(filter)) { set.delete(filter); return; }
@@ -20536,9 +20542,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // A tap on a pill or a box turns that filter on or off, next to the ones already on. "All Apps" turns them all off.
         function setFilter(filter, el) {
-            // Uninstalled bloatware is a list of its own: turning it on turns every other filter off
-            // (Installed stays: Installed + Uninstalled together are every app on the phone)
-            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) { const keep = activeFilters.has('installed'); activeFilters.clear(); if (keep) activeFilters.add('installed'); }
+            // Uninstalled bloatware is a list of its own: turning it on turns every other filter off (Installed too, its pair)
+            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) activeFilters.clear();
             // a running app is installed: turning Running on turns Uninstalled off
             if (filter === 'running' && !activeFilters.has('running')) activeFilters.delete('uninstalled');
             toggleFilterIn(activeFilters, filter);
@@ -25205,8 +25210,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // the same pills as the Apps tab (v7.14, the owner's wish), in its order and its pairs: Installed | Uninstalled, System | User, Enabled | Frozen. A device's list
         // knows only these states (not running, updated, suspended, trackers or patched), so those pills are not here. 'disabled' is Frozen; its pill wears Frozen's colour.
         const CD_FILTERS = [['installed', 'Installed'], ['uninstalled', 'Uninstalled'], ['system', 'System'], ['user', 'User'], ['enabled', 'Enabled'], ['disabled', 'Frozen']];
+        // each pair shares one frame, and only one of a pair can be on (tapping one turns the other off), as in the Apps tab
         const CD_FILTER_PAIRS = [['installed', 'uninstalled'], ['system', 'user'], ['enabled', 'disabled']];
-        const CD_FILTER_GROUPS = [['user', 'system'], ['enabled', 'disabled']];
         const CD_CHIPS = ['getprop ro.product.model', 'pm list packages -3', 'dumpsys battery', 'dumpsys activity activities | grep mResumedActivity', 'df -h /data', 'ps -A | head -25', 'wm size', 'wm density',
             'settings list global', 'ip addr show wlan0', 'cat /proc/meminfo | head -6', 'logcat -d -t 40', 'input keyevent 26', 'adb devices -l', 'adb pull /sdcard/Download/'];
         const CD_PLACES = [['Storage', '/sdcard'], ['Download', '/sdcard/Download'], ['Temp', '/data/local/tmp'], ['All storage', '/storage'], ['System', '/system'], ['Root', '/']];
@@ -26029,7 +26034,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!f.has('uninstalled') || f.has('enabled') || f.has('disabled')) return false;
                 return !(f.has('user') && a.system) && !(f.has('system') && !a.system);
             }
-            if (f.has('uninstalled') && !f.has('installed')) return false;          // Installed and Uninstalled together are every app, as in the Apps tab
+            if (f.has('uninstalled')) return false;          // an installed app is not Uninstalled (Installed / Uninstalled are a pair: only one is ever on)
             if (f.has('user') && a.system) return false;
             if (f.has('system') && !a.system) return false;
             if (f.has('enabled') && a.disabled) return false;
@@ -26038,9 +26043,9 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdFilter(k) {
             haptic();
-            // as in the Apps tab: Uninstalled starts a clean list (Installed stays: the two together are every app)
-            if (k === 'uninstalled' && !cd.filters.has('uninstalled')) { const keep = cd.filters.has('installed'); cd.filters.clear(); if (keep) cd.filters.add('installed'); }
-            toggleFilterIn(cd.filters, k, CD_FILTER_GROUPS);
+            // as in the Apps tab: Uninstalled starts a clean list (every other filter off, Installed too, its pair)
+            if (k === 'uninstalled' && !cd.filters.has('uninstalled')) cd.filters.clear();
+            toggleFilterIn(cd.filters, k, CD_FILTER_PAIRS);
             cdAppsRender();
         }
         function cdAppClearSearch() { document.getElementById('cdAppSearch').value = ''; cdAppsRender(); }
