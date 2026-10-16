@@ -63,6 +63,33 @@ public class PureTest {
     // a non-zip file must not throw
     File junk = File.createTempFile("tst", ".bin"); Files.write(junk.toPath(), "not a zip".getBytes());
     check("non-zip: no crash, no extras", XapkInfo.inspect(junk).candidates.isEmpty());
+    // a manifest.json whose central-directory size (what ZipEntry.getSize() reports) says 1000 bytes but that inflates to 2 MB: the bytes
+    // actually read count, so it is dropped (a bigger one ran the app out of memory and the Installer never answered); the OBB scan goes on
+    File liar = File.createTempFile("tst", ".xapk");
+    byte[] padded = new byte[2 * 1024 * 1024];
+    Arrays.fill(padded, (byte) ' ');
+    byte[] head = "{\"xapk_version\":2}".getBytes("UTF-8");
+    System.arraycopy(head, 0, padded, 0, head.length);
+    try (ZipOutputStream z = new ZipOutputStream(new FileOutputStream(liar))) {
+      putEntry(z, "com.foo.apk", new byte[]{9});
+      putEntry(z, "Android/obb/com.foo/main.1.com.foo.obb", new byte[]{1, 2, 3});
+      putEntry(z, "manifest.json", padded);
+    }
+    byte[] raw = Files.readAllBytes(liar.toPath());
+    byte[] mfName = "manifest.json".getBytes("UTF-8");
+    int patched = 0;
+    for (int i = 0; i + 46 + mfName.length <= raw.length; i++) {
+      if (raw[i] != 'P' || raw[i + 1] != 'K' || raw[i + 2] != 1 || raw[i + 3] != 2) continue;     // central-directory record
+      int nameLen = (raw[i + 28] & 0xff) | (raw[i + 29] & 0xff) << 8;
+      if (nameLen != mfName.length || !Arrays.equals(Arrays.copyOfRange(raw, i + 46, i + 46 + nameLen), mfName)) continue;
+      raw[i + 24] = (byte) 0xe8; raw[i + 25] = 0x03; raw[i + 26] = 0; raw[i + 27] = 0;            // uncompressed size: 1000
+      patched++;
+    }
+    Files.write(liar.toPath(), raw);
+    check("lying manifest.json: the archive was patched to declare 1000 bytes", patched == 1);
+    XapkInfo.Info lied = XapkInfo.inspect(liar);
+    check("lying manifest.json: not read past the limit (dropped, not parsed)", lied.manifest == null);
+    check("lying manifest.json: the OBB file is still found", lied.forPackage("com.foo").size() == 1 && lied.forPackage("com.foo").get(0).dest.equals("Android/obb/com.foo/main.1.com.foo.obb"));
     check("humanBytes", "1.5 KB".equals(XapkInfo.humanBytes(1536)) && "2.00 GB".equals(XapkInfo.humanBytes(2L*1073741824)));
 
     // ---------- ApkScan ----------
