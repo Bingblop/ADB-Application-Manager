@@ -4356,6 +4356,8 @@ x: {
 "VirusTotal scan needs the app build": "Pemindaian VirusTotal memerlukan build aplikasi",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotal dilewati: tambahkan kunci API Anda di Setelan.",
 "Vivid": "Cerah",
+"Gradient": "Gradien",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "Aktif: setiap warna memudar di sepanjang baris, dari cahaya di belakang ikon aplikasi atau dari awal baris Logcat. Nonaktif: seluruh baris diwarnai satu warna yang rata. Aktif secara default.",
 "Vivo": "Vivo",
 "Voice assistant service": "Layanan asisten suara",
 "Voltage": "Tegangan",

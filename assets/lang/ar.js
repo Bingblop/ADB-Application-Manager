@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "يتطلب فحص VirusTotal نسخة التطبيق",
 "VirusTotal was skipped: add your API key in Settings.": "تم تخطي VirusTotal: أضف مفتاح API في الإعدادات.",
 "Vivid": "زاهٍ",
+"Gradient": "تدرّج",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "عند التشغيل: يتلاشى كل تلوين على امتداد الصف، من توهّج خلف أيقونة التطبيق أو من بداية سطر Logcat. عند الإيقاف: يصبح الصف كله بلون واحد متساوٍ. مفعّل افتراضيًا.",
 "Vivo": "Vivo",
 "Voice assistant service": "خدمة المساعد الصوتي",
 "Voltage": "الجهد",

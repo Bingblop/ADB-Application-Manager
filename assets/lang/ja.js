@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "VirusTotalスキャンにはアプリ版が必要です",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotalをスキップしました: 設定でAPIキーを追加してください。",
 "Vivid": "鮮やか",
+"Gradient": "グラデーション",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "オンの場合：色付けはアプリのアイコンの後ろの光、または Logcat の行の先頭から、行に沿って薄れていきます。オフの場合：行全体が均一な一色になります。デフォルトでオンです。",
 "Vivo": "Vivo",
 "Voice assistant service": "音声アシスタントサービス",
 "Voltage": "電圧",

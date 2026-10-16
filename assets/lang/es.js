@@ -4357,6 +4357,8 @@ x: {
 "VirusTotal scan needs the app build": "El análisis de VirusTotal solo está disponible en la app",
 "VirusTotal was skipped: add your API key in Settings.": "Se omitió VirusTotal: añade tu clave de API en Ajustes.",
 "Vivid": "Intenso",
+"Gradient": "Degradado",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "Activado: cada tinte se difumina a lo largo de la fila, desde un brillo detrás del icono de la app o desde el inicio de una línea de Logcat. Desactivado: toda la fila es de un solo color uniforme. Activado por defecto.",
 "Vivo": "Vivo",
 "Voice assistant service": "Servicio de asistente de voz",
 "Voltage": "Voltaje",

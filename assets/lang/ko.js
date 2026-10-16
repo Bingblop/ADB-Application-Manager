@@ -4356,6 +4356,8 @@ x: {
 "VirusTotal scan needs the app build": "VirusTotal 검사는 앱 빌드에서만 사용할 수 있습니다",
 "VirusTotal was skipped: add your API key in Settings.": "VirusTotal 건너뜀: 설정에서 API 키를 추가하세요.",
 "Vivid": "선명하게",
+"Gradient": "그라데이션",
+"On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.": "켜면 각 색이 앱 아이콘 뒤의 빛이나 Logcat 줄의 시작에서부터 행을 따라 점점 옅어집니다. 끄면 행 전체가 고른 한 가지 색이 됩니다. 기본적으로 켜져 있습니다.",
 "Vivo": "Vivo",
 "Voice assistant service": "음성 어시스턴트 서비스",
 "Voltage": "전압",
