@@ -87,7 +87,9 @@ rm -rf "$STAGE"; mkdir -p "$STAGE"
 cp -R "$WORK_DIR/assets/." "$STAGE/"
 rm -f "$STAGE/libadb.so"
 if [ "$ABI" != "armeabi-v7a" ]; then
-    [ -f "$WORK_DIR/assets/libadb.so" ] && cp "$WORK_DIR/assets/libadb.so" "$STAGE/libadb.so"
+    # Stop like the 32-bit branch below: without it the APK builds and signs with no adb for 64-bit phones
+    [ -f "$WORK_DIR/assets/libadb.so" ] || fail "assets/libadb.so is missing"
+    cp "$WORK_DIR/assets/libadb.so" "$STAGE/libadb.so"
 fi
 if [ "$ABI" != "arm64-v8a" ]; then
     [ -f "$WORK_DIR/native/armeabi-v7a/libadb.so" ] || fail "native/armeabi-v7a/libadb.so is missing"
@@ -230,8 +232,9 @@ with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(work, 'obj', 'stub', 'adb_stub.apk'), 'assets/adb_stub.apk')     # the ADB Stub for Wear OS watches (Step 4c)
     if abi in ('arm64-v8a', 'universal'):
         libadb = os.path.join(work, 'assets', 'libadb.so')
-        if os.path.exists(libadb):
-            z.write(libadb, 'lib/arm64-v8a/libadb.so')
+        if not os.path.exists(libadb):
+            sys.exit('assets/libadb.so is missing')
+        z.write(libadb, 'lib/arm64-v8a/libadb.so')
     if abi in ('armeabi-v7a', 'universal'):
         z.write(os.path.join(work, 'native', 'armeabi-v7a', 'libadb.so'), 'lib/armeabi-v7a/libadb.so')
     # the pty helper of the full-screen Terminal (native/pty/ptyexec.c, built by native/pty/build.sh and kept in the repository): run from the library folder like libadb.so
