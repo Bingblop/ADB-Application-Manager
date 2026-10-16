@@ -32,7 +32,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const lit = () => page.evaluate(() => [Array.from(document.querySelectorAll('#filterScroll .filter-pill.active')).map(p => p.getAttribute('data-filter')), Array.from(document.querySelectorAll('.stat-card.active')).map(c => c.getAttribute('data-filter'))]);
   // several at once
   await tap('all'); await tap('running'); await tap('user');
-  console.log('Running + 3rd Party (your running user apps):', JSON.stringify([await names(), await lit(), await page.evaluate(() => document.getElementById('filterSummary').innerText)]));
+  console.log('Running + User (your running user apps):', JSON.stringify([await names(), await lit(), await page.evaluate(() => document.getElementById('filterSummary').innerText)]));
   await tap('all'); await tap('enabled'); await tap('system');
   console.log('Enabled + System (your enabled system apps):', JSON.stringify([await names(), await lit()]));
   await tap('frozen');
@@ -40,7 +40,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await tap('frozen');
   console.log('tapping Frozen again leaves none of the pair on:', JSON.stringify([await names(), await lit()]));
   await tap('user');
-  console.log('3rd Party replaces System the same way:', JSON.stringify(await lit()));
+  console.log('User replaces System the same way:', JSON.stringify(await lit()));
   await tap('all'); await tap('system'); await tap('running'); await tap('uninstalled');
   console.log('v7.10.9 turning Uninstalled on clears every other filter (System and Running are off now):', JSON.stringify([await names(), await lit()]));
   await tap('system');

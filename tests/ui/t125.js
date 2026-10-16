@@ -38,7 +38,7 @@ const tx = require('./lib/tx_mock');
   check('the input is usable in full screen', await ev(() => document.getElementById('txInput').value === 'echo hi' && document.elementFromPoint(100, document.getElementById('txInput').getBoundingClientRect().top + 5).closest('.tx-inputline') !== null));
   await ev(() => { backNavigate(); }); await sleep(150);
   g = await geo();
-  check('Back comes out of full screen first (and does not leave the tab)', g.btn === 'Full screen' && g.pane.h < 860 && (await ev(() => currentViewName())) === 'terminal', JSON.stringify(g.pane));
+  check('Back comes out of full screen first (and does not leave the tab)', g.btn === 'Full screen' && g.pane.h < 860 && (await ev(() => currentViewName())) === 'console', JSON.stringify(g.pane));
   await ev(() => txFullToggle()); await sleep(100);
   await ev(() => { cnApplySeg('shell'); switchView('console'); }); await sleep(100);
   check('going to the Console tab leaves full screen', (await ev(() => !document.getElementById('txPaneTerminal').classList.contains('tx-full'))));

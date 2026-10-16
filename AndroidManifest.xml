@@ -26,6 +26,8 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <!-- DUMP: a signature|privileged|development permission, grantable only with pm grant through ADB/Shizuku/root; lets this app run dumpsys itself -->
     <uses-permission android:name="android.permission.DUMP" />
+    <!-- READ_LOGS: like DUMP, granted only with pm grant through ADB/Shizuku/root; lets this app read the system log (logcat) itself -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -62,7 +64,7 @@
     </queries>
 
     <application
-        android:label="ADB Application Manager Pro"
+        android:label="ADB System Manager"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
@@ -80,7 +82,7 @@
 
         <activity
             android:name="com.bloatware.bingblop.MainActivity"
-            android:label="ADB Application Manager Pro"
+            android:label="ADB System Manager"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
@@ -162,7 +164,7 @@
         <service
             android:name=".SdmAccessService"
             android:exported="true"
-            android:label="SD Maid (AppCleaner) - ADB App Manager"
+            android:label="SD Maid (AppCleaner) - ADB System Manager"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -176,7 +178,7 @@
         <receiver
             android:name=".QuickWidgetProvider"
             android:exported="true"
-            android:label="ADB App Manager">
+            android:label="ADB System Manager">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

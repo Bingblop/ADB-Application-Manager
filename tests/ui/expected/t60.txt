@@ -1,4 +1,4 @@
-1. the Hidden Settings tab sits right after Terminal (Extra Settings, added in v7.12.12, and then RRO/Monet Customization follow it): true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Terminal","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","About"]
+1. the Hidden Settings tab sits right after Live Logcat (Extra Settings, added in v7.12.12, and then RRO/Monet Customization follow it): true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Live Logcat","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","About"]
    it activates its own button and view: true
    and the neighbours still work (App Stores, About): true
    About keeps its button: true

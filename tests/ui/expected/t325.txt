@@ -1,7 +1,7 @@
-ok   apps 400: 19 controls, the buttons and chips drawn at least 36px tall
+ok   apps 400: 16 controls, the buttons and chips drawn at least 36px tall
 ok   apps 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   apps 400: no sideways row scrolls up and down, no horizontal page scroll
-ok   saved-lists 400: 18 controls, the buttons and chips drawn at least 36px tall
+ok   saved-lists 400: 21 controls, the buttons and chips drawn at least 36px tall
 ok   saved-lists 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   saved-lists 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   saved-lists 400: the ? is 36x36 and no text of its card lies under it
@@ -32,16 +32,16 @@ ok   prefs 400: 11 controls, the buttons and chips drawn at least 36px tall
 ok   prefs 400: each answers a tap over at least 44x44px, no neighbour takes it
 ok   prefs 400: no sideways row scrolls up and down, no horizontal page scroll
 ok   prefs 400: the ? is 36x36 and no text of its card lies under it
-ok   apps 400: the sort row is one line of 36px controls
+ok   apps 400: the sort row is one line of 36px controls (its two labels aside)
 ok   apps 400: the 40px icon checkbox of a row answers 1.5px to its left and below it, and selects the app
 ok   apps 400: the ⋯ button beside it keeps its middle and its edge
 ok   files 400: a tick box inside its option label, and the name and × inside a chip, keep their own taps
 ok   saved-lists 400: the lbAuto switch is a whole label row at least 44px tall that takes the taps on its track
 ok   prefs 400: the pureBlackToggle switch is a whole label row at least 44px tall that takes the taps on its track (and flips)
-ok   apps 320: 19 controls, the buttons and chips drawn at least 36px tall
+ok   apps 320: 16 controls, the buttons and chips drawn at least 36px tall
 ok   apps 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   apps 320: no sideways row scrolls up and down, no horizontal page scroll
-ok   saved-lists 320: 18 controls, the buttons and chips drawn at least 36px tall
+ok   saved-lists 320: 21 controls, the buttons and chips drawn at least 36px tall
 ok   saved-lists 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   saved-lists 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   saved-lists 320: the ? is 36x36 and no text of its card lies under it
@@ -72,7 +72,7 @@ ok   prefs 320: 11 controls, the buttons and chips drawn at least 36px tall
 ok   prefs 320: each answers a tap over at least 44x44px, no neighbour takes it
 ok   prefs 320: no sideways row scrolls up and down, no horizontal page scroll
 ok   prefs 320: the ? is 36x36 and no text of its card lies under it
-ok   apps 320: the sort row is one line of 36px controls
+ok   apps 320: the sort row is one line of 36px controls (its two labels aside)
 ok   apps 320: the 40px icon checkbox of a row answers 1.5px to its left and below it, and selects the app
 ok   apps 320: the ⋯ button beside it keeps its middle and its edge
 ok   files 320: a tick box inside its option label, and the name and × inside a chip, keep their own taps

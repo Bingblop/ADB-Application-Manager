@@ -77,7 +77,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
 
   // 3b) the opt-in "Remember my filters" setting (Settings, Lists): off by default, and when on the filters come back
   page = await open({ ui_state: JSON.stringify({ rememberFilters: true, filters: { apps: ['running', 'user', 'bogus'], uad: ['system'], saved: ['frozen'] } }) });
-  check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', (await active(page)) === 'running:true,user:true', await active(page));
+  check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', ['running:true,user:true', 'user:true,running:true'].includes(await active(page)), await active(page));   // (v7.14 put User before Running in the row)
   check('   the setting shows as on, and the Debloater and Saved rows come back too', await ev(page, () => document.getElementById('rememberFiltersToggle').checked && uadExtra.has('system') && savedFilters.has('frozen')));
   await page.click('#filterScroll .filter-pill[data-filter="all"]'); await ev(page, () => new Promise(r => setTimeout(r, 200)));
   check('   it saves the change (tapping All Apps saves an empty set)', await ev(page, () => JSON.parse(window.AndroidBridge.loadStore('ui_state') || '{}').filters.apps.length === 0));
@@ -89,13 +89,13 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   // 4) the tip: an arrow at the right end of the filter row
   page = await open();
   const t = await ev(page, () => { const h = document.getElementById('filtersHint'), r = x => document.querySelector(x).getBoundingClientRect();
-    const btns = Array.from(document.querySelectorAll('.apps-sort-row .mode-action-btn')); const lastBtn = btns[btns.length - 1].getBoundingClientRect();
-    const exp = btns.find(x => /Profiles/.test(x.innerText)).getBoundingClientRect(), csv = btns.find(x => /Share CSV/.test(x.innerText)).getBoundingClientRect();
+    // v7.14: the sort row keeps only its two menus (CSV, Backups and Profiles moved to Saved Applications)
+    const exp = r('#appSort'), csv = r('#appsActionBtnPick'), lastBtn = csv;
     const hr = h.getBoundingClientRect(), fr = r('#filterScroll');
     return { shown: getComputedStyle(h).display !== 'none', text: h.getAttribute('aria-label'), title: h.getAttribute('title'), arrow: h.innerText.trim(), belowButtons: hr.top >= Math.max(exp.bottom, csv.bottom, lastBtn.bottom) - 1,
       inRow: h.parentElement === document.getElementById('filterScroll') && hr.top >= fr.top - 1 && hr.bottom <= fr.bottom + 1 && Math.abs(hr.right - fr.right) <= 1, width: Math.round(hr.width), height: Math.round(hr.height), sticky: getComputedStyle(h).position };
   });
-  check('4. a tip arrow sits under the Share CSV / Profiles buttons, held at the right end of the filter row', t.shown && t.belowButtons && t.inRow && t.sticky === 'sticky' && t.arrow === '›', JSON.stringify(t));
+  check('4. a tip arrow sits under the Sort and Action Button menus, held at the right end of the filter row', t.shown && t.belowButtons && t.inRow && t.sticky === 'sticky' && t.arrow === '›', JSON.stringify(t));
   check('   its name and tooltip tell to scroll the filters sideways for more', /scroll/i.test(t.text) && /sideways/i.test(t.text) && /more filters/i.test(t.text) && t.title === t.text, t.text);
   check('   the filters really do scroll sideways (more pills than fit)', await ev(page, () => { const f = document.getElementById('filterScroll'); return f.scrollWidth > f.clientWidth + 20; }));
   await ev(page, () => { document.getElementById('filterScroll').scrollLeft = 200; });

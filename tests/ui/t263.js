@@ -83,34 +83,43 @@ async function open(b, opts, vp) {
   await page.click('#bnavMenu .bn-sc[data-id="search"]'); await page.waitForTimeout(400);
   check('10. Apps: "Search apps" focuses the search box', am.items.join() === 'Search apps' && await ev(() => document.activeElement.id) === 'searchInput', am.items.join());
   await ev(() => { document.activeElement.blur(); }); await page.waitForTimeout(600);
+  // v7.14.0: Console holds both shells ("ADB Shell | Terminal"); its menu lists the two segments, then the Terminal's full screen and Coding Agents
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   const cm = await menu();
-  await page.click('#bnavMenu .bn-sc[data-id="log"]'); await page.waitForTimeout(500);
-  const cl = await ev(() => ({ view: currentViewName(), seg: cnSeg, logShown: !document.getElementById('cnSegLog').hidden, shellShown: !document.getElementById('cnSegShell').hidden, kv: window.__kv.console_seg }));
-  check('11. Console: the menu lists its two segments, "Live Logcat" opens the tab on the log (and keeps that choice)', cm.items.join() === 'ADB Shell,Live Logcat' && cl.view === 'console' && cl.seg === 'log' && cl.logShown && !cl.shellShown && cl.kv === '"log"', cm.items.join() + ' ' + JSON.stringify(cl));
+  await page.click('#bnavMenu .bn-sc[data-id="term"]'); await page.waitForTimeout(500);
+  const cl = await ev(() => ({ view: currentViewName(), seg: cnSeg, termShown: !document.getElementById('cnSegTerm').hidden, shellShown: !document.getElementById('cnSegShell').hidden, kv: window.__kv.console_seg }));
+  check('11. Console: the menu lists its two segments and two Terminal entries, "Terminal" opens the tab on the Terminal (and keeps that choice)', cm.items.join() === 'ADB Shell,Terminal,Full-screen terminal,Coding Agents' && cl.view === 'console' && cl.seg === 'term' && cl.termShown && !cl.shellShown && cl.kv === '"term"', cm.items.join() + ' ' + JSON.stringify(cl));
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="shell"]'); await page.waitForTimeout(500);
-  check('    "ADB Shell" switches the open tab to the shell segment', await ev(() => currentViewName() === 'console' && cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && document.getElementById('cnSegLog').hidden));
+  check('    "ADB Shell" switches the open tab to the shell segment', await ev(() => currentViewName() === 'console' && cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && document.getElementById('cnSegTerm').hidden));
   await ev(() => switchView('apps')); await page.waitForTimeout(400);
-  // the Terminal (the real terminal and the Coding Agents) is not on the bar by default: pinned here for its menu
-  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'console', 'terminal']; tabsApplyConfig(); }); await page.waitForTimeout(300);
-  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
-  const tm = await menu();
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="full"]'); await page.waitForTimeout(500);
-  check('11b. Terminal: four entries; "Full-screen terminal" opens the full screen (and the bar goes away)', tm.items.join() === 'Full-screen terminal,Coding Agents,Termux setup,Terminal settings' && await ev(() => txFullOn === true && document.getElementById('bnav').classList.contains('bnav-off')), tm.items.join());
+  check('11b. Console: "Full-screen terminal" opens the Terminal segment in full screen (and the bar goes away)', await ev(() => currentViewName() === 'console' && cnSeg === 'term' && txFullOn === true && document.getElementById('bnav').classList.contains('bnav-off')));
   await ev(() => txFullToggle(false)); await page.waitForTimeout(500);
-  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  await ev(() => { cnShowSeg('shell'); switchView('apps'); }); await page.waitForTimeout(500);
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="agents"]'); await page.waitForTimeout(500);
-  check('    "Coding Agents" opens the tab with the agent picker lit up and focused', await ev(() => currentViewName() === 'terminal' && document.getElementById('txAgent').classList.contains('bn-flash') && document.activeElement.id === 'txAgent'), await ev(() => document.activeElement.id));
-  await ev(() => { document.activeElement.blur(); switchView('apps'); }); await page.waitForTimeout(700);
-  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  check('    "Coding Agents" opens the Terminal segment with the agent picker lit up and focused', await ev(() => currentViewName() === 'console' && cnSeg === 'term' && document.getElementById('txAgent').classList.contains('bn-flash') && document.activeElement.id === 'txAgent'), await ev(() => document.activeElement.id));
+  // Termux setup and Terminal settings are entries five and six: chosen here (Settings > Navigation > Shortcuts)
+  await ev(() => { document.activeElement.blur(); tabConfig.shortcuts.console = ['termux', 'settings']; switchView('apps'); }); await page.waitForTimeout(700);
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
+  const cm2 = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="termux"]'); await page.waitForTimeout(500);
-  check('    "Termux setup" opens the Terminal and its Termux setup sheet', await ev(() => currentViewName() === 'terminal' && document.getElementById('txTermuxModal').classList.contains('show')));
+  check('    chosen, "Termux setup" opens the Terminal segment and its Termux setup sheet', cm2.items.join() === 'Termux setup,Terminal settings' && await ev(() => currentViewName() === 'console' && cnSeg === 'term' && document.getElementById('txTermuxModal').classList.contains('show')), cm2.items.join());
   await ev(() => { txCloseTermux(); switchView('apps'); }); await page.waitForTimeout(700);
-  await hold('terminal'); await page.mouse.up(); await page.waitForTimeout(600);
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="settings"]'); await page.waitForTimeout(500);
-  check('    "Terminal settings" opens the Terminal and its settings sheet', await ev(() => currentViewName() === 'terminal' && document.getElementById('txSettingsModal').classList.contains('show')));
-  await ev(() => { txCloseSettings(); tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'console']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(700);          // the default pins again
+  check('    "Terminal settings" opens the Terminal segment and its settings sheet', await ev(() => currentViewName() === 'console' && cnSeg === 'term' && document.getElementById('txSettingsModal').classList.contains('show')));
+  await ev(() => { txCloseSettings(); delete tabConfig.shortcuts.console; cnShowSeg('shell'); switchView('apps'); }); await page.waitForTimeout(700);
+  // Live Logcat (its own tab again) is not on the bar by default: pinned here for its menu
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'console', 'logcat']; tabsApplyConfig(); }); await page.waitForTimeout(300);
+  await hold('logcat'); await page.mouse.up(); await page.waitForTimeout(600);
+  const lm = await menu();
+  await page.click('#bnavMenu .bn-sc[data-id="filter"]'); await page.waitForTimeout(500);
+  check('11c. Live Logcat: three entries; "Filter the log" opens the tab with its filter focused', lm.items.join() === 'Filter the log,Log of one app,Recordings' && await ev(() => currentViewName() === 'logcat' && document.activeElement.id === 'logcatFilter'), lm.items.join());
+  await ev(() => { document.activeElement.blur(); switchView('apps'); }); await page.waitForTimeout(700);
+  await ev(() => { tabConfig.pinned = ['apps', 'installer', 'extrasettings', 'console']; tabsApplyConfig(); switchView('apps'); }); await page.waitForTimeout(700);          // the default pins again
   // The Extra Settings slot (third place by default) lists the first four sections of the registry that are on the page: Private DNS, Animations, Brightness, Telemetry (Power, Doze and Zram are there too, but a menu lists four at most unless the user picks them)
   s = await hold('extrasettings'); await page.mouse.up(); await page.waitForTimeout(600);
   const xm = await menu();
@@ -145,8 +154,10 @@ async function open(b, opts, vp) {
   await ev(() => { document.getElementById('searchInputGone').id = 'searchInput'; });
   // a registry entry added by another tab shows up, with a section filter
   await ev(() => { TAB_SHORTCUTS.console.push({ id: 'ghost', label: 'Ghost section', icon: 'tune', when: () => !!document.querySelector('#ghost'), run: () => switchView('apps') }); });
+  await ev(() => { tabConfig.shortcuts.console = ['shell', 'ghost']; });
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
-  check('15. the registry takes more entries: one whose section is missing is not listed', (await menu()).items.join() === 'ADB Shell,Live Logcat');
+  check('15. the registry takes more entries: one whose section is missing is not listed', (await menu()).items.join() === 'ADB Shell');
+  await ev(() => { delete tabConfig.shortcuts.console; });
   await page.keyboard.press('Escape');
 
   // ---- 5. Update All (N): listed first when more than one update waits; it asks the install question and installs nothing ----
@@ -263,7 +274,7 @@ async function open(b, opts, vp) {
   page = await open(b, { kv: { bnav_tip: 'true' } });
   const src = await ev(() => { const o = {}; Object.keys(TAB_SHORTCUTS).forEach(k => TAB_SHORTCUTS[k].forEach(i => { o[k + ':' + i.id] = String(i.run); })); return o; });
   // what a shortcut may call: moving between and opening screens, sections, segments and sheets, focusing a field, scrolling and lighting up a section, a harmless read-only check, and the Update All button's own function
-  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'setTimeout']);
+  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'lcAppOpen', 'lcRecListOpen', 'setTimeout']);          // lcAppOpen / lcRecListOpen: the app picker and the recordings sheet of Live Logcat (they only open a sheet)
   const EXCEPTION = new Set(['updateAllUI']);            // the one state-changing path: it asks the install question first (checked above)
   const bad2 = [];
   Object.keys(src).forEach(k => {

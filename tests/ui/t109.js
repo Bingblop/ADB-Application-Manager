@@ -153,14 +153,14 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { window.__st.devs = ['self', 'watch']; cdSelect('192.168.1.20:5555'); }); await wait(900);
 
   // Apps
-  const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-chip')).map(c => c.innerText) }));
+  const apps0 = await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, names: Array.from(document.querySelectorAll('#cdAppList .app-name')).map(e => e.innerText), count: document.getElementById('cdAppCount').innerText, chips: Array.from(document.querySelectorAll('#cdAppFilters .filter-pill')).map(c => c.innerText.replace(/[()]/g, '').trim()) }));
   check('the apps of the device are listed with phone names where the phone has the app', apps0.n === 5 && apps0.names.includes('Fit') && apps0.names.includes('Deskclock') && /5 apps/.test(apps0.count), JSON.stringify(apps0));
-  check('the filter chips carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All 5|3rd Party 2|System 2|Enabled 3|Frozen 1|Uninstalled 1', apps0.chips.join('|'));
+  check('the filter pills (the Apps tab\'s, in its order) carry counts; an uninstalled app counts only as Uninstalled', apps0.chips.join('|') === 'All Apps 5|Installed 4|Uninstalled 1|System 2|User 2|Enabled 3|Frozen 1', apps0.chips.join('|'));
   const rowOf = pkg => `#cdcard_${pkg.replace(/\./g, '\\.')}`;
-  const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.cd-row-act').innerText; return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
-  check('each row shows its state and the action that fits it', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Freeze' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
+  const badges = await ev(() => { const g = p => Array.from(document.getElementById('cdcard_' + p).querySelectorAll('.tag-badge')).map(b => b.innerText).join(',') + '/' + document.getElementById('cdcard_' + p).querySelector('.ab-btn').getAttribute('aria-label'); return [g('com.google.android.deskclock'), g('com.example.fit'), g('com.google.android.apps.fitness')]; });
+  check('each row shows its state and its Action Button (Enable / Disable by default, Reinstall for an uninstalled app)', badges[0] === 'FROZEN,SYSTEM/Enable' && badges[1] === 'USER/Disable' && badges[2] === 'UNINSTALLED,SYSTEM/Reinstall', JSON.stringify(badges));
   await ev(() => cdFilter('system')); await ev(() => cdFilter('disabled'));
-  check('3rd Party / System and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
+  check('System / User and Enabled / Frozen combine and show the Clear filters chip', await ev(() => ({ n: document.querySelectorAll('#cdAppList .app-card').length, sum: getComputedStyle(document.getElementById('cdAppSummary')).display !== 'none' && /System \+ Frozen/.test(document.getElementById('cdAppSummary').innerText) })).then(r => r.n === 1 && r.sum));
   await ev(() => { cd.filters.clear(); cdFilter('uninstalled'); cdFilter('system'); });
   check('Uninstalled with System narrows to the removed system app', await ev(() => Array.from(document.querySelectorAll('#cdAppList .app-card')).map(c => c.dataset.pkg).join()) === 'com.google.android.apps.fitness');
   await ev(() => cdFilter('all'));
@@ -169,9 +169,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { document.getElementById('cdAppSearch').value = ''; cdAppsRender(); });
 
   // one app: Freeze then Enable, Reinstall, Uninstall (asks first)
-  await ev(() => document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').click()); await wait(250);
-  check('Freeze runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /FROZEN/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .cd-row-act').innerText === 'Enable'));
-  await ev(() => document.querySelector('#cdcard_com\\.google\\.android\\.apps\\.fitness .cd-row-act').click()); await wait(250);
+  await ev(() => document.querySelector('#cdcard_com\\.example\\.fit .ab-btn').click()); await wait(250);
+  check('Freeze runs pm disable-user and the row changes', (await calls()).includes("192.168.1.20:5555 shell pm disable-user --user 0 'com.example.fit'") && await ev(() => /FROZEN/.test(document.getElementById('cdcard_com.example.fit').innerText) && document.querySelector('#cdcard_com\\.example\\.fit .ab-btn').getAttribute('aria-label') === 'Enable'));
+  await ev(() => document.querySelector('#cdcard_com\\.google\\.android\\.apps\\.fitness .ab-btn').click()); await wait(250);
   check('Reinstall runs install-existing and the app is back', (await calls()).some(c => /cmd package install-existing 'com\.google\.android\.apps\.fitness'/.test(c)) && await ev(() => !/UNINSTALLED/.test(document.getElementById('cdcard_com.google.android.apps.fitness').innerText)));
   await ev(() => cdAppMenu('com.example.fit')); await wait(200);
   const menu = await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).map(b => b.innerText));
@@ -271,11 +271,11 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => cdSub('logcat')); await wait(500);
   const lc = await ev(() => ({ rows: document.querySelectorAll('#cdLcOut .lc-row').length, lvls: Array.from(document.querySelectorAll('#cdLcOut .lc-row')).map(r => r.className.split(' ').pop()).join(), tag: document.querySelector('#cdLcOut .lc-tag').innerText }));
   check('the device log is read and drawn like the phone\'s own logcat', lc.rows === 3 && lc.lvls === 'lvl-I,lvl-W,lvl-E' && lc.tag === 'WatchFace', JSON.stringify(lc));
-  check('the level goes to the device as a logcat filter', (await calls()).some(c => /shell logcat -d -v threadtime -t 500 '\*:I'$/.test(c)));
+  check('the level goes to the device as a logcat filter', (await calls()).some(c => /shell logcat -d -v threadtime -t 1000 '\*:I'$/.test(c)));
   await ev(() => { document.getElementById('cdLcFilter').value = 'sensors'; cdLcDraw(false); });
   check('the filter box narrows the rows and marks the match', await ev(() => document.querySelectorAll('#cdLcOut .lc-row').length === 1 && document.querySelectorAll('#cdLcOut mark').length >= 1));
   await ev(() => { document.getElementById('cdLcFilter').value = ''; cdLcTogglePlay(); }); await wait(100);
-  check('Play follows the log and the button says Pause', await ev(() => document.getElementById('cdLcPlay').innerText === 'Pause' && !!cd.lcTimer));
+  check('Play follows the log and the button says Stop', await ev(() => document.getElementById('cdLcPlay').innerText === 'Stop' && !!cd.lcTimer));
   await ev(() => cdSub('apps'));
   check('leaving the Logcat sub-tab stops following', await ev(() => !cd.lcTimer && document.getElementById('cdLcPlay').innerText === 'Play'));
   await ev(() => { cdSub('logcat'); cdLcClear(); }); await wait(200);

@@ -20,7 +20,6 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -293,7 +292,8 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(false);
 
-        webView.setWebChromeClient(new WebChromeClient());
+        // alert(), confirm() and prompt() of the page as dialogs in the app's look, with a real title (PageDialogs); every one is answered exactly once
+        webView.setWebChromeClient(pageDialogs.client());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -388,13 +388,15 @@ public class MainActivity extends Activity {
     }
 
     private static final int REQ_STORAGE_PERM = 9301;
+    /** A runtime permission asked for from the permissions sheet (Bluetooth Connect, Notifications): a refusal for good sends the person to the app's settings page too */
+    private static final int REQ_SHEET_RUNTIME_PERM = 9304;
 
     /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         try {
-            if (requestCode == REQ_STORAGE_PERM) {
+            if (requestCode == REQ_STORAGE_PERM || requestCode == REQ_SHEET_RUNTIME_PERM) {
                 boolean never = false;
                 for (String p : permissions) {
                     if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
@@ -2332,6 +2334,21 @@ public class MainActivity extends Activity {
         }
     };
 
+    // ---------------------------------------------------------------------------------------------
+    // Internet speed test (Task Manager > Network > Speed test): SpeedTest (pure Java) does the work; this is the bridge. Needs no working mode: it only
+    // opens HTTPS connections of its own to speed.cloudflare.com through HttpSafe. Runs only while its screen is open (the page stops it on Close, Back
+    // and when the app is hidden); a pool of its own whose idle threads end, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService speedTestExec = SpeedTest.newPool();
+    private final SpeedTest.Runner speedTest = new SpeedTest.Runner(new SpeedTest.Config());
+
+    private final SpeedTest.Sink speedTestSink = new SpeedTest.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onSpeedTest && window.onSpeedTest(" + JSONObject.quote(json) + ")");
+        }
+    };
+
 
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
@@ -2391,7 +2408,7 @@ public class MainActivity extends Activity {
                             };
                             if (retried == null) {
                                 PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
-                                o.self = new UpdateChecker.App(getPackageName(), "ADB Application Manager Pro", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB System Manager", currentVersionName(), versionCodeOf(me), null, false, false, false);
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
@@ -3150,6 +3167,9 @@ public class MainActivity extends Activity {
         }
         return yes[0] ? BundleApprovals.Answer.ALLOW : BundleApprovals.Answer.DENY;
     }
+
+    /** The page's alert / confirm / prompt in the app's look (its colours come from the page); see PageDialogs. */
+    private final PageDialogs pageDialogs = new PageDialogs(this);
 
     /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
     private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
@@ -5190,6 +5210,16 @@ public class MainActivity extends Activity {
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
+    // a tick that is still running makes the next one (a scheduled one or "Refresh now") a no-op instead of a second shell round trip queued behind it
+    private final java.util.concurrent.atomic.AtomicBoolean tmTickBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // the thread count reads every process's status file: it is taken at most once every TM_THREADS_EVERY_MS and the last count is shown in between
+    private static final long TM_THREADS_EVERY_MS = 3000;
+    private long tmThreadsAt;
+    private long tmThreadsLast = -1;
+    // what does not change while the app runs is read once: the GPU facts, each core's min / max clock, which thermal zone is the CPU's
+    private volatile JSONObject tmGpuInfoCache;
+    private volatile long[] tmCpuMinHz, tmCpuMaxHz;
+    private volatile String tmThermalPath;              // "" when no zone was readable
     private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
             TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
             TM_M10 = "@@TM10-THREADS@@";
@@ -7214,6 +7244,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** READ_LOGS (signature|privileged|development): like DUMP, granted only with pm grant through ADB/Shizuku/root, and read back from the phone's own permission check. */
+    private boolean hasReadLogsAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** BLUETOOTH_CONNECT is a runtime permission from Android 12 on; below that the app needs nothing to be allowed (it counts as held). */
+    private boolean hasBluetoothConnectAccess() {
+        if (Build.VERSION.SDK_INT < 31) return true;
+        try {
+            return checkSelfPermission("android.permission.BLUETOOTH_CONNECT") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** POST_NOTIFICATIONS is a runtime permission from Android 13 on; below that notifications need no permission (it counts as held). */
+    private boolean hasNotificationAccess() {
+        if (Build.VERSION.SDK_INT < 33) return true;
+        try {
+            return checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
     /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
@@ -9123,7 +9182,7 @@ public class MainActivity extends Activity {
             };
             try {
                 checkTermuxReady();
-                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB App Manager check", new TermuxLink.Callback() {
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB System Manager check", new TermuxLink.Callback() {
                     @Override
                     public void onResult(TermuxLink.Result r) {
                         if (!answered.compareAndSet(false, true)) return;
@@ -9843,7 +9902,9 @@ public class MainActivity extends Activity {
                     o.put("isSystem", true);
                     o.put("isRunning", false);
                     o.put("isFrozen", true);
-                    o.put("isSuspended", false);
+                    // the user's own flag: Android keeps a package's state per user after an uninstall for that user, and the app menu shows
+                    // Suspend or Unsuspend for an uninstalled app from this
+                    o.put("isSuspended", uninstalledSuspended(pm, pkg));
                     o.put("isUninstalled", true);
                     o.put("targetSdk", 0);
                     arr.put(o);
@@ -9852,6 +9913,16 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "[]";
             }
+        }
+
+        /** Whether a package uninstalled for the current user is suspended for that user (FLAG_SUSPENDED of its per-user
+         *  ApplicationInfo, which MATCH_UNINSTALLED_PACKAGES still returns); false when it cannot be read. */
+        private boolean uninstalledSuspended(PackageManager pm, String pkg) {
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                return (info.flags & ApplicationInfo.FLAG_SUSPENDED) != 0;
+            } catch (Exception ignored) {}
+            return false;
         }
 
         /** The real app name for a package that's uninstalled-for-this-user but still has a stub on this system
@@ -10142,7 +10213,9 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < rows.length(); i++) {
                     String pkg = rows.getJSONObject(i).optString("pkg", "");
                     Boolean sus = null;
-                    if (installed.contains(pkg) && BackupScripts.isPackageName(pkg)) {
+                    // read for an app uninstalled for the user too: its "User 0:" line (installed=false) still carries the flag, and the app menu
+                    // offers Suspend / Unsuspend for it. A package the phone does not know has no such line and stays unknown.
+                    if (BackupScripts.isPackageName(pkg)) {
                         try { sus = BatchVerify.suspendedFrom(executeShell("dumpsys package " + pkg)); } catch (Throwable ignored) {}
                     }
                     if (sus == null) unknown.add(pkg); else if (sus.booleanValue()) suspended.add(pkg);
@@ -12153,6 +12226,50 @@ public class MainActivity extends Activity {
             dnsProbe.cancel(id);
         }
 
+        /**
+         * Internet speed test: starts latency, download and upload against Cloudflare (see SpeedTest for the contract and limits). Returns
+         * {"ok":true,"id":..} or {"ok":false,"error":..}; events arrive in window.onSpeedTest(json), ending with one {"type":"done",..}.
+         */
+        @JavascriptInterface
+        public String speedTestStart(String requestJson) {
+            return speedTest.start(requestJson, speedTestExec, speedTestSink);
+        }
+
+        /** Stops the running speed test if it has this id (its connections are closed at once). */
+        @JavascriptInterface
+        public void speedTestStop(String id) {
+            speedTest.cancel(id);
+        }
+
+        /** The active network for the speed test's cards and its mobile-data warning: {"type":"wifi|cellular|ethernet|vpn|other|none","metered":bool}. */
+        @JavascriptInterface
+        public String speedTestNetInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                String type = "none";
+                boolean metered = false;
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) {
+                    android.net.Network n = cm.getActiveNetwork();
+                    android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+                    if (nc != null) {
+                        if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) type = "wifi";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) type = "cellular";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) type = "ethernet";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) type = "vpn";
+                        else type = "other";
+                    }
+                    metered = cm.isActiveNetworkMetered();
+                }
+                o.put("type", type);
+                o.put("metered", metered);
+                o.put("maxBytes", speedTest.maxBytes());
+            } catch (Throwable t) {
+                try { o.put("type", "other"); o.put("metered", false); } catch (Exception ignored) {}
+            }
+            return o.toString();
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -12338,7 +12455,7 @@ public class MainActivity extends Activity {
                         @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
                     }, 2000, 25L * 1024 * 1024);
                     java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                    head.add("ADB Application Manager - log recording");
+                    head.add("ADB System Manager - log recording");
                     head.add("Started: " + new java.util.Date());
                     head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
                     head.add("Level: " + lv + " and above");
@@ -12411,7 +12528,7 @@ public class MainActivity extends Activity {
         /** Starts (or restarts, at a new period) the native poll. Each tick runs {@link #tmTick()} on the shared executor. */
         @JavascriptInterface
         public String tmStart(int intervalMs) {
-            if (intervalMs < 1000) intervalMs = 1000;
+            if (intervalMs < 500) intervalMs = 500;            // the page's fastest choice; the fixed delay below keeps ticks from piling up even then
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
                 if (tmClosed) return "closed";
@@ -12455,12 +12572,24 @@ public class MainActivity extends Activity {
          *  missing piece never corrupts another), plus a synchronous battery read (no shell, no permission needed).
          *  Pushes window.onTaskMgrData(json); never throws (a failure is reported in the JSON, not as a crash). */
         private void tmTick() {
+            if (!tmTickBusy.compareAndSet(false, true)) return;          // the previous one is still running: skip, do not queue
+            try {
+                tmTickOnce();
+            } finally {
+                tmTickBusy.set(false);
+            }
+        }
+
+        private void tmTickOnce() {
             JSONObject res = new JSONObject();
             try {
                 res.put("ts", System.currentTimeMillis());
                 boolean havePriv = !"standard".equals(resolveExecMode());
                 res.put("privileged", havePriv);
                 String blob = null;
+                long tickAt = System.currentTimeMillis();
+                boolean wantThreads;
+                synchronized (tmLock) { wantThreads = tmThreadsLast < 0 || tickAt - tmThreadsAt >= TM_THREADS_EVERY_MS; }
                 if (havePriv) {
                     try {
                         blob = executeShell(
@@ -12473,7 +12602,7 @@ public class MainActivity extends Activity {
                                         + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
                                         + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
                                         + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; echo " + TM_M10);
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TM_M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
@@ -12582,7 +12711,12 @@ public class MainActivity extends Activity {
                 cpuJson.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
                 if (havePriv) {
                     cpuJson.put("processes", ps.procs.size());
-                    cpuJson.put("threads", ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""));
+                    long threads;
+                    synchronized (tmLock) {
+                        if (wantThreads) { tmThreadsLast = ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""); tmThreadsAt = tickAt; }
+                        threads = tmThreadsLast;
+                    }
+                    if (threads >= 0) cpuJson.put("threads", threads);
                 }
 
                 // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
@@ -12599,7 +12733,9 @@ public class MainActivity extends Activity {
                 if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
                 gpuJson.put("approx", gpu.approx != null && gpu.approx);
                 gpuJson.put("label", GpuStats.label(gpu));
-                mergeInto(gpuJson, gpuInfoJson());
+                JSONObject gpuInfo = tmGpuInfoCache;
+                if (gpuInfo == null) { gpuInfo = gpuInfoJson(); tmGpuInfoCache = gpuInfo; }
+                mergeInto(gpuJson, gpuInfo);
                 res.put("gpu", gpuJson);
 
                 // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
@@ -12715,17 +12851,25 @@ public class MainActivity extends Activity {
                 if (tempC != null) o.put("tempC", tempC.doubleValue());
 
                 int cores = Runtime.getRuntime().availableProcessors();
-                long[] minHz = new long[cores], curHz = new long[cores], maxHz = new long[cores];
+                long[] curHz = new long[cores];
+                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s);
+                // a core whose limits could not be read (its whole cluster offline answers -EBUSY) is read again on later polls until it answers
+                long[] minHz = tmCpuMinHz, maxHz = tmCpuMaxHz;
+                boolean readLimits = minHz == null || maxHz == null || minHz.length != cores || maxHz.length != cores;
+                if (readLimits) { minHz = new long[cores]; maxHz = new long[cores]; }
                 boolean anyFreq = false;
                 for (int i = 0; i < cores; i++) {
                     String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
                     // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
                     // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
-                    minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                    if (readLimits || maxHz[i] <= 0) {
+                        minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                        maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
+                    }
                     curHz[i] = 1000L * parseLongOr(readWorldReadable(base + "scaling_cur_freq"), 0);
-                    maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
                     if (maxHz[i] > 0) anyFreq = true;
                 }
+                if (readLimits) { tmCpuMinHz = minHz; tmCpuMaxHz = maxHz; }
                 if (anyFreq) {
                     JSONArray clusters = new JSONArray();
                     for (CpuStats.Cluster c : CpuStats.groupClusters(minHz, curHz, maxHz)) {
@@ -12748,17 +12892,25 @@ public class MainActivity extends Activity {
          *  of a degree on some) are not standardized across devices. */
         private Double cpuThermalC() {
             try {
+                // which zone is the CPU's does not change: it is looked for once (a phone can have 80+ zones, two files each), then only its temp is read
+                String known = tmThermalPath;
+                if (known != null) {
+                    if (known.isEmpty()) return null;
+                    String raw = readWorldReadable(known).trim();
+                    return raw.isEmpty() ? null : millidegreesToC(raw);
+                }
                 File[] zones = new File("/sys/class/thermal").listFiles();
-                if (zones == null) return null;
-                String fallback = null;
+                if (zones == null) { tmThermalPath = ""; return null; }
+                String fallback = null, fallbackPath = null;
                 for (File z : zones) {
                     if (!z.getName().startsWith("thermal_zone")) continue;
                     String raw = readWorldReadable(z.getPath() + "/temp").trim();
                     if (raw.isEmpty()) continue;
-                    if (fallback == null) fallback = raw;
+                    if (fallback == null) { fallback = raw; fallbackPath = z.getPath() + "/temp"; }
                     String type = readWorldReadable(z.getPath() + "/type").trim();
-                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) return millidegreesToC(raw);
+                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) { tmThermalPath = z.getPath() + "/temp"; return millidegreesToC(raw); }
                 }
+                tmThermalPath = fallbackPath == null ? "" : fallbackPath;
                 return fallback == null ? null : millidegreesToC(fallback);
             } catch (Throwable t) {
                 return null;
@@ -13085,7 +13237,7 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return false; }
         }
 
-        /** Which of the three special accesses this app has right now: {files, usage, overlay, sdk}. */
+        /** Which of the accesses and permissions of the permissions sheet this app holds right now, read from the phone's own checks: {files, usage, overlay, ..., sdk}. */
         @JavascriptInterface
         public String getPermissionStatus() {
             JSONObject o = new JSONObject();
@@ -13098,6 +13250,12 @@ public class MainActivity extends Activity {
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
                 o.put("dump", hasDumpAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
+                o.put("read_logs", hasReadLogsAccess());
+                o.put("bluetooth", hasBluetoothConnectAccess());
+                o.put("notifications", hasNotificationAccess());
+                // runtime permissions this Android version does not have yet: held without asking, and the sheet says "Not needed"
+                o.put("bluetooth_na", Build.VERSION.SDK_INT < 31);
+                o.put("notifications_na", Build.VERSION.SDK_INT < 33);
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
             return o.toString();
@@ -13193,6 +13351,62 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
+        /** READ_LOGS - no Settings screen either: pm grant through the working mode, read back with the permission check. Answer: "granted" or "failed". */
+        @JavascriptInterface
+        public String requestReadLogsAccess() {
+            if (hasReadLogsAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.READ_LOGS");
+                if (hasReadLogsAccess()) return "granted";
+            }
+            return "failed";
+        }
+
+        /** Bluetooth Connect (Android 12+): pm grant through the working mode when there is one, else Android's own permission dialog
+         *  (window.onPermissionsChanged follows the answer). Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestBluetoothAccess() {
+            return requestRuntimeForSheet("android.permission.BLUETOOTH_CONNECT", 31);
+        }
+
+        /** Notifications (Android 13+): the same way as Bluetooth Connect. Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestNotificationAccess() {
+            return requestRuntimeForSheet("android.permission.POST_NOTIFICATIONS", 33);
+        }
+
+        private String requestRuntimeForSheet(final String perm, int fromSdk) {
+            if (Build.VERSION.SDK_INT < fromSdk) return "granted";
+            if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " " + perm);
+                if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM); } catch (Exception e) { openOwnAppInfo(); }
+                }
+            });
+            return "dialog";
+        }
+
+        /** All files access for the sheet's Allow button: through the working mode it is granted by command (appops MANAGE_EXTERNAL_STORAGE, or the storage
+         *  permissions below Android 11) and read back from the phone; without one (or when the phone refuses it) Android's screen opens as before.
+         *  Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String grantAllFilesAccess() {
+            if (hasStorageAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                String pkg = getPackageName();
+                if (Build.VERSION.SDK_INT >= 30) executeShell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+                else executeShell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE; pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+                if (hasStorageAccess()) return "granted";
+            }
+            requestAllFilesAccess();
+            return "settings";
+        }
+
         /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
          *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
          *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
@@ -13247,6 +13461,9 @@ public class MainActivity extends Activity {
                 }
                 if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
                 if (!hasDumpAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.DUMP; ");
+                if (!hasReadLogsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.READ_LOGS; ");
+                if (!hasBluetoothConnectAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.BLUETOOTH_CONNECT; ");
+                if (!hasNotificationAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.POST_NOTIFICATIONS; ");
                 if (sb.length() > 0) executeShell(sb.toString() + "true");
             }
             return getPermissionStatus();
@@ -13282,6 +13499,9 @@ public class MainActivity extends Activity {
             }
             if (!hasWriteSecureSettingsAccess()) out.add(pm + "WRITE_SECURE_SETTINGS");
             if (!hasDumpAccess()) out.add(pm + "DUMP");
+            if (!hasReadLogsAccess()) out.add(pm + "READ_LOGS");
+            if (!hasBluetoothConnectAccess()) out.add(pm + "BLUETOOTH_CONNECT");
+            if (!hasNotificationAccess()) out.add(pm + "POST_NOTIFICATIONS");
             StringBuilder sb = new StringBuilder();
             for (String line : out) { if (sb.length() > 0) sb.append('\n'); sb.append(line); }
             return sb.toString();
@@ -16158,7 +16378,7 @@ public class MainActivity extends Activity {
                     try {
                         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                         if (cm != null) {
-                            cm.setPrimaryClip(ClipData.newPlainText("ADB App Manager", text));
+                            cm.setPrimaryClip(ClipData.newPlainText("ADB System Manager", text));
                             Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
@@ -16179,6 +16399,18 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "";
             }
+        }
+
+        /** The page's colours and the words of its dialogs (applyTheme sends them): the look of alert / confirm / prompt (PageDialogs). */
+        @JavascriptInterface
+        public void setDialogTheme(String json) {
+            pageDialogs.setTheme(json);
+        }
+
+        /** The title of the page's next alert / confirm / prompt (nextDialogTitle in the page); used once. */
+        @JavascriptInterface
+        public void setNextDialogTitle(String title) {
+            pageDialogs.setNextTitle(title);
         }
 
         /** Tints the status and navigation bars to match the active theme background. */
@@ -16346,6 +16578,8 @@ public class MainActivity extends Activity {
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
+        // the page's own dialogs too: each one still open answers its page with Cancel, so nothing waits on a window that is gone
+        try { pageDialogs.dismissAll(); } catch (Throwable ignored) {}
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.
@@ -16361,6 +16595,9 @@ public class MainActivity extends Activity {
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
+        // the internet speed test: refuse new tests and close the running one's connections, then stop its pool
+        try { speedTest.shutdown(); } catch (Throwable ignored) {}
+        try { speedTestExec.shutdownNow(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {

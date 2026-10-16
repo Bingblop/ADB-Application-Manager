@@ -13,7 +13,7 @@
    every row carries the same words as a hover title (tap to load, press and hold to delete): true Tap to load it · press and hold (or press Delete) to delete it
    the tip stays while the filter shows nothing (the rows are still there to press): true
 6. press and hold on a file opens a sheet for it (not the file): true
-   the sheet shows the size, how old it is, the full path, and that an Undo follows: true {"sub":"11.8 MB · 3 days ago","path":"/storage/emulated/0/Download/Example-App-2.0.apks","helper":"The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone."}
+   the sheet shows the size, how old it is, the full path, and that an Undo follows: true {"sub":"11.8 MB · 3 days ago","path":"/storage/emulated/0/Download/Example-App-2.0.apks","helper":"The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone."}
    nothing has been deleted yet: true
 7. Cancel closes it and nothing happens: true
    Back closes it too: true
@@ -44,7 +44,7 @@
     Delete opens the delete sheet for it: true
     Enter loads it: true
 27. the text of a found file is not selectable (the long press must not start Android's own text selection): true
-16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs: true card top 156, tabs end 148
+16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs: true card top 157, tabs end 149
     the card it landed on says what was picked: true
 17. choosing with the file picker swipes down the same way: true
 18. no swipe when the answer comes after the user went to another tab: true

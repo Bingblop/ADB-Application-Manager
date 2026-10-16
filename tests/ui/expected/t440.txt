@@ -1,0 +1,22 @@
+1. applyTheme sends the colours and the words of the dialogs: true bg,card,surface,text,muted,accent,onAccent,border,radius,light,alertTitle,confirmTitle,promptTitle,ok,cancel
+   they are the colours on the page: true
+   a light appearance sends light colours: true
+2. Save current theme: the prompt is titled "Save theme": true [["prompt","Save theme"]]
+   Rename: "Rename theme": true [["prompt","Rename theme"]]
+   Update: the confirm is titled "Update theme": true [["confirm","Update theme"]]
+3. Batch command: "Save command": true [["prompt","Save command"]]
+   "Rename command": true [["prompt","Rename command"]]
+   "Delete command": true [["confirm","Delete command"]]
+4. Batch Ops: "Save preset": true [["prompt","Save preset"]]
+   "Rename preset": true [["prompt","Rename preset"]]
+   "Delete preset": true [["confirm","Delete preset"]]
+5. Debloater: "Name this list": true [["prompt","Name this list"]]
+6. Updater: "GitHub token": true [["prompt","GitHub token"]]
+   "Update source": true [["prompt","Update source"]]
+7. Delete a theme: "Delete theme": true [["confirm","Delete theme"]]
+8. a title is used by the next dialog only: true [{"kind":"confirm","m":"Something else?","title":"Delete theme"},{"kind":"confirm","m":"And this?","title":null}]
+   an empty title is not sent: true
+9. without the bridge method the helper does nothing and the prompt still comes: true
+   and the theme was saved under the typed name: true
+10. no page errors: true
+all passed

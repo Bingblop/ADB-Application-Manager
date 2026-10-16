@@ -115,7 +115,7 @@
 <ul>
 <li>A <a href="#modes-overview">working mode</a>, and a backup made by this app (a file ending in <code>.adbbackup</code>). See <a href="#recipe-backup-before">Back up an app before you change it</a>.</li>
 <li>To restore the app's <b>data</b> as well, the backup must contain data and the phone must have <a href="#mode-root">Root</a>.</li>
-<li>The <b>Application Manager</b> tab, and its <b>Backups</b> button (in the row above the filter pills).</li>
+<li>The <b>Saved Applications</b> tab, and its <b>Backups</b> button (beside <b>New List</b>).</li>
 </ul>
 
 <h4>Steps</h4>
@@ -250,7 +250,7 @@
 <li>In the row above the filter pills, open the <b>Sort</b> menu and choose <b>Size</b>. A message says "Measuring app sizes...". The list is then biggest first, and each row shows its size after a dot, for example "&#8226; 1.4 GB".</li>
 <li>To include data and cache, open any app's <b>...</b> menu. The line under its name reads "APK 12 MB" and ends in a link, <b>Show data usage</b>. Tap it. With a working mode on, the app switches usage access on for you. Otherwise Android's Usage access screen opens: switch it on for this app and press Back.</li>
 <li>Close the app and open it again. The <b>Size</b> sort is remembered and the sizes are measured again. The line in an app's menu now reads like "APK 12 MB &#8226; Data 340 MB &#8226; Cache 80 MB".</li>
-<li>Tap the <b>3rd Party</b> pill to see only apps you installed yourself, or type in the search box.</li>
+<li>Tap the <b>User</b> pill to see only apps you installed yourself, or type in the search box.</li>
 </ol>
 
 <h4>What you can do about a big app</h4>
@@ -335,12 +335,12 @@
 <li>Type <code>animation</code> in the box <b>Search settings...</b>. The list shrinks to the matches, with the matching letters highlighted.</li>
 <li>Tap the row <code>window_animation_scale</code>. A sheet slides up with its name, table, description and a <b>Value</b> box. First tap <b>Copy value</b>, to keep the old value on the clipboard.</li>
 <li>Replace the text in the <b>Value</b> box with <code>0.5</code>. A line under the box says what kind of value it looks like and what it was before. A red line means it cannot be saved yet.</li>
-<li>Tap <b>Save</b>. The sheet closes, the row shows the new value with a small dot, and an <b>Undo</b> bar appears at the bottom for about 7 seconds. Open an app: its windows should now move quicker. Some phone makers' software ignores some settings.</li>
+<li>Tap <b>Save</b>. The sheet closes, the row shows the new value with a small dot, and an <b>Undo</b> bar appears at the bottom for 3 seconds. Open an app: its windows should now move quicker. Some phone makers' software ignores some settings.</li>
 </ol>
 
 <h4>Undo it</h4>
 <ol class="hg-steps">
-<li>Within about 7 seconds, tap <b>Undo</b> on the bar. A message says "Put back: window_animation_scale".</li>
+<li>Within 3 seconds, tap <b>Undo</b> on the bar. A message says "Put back: window_animation_scale".</li>
 <li>Later: tap <b>...</b> (the three dots next to the search box), then <b>Changes</b>. Each entry shows the old and new value. Tap <b>Revert</b> under the one you want to undo.</li>
 </ol>
 <p>A setting with an orange edge and the word "careful" asks for confirmation. Some of them can cut the connection the app uses (<code>adb_enabled</code>, <code>wifi_on</code>, <code>airplane_mode_on</code>) or lock you out of the keyboard. Leave those alone. A setting that is 1 or 0 can also be flipped by pressing and holding its row.</p>
@@ -367,7 +367,7 @@
 <li>Under <b>Color</b>, tap <b>Custom color</b> (<b>Wallpaper</b> is the default). A box appears with a big square and a code field.</li>
 <li>Pick the colour: type a six-digit code such as <code>6750A4</code>, move the <b>Hue</b>, <b>Saturation</b> and <b>Lightness</b> sliders, tap a recent colour, or open <b>Preset colors</b>, search by name and tap a round swatch.</li>
 <li>Under <b>Style</b>, choose one: <b>Tonal Spot</b> (the default), <b>Vibrant</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> or <b>Spritz</b>.</li>
-<li>Tap <b>Apply theme</b>. It reads "Applying...", then Android repaints within a second or two and may restart apps. An <b>Undo</b> bar saying "Theme applied" waits for about 7 seconds. If Android restarted this app, it comes back to this tab with the bar still waiting. The squares update a few seconds later.</li>
+<li>Tap <b>Apply theme</b>. It reads "Applying...", then Android repaints within a second or two and may restart apps. An <b>Undo</b> bar saying "Theme applied" waits for 3 seconds. If Android restarted this app, it comes back to this tab with the bar still waiting. The squares update a few seconds later.</li>
 </ol>
 
 <h4>Overlays</h4>
@@ -376,7 +376,7 @@
 <li>The list is read again and the row shows what Android reports. The <b>Undo</b> bar says "On: name" or "Off: name". An overlay marked <b>Unavailable</b> cannot be switched.</li>
 </ol>
 
-<div class="hg-warn"><b>Undo.</b> Tap <b>Undo</b> on the bar within about 7 seconds, or tap <b>Default</b> and confirm "Go back to the system default?". Later, <b>Hidden Settings</b>, <b>...</b>, <b>Changes</b> lists <code>theme_customization_overlay_packages</code> with a <b>Revert</b>. A wrong overlay can make the screen harder to use: switch it off again in the <b>Overlays</b> half. If the colours look unchanged, your phone maker's palette wins. This tab does not change the app's own colours: see <a href="#themes">Themes and colours</a>.</div>
+<div class="hg-warn"><b>Undo.</b> Tap <b>Undo</b> on the bar within 3 seconds, or tap <b>Default</b> and confirm "Go back to the system default?". Later, <b>Hidden Settings</b>, <b>...</b>, <b>Changes</b> lists <code>theme_customization_overlay_packages</code> with a <b>Revert</b>. A wrong overlay can make the screen harder to use: switch it off again in the <b>Overlays</b> half. If the colours look unchanged, your phone maker's palette wins. This tab does not change the app's own colours: see <a href="#themes">Themes and colours</a>.</div>
 
 <p><b>Read more:</b> <a href="#tab-overlays">RRO/Monet Customization</a>, <a href="#settings-journal">Undoing settings changes</a>.</p>
 </section>
@@ -392,18 +392,18 @@
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. <b>Live Logcat</b> (in the Console tab) opens showing only that app's lines. (Or open it yourself, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
+<li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. <b>Live Logcat</b> opens showing only that app's lines. (Or open it yourself, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
 <li>Set the level drop-down to <b>Warn</b> or <b>Error</b> (the level is how serious a line must be to show), and the lines drop-down to <b>2000</b>, so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b>, so the log holds only what comes next. This empties the phone's log for every app, and it also pauses the live reading: the screen says "(cleared)" and the button says <b>Play</b> again.</li>
-<li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Pause</b>.</li>
-<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. Type <code>AndroidRuntime</code> in the filter box and press Enter to see just the crash. A crash in native code shows "Fatal signal" instead.</li>
+<li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Stop</b>.</li>
+<li>Tap <b>Stop</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. Type <code>AndroidRuntime</code> in the filter box and press Enter to see just the crash. A crash in native code shows "Fatal signal" instead.</li>
 <li>Read the lines. A row <b>FATAL EXCEPTION</b> starts the report. The line <b>Process:</b> names the app. The next line names the error, for example a null pointer. A <b>Caused by:</b> line gives the real cause. Lines starting with <b>at</b> say where in the code it happened.</li>
 <li>Tap <b>Share</b> and send the text to the developer, or tap <b>Save</b>: the file goes to <code>Download/ADB App Manager</code> as <code>logcat_all_date_time.txt</code> (with the app's package name when one app is picked).</li>
 </ol>
 
 <div class="hg-warn"><b>Careful.</b> A log can hold personal details: account names, addresses, the names of your apps. Read it before you share it, and filter to one app first. <b>Clear</b> cannot be undone, but it only empties the log, not your apps. For a Wear OS watch use <a href="#recipe-device-log">Read a watch's log</a>.</div>
 
-<p><b>Read more:</b> <a href="#console-logcat">Live Logcat</a>, <a href="#apps-menu">The app menu</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
+<p><b>Read more:</b> <a href="#tab-logcat">Live Logcat</a>, <a href="#apps-menu">The app menu</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
 </section>
 
 <section id="recipe-copy-files" data-title="Copy, move or unzip files" data-group="How do I...?">
@@ -442,12 +442,12 @@
 <h4>What you need</h4>
 <ul>
 <li>A <a href="#modes-overview">working mode</a> for commands such as <code>pm</code> and <code>dumpsys</code>. Without one, the shell <b>This app (sandbox)</b> still runs file and text commands.</li>
-<li>The <b>Terminal</b> tab (the ADB shell and the log are in the separate <b>Console</b> tab).</li>
+<li>The <b>Terminal</b>: the second part of the <b>Console</b> tab, next to the ADB Shell (the log is in the separate <b>Live Logcat</b> tab).</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>Open <b>Terminal</b>. A black screen prints a welcome.</li>
+<li>Open the <b>Console</b> tab and tap <b>Terminal</b> at its top (or hold <b>Console</b> on the bottom bar and choose <b>Terminal</b>). A black screen prints a welcome.</li>
 <li>Next to <b>Shell</b>, choose <b>Working mode (ADB, Shizuku, Root)</b>. The screen prints a line such as "sh ready through ADB, running as the shell user (uid 2000)". (A uid is the account number Android runs the command under. 2000 is the shell user: it can do a lot, but it is not root.)</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b>. Your line is echoed, and under it comes the answer: your phone's model name.</li>
 <li>Try a command that lists the apps you installed: <code>pm list packages -3</code>. It prints one <code>package:</code> line for each.</li>
@@ -473,7 +473,7 @@
 <h4>Steps</h4>
 <ol class="hg-steps">
 <li>First freeze, suspend or uninstall the apps the way you like them.</li>
-<li>Tap <b>Profiles</b> (in the row under the count boxes, next to <b>Backups</b>). A box called "App Profiles" opens. A line says "Every app that is not enabled is saved." and how many apps that is. If you selected some apps first, it says "Only the selected apps are saved."</li>
+<li>Open the <b>Saved Applications</b> tab and tap <b>Profiles</b> (beside <b>New List</b>). A box called "App Profiles" opens. A line says "Every app that is not enabled is saved." and how many apps that is. If you selected some apps first, it says "Only the selected apps are saved."</li>
 <li>Type a name in the box "Profile name (e.g. Lean Samsung)" and tap <b>Save</b>. A message says "Saved profile (name) ((number) apps)". The card shows a summary such as "12 apps, 8 disabled, 3 suspended, 1 uninstalled".</li>
 <li>Later, open <b>Profiles</b> and tap <b>Apply</b> on the card. A preview says what will change, for example "Will disable 4, suspend 2", then how many already match and how many are not on this phone and are skipped.</li>
 <li>Read it and tap <b>Confirm apply ((number))</b>. The button is greyed out if nothing needs changing. A box shows each app and a <b>Stop</b> button, then <b>Profile Results</b> lists <b>Success</b> or <b>Failed</b> for each app.</li>
@@ -526,7 +526,7 @@
 <h4>Steps</h4>
 <ol class="hg-steps">
 <li>Open <b>Connected Devices</b> and pick the watch. Read the name in the device card: everything here happens on <i>that</i> device, not on this phone.</li>
-<li>Open the <b>Apps</b> sub-tab. The line above the list says "Reading the apps of the device..." until it is done. Tap <b>3rd Party</b> (apps added after the watch was made) or <b>System</b> (apps that came with it) to narrow the list, or type in <b>Search apps on the device</b>.</li>
+<li>Open the <b>Apps</b> sub-tab. The line above the list says "Reading the apps of the device..." until it is done. Tap <b>User</b> (apps added after the watch was made) or <b>System</b> (apps that came with it) to narrow the list, or type in <b>Search apps on the device</b>.</li>
 <li>Find an app you know. If its name means nothing to you, leave it alone and read <a href="#debloater-safety">Debloating safely</a>.</li>
 <li>Tap <b>Disable</b> on its row. A message says, for example, "Disabled: Fit". The row gets a <b>DISABLED</b> badge and the button becomes <b>Enable</b>. To do several, tap the boxes on the left and use <b>Disable</b> in the bar that appears. It asks first when more than one is selected.</li>
 <li>Use the watch for a few days. If anything breaks, find the app with the <b>Disabled</b> filter and tap <b>Enable</b>.</li>
@@ -602,7 +602,7 @@
 <li>Set the level drop-down (it starts at <b>Info</b>) to <b>Error</b>, and the lines drop-down to <b>1000</b>. Changing either reads the log again.</li>
 <li>Tap <b>Clear</b>. A message says "Log cleared on the device." Only fresh lines will show from now on.</li>
 <li>Make the problem happen on the watch, for example open the app that crashes.</li>
-<li>Tap <b>Refresh</b>. A few red rows appear. (<b>Play</b> reads again every 2.5 seconds, but it keeps the watch's Wi-Fi busy and uses its battery: tap <b>Pause</b> when you have what you need.)</li>
+<li>Tap <b>Refresh</b>. A few red rows appear. (<b>Play</b> reads again every 2.5 seconds, but it keeps the watch's Wi-Fi busy and uses its battery: tap <b>Stop</b> when you have what you need.)</li>
 <li>Look for a row with the tag <b>AndroidRuntime</b> whose message starts with <b>FATAL EXCEPTION</b>. The lines joined under it are the crash report: <b>Process:</b> and the package name, the name of the error, and a <b>Caused by</b> line that is usually the real reason. Type the app's package name in the <b>filter text / tag</b> box to cut the noise. A native crash shows "Fatal signal".</li>
 <li>Tap <b>Copy</b>, or <b>Share</b> to send it as the file <code>device_logcat.txt</code>.</li>
 </ol>
@@ -635,8 +635,8 @@
 
 <h4>On the old phone</h4>
 <ol class="hg-steps">
-<li>In the <b>Application Manager</b>, tap <b>Share CSV</b> and save the list of all your apps somewhere safe (a cloud drive, an email to yourself), a useful checklist.</li>
-<li>Tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
+<li>In the <b>Application Manager</b>, tap <b>CSV</b> and save the list of all your apps somewhere safe (a cloud drive, an email to yourself), a useful checklist.</li>
+<li>In <b>Saved Applications</b>, tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
 <li>In <b>Saved Applications</b>, tap <b>Copy</b> on each list and paste it into a note.</li>
 <li>For apps whose data matters, tap <b>Backups</b>, then <b>Share</b> on each backup, and keep the files (<a href="#recipe-backup-before">Back up an app before you change it</a>).</li>
 <li>If you made your own presets or commands: select any app, tap the round button, then <b>Batch Ops</b> and <b>Export presets</b>, or <b>Command</b> and <b>Export saved commands</b>. Send the files to yourself.</li>
@@ -644,7 +644,7 @@
 
 <h4>On the new phone</h4>
 <ol class="hg-steps">
-<li>Install the app (<a href="#install-and-update">Installing and updating the app</a>) and set up a working mode again. Pairing and the ADB key belong to each phone. When you open the app, the title at the top reads "Full ADB/Root System Manager". This guide is in the <b>About</b> tab, under <b>Help Guide</b>.</li>
+<li>Install the app (<a href="#install-and-update">Installing and updating the app</a>) and set up a working mode again. Pairing and the ADB key belong to each phone. When you open the app, the title at the top reads "ADB System Manager". This guide is in the <b>About</b> tab, under <b>Help Guide</b>.</li>
 <li>Install your own apps first, from their stores. A profile skips apps that are not on the phone.</li>
 <li>Open <b>Profiles</b>, paste the text into "Paste a shared profile here to import it", tap <b>Import</b>, then <b>Apply</b>. Read the preview and tap <b>Confirm apply</b>.</li>
 <li>In <b>Saved Applications</b>, tap <b>New List</b>, paste the package names and tap <b>Save List</b>.</li>

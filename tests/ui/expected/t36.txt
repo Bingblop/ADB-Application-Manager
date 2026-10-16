@@ -1,4 +1,4 @@
-1. App Stores comes right before Task Manager (the Logcat Viewer tab moved into Console), then Connected Devices: true
+1. App Stores comes right before Task Manager (Live Logcat is right after Console, not here), then Connected Devices: true
    catalog requested: true
    app cards rendered: 2
 2. default sort most-starred, Bravo first: true

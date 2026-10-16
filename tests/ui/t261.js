@@ -32,9 +32,9 @@ const NEWPAGE = async (b, kv, vp) => {
   check('2. pinned: Application Manager first, the tab that is off, unknown keys and the old Logcat Viewer dropped, no repeats, at most four', cfg2.join() === 'apps,store,files,sdm', cfg2.join());
   check('   the bar shows them in the Feature List order', await bar(page) === 'apps,files,store,sdm', await bar(page));
   await page.close();
-  // a record from before the Console tab (v7.12.12) with the Command-Line Interface ('terminal') pinned: Console takes its place on the bar, the new Terminal tab waits under More
+  // a record from before the Console tab (v7.12.12) with the Command-Line Interface ('terminal') pinned: Console takes its place on the bar; Live Logcat (in the old place of Terminal since v7.14.0) waits under More
   page = await NEWPAGE(b, { tab_config: JSON.stringify({ order: ['installer', 'terminal', 'files'], off: [], pinned: ['apps', 'terminal', 'files'] }) });
-  check('   an old record with the Command-Line Interface pinned: Console is pinned in its place (the new Terminal tab is not)', await page.evaluate(() => tabConfig.pinned.join()) === 'apps,console,files' && await bar(page) === 'apps,console,files', await bar(page));
+  check('   an old record with the Command-Line Interface pinned: Console is pinned in its place (Live Logcat is not)', await page.evaluate(() => tabConfig.pinned.join()) === 'apps,console,files' && await bar(page) === 'apps,console,files', await bar(page));
 
   // ---- 3. the Feature List: pin, unpin, the limit, off, reset ----
   page = await NEWPAGE(b);

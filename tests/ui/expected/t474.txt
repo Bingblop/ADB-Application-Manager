@@ -1,0 +1,7 @@
+ok   1. with nothing saved: 1000 lines, Info, no filter, all apps
+ok      and a full read (Refresh) asks for 1000 lines (a live read once a second asks for the new lines only, at most 300, as before)
+ok   2. after a new launch the level (Warn), the lines (2000), the filter text and the app (Chrome) are as they were left
+ok   3. Show all apps is kept too
+ok   4. values that are not choices of the page are ignored (Info, 1000, no filter, all apps)
+ok      and so is a damaged entry
+errors: []

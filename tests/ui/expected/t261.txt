@@ -2,7 +2,7 @@
    unknown keys are dropped, the order is completed, the pinned list is made: true
 2. pinned: Application Manager first, the tab that is off, unknown keys and the old Logcat Viewer dropped, no repeats, at most four: true
    the bar shows them in the Feature List order: true
-   an old record with the Command-Line Interface pinned: Console is pinned in its place (the new Terminal tab is not): true
+   an old record with the Command-Line Interface pinned: Console is pinned in its place (Live Logcat is not): true
 3. the Feature List marks the pinned tabs (the defaults): true
    a fourth tab (Application Manager is the first of the four) is refused with a message: true
    unpinning one frees a place: true

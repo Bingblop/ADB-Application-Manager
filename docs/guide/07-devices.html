@@ -33,7 +33,18 @@
     </tbody>
   </table>
   <p><b>Reconnect all.</b> When two or more devices are not connected, a line above the cards says <b>2 devices not connected</b> and has a <b>Reconnect all</b> button. It tries each one in turn (they share one adb, so not at the same time), shows <i>Trying...</i> while it works, and ends with a message such as <i>Reconnected 1 of 2. The rest says why where it is listed.</i> or <i>Reconnected 2 devices</i>. A device that could not be reached keeps its card with the reason, so you can fix it and press its own <b>Reconnect</b>. With one device not connected there is no such button: its own Reconnect does the same.</p>
-  <p><b>On its own.</b> When a device drops while you look at the tab, the app also tries to bring it back by itself: right away, after 8 seconds and after 25 seconds (not for USB, and not while the app is in the background). If one attempt works it stops there; if all three fail the card tells why and waits for you. The line <b>Reconnect on its own when a device drops: On</b> under the card switches this off and on, and <a href="#prefs">Settings &gt; Reconnecting devices</a> has the same switch and lets you set the <b>retry timings</b> (how many attempts, and how many seconds before each one). <b>Reconnect</b> is also the first item in the device menu (the three dots on the device card) and the button in the note under the card of a device that is <b>offline</b>. <b>Disconnect</b> in the device menu is a decision, not a drop: the device is forgotten and nothing is tried.</p>
+  <p><b>On its own.</b> When a device drops while you look at the tab, the app also tries to bring it back by itself: right away, after 8 seconds and after 25 seconds (not for USB, and not while the app is in the background). If one attempt works it stops there; if all three fail the card tells why and waits for you. The <b>Reconnecting devices</b> card of this tab, right under the device picker, switches this off and on and sets the <b>retry timings</b> (see below). <b>Reconnect</b> is also the first item in the device menu (the three dots on the device card) and the button in the note under the card of a device that is <b>offline</b>. <b>Disconnect</b> in the device menu is a decision, not a drop: the device is forgotten and nothing is tried.</p>
+  <h4>The Reconnecting devices card</h4>
+  <p>Right under the device picker. It starts folded: tap its title to open it (the app remembers whether you left it open). <i>What this tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own).</i> Until v7.14 this card was in Settings.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reconnect on its own</b> (switch)</td><td>When a Wi-Fi, Wireless debugging or Bluetooth device drops while the tab is open, the app tries to bring it back without you pressing anything. A message says <i>Reconnecting on its own: on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if you take devices away on purpose and do not want the app to keep knocking.</td></tr>
+      <tr><td><b>Retry timings</b> (a box)</td><td>The seconds to wait before each attempt, separated by commas or spaces. <b>0, 8, 25</b> means: at once, again 8 seconds after that attempt and a last time 25 seconds later. Up to 8 attempts, each wait from 0 to 600 seconds (10 minutes); a decimal such as 0.5 is allowed. A line under the box repeats what is in use. When the box is not valid the line says why (<i>"x" is not a number of seconds</i>, <i>At most 8 attempts.</i>, <i>Each wait is 600 seconds (10 minutes) at most.</i>) and the timings you had stay.</td><td>0, 8, 25</td><td>A watch that needs longer to wake up: <b>0, 15, 45, 90</b>. A device that comes back fast: <b>0, 3</b>.</td></tr>
+      <tr><td><b>Reset</b> (button)</td><td>Back to 0, 8, 25. It shows only while you use your own timings.</td><td>-</td><td>To undo your timings.</td></tr>
+    </tbody>
+  </table>
+  <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
   <h4>Saved devices</h4>
   <p>Under the picker, once a device has been connected, a line says <b>Saved devices (2)</b>. Tap it to open the list: every device this app has seen connected, newest first, with how it was connected (<b>Wi-Fi</b>, <b>USB</b> or <b>Bluetooth link</b>) and when it was last connected, or <b>connected now</b>. A device that is not connected has two buttons: <b>Connect</b> (the same as Reconnect above) and <b>Delete</b>; a device that is connected has only Delete.</p>
   <ul>
@@ -243,42 +254,52 @@
     <li>An icon: the real icon when this phone has the same app, otherwise a square with the app's first letter.</li>
     <li>The <b>name</b>. When this phone has the same app installed, the name is the one this phone shows. Otherwise the app makes a name from the package name (the app's unique code name): it takes the last part, adds the part before it for very generic words such as app or wear, splits joined words and gives it a capital letter. So com.google.android.deskclock becomes <b>Deskclock</b>.</li>
     <li>The <b>package name</b> in small letters under it.</li>
-    <li>Badges: <b>UNINSTALLED</b> or <b>DISABLED</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
-    <li>A round-edged button on the right (<b>Freeze</b> in blue, <b>Enable</b> or <b>Reinstall</b> in green, like the app menu) and three dots for the menu.</li>
-    <li>A tick box on the left. Tap the box, or the name, to select the row.</li>
+    <li>Badges: <b>UNINSTALLED</b> or <b>FROZEN</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
+    <li>A frozen app's row has a blue glow and an uninstalled app's row a red one, as in the Apps tab. <b>Row tints</b> in Settings sets how strong it is (Off turns it off).</li>
+    <li>On the right, the Apps tab's <b>Action Button</b> (an icon; see "The button on each row" below) and three dots for the menu.</li>
+    <li>As in the Apps tab, the icon is the row's selection box: tap the icon, or the name, to select the row, and a check mark appears on the icon's corner.</li>
   </ul>
   <p>The list is sorted by name. Under the search box a line tells you how many apps are shown (<b>12 apps of 87</b>). Only the first 600 rows are drawn; if there are more, a note says how many are hidden and suggests you search or filter. <b>Reload</b>, next to the search box, reads the device again.</p>
 
+  <h4>Sort and Button</h4>
+  <p>Above the search box is the Apps tab's <b>Sort</b> / <b>Button</b> row. <b>Sort</b> puts the list in name order, <b>Name (A–Z)</b> or <b>Name (Z–A)</b> (a device's list has no install dates or sizes to sort by). <b>Button</b> chooses what the button on every row does (below). Both choices are kept for next time and do not change the Apps tab's own.</p>
+
   <h4>Search and filters</h4>
-  <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is a row of filters, each with a count:</p>
+  <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is the Apps tab's row of filters, in the same order and colours, each with a count. A device's list does not know which apps are running, updated, suspended, tracking or patched, so those filters are not here:</p>
   <table class="hg-table">
     <thead><tr><th>Filter</th><th>Shows</th></tr></thead>
     <tbody>
-      <tr><td><b>All</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
-      <tr><td><b>3rd Party</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
+      <tr><td><b>All Apps</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
+      <tr><td><b>Installed</b></td><td>Every app that is installed for the device's user.</td></tr>
+      <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
       <tr><td><b>System</b></td><td>Apps that came with the device.</td></tr>
+      <tr><td><b>User</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
       <tr><td><b>Enabled</b></td><td>Apps that are installed and not disabled.</td></tr>
       <tr><td><b>Frozen</b></td><td>Apps that are installed but switched off (what Android calls disabled).</td></tr>
-      <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
     </tbody>
   </table>
   <p>The rules are simple:</p>
   <ul>
-    <li><b>3rd Party</b> and <b>System</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one.</li>
+    <li>The filters come in pairs, joined into one box: <b>Installed</b> | <b>Uninstalled</b>, <b>System</b> | <b>User</b> and <b>Enabled</b> | <b>Frozen</b>. <b>System</b> and <b>User</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Frozen</b> are another one. <b>Installed</b> and <b>Uninstalled</b> together show every app.</li>
     <li>You can combine one of each pair, for example <b>System</b> and <b>Enabled</b>. A line then says "Showing apps that are System + Enabled." with a <b>Clear filters</b> button.</li>
-    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the 3rd Party, System, Enabled or Frozen counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>3rd Party</b> or <b>System</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
+    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the System, User, Enabled or Frozen counts. Turning on <b>Uninstalled</b> starts a clean list (only <b>Installed</b> stays on): you see only uninstalled apps, and <b>System</b> or <b>User</b> narrow that list. <b>Enabled</b> or <b>Frozen</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
     <li>Tap an active filter again to turn it off. <b>All</b> or <b>Clear filters</b> turns all of them off.</li>
   </ul>
 
   <h4>The button on each row</h4>
+  <p>The icon button left of the three dots is the Apps tab's <b>Action Button</b>. Choose what it does with <b>Button</b> above the list. Press and hold it for that app's menu.</p>
   <table class="hg-table">
-    <thead><tr><th>Button</th><th>Shown when</th><th>What it does</th></tr></thead>
+    <thead><tr><th>Choice</th><th>What a tap does</th></tr></thead>
     <tbody>
-      <tr><td><b>Freeze</b></td><td>The app is enabled</td><td>Switches the app off (<code>pm disable-user</code>, the same thing the Application Manager calls freezing). It stays on the device with its data, but cannot run and is hidden from the launcher. The row gets the blue <b>FROZEN</b> badge.</td></tr>
-      <tr><td><b>Enable</b></td><td>The app is frozen</td><td>Switches it back on.</td></tr>
-      <tr><td><b>Reinstall</b></td><td>The app is uninstalled</td><td>Brings back a removed system app from the copy still kept in the device's system. No download or file is needed.</td></tr>
+      <tr><td><b>Enable / Disable</b> (the first time)</td><td>Freezes an enabled app (<code>pm disable-user</code>, the same thing the Application Manager calls freezing: it stays on the device with its data, but cannot run and is hidden from the launcher; the row gets the blue <b>FROZEN</b> badge), or switches a frozen one back on.</td></tr>
+      <tr><td><b>App Settings</b></td><td>Opens the app's page in the device's own settings, on the device.</td></tr>
+      <tr><td><b>Force Stop</b></td><td>Stops the app on the device.</td></tr>
+      <tr><td><b>App Launcher</b></td><td>Opens the app on the device.</td></tr>
+      <tr><td><b>Install / Uninstall</b></td><td>Uninstalls the app for the device's user (it asks first).</td></tr>
+      <tr><td><b>None</b></td><td>Rows have no extra button.</td></tr>
     </tbody>
   </table>
+  <p>Whatever the choice, an <b>uninstalled</b> app's button is <b>Reinstall</b> (a down arrow): it brings back a removed system app from the copy still kept in the device's system. No download or file is needed. Suspending and the permission and activity lists are not offered here: use the device's menu (the three dots) for what a device allows.</p>
   <p>After the command, the app asks the device what became of the app (it lists the apps again; <i>Checking the device&hellip;</i> shows meanwhile, unless you turned off <a href="#prefs">Progress messages</a>), and the answer is what the device says now, not what the command printed. A message such as <b>Disabled: Fit</b> appears and the row changes in place. If the app is not in the wanted state (<i>Still installed</i>, <i>Not disabled</i>, <i>Not installed</i>), the sheet <b>That did not work</b> opens with <i>Checked afterwards: still installed.</i> and the device's own answer, and a command that printed an error for an app that is in fact gone still counts as done. For several apps at once the device is looked at once for all of them, and the sheet names only those that are not as wanted.</p>
 
   <h4>The three-dot menu of an app</h4>
@@ -302,7 +323,7 @@
 
   <h4>Selecting several apps</h4>
   <ol class="hg-steps">
-    <li>Tap the box or the name of a row. The row gets a tick and a bar appears at the bottom of the list: <b>1 selected</b>.</li>
+    <li>Tap the icon or the name of a row. The icon gets a check mark and a bar appears at the bottom of the list: <b>1 selected</b>.</li>
     <li>Tap more rows. The count goes up. A filter or a search can help you find them.</li>
     <li>Tap <b>Enable</b> (green), <b>Freeze</b> (blue), <b>Uninstall</b> (red) or <b>Reinstall</b> (green) in the bar. The cross at the right clears the selection.</li>
     <li>While it runs the bar shows <b>1 of 5...</b>, <b>2 of 5...</b>. The apps are done one after the other.</li>
@@ -393,7 +414,7 @@
   <h4>From this phone</h4>
   <ol class="hg-steps">
     <li>Tap <b>From this phone</b>. A sheet opens: <b>Apps on this phone</b>, "Choose the ones to send to the device".</li>
-    <li>Use the search box and the filters <b>3rd Party</b>, <b>System</b> and <b>All</b>. Tap rows to tick them. Only the first 300 are drawn: search to find the rest.</li>
+    <li>Use the search box and the filters <b>System</b>, <b>User</b> and <b>All</b>. Tap rows to tick them. Only the first 300 are drawn: search to find the rest.</li>
     <li>Tap <b>Add to the list</b> (it says <b>Add 2 to the list</b> when two are ticked). With nothing ticked you read <b>Tick the apps to send</b>.</li>
     <li>Each app becomes a row that says <b>From this phone</b> and the number of files. An app that this phone keeps in several parts ("splits", see <a href="#installer-splits">Split APKs</a>) says <b>(splits made for this phone, they may not fit the device)</b>.</li>
   </ol>
@@ -556,7 +577,7 @@
 
 <section id="devices-logcat" data-title="The device's log" data-group="The tabs">
   <p class="hg-lead">The <b>Logcat</b> sub-tab reads the other device's own log: the running diary in which Android and every app write what they do, including why something failed. It is the quickest way to see why an app crashes on a watch.</p>
-  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like <a href="#console-logcat">Live Logcat</a> in the Console tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like the <a href="#tab-logcat">Live Logcat</a> tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -569,16 +590,19 @@
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td>Level (drop-down)</td><td>How serious a line has to be to show. Choices: <b>Verbose</b>, <b>Debug</b>, <b>Info</b> (the default), <b>Warn</b>, <b>Error</b>, <b>Fatal</b>. A level shows itself and everything more serious: <b>Info</b> shows Info, Warn, Error and Fatal; <b>Error</b> shows Error and Fatal. Changing it reads the log again.</td></tr>
-      <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b> (the default) or <b>1000</b>. Changing it reads again.</td></tr>
+      <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b>, <b>1000</b> (the default) or <b>2000</b>. Changing it reads again.</td></tr>
       <tr><td><b>filter text / tag</b> box</td><td>Shows only the entries that contain what you type, in the tag or in the message. Capitals do not matter and the text is taken as it is (no special codes). Every match is highlighted. It works at once on what is already loaded and does not read the device again.</td></tr>
-      <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns orange and says <b>Pause</b>. Each live read asks for at most 300 lines. Tap <b>Pause</b> to stop.</td></tr>
+      <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns red and says <b>Stop</b>. Each live read asks for at most 300 lines. Tap <b>Stop</b> to stop.</td></tr>
       <tr><td><b>Refresh</b></td><td>Reads the log once, now.</td></tr>
       <tr><td><b>Clear</b></td><td>Empties the device's log buffer (the command <code>logcat -c</code>) and the screen, and says <b>Log cleared on the device.</b> The old lines cannot be brought back.</td></tr>
       <tr><td><b>Copy</b></td><td>Copies everything that was read to the clipboard as plain text. That includes entries the filter box hides or the 700-row limit leaves off the screen.</td></tr>
       <tr><td><b>Share</b></td><td>Sends the same text as a file named device_logcat.txt through Android's share sheet.</td></tr>
+      <tr><td>The colour key</td><td>Live Logcat's row of level chips, one per level with its coloured dot and how many of the lines read are at that level (after the filter box). Tap a chip to hide that level's lines, tap it again to show them.</td></tr>
     </tbody>
   </table>
-  <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Pause when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
+  <p>The level, the number of lines and the filter text are kept for next time, as Live Logcat keeps its own.</p>
+    <p>The lines are coloured as in <b>Live Logcat</b>: each line's level letter and the bar at its edge are green for Verbose, yellow for Debug, the theme's accent colour for Info, orange for Warn, red for Error and purple for Fatal, and the line is tinted in that colour as strongly as <b>Row tints</b> in Settings says.</p>
+  <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Tap Stop when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
 
   <h4>How the rows are drawn</h4>
   <p>Exactly like in Live Logcat. Each entry is one row:</p>
@@ -589,7 +613,7 @@
     <li>The message below, in the colour of its level. Several lines that belong to one log call, such as the lines of a crash report, are joined into one row.</li>
     <li>Warnings have an amber background, errors a red one and fatal lines a purple one, and error text is bold.</li>
   </ul>
-  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
+  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike Live Logcat, this one has no per-app picker, no <b>Record to file</b> and no <b>Save</b> button.</p>
 
   <h4>Reading a crash on a watch</h4>
   <ol class="hg-steps">
@@ -857,7 +881,7 @@
 
   <h4>Example 1: remove a preinstalled app you never use</h4>
   <ol class="hg-steps">
-    <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>3rd Party</b> or <b>System</b> to narrow it, or type a word in the search box.</li>
+    <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>System</b> or <b>User</b> to narrow it, or type a word in the search box.</li>
     <li>Find the app. If its name means nothing to you, leave it: use <a href="#debloater-safety">Debloater safety</a> as a guide to what is safe.</li>
     <li>Tap <b>Freeze</b> on its row. The row gets the <b>FROZEN</b> badge and the app is hidden from the watch's own app list.</li>
     <li>Use the watch for a few days. If anything breaks, tap <b>Enable</b>.</li>

@@ -77,16 +77,19 @@ the hold sheet follows it (Activity Launcher moved up, App Launcher hidden): ["A
 the last action cannot be switched off: 1 | Keep at least one action in the hold menu
 Press and hold guide (Settings): [
   'Press and hold guide',
-  8,
+  11,
   [
     'An app row',
     "An app's icon",
     'The Action Button',
     'The round checkmark button (when apps are selected)',
+    'A tab on the bottom bar',
     'A file or folder row',
     'A file the APK search found',
-    'A setting that is 1 or 0',
-    'An overlay row'
+    'A setting that is on or off',
+    'An overlay row',
+    'Hold to confirm',
+    'The arrow and page keys'
   ]
 ]
 Activity Launcher sheet: [

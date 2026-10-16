@@ -54,15 +54,15 @@ const initMock = () => {
   // 2) every filter is still there, each with its count
   const row = await ev(() => Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(p => p.getAttribute('data-filter') + '=' + p.innerText.replace(/\s+/g, ' ').trim()));
   console.log('   the row:', JSON.stringify(row));
-  const want = ['all', 'installed', 'running', 'user', 'system', 'enabled', 'frozen', 'recent', 'suspended', 'patched', 'trackers', 'uninstalled'];
-  check('2. every filter has its pill, each once: All Apps, the seven counted ones (first, so they show), then Updated 7d, Suspended, Patched, Trackers, Uninstalled last', row.map(r => r.split('=')[0]).join() === want.join(), row.map(r => r.split('=')[0]).join());
+  const want = ['all', 'installed', 'uninstalled', 'system', 'user', 'enabled', 'frozen', 'running', 'recent', 'suspended', 'trackers', 'patched'];   // the owner's order (v7.14)
+  check('2. every filter has its pill, each once, in the owner\'s order (v7.14): All Apps, Installed / Uninstalled, System / User, Enabled / Frozen, Running, Updated 7d, Suspended, Trackers, Patched', row.map(r => r.split('=')[0]).join() === want.join(), row.map(r => r.split('=')[0]).join());
   const counts = await ev(() => {
     const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0 };
     allApps.forEach(a => { if (a.isRunning) n.running++; if (a.isFrozen && !a.isUninstalled) n.frozen++; if (!a.isFrozen && !a.isUninstalled) n.enabled++; if (a.isUninstalled) n.uninstalled++; else { n.installed++; if (a.isSystem) n.system++; else n.user++; } });
     const shown = {}; Object.keys(n).forEach(k => { shown[k] = Number(document.querySelector('#filterScroll .stat-card[data-filter="' + k + '"] .stat-num').innerText); });
     return { n, shown, all: document.getElementById('countAll').innerText, ids: ['statTotal', 'statRunning', 'statEnabled', 'statFrozen', 'statUser', 'statSystem', 'statUninstalled'].every(id => document.getElementById(id) && document.getElementById(id).closest('#filterScroll')) };
   });
-  check('   each of the seven counts is in its pill and right (Installed 9, Running 2, 3rd Party 7, System 2, Enabled 7, Frozen 2, Uninstalled 1); All Apps counts 10', JSON.stringify(counts.n) === JSON.stringify(counts.shown) && counts.all === '10' && counts.ids && counts.shown.installed === 9 && counts.shown.uninstalled === 1, JSON.stringify(counts));
+  check('   each of the seven counts is in its pill and right (Installed 9, Running 2, User 7, System 2, Enabled 7, Frozen 2, Uninstalled 1); All Apps counts 10', JSON.stringify(counts.n) === JSON.stringify(counts.shown) && counts.all === '10' && counts.ids && counts.shown.installed === 9 && counts.shown.uninstalled === 1, JSON.stringify(counts));
 
   // 3) the tip (before anything scrolls the row)
   const tip = await ev(() => { const h = document.getElementById('filtersHint'), r = h.getBoundingClientRect(), f = document.getElementById('filterScroll').getBoundingClientRect();
@@ -98,7 +98,7 @@ const initMock = () => {
     const i = document.createElement('i'); i.style.color = 'var(--apps-frozen)'; document.body.appendChild(i); const want = getComputedStyle(i).color; i.remove();
     const r = { pair: Array.from(box.querySelectorAll('.stat-card')).map(x => x.dataset.filter).join('/'), frame: getComputedStyle(box).outlineColor === want, other: document.querySelector('.stat-card[data-filter="user"]').closest('.stat-split') !== box };
     setFilter('all'); return r; });
-  check('   Enabled / Frozen and 3rd Party / System are pairs that share a frame, the frame in the colour of the side that is on', pair.pair === 'enabled/frozen' && pair.frame && pair.other, JSON.stringify(pair));
+  check('   Enabled / Frozen and System / User are pairs that share a frame, the frame in the colour of the side that is on', pair.pair === 'enabled/frozen' && pair.frame && pair.other, JSON.stringify(pair));
   await ev(() => document.querySelector('.stat-card[data-filter="running"]').focus());
   await page.keyboard.press('Enter'); await page.waitForTimeout(120);
   check('   Enter on a focused count pill uses it', (await ev(() => Array.from(activeFilters).join())) === 'running');
@@ -115,9 +115,9 @@ const initMock = () => {
       return { v, w: Math.round(s.getBoundingClientRect().width), text: Math.round(textW), fits: s.clientWidth >= textW + parseFloat(cs.paddingLeft), sorted: appSort === v };
     }, v));
   }
-  check('5. the sort menu shows its whole choice for every choice (it was cut to 60 px), and is no wider than it needs (under 170 px)', sorts.every(s => s.fits && s.sorted && s.w < 170 && s.w >= 60), JSON.stringify(sorts));
-  check('   it follows the choice: "Size" is narrower than "Updates first"', sorts.find(s => s.v === 'size').w < sorts.find(s => s.v === 'updates').w);
-  check('   the row keeps the menu and all its buttons', (await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => e.id || e.innerText.trim()).join('|'))) === 'appSort|Share CSV|Profiles|Backups|appsActionBtnPick');
+  check('5. the sort menu shows its whole choice for every choice (it was cut to 60 px; since v7.14 it shares the row with the Action Button picker)', sorts.every(s => s.fits && s.sorted && s.w >= 60), JSON.stringify(sorts));
+  // (v7.14: the menu no longer follows the width of its choice: it takes half the row the labels leave)
+  check('   the row keeps the menu and the Action Button picker, each with its label (v7.14: the buttons moved to Saved Applications)', (await ev(() => Array.from(document.querySelectorAll('#view-apps .apps-sort-row > *')).map(e => e.id || e.innerText.trim().replace(/\n/g, ' ')).join('|'))) === 'Sort|appSort|appsActionBtnPickTitle|appsActionBtnPick');
   await page.selectOption('#appSort', 'name');
 
   await page.screenshot({ path: 'apps_400.png', clip: { x: 0, y: 0, width: 400, height: 420 } });
@@ -144,7 +144,7 @@ const initMock = () => {
     const s0 = await st();
     check('7. at 1200 px the page column stays 600 px wide, so the twelve pills still overflow their 568 px row and the arrow shows', s0.rowW === 568 && s0.overflows && s0.shown, JSON.stringify({ shown: s0.shown, overflows: s0.overflows, rowW: s0.rowW }));          // no pixel widths of text in the output: fonts differ a little between machines
     // a shorter row (as short words would make it): only All Apps, Installed and the Enabled / Frozen pair
-    await p.evaluate(() => { for (const c of document.getElementById('filterScroll').children) if (!c.matches('[data-filter="all"], [data-filter="installed"], .stat-split:has([data-filter="enabled"]), #filtersHint')) c.style.display = 'none'; });
+    await p.evaluate(() => { for (const c of document.getElementById('filterScroll').children) if (!c.matches('[data-filter="all"], .stat-split:has([data-filter="installed"]), .stat-split:has([data-filter="enabled"]), #filtersHint')) c.style.display = 'none'; });
     await settle();
     const s1 = await st();
     check('   when every pill fits, the arrow is not shown', !s1.overflows && !s1.shown, JSON.stringify({ shown: s1.shown, overflows: s1.overflows }));

@@ -14,12 +14,13 @@
 8. press, slide onto "Find APKs on storage", let go: it runs (the install side, the button lit up) and the menu closes: true
 9. "Check for updates" opens the updater and starts the check (nothing else): true
 10. Apps: "Search apps" focuses the search box: true
-11. Console: the menu lists its two segments, "Live Logcat" opens the tab on the log (and keeps that choice): true
+11. Console: the menu lists its two segments and two Terminal entries, "Terminal" opens the tab on the Terminal (and keeps that choice): true
     "ADB Shell" switches the open tab to the shell segment: true
-11b. Terminal: four entries; "Full-screen terminal" opens the full screen (and the bar goes away): true
-    "Coding Agents" opens the tab with the agent picker lit up and focused: true
-    "Termux setup" opens the Terminal and its Termux setup sheet: true
-    "Terminal settings" opens the Terminal and its settings sheet: true
+11b. Console: "Full-screen terminal" opens the Terminal segment in full screen (and the bar goes away): true
+    "Coding Agents" opens the Terminal segment with the agent picker lit up and focused: true
+    chosen, "Termux setup" opens the Terminal segment and its Termux setup sheet: true
+    "Terminal settings" opens the Terminal segment and its settings sheet: true
+11c. Live Logcat: three entries; "Filter the log" opens the tab with its filter focused: true
 11b. Extra Settings: the menu lists the first four sections (Private DNS, Animations, Brightness, Telemetry), and "Private DNS" opens the tab and lights that section up: true
 12. Hidden Settings: no menu while its list is not usable; then "Search settings" opens the tab and focuses its search box: true
 13. a hold on More has no menu (it is a tap: the More sheet opens): true
@@ -51,6 +52,6 @@
 27. on the rail the menu opens beside the item, inside the screen: true
 28. at 320 px the menu of "extrasettings" is inside the screen: true
 28. at 320 px the menu of "console" is inside the screen: true
-29. SAFETY: every shortcut's run() calls only navigation functions (25 entries); updateAllUI only from "Update All (N)": true
+29. SAFETY: every shortcut's run() calls only navigation functions (28 entries); updateAllUI only from "Update All (N)": true
     and the scan sees every entry of every tab (no empty source): true
 errors: []

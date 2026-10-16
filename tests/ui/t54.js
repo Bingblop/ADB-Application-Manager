@@ -74,7 +74,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { window.__logLines = ['10-03 12:00:03.000  100  200 I Tag: refreshed']; logcatRefresh(); }); await sleep(150);
   console.log('   Refresh fetches and draws again:', /refreshed/.test(await page.locator('#logcatOutput').innerText()));
   const lastCall = await page.evaluate(() => window.__calls.logcat.slice(-1)[0]);
-  console.log('   the level, line count and app go along:', lastCall[1] === 'I' && lastCall[3] === 500 && lastCall[4] === '', JSON.stringify(lastCall));
+  console.log('   the level, line count and app go along:', lastCall[1] === 'I' && lastCall[3] === 1000 && lastCall[4] === '', JSON.stringify(lastCall));
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();
