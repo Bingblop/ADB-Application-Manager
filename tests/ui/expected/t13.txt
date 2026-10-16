@@ -17,5 +17,6 @@ self filtered from general list: true
 RELAUNCH apps filter: All Apps (2)
 RELAUNCH uad chips: Recommended, Advanced, OEM, Samsung (49), Enabled
 RELAUNCH history entries: 5
+RELAUNCH updater entry: Updater • 0/1 succeeded | ✕ Updated Samsung Notes (com.samsung.android.app.notes)
 calls (other): check
 errors: []

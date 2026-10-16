@@ -14254,7 +14254,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- Debloat history ----------
         const HISTORY_LIMIT = 150;
         const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend' };
-        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates' };
+        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates', update: 'Updated' };
         let debloatHistory = null;
 
         function getHistory() {
@@ -14307,7 +14307,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <div class="hist-head">
                             <div>
                                 <div class="hist-title">${escapeHtml(e.title)}</div>
-                                <div class="hist-meta">${escapeHtml(when)} • ${escapeHtml(e.source === 'debloater' ? 'Debloater' : e.source === 'undo' ? 'Undo' : 'Applications')} • ${ok}/${e.items.length} succeeded</div>
+                                <div class="hist-meta">${escapeHtml(when)} • ${escapeHtml(e.source === 'debloater' ? 'Debloater' : e.source === 'undo' ? 'Undo' : e.source === 'updates' ? 'Updater' : 'Applications')} • ${ok}/${e.items.length} succeeded</div>
                             </div>
                             ${undoable ? `<button class="mode-action-btn" data-id="${e.id}" onclick="undoHistory(this.getAttribute('data-id'))">Undo</button>` : ''}
                         </div>
