@@ -33,6 +33,12 @@ public final class ApkScan {
     public static final String FIND_PREDICATE =
             "! -path \"$(printf '*\\n*')\" ! -path \"$(printf '*\\r*')\" -type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
 
+    /**
+     * The line the privileged search prints once {@code find} is over ({@code find ... | head -n 2500; echo FIND_END}). A path always starts with
+     * {@code /}, so no file name can stand in for it.
+     */
+    public static final String FIND_END = "__apkscan_find_end__";
+
     /** One package file found on storage. */
     public static final class Entry {
         public String path;
@@ -173,6 +179,19 @@ public final class ApkScan {
             if (paths.size() >= max) break;
         }
         return paths;
+    }
+
+    /**
+     * Whether the privileged search ran to its end: the {@link #FIND_END} line came back, so everything find printed came before it. Without it
+     * the list is partial (the command timed out, the link to adb or Shizuku dropped, su refused, an "Error: ..." answer) and the search is
+     * reported as stopped early instead of as complete.
+     */
+    public static boolean findComplete(String out) {
+        if (out == null) return false;
+        for (String line : out.split("\n")) {
+            if (line.trim().equals(FIND_END)) return true;
+        }
+        return false;
     }
 
     /** Parses `stat -c '%s|%Y|%n'` output into path -> {size, mtimeSeconds}. */

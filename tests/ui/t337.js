@@ -3,6 +3,9 @@
 // port, at 320 px), a longer one (German) ends in "…" inside
 // the badge, and nothing pushes the page sideways. The gear was a colour emoji (the same gear as the Extra Settings tab); now it is an SVG drawn in
 // the theme's text colour, in dark and light, still called Settings and still opening Settings.
+// The badge's colours and the Updater's error lines come from the theme's status colours (the script wrote them as fixed orange and red): in the light
+// theme the orange of Read-Only and Setup reads (4.5:1) and an error is in the theme's danger colour; with the colours the token sheet declares
+// everything is the colour the script used to write, and the dark theme's orange is unchanged.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -78,6 +81,50 @@ const { chromium, PAGE } = require('./lib/pw');
     check(tag + '  a tap target of at least 38 x 38 px called Settings', m.gearW >= 38 && m.gearH >= 38 && m.label2 === 'Settings', JSON.stringify([m.gearW, m.gearH, m.label2]));
     await page.click('#prefsHeaderBtn'); await page.waitForTimeout(300);
     check(tag + '  a tap opens Settings', await page.evaluate(() => currentViewName() === 'prefs'));
+    await page.close();
+  }
+  // the colours of the badge and of the Updater's error lines
+  const colours = page => page.evaluate(async () => {
+    const rgba = c => { const m = /^rgba?\(([^)]+)\)/.exec(c), n = /^color\(srgb ([^)]+)\)/.exec(c);
+      if (m) { const v = m[1].split(',').map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; }
+      if (n) { const [rgb, a] = n[1].split('/'); const v = rgb.trim().split(/\s+/).map(x => Math.round(Number(x) * 255)); return [v[0], v[1], v[2], a === undefined ? 1 : Number(a)]; }
+      return null; };
+    const lum = v => { const f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }; return 0.2126 * f(v[0]) + 0.7152 * f(v[1]) + 0.0722 * f(v[2]); };
+    const over = (top, base) => [0, 1, 2].map(i => top[i] * top[3] + base[i] * (1 - top[3])).concat(1);
+    const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const token = n => { const e = document.createElement('div'); e.style.color = 'var(' + n + ')'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return rgba(c); };
+    const badge = document.getElementById('execModeBadge'), cs = getComputedStyle(badge), dot = getComputedStyle(document.getElementById('execModeDot'));
+    const ground = rgba(getComputedStyle(document.querySelector('.app-header')).backgroundColor);
+    const bg = rgba(cs.backgroundColor), text = rgba(cs.color);
+    usStatus('The versions could not be read.', true); const st = getComputedStyle(document.getElementById('usStatus'));
+    const app = document.createElement('div'); app.className = 'us-app'; app.innerHTML = '<div id="usV0"></div>'; document.getElementById('usStatus').after(app);
+    us.cands = [{ pkg: 'com.x' }]; us.busy = false; window.usList = async () => ({ ok: false, error: 'No versions.' }); window.usRead = () => ({});
+    await usVersions(0); const pc = getComputedStyle(document.querySelector('#usV0 .us-pkg')), pkg = { color: pc.color, fontWeight: pc.fontWeight }; app.remove(); usStatus('');
+    return { label: document.getElementById('execModeText').innerText, bg, border: rgba(cs.borderTopColor), text, dot: rgba(dot.backgroundColor), contrast: Math.round(contrast(text, over(bg, ground)) * 100) / 100,
+      bloat: token('--status-bloat'), usStatus: rgba(st.color), usWeight: st.fontWeight, usPkg: rgba(pkg.color), usPkgWeight: pkg.fontWeight };
+  });
+  const same = (a, b) => !!a && !!b && a.every((x, i) => Math.abs(x - b[i]) <= (i === 3 ? 0.01 : 1));
+  for (const mode of ['setup', 'readonly']) {
+    const page = await open({ width: 360, dark: false, mode });
+    const c = await colours(page);
+    check('light ' + mode + ': the badge\'s orange reads on its wash (4.5:1), the dot is in the same colour', c.contrast >= 4.5 && same(c.dot, c.text), JSON.stringify(c));
+    check('light ' + mode + ':   the Updater\'s error lines are in the theme\'s danger colour (bold as an error, the versions line plain as before)', same(c.usStatus, c.bloat) && same(c.usPkg, c.bloat) && c.usWeight === '700' && c.usPkgWeight === '400', JSON.stringify(c));
+    await page.close();
+  }
+  {
+    const page = await open({ width: 360, dark: true, mode: 'readonly' });
+    const c = await colours(page);
+    check('dark readonly: the badge\'s orange is the one it always was (#FFA726)', same(c.text, [255, 167, 38, 1]) && same(c.dot, [255, 167, 38, 1]), JSON.stringify(c));
+    // the token sheet's own colours (what the page declares before a theme adjusts them): every state looks as the script used to paint it
+    const was = { none: { bg: [255, 145, 0, 0.15], border: [255, 145, 0, 0.4], text: [255, 167, 38, 1], dot: [255, 167, 38, 1] }, root: { bg: [124, 77, 255, 0.15], border: [124, 77, 255, 0.4], text: [124, 77, 255, 1], dot: [124, 77, 255, 1] },
+      on: { bg: [0, 230, 118, 0.15], border: [0, 230, 118, 0.4], text: [0, 230, 118, 1], dot: [0, 230, 118, 1] } };
+    for (const [tone, m] of [['none', MODES.setup], ['none', { configuredMode: 'shizuku', activeMode: 'unprivileged', modeAvailable: false, isPrivileged: false }], ['root', { configuredMode: 'root', activeMode: 'root', modeAvailable: true, isPrivileged: true }], ['on', MODES.tcp]]) {
+      await page.evaluate(m => { window.AndroidBridge.getWorkingMode = () => JSON.stringify(m); checkAllWorkingModes(false); document.documentElement.removeAttribute('style'); }, m);
+      await page.waitForTimeout(400);          // the badge eases into its new colours (transition: all 0.2s)
+      const c = await colours(page), w = was[tone];
+      check('token sheet colours, ' + c.label + ': the badge as the script used to paint it', same(c.bg, w.bg) && same(c.border, w.border) && same(c.text, w.text) && same(c.dot, w.dot), JSON.stringify(c));
+      if (tone === 'on') check('token sheet colours: the Updater\'s error lines in #FF5252 as before', same(c.usStatus, [255, 82, 82, 1]) && same(c.usPkg, [255, 82, 82, 1]), JSON.stringify(c));
+    }
     await page.close();
   }
   console.log('errors:', JSON.stringify(errors));

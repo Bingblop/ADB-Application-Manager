@@ -1,6 +1,9 @@
 package com.bloatware.bingblop;
 
-/** The arithmetic of the internet speed test: median, jitter, bits per second, the rounding the page shows, the server code, the byte meter. */
+import java.util.ArrayList;
+import java.util.Arrays;
+
+/** The arithmetic of the internet speed test: median, jitter, bits per second, the rounding the page shows, the server code and time, the byte meter. */
 public class SpeedMathTest {
   static int fails = 0, n = 0;
   static void check(String what, boolean ok) { n++; if (!ok) { fails++; System.out.println("FAIL " + what); } }
@@ -46,6 +49,15 @@ public class SpeedMathTest {
     check("cf-meta-colo when there is no colo header (uploads)", SpeedMath.colo(null, "fra", null).equals("FRA"));
     check("the end of cf-ray when neither is there", SpeedMath.colo("", null, "8c1f0a2b3c4d5e6f-SJC").equals("SJC"));
     check("anything that is not three letters is not a code", SpeedMath.colo("IAD1", "<b>", "abc-12").isEmpty() && SpeedMath.colo(null, null, null).isEmpty() && SpeedMath.colo("  ", " ", "nodash").isEmpty());
+
+    // the server's own time (Server-Timing), taken off each latency sample
+    check("the server's time is the sum of the cfSpeed* durs; the second header, cfL4 (the TCP round trip), is not server time",
+        near(SpeedMath.serverMs(Arrays.asList("cfSpeedEdge;dur=4, cfSpeedWorker;dur=26", "cfL4;desc=\"?proto=TCP&rtt=9250\"")), 30));
+    check("decimals, any case, spaces and another parameter before dur", near(SpeedMath.serverMs(Arrays.asList("CFSPEEDWORKER ; desc=\"w\" ; DUR = 12.5")), 12.5));
+    check("no header, only cfL4, or other names: 0 (the sample is kept as measured)", SpeedMath.serverMs(null) == 0 && SpeedMath.serverMs(new ArrayList<String>()) == 0
+        && SpeedMath.serverMs(Arrays.asList((String) null)) == 0 && SpeedMath.serverMs(Arrays.asList("cfL4;desc=\"?rtt=9250\"")) == 0 && SpeedMath.serverMs(Arrays.asList("db;dur=53, app;dur=47.2")) == 0);
+    check("a dur that is not a number counts nothing (abc, -5, NaN, empty, too large to be finite)", SpeedMath.serverMs(Arrays.asList("cfSpeedWorker;dur=abc, cfSpeedEdge;dur=-5, cfSpeedX;dur=NaN, cfSpeedY;dur=")) == 0
+        && SpeedMath.serverMs(Arrays.asList("cfSpeedWorker;dur=" + new String(new char[400]).replace('\0', '9'))) == 0);
 
     // the meter
     SpeedMath.Meter m = new SpeedMath.Meter();

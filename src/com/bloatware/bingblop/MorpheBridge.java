@@ -75,7 +75,8 @@ public final class MorpheBridge {
     private final MorpheStore store;
     private final MorpheLibrary library;
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private final Object catalogLock = new Object();                                // one catalog read at a time (they share jobs/list)
+    private volatile boolean closing;                                                   // the window is gone: its Helper downloads and VirusTotal uploads stop (a patch goes on)
+    private static final Object catalogLock = new Object();                         // one catalog read at a time in the process: every window's bridge shares jobs/list
     private final MorpheShared shared;                                                   // what every window of the app shares: the runner, the slot, the events of the patch that is going
     private final MorpheRunner runner;                                                  // the one engine lock of the process (see MorpheShared)
     private final MorpheRunner.EventSink sink;                                          // this window's side of the patch's events
@@ -116,15 +117,22 @@ public final class MorpheBridge {
 
     /**
      * The window of this bridge is going away. The process-wide holders stop pointing at it (they would keep the destroyed window alive); a patch that is
-     * going goes on, and the next window's bridge takes over its events.
+     * going goes on, and the next window's bridge takes over its events. A Helper download or a VirusTotal upload this window started is for its page
+     * only, so it stops (its part file is deleted) instead of running on for a page that is gone.
      */
     public void release() {
+        closing = true;
         shared.unbind(sink);
         windows.closed(host);
         synchronized (this) {                                                            // the download list is the process's: this page is no longer told about it
             if (downloadList != null && pagePush != null) downloadList.removeListener(pagePush);
             pagePush = null;
         }
+        // the in-app browser is a dialog of this window: dismissed now (onDestroy, the UI thread), before Android tears its window down without a
+        // dismiss, so its WebView is destroyed and its download watcher leaves the process's list (a download it started goes on there)
+        final Runnable closer = browserCloser;
+        browserCloser = null;
+        if (closer != null) { try { closer.run(); } catch (RuntimeException ignored) {} }
     }
 
     /** The patcher service as the runner uses it. A class of its own (not an inner one) and with the application context only: the process keeps it, and it must not keep a window alive. */
@@ -816,7 +824,7 @@ public final class MorpheBridge {
         dir.mkdirs();
         JSONObject got = MorpheHelper.download(resolved, dir, new MorpheNet.Progress() {
             @Override public void onProgress(long done, long total) { download(null, label, done, total); }
-            @Override public boolean cancelled() { return false; }
+            @Override public boolean cancelled() { return closing; }
         });
         if (RepoSources.handles(resolved.optString("source")) && !RepoSources.abiFits(got.optJSONArray("abis"), Build.SUPPORTED_ABIS)) {
             new File(got.optString("path")).delete();
@@ -1033,7 +1041,7 @@ public final class MorpheBridge {
         MorpheVirusTotal vt = new MorpheVirusTotal(a.optString("key"), new File(base, "vt_state.json"));
         return vt.scan(f, new MorpheNet.Progress() {
             @Override public void onProgress(long done, long total) { download(null, "Uploading to VirusTotal", done, total); }
-            @Override public boolean cancelled() { return false; }
+            @Override public boolean cancelled() { return closing; }
         });
     }
 

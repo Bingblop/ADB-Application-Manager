@@ -2,6 +2,9 @@ package com.bloatware.bingblop;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +63,51 @@ public class PtyShellTest {
 
     static void type(Rec r, String s) throws Exception { byte[] b = s.getBytes(StandardCharsets.UTF_8); r.sh.write(b, 0, b.length); }
 
+    /**
+     * A process as Shizuku hands it over (ShizukuRemoteProcess): while the program runs, exitValue() throws IllegalArgumentException (the server's
+     * IllegalThreadStateException after the binder), and once its server has died, exitValue() and waitFor() throw a RuntimeException.
+     */
+    static final class RemoteLike extends Process {
+        final ByteArrayOutputStream stdin = new ByteArrayOutputStream();
+        final CountDownLatch ended = new CountDownLatch(1);
+        volatile boolean serverDied;
+        final OutputStream in = new OutputStream() {
+            public void write(int b) { synchronized (stdin) { stdin.write(b); } }
+            public void write(byte[] b, int off, int len) { synchronized (stdin) { stdin.write(b, off, len); } }
+        };
+        final InputStream out = new InputStream() {
+            public int read() throws IOException { byte[] b = new byte[1]; return read(b, 0, 1) < 0 ? -1 : b[0] & 0xff; }
+            public int read(byte[] b, int off, int len) throws IOException {
+                try { ended.await(); } catch (InterruptedException e) { throw new IOException(e); }
+                return -1;
+            }
+        };
+        public OutputStream getOutputStream() { return in; }
+        public InputStream getInputStream() { return out; }
+        public InputStream getErrorStream() { return new java.io.ByteArrayInputStream(new byte[0]); }
+        public int waitFor() throws InterruptedException {
+            ended.await();
+            if (serverDied) throw new RuntimeException(new IOException("the Shizuku server died"));
+            return 0;
+        }
+        public int exitValue() {
+            if (serverDied) throw new RuntimeException(new IOException("the Shizuku server died"));
+            if (ended.getCount() > 0) throw new IllegalArgumentException("process hasn't exited");
+            return 0;
+        }
+        public void destroy() { ended.countDown(); }
+        byte[] written() { synchronized (stdin) { return stdin.toByteArray(); } }
+    }
+
+    static boolean contains(byte[] hay, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= hay.length; i++) {
+            for (int j = 0; j < needle.length; j++) if (hay[i + j] != needle[j]) continue outer;
+            return true;
+        }
+        return false;
+    }
+
     public static void main(String[] args) throws Exception {
         // ---- the scripts (pure text) ----
         List<String> c = PtyShell.command("/lib/libptyexec.so", 30, 100, Arrays.asList("/system/bin/sh", "-l"));
@@ -74,6 +122,44 @@ public class PtyShellTest {
         is("termux script: connects back with the token, then the helper runs bash with the connection as its terminal",
                 ts.contains("exec 3<>/dev/tcp/127.0.0.1/4321") && ts.contains("ADBMGR %s") && ts.contains("tok123") && ts.contains("TERM=xterm-256color")
                 && ts.contains("-- '/data/data/com.termux/files/usr/bin/bash' -l 0<&3 1>&3 2>&3 3>&-") && ts.contains("40 120") && ts.contains("adbmgr-ptyexec"), ts);
+
+        // ---- a Shizuku process (SYS-1): no helper needed ----
+        // The writer thread asks exitValue() as soon as it starts. A Shizuku process answers "still running" with an IllegalArgumentException, which
+        // used to escape that thread (on Android an uncaught exception on any thread ends the app) and left a terminal that refused every key.
+        final List<String> uncaught = new ArrayList<String>();
+        Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread th, Throwable ex) { synchronized (uncaught) { uncaught.add(th.getName() + ": " + ex); } }
+        });
+        RemoteLike rp = new RemoteLike();
+        Rec rr = new Rec();
+        rr.sh = new PtyShell(rp, rr);
+        Thread.sleep(700);                                   // longer than one wait of the writer: it has asked exitValue() at least twice
+        boolean rwOk = true, rzOk = true;
+        try { type(rr, "ls\r"); } catch (IOException ex) { rwOk = false; }
+        try { rr.sh.resize(30, 100); } catch (IOException ex) { rzOk = false; }
+        long rw0 = System.currentTimeMillis();
+        byte[] keys = { 'D', 0, 3, 'l', 's', '\r' }, size = { 'R', 0, 30, 0, 100 };
+        while (!(contains(rp.written(), keys) && contains(rp.written(), size)) && System.currentTimeMillis() - rw0 < 2000) Thread.sleep(20);
+        synchronized (uncaught) { is("Shizuku process: its \"still running\" answer ends no thread", uncaught.isEmpty(), String.valueOf(uncaught)); }
+        is("Shizuku process: keys and a resize are taken", rwOk && rzOk, "write " + rwOk + ", resize " + rzOk);
+        is("Shizuku process: they reach the program, framed", contains(rp.written(), keys) && contains(rp.written(), size), Arrays.toString(rp.written()));
+        rp.destroy();
+        is("Shizuku process: its end is reported with its status", rr.done.await(3, TimeUnit.SECONDS) && rr.code == 0, "code " + rr.code);
+        // the Shizuku server dies while the terminal is open: waitFor() and exitValue() throw a RuntimeException
+        RemoteLike dp = new RemoteLike();
+        Rec dr = new Rec();
+        dr.sh = new PtyShell(dp, dr);
+        Thread.sleep(200);
+        dp.serverDied = true;
+        dp.destroy();
+        is("Shizuku server gone: the end is reported, status unknown (-1)", dr.done.await(3, TimeUnit.SECONDS) && dr.code == -1, "code " + dr.code);
+        boolean drRefused = false;
+        try { type(dr, "x"); } catch (IOException ex) { drRefused = true; }
+        is("Shizuku server gone: later input is refused", drRefused);
+        Thread.sleep(700);
+        synchronized (uncaught) { is("Shizuku server gone: no thread dies of it", uncaught.isEmpty(), String.valueOf(uncaught)); }
+        Thread.setDefaultUncaughtExceptionHandler(oldHandler);
 
         File helper = new File(System.getProperty("ptyexec", "native/pty/x86_64/ptyexec"));
         if (!helper.canExecute() || !new File("/dev/ptmx").exists()) {
@@ -103,6 +189,28 @@ public class PtyShellTest {
         is("a long line (many frames) arrives whole", r.waitFor("y".repeat(9000), 4000));
         type(r, "exit 9\n");
         is("the exit status of the program is reported", r.done.await(4, TimeUnit.SECONDS) && r.code == 9, "code " + r.code);
+
+        // ---- the shell ends while a job it left in the background still has the terminal (SYS-2) ----
+        // The job keeps the terminal open, so its output never ends: the helper used to wait for that, and the page showed an open, dead terminal.
+        String jmark = "sleep " + (40000 + new java.util.Random().nextInt(20000));
+        Rec j = start(h, 24, 80, "/bin/bash", "--norc", "-i");
+        is("a shell for a background job", j.waitFor("bash-", 3000), j.text());
+        type(j, jmark + " &\n");
+        long j0 = System.currentTimeMillis();
+        int jPid = -1;
+        while (jPid < 0 && System.currentTimeMillis() - j0 < 3000) { jPid = pidOf(jmark); if (jPid < 0) Thread.sleep(20); }
+        type(j, "exit 3\n");
+        long j1 = System.currentTimeMillis();
+        boolean jEnded = j.done.await(3, TimeUnit.SECONDS);
+        long jMs = System.currentTimeMillis() - j1;
+        is("the shell exits while its background job runs: the end is reported at once, with the shell's status",
+                jPid > 0 && pidOf(jmark) == jPid && jEnded && j.code == 3 && jMs < 1500, "job " + jPid + ", ended " + jEnded + " after " + jMs + " ms, code " + j.code);
+        if (!jEnded) j.sh.close();
+        if (pidOf(jmark) > 0) new ProcessBuilder("kill", "-9", String.valueOf(pidOf(jmark))).start().waitFor();
+        // the helper holds SIGCHLD back to notice the end: the program must not inherit that (a shell would not see its own jobs end)
+        Rec sb = start(h, 24, 80, "/bin/sh", "-c", "grep SigBlk /proc/self/status");
+        java.util.regex.Matcher sbm = java.util.regex.Pattern.compile("SigBlk:\\s*([0-9a-f]+)").matcher(sb.done.await(4, TimeUnit.SECONDS) ? sb.text() : "");
+        is("the program starts with SIGCHLD not blocked", sbm.find() && (Long.parseUnsignedLong(sbm.group(1), 16) & (1L << 16)) == 0, sb.text());
 
         // ---- other endings ----
         Rec q = start(h, 24, 80, "/bin/sh", "-c", "echo bye; exit 3");

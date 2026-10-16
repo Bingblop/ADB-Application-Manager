@@ -405,6 +405,16 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   check('a clean file is shown as clean with the engine counts and a link', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /VirusTotal: clean/.test(t) && /0 malicious, 0 suspicious of 70/.test(t) && /cached report/.test(t) && /Open in VirusTotal/.test(t); }));
   await ev(() => { window.__mp.vtVerdict = 'malicious'; mp.h.vt = null; mpHScan(); }); await wait(250);
   check('a flagged file is shown in red', await ev(() => !!document.querySelector('#mpSheetBody .mp-chip.bad') && /malicious/.test(document.querySelector('#mpSheetBody .mp-chip.bad').innerText)));
+  // a second version from All versions is another file: the verdict of the first is not shown on it, Scan is back and Install does not ask about it
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(4)'); await wait(300);
+  await page.click('#mpSheetBody button[onclick="mpHGetVersion(0)"]'); await wait(300);
+  await page.click('#mpSheetBody .mp-result .mode-action-btn:has-text("Scan")'); await wait(250);
+  check('a version downloaded from the list and scanned is flagged', await ev(() => !!document.querySelector('#mpSheetBody .mp-result .mp-chip.bad') && mp.h.got.versionName === '20.51.39'));
+  await page.click('#mpSheetBody button[onclick="mpHGetVersion(1)"]'); await wait(300);
+  check('the next version from the list does not carry that verdict and can be scanned', await ev(() => mp.h.got.versionName === '20.21.37' && mp.h.vt === null && !document.querySelector('#mpSheetBody .mp-result .mp-chip') && /Scan with VirusTotal/.test(document.querySelector('#mpSheetBody .mp-result').innerText)));
+  // a scan still running when the next file arrives: its answer is dropped, not put on the new file (the scan answers in 20 ms, the file in 30)
+  await ev(() => { mpHScan(); mpHGetVersion(0); }); await wait(300);
+  check('a scan that answers after another file was asked for does not label the new file', await ev(() => mp.h.got.versionName === '20.51.39' && mp.h.vt === null && !mp.h.vtBusy && /Scan with VirusTotal/.test(document.querySelector('#mpSheetBody .mp-result').innerText)));
   await ev(() => { window.__mp.helperFail = true; mp.h.got = null; mp.h.vt = null; mpHelperRender(); });
   await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(1)'); await wait(300);
   check('a source that changed its page says what to do', /changed its page format/.test(await text('#mpHMsg')));

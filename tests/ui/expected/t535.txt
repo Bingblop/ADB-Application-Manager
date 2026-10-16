@@ -1,0 +1,10 @@
+ok   1. the empty Recordings list points to the Live Logcat tab: No recordings yet. Tap Record to file in Live Logcat to make one.
+ok      and not to a Live Logcat inside Console: No recordings yet. Tap Record to file in Live Logcat to make one.
+ok   2. the About tip names Live Logcat on its own: ["Live Logcat can show one app only. Tap Logs in an app's ⋯ menu."]
+ok      no About tip says Console → Live Logcat
+ok   3. German: the hint is translated and names Live-Logcat, not the Konsole: Noch keine Aufnahmen. Tippe in Live-Logcat auf „In Datei aufnehmen“, um eine zu erstellen.
+ok      German: the About tip is translated and names Live-Logcat alone: ["Live-Logcat kann nur eine App anzeigen. Tippen Sie im ⋯-Menü einer App auf „Logs“."]
+ok   4. the Help Guide names the Live Logcat tab for Logs in an app's menu
+ok      and nowhere puts Live Logcat inside Console
+ok   no page errors:
+all passed

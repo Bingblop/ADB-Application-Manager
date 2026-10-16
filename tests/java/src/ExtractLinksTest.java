@@ -69,11 +69,58 @@ public class ExtractLinksTest {
         ZipTool.extractTree(a, "b.txt", out2, null, p2);
         check("extracting only the hard link does not write an empty file and says why: " + p2, !new File(out2, "b.txt").exists() && p2.toString().contains("hard link to a.txt"), null);
 
+        // again with Skip, a.txt there and b.txt gone (a resumed extraction): a.txt is left as it was, and b.txt is not copied from it (it may
+        // not be this archive's a.txt). The reason given is that, not "not part of this extraction"
+        Files.write(new File(out, "a.txt").toPath(), "the user's a".getBytes(StandardCharsets.UTF_8));
+        new File(out, "b.txt").delete();
+        List<String> p3 = new ArrayList<String>();
+        long[] r3 = ZipTool.extractTree(a, "", out, null, p3, null, FileOps.SKIP);
+        String b3 = null;
+        for (String s : p3) if (s.startsWith("b.txt:")) b3 = s;
+        check("Skip: the hard link to a kept file says the file was left as it was: " + b3, !new File(out, "b.txt").exists() && b3 != null && b3.contains("hard link to a.txt")
+            && b3.contains("left as it was") && !b3.contains("not part of this extraction") && "the user's a".equals(text(new File(out, "a.txt"))), p3.toString());
+        check("Skip: a.txt, sub/c.txt and late.txt are counted as left alone", r3[0] == 0 && r3[3] == 3, java.util.Arrays.toString(r3));
+        // a.txt can't be written (a folder of that name is in the way): its hard link says so
+        File out3 = new File(root, "out3"); new File(out3, "a.txt/inside").mkdirs();
+        List<String> p4 = new ArrayList<String>();
+        ZipTool.extractTree(a, "", out3, null, p4);
+        String b4 = null;
+        for (String s : p4) if (s.startsWith("b.txt:")) b4 = s;
+        check("the hard link to a file that failed says it could not be extracted: " + b4, !new File(out3, "b.txt").exists() && b4 != null && b4.contains("could not be extracted")
+            && !b4.contains("not part of this extraction") && p4.toString().contains("a.txt: \"a.txt\": a folder named a.txt is in the way"), p4.toString());
+
         // a single entry (preview, open) cannot silently be empty either
         String msg = null;
         try { ZipTool.extractTo(a, b, new File(root, "single.txt")); } catch (java.io.IOException ex) { msg = ex.getMessage(); }
         check("extracting the hard link entry on its own is an error that names the target: " + msg, msg != null && msg.contains("hard link") && msg.contains("a.txt") && !new File(root, "single.txt").exists(), null);
         check("no partial file is left", !new File(out, ".b.txt.part").exists(), null);
+
+        // a symbolic link on its own (the archive browser's Extract, a preview, Open) is refused in words: never an empty file, never over one that is there
+        ZipTool.Entry sym = null;
+        for (ZipTool.Entry e : a.entries) if (e.name.equals("sym.txt")) sym = e;
+        String smsg = null;
+        try { ZipTool.extractTo(a, sym, new File(root, "single-sym.txt")); } catch (java.io.IOException ex) { smsg = ex.getMessage(); }
+        check("extracting the symbolic link entry on its own is an error that says so: " + smsg, smsg != null && smsg.contains("symbolic link") && smsg.contains("a.txt") && !new File(root, "single-sym.txt").exists(), null);
+        File mine = new File(root, "mine.txt");
+        Files.write(mine.toPath(), "the user's own text".getBytes(StandardCharsets.UTF_8));
+        String rmsg = null;
+        try { ZipTool.extractTo(a, sym, mine, null); } catch (java.io.IOException ex) { rmsg = ex.getMessage(); }
+        check("with Replace it does not write over the file that is there: " + text(mine), rmsg != null && "the user's own text".equals(text(mine)) && !new File(root, ".mine.txt.part").exists(), rmsg);
+        // a RAR5 link (listed with the target's length, no data) was refused as "damaged"; it is named for what it is
+        File rar = null;
+        for (File p = new File(System.getProperty("user.dir")); p != null && rar == null; p = p.getParentFile()) {
+            File c = new File(p, "tests/java/fixtures/rar/libarchive-rar5-symlink.rar");
+            if (c.isFile()) rar = c;
+        }
+        if (rar == null) System.out.println("SKIP no RAR5 link fixture (tests/java/fixtures/rar)");
+        else {
+            ZipTool.Archive ra = RarSource.open(rar, null);
+            ZipTool.Entry rl = null;
+            for (ZipTool.Entry e : ra.entries) if (e.linkTarget != null && !e.dir && rl == null) rl = e;
+            String rlmsg = null;
+            if (rl != null) try { ZipTool.extractTo(ra, rl, new File(root, "rar-link")); } catch (java.io.IOException ex) { rlmsg = ex.getMessage(); }
+            check("a RAR5 link entry on its own is refused as a symbolic link: " + rlmsg, rl != null && rlmsg != null && rlmsg.contains("symbolic link") && !new File(root, "rar-link").exists(), null);
+        }
 
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
         System.out.println("ALL PASSED");

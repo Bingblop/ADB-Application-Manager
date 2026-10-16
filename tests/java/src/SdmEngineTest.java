@@ -117,10 +117,12 @@ public class SdmEngineTest {
         @Override public void stream(String script, int timeoutMs, Sdm.LineSink sink, Sdm.Cancel cancel) {}
     }
 
-    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation, final Sdm.Shell shell) {
+    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation, final Sdm.Shell shell) { return engine(dir, events, automation, shell, null); }
+
+    static SdmEngine engine(File dir, final List<String> events, final Sdm.Automation automation, final Sdm.Shell shell, final Sdm.Areas areas) {
         SdmEngine.Env env = new SdmEngine.Env() {
             @Override public Sdm.Fs fs() { return null; }
-            @Override public Sdm.Areas areas() { return null; }
+            @Override public Sdm.Areas areas() { return areas; }
             @Override public Sdm.Packages pkgs() { return null; }
             @Override public Sdm.Shell shell() { return shell; }
             @Override public Sdm.Automation automation() { return automation; }
@@ -329,6 +331,15 @@ public class SdmEngineTest {
         is("ready: the one-click ran its deletion", waitFor(() -> t4.deleteCtx != null && !e4.busy(Sdm.Tool.APPCLEANER), 3000), "");
         is("a ready automation is handed to a one-click deletion too, no reason", t4.deleteCtx.automation != null && t4.deleteCtx.automationNotReady == null, "");
         e4.shutdown();
+
+        // ---- off user 0 (a work profile, a second user) the scans still read /storage/emulated/0, SdmHost's primary root: /sdcard in an exclusion is that storage
+        SdmAreas.Config c10 = new SdmAreas.Config();
+        c10.userId = 10;
+        SdmEngine e10 = engine(Files.createTempDirectory("sdmengine10").toFile(), Collections.synchronizedList(new ArrayList<String>()), null, null, new SdmAreas(null, new SdmFsJava(), c10, null));
+        e10.exclusions().save(SdmExclusions.fromPage(new JSONObject().put("kind", "path").put("path", "/sdcard/Keep").put("tags", new JSONArray().put("general"))));
+        is("user 10: an exclusion typed as /sdcard/Keep holds /storage/emulated/0/Keep, where the scans look", e10.exclusions().blocksDelete(Sdm.Tool.SYSTEMCLEANER, "/storage/emulated/0/Keep/a.tmp"), e10.exclusions().paths(Sdm.Tool.SYSTEMCLEANER));
+        is("user 10: ...and the walks are pruned there", e10.exclusions().paths(Sdm.Tool.DEDUPLICATOR).contains("/storage/emulated/0/Keep"), e10.exclusions().paths(Sdm.Tool.DEDUPLICATOR));
+        e10.shutdown();
         System.out.println((fails == 0 ? "PASS" : "FAIL") + " SdmEngineTest: " + n + " checks, " + fails + " failed");
         if (fails > 0) System.exit(1);
     }

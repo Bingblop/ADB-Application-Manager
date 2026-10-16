@@ -119,6 +119,38 @@ public class DownloadNoticeTest {
 
         // speed: no running job, no speed
         is("no running job: speed 0", s.speed == 0 && s.running == 0);
+
+        // NET-2 (full main review): Retry and Resume run the same job (same id) again while another download keeps the round open
+        DownloadNotice r = new DownloadNotice();
+        List<BrowserDownload.Job> lr = new ArrayList<BrowserDownload.Job>();
+        BrowserDownload.Job ra = job("ra", "a.apkm", BrowserDownload.State.RUNNING, 1, 10), rb = job("rb", "b.apkm", BrowserDownload.State.RUNNING, 1, 10);
+        lr.add(ra); lr.add(rb); r.update(lr, 1000);
+        ra.state = BrowserDownload.State.FAILED; r.update(lr, 2000);
+        ra.state = BrowserDownload.State.QUEUED; r.update(lr, 3000);
+        ra.state = BrowserDownload.State.RUNNING; r.update(lr, 4000);
+        ra.state = BrowserDownload.State.DONE; r.update(lr, 5000);
+        rb.state = BrowserDownload.State.DONE; s = r.update(lr, 6000);
+        is("a failed download retried and finished while another ran: '2 downloads finished', no failure", !s.active() && "2 downloads finished".equals(r.summary()) && !r.hadFailure(), r.summary() + " failure=" + r.hadFailure());
+        DownloadNotice q = new DownloadNotice();
+        List<BrowserDownload.Job> lq = new ArrayList<BrowserDownload.Job>();
+        BrowserDownload.Job qa = job("qa", "a.apkm", BrowserDownload.State.RUNNING, 1, 10), qb = job("qb", "b.apkm", BrowserDownload.State.RUNNING, 1, 10);
+        lq.add(qa); lq.add(qb); q.update(lq, 1000);
+        qa.state = BrowserDownload.State.PAUSED; q.update(lq, 2000);
+        qa.state = BrowserDownload.State.QUEUED; q.update(lq, 3000);
+        qa.state = BrowserDownload.State.RUNNING; q.update(lq, 4000);
+        qa.state = BrowserDownload.State.DONE; q.update(lq, 5000);
+        qb.state = BrowserDownload.State.DONE; q.update(lq, 6000);
+        is("a paused download resumed and finished while another ran: both counted, '2 downloads finished'", "2 downloads finished".equals(q.summary()) && !q.hadFailure(), String.valueOf(q.summary()));
+        DownloadNotice v = new DownloadNotice();
+        List<BrowserDownload.Job> lv = new ArrayList<BrowserDownload.Job>();
+        BrowserDownload.Job va = job("va", "a.apkm", BrowserDownload.State.RUNNING, 1, 10), vb = job("vb", "b.apkm", BrowserDownload.State.RUNNING, 1, 10);
+        lv.add(va); lv.add(vb); v.update(lv, 1000);
+        va.state = BrowserDownload.State.FAILED; v.update(lv, 2000);
+        va.state = BrowserDownload.State.RUNNING; v.update(lv, 3000);
+        va.state = BrowserDownload.State.FAILED; v.update(lv, 4000);
+        v.update(lv, 4500);
+        vb.state = BrowserDownload.State.DONE; v.update(lv, 5000);
+        is("a retry that fails again is one failure, not two: '1 finished, 1 stopped. Open the app to retry'", "1 finished, 1 stopped. Open the app to retry".equals(v.summary()) && v.hadFailure(), String.valueOf(v.summary()));
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " FAILED");
         System.exit(fails == 0 ? 0 : 1);
     }

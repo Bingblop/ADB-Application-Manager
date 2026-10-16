@@ -39,7 +39,9 @@ public class FileSearchTest {
     return names(FileSearch.run(Collections.singletonList(root), query, new FileSearch.Limits(), null), root);
   }
   /** A zip of stored entries with the raw name bytes given and no UTF-8 flag, as Windows Explorer writes non-English names. */
-  static void legacyZip(File f, byte[][] names, String[] data) throws IOException {
+  static void legacyZip(File f, byte[][] names, String[] data) throws IOException { legacyZip(f, names, data, 0, 0); }
+  /** As above; the first entry carries these general-purpose flags and this method number (its bytes stay stored). */
+  static void legacyZip(File f, byte[][] names, String[] data, int firstFlags, int firstMethod) throws IOException {
     java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream(), cd = new java.io.ByteArrayOutputStream();
     int dosDate = (40 << 9) | (1 << 5) | 1;                                 // 2020-01-01
     for (int i = 0; i < names.length; i++) {
@@ -47,8 +49,10 @@ public class FileSearchTest {
       java.util.zip.CRC32 crc = new java.util.zip.CRC32(); crc.update(d);
       long off = bo.size();
       byte[] h = new byte[30]; le(h, 0, 0x04034b50, 4); le(h, 4, 10, 2); le(h, 12, dosDate, 2); le(h, 14, crc.getValue(), 4); le(h, 18, d.length, 4); le(h, 22, d.length, 4); le(h, 26, n.length, 2);
+      if (i == 0) { le(h, 6, firstFlags, 2); le(h, 8, firstMethod, 2); }
       bo.write(h); bo.write(n); bo.write(d);
       byte[] c = new byte[46]; le(c, 0, 0x02014b50, 4); le(c, 4, 20, 2); le(c, 6, 10, 2); le(c, 14, dosDate, 2); le(c, 16, crc.getValue(), 4); le(c, 20, d.length, 4); le(c, 24, d.length, 4); le(c, 28, n.length, 2); le(c, 42, off, 4);
+      if (i == 0) { le(c, 8, firstFlags, 2); le(c, 10, firstMethod, 2); }
       cd.write(c); cd.write(n);
     }
     long cdOff = bo.size();
@@ -142,6 +146,19 @@ public class FileSearchTest {
     check("and lists the legacy-named entry under the name the archive viewer shows", find(legacyRoot, "archive:.txt", true, true, false).equals(l("legacy.zip!readme.txt", "legacy.zip!\u00c4\u00e3.txt")));
     check("content: looks inside its entries as well", find(legacyRoot, "content:milk", true, true, true).equals(l("legacy.zip!readme.txt")));
     rm(legacyRoot);
+    // an entry that can't be read (a password, a method such as bzip2, damage) is no match, and the entries after it are still read
+    File oddRoot = Files.createTempDirectory("fs-odd").toFile();
+    byte[][] secretFirst = {"secret.txt".getBytes(StandardCharsets.US_ASCII), "readme.txt".getBytes(StandardCharsets.US_ASCII)};
+    String[] secretData = {"milk in the secret", "hello milk"};
+    legacyZip(new File(oddRoot, "enc.zip"), secretFirst, secretData, 1, 0);                  // flag bit 0: encrypted, and no password is given
+    legacyZip(new File(oddRoot, "bz.zip"), secretFirst, secretData, 0, 12);                  // method 12: bzip2
+    zip(new File(oddRoot, "dmg.zip"), new String[][]{{"secret.txt", "milk in the secret"}, {"readme.txt", "hello milk"}});
+    byte[] dmg = Files.readAllBytes(new File(oddRoot, "dmg.zip").toPath());
+    dmg[30 + "secret.txt".length() + ((dmg[28] & 0xff) | (dmg[29] & 0xff) << 8)] = (byte) 0xFF;   // the first deflate block: a reserved block type
+    Files.write(new File(oddRoot, "dmg.zip").toPath(), dmg);
+    check("content: an unreadable entry does not end the search of its zip " + find(oddRoot, "content:milk", true, true, true),
+        find(oddRoot, "content:milk", true, true, true).equals(l("bz.zip!readme.txt", "dmg.zip!readme.txt", "enc.zip!readme.txt")));
+    rm(oddRoot);
     check("without the archive option a plain name does not look inside archives", find(root, "readme", true, true, false).isEmpty());
     check("with it, a plain name matches the entries as well", find(root, "readme", true, true, true).equals(l("pack/data.zip!readme.txt")));
     check("with it, content: looks at text entries as well", find(root, "content:hello", true, true, true).equals(l("pack/data.zip!readme.txt")));

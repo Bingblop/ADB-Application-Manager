@@ -24,6 +24,9 @@ public class BrowserDownloadTest {
         // ---- names ----
         is("name: filename in Content-Disposition", BrowserDownload.fileName("https://x/dl.php?id=1", "attachment; filename=\"com.google.android.inputmethod.latin_18.0.3_apkmirror.com.apkm\"", "application/octet-stream").equals("com.google.android.inputmethod.latin_18.0.3_apkmirror.com.apkm"));
         is("name: filename* (UTF-8) wins over filename (the accent becomes _)", BrowserDownload.fileName("https://x/a", "attachment; filename=\"a.apk\"; filename*=UTF-8''caf%C3%A9.apks", "").equals("caf_.apks"));
+        // NET-3 (full main review): the language between the two quotes is not part of the name
+        is("name: filename* with a language tag", BrowserDownload.fileName("https://x/a", "attachment; filename=\"a.apk\"; filename*=UTF-8'en'app.apk", "").equals("app.apk"), BrowserDownload.fileName("https://x/a", "attachment; filename=\"a.apk\"; filename*=UTF-8'en'app.apk", ""));
+        is("name: filename* with a region in the language tag, a lower-case charset and an escaped space", BrowserDownload.fileName("https://x/a", "attachment; filename*=utf-8'en-US'app%201.2.apk; filename=\"fallback.apk\"", "").equals("app 1.2.apk"), BrowserDownload.fileName("https://x/a", "attachment; filename*=utf-8'en-US'app%201.2.apk; filename=\"fallback.apk\"", ""));
         is("name: unquoted filename", BrowserDownload.fileName("https://x/a", "attachment; filename=app.xapk; size=5", "").equals("app.xapk"));
         is("name: from the address when there is no header", BrowserDownload.fileName("https://cdn.example/files/My%20App-1.2.apk?token=abc", null, "application/octet-stream").equals("My App-1.2.apk"));
         is("name: download.php with an Android package type becomes download.apk", BrowserDownload.fileName("https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=9&key=k", null, "application/vnd.android.package-archive").equals("download.apk"));

@@ -390,6 +390,9 @@ public class MainActivity extends Activity {
     private static final int REQ_STORAGE_PERM = 9301;
     /** A runtime permission asked for from the permissions sheet (Bluetooth Connect, Notifications): a refusal for good sends the person to the app's settings page too */
     private static final int REQ_SHEET_RUNTIME_PERM = 9304;
+    /** The sheet's last request as it stood before Android's dialog (for PermRefusal): the permission, its rationale, and whether the sheet had asked for it before. UI thread only. */
+    private String sheetAskPerm = "";
+    private boolean sheetRationaleBefore, sheetAskedBefore;
 
     /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
     @Override
@@ -399,7 +402,12 @@ public class MainActivity extends Activity {
             if (requestCode == REQ_STORAGE_PERM || requestCode == REQ_SHEET_RUNTIME_PERM) {
                 boolean never = false;
                 for (String p : permissions) {
-                    if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
+                    boolean granted = checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED, rationale = shouldShowRequestPermissionRationale(p);
+                    if (requestCode == REQ_SHEET_RUNTIME_PERM) {
+                        // a dialog dismissed on a first ask (Back, a tap outside) leaves no rationale either: only an earlier answer makes it a refusal for good
+                        boolean same = p.equals(sheetAskPerm);
+                        if (PermRefusal.forGood(granted, same && sheetRationaleBefore, rationale, same && sheetAskedBefore)) never = true;
+                    } else if (!granted && !rationale) never = true;
                 }
                 if (never) {
                     Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
@@ -630,20 +638,20 @@ public class MainActivity extends Activity {
         return o;
     }
 
-    private void extractAsset(String assetName, File destFile) {
+    /** Copies an asset into the app's files once per app version, whole or not at all (a copy cut short is not kept; see AssetCopy). */
+    private void extractAsset(final String assetName, File destFile) {
+        String stamp;
         try {
-            if (destFile.exists() && destFile.length() > 0) return;
-            InputStream in = getAssets().open(assetName);
-            OutputStream out = new FileOutputStream(destFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
+            stamp = String.valueOf(versionCodeOf(getPackageManager().getPackageInfo(getPackageName(), 0)));
+        } catch (Exception e) {
+            stamp = "0";
+        }
+        AssetCopy.copy(new AssetCopy.Source() {
+            @Override
+            public InputStream open() throws IOException {
+                return getAssets().open(assetName);
             }
-            in.close();
-            out.flush();
-            out.close();
-        } catch (Exception ignored) {}
+        }, destFile, stamp);
     }
 
     /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
@@ -1534,13 +1542,18 @@ public class MainActivity extends Activity {
             };
         }
         if ("adb".equals(kind)) {
-            final String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            final boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            final String target = tcp ? tcpTarget() : wirelessTarget();
+            final String host = tcp ? adbTcpHost : adbWirelessHost;
+            final int port = tcp ? adbTcpPort : adbWirelessPort;
             return new RishShell.Spawner() {
                 @Override
                 public Process spawn(String[] argv) throws Exception {
+                    if (argv.length >= 3 && "-c".equals(argv[1])) return buildAdbProcess("-s", target, "shell", argv[2]).start();   // a helper (Stop, ps) next to a shell that is up
+                    // the shell itself: a link that dropped (adbd restarted) is connected again first, as every other adb command does
+                    if (!isAdbTargetConnected(target)) performConnect(host, port, null);
                     // -T: no terminal on the phone's side; the shell reads the commands this app writes
-                    return (argv.length >= 3 && "-c".equals(argv[1]) ? buildAdbProcess("-s", target, "shell", argv[2])
-                            : buildAdbProcess("-s", target, "shell", "-T")).start();
+                    return buildAdbProcess("-s", target, "shell", "-T").start();
                 }
             };
         }
@@ -1636,7 +1649,9 @@ public class MainActivity extends Activity {
         }
         if ("adb".equals(kind)) {
             // adb's own client gets the terminal: it then asks the phone for a terminal of the same size and follows resizes
-            String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);   // a link that dropped is connected again first
             ProcessBuilder adb = buildAdbProcess("-s", target, "shell");
             ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, adb.command()));
             pb.environment().putAll(adb.environment());
@@ -2759,9 +2774,9 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     selfUpdateProgress("error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 } finally {
-                    // The system installer reads the file asynchronously, so keep it in that path; the
-                    // privileged path has already consumed it and can clean up.
-                    if (!standard) apk.delete();
+                    // Used up either way: launchSystemInstaller hands the system installer a copy of its own (in cache/share, swept
+                    // by ShareProvider), and the privileged install has read it. Kept, it stayed in the cache for good.
+                    apk.delete();
                     installingUpdates.remove("self");
                 }
             }
@@ -3085,7 +3100,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard && apk != null) apk.delete();
+                    if (apk != null) apk.delete();         // the system installer reads its own copy (launchSystemInstaller)
                     storeInstalling.remove(key);
                 }
             }
@@ -3701,7 +3716,8 @@ public class MainActivity extends Activity {
 
     /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
-     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
+     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json), each with the
+     * path it is for, so the page can drop a late answer for a package that was replaced while the scan ran.
      */
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
         executor.submit(new Runnable() {
@@ -3723,17 +3739,19 @@ public class MainActivity extends Activity {
                     f = staged;
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
-                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
+                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…")
+                            .put("path", path));
                     String sha = VirusTotal.sha256(f);
                     JSONObject res = upload
                             ? VirusTotal.uploadAndWait(apiKey.trim(), f, sha, 180000)
                             : VirusTotal.lookup(apiKey.trim(), sha);
                     res.put("stage", "done");
                     res.put("size", f.length());
+                    res.put("path", path);
                     notifyUpdates("onVtResult", res);
                 } catch (Exception e) {
                     try {
-                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
+                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)).put("path", path));
                     } catch (Exception ignored) {}
                 } finally {
                     if (staged != null) staged.delete();
@@ -4931,7 +4949,9 @@ public class MainActivity extends Activity {
                 try { res.put("sourceDeleted", deleted); } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
-        endInstallStage(snap, true);           // its own files only: a package read since keeps its folder
+        // Its own files only (a package read since keeps its folder), and only a successful install uses them up: after a failure or a
+        // Cancel in the system installer they stay, so "turn on Allow downgrade and install again" does not need the package picked again.
+        endInstallStage(snap, res.optBoolean("ok", false));
         notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
     }
 
@@ -5220,9 +5240,6 @@ public class MainActivity extends Activity {
     private volatile JSONObject tmGpuInfoCache;
     private volatile long[] tmCpuMinHz, tmCpuMaxHz;
     private volatile String tmThermalPath;              // "" when no zone was readable
-    private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
-            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
-            TM_M10 = "@@TM10-THREADS@@";
 
     private static final class ArcSlot {
         final ZipTool.Archive archive;
@@ -5412,19 +5429,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens a zip first (a bounded scan for its end record, cheap even to rule a huge non-zip file out); a file that isn't one is tried
-     *  as a RAR, then as whatever {@link ArchiveIo} recognises (7z, the tar family, or a single compressed file). */
+    /** Opens any archive format this app reads, decided by the file's first bytes (a tar of APKs is a tar, not its last APK); see {@link ZipTool#openAny}. */
     private ZipTool.Archive openAnyArchive(File use, char[] password, ArchiveIo.Progress cb) throws IOException {
-        IOException zipErr;
-        try {
-            return ZipTool.open(use);
-        } catch (IOException e) {
-            zipErr = e;
-        }
-        if (RarReader.isRar(use)) return RarSource.open(use, password);
-        String fmt = ArchiveIo.detect(use);
-        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password, cb);
-        throw zipErr;
+        return ZipTool.openAny(use, password, cb);
     }
 
     /** Forgets an archive that changed on disk, and removes the shell-staged copy it was read from. */
@@ -5920,7 +5927,8 @@ public class MainActivity extends Activity {
                 long t0 = System.currentTimeMillis();
                 try {
                     boolean fsAccess = hasStorageAccess();
-                    boolean privileged = !"standard".equals(resolveExecMode());
+                    String mode = resolveExecMode();
+                    boolean privileged = !"standard".equals(mode);
                     res.put("fs", fsAccess);
                     res.put("shell", privileged);
                     if (!fsAccess && !privileged) {
@@ -5971,8 +5979,11 @@ public class MainActivity extends Activity {
                         }
                         AndroidBridge sh = new AndroidBridge();
                         sendApkScanProgress(scanId, -1, fsAccess ? "Searching Android/data and Android/obb with the privileged mode…" : "Searching storage with the privileged mode…", found.size(), true);
-                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
-                                + " 2>/dev/null | head -n 2500");
+                        // find gets a time of its own: executeShell's 8-10 s cut a search of a full storage short, and what it had read so far
+                        // looked complete. No end line means a partial list, and the page says the search stopped early.
+                        String out = runPrivilegedShell(mode, "find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
+                                + " 2>/dev/null | head -n 2500; echo " + ApkScan.FIND_END, 25000);
+                        if (!ApkScan.findComplete(out)) lim.hitLimit = true;
                         List<String> unreadable = new ArrayList<String>();
                         for (String path : ApkScan.parseFindOutput(out, 2500)) {
                             if (found.size() >= lim.maxResults) { lim.hitLimit = true; break; }
@@ -6807,7 +6818,8 @@ public class MainActivity extends Activity {
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
                         String out = installApksIn(ordered, restoreMode);
                         if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
-                        res.put("install", "installed " + meta.optString("versionName"));
+                        // the version of the APK that was installed (the same one the question above showed), not backup.json's claim
+                        res.put("install", "installed " + (archiveInfo.versionName != null ? archiveInfo.versionName : String.valueOf(archiveVersionCode)));
                     }
 
                     // Permissions and app ops
@@ -12593,30 +12605,38 @@ public class MainActivity extends Activity {
                 if (havePriv) {
                     try {
                         blob = executeShell(
-                                "cat /proc/stat 2>/dev/null; echo " + TM_M1 + "; "
-                                        + "cat /proc/meminfo 2>/dev/null; echo " + TM_M2 + "; "
-                                        + "cat /proc/net/dev 2>/dev/null; echo " + TM_M3 + "; "
-                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TM_M4 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TM_M5 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TM_M6 + "; "
-                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
-                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TM_M10);
+                                "cat /proc/stat 2>/dev/null; echo " + TaskMgrBlob.M1 + "; "
+                                        + "cat /proc/meminfo 2>/dev/null; echo " + TaskMgrBlob.M2 + "; "
+                                        + "cat /proc/net/dev 2>/dev/null; echo " + TaskMgrBlob.M3 + "; "
+                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TaskMgrBlob.M4 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TaskMgrBlob.M5 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TaskMgrBlob.M6 + "; "
+                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TaskMgrBlob.M7 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TaskMgrBlob.M8 + "; "
+                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TaskMgrBlob.M9 + "; "
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TaskMgrBlob.M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
-                } else {
+                    // a backend that is down (adb lost the device, Shizuku stopped after a reboot, su refused) answers with its error
+                    // text, not an exception, and that text parsed as it is reads as 0 % CPU, no RAM, no network and no processes. This
+                    // tick then reads CPU, RAM and network itself, as below, and says it is unprivileged, so Processes and GPU show
+                    // their lock instead of an empty list.
+                    if (!TaskMgrBlob.scriptRan(blob)) {
+                        havePriv = false;
+                        res.put("privileged", false);
+                    }
+                }
+                if (!havePriv) {
                     // no privileged backend: /proc/stat, /proc/meminfo and /proc/net/dev are world-readable, so this app can read
                     // them itself with no shell at all; only the process list and GPU need a privileged shell and stay empty.
                     try {
-                        blob = readWorldReadable("/proc/stat") + TM_M1 + readWorldReadable("/proc/meminfo") + TM_M2
-                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9 + TM_M10;
+                        blob = TaskMgrBlob.direct(readWorldReadable("/proc/stat"), readWorldReadable("/proc/meminfo"), readWorldReadable("/proc/net/dev"));
                     } catch (Throwable t) {
                         blob = null;
                     }
                 }
-                String[] parts = blob == null ? new String[0] : splitTm(blob);
+                String[] parts = blob == null ? new String[0] : TaskMgrBlob.split(blob);
                 long now = System.currentTimeMillis();
 
                 // CPU
@@ -12756,19 +12776,6 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "";
             }
-        }
-
-        private String[] splitTm(String blob) {
-            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9, TM_M10};
-            String[] out = new String[markers.length];
-            int from = 0;
-            for (int i = 0; i < markers.length; i++) {
-                int at = blob.indexOf(markers[i], from);
-                if (at < 0) { out[i] = ""; continue; }
-                out[i] = blob.substring(from, at);
-                from = at + markers[i].length();
-            }
-            return out;
         }
 
         /** Battery level, temperature, voltage, current, charge state and health: the public BatteryManager API and the
@@ -13385,7 +13392,14 @@ public class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try { requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM); } catch (Exception e) { openOwnAppInfo(); }
+                    try {
+                        // read before asking: afterwards a dismissed dialog and a refusal for good look the same (PermRefusal)
+                        sheetAskPerm = perm;
+                        sheetRationaleBefore = shouldShowRequestPermissionRationale(perm);
+                        sheetAskedBefore = prefs != null && prefs.getBoolean("sheet_perm_asked_" + perm, false);
+                        if (prefs != null) prefs.edit().putBoolean("sheet_perm_asked_" + perm, true).apply();
+                        requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM);
+                    } catch (Exception e) { openOwnAppInfo(); }
                 }
             });
             return "dialog";
@@ -14233,20 +14247,13 @@ public class MainActivity extends Activity {
                 if (name == null) return "Could not read the source";
                 boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyInto(kidUri, newDir);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyInto(Uri.parse(k[0]), newDir);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -14263,10 +14270,14 @@ public class MainActivity extends Activity {
                 android.content.ContentResolver cr = getContentResolver();
                 String name = srcFile.getName();
                 if (srcFile.isDirectory()) {
+                    File[] kids = srcFile.listFiles();                    // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    File[] kids = srcFile.listFiles();
-                    if (kids != null) for (File k : kids) { String err = safCopyPosixIntoSaf(k, newDir); if (err != null) return err; }
+                    if (kids != null) for (File k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyPosixIntoSaf(k, newDir);
+                        if (err != null) return err;
+                    }
                     return null;
                 }
                 String mime = fmMime(name);
@@ -14304,19 +14315,12 @@ public class MainActivity extends Activity {
                 String canonRoot = destDir.getCanonicalPath();
                 if (!dest.getCanonicalPath().startsWith(canonRoot.endsWith(File.separator) ? canonRoot : canonRoot + File.separator)) return "Could not copy " + name;
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyIntoPosix(kidUri, dest);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyIntoPosix(Uri.parse(k[0]), dest);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -14395,6 +14399,91 @@ public class MainActivity extends Activity {
             return null;
         }
 
+        /** The children of a SAF folder, read once before anything is written into it: {document URI, name, MIME type}. A copy that
+         *  lists a folder after it created its own target folder there would find that folder and copy it into itself without end. */
+        private List<String[]> safKids(Uri dir) {
+            List<String[]> out = new ArrayList<String[]>();
+            Uri tree = safTreeUri(dir);
+            Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, safCurrentDocId(dir));
+            android.database.Cursor c = getContentResolver().query(kids, new String[]{
+                    android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null);
+            if (c == null) return out;
+            try {
+                while (c.moveToNext()) out.add(new String[]{ android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)).toString(), c.getString(1), c.getString(2) });
+            } finally { c.close(); }
+            return out;
+        }
+
+        /** Whether a SAF document is a folder (null when it cannot be read). */
+        private Boolean safIsDir(Uri doc) {
+            try {
+                android.database.Cursor c = getContentResolver().query(doc, new String[]{ android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE }, null, null, null);
+                if (c == null) return null;
+                try { return c.moveToFirst() ? android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(c.getString(0)) : null; } finally { c.close(); }
+            } catch (Throwable t) { return null; }
+        }
+
+        /** The plain path of a file manager item: the path itself, or for a document of Android's own storage provider the path it is
+         *  under /storage (see {@link FileOps#externalStoragePath}); null when it has none the app can know. */
+        private String fmPlainPathOf(String ref) {
+            if (!ref.startsWith("content://")) return ref;
+            try {
+                Uri u = Uri.parse(ref);
+                return FileOps.externalStoragePath(u.getAuthority(), safCurrentDocId(u), android.os.Process.myUid() / 100000);
+            } catch (Throwable t) { return null; }
+        }
+
+        /**
+         * Puts the children of the folder {@code src} (a SAF document URI or a plain path) into the SAF folder {@code destDir} that
+         * already holds a folder of the same name, the way two plain folders merge (FileOps.transfer): a folder meets a folder and is
+         * merged, a file meets a file and replaces it ("replace") or is left ("skip"), a file meets a folder or the reverse and is
+         * refused ("replace") or left ("skip"). For a move, what went across is removed from the source, and the source folder too
+         * when nothing was left in it. {@code left[0]} counts what was left alone. Returns null, or why it stopped.
+         */
+        private String safMergeInto(String src, Uri destDir, String policyName, boolean move, int[] left) throws Exception {
+            boolean srcSaf = src.startsWith("content://");
+            List<String[]> kids = new ArrayList<String[]>();              // {ref, name, isDir}
+            if (srcSaf) {
+                for (String[] k : safKids(Uri.parse(src))) kids.add(new String[]{ k[0], k[1], String.valueOf(android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(k[2])) });
+            } else {
+                File[] fs = new File(src).listFiles();
+                if (fs != null) for (File f : fs) kids.add(new String[]{ f.getPath(), f.getName(), String.valueOf(f.isDirectory() && !java.nio.file.Files.isSymbolicLink(f.toPath())) });
+            }
+            int leftBefore = left[0];
+            for (String[] k : kids) {
+                if (fmBatchCancel) return "Cancelled";
+                String ref = k[0], name = k[1];
+                if (name == null || FileOps.badName(name) != null) { left[0]++; continue; }
+                boolean kidDir = Boolean.parseBoolean(k[2]);
+                Uri clash = safChildNamed(destDir, name);
+                Boolean clashDir = clash == null ? null : safIsDir(clash);
+                if (clash != null && clashDir == null) return "Could not read " + name;
+                int action = FileOps.safClash(kidDir, clashDir, policyName);
+                if (action == FileOps.SAF_SKIP) { left[0]++; continue; }
+                if (action == FileOps.SAF_IN_THE_WAY) return (kidDir ? "A file with that name is in the way: " : "A folder with that name is in the way: ") + name;
+                String err;
+                if (action == FileOps.SAF_MERGE) {
+                    err = safMergeInto(ref, clash, policyName, move, left);
+                    if (err != null) return err;
+                    continue;                                              // the merge removed what it moved, and the folder when it was emptied
+                }
+                if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) return "Could not replace " + name;
+                err = srcSaf ? safCopyInto(Uri.parse(ref), destDir) : safCopyPosixIntoSaf(new File(ref), destDir);
+                if (err != null) return err;
+                if (move) {
+                    if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
+                    else FileOps.delete(java.util.Collections.singletonList(new File(ref)), null);
+                }
+            }
+            if (move && left[0] == leftBefore) {                          // everything in it went across: the emptied source folder goes too
+                if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(src));
+                else new File(src).delete();
+            }
+            return null;
+        }
+
         private String safDisplayName(String ref) {
             if (!ref.startsWith("content://")) return new File(ref).getName();
             try {
@@ -14434,19 +14523,41 @@ public class MainActivity extends Activity {
                             if (q.equals(dest)) throw new IOException("Can't put a folder inside itself");
                             if (q.startsWith("content://") && dest.startsWith("content://")) {
                                 try {
-                                    String sd = android.provider.DocumentsContract.getDocumentId(Uri.parse(q));
-                                    String dd = android.provider.DocumentsContract.getDocumentId(Uri.parse(dest));
-                                    if (safTreeUri(Uri.parse(q)).equals(safTreeUri(Uri.parse(dest))) && (dd.equals(sd) || dd.startsWith(sd + "/"))) throw new IOException("Can't put a folder inside itself");
+                                    Uri qu = Uri.parse(q), du = Uri.parse(dest);
+                                    // two added roots of one provider can reach the same folder: the ids decide, not the tree they were reached through
+                                    String sd = safCurrentDocId(qu), dd = safCurrentDocId(du);
+                                    if (String.valueOf(qu.getAuthority()).equals(du.getAuthority()) && FileOps.safDocInside(sd, dd)) throw new IOException("Can't put a folder inside itself");
                                 } catch (IllegalArgumentException ignored) {}
                             }
                             if (!dest.startsWith("content://") && (dest.equals(q) || dest.startsWith(q + "/"))) throw new IOException("Can't put a folder inside itself");
                             String name = safDisplayName(q);
+                            // the SD card added as storage and /storage/XXXX-XXXX are one place seen two ways: the same plain-path rules apply
+                            String qp = fmPlainPathOf(q), dp = fmPlainPathOf(dest);
+                            if (qp != null && dp != null) {
+                                if (FileOps.pathInside(qp, dp)) throw new IOException("Can't put a folder inside itself");
+                                if (!name.isEmpty() && FileOps.policyOf(policyName) != FileOps.KEEP_BOTH && qp.equals(dp + "/" + name)) { skipped++; kept.put(q); continue; }   // already there: the item itself
+                            }
                             if (dest.startsWith("content://") && !name.isEmpty()) {
                                 Uri clash = safChildNamed(Uri.parse(dest), name);
                                 if (clash != null) {
                                     if (clash.equals(Uri.parse(q))) { skipped++; kept.put(q); continue; }
-                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }
-                                    if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
+                                    Boolean qDir = q.startsWith("content://") ? safIsDir(Uri.parse(q)) : Boolean.valueOf(new File(q).isDirectory());
+                                    Boolean clashDir = safIsDir(clash);
+                                    if (qDir == null || clashDir == null) throw new IOException("Could not read " + name);
+                                    int action = FileOps.safClash(qDir, clashDir, policyName);
+                                    if (action == FileOps.SAF_SKIP) { skipped++; kept.put(q); continue; }
+                                    if (action == FileOps.SAF_IN_THE_WAY) throw new IOException(qDir ? "A file with that name is in the way" : "A folder with that name is in the way");
+                                    if (action == FileOps.SAF_MERGE) {
+                                        // folders merge, as the sheet says and as two plain folders do: nothing that is only in the old folder is lost
+                                        int[] left = new int[1];
+                                        String err = safMergeInto(q, clash, policyName, "mv".equals(op), left);
+                                        if (err != null && fmBatchCancel) { cancelled = true; break; }
+                                        if (err != null) failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
+                                        else if (left[0] > 0 && "mv".equals(op)) { skipped++; kept.put(q); }   // some of it was left in the source: it stays on the move clipboard
+                                        else done++;
+                                        continue;
+                                    }
+                                    if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) throw new IOException("Could not replace " + name);
                                 }
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
                                 // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
@@ -14458,6 +14569,7 @@ public class MainActivity extends Activity {
                         }
                         String err = fmOpSaf(op, q, dest, asName);
                         if (err.isEmpty()) done++;
+                        else if (fmBatchCancel) { cancelled = true; break; }      // stopped inside a folder: a cancel, not a failure
                         else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
                     } catch (Throwable t) {
                         try { failed.put(new JSONObject().put("p", q).put("error", errMsg(t))); } catch (Exception ignored) {}
@@ -16591,7 +16703,10 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
+        // the tracker scan: stop its pool FIRST (a trackerScan that comes in now is rejected), then the scan that runs, which would read
+        // every app's dex for minutes and keep this activity alive; it ends after the app it is reading and saves what it found to the cache
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        trackerCancel = true;
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}

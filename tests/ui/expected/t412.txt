@@ -1,22 +1,22 @@
-ok   the token sheet has its color-mix() tokens (25), each a colour mixed with transparent
+ok   the token sheet has its color-mix() tokens (26), each a colour mixed with transparent
 ok   dark material3: color-mix() is there in the test browser, and missing in the rewritten page
 ok   dark material3: with color-mix(), no token is written inline (the sheet's own mixes are used)
-ok   dark material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (25)
+ok   dark material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
 ok   dark material3, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
 ok   dark material3, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
 ok   dark cyberpunk: color-mix() is there in the test browser, and missing in the rewritten page
 ok   dark cyberpunk: with color-mix(), no token is written inline (the sheet's own mixes are used)
-ok   dark cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (25)
+ok   dark cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
 ok   dark cyberpunk, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
 ok   dark cyberpunk, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
 ok   light material3: color-mix() is there in the test browser, and missing in the rewritten page
 ok   light material3: with color-mix(), no token is written inline (the sheet's own mixes are used)
-ok   light material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (25)
+ok   light material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
 ok   light material3, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
 ok   light material3, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
 ok   light cyberpunk: color-mix() is there in the test browser, and missing in the rewritten page
 ok   light cyberpunk: with color-mix(), no token is written inline (the sheet's own mixes are used)
-ok   light cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (25)
+ok   light cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
 ok   light cyberpunk, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
 ok   light cyberpunk, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
 ok   colorMixCompute() gives the browser's own color-mix() result (8 mixes: two colours, translucent, transparent, var(), no percentage, both percentages)

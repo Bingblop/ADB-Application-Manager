@@ -1,12 +1,15 @@
 package com.bloatware.bingblop;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The arithmetic of the internet speed test (Task Manager > Network > Speed test), apart from any network code so it can be tested on its
  * own: the median and the jitter of the latency samples, the throughput of a phase from a running byte count, the rounding the page shows,
- * and the server's location code from the answer's headers. No Android classes.
+ * and the server's location code and its own processing time from the answer's headers. No Android classes.
  *
  * Latency is the median of the samples (an even count: the mean of the two middle values); jitter is the mean absolute difference of
  * consecutive samples, in the order they were taken (the definition of RFC 3550's "interarrival jitter" without its smoothing, and what
@@ -98,6 +101,34 @@ final class SpeedMath {
         if (s == null) return "";
         String t = s.trim().toUpperCase(Locale.ROOT);
         return t.matches("[A-Z]{3}") ? t : "";
+    }
+
+    private static final Pattern DUR = Pattern.compile("(?i)dur\\s*=\\s*\"?([0-9]+(?:\\.[0-9]+)?)\"?");
+
+    /**
+     * The time the test server says it spent on an answer, in milliseconds: the sum of the dur of every cfSpeed* entry of its Server-Timing
+     * headers ("cfSpeedEdge;dur=4, cfSpeedWorker;dur=26" -> 30). speed.cloudflare.com answers from a Worker that takes 20 to 40 ms a request;
+     * that is not the line's latency, and Cloudflare's own client takes it off each sample the same way. Other entries are left out (cfL4
+     * carries the TCP round trip, not server time). 0 when no entry has a dur that is a number.
+     */
+    static double serverMs(List<String> serverTiming) {
+        if (serverTiming == null) return 0;
+        double sum = 0;
+        for (String value : serverTiming) {
+            if (value == null) continue;
+            for (String entry : value.split(",")) {
+                String[] parts = entry.split(";");
+                if (!parts[0].trim().toLowerCase(Locale.ROOT).startsWith("cfspeed")) continue;
+                for (int i = 1; i < parts.length; i++) {
+                    Matcher m = DUR.matcher(parts[i].trim());
+                    if (!m.matches()) continue;
+                    double dur = Double.parseDouble(m.group(1));
+                    if (!Double.isInfinite(dur)) sum += dur;
+                    break;
+                }
+            }
+        }
+        return sum;
     }
 
     /**

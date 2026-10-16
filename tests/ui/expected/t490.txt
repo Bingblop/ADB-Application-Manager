@@ -1,0 +1,7 @@
+ok   1. Download on a row starts one download
+ok   2. a second tap on that row, and a tap on the other CPU type of the same version, start nothing while it runs: 20.21.37 arm64-v8a
+ok      and the download keeps its message
+ok   3. its answer is the result: The APK is ready.
+ok   4. once it is done, another row downloads again: 20.21.37 arm64-v8a | 20.21.37 armeabi-v7a
+ok   no page errors
+all passed

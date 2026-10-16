@@ -285,6 +285,8 @@ public class PrivatePathsTest {
       routeHas(m, "private void runVirusTotalScan(", "copyFileChecked(f, sout)", null);
       String vt = bodyOf(m, "private void runVirusTotalScan(");
       is("VirusTotal hashes and uploads the checked copy, not the name the page gave", vt != null && vt.indexOf("f = staged;") > 0 && vt.indexOf("VirusTotal.sha256(f)") > vt.indexOf("f = staged;"));
+      // the page shows a verdict only for the file it asked about: each answer (progress, result, error) names that file, not the staged copy
+      is("every VirusTotal answer names the file it is for", vt != null && vt.split("notifyUpdates\\(\"onVtResult\"", -1).length == 4 && vt.split("put\\(\"path\", path\\)", -1).length == 4);
       routeHas(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb, long requested)", "fmPrivate(p)", null);
       routeHas(m, "private String archiveOpenAny(", "fmPrivate(p)", null);
       routeHas(m, "public String archiveExtract2(", "fmPrivate(dest)", null);

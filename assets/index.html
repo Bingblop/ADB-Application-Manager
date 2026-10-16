@@ -39,6 +39,7 @@
             --status-frozen: #00E5FF;
             --status-system: #7C4DFF;
             --status-user: #FF9100;
+            --status-warn: #FFA726;                  /* the mode badge's text and dot while no working mode is ready (Read-Only, Setup, not ready) */
             --status-bloat: #FF5252;                 /* bloatware and every destructive or danger state */
             --status-suspended: #FFC400;             /* suspended apps and warnings */
             --status-mod: #19D3C5;                   /* the tag of an app a patch (Morphe, ReVanced) changed */
@@ -63,6 +64,7 @@
             --line-running: color-mix(in srgb, var(--status-running) 35%, transparent);
             --tint-frozen: color-mix(in srgb, var(--status-frozen) 12%, transparent);
             --tint-system: color-mix(in srgb, var(--status-system) 12%, transparent);
+            --line-system: color-mix(in srgb, var(--status-system) 35%, transparent);
             --tint-user: color-mix(in srgb, var(--status-user) 12%, transparent);
             --tint-user-strong: color-mix(in srgb, var(--status-user) 22%, transparent);
             --line-user: color-mix(in srgb, var(--status-user) 35%, transparent);
@@ -348,6 +350,13 @@
         @media (max-width: 360px) { #execModeBadge { max-width: 47vw; } #execModeBadge #execModeText { font-size: var(--fs-overline); letter-spacing: -0.2px; } }          /* "Setup Mode (Read-Only)", the first-run state, whole at 320 px (the smallest step of the type scale, a little tighter) */
         #execModeBadge #execModeText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; }
         #execModeBadge .status-dot { flex: 0 0 auto; }
+        /* its colours say what the working mode is (checkAllWorkingModes sets data-tone): "on" a mode is ready, "root" Root, "none" no mode is ready yet
+           (Read-Only, Setup, a chosen mode that is not ready). From the theme's status colours, so a light theme darkens them until they read */
+        #execModeBadge[data-tone="on"] { background: color-mix(in srgb, var(--status-running) 15%, transparent); border-color: color-mix(in srgb, var(--status-running) 40%, transparent); }
+        #execModeBadge[data-tone="root"] { background: color-mix(in srgb, var(--status-system) 15%, transparent); border-color: color-mix(in srgb, var(--status-system) 40%, transparent); color: var(--status-system); }
+        #execModeBadge[data-tone="root"] .status-dot { background: var(--status-system); }
+        #execModeBadge[data-tone="none"] { background: color-mix(in srgb, var(--status-user) 15%, transparent); border-color: color-mix(in srgb, var(--status-user) 40%, transparent); color: var(--status-warn); }
+        #execModeBadge[data-tone="none"] .status-dot { background: var(--status-warn); }
 
         /* the title: "ADB System" over "Manager", "ADB" and "Manager" in the accent and "System" in the text colour, heavy and tight. Solid colours only: a
            gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView, which left only "Full" and "System" */
@@ -2302,13 +2311,15 @@
             cursor: pointer;
         }
 
-        .saved-lists-toolbar {
+        .saved-lists-toolbar,
+        #appsSavedFallback {                         /* the same three on the Apps tab while Saved Applications is switched off */
             display: flex;
             flex-wrap: wrap;                         /* New List, Profiles, CSV, Backups: one row, two on a very narrow screen */
             gap: var(--space-2);
             margin-bottom: var(--space-4);
         }
-        .saved-lists-toolbar > .bs-btn { flex: 1 0 auto; white-space: nowrap; padding-inline: var(--space-3); }
+        .saved-lists-toolbar > .bs-btn,
+        #appsSavedFallback > .bs-btn { flex: 1 0 auto; white-space: nowrap; padding-inline: var(--space-3); }
 
         .saved-list-card {
             background: var(--bg-card);
@@ -3368,13 +3379,14 @@
             opacity: 0.85;
         }
 
-        /* the Read-Only banner (Application Manager) can be put away with the X in its top right corner; it comes back the next time the app starts in read-only mode */
+        /* the Read-Only banner (Application Manager) can be put away with the X in its top right corner; it comes back the next time the app starts in read-only mode.
+           The corner is the line's end (top left in Arabic), above Set Up: a fixed right would put it on the title once the row is mirrored. */
         #modeAlertCard { position: relative; }
         #modeAlertCard .mode-alert-btn { margin-top: var(--space-5); }
         .mode-alert-x {
             position: absolute;
             top: 6px;
-            right: 8px;
+            inset-inline-end: 8px;
             width: 28px;
             height: 28px;
             border-radius: 50%;
@@ -4271,6 +4283,9 @@
            (computed in JS there). A translucent token laid over an opaque colour (linear-gradient(t, t), base) is the same mix. */
         @supports not (color: color-mix(in srgb, red 50%, blue)) {
             #prefsHeaderBtn { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--bg-card); border-color: var(--line-accent); }
+            #execModeBadge[data-tone="on"] { background: var(--tint-running); border-color: var(--line-running); }
+            #execModeBadge[data-tone="root"] { background: var(--tint-system); border-color: var(--line-system); }
+            #execModeBadge[data-tone="none"] { background: var(--tint-user); border-color: var(--line-user); }
             .bn-tile .bn-ico, .bn-tile.current, .bn-sc.fav { background: var(--tint-accent); }
             .nav-opt[aria-checked="true"] { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--input-bg); }
             .bn-menu { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line-accent); }
@@ -4350,6 +4365,13 @@
                 </select>
                 <span class="apps-row-label apps-row-label-2" id="appsActionBtnPickTitle" aria-hidden="true">Button</span>
                 <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
+            </div>
+            <!-- Profiles, CSV and Backups belong to Saved Applications (v7.14). Only while that tab is switched off in the Feature List are they here
+                 too (tabsApplyConfig), so they can still be reached -->
+            <div id="appsSavedFallback" style="display:none;">
+                <button class="batch-tool-link bs-btn" onclick="openProfiles()">Profiles</button>
+                <button class="batch-tool-link bs-btn" onclick="exportAppList(true)" aria-label="Share the app list as CSV">CSV</button>
+                <button class="batch-tool-link bs-btn" onclick="openBackups()">Backups</button>
             </div>
 
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
@@ -4523,7 +4545,7 @@
                         <button class="batch-tool-link" id="apkSelBtn" onclick="apkSelToggle()">Select</button>
                         <button class="batch-tool-link" id="apkSelCleanBtn" style="display:none;" onclick="apkSelCleanup()">Select duplicates and older versions</button>
                         <button class="batch-tool-link" id="apkSelAllBtn" style="display:none;" onclick="apkSelAll()">All</button>
-                        <button class="batch-tool-link" id="apkSelDelBtn" style="display:none; color:#FF5252;" onclick="apkSelDelete()">Delete selected</button>
+                        <button class="batch-tool-link" id="apkSelDelBtn" style="display:none; color:var(--status-bloat);" onclick="apkSelDelete()">Delete selected</button>
                     </div>
                     <div id="apkScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
                     <div id="apkScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="apkScanBarFill"></div></div>
@@ -4924,7 +4946,7 @@
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
                     <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
-                    <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
+                    <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
                 <div class="fm-selbar" id="fmClipBar" style="display:none;">
@@ -7661,7 +7683,7 @@
                     <li><b>File Manager → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>Sign</b>, then install it.</li>
                     <li>Installs started from <b>File Manager</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
                     <li><b>Console → ADB Shell → Rish mode</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
-                    <li><b>Console → Live Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
+                    <li><b>Live Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
                 </ul>
             </div>
 
@@ -9277,7 +9299,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
             <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.</div>
             <div style="display:flex; gap:10px; margin-top:12px;">
-                <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:linear-gradient(135deg,#FF5252,#FF8A65);" onclick="confirmApkDelete()">Delete from this device</button>
+                <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:var(--danger-solid); color:var(--on-danger);" onclick="confirmApkDelete()">Delete from this device</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeApkDelete()">Cancel</button>
             </div>
         </div>
@@ -10658,6 +10680,9 @@ Type any command above (e.g. pm list packages -d)</div>
     <script>
         // Global State
         let allApps = [];
+        // what the app sheet's deeper check (the app's file, its signing key) found, by package: { mods, at } with at = the app's last update time.
+        // The list itself only runs the cheap check, so a reload of it puts these back while the app is the same install (see loadPackageData)
+        const deepMods = new Map();
         let filteredApps = [];
         let selectedPkgs = new Set();
         let batchPanelExpanded = false;
@@ -11238,6 +11263,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // A tab that was switched off cannot be the Back target any more
         function tabsApplyConfig() {
             viewStack = viewStack.filter(tabIsOn);
+            const savedFallback = document.getElementById('appsSavedFallback');          // Profiles, CSV and Backups on the Apps tab while Saved Applications is off
+            if (savedFallback) savedFallback.style.display = tabIsOn('saved-lists') ? 'none' : '';
             renderTabBar();
             if (typeof featureRender === 'function') featureRender();
             if (typeof navScRender === 'function') navScRender();
@@ -13112,8 +13139,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const pinnedButNotReady = configured !== 'auto' && configured !== 'unprivileged' && !d.modeAvailable;
 
                 // Update Header Badge
-                const badge = document.getElementById('execModeBadge');
-                const dot = document.getElementById('execModeDot');
+                const badge = document.getElementById('execModeBadge');          // its colours are the #execModeBadge[data-tone] rules
                 const text = document.getElementById('execModeText');
 
                 let label;
@@ -13131,28 +13157,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (configured === 'auto' && isPrivilegedActive) label = 'Auto • ' + label;
 
                 if (pinnedButNotReady) {
-                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
-                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
-                    badge.style.color = '#FFA726';
-                    dot.style.background = '#FFA726';
+                    badge.dataset.tone = 'none';
                     text.innerText = `${label} (not ready)`;
                 } else if (currentWorkingMode === 'root' && isPrivilegedActive) {
-                    badge.style.background = 'rgba(124, 77, 255, 0.15)';
-                    badge.style.borderColor = 'rgba(124, 77, 255, 0.4)';
-                    badge.style.color = 'var(--status-system)';
-                    dot.style.background = 'var(--status-system)';
+                    badge.dataset.tone = 'root';
                     text.innerText = label;
                 } else if (isPrivilegedActive) {
-                    badge.style.background = 'rgba(0, 230, 118, 0.15)';
-                    badge.style.borderColor = 'rgba(0, 230, 118, 0.4)';
-                    badge.style.color = 'var(--status-running)';
-                    dot.style.background = 'var(--status-running)';
+                    badge.dataset.tone = 'on';
                     text.innerText = label;
                 } else {
-                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
-                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
-                    badge.style.color = '#FFA726';
-                    dot.style.background = '#FFA726';
+                    badge.dataset.tone = 'none';
                     text.innerText = configured === 'unprivileged' ? 'Read-Only Mode' : 'Setup Mode (Read-Only)';
                 }
 
@@ -14253,7 +14267,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- Debloat history ----------
         const HISTORY_LIMIT = 150;
         const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend' };
-        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates' };
+        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates', update: 'Updated' };
         let debloatHistory = null;
 
         function getHistory() {
@@ -14306,7 +14320,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <div class="hist-head">
                             <div>
                                 <div class="hist-title">${escapeHtml(e.title)}</div>
-                                <div class="hist-meta">${escapeHtml(when)} • ${escapeHtml(e.source === 'debloater' ? 'Debloater' : e.source === 'undo' ? 'Undo' : 'Applications')} • ${ok}/${e.items.length} succeeded</div>
+                                <div class="hist-meta">${escapeHtml(when)} • ${escapeHtml(e.source === 'debloater' ? 'Debloater' : e.source === 'undo' ? 'Undo' : e.source === 'updates' ? 'Updater' : 'Applications')} • ${ok}/${e.items.length} succeeded</div>
                             </div>
                             ${undoable ? `<button class="mode-action-btn" data-id="${e.id}" onclick="undoHistory(this.getAttribute('data-id'))">Undo</button>` : ''}
                         </div>
@@ -18852,6 +18866,15 @@ Type any command above (e.g. pm list packages -d)</div>
                 const jsonStr = window.AndroidBridge.loadPackages();
                 allApps = JSON.parse(jsonStr);
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                // the sheet's deeper finding stays on the row while the app is the same install; an update, a reinstall or an uninstall drops it
+                if (deepMods.size) {
+                    const byPkg = new Map(allApps.map(a => [a.pkg, a]));
+                    deepMods.forEach((k, pkg) => {
+                        const a = byPkg.get(pkg);
+                        if (!a || a.updatedAt !== k.at) { deepMods.delete(pkg); return; }
+                        a.mods = Array.from(new Set((a.mods || []).concat(k.mods)));
+                    });
+                }
                 trackersLoadCached();
                 renderApps();
                 if (activeFilters.has('trackers')) trackersEnsure(false);
@@ -19122,6 +19145,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const from = Math.min(filteredApps.length, appsShown);
             appsShown += APPS_PAGE;
             container.insertAdjacentHTML('beforeend', filteredApps.slice(from, appsShown).map(appCardHtml).join('') + appsMoreHtml());
+            rowBusyApply();          // a batch may already be working on the apps of this page: their rows say so too
             appsLoadIcons();
             appsWatchMore();
         }
@@ -20704,8 +20728,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function usStatus(text, err) {
             const el = usEl('usStatus');
             if (!text) { el.style.display = 'none'; el.textContent = ''; return; }
-            el.style.display = ''; el.textContent = text; el.classList.toggle('is-err', !!err);
-            el.style.color = err ? '#FF5252' : '';
+            el.style.display = ''; el.textContent = text; el.classList.toggle('is-err', !!err);          // .is-err: the theme's danger colour
         }
         function usBar(pct) {
             const b = usEl('usBar');
@@ -20839,7 +20862,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const box = usEl('usV' + i);
             box.innerHTML = '<div class="us-pkg">' + escapeHtml(txT('Looking for versions...')) + '</div>';
             const r = await usList(c, cfg);
-            if (!r.ok) { box.innerHTML = '<div class="us-pkg" style="color:#FF5252;">' + escapeHtml(r.error || txT('The versions could not be read.')) + '</div>' + (r.browse ? '<div class="us-acts"><button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'\')">Open it here, in the app</button></div>' : ''); us.browse = r.browse || ''; return; }
+            if (!r.ok) { box.innerHTML = '<div class="us-pkg" style="color:var(--status-bloat);">' + escapeHtml(r.error || txT('The versions could not be read.')) + '</div>' + (r.browse ? '<div class="us-acts"><button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'\')">Open it here, in the app</button></div>' : ''); us.browse = r.browse || ''; return; }
             us.vers[i] = r.data;
             let items = r.data.versions || [];
             if (!cfg.split) items = items.filter(x => !/^(apkm|apks|xapk)$/i.test(x.format || ''));
@@ -21095,6 +21118,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Find package files on storage (automatic search) ----
         let apkScanFiles = [];
+        let apkScanCutEmpty = false;         // the last search stopped early before it found anything: that is not "no files on this device"
         let apkScanDone = false;
         let apkScanning = false;
         let apkScanTimer = null;
@@ -21195,6 +21219,7 @@ Type any command above (e.g. pm list packages -d)</div>
             apkScanDone = true;
             apkScanFiles = Array.isArray(d.files) ? d.files : [];
             apkScanFiles.forEach(f => { f._trunc = !!d.truncated; });
+            apkScanCutEmpty = !!d.truncated && !apkScanFiles.length;
             apkSel.clear();
             renderApkScan();
             apkSelRender();
@@ -21218,7 +21243,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const shown = apkScanFiles.map((f, i) => ({ f: f, i: i }))
                 .filter(x => (!kind || x.f.kind === kind) && (!q || (x.f.name + ' ' + x.f.path).toLowerCase().includes(q)));
             if (!apkScanFiles.length) {
-                st.style.display = ''; st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
+                st.style.display = '';
+                if (apkScanCutEmpty) errNote(st, 'The search took too long. Tap Find APKs to try again.');
+                else st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
                 document.getElementById('apkScanTip').style.display = 'none';
                 list.innerHTML = '';
                 return;
@@ -21781,6 +21808,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (typeof mp === 'object' && mp && mp.h && mp.h.tab === 'set' && document.getElementById('mpSheetBody') && typeof mpHelperRender === 'function') { try { mpHelperRender(); } catch (e) {} }
         }
         let vtBusyScan = false;
+        let vtScanPath = '';           // the file the last scan was sent for; an answer for any other file is dropped
 
         function vtBaseApkPath() {
             if (!installData || !installData.splits) return '';
@@ -21791,7 +21819,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function resetVtScan() {
             const box = document.getElementById('vtResultBox');
             if (box) { box.style.display = 'none'; box.innerHTML = ''; }
-            vtBusyScan = false;
+            vtBusyScan = false; vtScanPath = '';
             vtRefreshUi();
         }
 
@@ -21804,13 +21832,15 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             const box = document.getElementById('vtResultBox');
             box.style.display = ''; box.innerHTML = upload ? 'Uploading to VirusTotal…' : 'Checking VirusTotal…';
-            document.getElementById('vtScanBtn').disabled = true; vtBusyScan = true;
+            document.getElementById('vtScanBtn').disabled = true; vtBusyScan = true; vtScanPath = path;
             if (upload) window.AndroidBridge.virusTotalUpload(key, path);
             else window.AndroidBridge.virusTotalScan(key, path);
         }
 
         function onVtResult(json) {
             let d; try { d = JSON.parse(json); } catch (e) { return; }
+            // the app names the file each answer is for: a late answer for a package that was replaced since, or for an earlier scan, is not this package's verdict
+            if (d.path != null && d.path !== vtScanPath) return;
             const box = document.getElementById('vtResultBox');
             const btn = document.getElementById('vtScanBtn');
             if (!box) return;
@@ -22462,17 +22492,18 @@ Type any command above (e.g. pm list packages -d)</div>
             const entries = [];
             let error = null;
             (raw || '').split('\n').forEach(line => {
-                const t = line.replace(/\r$/, '').trim();
+                const l = line.replace(/\r+$/, ''), t = l.trim();
                 if (!t || t.startsWith('total ')) return;
                 const low = t.toLowerCase();
                 if (low.startsWith('ls:') || low.includes('permission denied') || low.includes('no such file') || low.includes('not a directory') || low.includes('operation not permitted')) { if (!error) error = t; return; }
-                const e = parseLsLine(t);
+                const e = parseLsLine(l);          // not trimmed: a name's own leading or trailing spaces are part of it
                 if (e) entries.push(e);
             });
             return { entries, error: entries.length ? null : error };
         }
         function parseLsLine(ln) {
-            const parts = ln.split(/\s+/);
+            ln = ln.replace(/^\s+/, '');
+            const parts = ln.trim().split(/\s+/);
             if (parts.length < 4) return null;
             const perms = parts[0];
             if (!/^[-dlbcps][-rwxsStT]{9}/.test(perms)) return null;
@@ -22482,10 +22513,13 @@ Type any command above (e.g. pm list packages -d)</div>
             let name;
             let size = 0;
             const sz = parseInt(parts[4], 10); if (!isNaN(sz)) size = sz;
-            if (timeIdx >= 0 && timeIdx + 1 < parts.length) name = parts.slice(timeIdx + 1).join(' ');
+            // the name is cut from the line as ls printed it (one space after the time), not put together again from its words:
+            // "a  b.txt", a tab or a leading space in a name is kept, so the row's actions reach that file and not a near twin
+            const at = timeIdx >= 0 ? ln.match(new RegExp('^(\\S+\\s+){' + timeIdx + '}\\S+\\s')) : null;          // a plain group: tests/i18n/extract.js would take '(?:' for text
+            if (at && at[0].length < ln.length) name = ln.slice(at[0].length);
             else name = parts[parts.length - 1];
             let link = null;
-            const arrow = name.indexOf(' -> ');
+            const arrow = type === 'l' ? name.indexOf(' -> ') : -1;     // only a link has a target; " -> " in another name is part of the name
             if (arrow >= 0) { link = name.slice(arrow + 4); name = name.slice(0, arrow); }
             // Reduce an absolute/slashed name (e.g. a lone symlink listing printed as "/sdcard") to its basename.
             name = name.replace(/\/+$/, ''); if (name.indexOf('/') >= 0) name = name.slice(name.lastIndexOf('/') + 1);
@@ -27554,7 +27588,7 @@ Type any command above (e.g. pm list packages -d)</div>
             lcRecItems = items;
             box.innerHTML = items.length
                 ? items.map((it, i) => `<div class="lc-rec-row" onclick="lcvOpen(lcRecItems[${i}].name)" role="button" tabindex="0"><div class="lc-rec-main"><div class="lc-rec-name" translate="no">${escapeHtml(lcRecWhen(it.name, it.modified))}</div><div class="lc-rec-sub" translate="no">${escapeHtml(it.name)} · ${lcRecSize(it.size)}</div></div><div class="lc-rec-del" onclick="event.stopPropagation(); lcRecDelete(${i})" role="button" aria-label="Delete">✕</div></div>`).join('')
-                : emptyStateHtml({ key: 'lcrec-none', icon: 'log', title: 'No recordings yet.', hint: 'Tap Record to file in Console, Live Logcat to make one.', compact: true });
+                : emptyStateHtml({ key: 'lcrec-none', icon: 'log', title: 'No recordings yet.', hint: 'Tap Record to file in Live Logcat to make one.', compact: true });
         }
         let lcRecItems = [];
         function lcRecDelete(i) {
@@ -28506,7 +28540,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // A full screen of its own over the Task Manager (Back, the arrow and the X close it). SpeedTest.java measures (latency, then download,
         // then upload against Cloudflare) and streams events to window.onSpeedTest; this part only shows them. While the screen is open the
         // Task Manager's own poll is paused (it would compete with the test for the CPU and the radio) and it resumes on closing. A test stops
-        // on Stop, on closing the screen, on leaving the tab and when the app goes to the background; the app stops it in onDestroy.
+        // on Stop, on closing the screen, on leaving the tab, when the app goes to the background and when the network changes; the app stops it in onDestroy.
         const ST_TICKS = [0, 1, 5, 10, 20, 50, 100, 250, 500, 1000];           // the gauge's scale: equal steps between these, so 3 Mbps and 300 both move the needle
         const ST_HIST_KEY = 'speedtest_history', ST_HIST_MAX = 10;
         const ST_COLOS = { AMS: 'Amsterdam', ARN: 'Stockholm', ATL: 'Atlanta', ATH: 'Athens', BCN: 'Barcelona', BKK: 'Bangkok', BNE: 'Brisbane', BOG: 'Bogotá', BOM: 'Mumbai', BOS: 'Boston',
@@ -28517,7 +28551,7 @@ Type any command above (e.g. pm list packages -d)</div>
             OSL: 'Oslo', OTP: 'Bucharest', PDX: 'Portland', PHX: 'Phoenix', PRG: 'Prague', SCL: 'Santiago', SEA: 'Seattle', SFO: 'San Francisco', SIN: 'Singapore', SJC: 'San Jose',
             SOF: 'Sofia', SYD: 'Sydney', TLV: 'Tel Aviv', TPE: 'Taipei', VIE: 'Vienna', WAW: 'Warsaw', YUL: 'Montreal', YVR: 'Vancouver', YYZ: 'Toronto', ZRH: 'Zurich' };
         const ST_NET_LABEL = { wifi: 'Wi-Fi', cellular: 'Mobile data', ethernet: 'Ethernet', vpn: 'VPN', other: 'Other network', none: 'No connection' };
-        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, ping: null, jitter: null, down: null, up: null, colo: '',
+        let spd = { open: false, id: '', running: false, seq: 0, phase: '', net: null, netStart: null, netAt: 0, ping: null, jitter: null, down: null, up: null, colo: '',
             samples: { download: [], upload: [] }, phaseMs: { download: 10000, upload: 10000 }, rampMs: { download: 2000, upload: 2000 },
             target: 0, targetV: 0, shown: 0, gaugeKey: '', frame: 0, lastT: 0, graphFrame: 0, dirty: {}, colors: null, ticks: false, result: null };
 
@@ -28632,13 +28666,17 @@ Type any command above (e.g. pm list packages -d)</div>
             ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
         }
 
-        function stNetRefresh() {
+        function stNetRead() {
             let n = null;
             try { if (window.AndroidBridge && window.AndroidBridge.speedTestNetInfo) n = JSON.parse(window.AndroidBridge.speedTestNetInfo()); } catch (e) { n = null; }
             if (!n || typeof n !== 'object') n = { type: 'other', metered: false };
             if (!ST_NET_LABEL[n.type]) n.type = 'other';
             n.metered = !!n.metered;
             n.maxBytes = +n.maxBytes > 0 ? +n.maxBytes : 350e6;
+            return n;
+        }
+        function stNetRefresh() {
+            const n = stNetRead();
             spd.net = n;
             const label = txT(ST_NET_LABEL[n.type]);
             stText('stNetText', n.metered ? label + ' · ' + txT('metered') : label);
@@ -28726,6 +28764,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { r = JSON.parse(window.AndroidBridge.speedTestStart(JSON.stringify({ id: id }))); } catch (e) { r = null; }
             if (!r || !r.ok) { stErr(r && r.error ? txT('Could not start:') + ' ' + r.error : 'Could not start the test.'); stButton(); return; }
             spd.id = id; spd.running = true; spd.phase = 'starting';
+            spd.netStart = spd.net; spd.netAt = Date.now();                // the network shown (and agreed to) at Start: see stNetMoved
             stText('stPhase', txT('Connecting…'));
             stButton();
         }
@@ -28742,11 +28781,25 @@ Type any command above (e.g. pm list packages -d)</div>
             stButton();
         }
 
+        // The app opens each connection of the test on whatever network Android uses at that moment, so a test begun on Wi-Fi would go on over
+        // mobile data if the Wi-Fi dropped, without the warning, and save a result measured on two networks under the first. While a test runs the
+        // network is read again (at each phase, at the end, and about once a second in between): another type of network, or one that became
+        // metered, ends the test.
+        function stNetMoved(force) {
+            const a = spd.netStart; if (!a) return false;
+            const now = Date.now();
+            if (!force && now - spd.netAt < 1000) return false;
+            spd.netAt = now;
+            const n = stNetRead();
+            return n.type !== a.type || (n.metered && !a.metered);
+        }
+
         window.onSpeedTest = function (raw) {
             let e;
             try { e = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (x) { return; }
             if (!e || !spd.running || e.id !== spd.id) return;                 // another (stopped) test, or none running
             const type = e.type;
+            if (stNetMoved(type === 'phase' || (type === 'done' && e.ok))) { stStop('Failed'); stErr('The network changed during the test.'); stNetRefresh(); return; }
             if (type === 'phase') {
                 spd.phase = e.phase;
                 if (e.phase === 'latency') { stText('stPhase', txT('Ping')); stText('stUnit', 'ms'); stText('stNum', '—'); stLive('stCardPing'); }
@@ -29016,9 +29069,13 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             renderInspectorDates(d);
             // the sheet shows no "Patched / modified" box any more (the owner's choice, v7.14); what its deeper check (the app's file, its signing key) finds goes to the
-            // list instead, so the row's tag and the Patched filter carry it from the next time the list is drawn
-            const listed = d && inspectedPkg ? allApps.find(a => a.pkg === inspectedPkg) : null;
-            if (listed && Array.isArray(d.mods) && d.mods.length > ((listed.mods && listed.mods.length) || 0)) listed.mods = d.mods.slice();
+            // list instead: the row's tag and the Patched filter show it at once, and a reload of the list keeps it (deepMods) while the app is the same install
+            if (d && inspectedPkg && Array.isArray(d.mods)) {
+                if (d.mods.length) deepMods.set(inspectedPkg, { mods: d.mods.slice(), at: d.lastUpdateTime }); else deepMods.delete(inspectedPkg);
+                const listed = allApps.find(a => a.pkg === inspectedPkg);
+                const mods = listed ? Array.from(new Set((listed.mods || []).concat(d.mods))) : [];
+                if (listed && mods.length > ((listed.mods && listed.mods.length) || 0)) { listed.mods = mods; renderApps(); }
+            }
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();
@@ -30051,6 +30108,7 @@ Type any command above (e.g. pm list packages -d)</div>
             css.setProperty('--apps-uninstalled', ink('#FF5252'));
             css.setProperty('--apps-system', ink('#A33CFF'));
             css.setProperty('--status-user', ink('#FF9100'));
+            css.setProperty('--status-warn', ink('#FFA726'));
             css.setProperty('--status-suspended', ink(light ? '#FFAB00' : '#FFC400'));
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
@@ -30582,7 +30640,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'storage_legacy', name: 'Read/Write External Storage', perm: 'READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE', why: 'The older storage permission some apps still check for.', adbOnly: true },
             { key: 'secure_settings', name: 'Write Secure Settings', perm: 'WRITE_SECURE_SETTINGS', why: 'Lets this app change a few protected system settings used by some advanced features.', adbOnly: true },
             { key: 'dump', name: 'Dump system services (DUMP)', perm: 'DUMP', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true },
-            { key: 'read_logs', name: 'Read Logs', perm: 'READ_LOGS', why: "Lets this app read the system log (logcat) of every app itself, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true }
+            { key: 'read_logs', name: 'Read Logs', perm: 'READ_LOGS', why: "Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.", adbOnly: true, known: true }
         ];
         // Every row the app build reports is listed, with or without a working mode (an adbOnly one is locked without it)
         function visiblePermDefs() { return PERM_DEFS.filter(d => !d.known || permStatus[d.key] !== undefined); }
@@ -31252,11 +31310,15 @@ Type any command above (e.g. pm list packages -d)</div>
             termSyncModeUi();
         }
 
+        // a command is still running where runTerminalCmd would send a proposed one (the Rish shell or this console), so it would be refused
+        function termAiCmdBusy() { return rishActive ? rishRunning : !!termShellRun; }
+
         function termAiProposeRun(who, cmd) {
             const term = (termAiCard && termAiCard.out) || cnSink().out;
             const id = 'tac' + (++termAiSeq);
             termAiPending[id] = cmd;
-            if (!txSettings.askRun) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
+            // run at once only when it can start; otherwise it is offered with Run and Skip like any proposal, so it is not lost
+            if (!txSettings.askRun && !termAiCmdBusy()) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
             term.insertAdjacentHTML('beforeend', '<div id="' + id + '" style="margin:6px 0; border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; background:var(--input-bg);">'
                 + '<div style="color:var(--text-muted); font-size:11px;">' + escapeHtml(who) + ' wants to run this:</div>'
                 + '<div style="color:var(--text-main); word-break:break-all;" translate="no">' + escapeHtml(cmd) + '</div>'
@@ -31266,6 +31328,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function termAiRunProposed(id) {
             const cmd = termAiPending[id];
             if (cmd === undefined) return;
+            // before the proposal is let go: its Run and Skip stay, to be tapped once the running command is done
+            if (termAiCmdBusy()) { showToast(rishActive ? 'A command is still running. Tap STOP to end it.' : 'A command is still running. Wait for it to finish.'); return; }
             delete termAiPending[id];
             haptic();
             const card = document.getElementById(id);
@@ -32294,9 +32358,12 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function txCopyScreen() {
             const sc = txScreen(txCurShell());
-            const sel = String(window.getSelection ? window.getSelection() : '');
-            copyText(sel && sc.el.contains(window.getSelection().anchorNode) ? sel : sc.el.innerText);
-            showToast(sel ? 'Copied the selection' : 'Copied the screen');
+            const s = window.getSelection ? window.getSelection() : null;
+            const sel = s ? String(s) : '';
+            // text selected elsewhere (the input line, a label) is not copied: the screen is, and the toast says so
+            const inScreen = !!sel && sc.el.contains(s.anchorNode);
+            copyText(inScreen ? sel : sc.el.innerText);
+            showToast(inScreen ? 'Copied the selection' : 'Copied the screen');
         }
 
         // ---------------------------------------------------------------- running commands
@@ -33767,7 +33834,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 txNote('[' + cli.name + ' in Termux' + (useKey ? ', with your saved key' : ', with its own sign-in') + ']', 'termux');
                 const r = await txExec('termux', txCliWrap(cli, inner, useKey), 'agent', { env: useKey ? { [cli.env]: ag.provider } : null });
                 const out = txStripAnsi(r.output || '');
-                if (r.exit === 127 || /command not found|No such file or directory.*(claude|gemini|codex|copilot|agent|opencode)|proot-distro: command not found|not installed/i.test(out)) {
+                // the answer itself may say "not installed" or "command not found": only a run that failed is read as a missing CLI
+                if (r.exit === 127 || (r.exit !== 0 && /command not found|No such file or directory.*(claude|gemini|codex|copilot|agent|opencode)|proot-distro: command not found|not installed/i.test(out))) {
                     txNote('[' + cli.name + ' does not seem to be installed yet]', 'termux', 'tx-err');
                     txButtons('termux', [{ label: 'Install ' + cli.name, go: true, on: () => txInstallCli(ag) }, { label: 'Connect sheet', on: () => txOpenConnect(ag.id) }]);
                 } else {
@@ -36488,9 +36556,18 @@ Type any command above (e.g. pm list packages -d)</div>
                 + (e.lf ? '' : '<button class="batch-tool-link" style="padding:6px 0 0;" onclick="sdbRevert(' + e.n + ')">Revert</button>') + '</div>').join('');
         }
 
-        function sdbRevert(n) {
+        function sdbRevert(n, tried) {
             const e = sdbJournal.find(x => x.n === n);
             if (!e || e.lf) return;
+            // a table not read yet (still reading, or the read failed) is read first, as for a restore: without it the setting would look "not set",
+            // and the value put back would be journaled as new, so a Revert of that entry would delete the setting
+            if (!sdbData[e.ns]) {
+                if (tried) { showToast('Could not read the settings'); return; }
+                sdbReadTable(e.ns);              // a read already running is waited for
+                const wait = () => { if (sdbLoading[e.ns]) setTimeout(wait, 100); else sdbRevert(n, true); };
+                setTimeout(wait, 100);
+                return;
+            }
             const cur = sdbData[e.ns] && sdbData[e.ns].has(e.k) ? sdbData[e.ns].get(e.k) : null;
             const say = v => v === null ? 'not set' : '“' + sdbClip(v, 60) + '”';
             if (!e.lv && cur !== e.v && !confirm(e.k + ' has changed since: it is now ' + say(cur) + ' (this change left it ' + say(e.v) + ').\n\nPut the old value back anyway?')) return;
@@ -39774,9 +39851,12 @@ Type any command above (e.g. pm list packages -d)</div>
         async function mpHGetVersion(i) {
             const x = mp.h.versions && mp.h.versions.versions[i];
             if (!x) return;
+            // the list stays tappable while a download runs: a second tap (or another row of the same version) would write the same file
+            if (mp.h.busy) return;
             mp.h.ver = x.version; mp.h.abi = x.abi || mp.h.abi;
             const h = mp.h;
-            h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
+            // another file is coming: the verdict of the one before is not its verdict
+            h.busy = true; h.got = null; h.vt = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
             const r = await mpCall('helperGet', { source: h.src, pkg: h.pkg, version: x.version, abi: x.abi || h.abi, policy: 'requested', sources: [h.src], save: mp.cfg.hSave, conn: mp.cfg.hConn, url: x.url || '', page: x.page || '' });
             h.busy = false;
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
@@ -39958,6 +40038,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
             vtLoadQuota(true);
             mp.h.vtBusy = false;
+            // another file arrived while this one was scanned: its answer must not label the new one
+            if (mp.h.got !== g) { mpHelperRender(); return; }
             if (!r.ok) { mpHMsg(r.error || 'The VirusTotal scan did not work', true); mpHelperRender(); return; }
             mp.h.vt = r.data; mpHelperRender();
             if (r.data && (r.data.verdict === 'malicious' || r.data.verdict === 'suspicious')) showToast('VirusTotal flags this file as ' + r.data.verdict);
@@ -41257,7 +41339,16 @@ Type any command above (e.g. pm list packages -d)</div>
         async function sdDeleteAll() {
             const ready = SD_TOOLS.filter(t => sdTool(t.id).hasData && !sdBusy(sdTool(t.id)));
             if (!ready.length) { showToast('There is nothing to delete. Scan first.'); return; }
-            if (!await mpAsk({ title: 'Confirm deletion', text: 'Delete results in all tools?\n\n' + ready.map(t => t.name + ': ' + (sdTool(t.id).summary && sdTool(t.id).summary.primary || '')).join('\n'), ok: 'Delete', danger: true })) return;
+            // a tool whose review took something out deletes only what is still ticked: its line says that, not the whole scan. The closing
+            // sentence says why, and it keeps a translation from reading the whole question as one "{0}: {1} selected items" line.
+            let taken = false;
+            const lines = ready.map(t => {
+                const st = sdSelStats(t.id);
+                if (st.all) return t.name + ': ' + (sdTool(t.id).summary && sdTool(t.id).summary.primary || '');
+                taken = true;
+                return t.name + ': ' + st.count + ' selected item' + (st.count === 1 ? '' : 's') + (st.bytes ? ' (' + sdSizeStr(st.bytes) + ')' : '');
+            });
+            if (!await mpAsk({ title: 'Confirm deletion', text: 'Delete results in all tools?\n\n' + lines.join('\n') + (taken ? '\n\nWhat you took out in Details is kept.' : ''), ok: 'Delete', danger: true })) return;
             for (const t of ready) { const r = await sdCall('delete', { tool: t.id, selection: sdSelection(t.id, sdDeleteOptions(t.id)) }); if (!r.ok) { sdFail(r); break; } }
         }
 

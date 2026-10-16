@@ -457,6 +457,35 @@ public final class ZipTool {
         }
     }
 
+    /**
+     * Opens an archive of any format this app reads; the first bytes decide. A file that starts as a RAR, a 7z, a tar or a compressed file
+     * is opened as that, never as a zip (or RAR) further in: a plain tar or a stored 7z keeps a member APK byte for byte, so that member's
+     * end record can sit near the end of the file, and the zip scan would take the one member for the whole archive (and "Delete the
+     * archive afterwards" would then delete everything else in it). Anything else is tried as a zip first (a bounded scan for its end
+     * record, cheap even to rule a huge non-zip file out; a self-extractor stub or a CRX header in front is fine), then as a RAR behind a
+     * self-extractor stub, then as what {@link ArchiveIo} makes of its name. {@code password} opens an encrypted RAR or 7z; {@code cb}
+     * (may be null) can stop the listing of a compressed tar.
+     */
+    static Archive openAny(File f, char[] password, ArchiveIo.Progress cb) throws IOException {
+        String lead = ArchiveIo.magicOf(f);
+        if ("rar".equals(lead)) return RarSource.open(f, password);
+        if (lead != null && !"zip".equals(lead)) {
+            String fmt = ArchiveIo.detect(f);
+            if (!ArchiveIo.supportsRead(fmt)) throw new IOException("This ." + fmt + " archive can't be opened on this phone");
+            return ArchiveIoSource.open(f, fmt, password, cb);
+        }
+        IOException zipErr;
+        try {
+            return open(f);
+        } catch (IOException e) {
+            zipErr = e;
+        }
+        if (RarReader.isRar(f)) return RarSource.open(f, password);
+        String fmt = ArchiveIo.detect(f);
+        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(f, fmt, password, cb);
+        throw zipErr;
+    }
+
     /** The name as UTF-8, or null when the bytes are not valid UTF-8 (older tools write the local code page). */
     private static String decodeName(byte[] raw) {
         try {
@@ -668,6 +697,9 @@ public final class ZipTool {
     }
 
     private static long extractTo(Archive a, Entry e, File dest, File protect, Pulse pulse) throws IOException {
+        // a symbolic link has no file data (a tar's reads as empty, a RAR5's as nothing at all): writing it would leave an empty file, or
+        // empty one that is there, so it is refused in words, as an extraction of its folder skips it
+        if (e.linkTarget != null) throw new IOException("\"" + e.name + "\" is a symbolic link" + (e.linkTarget.isEmpty() ? "" : " to \"" + e.linkTarget + "\"") + " and is not extracted");
         checkTarget(a, dest, protect);
         if (e.hardLink != null) throw new IOException("\"" + e.name + "\" is a hard link to \"" + e.hardLink + "\" and holds no data of its own: extract that one");
         InputStream in = a.open(e);
@@ -855,6 +887,7 @@ public final class ZipTool {
         final int total = wanted.size();
         final int[] seen = {0};
         final java.util.HashMap<String, File> extracted = new java.util.HashMap<String, File>();      // archive name -> where it was written, for the hard links that follow
+        final java.util.HashSet<String> leftAlone = new java.util.HashSet<String>(), failed = new java.util.HashSet<String>();     // and why one was not: a hard link says so
         a.src.walk(a, a.password(), new Walker() {
             @Override
             public boolean entry(Entry e, InputStream data) throws IOException {
@@ -869,17 +902,21 @@ public final class ZipTool {
                 if (cb != null && !cb.onProgress(st[0], (int) st[1], e.name)) throw new IOException("Cancelled");
                 if (e.linkTarget != null) { st[2]++; note(problems, e.name + ": symbolic link (not extracted)"); return true; }
                 if (FileOps.exists(out)) {
-                    if (policy == FileOps.SKIP) { st[3]++; return true; }
+                    if (policy == FileOps.SKIP) { leftAlone.add(linkKey(e.name)); st[3]++; return true; }
                     if (policy == FileOps.KEEP_BOTH) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));     // also next to a folder of that name
                 }
                 try {
                     checkTarget(a, out, protect);
                     if (e.hardLink != null) {
                         // a hard link has no data in the archive: it is the same file as an earlier entry, so it is copied from where that one was written
+                        // (never from a file Skip left alone: that may not be this archive's version of it)
                         File from = extracted.get(linkKey(e.hardLink));
                         if (from == null || !from.isFile()) {
+                            String key = linkKey(e.hardLink);
+                            String why = leftAlone.contains(key) ? "that file was already there and was left as it was"
+                                    : failed.contains(key) ? "that file could not be extracted" : "that file is not part of this extraction";
                             st[2]++;
-                            note(problems, e.name + ": hard link to " + e.hardLink + " (not extracted: that file is not part of this extraction)");
+                            note(problems, e.name + ": hard link to " + e.hardLink + " (not extracted: " + why + ")");
                             return true;
                         }
                         Entry copy = new Entry(e.name, false, from.length(), from.length(), e.mtime(), e.mode, false, null);
@@ -895,6 +932,7 @@ public final class ZipTool {
                 } catch (IOException ex) {
                     String m = ex.getMessage() == null ? "failed" : ex.getMessage();
                     if (m.startsWith("Cancelled")) throw ex;
+                    failed.add(linkKey(e.name));
                     st[2]++;
                     note(problems, e.name + ": " + m);
                 }

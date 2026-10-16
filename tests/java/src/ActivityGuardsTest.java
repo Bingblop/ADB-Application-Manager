@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
  * Files app frozen, the call throws ActivityNotFoundException, and uncaught on the UI thread that ends the app: review MA2-3).</li>
  * <li>every executor that MainActivity (or its bridge) keeps in a field is shut down in onDestroy: each recreate() makes a new activity and
  * bridge, and a pool nobody stops keeps its idle thread for the life of the process (AGENTS.md; review MA2-4).</li>
+ * <li>every {@code adb -s <target> shell} that MainActivity starts connects a dropped target again first, or asks again after "not found", in the
+ * method that starts it: the Terminal's shells over ADB did neither and failed until Connect was pressed again (full main review, MA1-2).</li>
  * </ul>
  * The scan works on the source with comments, string and character literals blanked out.
  */
@@ -107,6 +109,40 @@ public class ActivityGuardsTest {
     return out;
   }
 
+  /** The raw text of the method body that holds position {@code at}: the method is found on the blanked source {@code b}, read from {@code src}. */
+  static String enclosingMethod(String src, String b, int at) {
+    int depth = 0;
+    for (int i = at - 1; i >= 0; i--) {
+      char c = b.charAt(i);
+      if (c == '}') depth++;
+      else if (c == '{') {
+        if (depth > 0) { depth--; continue; }
+        Matcher m = METHOD_HEAD.matcher(b.substring(Math.max(0, i - 300), i));
+        if (!m.find() || NOT_METHODS.contains(m.group(1))) continue;
+        int d = 0;
+        for (int j = i; j < b.length(); j++) {
+          if (b.charAt(j) == '{') d++;
+          else if (b.charAt(j) == '}' && --d == 0) return src.substring(i, j + 1);
+        }
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** Line numbers of the {@code adb -s <target> shell} spawns whose method neither connects the target again when it dropped nor asks again after "not found". */
+  static List<Integer> adbShellsWithoutReconnect(String src, int[] count) {
+    String b = blank(src);
+    List<Integer> out = new ArrayList<Integer>();
+    Matcher m = Pattern.compile("buildAdbProcess\\(\"-s\", (\\w+), \"shell\"").matcher(src);
+    while (m.find()) {
+      if (count != null) count[0]++;
+      String body = enclosingMethod(src, b, m.start());
+      if (body == null || !(body.contains("isAdbTargetConnected(" + m.group(1) + ")") || body.contains("' not found"))) out.add(lineOf(src, m.start()));
+    }
+    return out;
+  }
+
   static int lineOf(String s, int at) {
     int line = 1;
     for (int i = 0; i < at; i++) if (s.charAt(i) == '\n') line++;
@@ -140,6 +176,13 @@ public class ActivityGuardsTest {
     check("an executor of an inner class that onDestroy does not stop is named", executorsNotStopped("class A { protected void onDestroy() { a.shutdown(); } class B { final ExecutorService thumbs = Executors.newSingleThreadExecutor(); } }", null).equals(java.util.Arrays.asList("thumbs")));
     check("a shutdown elsewhere, or only in a comment, does not count", executorsNotStopped("class A { final ExecutorService a = Executors.newCachedThreadPool(); void stop() { a.shutdown(); } protected void onDestroy() { // a.shutdown();\n } }", null).equals(java.util.Arrays.asList("a")));
 
+    String connects = "class A { Process f() throws Exception {\n if (!isAdbTargetConnected(target)) performConnect(h, p, null);\n return buildAdbProcess(\"-s\", target, \"shell\").start(); } }";
+    check("an adb shell started after the reconnect check is fine", adbShellsWithoutReconnect(connects, null).isEmpty());
+    check("an adb shell that asks again after \"not found\" is fine", adbShellsWithoutReconnect("class A { String f() {\n String o = run(buildAdbProcess(\"-s\", t, \"shell\", c));\n if (o.contains(\"' not found\")) o = run(buildAdbProcess(\"-s\", t, \"shell\", c));\n return o; } }", null).isEmpty());
+    check("a bare adb shell is named", adbShellsWithoutReconnect("class A { Process f() throws Exception {\n return buildAdbProcess(\"-s\", target, \"shell\", \"-T\").start(); } }", null).equals(java.util.Arrays.asList(2)));
+    check("a check in the method that makes a spawner does not cover the spawn it runs later (a restart)",
+        adbShellsWithoutReconnect("class A { Spawner f() { if (!isAdbTargetConnected(target)) performConnect(h, p, null); return new Spawner() {\n public Process spawn(String[] a) throws Exception { if (x) { return buildAdbProcess(\"-s\", target, \"shell\").start(); } return null; } }; } }", null).equals(java.util.Arrays.asList(2)));
+
     // the source tree
     File dir = srcDir();
     if (dir == null) { System.out.println("SKIP src/com/bloatware/bingblop not found"); System.out.println("PASS ActivityGuardsTest: " + n + " checks"); return; }
@@ -155,6 +198,14 @@ public class ActivityGuardsTest {
     List<String> pools = new ArrayList<String>();
     List<String> loose = executorsNotStopped(main, pools);
     check("MainActivity: every executor field is shut down in onDestroy (found " + pools + "); not stopped: " + loose, pools.size() >= 8 && loose.isEmpty());
+
+    // MA3-5: shutdown() lets a running job finish, and a tracker scan of a few hundred apps runs for minutes, keeping the destroyed activity
+    // alive while the next window starts a second scan of the same apps: onDestroy stops the pool, then sets the flag the scan stops on
+    // (in that order, so a scan accepted just before the pool stopped is still told to stop)
+    String destroy = bodyOf(b, "void onDestroy()");
+    int trackerPool = destroy == null ? -1 : destroy.indexOf("trackerExecutor.shutdown");
+    check("MainActivity: onDestroy stops a running tracker scan (trackerCancel = true after trackerExecutor.shutdown)",
+        trackerPool >= 0 && Pattern.compile("\\btrackerCancel\\s*=\\s*true\\s*;").matcher(destroy).find(trackerPool));
 
     // MA1-2: the activity's own monitor is taken on the UI thread (onDestroy, the Morphe picker) and by the lazy getters, so no method that
     // holds it may run a shell command (which can wait minutes on a backend that does not answer)
@@ -180,6 +231,25 @@ public class ActivityGuardsTest {
       if (lock >= 0 && read > lock && bw.start() - lock < 1500) locked++;
     }
     check("MainActivity: every write of backups_index is under backupIndexLock, after a read under it (" + locked + " of " + writes + ")", writes >= 3 && locked == writes);
+
+    // MA1-4: a download for the system installer (Read-Only mode) was kept "because the installer reads it later", but the installer is
+    // handed a copy in cache/share (launchSystemInstaller): the self-update and Store downloads are deleted in every mode
+    String launch = bodyOf(b, "private void launchSystemInstaller(");
+    check("launchSystemInstaller gives the installer a copy of its own (a share file), not the downloaded file", launch != null && launch.contains("ShareProvider.newShareFile(") && launch.contains("ShareProvider.uriFor(shareApk)"));
+    for (String sig : new String[] {"private void runInstallSelfUpdate(", "private void downloadAndInstall("}) {
+      String body = bodyOf(b, sig);
+      Matcher fin = Pattern.compile("finally\\s*\\{([^{}]*)\\}").matcher(body == null ? "" : body);
+      String last = null;
+      while (fin.find()) last = fin.group(1);
+      check(sig.trim() + ": the downloaded APK is deleted in its finally block in every mode (found: " + (last == null ? null : last.trim().replaceAll("\\s+", " ")) + ")",
+          last != null && last.contains("apk.delete()") && !last.contains("standard"));
+    }
+
+    // full main review MA1-2: the Terminal's shell and the full-screen terminal over ADB connect a dropped target again, as every other adb shell does
+    int[] adbShells = { 0 };
+    List<Integer> noReconnect = adbShellsWithoutReconnect(main, adbShells);
+    check("MainActivity: every adb shell it starts connects a dropped target again first or asks again after \"not found\" (checked " + adbShells[0] + "); not at lines " + noReconnect,
+        adbShells[0] >= 10 && noReconnect.isEmpty());
 
     System.out.println(fails == 0 ? "PASS ActivityGuardsTest: " + n + " checks" : "FAILED ActivityGuardsTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);

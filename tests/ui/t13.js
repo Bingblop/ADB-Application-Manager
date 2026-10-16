@@ -104,6 +104,10 @@ function bridgeInit([mock, store]) {
   console.log('RELAUNCH uad chips:', (await p2.locator('#uadRemovalRow .active, #uadListRow .active, #uadStateRow .active, #uadBrandRow .active').allInnerTexts()).join(', '));
   await p2.click('text=/^History$/'); await p2.waitForTimeout(100);
   console.log('RELAUNCH history entries:', await p2.locator('.hist-entry').count());
+  // the newest entry is the Updater's (Samsung Notes failed): it is named for the Updater, not "Applications", and its line says "Updated", not the raw "update"
+  const upd = await p2.evaluate(() => { const e = document.querySelector('.hist-entry'); return { meta: e.querySelector('.hist-meta').innerText.split(' • ').slice(1).join(' • '), line: e.querySelector('.hist-pkgs').innerText.split('\n')[0] }; });
+  console.log('RELAUNCH updater entry:', upd.meta, '|', upd.line);
+  if (upd.meta !== 'Updater • 0/1 succeeded' || !/^✕ Updated Samsung Notes\b/.test(upd.line)) console.log('FAIL the Updater\'s history entry is labelled', JSON.stringify(upd));
   console.log('calls (other):', (await page.evaluate(() => window.__st.calls)).filter(c => c.startsWith('url') || c === 'check').join(', '));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

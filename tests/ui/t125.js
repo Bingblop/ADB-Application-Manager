@@ -1,5 +1,6 @@
 // Terminal: Full screen. The button makes the Terminal pane cover the whole app (header and tabs too), the screen takes the room above the input and
-// the extra keys, the height follows the on-screen keyboard, Back and the same button come out of it, and leaving the tab does too.
+// the extra keys, the height follows the on-screen keyboard, Back and the same button come out of it, and leaving the tab does too. The Copy button of the same row
+// copies a selection on the screen, or the whole screen when the selection is elsewhere (the input line, a label), and its toast says which.
 const { chromium, PAGE } = require('./lib/pw');
 const tx = require('./lib/tx_mock');
 (async () => {
@@ -22,6 +23,18 @@ const tx = require('./lib/tx_mock');
   });
   const before = await geo();
   check('the tools row has a Full screen button', before.btn === 'Full screen' && before.pressed === 'false');
+  // Copy: what was copied and what the toast says agree
+  await ev(() => { txNote('SCREEN LINE one two three', txCurShell()); window.__toasts = []; const o = window.showToast; window.showToast = function (m) { window.__toasts.push(String(m)); return o.apply(this, arguments); }; });
+  const copy = async () => { await ev(() => { window.__tx.clip = ''; window.__toasts = []; }); await page.click('.tx-tools .term-icon-btn:has-text("Copy")'); await sleep(50); return ev(() => ({ clip: window.__tx.clip, toast: window.__toasts.slice(-1)[0], screen: txScreen(txCurShell()).el.innerText })); };
+  await ev(() => { const w = document.createTreeWalker(txScreen(txCurShell()).el, NodeFilter.SHOW_TEXT); let t; while ((t = w.nextNode()) && !/SCREEN LINE/.test(t.nodeValue)); const r = document.createRange(); r.setStart(t, t.nodeValue.indexOf('one')); r.setEnd(t, t.nodeValue.indexOf('one') + 7); getSelection().removeAllRanges(); getSelection().addRange(r); });
+  let c = await copy();
+  check('Copy with text selected on the screen copies that text and says so', c.clip === 'one two' && c.toast === 'Copied the selection', JSON.stringify([c.clip, c.toast]));
+  await ev(() => { const i = document.getElementById('txInput'); i.value = 'echo hello'; i.focus(); i.setSelectionRange(0, 4); });
+  c = await copy();
+  check('Copy with text selected in the input line (not the screen) copies the screen and says so', c.clip === c.screen && /SCREEN LINE/.test(c.clip) && c.toast === 'Copied the screen', JSON.stringify([c.clip.slice(0, 40), c.toast]));
+  await ev(() => { document.getElementById('txInput').value = ''; getSelection().removeAllRanges(); });
+  c = await copy();
+  check('Copy with nothing selected copies the screen and says so', c.clip === c.screen && c.toast === 'Copied the screen', JSON.stringify([c.clip.slice(0, 40), c.toast]));
   await ev(() => txFullToggle()); await sleep(200);
   let g = await geo();
   check('full screen: the pane covers the whole window (top to bottom, side to side)', g.pane.top === 0 && g.pane.h === 860 && g.pane.w === 400 && g.pane.left === 0, JSON.stringify(g.pane));

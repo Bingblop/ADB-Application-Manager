@@ -7,4 +7,8 @@
 5. malicious verdict: true
 6. unknown file offers upload: true
    upload bridge called: true
+7. the first file's late answer is not shown under the second package, its Scan button stays usable: true
+8. scan bridge called for the second package: true
+   the first file's answer during it is dropped (still checking, button off): true
+   its own answer is shown and frees the button: true
 errors: []

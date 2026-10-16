@@ -443,6 +443,7 @@ public class ArchiveIoTest {
         rewriteCases(exp);
         cancelAndAtomic(exp);
         damaged();
+        zipMemberIsNotTheArchive();
     }
 
     // ------------------------------------------------------------------------------------------------------------------ cases
@@ -1413,5 +1414,75 @@ public class ArchiveIoTest {
         List<String> names = new ArrayList<String>();
         for (ArchiveIo.Item it : ArchiveIo.list(evil, null).items) names.add(it.name);
         check("odd names are listed as stored " + names, names.equals(Arrays.asList("../escape.txt", "/abs/path.txt", "ok/../x.txt")));
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------ a member is not the archive
+
+    /**
+     * A plain tar or a stored 7z keeps a zip member (an APK) byte for byte, so that member's end record sits near the end of the file. Opened
+     * as a zip first, such a file was listed and extracted as the one member's contents, and "Delete the archive afterwards" then deleted the
+     * whole file. ZipTool.openAny (the file manager's open) goes by the first bytes: a tar stays a tar, a 7z a 7z.
+     */
+    static void zipMemberIsNotTheArchive() throws Exception {
+        File d = new File(tmp, "member"); d.mkdirs();
+        File apk = new File(d, "z_app.apk");
+        java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(apk));
+        try {
+            for (String nm : new String[] { "AndroidManifest.xml", "classes.dex", "res/x.txt" }) {
+                zo.putNextEntry(new java.util.zip.ZipEntry(nm));
+                zo.write(("the content of " + nm).getBytes(StandardCharsets.UTF_8));
+                zo.closeEntry();
+            }
+        } finally { zo.close(); }
+        File notes = new File(d, "a_notes.txt"); write(notes, "notes\n");
+        byte[] noise = new byte[40000]; new Random(11).nextBytes(noise);
+        File photo = new File(d, "b_photo.bin"); write(photo, noise);
+        check("member: the APK is a zip of 3 files", ZipTool.open(apk).entries.size() == 3);
+        List<ArchiveIo.Source> zipLast = Arrays.asList(new ArchiveIo.Source("a_notes.txt", notes), new ArchiveIo.Source("b_photo.bin", photo), new ArchiveIo.Source("z_app.apk", apk));
+        List<ArchiveIo.Source> zipFirst = Arrays.asList(new ArchiveIo.Source("z_app.apk", apk), new ArchiveIo.Source("a_notes.txt", notes));
+        Object[][] cases = { { "apks.tar", "tar", 1, zipLast }, { "first.tar", "tar", 1, zipFirst }, { "stored.7z", "7z", 0, zipLast } };
+        for (Object[] c : cases) {
+            String label = (String) c[0], fmt = (String) c[1];
+            @SuppressWarnings("unchecked") List<ArchiveIo.Source> in = (List<ArchiveIo.Source>) c[3];
+            File f = new File(d, label);
+            ArchiveIo.create(f, fmt, in, null, (Integer) c[2], null);
+            ZipTool.Archive a = ZipTool.openAny(f, null, null);
+            List<String> names = new ArrayList<String>();
+            for (ZipTool.Entry e : a.entries) names.add(e.name);
+            check("member " + label + ": opens as " + fmt + ", not as the zip inside (" + a.format + ", prefix " + a.prefix + ")", fmt.equals(a.format) && !a.isZip());
+            check("member " + label + ": every file is listed " + names, names.size() == in.size() && names.contains("z_app.apk") && names.contains("a_notes.txt"));
+            check("member " + label + ": the count the delete-afterwards rule compares is the archive's own", ZipTool.countFiles(a, "") == in.size());
+            File out = new File(d, label + ".out");
+            List<String> problems = new ArrayList<String>();
+            long[] r = ZipTool.extractTree(a, "", out, null, problems);
+            check("member " + label + ": extracting writes every file, the APK as it was " + problems, r[0] == in.size() && problems.isEmpty()
+                && new File(out, "z_app.apk").isFile() && sha(new File(out, "z_app.apk")).equals(sha(apk)) && new File(out, "a_notes.txt").isFile());
+        }
+        // a tar holding a RAR is a tar as well (the RAR test looks for a signature up to 1 MB in, for a self-extractor)
+        File rar = null;
+        for (File p = new File(System.getProperty("user.dir")); p != null && rar == null; p = p.getParentFile()) {
+            File c = new File(p, "tests/java/fixtures/rar/libarchive-rar5-stored.rar");
+            if (c.isFile()) rar = c;
+        }
+        if (rar == null) skip("member: no RAR fixture (tests/java/fixtures/rar): a tar holding a RAR");
+        else {
+            File rt = new File(d, "rar.tar");
+            ArchiveIo.create(rt, "tar", Arrays.asList(new ArchiveIo.Source("x.rar", rar), new ArchiveIo.Source("a_notes.txt", notes)), null, 1, null);
+            ZipTool.Archive a = ZipTool.openAny(rt, null, null);
+            check("member rar.tar: opens as tar, not as the RAR inside (" + a.format + ")", "tar".equals(a.format) && a.entries.size() == 2);
+            check("member: a RAR still opens as a RAR", ZipTool.openAny(rar, null, null).format.startsWith("rar"));
+        }
+        // what must not change: a zip, a zip behind a self-extractor stub, a zip under another name
+        ZipTool.Archive z = ZipTool.openAny(apk, null, null);
+        check("member: an APK still opens as a zip", z.isZip() && z.prefix == 0 && z.entries.size() == 3);
+        byte[] stub = new byte[3000]; stub[0] = 'M'; stub[1] = 'Z';
+        byte[] apkBytes = Files.readAllBytes(apk.toPath());
+        byte[] sfx = Arrays.copyOf(stub, stub.length + apkBytes.length);
+        System.arraycopy(apkBytes, 0, sfx, stub.length, apkBytes.length);
+        File exe = new File(d, "setup.exe"); write(exe, sfx);
+        ZipTool.Archive s = ZipTool.openAny(exe, null, null);
+        check("member: a zip behind a self-extractor stub still opens, with the stub as its prefix (" + s.prefix + ")", s.isZip() && s.prefix == 3000 && s.entries.size() == 3);
+        File renamed = new File(d, "renamed.tar"); write(renamed, apkBytes);
+        check("member: a zip named .tar is still a zip", ZipTool.openAny(renamed, null, null).isZip());
     }
 }

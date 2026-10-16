@@ -182,6 +182,11 @@ public class SdmAreasTest {
         eq("the user id is the host's (0 unless it says otherwise)", areas.userId(), 0);
         SdmAreas.Config cu = new SdmAreas.Config(); cu.userId = 10;
         eq("a secondary user is reported as such", new SdmAreas(new SdmShell(new Runner() {{ mode = "standard"; }}), jfs, cu, null).userId(), 10);
+        eq("…but the shared storage it reads is the primary root's, /storage/emulated/0 (what /sdcard in an exclusion names)", new SdmAreas(null, jfs, cu, null).storageUserId(), 0);
+        SdmAreas.Config cu10 = new SdmAreas.Config(); cu10.userId = 10; cu10.publicRoots = new ArrayList<String>(Arrays.asList("/storage/emulated/10"));
+        eq("a primary root of /storage/emulated/10 is user 10's storage", new SdmAreas(null, jfs, cu10, null).storageUserId(), 10);
+        SdmAreas.Config cuX = new SdmAreas.Config(); cuX.userId = 10; cuX.publicRoots = new ArrayList<String>(Arrays.asList(sd.getPath()));
+        eq("a primary root that names no user: the app's own", new SdmAreas(null, jfs, cuX, null).storageUserId(), 10);
 
         // no privilege, All-files access
         List<Sdm.AreaInfo> l = areas.all();
