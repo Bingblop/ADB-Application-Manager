@@ -16,6 +16,8 @@
 10. Apps: "Search apps" focuses the search box: true
 11. Console: the menu lists its two segments and two Terminal entries, "Terminal" opens the tab on the Terminal (and keeps that choice): true
     "ADB Shell" switches the open tab to the shell segment: true
+    v7.15: chosen, "History" opens the ADB Shell with its command history: true
+    v7.15: Files lists Search files, Storage and Downloads: true
 11b. Console: "Full-screen terminal" opens the Terminal segment in full screen (and the bar goes away): true
     "Coding Agents" opens the Terminal segment with the agent picker lit up and focused: true
     chosen, "Termux setup" opens the Terminal segment and its Termux setup sheet: true
@@ -52,6 +54,6 @@
 27. on the rail the menu opens beside the item, inside the screen: true
 28. at 320 px the menu of "extrasettings" is inside the screen: true
 28. at 320 px the menu of "console" is inside the screen: true
-29. SAFETY: every shortcut's run() calls only navigation functions (32 entries); updateAllUI only from "Update All (N)": true
+29. SAFETY: every shortcut's run() calls only navigation functions (36 entries); updateAllUI only from "Update All (N)": true
     and the scan sees every entry of every tab (no empty source): true
 errors: []

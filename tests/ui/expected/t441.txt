@@ -7,7 +7,7 @@
    "Open it" from the Default Ask Agent note does too: true
 5. full screen ends when the ADB Shell segment is chosen: true
    and when another tab is opened: true
-6. Console's long-press menu: both segments, then the Terminal's full screen and Coding Agents (Termux setup and settings can be chosen): true {"ids":"shell,term,full,agents,termux,settings","shown":"ADB Shell,Terminal,Full-screen terminal,Coding Agents","terminal":false}
+6. Console's long-press menu: both segments, then the Terminal's full screen and Coding Agents (Termux setup, settings and, since v7.15, the shell's History can be chosen): true {"ids":"shell,term,full,agents,termux,settings,history","shown":"ADB Shell,Terminal,Full-screen terminal,Coding Agents","terminal":false}
    "Coding Agents" opens Console on Terminal with the agent picker focused: true
    "ADB Shell" opens Console on the shell: true
 7. dark: the screen is the card colour with the theme's text and 16px corners, like the Console's output: true {"screenBg":true,"screenFg":true,"screenRadius":true,"red":true,"redVal":"#E05561","send":true,"input":true,"keys":true,"tool":true,"xterm":true}

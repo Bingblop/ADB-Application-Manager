@@ -1323,9 +1323,10 @@
         #fmTopCard .fm-bar .term-run-btn { background: var(--tint-accent); border: 1px solid var(--line-accent); color: var(--accent); font-weight: var(--fw-bold); }
         #fmTopCard .fm-bar .term-run-btn:active { background: var(--accent); color: var(--on-accent); }
         /* the path of the open folder as crumbs on one line that scrolls sideways */
-        #fmCurrentPath.fm-crumbs { white-space: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: calc(-1 * var(--space-1)) 0 0; font-family: ui-monospace, 'Roboto Mono', monospace; font-size: var(--fs-body); color: var(--text-muted); line-height: var(--ctl-h); }
+        #fmCurrentPath.fm-crumbs { white-space: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: calc(-1 * var(--space-3)) 0 0; font-family: ui-monospace, 'Roboto Mono', monospace; font-size: var(--fs-body); color: var(--text-muted); line-height: calc(var(--tap) - var(--space-1)); }          /* 40px tall: the extra reaches up over the card's own padding, so the list below starts where it did (t346) */
         #fmCurrentPath.fm-crumbs::-webkit-scrollbar { display: none; }
-        .fm-crumb { display: inline-block; vertical-align: top; min-height: var(--ctl-h); padding: 0 var(--space-1); border: 0; border-radius: var(--radius-sm); background: none; color: var(--accent); font: inherit; font-weight: var(--fw-bold); cursor: pointer; }
+        html[dir] #fmCurrentPath.fm-crumbs { direction: ltr; unicode-bidi: isolate; --hf-dir: to right; }          /* a path reads from the root in every language: in Arabic, a folder named in Arabic no longer turns the line around and scrolls the open folder out of view; its fade follows the line, not the page */
+        .fm-crumb { display: inline-block; vertical-align: top; min-width: var(--tap); min-height: calc(var(--tap) - var(--space-1)); padding: 0 var(--space-1); border: 0; border-radius: var(--radius-sm); background: none; color: var(--accent); font: inherit; font-weight: var(--fw-bold); text-align: center; cursor: pointer; }          /* at least 44 x 40 px (the line's whole height); the / after a folder is part of its crumb, so no strip between two crumbs does nothing */
         .fm-crumb:active, .fm-crumb:focus-visible { background: var(--tint-accent); outline: none; }
         .fm-crumb-sep { color: var(--text-dim); }
         .fm-crumb-here { padding: 0 var(--space-1); color: var(--text-main); font-weight: var(--fw-bold); }
@@ -3700,8 +3701,8 @@
         .mt-btns button { flex: 1 1 0; min-width: 0; border: 1px solid var(--border-glass); background: transparent; color: var(--text-muted); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-1); font-size: var(--fs-caption); font-weight:var(--fw-heavy); cursor: pointer; }
         .mt-btns button.danger { color: var(--status-bloat); }
         .ps-style-card .ps-desc { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); margin-top: var(--space-1); font-weight:var(--fw-semibold); }
-        /* v7.15: nine styles in three columns (swatches and the name); the line of the chosen one is under the grid */
-        #psStyleGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+        /* v7.15: nine styles in three columns (two on a narrow screen: swatches and the name); the line of the chosen one is under the grid */
+        #psStyleGrid { grid-template-columns: repeat(auto-fill, minmax(max(104px, calc((100% - 2 * var(--space-2)) / 3)), 1fr)); gap: var(--space-2); }          /* three a row while a tile keeps 104px (the longest name, "Нейтральный", fits), else two: no name breaks between letters */
         #psStyleGrid .palette-preset-card { padding: var(--space-3); min-width: 0; }
         #psStyleGrid .preset-strip { margin-bottom: var(--space-2); }
         #psStyleGrid .preset-name { font-size: var(--fs-pill); overflow-wrap: anywhere; }
@@ -5550,11 +5551,11 @@
                 .tm-kill-btn:active { transform: scale(0.92); background: var(--tint-bloat-strong); }
                 .tm-sort-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); flex-wrap: wrap; }
                 .tm-sort-bar button.on { color: var(--accent); }
-                /* v7.15: the sort choices are chips (outlined; the chosen one tinted), the Graph speed row stays one line with its value */
+                /* v7.15: the sort choices are chips (outlined; the chosen one tinted); Graph speed is one line where the slider keeps 120 px beside its value, else the slider and the value take the next line together (a long label, "Diagrammgeschwindigkeit", or a narrow screen) */
                 .tm-sort-bar .batch-tool-link { padding: var(--space-1) var(--space-4); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font-weight: var(--fw-bold); }
                 .tm-sort-bar .batch-tool-link.on, .tm-sort-bar .batch-tool-link[aria-pressed="true"] { border-color: var(--line-accent); background: var(--tint-accent); color: var(--accent); }
-                .tm-settings-row.tm-speed-row { flex-wrap: nowrap; }
-                .tm-settings-row.tm-speed-row input[type=range] { flex: 1 1 0; }
+                .tm-settings-row.tm-speed-row > .tm-speed-ctl { display: flex; align-items: center; gap: var(--space-3h); flex: 1 1 182px; min-width: 182px; }          /* the slider and its value wrap as one */
+                .tm-settings-row.tm-speed-row input[type=range] { flex: 1 1 120px; min-width: 120px; }
                 .tm-net-ifaces { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3h); }
                 .tm-net-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); font-size: var(--fs-body); }
                 .tm-net-row b { font-weight:var(--fw-heavy); }
@@ -5613,8 +5614,8 @@
                     </div>
                     <div class="tm-settings-row tm-speed-row ovl-slider" style="margin:0;">
                         <span>Graph speed</span>
-                        <input type="range" id="tmGraphDelay" min="50" max="1000" step="10" value="150" oninput="tmGraphDelayInput()" aria-label="Graph speed">
-                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">150 ms</span>
+                        <span class="tm-speed-ctl"><input type="range" id="tmGraphDelay" min="50" max="1000" step="10" value="150" oninput="tmGraphDelayInput()" aria-label="Graph speed">
+                        <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">150 ms</span></span>
                     </div>
                     <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
                         <span>Units</span>
@@ -7964,7 +7965,7 @@
                 /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
                 .cn-tools.cn-scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
                 .cn-tools.cn-scroll::-webkit-scrollbar { display: none; }
-                .cn-tools.cn-scroll + .cn-tools.cn-scroll { margin-top: calc(-1 * var(--space-2)); }          /* Live Logcat's second row (what to do) right under the first (what to show) */
+                .cn-tools.cn-scroll + .cn-tools.cn-scroll { margin-top: var(--space-2); }          /* Live Logcat's second row (what to do) right under the first (what to show): with the first row's -6px this collapses to 0, so the two 44px bands meet without overlapping (a tap under All apps no longer lands on Recordings) */
                 /* v7.15: the find row comes with the first output (there is nothing to find before it) */
                 #cnSegShell:not(:has(#termOutput > .cn-card)) > .cn-find { display: none; }
                 .cn-tools.cn-scroll { padding-block: var(--space-2); margin-block: calc(var(--space-3h) - var(--space-2)) calc(-1 * var(--space-2)); }          /* room for the 44px hit area of the 32px buttons, so the row does not scroll up and down */
@@ -11877,7 +11878,7 @@ Type any command above (e.g. pm list packages -d)</div>
             files: [                                                  // v7.15: the search, and the two places a person opens most
                 { id: 'search', label: 'Search files', icon: 'search', when: () => !!document.getElementById('fmSearchInput'), run: () => bnavGo('files', () => bnavFocus('fmSearchInput')) },
                 { id: 'storage', label: 'Storage', icon: 'folder', when: () => typeof fmGo === 'function', run: () => bnavGo('files', () => fmGo('/storage/emulated/0')) },
-                { id: 'download', label: 'Download', icon: 'folder', when: () => typeof fmGo === 'function', run: () => bnavGo('files', () => fmGo('/storage/emulated/0/Download')) }
+                { id: 'download', label: 'Downloads', icon: 'folder', when: () => typeof fmGo === 'function', run: () => bnavGo('files', () => fmGo('/storage/emulated/0/Download')) }
             ],
             settings: [
                 { id: 'search', label: 'Search settings', icon: 'search', when: () => typeof sdbUsable === 'function' && sdbUsable() && !!document.getElementById('sdbSearch'), run: () => bnavGo('settings', () => bnavFocus('sdbSearch')) }
@@ -22776,11 +22777,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!el) return;
             if (fmPath.startsWith('content://')) { el.textContent = fmPath; return; }
             const parts = fmPath.split('/').filter(Boolean);
-            let h = parts.length ? '<button type="button" class="fm-crumb" data-p="/">/</button>' : '<span class="fm-crumb-here">/</span>', at = '';
+            let h = parts.length ? '<button type="button" class="fm-crumb" data-p="/" aria-label="/">/</button>' : '<span class="fm-crumb-here">/</span>', at = '';
             parts.forEach((p, i) => {
                 at += '/' + p;
                 h += i === parts.length - 1 ? '<span class="fm-crumb-here">' + escapeHtml(p) + '</span>'
-                    : '<button type="button" class="fm-crumb" data-p="' + escapeHtml(at) + '">' + escapeHtml(p) + '</button><span class="fm-crumb-sep">/</span>';
+                    : '<button type="button" class="fm-crumb" data-p="' + escapeHtml(at) + '" aria-label="' + escapeHtml(at) + '">' + escapeHtml(p) + '<span class="fm-crumb-sep">/</span></button>';
             });
             el.innerHTML = h;
             el.scrollLeft = el.scrollWidth;          // the folder you are in shows; the ones above it scroll in from the start

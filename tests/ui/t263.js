@@ -100,7 +100,7 @@ async function open(b, opts, vp) {
   check('    v7.15: chosen, "History" opens the ADB Shell with its command history', await ev(() => TAB_SHORTCUTS.console.map(i => i.id).pop() === 'history' && currentViewName() === 'console' && cnSeg === 'shell' && document.getElementById('termModal').classList.contains('show')));
   await ev(() => { termCloseModal(); delete tabConfig.shortcuts.console; }); await page.waitForTimeout(300);
   // v7.15: Files has a menu too: the search and the two places opened most
-  check('    v7.15: Files lists Search files, Storage and Download', await ev(() => TAB_SHORTCUTS.files.map(i => i.id).join() === 'search,storage,download'));
+  check('    v7.15: Files lists Search files, Storage and Downloads', await ev(() => TAB_SHORTCUTS.files.map(i => i.id).join() === 'search,storage,download'));
   await ev(() => switchView('apps')); await page.waitForTimeout(400);
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="full"]'); await page.waitForTimeout(500);

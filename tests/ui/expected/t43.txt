@@ -1,4 +1,4 @@
-1. no "adb devices" button: true | Rish button present: true ["Rish mode","Cheat Sheet","History","Saved","UID (id)","Connect 5555","tcpip 5555","Dev Options"]
+1. no "adb devices" button: true | Rish button present: true ["Cheat Sheet","History","Saved","Rish mode","UID (id)","Connect 5555","tcpip 5555","Dev Options"]
    no stale adb-devices handler in markup: true
 2. normal mode uses executeShell: true
 3. switched to Shizuku, then started the shell: true ["exec:id","select:shizuku","rishStart"]
