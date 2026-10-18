@@ -76,7 +76,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const saved = await page.evaluate(() => window.__calls.save.slice());
   console.log('5. Save writes one text file named after the app:', saved.length === 1 && /^logcat_com\.example\.alpha_\d{14}\.txt$/.test(saved[0][0]), JSON.stringify(saved.map(x => x[0])));
   const txt = saved[0] ? saved[0][1] : '';
-  console.log('   the file has a header (app, level, lines) and the raw lines minus the hidden level:', /^# ADB System Manager - log export/.test(txt) && /# App: Alpha \(com\.example\.alpha\)/.test(txt) && /Level: Info and above/.test(txt) && /Hidden levels: Warn/.test(txt) && /hello from alpha/.test(txt) && /boom/.test(txt) && !/careful/.test(txt), JSON.stringify(txt.split('\n').slice(0, 6)));
+  console.log('   the file has a header (app, level, lines) and the raw lines minus the hidden level:', /^# ADB Full System Manager - log export/.test(txt) && /# App: Alpha \(com\.example\.alpha\)/.test(txt) && /Level: Info and above/.test(txt) && /Hidden levels: Warn/.test(txt) && /hello from alpha/.test(txt) && /boom/.test(txt) && !/careful/.test(txt), JSON.stringify(txt.split('\n').slice(0, 6)));
   console.log('   the toast says where it went:', /Download\/ADB App Manager\/logcat_com\.example\.alpha/.test(await toast()));
   await page.evaluate(() => logcatToggleLevel('W'));
 

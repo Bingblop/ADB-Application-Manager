@@ -1,39 +1,39 @@
-ok   1. [320 px, dark] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   1. [320 px, dark] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
-ok   1. [360 px, dark] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   1. [360 px, dark] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
-ok   2. the page title and the About card say ADB System Manager
-ok      the share text names the app ADB System Manager
-ok   1. [412 px, dark] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   2. the page title and the About card say ADB Full System Manager
+ok      the share text names the app ADB Full System Manager
+ok   1. [412 px, dark] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
-ok   1. [320 px, light] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   1. [320 px, light] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
-ok   1. [360 px, light] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   1. [360 px, light] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
-ok   1. [412 px, light] the title is "ADB System Manager", on two lines: "ADB System" and "Manager"
+ok   1. [412 px, light] the title is "ADB Full System Manager", on two lines: "ADB Full System" and "Manager"
 ok      every word is drawn: a solid colour and a solid text fill, no gradient clipped to the text
 ok      and the colour is not the background's
 ok      every word has a size and lies inside the header and the title's room
-ok      "ADB" and "Manager" are in the accent, "System" is not
+ok      the whole title is one colour, the text colour (no word in the accent)
 ok      fitHeaderTitle sized it (13 to 26 px) and nothing is wider than the screen
 errors: []

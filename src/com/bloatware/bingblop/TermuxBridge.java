@@ -152,7 +152,7 @@ public final class TermuxBridge {
     public static void openInTermux(Activity a, String cmd) throws IOException {
         String c = cmd == null ? "" : cmd.trim();
         String script = c.isEmpty() ? "exec bash -l" : c + "\nprintf '\\n[finished: press Enter to close]'; read -r _";
-        run(a, script, false, true, "ADB System Manager", null);
+        run(a, script, false, true, "ADB Full System Manager", null);
         // Android 10+ stops Termux from opening its own screen from the background unless it may draw over other apps;
         // this app is in the foreground, so it brings Termux up itself.
         try {

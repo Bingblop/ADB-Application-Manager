@@ -81,7 +81,8 @@ async function open(b, opts, vp) {
   s = await hold('apps'); await page.mouse.up(); await page.waitForTimeout(600);
   const am = await menu();
   await page.click('#bnavMenu .bn-sc[data-id="search"]'); await page.waitForTimeout(400);
-  check('10. Apps: "Search apps" focuses the search box', am.items.join() === 'Search apps' && await ev(() => document.activeElement.id) === 'searchInput', am.items.join());
+  // v7.15: the Apps tab's menu also lists Running, Frozen and Uninstalled (the list with only that filter on)
+  check('10. Apps: "Search apps" focuses the search box', am.items.join() === 'Search apps,Running,Frozen,Uninstalled' && await ev(() => document.activeElement.id) === 'searchInput', am.items.join());
   await ev(() => { document.activeElement.blur(); }); await page.waitForTimeout(600);
   // v7.14.0: Console holds both shells ("ADB Shell | Terminal"); its menu lists the two segments, then the Terminal's full screen and Coding Agents
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
@@ -148,10 +149,10 @@ async function open(b, opts, vp) {
   await hold('installer'); await page.mouse.up(); await page.waitForTimeout(600);
   check('14. an entry whose target is not on the page ("Find APKs") is simply not listed', (await menu()).items.join('|') === 'Updater|Check for updates');
   await page.keyboard.press('Escape'); await ev(() => { document.getElementById('apkScanBtnGone').id = 'apkScanBtn'; });
-  await ev(() => { document.getElementById('searchInput').id = 'searchInputGone'; });
+  await ev(() => { document.getElementById('searchInput').id = 'searchInputGone'; document.getElementById('filterScroll').id = 'filterScrollGone'; });
   s = await slot('apps'); await page.mouse.move(s.x, s.y); await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(100);
   check('    a slot left with no entry does nothing on a hold', !(await menu()));
-  await ev(() => { document.getElementById('searchInputGone').id = 'searchInput'; });
+  await ev(() => { document.getElementById('searchInputGone').id = 'searchInput'; document.getElementById('filterScrollGone').id = 'filterScroll'; });
   // a registry entry added by another tab shows up, with a section filter
   await ev(() => { TAB_SHORTCUTS.console.push({ id: 'ghost', label: 'Ghost section', icon: 'tune', when: () => !!document.querySelector('#ghost'), run: () => switchView('apps') }); });
   await ev(() => { tabConfig.shortcuts.console = ['shell', 'ghost']; });
@@ -274,7 +275,7 @@ async function open(b, opts, vp) {
   page = await open(b, { kv: { bnav_tip: 'true' } });
   const src = await ev(() => { const o = {}; Object.keys(TAB_SHORTCUTS).forEach(k => TAB_SHORTCUTS[k].forEach(i => { o[k + ':' + i.id] = String(i.run); })); return o; });
   // what a shortcut may call: moving between and opening screens, sections, segments and sheets, focusing a field, scrolling and lighting up a section, a harmless read-only check, and the Update All button's own function
-  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'lcAppOpen', 'lcRecListOpen', 'setTimeout']);          // lcAppOpen / lcRecListOpen: the app picker and the recordings sheet of Live Logcat (they only open a sheet)
+  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'lcAppOpen', 'lcRecListOpen', 'appsShowOnly', 'setTimeout']);          // lcAppOpen / lcRecListOpen: the app picker and the recordings sheet of Live Logcat (they only open a sheet); appsShowOnly: the Apps list with one filter on (v7.15)
   const EXCEPTION = new Set(['updateAllUI']);            // the one state-changing path: it asks the install question first (checked above)
   const bad2 = [];
   Object.keys(src).forEach(k => {

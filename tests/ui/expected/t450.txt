@@ -19,7 +19,7 @@ ok   3. a button that does not apply stays, dimmed, with its reason: Launch and 
 ok      Rem Updates of a user app: Rem Updates (Only a system app has updates to remove)
 ok      nothing is dimmed for an installed system app:
 ok      a tap on the dimmed Launch runs nothing and says why: Not installed for this user []
-ok   4. Uninstall while the menu is open: Reinstall comes in its cell, nothing else moves: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall | top 508→508
+ok   4. Uninstall while the menu is open: Reinstall comes in its cell, nothing else moves: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall | top 545→545
 ok      Launch and Force Stop are dimmed now, in their places: Launch(dimmed), App Info, Logs, Force Stop(dimmed), Enable, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Reinstall
 ok      Reinstall: Uninstall is back in the same cell, nothing moves: Launch, App Info, Logs, Force Stop, Freeze, Suspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall
 ok      Suspend: Unsuspend in the same cell, nothing moves: Launch, App Info, Logs, Force Stop, Freeze, Unsuspend, Clear Data, Optimize, Standby, Extract APK, Rem Updates, Uninstall

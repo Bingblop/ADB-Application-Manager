@@ -101,8 +101,8 @@ const ALL_MIX = (rootBlock.match(/--[\w-]+:\s*color-mix\(/g) || []).length;
     check(`${t}, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()`, same.length === 0, same.join(' | '));
     // the rules that mix two colours themselves: their @supports not fallback, never the white outline or a missing fill
     const fb = [];
-    if (!near(o.el.gear.border, o.lineAccent)) fb.push('gear border ' + o.el.gear.border);
-    if (o.el.gear.img === 'none') fb.push('gear fill none');
+    // v7.15: the gear is a quiet tonal button (--fill-2 on the hairline), nothing in it needs color-mix(): it looks as it does with color-mix()
+    if (!near(o.el.gear.border, m.el.gear.border) || !near(o.el.gear.bg, m.el.gear.bg) || clear(o.el.gear.bg)) fb.push('gear ' + o.el.gear.border + ' ' + o.el.gear.bg + ' vs ' + m.el.gear.border + ' ' + m.el.gear.bg);
     // the coloured action buttons are filled (v7.14) from fixed gradients that need no color-mix()
     if (!/linear-gradient/.test(o.el.red.img)) fb.push('red sheet button fill ' + o.el.red.img);
     if (!/linear-gradient/.test(o.el.cdRed.img)) fb.push('Connected Devices row button fill ' + o.el.cdRed.img);

@@ -7,7 +7,7 @@ package com.bloatware.bingblop;
  * A dialog gets a real title instead of the WebView's 'The page at "file://" says:'. The page can name it (nextDialogTitle(title) in
  * index.html, which reaches {@link PageDialogs#setNextTitle}); without one the title is taken from the message: a short first line followed
  * by a blank line ("Delete the preset X?\n\nThis cannot be undone.") is the title and the rest the body; otherwise a plain word for the kind
- * of dialog ("Confirm", "ADB System Manager", "Enter a value", or the page's translation of them).
+ * of dialog ("Confirm", "ADB Full System Manager", "Enter a value", or the page's translation of them).
  */
 final class PageDialogText {
     private PageDialogText() {}
@@ -45,7 +45,7 @@ final class PageDialogText {
     static String defaultTitle(int kind) {
         if (kind == CONFIRM) return "Confirm";
         if (kind == PROMPT) return "Enter a value";
-        return "ADB System Manager";
+        return "ADB Full System Manager";
     }
 
     /** One line of plain text: control characters (line breaks included) become spaces, at most 120 characters. */
