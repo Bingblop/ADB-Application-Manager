@@ -1,5 +1,42 @@
 # Changelog
 
+## v7.15.0-Pro (versionCode 861)
+
+A look-and-reach release on top of v7.14.1: the app is renamed **ADB Full System Manager** and every tab got a top-to-bottom UI pass, so the screens are calmer and the things used most are one tap or one hold away (#251, #252). What the app does is unchanged: no feature was taken out, no setting changes meaning, and the package, the signing certificate, the APK file names and the permissions are the same, so it installs over every earlier version. The owner's earlier choices stay: the check marks beside the app icons, the row tints and gradient buttons, the Settings order of v7.14, an app menu that asks before nothing, the Private DNS pointer in Hidden Settings, Live Logcat's green Play and red Stop, and the Console's long-press menu. **Nothing in it has been run on a phone** by the people and tools that wrote it; `docs/PHONE-SCRIPT-v7.15.0.md` is the phone script.
+
+**Name and header**
+
+- **ADB Full System Manager** is the name under the icon, on the widget, in the page title, in About, the console banner, shared texts and the Help Guide, in all 14 languages. Package, folders, APK file names and the release name are unchanged.
+- **The header** is the name in one colour, and under it only the Android and One UI versions ("Android 16 • One UI 8.5"; no maker or model, each part kept whole). The mode badge shows the short mode name and, when the chosen mode is not ready, says so in the warning colour ("Shizuku (not ready)"); a tap still opens Working Modes. The gear is a quiet tonal button and the only gear: the Extra Settings tab has a switch icon, and the row's Action Button set to App info shows an (i).
+- **Colours and type:** softer shadows on sheets and menus, white cards on a tinted page in the Material 3 palette's light theme (Material You from the wallpaper and the Palette Styles keep their own light colours), and one weight ladder (titles and the selected state heavier, chips and buttons a step lighter).
+
+**Easier to reach**
+
+- **Long-press shortcuts:** the **Apps** tab lists Running, Frozen and Uninstalled (the list with only that filter on); **Files** lists Search files, Storage and Downloads; **History** (the ADB Shell's command history) can be chosen for the **Console** tab in Settings > Navigation > Shortcuts.
+- **Select shown** sits next to **Clear filters** while a filter is on, and selects every app the list shows.
+- **The Debloater's** top card starts folded to its name and the list's status (a tap opens it, and it stays as you leave it); **Update List** and **History** (with Undo) are round buttons beside the search, so they stay one tap away.
+- **Files** shows the open folder's path as a row of crumbs: a tap on a folder above this one (or on the "/" after it) opens it; each crumb is a full-size tap, the path reads from the root in every language, and the path field still takes a typed path.
+- **Saved Applications** puts the lists first, right under the filters; Back up and restore and Quick actions fold at the bottom.
+
+**Every tab, calmer**
+
+- **Apps and the app menu:** rows a little shorter, the row's Action Button quiet until pressed, filter rows that fade at the edge with more; in the app menu the permission chips sit on one line, long permission names break at "." and "_", and the tab counts are plain numbers.
+- **Bottom bar:** lighter labels on the tabs that are not open; the More tiles use short labels on narrow screens.
+- **Console:** the "Active mode" card under the command field is gone while a working mode is ready (the header badge names the mode); a tinted card says when no working mode is ready, with Configure, and explains the Rish shell while Rish mode is on. The mode button, the field and Run are one height; the output area is a console card waiting at a "$" prompt; the find row comes with the first output.
+- **Live Logcat** opens on a title row with Play beside the title; its tools are two rows and the level key wraps so every level is in view.
+- **Hidden Settings:** the search bar's buttons are as tall as the field; a setting's value and Ask agent share one line.
+- **Installer** and **Morphe Patcher:** Application Installer | Application Updater and Apps | Community are segmented controls like Light / Dark / System; Morphe's Sources, Helper, Patched APKs and Settings are one row that scrolls sideways; Patch a file is tonal.
+- **Settings:** long descriptions show two lines and open with a tap (a small arrow marks text that has more); Palette Style shows three swatches a row (two on a narrow screen, so no name breaks).
+- **Task Manager:** the sort buttons are chips, the chosen one tinted; Graph speed shares a line with its label where the slider keeps room to drag, else the slider and its value take the next line together. **Extra Settings:** the section icons sit on a tinted tile.
+- **SD Maid:** each tool's Scan is tonal, so Scan all is the one bright button in the top card and the tool list (Clear Data from Uninstalled Apps and Trim Caches keep their bright buttons in their own cards); the long explanations of Clear Data from Uninstalled Apps and Trim Caches fold under "What does this do?".
+- **About:** Handy to know, Privacy and Credits start folded. **Connected Devices** with no device shows only Refresh in its top card (the empty state below has + Add device). The tab rows of App Stores and Connected Devices fade at the edge with more.
+
+**Fixes found on the way**
+
+- **Debloater:** a row's buttons no longer take the sticky action bar's layout (they shared a class name), so they sit at the end of the row.
+- **A folded card's ?** sits left of the fold button, and their tap areas no longer overlap.
+- **Live Logcat's All apps** button reads in the text colour like the Level and Lines selects beside it.
+
 ## v7.14.1-Pro (versionCode 860)
 
 A release on top of v7.14.0, cut from `main`: the 57 fixes of a full review of `main` and of the v7.14.0 changes (#238), a check in the release workflow (#239), two unused leftovers taken out of the repository (#240, #241), and seven changes the owner asked for after v7.14.0 (#242 to #248): a progress notification for the Stop apps tile, a Speed test section in Extra Settings, a Refresh button in the File Manager, Installed | Uninstalled as one choice, a Gradient switch and a shortcut for Row tints, and the Updated 7d filter taken out. Each fix and each change comes with a Java suite or a UI script that fails on the old code, except the two CI workflow changes (BLD-4, BLD-6), which were checked by parsing the YAML and running their steps on a computer. **Nothing in it has been run on a phone** by the people and tools that wrote it; the Live Update part of the Stop apps notification calls Android 16's documented API and has not run on any phone. `docs/PHONE-SCRIPT-v7.14.1.md` is one phone step per change.
