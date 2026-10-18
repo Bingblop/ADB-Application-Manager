@@ -606,7 +606,7 @@
     <li>A second tap while a run is going does not start another one: the message says "Stop apps is already running. Tap Cancel in its notification to stop it."</li>
   </ul>
   <h4>Apps it never stops</h4>
-  <p>Whatever the list says, <b>Stop apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB System Manager), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
+  <p>Whatever the list says, <b>Stop apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB Full System Manager), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
 
   <h4>Step by step: set up Stop apps</h4>
   <ol class="hg-steps">
