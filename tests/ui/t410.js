@@ -91,7 +91,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // ---- 3. the other long screens, and a list in a box of its own ----
   page = await open();
   for (const v of ['prefs', 'extrasettings', 'sdm', 'about']) {
-    await page.evaluate(v => { switchView(v); window.scrollTo(0, 0); }, v); await sleep(400);
+    // v7.15: SD Maid's explanations and About's reading cards start folded; opened here, so each screen is long again
+    await page.evaluate(v => { switchView(v); const view = document.querySelector('.view-content.active');
+      view.querySelectorAll('details.sd-more').forEach(d => { d.open = true; }); view.querySelectorAll('.cc.cc-closed').forEach(c => ccApply(c, true, false)); window.scrollTo(0, 0); }, v); await sleep(400);
     const h = await page.evaluate(() => (document.scrollingElement || document.documentElement).scrollHeight);
     await scrollTo(page, 2000);
     const a = await st(page);

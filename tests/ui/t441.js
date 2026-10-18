@@ -55,7 +55,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   // the long-press menu of Console
   const sc = await ev(() => ({ ids: TAB_SHORTCUTS.console.map(i => i.id).join(), shown: bnavScList('console').map(i => bnavScLabel(i)).join(), terminal: 'terminal' in TAB_SHORTCUTS }));
-  check('6. Console\'s long-press menu: both segments, then the Terminal\'s full screen and Coding Agents (Termux setup and settings can be chosen)', sc.ids === 'shell,term,full,agents,termux,settings' && sc.shown === 'ADB Shell,Terminal,Full-screen terminal,Coding Agents' && !sc.terminal, JSON.stringify(sc));
+  check('6. Console\'s long-press menu: both segments, then the Terminal\'s full screen and Coding Agents (Termux setup, settings and, since v7.15, the shell\'s History can be chosen)', sc.ids === 'shell,term,full,agents,termux,settings,history' && sc.shown === 'ADB Shell,Terminal,Full-screen terminal,Coding Agents' && !sc.terminal, JSON.stringify(sc));
   await ev(() => { switchView('apps'); TAB_SHORTCUTS.console.find(i => i.id === 'agents').run(); }); await sleep(400);
   check('   "Coding Agents" opens Console on Terminal with the agent picker focused', await ev(() => currentViewName() === 'console' && cnSeg === 'term' && document.activeElement.id === 'txAgent'));
   await ev(() => { switchView('apps'); TAB_SHORTCUTS.console.find(i => i.id === 'shell').run(); }); await sleep(250);

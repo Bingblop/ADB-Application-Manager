@@ -57,7 +57,7 @@ const mock = require('./lib/console_mock');
   s = await ev(page, () => ({ timer: !!logcatTimer, play: document.getElementById('logcatPlayBtn').innerText, n: window.__calls.logcat.length, ph: document.getElementById('logcatFilter').placeholder, rows: document.querySelectorAll('#logcatOutput .lc-row').length }));
   check('Live Logcat starts reading at once (Stop shown, polling, the lines drawn)', s.timer && s.play === 'Stop' && s.n >= 1 && s.rows === 2, JSON.stringify(s));
   check('the filter box has the Kotlin console\'s hint, with "text" (the filter is plain text, not a regex)', s.ph === 'Filter tag / text...');
-  const kinds = await ev(page, () => ['logcatLevel', 'logcatLines', 'logcatAppBtn', 'logcatPlayBtn', 'logcatRecBtn', 'logcatRecListBtn', 'logcatKey', 'logcatOutput', 'logcatScope'].map(i => !!document.getElementById(i) && document.querySelector('#view-logcat #cnSegLog').contains(document.getElementById(i))).every(Boolean)
+  const kinds = await ev(page, () => ['logcatLevel', 'logcatLines', 'logcatAppBtn', 'logcatPlayBtn', 'logcatRecBtn', 'logcatRecListBtn', 'logcatKey', 'logcatOutput', 'logcatScope'].map(i => !!document.getElementById(i) && document.getElementById('view-logcat').contains(document.getElementById(i))).every(Boolean)          // v7.15: Play / Stop is in the title row
     && ['Copy', 'Save', 'Share'].every(t => [...document.querySelectorAll('#cnSegLog button')].some(x => x.textContent.trim() === t)));
   check('everything of the old Logcat Viewer is in the tab (level, lines, app picker, Play, Record to file, Recordings, key, Copy, Save, Share)', kinds);
   // stops on leaving the tab, starts again on coming back
@@ -212,7 +212,7 @@ const mock = require('./lib/console_mock');
       };
     });
     check('[' + w + ' px ' + scheme + '] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card', g.side && g.inside && g.badgeOneLine && g.badgeIn, JSON.stringify(g));
-    check('[' + w + ' px ' + scheme + '] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling', g.fieldH === 56 && g.runW === 58 && g.sticky === 'sticky', JSON.stringify({ f: g.fieldH, r: g.runW, s: g.sticky }));
+    check('[' + w + ' px ' + scheme + '] the command box is 48 px tall (v7.15: as tall as $ and Run), Run 58 px wide, the box row sticks while scrolling', g.fieldH === 48 && g.runW === 58 && g.sticky === 'sticky', JSON.stringify({ f: g.fieldH, r: g.runW, s: g.sticky }));
     check('[' + w + ' px ' + scheme + '] the outcome text, the command and the output read at 3:1 or better on the card (' + g.contrast.join('/') + ', ' + g.cmdContrast + ', ' + g.outContrast + ')', g.contrast.every(x => x >= 3) && g.cmdContrast >= 3 && g.outContrast >= 3);
     await p.close();
   }

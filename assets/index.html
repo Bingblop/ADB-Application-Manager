@@ -248,9 +248,9 @@
         }
         .copy-chip:active { transform: scale(0.96); }
         /* Live Logcat's Play / Stop (the owner's choice, v7.14): filled, the Reinstall green to play and the Uninstall red to stop, black text and a black outline in either theme */
-        #cnSegLog .batch-tool-link.lc-play, #cdPane-logcat .batch-tool-link.lc-play { background: var(--fill-reinstall); color: var(--on-fill); border: 1px solid var(--on-fill); font-weight: var(--fw-heavy); }
-        #cnSegLog .batch-tool-link.lc-play.is-playing, #cdPane-logcat .batch-tool-link.lc-play.is-playing { background: var(--fill-uninstall); }
-        #cnSegLog .batch-tool-link.lc-play:active, #cdPane-logcat .batch-tool-link.lc-play:active { filter: brightness(0.82); }
+        #lcTitleRow .batch-tool-link.lc-play, #cdPane-logcat .batch-tool-link.lc-play { background: var(--fill-reinstall); color: var(--on-fill); border: 1px solid var(--on-fill); font-weight: var(--fw-heavy); }
+        #lcTitleRow .batch-tool-link.lc-play.is-playing, #cdPane-logcat .batch-tool-link.lc-play.is-playing { background: var(--fill-uninstall); }
+        #lcTitleRow .batch-tool-link.lc-play:active, #cdPane-logcat .batch-tool-link.lc-play:active { filter: brightness(0.82); }
         #cdPane-logcat .batch-tool-link.lc-play { padding: var(--space-1) var(--space-4); border-radius: var(--radius-sm); }
         /* Connected Devices' Logcat in the same colours as Live Logcat (the owner's wish, v7.14): the badge and the bar in the level's dot colour, each row tinted
            in it as strongly as Row tints says, in place of the fixed washes of Warn, Error and Fatal */
@@ -766,7 +766,9 @@
         /* A long intro paragraph (SD Maid, Saved lists, Hidden settings, the stores, the Default Ask Agent, the Morphe and SD Maid credits): two lines,
            ending in "…"; the text itself opens and closes it (script: clampIntro). One that fits in two lines is left as it is. */
         .clamp-2:not(.open) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-        .clamp-2.is-clamped { cursor: pointer; border-radius: var(--radius-sm); }
+        .clamp-2.is-clamped { cursor: pointer; border-radius: var(--radius-sm); position: relative; padding-right: var(--space-5); }
+        .clamp-2.is-clamped::after { content: ''; position: absolute; right: var(--space-1); bottom: 0.5em; width: 7px; height: 7px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg); pointer-events: none; }          /* v7.15: the cue that a tap opens it */
+        .clamp-2.is-clamped.open::after { bottom: 0.25em; transform: rotate(-135deg); }
         .clamp-2.is-clamped:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
         /* Search Bar */
@@ -1317,6 +1319,19 @@
         /* The File Manager's top card: the path bar, the search bar and one row of the actions used most, so the list starts high on a phone;
            the search, list and place options are in the ⋯ More sheet (#fmMoreModal), which keeps the same controls */
         #fmTopCard .fm-bar { margin: var(--space-3) 0 0; }
+        /* v7.15: Go and Search are tonal: the list is what the screen is for, no loud button sits above it */
+        #fmTopCard .fm-bar .term-run-btn { background: var(--tint-accent); border: 1px solid var(--line-accent); color: var(--accent); font-weight: var(--fw-bold); }
+        #fmTopCard .fm-bar .term-run-btn:active { background: var(--accent); color: var(--on-accent); }
+        /* the path of the open folder as crumbs on one line that scrolls sideways */
+        #fmCurrentPath.fm-crumbs { white-space: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: calc(-1 * var(--space-1)) 0 0; font-family: ui-monospace, 'Roboto Mono', monospace; font-size: var(--fs-body); color: var(--text-muted); line-height: var(--ctl-h); }
+        #fmCurrentPath.fm-crumbs::-webkit-scrollbar { display: none; }
+        .fm-crumb { display: inline-block; vertical-align: top; min-height: var(--ctl-h); padding: 0 var(--space-1); border: 0; border-radius: var(--radius-sm); background: none; color: var(--accent); font: inherit; font-weight: var(--fw-bold); cursor: pointer; }
+        .fm-crumb:active, .fm-crumb:focus-visible { background: var(--tint-accent); outline: none; }
+        .fm-crumb-sep { color: var(--text-dim); }
+        .fm-crumb-here { padding: 0 var(--space-1); color: var(--text-main); font-weight: var(--fw-bold); }
+        #fmList .fm-more { position: relative; width: 40px; height: 40px; padding: 0; border-radius: 50%; background: transparent; color: var(--text-muted); font-size: var(--fs-item); cursor: pointer; }
+        #fmList .fm-more::after { content: ''; position: absolute; inset: -2px; }
+        #fmList .fm-more:active { background: var(--fill-3); }
         #fmTopCard .fm-actions { flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
         #view-files #fmTopCard .batch-tool-link { padding: var(--space-2) var(--space-3); }
         /* the top card and the list read as one card: the list hangs from the toolbar with a hairline between them (positioned like the top card,
@@ -1369,7 +1384,7 @@
         #appsListContainer .app-actions .btn-mini:focus-visible, #cdAppList .app-actions .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
         .ab-btn { color: var(--accent); -webkit-touch-callout: none; }
-        .uad-row .uad-actions { margin-left: auto; align-self: flex-start; }
+        .uad-row .uad-row-actions { margin-left: auto; align-self: flex-start; }          /* not .uad-actions: that is the sticky action bar */
         .ab-sheet-list { display: flex; flex-direction: column; gap: var(--space-3); }
         .ab-sheet-row { display: flex; align-items: center; gap: var(--space-4); width: 100%; padding: var(--space-4) var(--space-4); background: var(--bg-surface); border: 1px solid var(--accent); border-radius: var(--radius-md); color: var(--text-main); font-size: var(--fs-label); font-weight:var(--fw-bold); text-align: left; cursor: pointer; }
         .ab-sheet-row:active { background: var(--accent); color: var(--on-accent); }
@@ -1842,7 +1857,7 @@
         .trk-cats { font-size: var(--fs-pill); color: var(--text-muted); }
         .uad-chip.uad-chip-row { font-size: var(--fs-overline); padding: 1px var(--space-2); gap: var(--space-1); margin: 0 var(--space-1) var(--space-1) 0; line-height: 1.5; vertical-align: middle; }
         .sheet-avatar:empty { display: none; }
-        .perm-name.fm-dir { color: var(--accent); font-weight:var(--fw-heavy); }
+        .perm-name.fm-dir { color: var(--text-main); font-weight:var(--fw-heavy); }          /* v7.15: the name in the text colour; the folder icon carries the accent */
 
         .sheet-avatar:empty { display: none; }          /* a sheet with no symbol to show has no empty tile either */
         .sheet-avatar.has-icon { background: var(--bg-surface); overflow: hidden; }          /* the app's own icon instead of its first letter */
@@ -2208,6 +2223,14 @@
 
         /* Settings > Trim Caches: the explanation under the button */
         .trim-explain { margin-top: var(--space-4); font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); }
+        /* v7.15: the long explanations of SD Maid's last two cards fold under "What does this do?", as in Extra Settings */
+        .sd-more { margin-top: var(--space-4); border-top: 1px solid var(--border-glass); }
+        .sd-more > summary { display: flex; align-items: center; min-height: 44px; font-size: var(--fs-body); font-weight: var(--fw-heavy); cursor: pointer; list-style: none; color: var(--accent); }
+        .sd-more > summary::-webkit-details-marker { display: none; }
+        .sd-more > summary::after { content: '\25BE'; margin-left: var(--space-2); display: inline-block; }
+        .sd-more[open] > summary::after { transform: rotate(180deg); }
+        .sd-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .sd-more > .trim-explain { margin-top: 0; }
         .trim-explain p { margin: 0 0 var(--space-3) 0; }
         .trim-explain b { color: var(--text-main); }
         .trim-explain code { font-family: monospace; font-size: var(--fs-pill); padding: 1px var(--space-1); border-radius: var(--radius-xs); background: var(--fill-3); color: var(--accent); word-break: break-all; }
@@ -5067,7 +5090,7 @@
                 <div class="filter-scroll" id="fmSearchFilterRow" style="display:none;"></div>
                 <div class="switch-sub" id="fmSearchFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
                 <div id="fmSearchList" style="display:none;"></div>
-                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:var(--space-1);">/storage/emulated/0</div>
+                <div id="fmCurrentPath" class="fm-crumbs h-fade" translate="no" onclick="fmCrumbTap(event)">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
             </div>
 
@@ -5109,6 +5132,8 @@
             <style>
                 .cd-pickrow { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; margin: var(--space-3h) 0 2px; }
                 .cd-pickrow .op-select { flex: 1 1 150px; min-width: 0; font-size: var(--fs-item); padding: var(--space-3) var(--space-3); }
+                /* v7.15: with no device the empty state below carries + Add device, so the head keeps only Refresh */
+                #cdTop.cd-nodev #cdDeviceSel, #cdTop.cd-nodev #cdAddBtn { display: none; }
                 .cd-info { margin-top: var(--space-3h); }
                 #cdDeviceSel:disabled { opacity: 1; color: var(--text-muted); }
                 .cd-dev { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--fill-1); }
@@ -5245,7 +5270,7 @@
                 @media (max-width: 360px) { .cd-dev-ico { width: 38px; height: 38px; } }
             </style>
 
-            <div class="color-card" id="cdTop">
+            <div class="color-card cd-nodev" id="cdTop">
                 <div class="color-card-title">Connected Devices</div>
                 <div class="color-card-subtitle">Look after a watch, a tablet or another phone from this phone. Built for Wear OS.</div>
                 <div class="cd-pickrow">
@@ -5293,7 +5318,7 @@
             </div>
 
             <div id="cdWork" style="display:none;">
-                <div class="cd-tabs" id="cdTabs" role="tablist"></div>
+                <div class="cd-tabs h-fade" id="cdTabs" role="tablist"></div>
 
                 <!-- Apps -->
                 <div class="cd-pane" id="cdPane-apps">
@@ -5525,6 +5550,11 @@
                 .tm-kill-btn:active { transform: scale(0.92); background: var(--tint-bloat-strong); }
                 .tm-sort-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); flex-wrap: wrap; }
                 .tm-sort-bar button.on { color: var(--accent); }
+                /* v7.15: the sort choices are chips (outlined; the chosen one tinted), the Graph speed row stays one line with its value */
+                .tm-sort-bar .batch-tool-link { padding: var(--space-1) var(--space-4); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font-weight: var(--fw-bold); }
+                .tm-sort-bar .batch-tool-link.on, .tm-sort-bar .batch-tool-link[aria-pressed="true"] { border-color: var(--line-accent); background: var(--tint-accent); color: var(--accent); }
+                .tm-settings-row.tm-speed-row { flex-wrap: nowrap; }
+                .tm-settings-row.tm-speed-row input[type=range] { flex: 1 1 0; }
                 .tm-net-ifaces { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3h); }
                 .tm-net-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) var(--space-3h); border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--fill-1); font-size: var(--fs-body); }
                 .tm-net-row b { font-weight:var(--fw-heavy); }
@@ -5581,8 +5611,8 @@
                         </select>
                         <button class="batch-tool-link" onclick="tmRefreshNow()">Refresh now</button>
                     </div>
-                    <div class="tm-settings-row ovl-slider" style="margin:0;">
-                        <b style="flex:0 0 104px; color:var(--text-muted); font-weight:700; font-size:11px;">Graph speed</b>
+                    <div class="tm-settings-row tm-speed-row ovl-slider" style="margin:0;">
+                        <span>Graph speed</span>
                         <input type="range" id="tmGraphDelay" min="50" max="1000" step="10" value="150" oninput="tmGraphDelayInput()" aria-label="Graph speed">
                         <span id="tmGraphDelayVal" style="font-size:var(--fs-caption); color:var(--text-muted); flex:0 0 52px; text-align:right;">150 ms</span>
                     </div>
@@ -5664,11 +5694,12 @@
                 .sdb-tab b { font-size:var(--fs-caption); font-weight:var(--fw-bold); opacity:.85; font-variant-numeric:tabular-nums; }
                 .sdb-tab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
                 .sdb-bar { display:flex; gap:var(--space-3); align-items:center; margin-bottom:var(--space-3); }
-                .sdb-iconbtn { flex:0 0 auto; min-width:38px; padding:0 var(--space-3h); height:38px; border-radius:var(--radius-md); border:1px solid var(--border-glass); background:var(--fill-2); color:var(--text-main); font-size:var(--fs-title); font-weight:var(--fw-heavy); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+                .sdb-iconbtn { flex:0 0 auto; position:relative; min-width:40px; padding:0 var(--space-3h); height:40px; border-radius:var(--radius-md); border:1px solid var(--border-glass); background:var(--fill-2); color:var(--text-main); font-size:var(--fs-title); font-weight:var(--fw-heavy); cursor:pointer; display:flex; align-items:center; justify-content:center; }
                 .sdb-iconbtn:active { transform:scale(0.94); }
+                .sdb-iconbtn::after { content:''; position:absolute; inset:-2px; }          /* v7.15: a 44px tap on the 40px button */
                 .sdb-iconbtn.accent { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
                 .sdb-searchwrap { position:relative; flex:1 1 auto; min-width:0; }
-                .sdb-searchwrap .list-search { width:100%; padding-right:30px; height:38px; font-size:var(--fs-item); }
+                .sdb-searchwrap .list-search { width:100%; padding-right:30px; height:40px; font-size:var(--fs-item); }
                 .sdb-searchwrap .search-clear { right:9px; }
                 .sdb-filters { display:flex; gap:var(--space-3) var(--space-2); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3); }          /* 8px between rows: the chips' 44px hit areas meet, they do not overlap */
                 .sdb-filters .filter-chip { font-size:var(--fs-pill); padding:var(--space-1) var(--space-3h); background:transparent; font-family:inherit; }
@@ -5686,6 +5717,10 @@
                 .sdb-hint { font-size:var(--fs-caption); color:var(--text-muted); margin-top:1px; line-height:1.35; }
                 .sdb-val { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-body); color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); margin-top:var(--space-1); overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-wrap; line-height:1.35; }
                 .sdb-val.empty { color:var(--text-muted); font-style:italic; }
+                /* v7.15: the value and Ask agent on one line, so a row is a line shorter */
+                .sdb-valrow { display:flex; align-items:center; gap:var(--space-3); margin-top:var(--space-1); min-width:0; }
+                .sdb-valrow > .sdb-val { flex:1 1 auto; min-width:0; margin-top:0; }
+                .sdb-valrow > .agent-btn { flex:0 0 auto; margin:0; }
                 .sdb-sw { flex:0 0 auto; width:44px; height:26px; border-radius:var(--radius-pill); border:1px solid var(--border-glass); background:var(--fill-4); position:relative; cursor:pointer; padding:0; transition:background .18s; }
                 .sdb-sw span { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--text-muted); transition:transform .18s, background .18s; }
                 .sdb-sw.on { background:var(--accent); border-color:transparent; }
@@ -5971,7 +6006,7 @@
                 .store-prompt { display:flex; gap:var(--space-3h); align-items:center; background:var(--fill-2); border:1px dashed var(--accent); border-radius:var(--radius-md); padding:var(--space-3h) var(--space-4); margin-bottom:var(--space-3h); font-size:var(--fs-body); color:var(--text-main); }
             </style>
 
-            <div class="store-subtabs" id="storeSubtabs" role="tablist">
+            <div class="store-subtabs h-fade" id="storeSubtabs" role="tablist">
                 <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">ShizuStore</button>
                 <button class="store-subtab" data-store="github" onclick="switchStoreTab('github')">GitHub</button>
                 <button class="store-subtab" data-store="fdroid" onclick="switchStoreTab('fdroid')">F-Droid</button>
@@ -6586,7 +6621,7 @@
                 #extraSettingsRoot .xs-chip-k { color: var(--text-muted); font-weight: var(--fw-bold); white-space: nowrap; flex: 0 0 auto; }
                 #extraSettingsRoot .xs-chip-v { font-weight: var(--fw-heavy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-variant-numeric: tabular-nums; }
                 #extraSettingsRoot .xs-sec-head { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-3); min-width: 0; }
-                #extraSettingsRoot .xs-ico { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 12px var(--accent-glow); }
+                #extraSettingsRoot .xs-ico { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; background: var(--tint-accent); color: var(--accent); box-shadow: none; }          /* v7.15: a tonal tile, no gradient and no glow */
                 #extraSettingsRoot .xs-ico svg { width: 22px; height: 22px; }
                 #extraSettingsRoot .xs-sec-line { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-width: 0; flex: 1 1 auto; }
                 #extraSettingsRoot .xs-sec-line .color-card-title { margin: 0; font-size: var(--fs-lead); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -7356,8 +7391,10 @@
 <!-- MORPHE:VIEW:BEGIN -->
         <section id="view-morphe" class="view-content">
             <style>
-                .mp-top-btns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3h); }
-                .mp-top-btns .mode-action-btn { justify-content: center; min-width: 0; }
+                /* v7.15: Sources, Morphe Helper, Patched APKs and Settings on one row that scrolls sideways (with the fade), not a 2 x 2 block above the apps */
+                .mp-top-btns { display: flex; flex-wrap: nowrap; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; margin-top: var(--space-3); padding-block: var(--space-1); }
+                .mp-top-btns::-webkit-scrollbar { display: none; }
+                .mp-top-btns .mode-action-btn { flex: 0 0 auto; justify-content: center; white-space: nowrap; }
                 .mp-credit { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-3h); overflow-wrap: anywhere; }
                 .mp-credit a { color: var(--accent); text-decoration: none; font-weight:var(--fw-bold); }
                 .mp-engine-warn { margin-top: var(--space-3h); padding: var(--space-3h) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--status-suspended); background: var(--tint-suspended); font-size: var(--fs-body); line-height: 1.5; }
@@ -7365,6 +7402,11 @@
                 .mp-tabs::-webkit-scrollbar { display: none; }
                 .mp-tab { flex: 0 0 auto; border: 1px solid var(--border-glass); background: var(--fill-2); color: var(--text-muted); border-radius: var(--radius-pill); padding: var(--space-3) var(--space-5); font-size: var(--fs-item); font-weight:var(--fw-heavy); cursor: pointer; white-space: nowrap; }
                 .mp-tab.active { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); border-color: transparent; box-shadow: 0 2px 12px var(--accent-glow); }
+                /* v7.15: Apps | Community is one segmented control (the look of Light / Dark / System), no glow */
+                #mpTabs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); overflow: visible; margin: var(--space-3h) 0 var(--space-3); padding: var(--space-1); background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); }
+                #mpTabs .mp-tab { min-height: 44px; padding: var(--space-2) var(--space-3); border: 0; background: transparent; }
+                #mpTabs .mp-tab.active { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+                #mpPane-apps .mp-row > .mode-action-btn.primary { background: var(--tint-accent); border: 1px solid var(--line-accent); color: var(--accent); box-shadow: none; }          /* Patch a file: tonal (the apps below are what the tab is for) */
                 .mp-pane { display: none; }
                 .mp-pane.active { display: block; }
                 .mp-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); }
@@ -7450,7 +7492,7 @@
             <div class="color-card" id="mpTop">
                 <div class="color-card-title">Morphe Patcher</div>
                 <div class="color-card-subtitle">Patch apps with Morphe, on this phone: pick the patches, build the APK, sign it and install it.</div>
-                <div class="mp-top-btns">
+                <div class="mp-top-btns h-fade">
                     <button class="mode-action-btn" onclick="mpSourcesOpen()">Sources</button>
                     <button class="mode-action-btn" onclick="mpHelperOpen()">Morphe Helper</button>
                     <button class="mode-action-btn" onclick="mpPatchedOpen()">Patched APKs<span id="mpPatchedCount"></span></button>
@@ -7632,6 +7674,9 @@
                 .sd-act .mode-action-btn.danger.fill { background: var(--danger-solid); color: var(--on-danger); }
                 .sd-act .mode-action-btn.ico { flex: 0 0 auto; padding-left: var(--space-4); padding-right: var(--space-4); }
                 .sd-act .mode-action-btn:disabled { opacity: 0.45; }
+                /* v7.15: a tool's own Scan is tonal; Scan all, above the cards, stays the one primary of the screen */
+                .sd-act .mode-action-btn.primary { background: var(--tint-accent); border: 1px solid var(--line-accent); color: var(--accent); box-shadow: none; }
+                #sdAcs > :empty { display: none; }          /* the accessibility card's rows that have nothing to say take no room */
                 .sd-sheet-list { display: block; }
                 .sd-row { display: flex; align-items: flex-start; gap: var(--space-3h); padding: var(--space-3) 0; border-bottom: 1px solid var(--fill-2); }
                 .sd-row:last-child { border-bottom: 0; }
@@ -7684,7 +7729,7 @@
 
             <div class="color-card" id="sdAcs">
                 <div class="color-card-title">Accessibility service</div>
-                <div class="color-card-subtitle">Only AppCleaner uses it: it opens the system's App info screen of each app and taps Clear cache, for the caches no file access can reach. It does nothing else, never reads what is on the screen apart from those screens, and stops when the screen turns off.</div>
+                <div class="color-card-subtitle clamp-2">Only AppCleaner uses it: it opens the system's App info screen of each app and taps Clear cache, for the caches no file access can reach. It does nothing else, never reads what is on the screen apart from those screens, and stops when the screen turns off.</div>
                 <div class="sd-chips" id="sdAcsChips"></div>
                 <div class="sd-note" id="sdAcsNote"></div>
                 <div id="sdAcsFail"></div>
@@ -7700,10 +7745,12 @@
                     <button class="mode-action-btn primary" id="uninstDataBtn" onclick="uninstDataStart()"><span id="uninstDataLock"></span><span id="uninstDataLabel">Clear Data from Uninstalled Apps</span></button>
                 </div>
                 <div class="color-card-subtitle" style="margin-top:8px;">Clears the data of apps that were uninstalled from this device while the <code translate="no">DONT_DELETE_FLAG</code> flag was active. This usually applies to <b>third-party</b> apps, and it can <b>fix common problems</b> when you install them again.</div>
+                <details class="sd-more"><summary>What does this do?</summary>
                 <div class="trim-explain" id="uninstDataExplain">
                     <p><b>What happens.</b> The app lists the apps that are uninstalled on this phone, and in <b>Root</b> mode only those that still have a data folder, with its size. You tick the ones to clear and confirm. Each one is cleared with <code translate="no">pm clear</code>; if that is refused, Root removes the app's data folders directly, and without Root the app is brought back for you with <code translate="no">pm install-existing</code> and removed again <i>without</i> keeping its data. An app that cannot be brought back (its APK was removed) needs Root.</p>
                     <p><b>What is not touched.</b> Installed apps, and the files in your own folders. The data of the apps you clear is gone for good.</p>
                 </div>
+                </details>
             </div>
 
             <div class="color-card" id="trimCachesCard">
@@ -7713,6 +7760,7 @@
                     <button class="mode-action-btn primary" id="trimCachesBtn" onclick="trimCachesAll()"><span id="trimCachesLock"></span><span id="trimCachesLabel">Trim Caches in All Applications</span></button>
                 </div>
                 <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:8px;"></div>
+                <details class="sd-more"><summary>What does this do?</summary>
                 <div class="trim-explain" id="trimCachesExplain">
                     <p><b>What it runs.</b> The button runs <code translate="no">pm trim-caches 128G</code> on the phone, the same as typing <code translate="no">adb shell pm trim-caches 128G</code> on a computer. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the button is locked.</p>
                     <p><b>What it does.</b> <code translate="no">pm trim-caches</code> asks Android to free space by deleting app caches until the phone has the amount of free storage you give it. 128 GB is more free space than any phone has, so the target can never be reached: Android keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. The apps it starts with, and the order, are Android's own choice.</p>
@@ -7721,6 +7769,7 @@
                     <p><b>What you may notice.</b> The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again. An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again. Apps that are running right now may keep some of their cache until they close.</p>
                     <p><b>How long it takes.</b> From a few seconds to a minute or two, depending on how many apps you have and how much cache they hold. The app stays usable while it runs, and a report shows how much free space there was before and after.</p>
                 </div>
+                </details>
             </div>
             <div class="sd-undo" id="sdUndo"><span id="sdUndoText"></span><button onclick="sdUndoDo()">Undo</button></div>
         </section>
@@ -7820,7 +7869,7 @@
                 <div id="deviceSpecsBody"></div>
             </div>
 
-            <div class="color-card">
+            <div class="color-card cc" id="aboutHandy" data-cc="abouthandy" data-cc-default="closed">
                 <div class="color-card-title">Handy to know</div>
                 <ul class="about-list">
                     <li><b>Back</b> closes the open sheet, steps up a folder or out of an archive, then returns to the tab you came from. Leaving takes a second, deliberate press.</li>
@@ -7832,13 +7881,13 @@
                 </ul>
             </div>
 
-            <div class="color-card">
+            <div class="color-card cc" id="aboutPrivacy" data-cc="aboutprivacy" data-cc-default="closed">
                 <div class="color-card-title">Privacy</div>
                 <div class="about-tip">No account, no ads, no analytics and no server of ours. Everything runs on your phone. The app only goes online for something you open or ask for: update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key.</div>
                 <div class="about-tip">The ADB key and the APK-signing key are created on this phone and never leave it.</div>
             </div>
 
-            <div class="color-card">
+            <div class="color-card cc" id="aboutCredits" data-cc="aboutcredits" data-cc-default="closed">
                 <div class="color-card-title">Credits</div>
                 <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
                 <div class="about-tip">Tracker libraries: the list is the <a href="#" onclick="openUrlExternal('https://exodus-privacy.eu.org'); return false;">Exodus Privacy</a> tracker database, made available under the Open Database License (ODbL) 1.0. This app reads class names in the apps' code on the phone; nothing is sent to Exodus.</div>
@@ -7864,9 +7913,11 @@
                 .cn-ind { position: absolute; inset-inline-start: 0; bottom: 0; width: 50%; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); pointer-events: none; transition: transform .25s; }
                 .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(100%); }
                 :root[dir="rtl"] .cn-tabs[data-seg="term"] .cn-ind { transform: translateX(-100%); }
-                /* the Live Logcat tab has one title in the same row (no segments): the underline spans it */
-                .cn-tabs.lc-title .cn-tab { display: flex; align-items: center; justify-content: center; margin: 0; cursor: default; color: var(--accent); }   /* a heading, not a tab: the selected tab's colour without aria-selected */
-                .cn-tabs.lc-title .cn-ind, .cn-tabs.lc-title.has-help .cn-ind { width: calc(100% - var(--cn-help-w, 0px)); transform: none; }
+                /* v7.15: Live Logcat opens on a title row like the other tabs' heads (not a lone tab with an underline): the title, Play / Stop beside it, the ? at the end */
+                #lcTitleRow { display: flex; align-items: center; gap: var(--space-3); }
+                #lcTitleRow > .sec-title { flex: 1 1 auto; min-width: 0; }
+                #lcTitleRow > .lc-play { flex: 0 0 auto; min-height: 40px; padding: 0 var(--space-5); border-radius: var(--radius-pill); }
+                #lcTitleRow > .help-q { top: calc(var(--space-1) + 2px); }
                 @media (prefers-reduced-motion: reduce) { .cn-ind { transition: none; } }
                 .cn-tabs .help-q { top: calc((48px - var(--ctl-h)) / 2); right: auto; inset-inline-end: var(--space-2); }
                 /* the "?" sits in its own space at the end of the row (no tab text under it, in either direction), and the underline is half of what is left */
@@ -7876,10 +7927,10 @@
                 .cn-seg[hidden] { display: none; }
                 .cn-sticky { position: sticky; top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px)); z-index: 20; background: var(--bg-base); padding: 0 0 var(--space-3h); margin-bottom: 0; }
                 .cn-row { display: flex; align-items: center; gap: var(--space-3); }
-                .cn-field { flex: 1 1 auto; min-width: 0; height: 56px; padding: 0 var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--text-main); font: 14px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; outline: none; }
+                .cn-field { flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--text-main); font: 14px/1.4 ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; outline: none; }
                 .cn-field::placeholder { color: var(--text-dim); font: 12px/1.4 var(--ui-font, system-ui, sans-serif); }
                 .cn-field:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-                .cn-run { flex: 0 0 auto; min-width: 58px; height: 40px; padding: 0 var(--space-5); display: inline-flex; align-items: center; justify-content: center; position: relative; border: 0; border-radius: var(--radius-sm); background: var(--accent); color: var(--on-accent); cursor: pointer; }
+                .cn-run { flex: 0 0 auto; min-width: 58px; height: 48px; padding: 0 var(--space-5); display: inline-flex; align-items: center; justify-content: center; position: relative; border: 0; border-radius: var(--radius-sm); background: var(--accent); color: var(--on-accent); cursor: pointer; }
                 .cn-run svg { width: 24px; height: 24px; display: block; }
                 .cn-run.is-idle { background: rgba(var(--ov), 0.12); color: rgba(var(--ov), 0.38); }
                 .cn-run.stop { background: #E53935; color: #fff; }
@@ -7891,9 +7942,9 @@
                 @keyframes cnSpin { to { transform: rotate(360deg); } }
                 @media (prefers-reduced-motion: reduce) { .cn-spin { animation-duration: 3s; } }
                 .cn-icon { flex: 0 0 auto; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); cursor: pointer; padding: 0; }
-                .cn-icon.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); }
+                .cn-icon.danger { color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); background: var(--tint-bloat); border-color: var(--line-bloat); }
                 .cn-icon svg { width: 24px; height: 24px; display: block; }
-                .cn-mode { flex: 0 0 auto; width: 40px; height: 40px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font: 800 14px ui-monospace, monospace; cursor: pointer; padding: 0; }
+                .cn-mode { flex: 0 0 auto; width: 48px; height: 48px; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font: 800 14px ui-monospace, monospace; cursor: pointer; padding: 0; }
                 .cn-mode.chat { color: var(--secondary); border-color: var(--secondary); }
                 .cn-mode:disabled { opacity: .55; }
                 .cn-note { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-2) 2px 0; }
@@ -7902,17 +7953,25 @@
                 .cn-mcard-main { flex: 1 1 auto; min-width: 0; }
                 .cn-mcard h4 { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--accent); overflow-wrap: anywhere; }
                 .cn-mcard p { font-size: var(--fs-pkg); color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+                /* v7.15: the header badge names the mode and opens Working Modes, so this card shows only when it has news: no working mode yet
+                   (in the alert colours, with Configure), or the Rish shell and how to leave it */
+                .cn-mcard.is-ready:not(.is-rish) { display: none; }
+                .cn-mcard:not(.is-ready) { background: var(--tint-user); border-color: var(--line-user); }
                 .cn-mini { flex: 0 0 auto; height: 32px; padding: 0 var(--space-4); display: inline-flex; align-items: center; gap: var(--space-2); background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); cursor: pointer; white-space: nowrap; }
                 .cn-mini:active { background: var(--accent); color: var(--on-accent); }
                 .cn-mini svg { width: 16px; height: 16px; flex: 0 0 auto; }
                 .cn-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3h); }
                 /* one row of small buttons that scrolls sideways (the next one peeks in at the edge) instead of three rows that push the history down */
-                .cn-tools.cn-scroll, #cnSegLog .lc-key { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
-                .cn-tools.cn-scroll::-webkit-scrollbar, #cnSegLog .lc-key::-webkit-scrollbar { display: none; }
+                .cn-tools.cn-scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-inline: -16px; padding-inline: var(--space-5); }
+                .cn-tools.cn-scroll::-webkit-scrollbar { display: none; }
+                .cn-tools.cn-scroll + .cn-tools.cn-scroll { margin-top: calc(-1 * var(--space-2)); }          /* Live Logcat's second row (what to do) right under the first (what to show) */
+                /* v7.15: the find row comes with the first output (there is nothing to find before it) */
+                #cnSegShell:not(:has(#termOutput > .cn-card)) > .cn-find { display: none; }
                 .cn-tools.cn-scroll { padding-block: var(--space-2); margin-block: calc(var(--space-3h) - var(--space-2)) calc(-1 * var(--space-2)); }          /* room for the 44px hit area of the 32px buttons, so the row does not scroll up and down */
                 #cnSegLog .lc-chip { flex: 0 0 auto; }
                 .cn-tools .apps-tool-btn, .cn-tools .batch-tool-link, .cn-tools .op-select { flex: 0 0 auto; white-space: nowrap; height: 32px; min-height: 0; margin: 0; padding: 0 var(--space-4); display: inline-flex; align-items: center; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: 1; width: auto; box-shadow: none; }
                 .cn-tools .op-select { color: var(--text-main); padding: 0 var(--space-3); max-width: 46vw; }
+                .cn-tools #logcatAppBtn { color: var(--text-main); }          /* v7.15: the app filter reads like the Level and Lines selects beside it */
                 .cn-tools .apps-tool-btn.term-pin { border-color: var(--accent); }
                 .cn-tools .apps-tool-btn.rish-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
                 .cn-tools .apps-tool-btn:active, .cn-tools .batch-tool-link:active { background: var(--accent); color: var(--on-accent); }
@@ -7948,7 +8007,10 @@
                 .cn-card.is-note { background: transparent; border-style: dashed; }
                 .cn-card.is-note .cn-head { display: none; }
                 .cn-card.is-note .cn-out { margin-top: 0; font-style: italic; max-height: 40vh; overflow-y: auto; }
-                .cn-empty { margin-top: var(--space-3h); font-size: var(--fs-pill); color: var(--text-muted); padding: var(--space-3h) 2px; white-space: pre-wrap; }
+                /* v7.15: before the first command the output area is already the console's surface, waiting at a prompt */
+                .cn-empty { margin-top: var(--space-3h); padding: var(--space-4); background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-lg);
+                    font-family: ui-monospace, 'Roboto Mono', 'DejaVu Sans Mono', monospace; font-size: var(--fs-code); line-height: 1.5; color: var(--text-muted); white-space: pre-wrap; }
+                .cn-empty::after { content: '\A$ \258D'; color: var(--accent); font-weight: var(--fw-bold); }
                 .cn-empty:has(+ .cn-list > .cn-card) { display: none; }
                 .cn-card .rish-note { color: var(--text-muted); font-style: italic; }
                 .cn-card .rish-prompt { color: var(--text-main); }
@@ -7978,7 +8040,7 @@
                 #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)); }
                 #cnSegLog #logcatRecBtn.is-recording::before { content: '\25A0'; color: inherit; }
                 #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
-                #cnSegLog .lc-key { margin: 10px -16px 0; }
+                #cnSegLog .lc-key { margin: var(--space-3h) 0 0; }
                 #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
                 #cnSegLog #logcatScope:empty { display: none; }
                 @supports not (color: color-mix(in srgb, red 50%, blue)) {
@@ -8020,11 +8082,11 @@
                     </div>
                     <button class="cn-mini" onclick="openWorkingModesModal()">Configure</button>
                 </div>
-                <div class="cn-tools cn-scroll mode-btn-row">
-                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
+                <div class="cn-tools cn-scroll mode-btn-row h-fade">
                     <button class="apps-tool-btn" onclick="openCheatSheet()">Cheat Sheet</button>
                     <button class="apps-tool-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">History</button>
                     <button class="apps-tool-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">Saved</button>
+                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">Rish mode</button>
                     <button class="apps-tool-btn" onclick="runTerminalCmd('id')">UID (id)</button>
                     <button class="apps-tool-btn" onclick="connectAdbTcpUI()">Connect 5555</button>
                     <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">tcpip 5555</button>
@@ -8257,9 +8319,9 @@ Type any command above (e.g. pm list packages -d)</div>
 
         <!-- VIEW: LIVE LOGCAT (its own tab again since v7.14.0; the pane keeps the id cnSegLog it had as a segment of Console, and the Console's look) -->
         <section id="view-logcat" class="view-content">
-            <div class="cn-tabs lc-title" id="lcTitleRow">
-                <h2 class="cn-tab" id="lcTitle">Live Logcat</h2>
-                <span class="cn-ind" aria-hidden="true"></span>
+            <div class="sec-head" id="lcTitleRow">
+                <h2 class="sec-title" id="lcTitle">Live Logcat</h2>
+                <button type="button" class="batch-tool-link lc-play" id="logcatPlayBtn" onclick="logcatTogglePlay()" aria-pressed="false">Play</button>
             </div>
             <div id="cnSegLog" class="cn-seg lc-pane">
                 <div class="cn-sticky">
@@ -8269,8 +8331,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <button class="cn-icon danger" onclick="logcatClear()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                     </div>
                 </div>
-                <div class="cn-tools cn-scroll">
-                    <button type="button" class="batch-tool-link lc-play" id="logcatPlayBtn" onclick="logcatTogglePlay()" aria-pressed="false">Play</button>
+                <div class="cn-tools cn-scroll h-fade">
                     <select class="op-select" id="logcatLevel" onchange="lcSavePrefs(); logcatRefresh()" aria-label="Level">
                         <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
                         <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
@@ -8280,6 +8341,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     </select>
                     <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">All apps ▾</button>
                     <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
+                </div>
+                <div class="cn-tools cn-scroll h-fade">
                     <button type="button" class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()">Record to file</button>
                     <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
                     <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
@@ -11797,18 +11860,24 @@ Type any command above (e.g. pm list packages -d)</div>
                 { id: 'check', label: 'Check for updates', icon: 'check', run: () => { switchView('updates'); setTimeout(() => checkUpdatesUI(), 90); } },
                 { id: 'apks', label: 'Find APKs on storage', icon: 'folder', when: () => !!document.getElementById('apkScanBtn'), run: () => bnavGo('installer', () => { instPaneShow('install'); bnavReveal('#apkScanBtn'); }) }
             ],
-            console: [                                                // the two segments of the Console tab, then the Terminal's full screen, its agent picker and two of its sheets
+            console: [                                                // the two segments of the Console tab, then the Terminal's full screen, its agent picker, two of its sheets and the shell's history
                 bnavCnSeg('shell', 'ADB Shell', 'shell'),
                 bnavCnSeg('term', 'Terminal', 'code'),
                 { id: 'full', label: 'Full-screen terminal', icon: 'fullscreen', run: () => bnavGo('terminal', () => txFullToggle(true)) },
                 { id: 'agents', label: 'Coding Agents', icon: 'robot', when: () => !!document.getElementById('txAgent'), run: () => bnavGo('terminal', () => { bnavReveal('#txAgent'); bnavFocus('txAgent'); }) },
                 { id: 'termux', label: 'Termux setup', icon: 'launch', when: () => typeof txOpenTermuxSetup === 'function' && !!document.getElementById('txTermuxModal'), run: () => bnavGo('terminal', () => txOpenTermuxSetup()) },
-                { id: 'settings', label: 'Terminal settings', icon: 'tune', when: () => typeof txOpenSettings === 'function' && !!document.getElementById('txSettingsModal'), run: () => bnavGo('terminal', () => txOpenSettings()) }
+                { id: 'settings', label: 'Terminal settings', icon: 'tune', when: () => typeof txOpenSettings === 'function' && !!document.getElementById('txSettingsModal'), run: () => bnavGo('terminal', () => txOpenSettings()) },
+                { id: 'history', label: 'History', icon: 'list', when: () => typeof termOpenHistory === 'function', run: () => { cnShowSeg('shell'); switchView('console'); setTimeout(() => termOpenHistory(), 90); } }          // v7.15: choose it in Settings > Navigation > Shortcuts
             ],
             logcat: [                                                 // Live Logcat: its filter, the log of one app, the recordings
                 { id: 'filter', label: 'Filter the log', icon: 'search', when: () => !!document.getElementById('logcatFilter'), run: () => bnavGo('logcat', () => bnavFocus('logcatFilter')) },
                 { id: 'app', label: 'Log of one app', icon: 'list', when: () => typeof lcAppOpen === 'function', run: () => bnavGo('logcat', () => lcAppOpen()) },
                 { id: 'recordings', label: 'Recordings', icon: 'folder', when: () => typeof lcRecListOpen === 'function', run: () => bnavGo('logcat', () => lcRecListOpen()) }
+            ],
+            files: [                                                  // v7.15: the search, and the two places a person opens most
+                { id: 'search', label: 'Search files', icon: 'search', when: () => !!document.getElementById('fmSearchInput'), run: () => bnavGo('files', () => bnavFocus('fmSearchInput')) },
+                { id: 'storage', label: 'Storage', icon: 'folder', when: () => typeof fmGo === 'function', run: () => bnavGo('files', () => fmGo('/storage/emulated/0')) },
+                { id: 'download', label: 'Download', icon: 'folder', when: () => typeof fmGo === 'function', run: () => bnavGo('files', () => fmGo('/storage/emulated/0/Download')) }
             ],
             settings: [
                 { id: 'search', label: 'Search settings', icon: 'search', when: () => typeof sdbUsable === 'function' && sdbUsable() && !!document.getElementById('sdbSearch'), run: () => bnavGo('settings', () => bnavFocus('sdbSearch')) }
@@ -13369,6 +13438,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const termTitle = document.getElementById('termActiveModeTitle');
                 const termDesc = document.getElementById('termActiveModeDesc');
                 if (termTitle) {
+                    const cnModeCard = termTitle.closest('.cn-mcard');
+                    if (cnModeCard) cnModeCard.classList.toggle('is-ready', !!isPrivilegedActive);
                     if (isPrivilegedActive) {
                         termTitle.innerText = `Active Mode: ${text.innerText}`;
                         termDesc.innerText = 'Privileged execution active and ready.';
@@ -14290,7 +14361,7 @@ Type any command above (e.g. pm list packages -d)</div>
                             ${warn}
                             ${exp ? `<div class="uad-row-btns"><button class="mode-action-btn" type="button" onclick="event.stopPropagation(); openUadLevels()">Removal Levels</button></div>` : ''}
                         </div>
-                        ${abAppFor(p.pkg) ? `<div class="app-actions uad-actions">${actionBtnHtml(abAppFor(p.pkg))}</div>` : ''}
+                        ${abAppFor(p.pkg) ? `<div class="app-actions uad-row-actions">${actionBtnHtml(abAppFor(p.pkg))}</div>` : ''}
                     </div>`;
             }).join('');
             rowBusyApply();
@@ -22677,7 +22748,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const rawPath = d.path || path;
             fmPath = rawPath.startsWith('content://') ? rawPath : fmNormalizePath(rawPath);
             document.getElementById('fmPathInput').value = fmPath;
-            document.getElementById('fmCurrentPath').innerText = fmPath;
+            fmCrumbsRender();
             let entries;
             if (d.entries) {
                 entries = d.entries; // structured entries straight from the app's File API
@@ -22698,6 +22769,23 @@ Type any command above (e.g. pm list packages -d)</div>
             fmSelRender();
             fmClipRender();
         }
+        // v7.15: the folder's path as crumbs: a tap on a folder above this one goes there (the path bar keeps typed paths); a content:// place stays plain text.
+        // The crumbs are inline (no spaces between them), so the line reads, and copies, as the path itself.
+        function fmCrumbsRender() {
+            const el = document.getElementById('fmCurrentPath');
+            if (!el) return;
+            if (fmPath.startsWith('content://')) { el.textContent = fmPath; return; }
+            const parts = fmPath.split('/').filter(Boolean);
+            let h = parts.length ? '<button type="button" class="fm-crumb" data-p="/">/</button>' : '<span class="fm-crumb-here">/</span>', at = '';
+            parts.forEach((p, i) => {
+                at += '/' + p;
+                h += i === parts.length - 1 ? '<span class="fm-crumb-here">' + escapeHtml(p) + '</span>'
+                    : '<button type="button" class="fm-crumb" data-p="' + escapeHtml(at) + '">' + escapeHtml(p) + '</button><span class="fm-crumb-sep">/</span>';
+            });
+            el.innerHTML = h;
+            el.scrollLeft = el.scrollWidth;          // the folder you are in shows; the ones above it scroll in from the start
+        }
+        function fmCrumbTap(e) { const b = e.target.closest('.fm-crumb'); if (b) { haptic(); fmGo(b.dataset.p); } }
         function updateFmAccessHint(path, entries) {
             const hint = document.getElementById('fmAccessHint');
             if (!hint) return;
@@ -25619,6 +25707,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sel.disabled = !cd.devices.length || cd.batchBusy;
             const d = cdCur();
             document.getElementById('cdEmpty').style.display = d ? 'none' : '';
+            document.getElementById('cdTop').classList.toggle('cd-nodev', !cd.devices.length);          // v7.15: no empty picker and no second Add device
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
             cdRenderRecent();
             cdRenderLost();
@@ -35114,6 +35203,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 btn.innerText = rishStarting ? 'Starting…' : (rishActive ? 'Exit Rish' : 'Rish mode');
             }
             if (box) box.classList.toggle('rish-on', rishActive);
+            const cnModeCard = document.querySelector('#cnSegShell .cn-mcard');
+            if (cnModeCard) cnModeCard.classList.toggle('is-rish', !!rishActive);
             if (line) {
                 line.style.display = rishActive ? '' : 'none';
                 line.innerText = rishShortPrompt();
@@ -36519,8 +36610,8 @@ Type any command above (e.g. pm list packages -d)</div>
             else h += '<div class="sdb-hint">No description yet</div>';
             if (hint && hint.v) h += '<div class="sdb-vals">' + sdbValsHtml(hint, value, terms) + '</div>';
             const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
-            h += '<div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div>';
-            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '']) + '</div>';
+            h += '<div class="sdb-valrow"><div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div>';
+            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '']) + '</div></div>';
             if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
             return h + '</div>';
         }

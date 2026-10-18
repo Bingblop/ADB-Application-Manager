@@ -93,6 +93,14 @@ async function open(b, opts, vp) {
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="shell"]'); await page.waitForTimeout(500);
   check('    "ADB Shell" switches the open tab to the shell segment', await ev(() => currentViewName() === 'console' && cnSeg === 'shell' && !document.getElementById('cnSegShell').hidden && document.getElementById('cnSegTerm').hidden));
+  // v7.15: "History" (the last entry: chosen here, Settings > Navigation > Shortcuts) opens the shell's command history from anywhere
+  await ev(() => { cnShowSeg('term'); tabConfig.shortcuts.console = ['history']; switchView('apps'); }); await page.waitForTimeout(700);
+  await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
+  await page.click('#bnavMenu .bn-sc[data-id="history"]'); await page.waitForTimeout(500);
+  check('    v7.15: chosen, "History" opens the ADB Shell with its command history', await ev(() => TAB_SHORTCUTS.console.map(i => i.id).pop() === 'history' && currentViewName() === 'console' && cnSeg === 'shell' && document.getElementById('termModal').classList.contains('show')));
+  await ev(() => { termCloseModal(); delete tabConfig.shortcuts.console; }); await page.waitForTimeout(300);
+  // v7.15: Files has a menu too: the search and the two places opened most
+  check('    v7.15: Files lists Search files, Storage and Download', await ev(() => TAB_SHORTCUTS.files.map(i => i.id).join() === 'search,storage,download'));
   await ev(() => switchView('apps')); await page.waitForTimeout(400);
   await hold('console'); await page.mouse.up(); await page.waitForTimeout(600);
   await page.click('#bnavMenu .bn-sc[data-id="full"]'); await page.waitForTimeout(500);
@@ -275,7 +283,7 @@ async function open(b, opts, vp) {
   page = await open(b, { kv: { bnav_tip: 'true' } });
   const src = await ev(() => { const o = {}; Object.keys(TAB_SHORTCUTS).forEach(k => TAB_SHORTCUTS[k].forEach(i => { o[k + ':' + i.id] = String(i.run); })); return o; });
   // what a shortcut may call: moving between and opening screens, sections, segments and sheets, focusing a field, scrolling and lighting up a section, a harmless read-only check, and the Update All button's own function
-  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'lcAppOpen', 'lcRecListOpen', 'appsShowOnly', 'setTimeout']);          // lcAppOpen / lcRecListOpen: the app picker and the recordings sheet of Live Logcat (they only open a sheet); appsShowOnly: the Apps list with one filter on (v7.15)
+  const NAV = new Set(['switchView', 'instPaneShow', 'checkUpdatesUI', 'bnavGo', 'bnavReveal', 'bnavFocus', 'txFullToggle', 'tmSetSub', 'cnShowSeg', 'txOpenTermuxSetup', 'txOpenSettings', 'lcAppOpen', 'lcRecListOpen', 'appsShowOnly', 'setTimeout', 'fmGo', 'termOpenHistory']);          // lcAppOpen / lcRecListOpen: the app picker and the recordings sheet of Live Logcat (they only open a sheet); appsShowOnly: the Apps list with one filter on (v7.15); fmGo: lists a folder in Files, termOpenHistory: the shell's history sheet (v7.15)
   const EXCEPTION = new Set(['updateAllUI']);            // the one state-changing path: it asks the install question first (checked above)
   const bad2 = [];
   Object.keys(src).forEach(k => {
