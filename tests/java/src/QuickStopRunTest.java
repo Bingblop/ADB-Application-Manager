@@ -123,6 +123,13 @@ public class QuickStopRunTest {
     QuickStopRun.end(a);
     check("cancelActive: false when nothing is going", !QuickStopRun.cancelActive());
 
+    // ---- the Kill Apps tile's lit state follows the run (the tile reads tileActive() in onStartListening)
+    check("tile: idle (no run) is not lit", QuickStopRun.active() == null && !QuickStopRun.tileActive());
+    QuickStopRun g = run("a.b");
+    check("tile: lit while a run is going", QuickStopRun.begin(g, 1) && QuickStopRun.tileActive());
+    QuickStopRun.end(g);
+    check("tile: back to not lit when the run ends", QuickStopRun.active() == null && !QuickStopRun.tileActive());
+
     // ---- the tap on the notification
     check("open sheet at create: a plain start from the notification opens it", QuickStopRun.openAtCreate(false, 0));
     check("open sheet at create: not after a recreate or a restore (the same old intent comes back)", !QuickStopRun.openAtCreate(true, 0));
@@ -245,5 +252,14 @@ public class QuickStopRunTest {
 
     // the manifest
     check("source: the manifest declares the Live Updates permission once (approved by the owner) and the receiver, not exported", count(mf, "<uses-permission android:name=\"android.permission.POST_PROMOTED_NOTIFICATIONS\" />") == 1 && mf.contains("android:name=\".QuickStopReceiver\"\n            android:exported=\"false\" />"));
+
+    // the Kill Apps tile: label, lit state follows the run, long-press opens the app (QS_TILE_PREFERENCES)
+    String tile = read(new File(dir, "StopListTileService.java"));
+    check("source: the tile is labelled Kill Apps and its lit state follows the run", tile.contains("setLabel(\"Kill Apps\")") && tile.contains("QuickStopRun.tileActive()") && !tile.contains("\"Stop apps\""));
+    check("source: the manifest labels the tile Kill Apps and declares a QS_TILE_PREFERENCES activity (long-press opens the app)", mf.contains("android:name=\".StopListTileService\"") && mf.contains("android:label=\"Kill Apps\"") && mf.contains("android.service.quicksettings.action.QS_TILE_PREFERENCES"));
+    int aliasStart = mf.indexOf(".TilePreferencesActivity"), aliasEnd = mf.indexOf("</activity-alias>", aliasStart);
+    String alias = aliasStart >= 0 && aliasEnd > aliasStart ? mf.substring(aliasStart, aliasEnd) : "";
+    check("source: the QS_TILE_PREFERENCES alias is well-formed (exported, DEFAULT category, targets MainActivity) so SystemUI can launch it on long-press", alias.contains("android:targetActivity=\".MainActivity\"") && alias.contains("android:exported=\"true\"") && alias.contains("android.service.quicksettings.action.QS_TILE_PREFERENCES") && alias.contains("android.intent.category.DEFAULT"));
+    check("source: the start-of-run refresh lights the tile (requestListeningState for StopListTileService)", stop != null && stop.contains("requestListeningState(this, new android.content.ComponentName(this, StopListTileService.class))"));
   }
 }

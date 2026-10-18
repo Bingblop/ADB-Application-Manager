@@ -6179,7 +6179,7 @@
             </div>
             <div class="color-card cc" id="quickActionsHelp" data-cc="quickactions" data-cc-default="closed">
                 <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
+                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
             </div>
         </section>
 
@@ -13050,7 +13050,7 @@ Type any command above (e.g. pm list packages -d)</div>
             window.AndroidBridge.setQuickList(quickListId);
             renderSavedLists();
             const l = customLists.find(x => x.id === quickListId);
-            showToast(l ? `"${l.name}" is now the quick list. Add the "Stop apps" tile or the widget to use it.` : 'Quick list cleared');
+            showToast(l ? `"${l.name}" is now the quick list. Add the "Kill Apps" tile or the widget to use it.` : 'Quick list cleared');
         }
 
         function openListEditorModal(listId) {
