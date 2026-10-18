@@ -1,6 +1,6 @@
 // Header: the working-mode badge stays on one line and the settings gear is a monochrome SVG. The badge used to wrap its words onto a second line
-// ("Setup Mode (Read-" / "Only)"); now it never wraps: at 320 and 360 px the English mode names are whole (but the longest, Wireless ADB with its
-// port, at 320 px), a longer one (German) ends in "…" inside
+// ("Setup Mode (Read-" / "Only)"); now it never wraps: at 320 and 360 px the English mode names are whole (since v7.15 the badge shows the short
+// name, without "Auto • " and the port, so even Wireless ADB is whole at 320 px), a longer one (German) ends in "…" inside
 // the badge, and nothing pushes the page sideways. The gear was a colour emoji (the same gear as the Extra Settings tab); now it is an SVG drawn in
 // the theme's text colour, in dark and light, still called Settings and still opening Settings.
 // The badge's colours and the Updater's error lines come from the theme's status colours (the script wrote them as fixed orange and red): in the light
@@ -54,8 +54,7 @@ const { chromium, PAGE } = require('./lib/pw');
       const m = await measure(page);
       const tag = 'en ' + width + ' ' + mode + ': ';
       check(tag + 'one line, not wrapped', m.lines === 1 && m.nowrap && m.badgeH <= 40, JSON.stringify([m.label, m.lines, m.badgeH]));
-      if (width === 320 && mode === 'wireless') check(tag + '  the longest name ("Auto • Wireless ADB (41235)") ends in "…" at 320 px', m.ellipsis && m.full > m.shown, JSON.stringify([m.label, m.full, m.shown]));
-      else check(tag + '  the whole name shows (no "…")', m.full <= m.shown, JSON.stringify([m.label, m.full, m.shown]));
+      check(tag + '  the whole name shows (no "…")', m.full <= m.shown, JSON.stringify([m.label, m.full, m.shown]));
       check(tag + '  inside the screen, no sideways scroll, the title clear of the gear', m.badgeRight <= m.W && m.docW <= m.W && m.title, JSON.stringify([m.badgeRight, m.docW]));
       await page.close();
     }

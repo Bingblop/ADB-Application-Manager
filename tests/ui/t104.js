@@ -77,7 +77,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const chip = () => page.evaluate(() => { const r = document.getElementById('filterSummary'); const c = document.getElementById('filterClearChip'); return [getComputedStyle(r).display !== 'none', getComputedStyle(c).display !== 'none', c.innerText]; });
   console.log('no chip with no filter:', JSON.stringify(await chip()));
   await page.locator('.stat-card[data-filter="enabled"]').click(); await page.waitForTimeout(150);
-  console.log('no chip with one filter:', JSON.stringify([await chip(), await names()]));
+  console.log('one filter (v7.15: the row under the filters shows Select shown and Clear filters):', JSON.stringify([await chip(), await names()]));
   await page.locator('.stat-card[data-filter="system"]').click(); await page.waitForTimeout(150);
   console.log('Enabled box + System box (enabled system apps), chip shows:', JSON.stringify([await chip(), await names(), await lit()]));
   await page.locator('#filterClearChip').click(); await page.waitForTimeout(200);

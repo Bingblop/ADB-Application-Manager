@@ -9,7 +9,7 @@ ok   package names in the list are at least 12px
 ok   app names in the list are at least 14px
 ok   the app sheet's package name is at least 12px
 ok   320 px: no text under 11px on any tab, in the app sheet or the More sheet
-ok   320 px: the mode badge reads "Auto • ADB TCP (5555)" whole, at no less than 11px
+ok   320 px: the mode badge reads "ADB TCP" whole, at no less than 11px
 ok   320 px: the terminal's SHIFT key shows the whole word
 ok   360 px: no text under 11px on any tab, in the app sheet or the More sheet
 ok   360 px: every Feature List name stays inside its own box (not under the pin)

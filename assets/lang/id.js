@@ -2123,7 +2123,7 @@ x: {
 "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z": "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z",
 "M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z": "M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z",
 "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z": "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
-"M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z": "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
+"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z": "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z",
 "M3 BASELINE": "M3 BASELINE",
 "M3 DYNAMIC • WALLPAPER": "M3 DYNAMIC • WALLPAPER",
 "M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z": "M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z",
@@ -5074,7 +5074,7 @@ x: {
 "Live updates": "Pembaruan langsung",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Hentikan aplikasi di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplikasi Tersimpan tadinya nonaktif. Kini aktif lagi untuk menampilkan daftar ini.",
-"That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada.",
+"That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
@@ -5116,7 +5116,6 @@ p: [
 ["Android {0} (API {1})", "Android {0} (API {1})"],
 ["Android {0} on {1}", "Android {0} di {1}"],
 ["Android {0} settings", "Pengaturan Android {0}"],
-["Android {0} • One UI {1}", "Android {0} • One UI {1}"],
 ["Android: {0} (API {1})", "Android: {0} (API {1})"],
 ["Another preset is already called {0}", "Preset lain sudah bernama {0}"],
 ["Another saved command is already called {0}", "Perintah tersimpan lain sudah bernama {0}"],
@@ -6204,7 +6203,6 @@ p: [
 ["“{0}” already exists in {1} (now {2}). Creating it again replaces that value.", "“{0}” sudah ada di {1} (sekarang {2}). Membuatnya lagi akan mengganti nilai itu."],
 ["“{0}” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?", "“{0}” sudah memiliki tanda tangan yang valid. Penandatanganan di tempat akan menggantinya, dan yang lama tidak dapat dipulihkan. Lanjutkan?"],
 ["“{0}” is already in the archive. Replace it?", "“{0}” sudah ada di arsip. Ganti?"],
-["• One UI {0}", "• One UI {0}"],
 ["• installed {0}", "• terinstal {0}"],
 ["• showing the first {0}", "• menampilkan {0} pertama"],
 ["• updated {0}", "• diperbarui {0}"],

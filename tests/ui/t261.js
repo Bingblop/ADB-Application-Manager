@@ -73,13 +73,13 @@ const NEWPAGE = async (b, kv, vp) => {
   check('   with the bar only, the top tab bar takes no room (--tabs-h is 0)', n.tabsH === '0px', n.tabsH);
   await page.click('.nav-opt[data-nav-mode="both"]'); await page.waitForTimeout(250);
   n = await nav();
-  check('7. Bottom bar + top bar: both are there, the page has room for the bar', n.checked === 'both' && n.top !== 'none' && n.bottom !== 'none' && n.padB >= 216 && n.tabsH !== '0px', JSON.stringify(n));
+  check('7. Bottom bar + top bar: both are there, the page has room for the bar', n.checked === 'both' && n.top !== 'none' && n.bottom !== 'none' && n.padB >= 144 && n.tabsH !== '0px', JSON.stringify(n));
   check('   the top tab bar and the bottom bar agree on the lit tab (a tab that is not pinned lights More)', await page.evaluate(() => { switchView('files'); return document.querySelector('#tabBar .tab-btn.active').dataset.tab + '/' + document.querySelector('#bnav .bn-item.active').dataset.more + '/' + document.querySelector('#bnav .bn-item.active .bn-lbl').innerText; }) === 'files/1/Files');
   await page.screenshot({ path: 'nav_both.png' });
   await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
   await page.click('.nav-opt[data-nav-mode="top"]'); await page.waitForTimeout(250);
   n = await nav();
-  check('8. Top bar only: the bar is gone, the page is as it was (no extra room, --bnav-h is 0)', n.checked === 'top' && n.bottom === 'none' && n.top !== 'none' && n.h === '0px' && n.padB === 160, JSON.stringify(n));
+  check('8. Top bar only: the bar is gone, the page is as it was (no extra room, --bnav-h is 0)', n.checked === 'top' && n.bottom === 'none' && n.top !== 'none' && n.h === '0px' && n.padB === 88, JSON.stringify(n));
   check('   the choice is saved as nav_mode', await page.evaluate(() => window.__kv.nav_mode) === '"top"');
   await page.reload(); await page.waitForTimeout(600);
   n = await nav();

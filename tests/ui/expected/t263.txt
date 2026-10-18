@@ -52,6 +52,6 @@
 27. on the rail the menu opens beside the item, inside the screen: true
 28. at 320 px the menu of "extrasettings" is inside the screen: true
 28. at 320 px the menu of "console" is inside the screen: true
-29. SAFETY: every shortcut's run() calls only navigation functions (29 entries); updateAllUI only from "Update All (N)": true
+29. SAFETY: every shortcut's run() calls only navigation functions (32 entries); updateAllUI only from "Update All (N)": true
     and the scan sees every entry of every tab (no empty source): true
 errors: []

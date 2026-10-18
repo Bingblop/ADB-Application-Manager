@@ -54,7 +54,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   check('one package selected: all four are on', (await btns()) === 'Uninstall:on | Disable:on | Restore:on | Save to List:on', await btns());
   await page.evaluate(p => toggleUadSelect(p), one);
   check('unselected again: off', (await btns()).split(' | ').every(s => s.endsWith(':off')), await btns());
-  await page.click('text=Select shown');
+  await page.click('#view-debloater >> text=Select shown');
   check('Select shown: on', (await btns()).split(' | ').every(s => s.endsWith(':on')), await btns());
   await page.evaluate(() => clearUadSelection());
   check('Clear: off', (await btns()).split(' | ').every(s => s.endsWith(':off')), await btns());

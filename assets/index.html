@@ -147,8 +147,9 @@
 
             /* ---- Elevation [fixed] ---- */
             --glow-accent: 0 0 14px var(--accent-glow);          /* halo on the logo and the active tab */
-            --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.9);      /* a docked bottom sheet casting up onto the list */
-            --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.8);         /* toasts and floating snackbars */
+            --shadow-sheet: 0 -6px 24px rgba(0, 0, 0, 0.45);     /* a docked bottom sheet casting up onto the list (lighter values on the light page, below) */
+            --shadow-pop: 0 6px 20px rgba(0, 0, 0, 0.35);        /* toasts, floating snackbars and drop-down menus */
+            --shadow-float: 0 4px 14px rgba(0, 0, 0, 0.35);      /* round floating buttons (the batch button, back to top) and the bottom bar's menu */
 
             /* ---- Logcat: one row per log entry, colored by level [fixed palette] ---- */
             --lc-v: #9AA0A6;
@@ -208,7 +209,7 @@
         body {
             background-color: var(--bg-base);
             color: var(--text-main);
-            padding: 0 0 calc(160px + var(--bnav-h, 0px)) var(--bnav-w, 0px);          /* the bottom bar (or the side rail) never covers the end of a page */
+            padding: 0 0 calc(88px + var(--bnav-h, 0px) + env(safe-area-inset-bottom, 0px)) var(--bnav-w, 0px);          /* the bottom bar (or the side rail) never covers the end of a page, and the last row clears the round buttons over it (back to top, the batch button: 72px); v7.15: no longer a blank half screen (160px) after every list */
             min-height: 100vh;
             /* Text can be long-pressed, highlighted and copied */
             -webkit-user-select: text;
@@ -359,8 +360,8 @@
         #execModeBadge[data-tone="none"] { background: color-mix(in srgb, var(--status-user) 15%, transparent); border-color: color-mix(in srgb, var(--status-user) 40%, transparent); color: var(--status-warn); }
         #execModeBadge[data-tone="none"] .status-dot { background: var(--status-warn); }
 
-        /* the title: "ADB System" over "Manager", "ADB" and "Manager" in the accent and "System" in the text colour, heavy and tight. Solid colours only: a
-           gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView, which left only "Full" and "System" */
+        /* the title: "ADB Full System" over "Manager", every word in the text colour (the owner's wish, v7.15: one colour), heavy and tight. Solid colours only: a
+           gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView */
         .brand-text h1 {
             font-size: clamp(var(--fs-code), 4.1vw, 18px);
             line-height: 1;
@@ -371,21 +372,24 @@
 
         .brand-text h1 .bt-line { display: block; white-space: nowrap; }
 
-        .brand-text h1 .bt-c { color: var(--accent); -webkit-text-fill-color: currentColor; }
+        .brand-text h1 > .bt-line > span { color: inherit; -webkit-text-fill-color: currentColor; }
 
-        /* two lines right under the title: "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" */
+        /* one line right under the title (v7.15): "Android 16 • One UI 8.5" (the One UI part only on a Samsung phone); maker and model are in About */
         .brand-text p {
             font-size: var(--fs-pkg);
             color: var(--text-muted);
-            font-weight:var(--fw-bold);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            font-weight:var(--fw-semibold);
+            letter-spacing: 0;
             margin-top: 2px;
             line-height: 1.25;
         }
 
-        .brand-text p .bt-sub { display: block; white-space: nowrap; }
-        .brand-text p.sub-wrap .bt-sub { white-space: normal; }          /* even at the smallest size the line is wider than the room (320 px): it wraps, nothing is cut */
+        /* each part stays whole ("One UI 8.5" never breaks): if the line is wider than the room even at the smallest size, the second part goes under the first */
+        .brand-text p .bt-sub { display: inline-block; white-space: nowrap; }
+        .brand-text p .bt-sub:empty { display: none; }
+        .brand-text p .bt-sub + .bt-sub::before { content: '\2022'; margin: 0 var(--space-1); }
+        .brand-text p.sub-wrap .bt-sub { display: block; }
+        .brand-text p.sub-wrap .bt-sub + .bt-sub::before { content: none; }
 
         /* the gear and the mode badge share one height: whichever is taller (the badge when its words wrap) sets it for both */
         .hdr-right { display: flex; align-items: stretch; gap: var(--space-3); }
@@ -411,14 +415,14 @@
             box-shadow: 0 0 0 1px var(--accent) inset;
         }
 
-        /* the gear wears the app's theme (the mode badge next to it keeps its green) */
+        /* the gear is a quiet tonal button (v7.15): the accent is kept for what is selected or active, and the mode badge next to it keeps its status colour */
         #prefsHeaderBtn {
-            background: color-mix(in srgb, var(--accent) 16%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+            background: var(--fill-2);
+            border-color: var(--border-glass);
             color: var(--text-main);
             flex: 0 0 auto;
             min-width: 44px;
-            min-height: 38px;
+            min-height: 40px;                           /* 40 to see, the header row's height to touch (the badge beside it takes the same height) */
             padding: 0 var(--space-2);
             justify-content: center;
             font-size: 22px;
@@ -557,7 +561,7 @@
             border-radius: var(--radius-md);
             color: var(--text-muted);
             font-size: var(--fs-caption);
-            font-weight: var(--fw-heavy);
+            font-weight: var(--fw-semibold);
             line-height: 1.15;
             letter-spacing: 0.1px;
             cursor: pointer;
@@ -576,7 +580,7 @@
         }
         .bn-ico svg { width: 21px; height: 21px; fill: currentColor; display: block; }
         .bn-lbl { max-width: 100%; padding: 0 calc(var(--space-1) - 1px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
-        .bn-item.active { color: var(--text-main); }
+        .bn-item.active { color: var(--text-main); font-weight: var(--fw-heavy); }          /* the weight ladder (v7.15): the tab you are on 800, the others 600 */
         .bn-item.active .bn-ico { color: var(--on-gradient); }
         .bn-item:active .bn-ico { transform: scale(0.9); }
         .bn-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
@@ -615,7 +619,7 @@
             justify-content: flex-start;
             gap: var(--space-3);
             padding: var(--space-4) var(--space-2) var(--space-3h);
-            min-height: 92px;
+            min-height: 88px;
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-glass);
             background: rgba(var(--ov), 0.05);
@@ -627,9 +631,11 @@
             cursor: pointer;
             position: relative;
         }
-        .bn-tile .bn-ico { width: 44px; height: 44px; border-radius: calc(var(--radius-md) + 2px); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+        .bn-tile .bn-ico { width: 40px; height: 40px; border-radius: calc(var(--radius-md) + 2px); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
         .bn-tile .bn-ico svg { width: 24px; height: 24px; }
         .bn-tile .bn-tl { white-space: pre-line; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+        .bn-tile .bn-tl-short { display: none; }
+        @media (max-width: 340px) { .bn-tile .bn-tl { display: none; } .bn-tile .bn-tl.bn-tl-short { display: block; } }          /* the smallest phones: the bar's short name ("Hidden", "Monet"), which never breaks inside a word */
         @media (max-width: 360px) { .bn-tile { padding-left: var(--space-1); padding-right: var(--space-1); font-size: calc(var(--fs-pill) - 0.5px); } }          /* three tiles to a row on a narrow phone: a long name ("Gespeicherte", "Aplicaciones") still fits whole */
         .bn-tile .bn-badge { top: -5px; right: -5px; }
         .bn-tile .bn-badge.dot { top: -2px; right: 0; }
@@ -653,13 +659,13 @@
         @media (max-width: 359px) { #featureList .fl-row { flex-wrap: wrap; } #featureList .fl-row .fl-name { flex: 1 1 100%; } #featureList .fl-row .fl-pin { margin-left: auto; } }          /* a narrow screen: the name on its own line, the buttons under it */
 
         /* Long-press menu, the one-time hint, the section highlight */
-        .bn-menu { position: fixed; z-index: 210; min-width: 190px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--bg-sheet); border: 1px solid var(--border-glass); border-radius: calc(var(--radius-lg) + 2px); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .bn-menu { position: fixed; z-index: 210; min-width: 190px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--bg-sheet); border: 1px solid var(--border-glass); border-radius: calc(var(--radius-lg) + 2px); box-shadow: var(--shadow-float), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .bn-menu.up { flex-direction: column-reverse; }
         /* the small point towards the slot that was held */
         .bn-menu::after { content: ""; position: absolute; width: 12px; height: 12px; background: var(--bg-sheet); border: solid var(--border-glass); border-width: 0 1px 1px 0; pointer-events: none; }
         .bn-menu.up::after { bottom: -7px; left: var(--bn-cx, 50%); transform: translateX(-50%) rotate(45deg); }
         .bn-menu.side::after { left: -7px; top: var(--bn-cy, 50%); transform: translateY(-50%) rotate(135deg); }
-        .bn-sc { display: flex; align-items: center; gap: var(--space-4); width: 100%; min-height: 46px; padding: var(--space-3) calc(var(--space-4) + 2px) var(--space-3) var(--space-4); border: 0; border-radius: calc(var(--radius-md) + 1px); background: none; color: var(--text-main); font-size: var(--fs-item); font-weight: var(--fw-heavy); text-align: left; cursor: pointer; }
+        .bn-sc { display: flex; align-items: center; gap: var(--space-4); width: 100%; min-height: 44px; padding: var(--space-3) calc(var(--space-4) + 2px) var(--space-3) var(--space-4); border: 0; border-radius: calc(var(--radius-md) + 1px); background: none; color: var(--text-main); font-size: var(--fs-item); font-weight: var(--fw-heavy); text-align: left; cursor: pointer; }
         .bn-sc svg { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; color: var(--accent); }
         .bn-sc span { min-width: 0; overflow-wrap: anywhere; }
         .bn-sc.fav { background: color-mix(in srgb, var(--accent) 15%, transparent); }
@@ -670,7 +676,7 @@
             .bn-menu { animation: bnMenuIn 0.18s ease-out; transform-origin: 50% 100%; }
             @keyframes bnMenuIn { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: none; } }
         }
-        .bn-tip { position: fixed; z-index: 205; left: 50%; bottom: calc(var(--bnav-h, 0px) + 12px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: calc(var(--space-3) + 1px) var(--space-5); border-radius: var(--radius-pill); background: var(--bg-card); border: 1px solid var(--accent); color: var(--text-main); font-size: var(--fs-body); font-weight: var(--fw-heavy); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); cursor: pointer; text-align: center; }
+        .bn-tip { position: fixed; z-index: 205; left: 50%; bottom: calc(var(--bnav-h, 0px) + 12px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: calc(var(--space-3) + 1px) var(--space-5); border-radius: var(--radius-pill); background: var(--bg-card); border: 1px solid var(--accent); color: var(--text-main); font-size: var(--fs-body); font-weight: var(--fw-heavy); box-shadow: var(--shadow-pop); cursor: pointer; text-align: center; }
         @media (min-width: 720px) { .bn-tip { left: calc(var(--bnav-w, 0px) + 14px); bottom: 16px; transform: none; } }
         .bn-flash { animation: bnFlash 1.6s ease-out; border-radius: var(--radius-lg); }
         @keyframes bnFlash { 0% { box-shadow: 0 0 0 0 var(--accent); } 25% { box-shadow: 0 0 0 4px var(--accent), 0 0 24px var(--accent-glow); } 100% { box-shadow: 0 0 0 0 transparent; } }
@@ -860,7 +866,7 @@
             background: var(--bg-sheet);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-chip);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+            box-shadow: var(--shadow-pop);
             padding: var(--space-1) var(--space-5);
         }
 
@@ -910,6 +916,17 @@
             display: none;
         }
 
+        /* A row that scrolls sideways fades out at the end that has more beyond it (v7.15; hFadeUpdate sets the classes); the Apps filter row
+           waits until its own arrow (.filters-hint) has gone */
+        .h-fade.h-more-end, .h-fade.h-more-start {
+            -webkit-mask-image: linear-gradient(var(--hf-dir, to right), var(--hf-a, #000), #000 28px, #000 calc(100% - 28px), var(--hf-b, #000));
+            mask-image: linear-gradient(var(--hf-dir, to right), var(--hf-a, #000), #000 28px, #000 calc(100% - 28px), var(--hf-b, #000));
+        }
+        .h-fade.h-more-start { --hf-a: transparent; }
+        .h-fade.h-more-end { --hf-b: transparent; }
+        [dir="rtl"] .h-fade { --hf-dir: to left; }
+        .h-fade.hint-on { -webkit-mask-image: none; mask-image: none; }
+
         .filter-pill,
         .toggle-pill {
             flex: 0 0 auto;
@@ -918,7 +935,7 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-chip);
             font-size: var(--fs-code);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.15s ease;
@@ -939,7 +956,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            padding: var(--space-4) var(--space-4);
+            padding: var(--space-3h) var(--space-4);          /* v7.15: a little less above and below, so a phone shows one more app */
             margin-bottom: var(--space-3);
             display: flex;
             align-items: center;
@@ -1144,7 +1161,7 @@
 
         .tag-badge {
             font-size: var(--fs-overline);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             padding: 2px var(--space-2);
             border-radius: var(--radius-xs);
             text-transform: uppercase;
@@ -1282,6 +1299,8 @@
             align-items: center;
             gap: var(--space-4);
         }
+        .batch-sheet-title, .batch-sheet-tools .bs-btn { white-space: nowrap; }
+        @media (max-width: 360px) { .batch-sheet-tools { gap: var(--space-2); } .batch-sheet-tools .bs-btn { padding-inline: var(--space-3); } }          /* "12 Selected", Select All, Clear All and ✕ stay on one line at 320 px */
 
         /* File Manager buttons look like buttons: an outline, a pressed state, and a tap of haptic feedback (see the delegated click below) */
         #view-files .batch-tool-link {
@@ -1328,7 +1347,7 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             color: var(--text-main);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             transition: background 0.15s, transform 0.12s;
         }
         #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
@@ -1345,7 +1364,7 @@
             color: var(--text-muted);
         }
         #appsListContainer .app-actions .row-menu, #cdAppList .app-actions .row-menu { font-size: var(--fs-title); font-weight: var(--fw-black); }
-        #appsListContainer .app-actions .btn-mini.ab-btn, #cdAppList .app-actions .btn-mini.ab-btn { color: var(--accent); }
+        /* (the Action Button is as quiet as ⋯ (v7.15): the accent is for what is selected; it lights up while pressed, below) */
         #appsListContainer .app-actions .btn-mini:active, #cdAppList .app-actions .btn-mini:active { background: var(--fill-3); color: var(--accent); }
         #appsListContainer .app-actions .btn-mini:focus-visible, #cdAppList .app-actions .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
@@ -1434,7 +1453,7 @@
             border: none;
             color: var(--accent);
             font-size: var(--fs-pill);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             cursor: pointer;
             padding: var(--space-1);
         }
@@ -1456,7 +1475,7 @@
             border-radius: var(--radius-md);
             color: var(--text-main);
             font-size: var(--fs-pill);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1488,7 +1507,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+            box-shadow: var(--shadow-float), 0 0 20px var(--accent-glow);
             z-index: 200;
             cursor: pointer;
             transform: scale(0);
@@ -1534,7 +1553,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), var(--glow-accent);
+            box-shadow: var(--shadow-float), var(--glow-accent);
             cursor: pointer;
             opacity: 0;
             visibility: hidden;
@@ -1798,12 +1817,17 @@
         #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; }          /* the close's round target brings its own room */
         #inspectorModal .sheet-header-actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: 0; }
         #inspectorModal .sheet-header-actions > .uad-chip { margin-top: var(--space-3); }
+        #inspectorModal .uad-chip.uad-chip-ask { background: var(--tint-accent); border-color: var(--line-accent); color: var(--text-main); }          /* tonal (v7.15): an offer, not a warning in white outline */
+        /* the filter chips of the app menu's lists stay on one line and scroll sideways, with a fade at the end that has more (.h-fade, v7.15) */
+        #inspectorModal .chip-row.h-fade { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-block: var(--space-1); margin-block-start: calc(-1 * var(--space-1)); }
+        #inspectorModal .chip-row.h-fade::-webkit-scrollbar { display: none; }
+        #inspectorModal .chip-row.h-fade > .filter-chip { flex: 0 0 auto; white-space: nowrap; }
         #inspectorModal .sheet-meta { margin-bottom: var(--space-4); }
         #inspectorModal .sheet-meta .copy-row { flex-wrap: wrap; overflow: visible; }
         #inspectorModal .sheet-meta p.sheet-dates { margin-top: var(--space-2); overflow-wrap: break-word; }
         #inspectorModal .sheet-meta p.sheet-dates + p.sheet-dates { margin-top: 1px; }
         /* the UAD-NG classification of the app, under Share: tap for the project's full description */
-        .uad-chip { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--fs-pill); font-weight:var(--fw-heavy); padding: var(--space-1) var(--space-3h); border-radius: var(--radius-pill);
+        .uad-chip { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--fs-pill); font-weight:var(--fw-bold); padding: var(--space-1) var(--space-3h); border-radius: var(--radius-pill);
             border: 1px solid currentColor; background: var(--fill-2); cursor: pointer; max-width: 100%; }
         .uad-chip:active { transform: scale(0.96); }
         .uad-chip .uad-chip-src { font-size: var(--fs-overline); font-weight:var(--fw-bold); letter-spacing: 0.4px; color: var(--text-muted); }
@@ -1888,7 +1912,7 @@
             border-radius: var(--radius-md);
             color: var(--text-main);
             font-size: var(--fs-body);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1991,7 +2015,7 @@
             align-items: center;
             justify-content: center;
             font-size: var(--fs-body);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             padding: var(--space-1) var(--space-3h);
             border-radius: var(--radius-pill);
             border: 1px solid var(--border-glass);
@@ -2085,6 +2109,10 @@
             margin-top: 2px;
             word-break: break-all;
         }
+
+        #permsContainer .perm-sub { word-break: normal; overflow-wrap: anywhere; }          /* breaks where permWbr allows, and only inside a word that still does not fit */
+        #permsContainer .perm-name { word-break: normal; overflow-wrap: anywhere; }
+        #permsContainer .agent-btn { background: transparent; padding-inline: var(--space-1); margin-inline-start: calc(-1 * var(--space-1)); }          /* a ghost text button under the name (v7.15): the row's own switch leads */
 
         .perm-kind {
             display: inline-block;
@@ -2332,7 +2360,7 @@
             border-radius: var(--radius-md);
             color: var(--text-main);
             font-size: var(--fs-pill);
-            font-weight:var(--fw-heavy);
+            font-weight:var(--fw-bold);
             cursor: pointer;
         }
 
@@ -2561,7 +2589,7 @@
             background: var(--bg-sheet);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--shadow-pop);
         }
 
         .combo-item {
@@ -3056,6 +3084,7 @@
         /* syntax colours for code and markup in the file manager viewer, editor and archive preview */
         html[data-appearance="light"] { --ansi-0: #1F2328; --ansi-1: #C41E1E; --ansi-2: #0B7A2E; --ansi-3: #7A5A00; --ansi-4: #0451A5; --ansi-5: #9A1FB0; --ansi-6: #0B6E8C; --ansi-7: #4B5563;
             --ansi-8: #57606A; --ansi-9: #D12C2C; --ansi-10: #137F3B; --ansi-11: #866300; --ansi-12: #1A5FB4; --ansi-13: #A626A4; --ansi-14: #0A7A99; --ansi-15: #24292F; }
+        html[data-appearance="light"] { --shadow-sheet: 0 -6px 24px rgba(0, 0, 0, 0.18); --shadow-pop: 0 6px 20px rgba(0, 0, 0, 0.14); --shadow-float: 0 4px 14px rgba(0, 0, 0, 0.16); }          /* elevation on the light page: a soft shade, not a black halo */
         html[data-appearance="light"] { --syn-c: #008000; --syn-s: #A31515; --syn-n: #098658; --syn-k: #AF00DB; --syn-t: #800000; --syn-a: #C50000; --syn-v: #795E26; --syn-m: #7A5A00; --syn-add: #067D17; --syn-del: #C62828; }
         .syn-c { color: var(--syn-c); font-style: italic; }
         .syn-s { color: var(--syn-s); }
@@ -3537,6 +3566,8 @@
             padding: 2px var(--space-3);
             border-radius: var(--radius-pill);
             letter-spacing: 0.5px;
+            white-space: nowrap;          /* one line ("ANDROID 11+" broke in two, v7.15); the title beside it wraps instead */
+            flex: 0 0 auto;
         }
 
         .mode-status-tag.active {
@@ -4132,6 +4163,7 @@
         }
         /* the sort menu and the Action Button picker share the room the buttons leave (below) */
         #appSort { flex: 1 1 0; width: auto; min-width: 84px; text-overflow: ellipsis; }
+        .apps-sort-row .apps-sort-select { background: var(--fill-2); border-color: var(--border-glass); border-radius: var(--radius-chip); padding-inline: var(--space-4) var(--space-3); }          /* tonal pills (v7.15), like the filters under them */
         .apps-sort-select.apps-ab-select { flex: 1 1 0; width: auto; min-width: 84px; }
         .apps-row-label { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-main);   /* bold (the owner's choice) */ line-height: 1.15; padding: 0 var(--space-1); }
         .apps-row-label-2 { margin-inline-start: var(--space-2); }
@@ -4307,13 +4339,12 @@
         /* No color-mix() (a WebView before Chrome 111): the rules of this sheet that mix two colours themselves, drawn from the tokens instead
            (computed in JS there). A translucent token laid over an opaque colour (linear-gradient(t, t), base) is the same mix. */
         @supports not (color: color-mix(in srgb, red 50%, blue)) {
-            #prefsHeaderBtn { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--bg-card); border-color: var(--line-accent); }
             #execModeBadge[data-tone="on"] { background: var(--tint-running); border-color: var(--line-running); }
             #execModeBadge[data-tone="root"] { background: var(--tint-system); border-color: var(--line-system); }
             #execModeBadge[data-tone="none"] { background: var(--tint-user); border-color: var(--line-user); }
             .bn-tile .bn-ico, .bn-tile.current, .bn-sc.fav { background: var(--tint-accent); }
             .nav-opt[aria-checked="true"] { background: linear-gradient(var(--tint-accent), var(--tint-accent)), var(--input-bg); }
-            .bn-menu { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line-accent); }
+            .bn-menu { box-shadow: var(--shadow-float), 0 0 0 1px var(--line-accent); }
             .stat-card[data-filter="running"], .stat-card[data-filter="enabled"] { --tone-tint: var(--tint-running-strong); }
             .stat-card[data-filter="uninstalled"] { --tone-tint: var(--tint-bloat-strong); }
             .stat-card[data-filter="frozen"] { --tone-tint: var(--line-apps-frozen); }
@@ -4334,7 +4365,7 @@
     <header class="app-header">
         <div class="brand-box">
             <div class="brand-text">
-                <h1 translate="no"><span class="bt-line"><span class="bt-c">ADB</span> <span class="bt-w">System</span> </span><span class="bt-line"><span class="bt-c">Manager</span></span></h1>
+                <h1 translate="no"><span class="bt-line"><span>ADB</span> <span>Full</span> <span>System</span> </span><span class="bt-line"><span>Manager</span></span></h1>
                 <p id="deviceInfoSubtitle"><span class="bt-sub" id="deviceInfoLine1">&nbsp;</span><span class="bt-sub" id="deviceInfoLine2">&nbsp;</span></p>
             </div>
         </div>
@@ -4399,10 +4430,10 @@
                 <button class="batch-tool-link bs-btn" onclick="openBackups()">Backups</button>
             </div>
 
-            <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
+            <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterSelectShown" type="button" onclick="selectAllVisible(true)">Select shown</button><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
             <!-- The filters, with their counts. The ones with a colour (Installed / Uninstalled, System / User, Enabled / Frozen, Running) are
                  buttons with a pressed state; a pair that splits the apps in two shares one frame -->
-            <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
+            <div class="filter-scroll h-fade" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
                 <div class="stat-split"><div class="filter-pill stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Installed (<span class="stat-num" id="statTotal">--</span>)</div><div class="filter-pill stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">Uninstalled (<span class="stat-num" id="statUninstalled">--</span>)</div></div>
                 <div class="stat-split"><div class="filter-pill stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">System (<span class="stat-num" id="statSystem">--</span>)</div><div class="filter-pill stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">User (<span class="stat-num" id="statUser">--</span>)</div></div>
@@ -9133,7 +9164,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="sheetFullClose()">✕</button>
             </div>
             <!-- Sub Tabs -->
-            <div class="sheet-tabs">
+            <div class="sheet-tabs h-fade">
                 <div class="sheet-tab-pill active" data-tab="perms" onclick="switchSheetTab('perms')">Permissions <span class="tab-count" id="permsCount"></span></div>
                 <div class="sheet-tab-pill" data-tab="ops" onclick="switchSheetTab('ops')">App Ops <span class="tab-count" id="opsCount"></span></div>
                 <div class="sheet-tab-pill" data-tab="acts" onclick="switchSheetTab('acts')">Activities <span class="tab-count" id="actsCount"></span></div>
@@ -9150,14 +9181,14 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="sheetTabPerms" class="sheet-tab-content active">
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="permsSearch" placeholder="Search permissions..." oninput="renderPermissionsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Permissions" title="Expand Permissions"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
-                <div class="chip-row" id="permsFilterRow">
+                <div class="chip-row h-fade" id="permsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setPermsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="granted" onclick="setPermsFilter('granted')">Granted</span>
                     <span class="filter-chip" data-filter="denied" onclick="setPermsFilter('denied')">Denied</span>
                     <span class="filter-chip" data-filter="changeable" onclick="setPermsFilter('changeable')">Changeable</span>
                     <span class="filter-chip" data-filter="installtime" onclick="setPermsFilter('installtime')">Install-time</span>
-                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Permissions" title="Expand Permissions"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="permsContainer">
                     <div class="list-empty">Loading permissions...</div>
@@ -9169,13 +9200,13 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="opsSearch" placeholder="Search app ops..." oninput="renderAppOpsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
                     <button class="mode-action-btn" onclick="refreshAppOps()">Refresh</button>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand App Ops" title="Expand App Ops"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
-                <div class="chip-row" id="opsFilterRow">
+                <div class="chip-row h-fade" id="opsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setOpsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="allow" onclick="setOpsFilter('allow')">Allowed</span>
                     <span class="filter-chip" data-filter="restricted" onclick="setOpsFilter('restricted')">Ignored / Denied</span>
                     <span class="filter-chip" data-filter="foreground" onclick="setOpsFilter('foreground')">Foreground</span>
-                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand App Ops" title="Expand App Ops"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="opsContainer">
                     <div class="list-empty">Loading app ops...</div>
@@ -9197,12 +9228,12 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="sheetTabActs" class="sheet-tab-content">
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="actsSearch" placeholder="Search activities..." oninput="renderActivitiesList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Activities" title="Expand Activities"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
-                <div class="chip-row" id="actsFilterRow">
+                <div class="chip-row h-fade" id="actsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setActsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="exported" onclick="setActsFilter('exported')">Exported</span>
                     <span class="filter-chip" data-filter="unexported" onclick="setActsFilter('unexported')">Unexported</span>
-                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Activities" title="Expand Activities"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="actsContainer">
                     <div class="list-empty">Loading activities...</div>
@@ -9213,12 +9244,12 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="sheetTabComps" class="sheet-tab-content">
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="compsSearch" placeholder="Search receivers, services, providers..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Components" title="Expand Components"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
-                <div class="chip-row" id="compsFilterRow">
+                <div class="chip-row h-fade" id="compsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setCompsFilter('all')">All</span>
                     <span class="filter-chip" data-filter="exported" onclick="setCompsFilter('exported')">Exported</span>
                     <span class="filter-chip" data-filter="unexported" onclick="setCompsFilter('unexported')">Unexported</span>
-                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Components" title="Expand Components"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="compsContainer">
                     <div class="list-empty">Loading components...</div>
@@ -9253,13 +9284,13 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="sheetTabFeatures" class="sheet-tab-content">
                 <div class="list-toolbar">
                     <input type="text" class="list-search" id="featuresSearch" placeholder="Search features..." oninput="renderFeatures()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Features" title="Expand Features"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
-                <div class="chip-row" id="featuresFilterRow">
+                <div class="chip-row h-fade" id="featuresFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setFeaturesFilter('all')">All</span>
                     <span class="filter-chip" data-filter="required" onclick="setFeaturesFilter('required')">Required</span>
                     <span class="filter-chip" data-filter="optional" onclick="setFeaturesFilter('optional')">Optional</span>
                     <span class="filter-chip" data-filter="missing" onclick="setFeaturesFilter('missing')">Not on this phone</span>
-                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Features" title="Expand Features"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
                 </div>
                 <div id="featuresContainer">
                     <div class="list-empty">Open this tab to load the features.</div>
@@ -10804,9 +10835,9 @@ Type any command above (e.g. pm list packages -d)</div>
             slate: { dark: { accent: '#448AFF', bg: '#0D1117', card: '#161B22', running: '#00E676', frozen: '#448AFF', system: '#7C4DFF', bloat: '#FF5252' } },
             crimson: { dark: { accent: '#FF1744', bg: '#000000', card: '#1C080B', running: '#00E676', frozen: '#FF1744', system: '#D50000', bloat: '#FF5252' } },
             // Material Design 3 baseline schemes (primary, surface, surface containers, secondary, error, on-surface roles)
-            material3: {
+            material3: {          // light (v7.15): white cards on a tinted page (the M3 container tones), so a card stands out from the page instead of sinking into it
                 dark: { accent: '#D0BCFF', bg: '#141218', surface: '#2B2930', card: '#211F26', sheet: '#1D1B20', running: '#A6D4A9', frozen: '#D0BCFF', system: '#CCC2DC', bloat: '#F2B8B5', text: '#E6E0E9', muted: '#CAC4D0', secondary: '#CCC2DC' },
-                light: { accent: '#6750A4', bg: '#FEF7FF', surface: '#ECE6F0', card: '#F3EDF7', sheet: '#F7F2FA', running: '#386A20', frozen: '#6750A4', system: '#625B71', bloat: '#B3261E', text: '#1D1B20', muted: '#49454F', secondary: '#625B71' }
+                light: { accent: '#6750A4', bg: '#F3EDF7', surface: '#ECE6F0', card: '#FFFFFF', sheet: '#FEF7FF', running: '#386A20', frozen: '#6750A4', system: '#625B71', bloat: '#B3261E', text: '#1D1B20', muted: '#49454F', secondary: '#625B71' }
             }
         };
 
@@ -11362,7 +11393,7 @@ Type any command above (e.g. pm list packages -d)</div>
             console: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/>',          // a window with a prompt: the ADB shell and the Terminal
             logcat: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>',          // lines of a log: Live Logcat
             settings: '<path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>',
-            extrasettings: '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
+            extrasettings: '<path d="M17 7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>',          // a switch: the tab of toggles (v7.15: only the header button is a gear)
             overlays: '<path d="M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>',
             store: '<path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>',
             taskmgr: '<path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/>',
@@ -11467,7 +11498,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
             if (!grid) return;
             grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
-                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span></button>').join('');
+                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span><span class="bn-tl bn-tl-short">' + escapeHtml(bnavShort(k)) + '</span></button>').join('');
             document.getElementById('bnavMoreModal').classList.add('show');
             const mb = document.querySelector('#bnav .bn-item[data-more]');
             if (mb) mb.setAttribute('aria-expanded', 'true');
@@ -11682,7 +11713,10 @@ Type any command above (e.g. pm list packages -d)</div>
             launch: '<path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>',
             battery: '<path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/>',
             net: '<path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>',
-            tune: BNAV_ICONS.settings
+            tune: BNAV_ICONS.settings,
+            play: '<path d="M8 5v14l11-7z"/>',
+            snow: '<path d="M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z"/>',
+            trash: BNAV_ICONS.debloater
         };
         // what a run() may call (besides the arrow functions it is made of): see t263
         function bnavGo(tab, then) { switchView(tab); if (then) setTimeout(then, 90); }
@@ -11700,9 +11734,17 @@ Type any command above (e.g. pm list packages -d)</div>
         const bnavTmSub = (id, label, icon) => ({ id, label, icon, when: () => typeof tmSetSub === 'function', run: () => bnavGo('taskmgr', () => tmSetSub(id)) });
         // a segment of the Console tab (cnShowSeg chooses it first, so the tab opens on it at once: the same path as switchView('terminal') for old links)
         const bnavCnSeg = (id, label, icon) => ({ id, label, icon, when: () => typeof cnShowSeg === 'function' && !!document.getElementById('cnTabs'), run: () => { cnShowSeg(id); switchView('console'); } });
+        // the Apps list with only that filter on (v7.15: the three a person looks for most, one hold away)
+        // the Apps list with only this filter on: it changes what the list shows, nothing on the phone
+        function appsShowOnly(id) { activeFilters.clear(); setFilter(id, document.querySelector('#filterScroll [data-filter="' + id + '"]')); }
+        const bnavAppsFilter = (id, label, icon) => ({ id, label, icon, when: () => !!document.querySelector('#filterScroll [data-filter="' + id + '"]'),
+            run: () => bnavGo('apps', () => { appsShowOnly(id); }) });
         const TAB_SHORTCUTS = {
             apps: [
-                { id: 'search', label: 'Search apps', icon: 'search', when: () => !!document.getElementById('searchInput'), run: () => bnavGo('apps', () => bnavFocus('searchInput')) }
+                { id: 'search', label: 'Search apps', icon: 'search', when: () => !!document.getElementById('searchInput'), run: () => bnavGo('apps', () => bnavFocus('searchInput')) },
+                bnavAppsFilter('running', 'Running', 'play'),
+                bnavAppsFilter('frozen', 'Frozen', 'snow'),
+                bnavAppsFilter('uninstalled', 'Uninstalled', 'trash')
             ],
             installer: [
                 { id: 'updateall', label: () => txF('Update All ({0})', bnavUpdatePending()), name: 'Update All', icon: 'updateall', first: true, when: () => bnavUpdatePending() > 1, run: () => { switchView('updates'); setTimeout(() => updateAllUI(), 90); } },
@@ -11909,7 +11951,7 @@ Type any command above (e.g. pm list packages -d)</div>
             t.textContent = 'Long-press a tab for shortcuts';
             t.onclick = bnavTipHide;
             document.body.appendChild(t);
-            setTimeout(bnavTipHide, 7000);
+            setTimeout(bnavTipHide, 4000);
         }
         function bnavTipHide() { const t = document.getElementById('bnavTip'); if (t) t.remove(); }
 
@@ -12060,6 +12102,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'overlays') onOverlaysShown();
             if (viewName === 'store') onStoreShown();
             if (viewName === 'about') onAboutShown();
+            hFadeInit();
             bnavSync();
             haptic();
             return true;
@@ -13235,6 +13278,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 const badge = document.getElementById('execModeBadge');          // its colours are the #execModeBadge[data-tone] rules
                 const text = document.getElementById('execModeText');
 
+                // The badge shows the short name of the mode ("Shizuku", "Wireless ADB"); the whole label (Auto, the port, the UID) is its accessible name
+                // and the Working Modes sheet's (v7.15: the long one never fitted on a phone and always ended in "…")
+                const SHORT = { adb_tcp: 'ADB TCP', adb_wireless: 'Wireless ADB', shizuku: 'Shizuku', root: 'Root (Superuser)' };
+                const short = SHORT[currentWorkingMode] || 'Read-Only';
                 let label;
                 if (currentWorkingMode === 'adb_tcp') {
                     label = `ADB TCP (${d.adbTcp ? d.adbTcp.port : 5555})`;
@@ -13247,21 +13294,27 @@ Type any command above (e.g. pm list packages -d)</div>
                 } else {
                     label = 'Read-Only';
                 }
+                const activeName = label;          // the mode alone, for the Working Modes sheet ("Selected: Automatic • Active: Shizuku ADB (UID 2000)")
                 if (configured === 'auto' && isPrivilegedActive) label = 'Auto • ' + label;
 
+                let full;
                 if (pinnedButNotReady) {
                     badge.dataset.tone = 'none';
-                    text.innerText = `${label} (not ready)`;
+                    full = `${label} (not ready)`;
+                    text.innerText = (SHORT[configured] || label) + ' (not ready)';          // the mode that was chosen and that it is not ready, in the warning colour
                 } else if (currentWorkingMode === 'root' && isPrivilegedActive) {
                     badge.dataset.tone = 'root';
-                    text.innerText = label;
+                    full = label; text.innerText = short;
                 } else if (isPrivilegedActive) {
                     badge.dataset.tone = 'on';
-                    text.innerText = label;
+                    full = label; text.innerText = short;
                 } else {
                     badge.dataset.tone = 'none';
-                    text.innerText = configured === 'unprivileged' ? 'Read-Only Mode' : 'Setup Mode (Read-Only)';
+                    full = configured === 'unprivileged' ? 'Read-Only Mode' : 'Setup Mode (Read-Only)';
+                    text.innerText = full;
                 }
+                badge.dataset.full = full;
+                badge.setAttribute('aria-label', full);
 
                 // Update Alert Banner in view-apps
                 const alertCard = document.getElementById('modeAlertCard');
@@ -13294,7 +13347,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
                 // Update Modal Content
-                document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
+                document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${isPrivilegedActive && !pinnedButNotReady ? activeName : full}`;
 
                 // Card highlighting: green = in use, orange = selected but backend not ready
                 const cards = {
@@ -18849,12 +18902,12 @@ Type any command above (e.g. pm list packages -d)</div>
             selectModeUI('unprivileged', () => closeWorkingModesModal());
         }
 
-        // The header's two small lines under the title: "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" (capitals come from the style; the One UI part is for Samsung phones)
+        // The header's line under the title (v7.15, the owner's wish): "Android 16" and, on a Samsung phone, "One UI 8.5", joined by a dot the style draws
         function setHeaderSubtitle(info) {
             const l1 = document.getElementById('deviceInfoLine1'), l2 = document.getElementById('deviceInfoLine2');
             if (!l1 || !l2) return;
-            l1.textContent = [info.manufacturer, info.device].filter(Boolean).join(' ');
-            l2.textContent = (info.release ? 'Android ' + info.release : '') + (info.oneUi ? ' \u2022 One UI ' + info.oneUi : '');
+            l1.textContent = info.release ? 'Android ' + info.release : '';
+            l2.textContent = info.oneUi ? 'One UI ' + info.oneUi : '';
             fitHeaderTitle();
         }
 
@@ -18869,10 +18922,10 @@ Type any command above (e.g. pm list packages -d)</div>
             lines.forEach(l => { l.style.display = 'inline-block'; });
             const w10 = Math.max.apply(null, lines.map(l => l.getBoundingClientRect().width));
             lines.forEach(l => { l.style.display = ''; });
-            // the widest line takes about four fifths of the room: "ADB System" is shorter than the old "Full ADB/Root", and filling the whole room
-            // would make the title (and so the header) taller and push every list down the screen
+            // the widest line takes about four fifths of the room: filling the whole room would make the title (and so the header) taller and push every
+            // list down the screen
             let size = w10 > 0 ? 10 * room * 0.8 / w10 : 18;
-            size = Math.max(13, Math.min(size, 26));
+            size = Math.max(14, Math.min(size, 22));
             h1.style.fontSize = size.toFixed(1) + 'px';
             // the room next to the buttons moves a little as the title grows (it is one flex row): step down until both lines really fit
             const widest = () => { lines.forEach(l => { l.style.display = 'inline-block'; }); const w = Math.max.apply(null, lines.map(l => l.getBoundingClientRect().width)); lines.forEach(l => { l.style.display = ''; }); return w; };
@@ -18883,10 +18936,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 p.style.fontSize = '';
                 p.classList.remove('sub-wrap');
                 const base = parseFloat(getComputedStyle(p).fontSize) || 12, floor = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fs-overline')) || 11;
-                const subs = Array.from(p.querySelectorAll('.bt-sub'));
-                subs.forEach(l => { l.style.display = 'inline-block'; });
-                const sw = Math.max.apply(null, subs.map(l => l.getBoundingClientRect().width));
-                subs.forEach(l => { l.style.display = ''; });
+                const subs = Array.from(p.querySelectorAll('.bt-sub')).filter(l => l.textContent);
+                const sw = subs.reduce((t, l) => t + l.getBoundingClientRect().width, 0);          // one line: the parts side by side (the dot is part of the second)
                 if (sw > room) p.style.fontSize = Math.max(floor, base * room / sw).toFixed(1) + 'px';
                 if (sw * floor / base > room + 0.5) p.classList.add('sub-wrap');
             }
@@ -18914,7 +18965,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     const sysInfoStr = window.AndroidBridge.getSystemInfo();
                     const info = JSON.parse(sysInfoStr);
                     buildChangedThisLaunch = !!info.buildChanged;
-                    if (info.device) setHeaderSubtitle(info);
+                    if (info.release || info.device) setHeaderSubtitle(info);
                 } catch(e) {}
 
                 // Load packages immediately
@@ -19369,7 +19420,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---------- Action Button: the extra button on each row of the Apps list ----------
         const AB_PATHS = {
-            settings: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+            settings: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',          // App info: an "i" in a circle (v7.15: only the header button is a gear)
             forcestop: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z',
             launch: 'M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
             enable: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
@@ -20675,10 +20726,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 p.classList.toggle('active', k === 'all' ? none : activeFilters.has(k));
             });
             syncStatCards();
+            // under the filters while any is on (v7.15): Select shown (every app the filters show, in one tap) and Clear filters; the sentence that
+            // names them only for two or more (one is plain from its lit pill)
             const sum = document.getElementById('filterSummary');
             if (sum) {
-                sum.style.display = activeFilters.size > 1 ? '' : 'none';
-                document.getElementById('filterSummaryText').innerText = filterSummaryText(activeFilters).replace(' Tap All to clear.', '');
+                sum.style.display = activeFilters.size ? '' : 'none';
+                document.getElementById('filterSummaryText').innerText = activeFilters.size > 1 ? filterSummaryText(activeFilters).replace(' Tap All to clear.', '') : '';
             }
         }
 
@@ -20705,6 +20758,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 fits = el.scrollWidth - own <= el.clientWidth + 1;
             }
             h.style.display = filtersHintDone || fits ? 'none' : '';
+            if (el) { el.classList.toggle('hint-on', h.style.display !== 'none'); hFadeUpdate(el); }          // the arrow has its own fade: the row's waits until it has gone
         }
         // measured again whenever the row or a pill changes size: the screen turns or resizes, a count grows, the language changes, the font loads
         (function watchFiltersRow() {
@@ -20715,6 +20769,35 @@ Type any command above (e.g. pm list packages -d)</div>
             watch();
             new MutationObserver(watch).observe(el, { childList: true });                  // a pill added later is watched too
         })();
+        // Rows of chips that scroll sideways (class h-fade, v7.15): the end that has more beyond it fades out, so a chip cut at the edge reads as
+        // "there is more this way" (the classes h-more-end and h-more-start, drawn by the .h-fade rules). Measured when the row scrolls and when it
+        // or one of its chips changes size (a count grows, the language changes, the screen turns).
+        function hFadeUpdate(el) {
+            if (!el || !el.classList) return;
+            const max = el.scrollWidth - el.clientWidth, x = Math.abs(el.scrollLeft);          // negative from right to left (Arabic)
+            el.classList.toggle('h-more-end', max > 2 && x < max - 2);
+            el.classList.toggle('h-more-start', max > 2 && x > 2);
+        }
+        function hFadeObserver() {
+            if (hFadeObserver.ro === undefined) hFadeObserver.ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(es => es.forEach(e => hFadeUpdate(e.target.classList.contains('h-fade') ? e.target : e.target.parentElement)));
+            return hFadeObserver.ro;
+        }
+        function hFadeInit(root) {
+            (root || document).querySelectorAll('.h-fade').forEach(el => {
+                if (!el.hFadeOn) {
+                    el.hFadeOn = true;
+                    el.addEventListener('scroll', () => hFadeUpdate(el), { passive: true });
+                    const ro = hFadeObserver();
+                    if (ro) {
+                        const watch = () => { ro.observe(el); for (const c of el.children) ro.observe(c); };
+                        watch();
+                        new MutationObserver(watch).observe(el, { childList: true });
+                    }
+                }
+                hFadeUpdate(el);
+            });
+        }
+        hFadeInit();
         function dismissFiltersHint() {
             if (filtersHintDone) return;
             filtersHintDone = true;
@@ -29509,10 +29592,12 @@ Type any command above (e.g. pm list packages -d)</div>
             renderPermissionsList();
         }
 
+        // a permission's name may break after a dot or an underscore (POST_|NOTIFICATIONS), never inside a word (v7.15)
+        const permWbr = s => escapeHtml(s).replace(/([._])/g, '$1<wbr>');
         function renderPermissionsList() {
             const container = document.getElementById('permsContainer');
             const perms = (inspectorData && inspectorData.permissions) || [];
-            document.getElementById('permsCount').innerText = perms.length ? '(' + perms.length + ')' : '';
+            document.getElementById('permsCount').innerText = perms.length ? String(perms.length) : '';          // a bare number, like the other tabs' (v7.15)
             if (!perms.length) {
                 container.innerHTML = '<div class="list-empty">No permissions declared.</div>';
                 return;
@@ -29541,8 +29626,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 return `
                     <div class="perm-row">
                         <div class="perm-info">
-                            <div class="perm-name">${escapeHtml(shortName)}</div>
-                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${p.changeable ? '' : '<span class="perm-kind">locked</span>'}${escapeHtml(sub)}</div>
+                            <div class="perm-name">${permWbr(shortName)}</div>
+                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${p.changeable ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div>
                             ${agentBtnHtml('permission', p.name, ['Declared by the app: ' + inspectedPkg, 'Protection level: ' + kind, p.label ? 'Android calls it: ' + p.label : ''])}
                         </div>
                         ${btn}
@@ -29597,7 +29682,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function renderAppOpsList() {
             const container = document.getElementById('opsContainer');
-            document.getElementById('opsCount').innerText = appOpsList.length ? '(' + appOpsList.length + ')' : '';
+            document.getElementById('opsCount').innerText = appOpsList.length ? String(appOpsList.length) : '';
             if (!appOpsList.length) {
                 const raw = (inspectorData && inspectorData.appopsRaw) || '';
                 const hint = isPrivilegedActive ? 'No app ops recorded for this app yet. Use the field below to set one.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.';
@@ -38192,13 +38277,18 @@ Type any command above (e.g. pm list packages -d)</div>
         // CONTACT_ALIAS is the only place the address is written: a forwarding alias (not the developer's mailbox).
         let CONTACT_ALIAS = 'bingblop.coral666@simplelogin.fr';   // a forwarding alias (SimpleLogin), never the developer's own address (a let only so that the tests can change it)
         const CONTACT_SUBJECT = 'ADB App Manager';
+        // the working mode as the header badge knows it in full ("Auto • Shizuku ADB (UID 2000)"): the badge itself shows only the short name
+        function workingModeFullLabel() {
+            const b = document.getElementById('execModeBadge');
+            return (b && b.dataset.full) || (document.getElementById('execModeText') || {}).innerText || '';
+        }
         function contactDetailsText() {
             if (!aboutInfo || !aboutInfo.pkg) { try { renderAbout(); } catch (e) {} }
             const i = aboutInfo || {};
             const l = ['App: ADB Full System Manager ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
             if (i.android) l.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) l.push('Phone: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
-            const mode = (document.getElementById('execModeText') || {}).innerText;
+            const mode = workingModeFullLabel();
             if (mode) l.push('Working mode: ' + mode);
             return l.join('\n');
         }
@@ -38293,7 +38383,7 @@ Type any command above (e.g. pm list packages -d)</div>
             row('Device', i.device);
             row('CPU', i.abi);
             row('WebView', i.webview || (webviewChromeVersion() ? 'Chrome ' + webviewChromeVersion() : ''));          // the version from the user agent when the app cannot name the package
-            row('Working mode', (document.getElementById('execModeText') || {}).innerText);
+            row('Working mode', workingModeFullLabel());
             document.getElementById('aboutBuild').innerHTML = rows.join('');
             const sig = document.getElementById('aboutSig');
             if (!i.signerSha256) { sig.innerHTML = ''; return; }
@@ -38380,7 +38470,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (i.android) lines.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) lines.push('Device: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
             if (i.webview) lines.push('WebView: ' + i.webview);
-            const mode = (document.getElementById('execModeText') || {}).innerText;
+            const mode = workingModeFullLabel();
             if (mode) lines.push('Working mode: ' + mode);
             if (i.signerSha256) lines.push('Signature SHA-256: ' + signFp(i.signerSha256) + (i.signerSha256.toLowerCase() === ABOUT_RELEASE_SHA256 ? ' (official release key)' : ' (not the official release key)'));
             return lines.join('\n');

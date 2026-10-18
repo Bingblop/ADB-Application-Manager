@@ -8,7 +8,7 @@
    report a bug opens the issue form: true
    releases opens the latest release: true
    the developer profile link: true
-3. "Buy me a coffee" opens PayPal's donate page for the developer: true https://www.paypal.com/donate?business=bingblop%40yahoo.com&no_recurring=1&item_name=Buy%20me%20a%20coffee%20-%20ADB%20System%20Manager&amount=1.00&currency_code=USD
+3. "Buy me a coffee" opens PayPal's donate page for the developer: true https://www.paypal.com/donate?business=bingblop%40yahoo.com&no_recurring=1&item_name=Buy%20me%20a%20coffee%20-%20ADB%20Full%20System%20Manager&amount=1.00&currency_code=USD
    for exactly 1.00 US dollar: true
    the address is encoded (no raw @ in the link) and the item is named: true
    a thank-you toast: true
