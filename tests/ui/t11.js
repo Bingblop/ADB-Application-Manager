@@ -75,6 +75,8 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   await page.click('#uadStateRow [data-state="present"]'); await page.click('#view-debloater >> text=Select shown');
   await page.click('.uad-action-grid >> text=Save to List');
   console.log('saved list:', JSON.parse(await page.evaluate(() => window.__st.lists || '[]')).map(l => l.name + ' (' + l.packages.length + ')'));
+  // v7.15: the intro card is folded; its head opens it
+  await page.click('#uadIntro .cc-head'); await page.waitForTimeout(350);
   await page.click('text=UAD-NG Wiki'); await page.click('text=Removal Levels');
   console.log('levels visible:', await page.isVisible('#uadLevels'));
   const calls = await page.evaluate(() => window.__st.calls);

@@ -117,6 +117,7 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
     // the two switches are whole rows: the label row is the target, at least 44px tall, and the track hands its tap to the row (Pure black flips)
     for (const [view, id] of [['saved-lists', 'lbAuto'], ['prefs', 'pureBlackToggle']]) {
       await ev(v => switchView(v), view); await page.waitForTimeout(400);
+      await ev(id => ccReveal(document.getElementById(id)), id); await page.waitForTimeout(400);          // v7.15: the Saved lists backup card starts folded
       const s = await ev(id => {
         const i = document.getElementById(id), row = i.closest('.switch-row');
         row.scrollIntoView({ block: 'center' });

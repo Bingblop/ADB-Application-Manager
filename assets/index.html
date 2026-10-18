@@ -2155,6 +2155,26 @@
         .cc-section { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border-glass); }
         .cc-section-title { font-size: var(--fs-label); font-weight: var(--fw-heavy); margin-bottom: var(--space-1); }
 
+        /* v7.15: a tab's head without a card around it: its name, one muted line, and the ? beside them (Saved Applications) */
+        .sec-head { position: relative; margin: 0 0 var(--space-4); padding-top: var(--space-1); }
+        .sec-head.has-help { padding-right: calc(var(--ctl-h) + var(--space-3)); min-height: var(--ctl-h); }
+        .sec-head > .help-q { top: 0; right: 0; }
+        .sec-title { margin: 0; font-size: var(--fs-sheet); font-weight: var(--fw-heavy); line-height: 1.3; }
+        .sec-sub { margin: var(--space-1) 0 0; font-size: var(--fs-caption); color: var(--text-muted); line-height: 1.4; }
+
+        /* v7.15: one icon button (Update List by the Debloater's search, the tools' refresh and add buttons): 40px to see, 44px to touch, tonal */
+        .icon-btn { flex: 0 0 auto; position: relative; width: 40px; height: 40px; margin: 2px; padding: 0; border-radius: 50%; border: 1px solid var(--border-glass);
+            background: var(--fill-2); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font: inherit; }
+        .icon-btn::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; }
+        .icon-btn:active:not(:disabled) { background: var(--fill-3); transform: scale(0.97); }
+        .icon-btn:disabled { opacity: 0.5; cursor: default; }
+        .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .icon-btn svg { display: block; }
+        @media (prefers-reduced-motion: no-preference) { .icon-btn:disabled svg { animation: appsRefreshSpin 0.8s linear infinite; } }
+        /* a folded card that is a tab's first card: the ? sits left of the chevron */
+        .color-card.cc.has-help > .cc-head { padding-right: calc(var(--tap) + var(--ctl-h) + var(--space-4)); }
+        .color-card.cc.has-help > .help-q { top: calc(var(--space-3) + (var(--tap) - var(--ctl-h)) / 2); right: calc(var(--space-2) + var(--tap) + (var(--tap) - var(--ctl-h)) / 2); }          /* its 44px tap ends where the fold button's starts */
+
         /* A small ? on the first card of each tab: opens the Help Guide at that tab's topic */
         .color-card.has-help { position: relative; }
         /* the title leaves room beside the ? and reaches below it, so the line under the title starts clear of the button */
@@ -2263,7 +2283,7 @@
         .font-sample .fs-bold { font-weight:var(--fw-bold); }
         /* right to left (Arabic): names, paths, commands and what the user types keep the direction of their own text */
         html[dir="rtl"] .fm-edit-area, html[dir="rtl"] [translate="no"], html[dir="rtl"] .list-search, html[dir="rtl"] .modal-text-input, html[dir="rtl"] pre, html[dir="rtl"] code { unicode-bidi: plaintext; }
-        .lang-select { width: 100%; font-size: var(--fs-sheet); font-weight:var(--fw-bold); padding: var(--space-3h) var(--space-4); margin-top: var(--space-1); }
+        .lang-select { width: 100%; min-height: 44px; font-size: var(--fs-sheet); font-weight:var(--fw-bold); padding: var(--space-3h) var(--space-4); margin-top: var(--space-1); }
 
         .manifest-view {
             font-family: monospace;
@@ -2386,14 +2406,6 @@
             margin-bottom: var(--space-3);
         }
 
-        /* The "Saved" badge sits with the action buttons below, not the title - so the title/count
-           have the full row to themselves. */
-        .saved-list-controls {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: var(--space-3);
-        }
-
         .saved-list-title {
             font-size: var(--fs-label);
             font-weight:var(--fw-heavy);
@@ -2436,11 +2448,18 @@
             word-break: break-all;
         }
 
+        /* v7.15: Recall, Quick list and Edit on the first row, Copy and Delete on the second. Recall is the list's main action (tonal accent), Quick list
+           shows that it is on with the accent, Delete is a quiet danger-text button */
         .saved-list-actions {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: var(--space-3);
         }
+        .saved-list-actions > .apps-tool-btn { grid-column: span 2; min-width: 0; min-height: var(--ctl-h); padding-inline: var(--space-2); line-height: 1.2; overflow-wrap: anywhere; }
+        .saved-list-actions > .apps-tool-btn:nth-child(n+4) { grid-column: span 3; }
+        .saved-list-actions > .sl-recall { background: var(--tint-accent); border-color: var(--line-accent); color: var(--accent); }
+        .saved-list-actions > .apps-tool-btn.active { border-color: var(--accent); color: var(--accent); }
+        .saved-list-actions > .sl-delete { background: transparent; color: var(--status-bloat); }
 
         .modal-text-input,
         .modal-textarea {
@@ -3658,6 +3677,13 @@
         .mt-btns button { flex: 1 1 0; min-width: 0; border: 1px solid var(--border-glass); background: transparent; color: var(--text-muted); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-1); font-size: var(--fs-caption); font-weight:var(--fw-heavy); cursor: pointer; }
         .mt-btns button.danger { color: var(--status-bloat); }
         .ps-style-card .ps-desc { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); margin-top: var(--space-1); font-weight:var(--fw-semibold); }
+        /* v7.15: nine styles in three columns (swatches and the name); the line of the chosen one is under the grid */
+        #psStyleGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+        #psStyleGrid .palette-preset-card { padding: var(--space-3); min-width: 0; }
+        #psStyleGrid .preset-strip { margin-bottom: var(--space-2); }
+        #psStyleGrid .preset-name { font-size: var(--fs-pill); overflow-wrap: anywhere; }
+        #psStyleGrid .ps-desc { display: none; }
+        .ps-desc-note { font-size: var(--fs-caption); color: var(--text-main); font-weight: var(--fw-semibold); line-height: 1.4; margin-top: var(--space-3); text-align: center; }
         .appearance-toggle {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -3859,8 +3885,16 @@
         .uad-count {
             font-size: var(--fs-pill);
             font-weight:var(--fw-heavy);
-            margin-bottom: var(--space-3);
         }
+        /* v7.15: the count, Select shown and ✕ Clear on one line above the four buttons; ✕ Clear only while something is selected */
+        .uad-actions-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+        .uad-actions-head > .uad-count { flex: 1 1 auto; min-width: 0; }
+        .uad-actions-head > .mode-action-btn { flex: 0 0 auto; margin: 0; }
+        .uad-actions.uad-none .uad-clear { display: none; }
+        /* the folded intro card keeps the list's status under its name */
+        .color-card.cc > .cc-head.uad-head { flex-direction: column; align-items: flex-start; justify-content: center; }
+        .uad-head > .uad-status { margin: var(--space-1) 0 0; font-weight: var(--fw-medium); }
+        #uadIntro:not(.cc-closed) > .cc-head.uad-head { margin-bottom: var(--space-3); }
 
         /* four buttons in a row, as wide as each other; when the names do not fit (German, Russian on a narrow phone) a button moves to a second row whole */
         .uad-action-grid {
@@ -3953,18 +3987,21 @@
             color: var(--status-bloat);
             font-weight:var(--fw-heavy);
         }
-        .uad-brand-row {
+        .uad-brand-row,
+        #view-debloater .chip-row.h-fade {               /* v7.15: every filter row of the Debloater is one line that scrolls sideways */
             flex-wrap: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
             padding-block: var(--space-1);          /* room for the chips' hit area, so the row does not scroll up and down */
         }
 
-        .uad-brand-row::-webkit-scrollbar {
+        .uad-brand-row::-webkit-scrollbar,
+        #view-debloater .chip-row.h-fade::-webkit-scrollbar {
             display: none;
         }
 
-        .uad-brand-row .filter-chip {
+        .uad-brand-row .filter-chip,
+        #view-debloater .chip-row.h-fade > .filter-chip {
             white-space: nowrap;
             flex-shrink: 0;
         }
@@ -4489,15 +4526,13 @@
         <!-- VIEW 2: SAVED LISTS -->
         <!-- VIEW: DEBLOATER (UAD-NG community list) -->
         <section id="view-debloater" class="view-content">
-            <div class="color-card">
-                <div class="color-card-title">UAD-NG Debloater</div>
+            <!-- v7.15: the tab opens on its list. The intro card is folded (the list's status stays in its head), Update List sits by the search -->
+            <div class="color-card cc" id="uadIntro" data-cc="uadintro" data-cc-default="closed">
+                <div class="color-card-title uad-head"><span>UAD-NG Debloater</span><span class="uad-status" id="uadStatus">Checking list...</span></div>
                 <div class="color-card-subtitle">Powered by the <b>Universal Android Debloater Next Generation</b> (UAD-NG) community package list</div>
-                <div class="uad-status" id="uadStatus">Checking list...</div>
                 <div class="mode-btn-row">
-                    <button class="mode-action-btn primary" id="uadUpdateBtn" onclick="updateUadListUI()">Update List</button>
                     <button class="mode-action-btn" onclick="toggleUadLevels()">Removal Levels</button>
                     <button class="mode-action-btn" onclick="openUadWiki()">UAD-NG Wiki</button>
-                    <button class="mode-action-btn" onclick="openHistoryModal()">History</button>
                 </div>
                 <div class="uad-levels" id="uadLevels" style="display:none;">
                     <div class="uad-level"><span class="uad-badge uad-r-recommended">RECOMMENDED</span> Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.</div>
@@ -4510,14 +4545,17 @@
 
             <div class="list-toolbar">
                 <input type="text" class="list-search" id="uadSearch" placeholder="Search package, name or description..." oninput="uadSearchInput()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="button" class="icon-btn" id="uadUpdateBtn" aria-label="Update List" title="Update List" onclick="updateUadListUI()"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+                <!-- History (and its Undo) stays one tap away while the intro card is folded -->
+                <button type="button" class="icon-btn" id="uadHistBtn" aria-label="History" title="History" onclick="openHistoryModal()"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></button>
             </div>
-            <div class="chip-row" id="uadRemovalRow">
+            <div class="chip-row h-fade" id="uadRemovalRow">
                 <span class="filter-chip active" data-removal="Recommended" onclick="toggleUadRemoval('Recommended')">Recommended</span>
                 <span class="filter-chip" data-removal="Advanced" onclick="toggleUadRemoval('Advanced')">Advanced</span>
                 <span class="filter-chip" data-removal="Expert" onclick="toggleUadRemoval('Expert')">Expert</span>
                 <span class="filter-chip" data-removal="Unsafe" onclick="toggleUadRemoval('Unsafe')">Unsafe</span>
             </div>
-            <div class="chip-row" id="uadListRow">
+            <div class="chip-row h-fade" id="uadListRow">
                 <span class="filter-chip active" data-list="all" onclick="setUadList('all')">All vendors</span>
                 <span class="filter-chip" data-list="Oem" onclick="setUadList('Oem')">OEM</span>
                 <span class="filter-chip" data-list="Google" onclick="setUadList('Google')">Google</span>
@@ -4525,8 +4563,8 @@
                 <span class="filter-chip" data-list="Carrier" onclick="setUadList('Carrier')">Carrier</span>
                 <span class="filter-chip" data-list="Misc" onclick="setUadList('Misc')">Misc</span>
             </div>
-            <div class="chip-row uad-brand-row" id="uadBrandRow"></div>
-            <div class="chip-row" id="uadStateRow">
+            <div class="chip-row h-fade uad-brand-row" id="uadBrandRow"></div>
+            <div class="chip-row h-fade" id="uadStateRow">
                 <span class="filter-chip active" data-state="present" onclick="setUadState('present')">On device</span>
                 <span class="filter-chip" data-state="enabled" onclick="setUadState('enabled')">Enabled</span>
                 <span class="filter-chip" data-state="disabled" onclick="setUadState('disabled')">Disabled</span>
@@ -4534,15 +4572,14 @@
                 <span class="filter-chip" data-state="all" onclick="setUadState('all')">All</span>
             </div>
 
-            <div class="switch-sub" style="margin:4px 2px 4px;">Also show only (combine as many as you like):</div>
-            <div class="filter-scroll" id="uadExtraRow"></div>
+            <div class="filter-scroll h-fade" id="uadExtraRow" role="group" aria-label="Also show only (combine as many as you like):"></div>
             <div class="switch-sub" id="uadExtraSummary" style="display:none; margin:2px 2px 6px;"></div>
 
-            <div class="uad-actions">
-                <div class="uad-count" id="uadCount">0 packages</div>
-                <div class="mode-btn-row">
+            <div class="uad-actions" id="uadActions">
+                <div class="uad-actions-head">
+                    <div class="uad-count" id="uadCount">0 packages</div>
                     <button class="mode-action-btn" onclick="selectAllUadVisible()">Select shown</button>
-                    <button class="mode-action-btn" onclick="clearUadSelection()">✕ Clear</button>
+                    <button class="mode-action-btn uad-clear" onclick="clearUadSelection()">✕ Clear</button>
                 </div>
                 <div class="uad-action-grid" id="uadActionGrid">
                     <button class="batch-grid-btn danger" onclick="uadAction('uninstall')" disabled>Uninstall</button>
@@ -4570,6 +4607,10 @@
                 .apk-scan-bar > div { height:100%; width:0; background:var(--accent); border-radius:var(--radius-xs); transition:width .2s ease; }
                 .apk-scan-bar.indeterminate > div { width:35%; position:absolute; top:0; animation:apkScanSlide 1.1s ease-in-out infinite; }
                 @keyframes apkScanSlide { 0% { left:-35%; } 100% { left:100%; } }
+                .inst-btn { width:100%; min-height:44px; margin-top:var(--space-3); }
+                .inst-btn.accent { margin-top:var(--space-2); }
+                .inst-btn.inst-tonal { background:var(--tint-accent); border-color:var(--line-accent); color:var(--accent); }
+                .inst-tip { font-size:var(--fs-caption); margin:var(--space-4) 0 0; }
                 .apk-scan-tip { font-size:var(--fs-pill); color:var(--text-muted); margin-top:var(--space-3); }
                 .apk-scan-row { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
                 .apk-scan-name { font-size:var(--fs-item); font-weight:var(--fw-heavy); color:var(--text-main); word-break:break-word; }
@@ -4584,9 +4625,10 @@
             <div class="color-card">
                 <div class="color-card-title">Install a package</div>
                 <div class="color-card-subtitle">APK, APKS, APKM or XAPK — base plus splits (and OBB game data), with full install control</div>
-                <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">Choose APK / APKS / APKM / XAPK</button>
-                <button class="batch-grid-btn" id="installXapkBtn" style="width:100%;height:40px;margin-top:8px;" onclick="pickInstallFile('xapk')">Install XAPK (APK + OBB data)</button>
-                <button class="batch-grid-btn" id="apkScanBtn" style="width:100%;height:40px;margin-top:8px;" onclick="scanApkFiles()">Find APKs on this device</button>
+                <!-- v7.15: one primary (Choose), the other two tonal; all three 44px -->
+                <button class="batch-grid-btn accent inst-btn" onclick="pickInstallFile()">Choose APK / APKS / APKM / XAPK</button>
+                <button class="batch-grid-btn inst-btn inst-tonal" id="installXapkBtn" onclick="pickInstallFile('xapk')">Install XAPK (APK + OBB data)</button>
+                <button class="batch-grid-btn inst-btn inst-tonal" id="apkScanBtn" onclick="scanApkFiles()">Find APKs on this device</button>
                 <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it.</div>
 
                 <!-- Automatic storage search results -->
@@ -4613,7 +4655,7 @@
                     <div id="apkScanList" class="apk-scan-list"></div>
                 </div>
 
-                <div class="color-card-subtitle" style="margin-top:12px;">To make this the default installer, open any APK, choose this app, and tap "Always".</div>
+                <div class="color-card-subtitle inst-tip clamp-2">To make this the default installer, open any APK, choose this app, and tap "Always".</div>
             </div>
 
             <!-- Package info (after a pick) -->
@@ -4807,6 +4849,7 @@
                 .us-row2 .us-ver { flex:0 0 34%; max-width:150px; min-width:88px; }
                 .us-srcnote { font-size:var(--fs-pill); color:var(--text-muted); margin-top:var(--space-2); }
                 .us-chks { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--space-3) var(--space-4); margin-top:var(--space-4); }
+                @media (max-width: 400px) { .us-chks { grid-template-columns:1fr; } }          /* v7.15: one column on a phone, so no option wraps into three lines */
                 .us-chk { display:flex; gap:var(--space-3); align-items:flex-start; font-size:var(--fs-code); font-weight:var(--fw-bold); color:var(--text-main); cursor:pointer; }
                 .us-chk input { flex:0 0 auto; width:17px; height:17px; margin:1px 0 0; accent-color:var(--accent); }
                 .us-chk small { display:block; font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); margin-top:1px; }
@@ -6054,14 +6097,10 @@
 
 
         <section id="view-saved-lists" class="view-content">
-            <div class="color-card" id="quickActionsHelp">
-                <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle clamp-2">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB Full System Manager. They run without opening the app.</div>
-            </div>
-
-            <div style="margin-bottom:14px;">
-                <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved Applications</h3>
-                <p style="font-size:11px; color:var(--text-muted);">Create reusable named app selections, recall them instantly, edit packages, or delete old lists.</p>
+            <!-- v7.15: the tab opens on its lists. Head, tools and filters first; the backup card and the quick actions help are folded cards at the bottom -->
+            <div class="sec-head">
+                <h3 class="sec-title">Saved Applications</h3>
+                <p class="sec-sub">Create reusable named app selections, recall them instantly, edit packages, or delete old lists.</p>
             </div>
 
             <div class="saved-lists-toolbar">
@@ -6073,7 +6112,12 @@
                 <button class="batch-tool-link bs-btn" id="savedBackupsBtn" onclick="openBackups()">Backups</button>
             </div>
 
-            <div class="color-card" id="listsBackupCard" style="margin-bottom:12px;">
+            <div class="filter-scroll h-fade" id="savedFilterRow" role="group" aria-label="Show only the apps in each list that match (combine as many as you like):"></div>
+            <div class="switch-sub" id="savedFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
+
+            <div id="savedListsContainer"></div>
+
+            <div class="color-card cc" id="listsBackupCard" data-cc="listsbackup" data-cc-default="closed">
                 <div class="color-card-title">Back up and restore</div>
                 <div class="color-card-subtitle">Keep a copy of your saved lists in a folder of your choice, and bring them back from a backup file.</div>
                 <div class="lb-where" id="lbWhere"></div>
@@ -6097,11 +6141,10 @@
                 </div>
                 <div class="appearance-note" id="lbNote"></div>
             </div>
-            <div class="switch-sub" style="margin:0 2px 4px;">Show only the apps in each list that match (combine as many as you like):</div>
-            <div class="filter-scroll" id="savedFilterRow"></div>
-            <div class="switch-sub" id="savedFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
-
-            <div id="savedListsContainer"></div>
+            <div class="color-card cc" id="quickActionsHelp" data-cc="quickactions" data-cc-default="closed">
+                <div class="color-card-title">Quick actions</div>
+                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB Full System Manager. They run without opening the app.</div>
+            </div>
         </section>
 
         <!-- VIEW 3: SETTINGS (appearance, colors, the Feature List) -->
@@ -6144,7 +6187,7 @@
 
             <div class="color-card" id="paletteStyleCard">
                 <div class="color-card-title">Palette Style &amp; My Themes</div>
-                <div class="color-card-subtitle">One source color, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
+                <div class="color-card-subtitle clamp-2">One source color, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
 
                 <div class="color-row">
                     <div class="color-meta">
@@ -6161,12 +6204,13 @@
                 </div>
 
                 <div class="palette-presets-grid" id="psStyleGrid"></div>
+                <div class="ps-desc-note" id="psDescNote"></div>
                 <div class="appearance-note" id="psNote"></div>
 
                 <!-- My Themes: saved looks, in the same card as the style they are made from -->
                 <div class="cc-section" id="myThemesCard">
                     <div class="cc-section-title">My Themes</div>
-                    <div class="color-card-subtitle">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
+                    <div class="color-card-subtitle clamp-2">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
                     <div class="mode-btn-row" style="margin:2px 0 12px;">
                         <button class="mode-action-btn primary" id="mtSaveBtn" onclick="mtSave()">Save current theme…</button>
                     </div>
@@ -6397,7 +6441,7 @@
 
             <div class="color-card" id="rowTintCard">
                 <div class="color-card-title">Row tints</div>
-                <div class="color-card-subtitle">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.</div>
+                <div class="color-card-subtitle clamp-2">How strongly the Apps tab tints the row of a running (green), frozen (blue) or uninstalled (red) app, and Live Logcat (and the Logcat of Connected Devices) each line in the colour of its level. Only the apps you select get an outline.</div>
                 <div class="row-tint-slider">
                     <input type="range" id="rowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
                     <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
@@ -6458,7 +6502,7 @@
 
             <div class="color-card" id="iconPackCard">
                 <div class="color-card-title">Icon pack</div>
-                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover get the pack's background and shape when it has one, and otherwise keep their own icon.</div>
+                <div class="color-card-subtitle clamp-2">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover get the pack's background and shape when it has one, and otherwise keep their own icon.</div>
                 <select class="op-select" id="iconPackSelect" aria-label="Icon pack" onchange="setIconPack(this.value)"></select>
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="iconCacheClearBtn" onclick="clearIconCache()">Clear icon cache</button>
@@ -6467,7 +6511,7 @@
 
             <div class="color-card cc" id="actionBtnCard" data-cc="actionbtn">
                 <div class="color-card-title">Action Button</div>
-                <div class="color-card-subtitle">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
+                <div class="color-card-subtitle clamp-2">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
                 <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
                 <div class="switch-sub" id="actionBtnPreview" style="margin-top:8px;"></div>
                 <div class="color-card-title" style="margin-top:16px; font-size:13px;">Hold menu</div>
@@ -6506,7 +6550,7 @@
 
             <div class="color-card cc" id="featureCard" data-cc="features">
                 <div class="color-card-title">Feature List</div>
-                <div class="color-card-subtitle">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
+                <div class="color-card-subtitle clamp-2">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
                 <div class="color-card-subtitle">Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</div>
                 <div id="featureList" class="fl-list"></div>
                 <div class="mode-btn-row" style="margin-top:12px;">
@@ -8003,9 +8047,10 @@ Type any command above (e.g. pm list packages -d)</div>
             <!-- Terminal: the real terminal and the Coding Agents (the Terminal tab until v7.14.0; switchView('terminal') opens this segment) -->
             <div id="cnSegTerm" class="cn-seg" role="tabpanel" aria-labelledby="cnTabTerm" hidden>
             <style>
-                .tx-switch { display: flex; gap: var(--space-3); margin: 2px 0 var(--space-4); }
-                .tx-switch-btn { flex: 1 1 0; min-width: 0; min-height: 50px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--fill-2); color: var(--text-muted); font-size: var(--fs-lead); font-weight:var(--fw-heavy); cursor: pointer; transition: background .15s; }
-                .tx-switch-btn.active { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); border-color: transparent; box-shadow: 0 2px 12px var(--accent-glow); }
+                /* v7.15: Application Installer | Application Updater is one segmented control, the same look as Light / Dark / System / Schedule */
+                .tx-switch { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); margin: 2px 0 var(--space-4); padding: var(--space-1); background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: var(--radius-pill); }
+                .tx-switch-btn { min-width: 0; min-height: 44px; padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font-size: var(--fs-body); font-weight:var(--fw-heavy); line-height: 1.2; cursor: pointer; transition: background .2s ease, color .2s ease; }
+                .tx-switch-btn.active { background: var(--accent); color: var(--on-accent); }
                 /* The Terminal in the Console's look: the pickers on a card like the Active Mode card, the screen like the Console's output (the card colour, a 1px
                    hairline, 16px corners), the input row like the ADB Shell's (outlined field, the accent Run button), the extra keys and the tools as its small chips. */
                 .tx-bar { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
@@ -12889,15 +12934,12 @@ Type any command above (e.g. pm list packages -d)</div>
                         </div>
                         ${desc}
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
-                        <div class="saved-list-controls">
-                            <div class="tag-badge tag-system">Saved</div>
-                        </div>
                         <div class="saved-list-actions">
-                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">${recallText}</button>
+                            <button class="apps-tool-btn sl-recall" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">${recallText}</button>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">Edit</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">Copy</button>
-                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="deleteSavedList(this.getAttribute('data-list-id'))">Delete</button>
+                            <button class="apps-tool-btn sl-delete" data-list-id="${listId}" onclick="deleteSavedList(this.getAttribute('data-list-id'))">Delete</button>
                         </div>
                     </div>`;
             }).join('');
@@ -14196,6 +14238,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function uadSyncActionBtns() {
             const none = !uadSelected.size;
             document.querySelectorAll('#uadActionGrid .batch-grid-btn').forEach(b => { b.disabled = none; });
+            const bar = document.getElementById('uadActions');
+            if (bar) bar.classList.toggle('uad-none', none);                    // ✕ Clear only while something is selected
         }
 
         function renderUadList() {
@@ -25213,7 +25257,7 @@ Type any command above (e.g. pm list packages -d)</div>
             Object.keys(HELP_LINKS).forEach(view => {
                 const sec = document.getElementById('view-' + view);
                 if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
-                const card = sec.querySelector('.color-card, .cn-tabs');          // Console and Live Logcat have no card: the ? sits on the tab row
+                const card = sec.querySelector('.sec-head, .color-card, .cn-tabs');   // Console and Live Logcat have no card: the ? sits on the tab row; a .sec-head (v7.15) takes it before any card
                 if (!card) return;
                 card.classList.add('has-help');
                 const b = document.createElement('button');
@@ -25225,7 +25269,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 b.dataset.help = HELP_LINKS[view];
                 b.textContent = '?';
                 b.addEventListener('click', e => { e.stopPropagation(); openHelpGuide(b.dataset.help); });
-                const title = card.querySelector(':scope > .color-card-title');
+                const title = card.querySelector(':scope > .color-card-title, :scope > .sec-title');
                 if (title) title.after(b); else card.prepend(b);                       // next to the title, never inside it
             });
         }
@@ -30699,6 +30743,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const custom = /^#[0-9a-f]{6}$/i.test(themeState.seed || '');
             if (note) note.innerText = custom ? 'Your color' : (getMaterialYouSchemes() ? 'Automatic: your wallpaper\'s main color' : 'Automatic: Material purple (the wallpaper\'s colors need Android 12+)');
             if (auto) auto.style.display = custom ? '' : 'none';
+            const dn = document.getElementById('psDescNote');                    // v7.15: the tiles show the name only; the chosen style's line is under them
+            if (dn) { dn.innerText = on ? PS_STYLES.find(x => x.id === themeState.style).desc : ''; dn.style.display = on ? '' : 'none'; }
             if (pn) pn.innerText = on ? PS_STYLES.find(x => x.id === themeState.style).name + ' from ' + seed + '. Light and dark follow the Appearance setting; color tweaks below are kept for each.' : 'Not in use: the theme above is a curated palette. Choose a style to build one from the source color.';
         }
 

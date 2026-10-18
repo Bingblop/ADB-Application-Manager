@@ -1,4 +1,4 @@
-// The long intro paragraphs at the top of SD Maid (and its credit), Saved lists (Quick actions), Hidden Settings, the four App Stores, the Default Ask Agent
+// The long intro paragraphs at the top of SD Maid (and its credit), Hidden Settings (Saved lists' Quick actions is a folded card since v7.15), the four App Stores, the Default Ask Agent
 // and the Morphe credit show two lines ending in "…". The text itself opens and closes them: a button with aria-expanded (Enter and Space too), so no new
 // words are needed. A paragraph with links in it is not made a button (a link inside a button): a tap outside its links opens it, a tap on a link only
 // follows the link, and moving into a link with the keyboard opens it. A paragraph that fits in two lines is left as it is. The whole text stays in the page.
@@ -20,7 +20,6 @@ const initMock = () => {
 const PLACES = [
   ['SD Maid intro', 'sdm', '#sdTop > .color-card-subtitle'],
   ['SD Maid credit', 'sdm', '#sdTop .sd-credit'],
-  ['Saved lists: Quick actions', 'saved-lists', '#quickActionsHelp .color-card-subtitle'],
   ['Hidden Settings intro', 'settings', '#view-settings .color-card-subtitle.clamp-2'],
   ['ShizuStore intro', 'store', '#substore-shizu .color-card-subtitle', 'shizu'],
   ['GitHub store intro', 'store', '#substore-github .color-card-subtitle', 'github'],
