@@ -1,6 +1,6 @@
 # v7.15.0 release: before, during and after
 
-A release cut from `main` on top of v7.14.1. It ships the top-to-bottom UI pass the owner asked for on 2026-10-18 and the new name, ADB Full System Manager: part 1 (#251, the header, colours, bottom bar, Apps and the app menu) and parts 2 to 4 with this version bump (#252). No permission is new and none is removed; package, folders, APK file names and the signing certificate are unchanged. Not run on a device.
+A release cut from `main` on top of v7.14.1. It ships the top-to-bottom UI pass the owner asked for on 2026-10-18 and the new name, ADB/Root Full System Toolbox: part 1 (#251, the header, colours, bottom bar, Apps and the app menu) and parts 2 to 4 with this version bump (#252). No permission is new and none is removed; package, folders, APK file names and the signing certificate are unchanged. Not run on a device.
 
 ## The sequence, in order
 
@@ -32,7 +32,7 @@ done
 
 - [ ] `sha256sum -c` says `OK` for every line, and exactly three `.apk` files are listed.
 - [ ] For each APK: `Number of signers: 1`, and `Signer #1 certificate SHA-256 digest: 9461870f7cd2406406a119f4d37533c23bb7d1ed850506bad7ea3e6b4bd26d17` (the value in the README and in `release.yml`).
-- [ ] For each APK, the `package:` line says `name='com.bloatware.bingblop'`, `versionCode='861'` and `versionName='7.15.0-Pro'`, and `aapt2 dump badging` lists `application-label:'ADB Full System Manager'`.
+- [ ] For each APK, the `package:` line says `name='com.bloatware.bingblop'`, `versionCode='861'` and `versionName='7.15.0-Pro'`, and `aapt2 dump badging` lists `application-label:'ADB/Root Full System Toolbox'`.
 - [ ] The arm64 file is the first one in the list of assets (an older copy of the app that updates itself takes the first `.apk`; so does the Obtainium configuration's `arm64-v8a` filter).
 - [ ] The release text is the changelog section and nothing else (an empty body means the heading `## v7.15.0` was not found).
 - [ ] If the digest differs, or the workflow printed the "throwaway key" warning: stop. Do not tell anyone to update; delete the release (or mark it a pre-release) and fix the secrets first. Phones refuse an update over a different certificate.
@@ -41,7 +41,7 @@ done
 
 Install the arm64 file over v7.14.1 (an update, not a fresh install). The steps are [PHONE-SCRIPT-v7.15.0.md](PHONE-SCRIPT-v7.15.0.md). In short:
 
-- [ ] The launcher and the app say ADB Full System Manager, About says 7.15.0, and settings, saved lists, keys and pinned tabs are still there (step 1).
+- [ ] The launcher and the app say ADB/Root Full System Toolbox, About says 7.15.0, and settings, saved lists, keys and pinned tabs are still there (step 1).
 - [ ] The header is one colour with only the Android and One UI versions under it, and the mode badge reads well in dark and light (steps 2 and 3).
 - [ ] The long-press menus of Apps, Console and Files (steps 6, 18 and 22).
 - [ ] Every tab's screen looks as the script says (sections B to F); nothing overlaps or runs off the screen.

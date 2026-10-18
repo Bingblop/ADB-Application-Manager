@@ -196,16 +196,16 @@ Things the next person should know:
 
 ## v7.15.0 (cut from `main`; written 2026-10-18)
 
-The top-to-bottom UI pass the owner asked for on 2026-10-18 ("make it look better to the human eye ... features easier to reach"), with the rename to ADB Full System Manager and the one-colour header he asked for after v7.14.1. A design pass decided each screen and reviewed the build; the decisions, and where the build differs from them and why, are `/mnt/project-files/plans/ui-pass-v7.15-decisions.md` in the project. The owner tests the `arm64-v8a` APK of #252 before anything is published (`docs/RELEASE-CHECKLIST-v7.15.0.md` step 5b).
+The top-to-bottom UI pass the owner asked for on 2026-10-18 ("make it look better to the human eye ... features easier to reach"), with the rename to ADB/Root Full System Toolbox and the one-colour header he asked for after v7.14.1. A design pass decided each screen and reviewed the build; the decisions, and where the build differs from them and why, are `/mnt/project-files/plans/ui-pass-v7.15-decisions.md` in the project. The owner tests the `arm64-v8a` APK of #252 before anything is published (`docs/RELEASE-CHECKLIST-v7.15.0.md` step 5b).
 
 | PR | What | Tests | Checklist |
 |---|---|---|---|
-| #251 | Rename to ADB Full System Manager; header, colour tokens, bottom bar, the Apps tab and the app menu; Running, Frozen and Uninstalled as long-press shortcuts of Apps | t11, t104, t117, t261, t263, t330, t337, t412, t422 follow the new header, badge, padding and shortcuts; goldens re-recorded | PHONE-SCRIPT-v7.15.0 steps 1 to 8 |
+| #251 | Rename to ADB Full System Manager (renamed again in #252 to ADB/Root Full System Toolbox, the owner's choice after his phone test); header, colour tokens, bottom bar, the Apps tab and the app menu; Running, Frozen and Uninstalled as long-press shortcuts of Apps | t11, t104, t117, t261, t263, t330, t337, t412, t422 follow the new header, badge, padding and shortcuts; goldens re-recorded | PHONE-SCRIPT-v7.15.0 steps 1 to 8 |
 | #252 part 2 | Saved Applications, Debloater (folded top card, Update List and History by the search), Installer, Settings (two-line descriptions, three swatches a row, two below 380 px) | t13, t325; goldens t76, t115, t131, t325, t332 | steps 9 to 14 |
 | #252 part 3 | Console, Live Logcat, Hidden Settings, Files (path crumbs, tonal Go and Search); History as a choosable Console shortcut; Search files, Storage and Downloads for Files | t79, t263, t441, t480 | steps 15 to 22 |
 | #252 part 4 | Morphe, Task Manager, Extra Settings, SD Maid ("What does this do?" folds), About (three cards fold), Connected Devices with no device, App Stores and Devices tab rows; the design review's fixes (Debloater row buttons, folded-card ?, the arrow on text that has more, Logcat All apps colour) | t113, t410 | steps 23 to 25 |
 | #252 review | Six findings of a code review of parts 2 to 4, each verified by a second reader: the Files path crumbs in Arabic and their 44 px taps, the Graph speed slider squeezed to 2 px in German, Live Logcat's two tool rows overlapping their tap areas, Palette Style names broken between letters below 380 px, and the Files shortcut labelled with the verb "Download" | UI t556 (fails on the code before the fixes) | steps 13, 19, 21 to 23 |
-| #252 bump | Version 7.15.0 (861), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.15.0.md`, `docs/PHONE-SCRIPT-v7.15.0.md` | the full UI suite on the head of #252 | none |
+| #252 bump | The final name, ADB/Root Full System Toolbox (the header reads "ADB/Root Full" over "System Toolbox", the widget title stays on one line); version 7.15.0 (861), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.15.0.md`, `docs/PHONE-SCRIPT-v7.15.0.md` | the full UI suite on the head of #252 | none |
 
 Things the next person should know:
 

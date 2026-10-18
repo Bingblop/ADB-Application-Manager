@@ -1,12 +1,12 @@
 # Phone script for v7.15.0
 
-About 35 minutes, one pass or fail per step. v7.15.0 is a top-to-bottom UI pass: the app is renamed **ADB Full System Manager**, the header is one colour with only the Android and One UI versions under it, and every tab's look and the way to reach its features changed (sections B to F). Nothing else changed in what the app does. Section G checks the one part of v7.14.1 that never ran on a phone: the Live Update chip of Stop apps on Android 16. Nothing in this script has been run on a phone by the author. Any working mode will do unless a step says otherwise; step 26 needs Android 16 or newer.
+About 35 minutes, one pass or fail per step. v7.15.0 is a top-to-bottom UI pass: the app is renamed **ADB/Root Full System Toolbox**, the header is one colour with only the Android and One UI versions under it, and every tab's look and the way to reach its features changed (sections B to F). Nothing else changed in what the app does. Section G checks the one part of v7.14.1 that never ran on a phone: the Live Update chip of Stop apps on Android 16. Nothing in this script has been run on a phone by the author. Any working mode will do unless a step says otherwise; step 26 needs Android 16 or newer.
 
 **Before you start:** install the `arm64-v8a` file of v7.15.0 over v7.14.1 (an update, not a fresh install). Have a saved list with a few apps, the UAD-NG list downloaded once in the Debloater, and for section G a quick list of 30 or more user apps with the **Stop apps** tile in the Quick Settings panel.
 
 ## A. Start and header (3 minutes)
 
-1. Open the app. **Pass:** the launcher and the app's title say **ADB Full System Manager**; About says 7.15.0; your settings, saved lists, keys and pinned tabs are still there.
+1. Open the app. **Pass:** the launcher and the app's title say **ADB/Root Full System Toolbox**; About says 7.15.0; your settings, saved lists, keys and pinned tabs are still there.
 2. Look at the header in dark and in light (Settings > Appearance). **Pass:** the title is one colour (no accent words), and the line under it says only "Android 16 • One UI 8.5", with "One UI 8.5" in one piece; nothing overlaps the gear or the mode badge.
 3. With a working mode on, the badge shows the short mode name (for example "Shizuku"). Choose a mode that is not ready. **Pass:** the badge says "Shizuku (not ready)" (or the mode you chose) in the warning colour; a tap on it opens Working Modes.
 
