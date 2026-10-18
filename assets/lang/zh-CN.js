@@ -1,6 +1,10 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+  "Create new list": "新建列表",
+  "List name in use": "列表名称已被使用",
+  "Overwrite": "覆盖",
+  "Overwrite the existing list, or save this as a new separate list?": "覆盖现有列表，还是另存为新的单独列表？",
 "A test can use up to <1/> of data: it stops early at that amount.": "一次测试最多可能消耗 <1/> 流量：达到该数量时会提前停止。",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "每个询问代理按钮背后的研究代理，也是应用更新器用来查找应用的代理。它会读取网页并权衡所得信息，来回答：某个隐藏设置、权限、进程、日志行或应用是什么。它不是编程代理，也绝不会更改手机上的任何内容。默认为 Perplexity：它会自行搜索网页并注明来源。其密钥在“控制台 → 终端”中设置。",
 "✓ Granted": "✓ 已授予",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "该已保存列表已不存在。"
 },
 p: [
+  ["A list named \"{0}\" already exists.", "名为“{0}”的列表已存在。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} 尚未连接，因此在连接之前，询问代理按钮会为你读取网页（免费，无需密钥）。请在“控制台 → 终端”中添加其密钥。"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} 尚未连接。请先在“控制台 → 终端”中添加它的密钥或登录。"],
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],

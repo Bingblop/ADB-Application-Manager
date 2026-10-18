@@ -1,6 +1,10 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+  "Create new list": "Crear una lista nueva",
+  "List name in use": "Nombre de lista en uso",
+  "Overwrite": "Sobrescribir",
+  "Overwrite the existing list, or save this as a new separate list?": "¿Sobrescribir la lista existente o guardarla como una lista nueva aparte?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Una prueba puede usar hasta <1/> de datos: se detiene antes al llegar a esa cantidad.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "El agente de investigación detrás de cada botón Preguntar al agente, y el que usa el Actualizador de aplicaciones para encontrar una app. Lee la web y sopesa lo que encuentra para responder qué es un ajuste oculto, un permiso, un proceso, una línea de registro o una app. No es un agente de programación y nunca cambia nada en el teléfono. Perplexity es el predeterminado: busca en la web por sí mismo y cita sus fuentes. Su clave se configura en Consola → Terminal.",
 "✓ Granted": "✓ Concedido",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "Esa lista guardada ya no existe."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Ya existe una lista llamada «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} aún no está conectado, así que un botón Preguntar al agente lee la web por ti (gratis, sin clave) hasta que lo esté. Añade su clave en Consola → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} aún no está conectado. Añade primero su clave o inicio de sesión en Consola → Terminal."],
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],

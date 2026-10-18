@@ -1,6 +1,10 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+  "Create new list": "Buat daftar baru",
+  "List name in use": "Nama daftar sudah dipakai",
+  "Overwrite": "Timpa",
+  "Overwrite the existing list, or save this as a new separate list?": "Timpa daftar yang ada, atau simpan sebagai daftar baru terpisah?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Satu tes dapat memakai hingga <1/> data: tes berhenti lebih awal saat mencapai jumlah itu.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Agen riset di balik setiap tombol Tanya agen, sekaligus agen yang ditanyai Pembaru Aplikasi untuk menemukan aplikasi. Ia membaca web dan menimbang temuannya untuk menjawab: apa itu setelan tersembunyi, izin, proses, baris log, atau aplikasi. Ini bukan agen pemrograman dan tidak pernah mengubah apa pun di ponsel. Perplexity adalah bawaannya: ia mencari web sendiri dan menyebutkan sumbernya. Kuncinya diatur di Konsol → Terminal.",
 "✓ Granted": "✓ Diberikan",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Daftar bernama “{0}” sudah ada."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} belum terhubung. Tambahkan dulu kunci atau login-nya di Konsol → Terminal."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],

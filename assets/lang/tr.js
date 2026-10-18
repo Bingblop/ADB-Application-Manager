@@ -1,6 +1,10 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+  "Create new list": "Yeni liste oluştur",
+  "List name in use": "Liste adı kullanımda",
+  "Overwrite": "Üzerine yaz",
+  "Overwrite the existing list, or save this as a new separate list?": "Mevcut listenin üzerine mi yazılsın, yoksa ayrı bir yeni liste olarak mı kaydedilsin?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Bir test en fazla <1/> veri kullanabilir: bu miktara ulaşınca erken durur.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Her Sor aracısı düğmesinin arkasındaki ve Uygulama Güncelleyici'nin bir uygulamayı bulmak için sorduğu araştırma aracısı. Web'i okur ve bulduklarını tartarak şunun yanıtını verir: gizli bir ayar, bir izin, bir işlem, bir günlük satırı veya bir uygulama nedir. Kodlama aracısı değildir ve telefonda hiçbir şeyi değiştirmez. Varsayılan Perplexity'dir: web'i kendisi arar ve kaynaklarını belirtir. Anahtarı Konsol → Terminal bölümünde ayarlanır.",
 "✓ Granted": "✓ Verildi",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "Bu kayıtlı liste artık yok."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "“{0}” adında bir liste zaten var."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} henüz bağlı değil. Önce Konsol → Terminal bölümünde anahtarını veya girişini ekleyin."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],

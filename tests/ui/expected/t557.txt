@@ -1,0 +1,23 @@
+A1. new name: no collision prompt: true
+A2. new name: a second list is created: true ["Brand New","My List"]
+A3. new name: the save sheet closed: true
+B1. existing name: the collision prompt is shown: true
+B2. existing name: nothing saved yet (still one list): true {"n":1,"keep":{"pkgs":2,"desc":"old desc"},"collisionShown":true,"saveShown":true,"calls":[],"names":["My List"],"ids":["list_keep"]}
+B3. Overwrite: still one list (no duplicate): true ["My List"]
+B4. Overwrite: the kept list now has the 3 selected packages: true {"pkgs":3,"desc":"fresh"}
+B5. Overwrite: its id is unchanged (quick-list binding survives): true ["list_keep"]
+B6. Overwrite: its description was replaced: true {"pkgs":3,"desc":"fresh"}
+B7. Overwrite: both sheets closed: true
+B8. Create new list: a second list is created: true ["My List","My List"]
+B9. Create new list: the original is untouched (still 2 packages): true {"pkgs":2,"desc":"old desc"}
+B10. Create new list: the new one has a different id: true kept=1 distinct-new=true
+B11. Cancel: nothing saved (still one list, 2 packages): true {"n":1,"keep":{"pkgs":2,"desc":"old desc"},"collisionShown":false,"saveShown":true,"calls":[],"names":["My List"],"ids":["list_keep"]}
+B12. Cancel: the collision sheet is gone but the Save sheet stays open: true
+C1. editor, existing name: the collision prompt is shown: true
+C2. editor Overwrite: still one list: true ["My List"]
+C3. editor Overwrite: kept id, 3 packages, new description: true {"n":1,"keep":{"pkgs":3,"desc":"via editor"},"collisionShown":false,"saveShown":false,"calls":[],"names":["My List"],"ids":["list_keep"]}
+C4. editor Create new list: a second list is created with a different id: true count=2 distinct-new=true
+C5. editing a list without renaming does not prompt and saves in place: true {"n":1,"keep":{"pkgs":2,"desc":"old desc"},"collisionShown":false,"saveShown":false,"calls":[],"names":["My List"],"ids":["list_keep"]}
+D1. Overwrite of the quick list nudges the widget: true ["quicklist:\"list_keep\""]
+errors: []
+ALL OK

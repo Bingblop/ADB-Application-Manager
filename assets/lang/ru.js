@@ -1,6 +1,10 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+  "Create new list": "Создать новый список",
+  "List name in use": "Имя списка уже занято",
+  "Overwrite": "Перезаписать",
+  "Overwrite the existing list, or save this as a new separate list?": "Перезаписать существующий список или сохранить как новый отдельный список?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Тест может израсходовать до <1/> трафика: дойдя до этого объёма, он останавливается раньше.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Исследовательский агент за каждой кнопкой «Спросить агента», он же ищет приложение для обновления приложений. Он читает интернет и сопоставляет найденное, чтобы ответить, что такое скрытая настройка, разрешение, процесс, строка журнала или приложение. Это не агент для кода, и он ничего не меняет на телефоне. По умолчанию используется Perplexity: он сам ищет в интернете и называет источники. Его ключ задаётся в разделе «Консоль → Терминал».",
 "✓ Granted": "✓ Выдано",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "Этого сохранённого списка больше нет."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Список с именем «{0}» уже существует."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ещё не подключён. Сначала добавьте его ключ или вход в разделе «Консоль → Терминал»."],
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],

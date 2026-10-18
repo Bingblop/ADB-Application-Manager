@@ -1,6 +1,10 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+  "Create new list": "새 목록 만들기",
+  "List name in use": "이미 사용 중인 목록 이름",
+  "Overwrite": "덮어쓰기",
+  "Overwrite the existing list, or save this as a new separate list?": "기존 목록을 덮어쓰시겠습니까, 아니면 별도의 새 목록으로 저장하시겠습니까?",
 "A test can use up to <1/> of data: it stops early at that amount.": "테스트 한 번에 최대 <1/>의 데이터를 사용할 수 있으며, 그 양에 도달하면 일찍 멈춥니다.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "모든 질문 에이전트 버튼과, 앱 업데이트 도구가 앱을 찾을 때 묻는 리서치 에이전트입니다. 웹을 읽고 찾은 내용을 따져 숨겨진 설정, 권한, 프로세스, 로그 줄 또는 앱이 무엇인지 답합니다. 코딩 에이전트가 아니며 휴대폰을 절대 변경하지 않습니다. 기본값은 Perplexity로, 직접 웹을 검색하고 출처를 밝힙니다. 키는 콘솔 → 터미널에서 설정합니다.",
 "✓ Granted": "✓ 부여됨",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "해당 저장 목록이 더 이상 없습니다."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "\"{0}\"(이)라는 이름의 목록이 이미 있습니다."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0}은(는) 아직 연결되지 않았습니다. 먼저 콘솔 → 터미널에서 키 또는 로그인을 추가하세요."],
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],

@@ -1,6 +1,10 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+  "Create new list": "Créer une nouvelle liste",
+  "List name in use": "Nom de liste déjà utilisé",
+  "Overwrite": "Remplacer",
+  "Overwrite the existing list, or save this as a new separate list?": "Remplacer la liste existante ou l’enregistrer comme une nouvelle liste distincte ?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Un test peut utiliser jusqu’à <1/> de données : il s’arrête plus tôt une fois cette quantité atteinte.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "L'agent de recherche derrière chaque bouton Demander à l'agent, et celui que l'Application Updater interroge pour trouver une app. Il parcourt le web et pèse ce qu'il trouve pour répondre : ce qu'est un réglage caché, une autorisation, un processus, une ligne de journal ou une app. Ce n'est pas un agent de programmation et il ne modifie jamais rien sur le téléphone. Perplexity est le choix par défaut : il cherche sur le web de lui-même et cite ses sources. Sa clé se configure dans Console → Terminal.",
 "✓ Granted": "✓ Accordé",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "Cette liste enregistrée n’existe plus."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Une liste nommée « {0} » existe déjà."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} n'est pas encore connecté. Ajoutez d'abord sa clé ou sa connexion dans Console → Terminal."],
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],

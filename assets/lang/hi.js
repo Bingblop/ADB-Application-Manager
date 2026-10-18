@@ -1,6 +1,10 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+  "Create new list": "नई सूची बनाएँ",
+  "List name in use": "सूची नाम पहले से उपयोग में है",
+  "Overwrite": "ओवरराइट करें",
+  "Overwrite the existing list, or save this as a new separate list?": "मौजूदा सूची को ओवरराइट करें या इसे एक अलग नई सूची के रूप में सहेजें?",
 "A test can use up to <1/> of data: it stops early at that amount.": "एक टेस्ट में अधिकतम <1/> डेटा लग सकता है: इतना होते ही यह पहले ही रुक जाता है।",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "हर एजेंट से पूछें बटन के पीछे का रिसर्च एजेंट, और वही जिससे ऐप अपडेटर ऐप खोजने को कहता है। यह वेब पढ़ता है और जो मिलता है उसे परखकर बताता है: छिपी सेटिंग, अनुमति, प्रोसेस, लॉग लाइन या ऐप क्या है। यह कोडिंग एजेंट नहीं है और फ़ोन में कभी कुछ नहीं बदलता। Perplexity डिफ़ॉल्ट है: यह खुद वेब खोजता है और अपने स्रोत बताता है। इसकी कुंजी कंसोल → टर्मिनल में सेट होती है।",
 "✓ Granted": "✓ दी गई",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "वह सहेजी गई सूची अब मौजूद नहीं है।"
 },
 p: [
+  ["A list named \"{0}\" already exists.", "\"{0}\" नाम की एक सूची पहले से मौजूद है।"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} अभी जुड़ा नहीं है। पहले कंसोल → टर्मिनल में उसकी कुंजी या साइन-इन जोड़ें।"],
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],

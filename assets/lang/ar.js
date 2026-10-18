@@ -1,6 +1,10 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+  "Create new list": "إنشاء قائمة جديدة",
+  "List name in use": "اسم القائمة مُستخدَم بالفعل",
+  "Overwrite": "استبدال",
+  "Overwrite the existing list, or save this as a new separate list?": "هل تريد استبدال القائمة الحالية أم حفظها كقائمة جديدة منفصلة؟",
 "A test can use up to <1/> of data: it stops early at that amount.": "قد يستهلك الاختبار حتى <1/> من البيانات: ويتوقف مبكرًا عند بلوغ هذا المقدار.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "وكيل البحث الذي يقف وراء كل زر «اسأل الوكيل»، والذي يطلب منه محدّث التطبيقات العثور على تطبيق. يقرأ الويب ويوازن ما يجده ليجيب عن: ما هو الإعداد المخفي أو الإذن أو العملية أو سطر السجل أو التطبيق. ليس وكيل برمجة ولا يغيّر أي شيء على الهاتف أبدًا. Perplexity هو الافتراضي: يبحث في الويب بنفسه ويذكر مصادره. يُضبط مفتاحه في وحدة التحكم ← الطرفية.",
 "✓ Granted": "✓ ممنوح",
@@ -5079,6 +5083,7 @@ x: {
 "That saved list is not there any more.": "هذه القائمة المحفوظة لم تعد موجودة."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "توجد بالفعل قائمة باسم «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} غير متصل بعد. أضف مفتاحه أو تسجيل دخوله أولًا في وحدة التحكم ← الطرفية."],
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
