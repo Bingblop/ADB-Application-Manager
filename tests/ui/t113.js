@@ -27,6 +27,9 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('the card is in the SD Maid tab and no longer in Settings:', await page.evaluate(() => !!document.querySelector('#view-sdm #trimCachesCard') && !document.querySelector('#view-prefs #trimCachesCard')));
   console.log('button text:', JSON.stringify((await page.locator('#trimCachesBtn').innerText()).trim()));
   console.log('explanation is below the button:', await page.evaluate(() => { const a = document.getElementById('trimCachesBtn'), e = document.getElementById('trimCachesExplain'); return !!(a.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING); }));
+  // v7.15: the explanation folds under "What does this do?"; it starts closed and a tap on that line opens it
+  console.log('the explanation starts folded:', await page.evaluate(() => { const d = document.getElementById('trimCachesExplain').closest('details.sd-more'); return !!d && !d.open && d.querySelector('summary').textContent.trim(); }));
+  await page.click('#trimCachesCard details.sd-more > summary'); await sleep(150);
   const text = await page.locator('#trimCachesExplain').innerText();
   console.log('explanation parts:', JSON.stringify(['What it runs', 'What it does', 'What is trimmed', 'What is not touched', 'What you may notice', 'How long it takes'].map(h => h + '=' + text.includes(h))));
   console.log('names the command (both forms):', text.includes('pm trim-caches 128G') && text.includes('adb shell pm trim-caches 128G'), '| words:', text.split(/\s+/).length);

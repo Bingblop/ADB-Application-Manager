@@ -38,8 +38,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // the ? and the title row
   const help = await ev(() => { const h = document.querySelector('#view-logcat .help-q'); return h ? { topic: h.dataset.help, row: !!h.closest('#lcTitleRow') } : null; });
   check('5. the title row has the ? of the guide at the Live Logcat topic', help && help.topic === 'tab-logcat' && help.row, JSON.stringify(help));
-  const geo = await ev(() => { const row = document.getElementById('lcTitleRow').getBoundingClientRect(), t = document.getElementById('lcTitle').getBoundingClientRect(), q = document.querySelector('#view-logcat .help-q').getBoundingClientRect(), u = document.querySelector('#lcTitleRow .cn-ind').getBoundingClientRect(); return { rowH: Math.round(row.height), titleRight: Math.round(t.right), qLeft: Math.round(q.left), ul: Math.round(u.width), titleW: Math.round(t.width) }; });
-  check('   it is the Console\'s row: as tall, the title clear of the ?, the underline under the title', geo.rowH >= 48 && geo.titleRight <= geo.qLeft + 1 && Math.abs(geo.ul - geo.titleW) <= 2, JSON.stringify(geo));
+  const geo = await ev(() => { const r = id => document.getElementById(id).getBoundingClientRect(), row = r('lcTitleRow'), t = r('lcTitle'), p = r('logcatPlayBtn'), q = document.querySelector('#view-logcat .help-q').getBoundingClientRect(); return { rowH: Math.round(row.height), titleRight: Math.round(t.right), playLeft: Math.round(p.left), playRight: Math.round(p.right), playH: Math.round(p.height), qLeft: Math.round(q.left), mid: Math.abs((p.top + p.bottom) / 2 - (q.top + q.bottom) / 2) <= 3 }; });
+  check('   v7.15: a head like the other tabs\' (not a lone tab): the title, then Play / Stop (40 px), then the ?, on one line and clear of each other', geo.titleRight <= geo.playLeft && geo.playRight <= geo.qLeft && geo.playH >= 40 && geo.mid, JSON.stringify(geo));
 
   // the app picker and the Logs button of an app's sheet
   await page.click('#logcatAppBtn'); await sleep(150);

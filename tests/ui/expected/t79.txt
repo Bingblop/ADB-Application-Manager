@@ -16,6 +16,7 @@
    the remove button of a history row has a name for a screen reader: true Remove from history
    the F-Droid copy button says Copy (it was a symbol): true
    a sheet with no symbol to show has no empty tile (the archive sheet), and one with a symbol still has it: true {"empty":"none","filled":"flex"}
+3. before the first output the find row is not shown: true
 3. [320 px] the terminal find box is wide enough for its hint (288 px for 90 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":288,"hint":90,"navInside":true,"wrapped":true,"side":true}
 3. [360 px] the terminal find box is wide enough for its hint (112 px for 90 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":112,"hint":90,"navInside":true,"wrapped":false,"side":true}
 3. [412 px] the terminal find box is wide enough for its hint (164 px for 90 px of hint), the buttons are on screen, nothing scrolls sideways: true {"input":164,"hint":90,"navInside":true,"wrapped":false,"side":true}

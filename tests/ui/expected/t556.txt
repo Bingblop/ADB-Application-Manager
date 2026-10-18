@@ -1,0 +1,30 @@
+1. [en] the path line reads left to right from the root, the open folder in view, its fade running left to right: true
+   [en] every crumb is at least 44 x 40 px, inside the list card, each touches the next, no "/" outside a crumb: true
+   a tap on the "/" after "0" opens the storage root: true
+1. [ar] the path line reads left to right from the root, the open folder in view, its fade running left to right: true
+   [ar] every crumb is at least 44 x 40 px, inside the list card, each touches the next, no "/" outside a crumb: true
+2. [en 320 px] Graph speed has a slider of 120 px or more, its value beside it inside the row: true
+2. [en 360 px] Graph speed has a slider of 120 px or more, its value beside it inside the row: true
+2. [en 412 px] Graph speed has a slider of 120 px or more, its value beside it inside the row, all on one line: true
+2. [de 320 px] Graph speed has a slider of 120 px or more, its value beside it inside the row: true
+2. [de 360 px] Graph speed has a slider of 120 px or more, its value beside it inside the row: true
+2. [de 412 px] Graph speed has a slider of 120 px or more, its value beside it inside the row: true
+3. Live Logcat: the second tool row starts where the first ends, and a tap just under All apps is All apps: true
+4. [ru 320 px] Palette Style: two a row, every name fits its tile without breaking a word: true
+4. [ru 360 px] Palette Style: every name fits its tile without breaking a word: true
+4. [ru 384 px] Palette Style: every name fits its tile without breaking a word: true
+4. [ru 392 px] Palette Style: every name fits its tile without breaking a word: true
+4. [ru 412 px] Palette Style: three a row, every name fits its tile without breaking a word: true
+4. [fr 320 px] Palette Style: two a row, every name fits its tile without breaking a word: true
+4. [fr 360 px] Palette Style: every name fits its tile without breaking a word: true
+4. [fr 384 px] Palette Style: every name fits its tile without breaking a word: true
+4. [fr 392 px] Palette Style: every name fits its tile without breaking a word: true
+4. [fr 412 px] Palette Style: three a row, every name fits its tile without breaking a word: true
+4. [en 320 px] Palette Style: two a row, every name fits its tile without breaking a word: true
+4. [en 360 px] Palette Style: every name fits its tile without breaking a word: true
+4. [en 384 px] Palette Style: every name fits its tile without breaking a word: true
+4. [en 392 px] Palette Style: every name fits its tile without breaking a word: true
+4. [en 412 px] Palette Style: three a row, every name fits its tile without breaking a word: true
+5. the Files shortcut to /storage/emulated/0/Download is labelled "Downloads" (the folder), not "Download" (the verb): true
+no page errors: true
+ALL OK

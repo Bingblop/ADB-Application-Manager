@@ -286,8 +286,9 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   }
 
   // 14) the same with a web view that has no ResizeObserver (an old one): the heights are still measured at the start and when the window changes
+  //     (from 320 px, where the header is shorter than at 412 px, so the second height must differ from the first)
   {
-    const p = await b.newPage({ viewport: { width: 360, height: 760 } });
+    const p = await b.newPage({ viewport: { width: 320, height: 760 } });
     p.on('pageerror', e => { bad++; console.log('FAIL page error:', e.message); });
     await p.addInitScript(() => { delete window.ResizeObserver; });
     await p.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' } });

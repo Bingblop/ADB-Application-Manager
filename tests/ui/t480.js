@@ -25,7 +25,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const btn = await ev(() => { const b = document.getElementById('sdbHistBtn'); const r = b.getBoundingClientRect(), s = document.getElementById('sdbSearch').getBoundingClientRect();
     return { label: b.getAttribute('aria-label'), svg: !!b.querySelector('svg'), w: Math.round(r.width), h: Math.round(r.height), sameLine: Math.abs((r.top + r.bottom) / 2 - (s.top + s.bottom) / 2) < 2,
       fits: document.documentElement.scrollWidth <= window.innerWidth }; });
-  check('1. a clock button "History of changes" sits on the search line, 38 px square, without widening the page', btn.label === 'History of changes' && btn.svg && btn.w >= 38 && btn.h === 38 && btn.sameLine && btn.fits, JSON.stringify(btn));
+  check('1. a clock button "History of changes" sits on the search line, 40 px tall (v7.15: a 44 px tap), without widening the page', btn.label === 'History of changes' && btn.svg && btn.w >= 40 && btn.h === 40 && btn.sameLine && btn.fits, JSON.stringify(btn));
   await page.click('#sdbHistBtn'); await page.waitForTimeout(150);
   const empty = await ev(() => ({ open: document.getElementById('sdbJournalModal').classList.contains('show'), title: document.querySelector('#sdbJournalModal h3').innerText,
     sub: document.querySelector('#sdbJournalModal .sheet-title p').innerText, text: document.getElementById('sdbJournalList').innerText }));

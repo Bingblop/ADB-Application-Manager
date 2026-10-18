@@ -8,10 +8,10 @@
    the app was asked for exactly that file: true
    Cancel closes the sheet and the page keeps the system font: true
 4. a file that is not a font gives the reason in a toast and opens no sheet: true Could not use that file: That file is not a TrueType or OpenType font.
-5. Use this font: the sheet closes, the page is set in it, "In use" names it: true {"cur":"In use: Fixture Boxes (Fixture-Boxes-Regular.ttf, 3 KB)","body":"AppFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","kv":{"mode":"custom","family":"Fixture Boxes","style":"Regular","name":"Fixture-Boxes-Regular.ttf","kind":"ttf","variable":false,"size":2796},"css":"'AppFont', -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","sys":"flex","mono":"monospace","sheet":false}
+5. Use this font: the sheet closes, the page is set in it, "In use" names it: true {"cur":"In use: Fixture Boxes (Fixture-Boxes-Regular.ttf, 3 KB)","body":"AppFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","kv":{"mode":"custom","family":"Fixture Boxes","style":"Regular","name":"Fixture-Boxes-Regular.ttf","kind":"ttf","variable":false,"size":2796},"css":"'AppFont', -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","sys":"flex","mono":"ui-monospace, \"Roboto Mono\", monospace","sheet":false}
    every letter of the page is now a 0.6 em box: true
    the choice is kept (kv ui_font) with the font's details: true {"mode":"custom","family":"Fixture Boxes","style":"Regular","name":"Fixture-Boxes-Regular.ttf","kind":"ttf","variable":false,"size":2796}
-   code-style text (the path of the file manager) keeps its monospace font: true monospace
+   code-style text (the path of the file manager) keeps its monospace font: true ui-monospace, "Roboto Mono", monospace
    the toast says which font: true Font: Fixture Boxes
 6. at the next launch the chosen font is applied again: true
 7. Use system font: the app is told to drop the file, the page is back in the system font, the choice is kept as system: true {"css":"","kv":{"mode":"system"},"btn":"none"}

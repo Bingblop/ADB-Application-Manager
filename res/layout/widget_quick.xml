@@ -11,10 +11,12 @@
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ADB Full System Manager"
+        android:text="ADB/Root Full System Toolbox"
         android:textColor="#FFE6E1E9"
         android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/widget_mode"

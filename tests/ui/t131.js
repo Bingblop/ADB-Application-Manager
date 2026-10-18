@@ -52,6 +52,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { loadSavedLists(); loadQuickList(); switchView('saved-lists'); }); await wait(300);
 
   // ---- the card ----
+  // v7.15: it is a folded card under the lists (the tab opens on its lists); a tap on its head opens it
+  check('the Back up and restore card comes after the lists and starts folded', await ev(() => { const c = document.getElementById('listsBackupCard'), l = document.getElementById('savedListsContainer'); return c.classList.contains('cc-closed') && !!(l.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING); }));
+  await page.click('#listsBackupCard .cc-head'); await wait(350);
   check('the Saved Applications tab has a Back up and restore card with Back up now, Choose folder, Share, Restore from a file and Restore from the folder', await ev(() => { const c = document.getElementById('listsBackupCard'); const t = c.innerText; return /Back up and restore/.test(t) && /Back up now/.test(t) && /Choose folder/.test(t) && /Share/.test(t) && /Restore from a file/.test(t) && /Restore from the folder/.test(t) && /Back up automatically/.test(t); }));
   check('with no folder: says backups go to Download/ADB App Manager, no backup yet, 2 lists would be backed up; the folder-only controls are off', /Download\/ADB App Manager \(the default\)/.test(await note()) && /No backup made yet/.test(await note()) && await ev(() => document.getElementById('lbAuto').disabled && document.getElementById('lbFromFolder').disabled && getComputedStyle(document.getElementById('lbDefault')).display === 'none' && /2 lists would be backed up/.test(document.getElementById('lbNote').innerText)));
 

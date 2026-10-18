@@ -50,16 +50,16 @@ ok   Rish: STOP ends it and the card says Stopped
 ok   Rish: the card has Copy and Run again, Run is back to RUN
 ok   Rish: Run again sends the command to the Rish shell again
 ok   [360 px dark] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
-ok   [360 px dark] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [360 px dark] the command box is 48 px tall (v7.15: as tall as $ and Run), Run 58 px wide, the box row sticks while scrolling
 ok   [360 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
 ok   [360 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
-ok   [360 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [360 px light] the command box is 48 px tall (v7.15: as tall as $ and Run), Run 58 px wide, the box row sticks while scrolling
 ok   [360 px light] the outcome text, the command and the output read at 3:1 or better on the card (6.4/9.7/10, 6.4, 9.3)
 ok   [412 px dark] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
-ok   [412 px dark] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [412 px dark] the command box is 48 px tall (v7.15: as tall as $ and Run), Run 58 px wide, the box row sticks while scrolling
 ok   [412 px dark] the outcome text, the command and the output read at 3:1 or better on the card (9.6/10/10.5, 9.6, 9.6)
 ok   [412 px light] nothing scrolls sideways, every block is inside the screen, the outcome text is one line inside its card
-ok   [412 px light] the command box is 56 px tall, Run 58 px wide, the box row sticks while scrolling
+ok   [412 px light] the command box is 48 px tall (v7.15: as tall as $ and Run), Run 58 px wide, the box row sticks while scrolling
 ok   [412 px light] the outcome text, the command and the output read at 3:1 or better on the card (6.4/9.7/10, 6.4, 9.3)
 ok   palette amoled: the card text follows the theme (no sideways scroll, outcome colours differ)
 ok   palette cyberpunk: the card text follows the theme (no sideways scroll, outcome colours differ)
