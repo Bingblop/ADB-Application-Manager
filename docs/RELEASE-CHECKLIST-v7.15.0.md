@@ -26,7 +26,7 @@ ls -1 *.apk | wc -l
 for f in ADB_Application_Manager_Pro-v7.15.0-*.apk; do
   echo "== $f"
   apksigner verify --verbose --print-certs "$f" | grep -E "Number of signers|Signer #1 certificate SHA-256"
-  aapt2 dump badging "$f" | head -1
+  aapt2 dump badging "$f" | grep -E "^(package|application-label):"
 done
 ```
 
