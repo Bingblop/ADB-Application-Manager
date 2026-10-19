@@ -62,8 +62,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // ---- 2. (A) Root in use and su granted: the tab opens unlocked
   await ev(() => switchView('rootfeatures')); await sleep(100);
   check('2. (A) Root in use and su granted: the tab opens and the gate is hidden', (await ev(() => document.getElementById('view-rootfeatures').classList.contains('active'))) && (await disp('#rootGate')) === 'none');
-  check('   isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area says Super User is active', (await ev(() => isRootActive())) && (await tag()) === 'active ACTIVE' && (await disp('#rfSuCard')) === 'none' && /Super User is active/.test(await text('#rfFeatureList')) && !(await lockedRow()), await tag());
+  check('   isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area shows the unlocked Super User for apps row', (await ev(() => isRootActive())) && (await tag()) === 'active ACTIVE' && (await disp('#rfSuCard')) === 'none' && /Super User for apps/.test(await text('#rfFeatureList')) && !(await lockedRow()), await tag());
   check('   promptRootThenOpen goes straight on (true), switches nothing and asks nothing', (await ev(() => promptRootThenOpen('Test feature'))) === true && dialogs.length === 0 && (await ev(() => window.__calls.selectWorkingMode.length)) === 0);
+  // the active-state feature: "Super User for apps" opens the installed manager (reusing openRootManager) and marks the status pending so a change there is read back on return
+  await ev(() => { window.__calls.openRootManager = 0; window.__rootMgr = { ok: true, name: 'KernelSU' }; rootGrantPending = false; });
+  check('   the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no lock', (await ev(() => !!document.getElementById('rfSuAppsBtn'))) && !(await lockedRow()));
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  check('   Open manager (apps) launches the installed manager (openRootManager) and marks the status pending', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === true)));
+  await ev(() => { rootGrantPending = false; });
   await setMode('rootVetoed');
   check('   the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)', !(await ev(() => isRootActive())) && (await disp('#rootGate')) === 'flex' && (await lockedRow()));
   await setMode('root');

@@ -1,8 +1,10 @@
 ok   1. the tab is in the registry right before About (Application Manager still first), on, in the tab bar, with its two-line label and its name
 ok      its own icon (not the fallback) and the short label "Root"; not pinned on the bottom bar by default
 ok   2. (A) Root in use and su granted: the tab opens and the gate is hidden
-ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area says Super User is active
+ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area shows the unlocked Super User for apps row
 ok      promptRootThenOpen goes straight on (true), switches nothing and asks nothing
+ok      the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no lock
+ok      Open manager (apps) launches the installed manager (openRootManager) and marks the status pending
 ok      the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)
 ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there

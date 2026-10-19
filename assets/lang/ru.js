@@ -1,6 +1,9 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+  "Super User for apps": "Super User для приложений",
+  "Manage which apps get root in your manager.": "Управляйте тем, какие приложения получают root, в вашем root-менеджере.",
+  "Open manager": "Открыть менеджер",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Проверьте, может ли устройство получить доступ Super User, или откройте root-менеджер, чтобы его предоставить.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root-менеджер не найден. Установите KernelSU, APatch или Magisk, затем вернитесь.",
   "Open root manager": "Открыть root-менеджер",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "Запросить Superuser",
 "Root Features": "Функции Root",
 "Root Features need the Root working mode with su granted to this app.": "Функциям Root нужен режим работы Root, в котором su предоставлен этому приложению.",
-"Root features": "Функции Root",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Функции Superuser (root). Они открываются, когда режим работы — Root и su предоставил доступ этому приложению.",
 "Super User access": "Доступ Superuser",
-"Super User is active — root features will appear here.": "Superuser активен — функции root появятся здесь.",
-"They unlock once Super User is active.": "Они откроются, как только Superuser станет активен.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "На устройстве есть su. Выберите Root в «Режимах работы» и разрешите это приложение, когда su спросит.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Ваш менеджер root (Magisk, KernelSU, APatch) не предоставил su этому приложению. Разрешите его там, затем снова выберите Root."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "Открываем {0} — управляйте там, какие приложения получают Super User."],
   ["Allow this app in {0}, then come back.", "Разрешите этому приложению в {0}, затем вернитесь."],
   ["A list named \"{0}\" already exists.", "Список с именем «{0}» уже существует."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],

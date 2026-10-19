@@ -28520,11 +28520,19 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
         function onRootFeaturesShown() { renderRootFeatures(); }
-        // the placeholder of the feature area while Super User is not active: greyed, with the reason
-        function rootLockedRow() {
-            return '<div class="rf-row is-locked"><div class="rf-name">Root features<span>They unlock once Super User is active.</span></div>'
-                + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">Locked</button>'
-                + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>Needs Super User</span></div></div>';
+        // the root features themselves. One so far - "Super User for apps": once this app has root, open the installed manager so the user manages which
+        // OTHER apps get Super User in its own Super User screen. Unlocked while Super User is active; a locked row with the reason otherwise, so the
+        // feature is still named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
+        function rootFeatureRows() {
+            const name = '<div class="rf-name">' + txT('Super User for apps')
+                + '<span>' + txT('Manage which apps get root in your manager.') + '</span></div>';
+            if (isRootActive()) {
+                return '<div class="rf-row">' + name
+                    + '<button type="button" class="op-mode-btn" id="rfSuAppsBtn" onclick="rootManageSuperuser()">' + txT('Open manager') + '</button></div>';
+            }
+            return '<div class="rf-row is-locked">' + name
+                + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">' + txT('Locked') + '</button>'
+                + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + txT('Needs Super User') + '</span></div></div>';
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -28547,7 +28555,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (su) su.style.display = active ? 'none' : '';
             // the feature area: a locked placeholder until Super User is active (no feature yet in this step)
             const list = document.getElementById('rfFeatureList');
-            if (list) list.innerHTML = active ? '<div class="rf-note">Super User is active — root features will appear here.</div>' : rootLockedRow();
+            if (list) list.innerHTML = rootFeatureRows();
         }
         // Request Super User: the same path as Request Root Access in Working Modes (su asks; a yes makes Root the working mode and the mode change
         // re-renders this tab). Whether a phone without su can get a temporary root is a later step.
@@ -28566,6 +28574,20 @@ Type any command above (e.g. pm list packages -d)</div>
             if (res && res.ok) {
                 rootGrantPending = true;
                 showToast(txF('Allow this app in {0}, then come back.', res.name || txT('your root manager')));
+            } else {
+                showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
+            }
+        }
+        // Super User for apps: with root already active, open the installed manager (KernelSU, APatch or Magisk) so the user manages which OTHER apps
+        // get Super User in its own Super User screen. Like the grant hand-off it carries no mechanics - it only launches the manager; the status is
+        // re-read on return (the same rootGrantPending path) in case the user's own su was changed there too.
+        function rootManageSuperuser() {
+            if (!window.AndroidBridge || !window.AndroidBridge.openRootManager) { showToast(txT('This works in the app on a phone, not in a browser.')); return; }
+            let res = {};
+            try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
+            if (res && res.ok) {
+                rootGrantPending = true;
+                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name || txT('your root manager')));
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }

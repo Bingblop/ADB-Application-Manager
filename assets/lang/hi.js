@@ -1,6 +1,9 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+  "Super User for apps": "ऐप्स के लिए Super User",
+  "Manage which apps get root in your manager.": "अपने रूट मैनेजर में तय करें कि किन ऐप्स को रूट मिले।",
+  "Open manager": "मैनेजर खोलें",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "जांचें कि आपका डिवाइस Super User एक्सेस पा सकता है या नहीं, या इसे देने के लिए अपना रूट मैनेजर खोलें।",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "कोई रूट मैनेजर नहीं मिला। KernelSU, APatch या Magisk इंस्टॉल करें, फिर वापस आएं।",
   "Open root manager": "रूट मैनेजर खोलें",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "सुपरयूज़र का अनुरोध करें",
 "Root Features": "Root सुविधाएँ",
 "Root Features need the Root working mode with su granted to this app.": "Root सुविधाओं के लिए Root वर्किंग मोड चाहिए, जिसमें su इस ऐप को दिया गया हो।",
-"Root features": "Root सुविधाएँ",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "सुपरयूज़र (root) सुविधाएँ। ये तब अनलॉक होती हैं जब वर्किंग मोड Root हो और su ने इस ऐप को एक्सेस दिया हो।",
 "Super User access": "सुपरयूज़र एक्सेस",
-"Super User is active — root features will appear here.": "सुपरयूज़र सक्रिय है — root सुविधाएँ यहाँ दिखेंगी।",
-"They unlock once Super User is active.": "सुपरयूज़र सक्रिय होते ही ये अनलॉक हो जाती हैं।",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "आपके डिवाइस में su है। वर्किंग मोड में Root चुनें और su पूछे तो इस ऐप को अनुमति दें।",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "आपके root मैनेजर (Magisk, KernelSU, APatch) ने इस ऐप को su नहीं दिया। वहाँ अनुमति दें, फिर Root दोबारा चुनें।"
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "{0} खोल रहे हैं — वहाँ तय करें कि किन ऐप्स को Super User मिले।"],
   ["Allow this app in {0}, then come back.", "{0} में इस ऐप को अनुमति दें, फिर वापस आएं।"],
   ["A list named \"{0}\" already exists.", "\"{0}\" नाम की एक सूची पहले से मौजूद है।"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],

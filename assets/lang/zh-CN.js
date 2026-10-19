@@ -1,6 +1,9 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+  "Super User for apps": "应用的 Super User",
+  "Manage which apps get root in your manager.": "在你的 Root 管理器中管理哪些应用获得 Root。",
+  "Open manager": "打开管理器",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "检查你的设备能否获得 Super User 权限，或打开 Root 管理器来授予。",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "未找到 Root 管理器。请安装 KernelSU、APatch 或 Magisk，然后返回。",
   "Open root manager": "打开 Root 管理器",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "请求超级用户",
 "Root Features": "Root 功能",
 "Root Features need the Root working mode with su granted to this app.": "Root 功能需要 Root 工作模式，并且 su 已授予此应用。",
-"Root features": "Root 功能",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "超级用户（root）功能。当工作模式为 Root 且 su 已授予此应用访问权限时解锁。",
 "Super User access": "超级用户权限",
-"Super User is active — root features will appear here.": "超级用户已激活 — Root 功能将显示在这里。",
-"They unlock once Super User is active.": "超级用户激活后即可解锁。",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "你的设备有 su。请在“工作模式”中选择 Root，并在 su 询问时允许此应用。",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "你的 Root 管理器（Magisk、KernelSU、APatch）未授予此应用 su。请在其中允许，然后再次选择 Root。"
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "正在打开 {0} — 在其中管理哪些应用获得 Super User。"],
   ["Allow this app in {0}, then come back.", "在 {0} 中授权此应用，然后返回。"],
   ["A list named \"{0}\" already exists.", "名为“{0}”的列表已存在。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} 尚未连接，因此在连接之前，询问代理按钮会为你读取网页（免费，无需密钥）。请在“控制台 → 终端”中添加其密钥。"],

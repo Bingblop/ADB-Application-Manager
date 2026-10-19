@@ -1,6 +1,9 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+  "Super User for apps": "صلاحية Super User للتطبيقات",
+  "Manage which apps get root in your manager.": "تحكّم في التطبيقات التي تحصل على الروت من مدير الروت لديك.",
+  "Open manager": "فتح المدير",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "تحقّق مما إذا كان جهازك يمكنه الحصول على صلاحية Super User، أو افتح مدير الروت لمنحها.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "لم يُعثر على مدير روت. ثبّت KernelSU أو APatch أو Magisk، ثم عُد.",
   "Open root manager": "فتح مدير الروت",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "طلب Superuser",
 "Root Features": "ميزات Root",
 "Root Features need the Root working mode with su granted to this app.": "تحتاج ميزات Root إلى وضع التشغيل Root مع منح su لهذا التطبيق.",
-"Root features": "ميزات Root",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "ميزات Superuser (root). تُفتح عندما يكون وضع التشغيل Root وقد منح su هذا التطبيق الوصول.",
 "Super User access": "صلاحية Superuser",
-"Super User is active — root features will appear here.": "Superuser مفعّل — ستظهر ميزات Root هنا.",
-"They unlock once Super User is active.": "تُفتح عندما يصبح Superuser مفعّلًا.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "جهازك يحتوي على su. اختر Root في «أوضاع التشغيل» واسمح لهذا التطبيق عندما يسأل su.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "مدير Root لديك (Magisk أو KernelSU أو APatch) لم يمنح su لهذا التطبيق. اسمح له هناك ثم اختر Root مجددًا."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "جارٍ فتح {0} — تحكّم هناك في التطبيقات التي تحصل على صلاحية Super User."],
   ["Allow this app in {0}, then come back.", "اسمح لهذا التطبيق في {0}، ثم عُد."],
   ["A list named \"{0}\" already exists.", "توجد بالفعل قائمة باسم «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],

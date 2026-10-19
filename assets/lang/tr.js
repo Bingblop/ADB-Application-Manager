@@ -1,6 +1,9 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+  "Super User for apps": "Uygulamalar için Super User",
+  "Manage which apps get root in your manager.": "Hangi uygulamaların root alacağını root yöneticinizde yönetin.",
+  "Open manager": "Yöneticiyi aç",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Cihazınızın Super User erişimi alıp alamayacağını kontrol edin veya vermek için root yöneticinizi açın.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root yöneticisi bulunamadı. KernelSU, APatch veya Magisk kurun, sonra geri dönün.",
   "Open root manager": "Root yöneticisini aç",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "Superuser iste",
 "Root Features": "Root Özellikleri",
 "Root Features need the Root working mode with su granted to this app.": "Root Özellikleri, su’nun bu uygulamaya verildiği Root çalışma modunu gerektirir.",
-"Root features": "Root özellikleri",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Superuser (root) özellikleri. Çalışma modu Root olduğunda ve su bu uygulamaya erişim verdiğinde açılır.",
 "Super User access": "Superuser erişimi",
-"Super User is active — root features will appear here.": "Superuser etkin — root özellikleri burada görünecek.",
-"They unlock once Super User is active.": "Superuser etkin olduğunda açılır.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Cihazınızda su var. Çalışma Modları’ndan Root’u seçin ve su sorduğunda bu uygulamaya izin verin.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root yöneticiniz (Magisk, KernelSU, APatch) bu uygulamaya su vermedi. Orada izin verin, sonra Root’u yeniden seçin."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "{0} açılıyor — orada hangi uygulamaların Super User alacağını yönetin."],
   ["Allow this app in {0}, then come back.", "Bu uygulamaya {0} içinde izin verin, sonra geri dönün."],
   ["A list named \"{0}\" already exists.", "“{0}” adında bir liste zaten var."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],

@@ -1,6 +1,9 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+  "Super User for apps": "앱용 Super User",
+  "Manage which apps get root in your manager.": "어떤 앱이 루트를 받을지 루트 관리자에서 관리하세요.",
+  "Open manager": "관리자 열기",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "기기가 Super User 액세스를 받을 수 있는지 확인하거나, 루트 관리자를 열어 권한을 부여하세요.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "루트 관리자를 찾을 수 없습니다. KernelSU, APatch 또는 Magisk를 설치한 다음 돌아오세요.",
   "Open root manager": "루트 관리자 열기",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "슈퍼유저 요청",
 "Root Features": "Root 기능",
 "Root Features need the Root working mode with su granted to this app.": "Root 기능에는 이 앱에 su가 허용된 Root 작동 모드가 필요합니다.",
-"Root features": "Root 기능",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "슈퍼유저(root) 기능입니다. 작동 모드가 Root이고 su가 이 앱에 접근을 허용하면 잠금이 해제됩니다.",
 "Super User access": "슈퍼유저 권한",
-"Super User is active — root features will appear here.": "슈퍼유저가 활성화되었습니다 — Root 기능이 여기에 표시됩니다.",
-"They unlock once Super User is active.": "슈퍼유저가 활성화되면 잠금이 해제됩니다.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "이 기기에는 su가 있습니다. 작동 모드에서 Root를 선택하고 su가 물으면 이 앱을 허용하세요.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root 관리자(Magisk, KernelSU, APatch)가 이 앱에 su를 허용하지 않았습니다. 거기서 허용한 뒤 Root를 다시 선택하세요."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "{0} 여는 중 — 거기서 어떤 앱이 Super User를 받을지 관리하세요."],
   ["Allow this app in {0}, then come back.", "{0}에서 이 앱을 허용한 다음 돌아오세요."],
   ["A list named \"{0}\" already exists.", "\"{0}\"(이)라는 이름의 목록이 이미 있습니다."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],

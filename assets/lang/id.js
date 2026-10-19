@@ -1,6 +1,9 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+  "Super User for apps": "Super User untuk aplikasi",
+  "Manage which apps get root in your manager.": "Atur aplikasi mana yang mendapat root di pengelola root Anda.",
+  "Open manager": "Buka pengelola",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Periksa apakah perangkat Anda bisa mendapatkan akses Super User, atau buka pengelola root untuk memberikannya.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Tidak ada pengelola root yang ditemukan. Pasang KernelSU, APatch, atau Magisk, lalu kembali.",
   "Open root manager": "Buka pengelola root",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "Minta Superuser",
 "Root Features": "Fitur Root",
 "Root Features need the Root working mode with su granted to this app.": "Fitur Root memerlukan mode kerja Root dengan su yang diberikan ke aplikasi ini.",
-"Root features": "Fitur Root",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fitur Superuser (root). Terbuka saat mode kerja adalah Root dan su telah memberi aplikasi ini akses.",
 "Super User access": "Akses Superuser",
-"Super User is active — root features will appear here.": "Superuser aktif — fitur root akan muncul di sini.",
-"They unlock once Super User is active.": "Terbuka setelah Superuser aktif.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Perangkat Anda memiliki su. Pilih Root di Mode Kerja dan izinkan aplikasi ini saat su bertanya.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Pengelola root Anda (Magisk, KernelSU, APatch) tidak memberi su ke aplikasi ini. Izinkan di sana, lalu pilih Root lagi."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "Membuka {0} — atur di sana aplikasi mana yang mendapat Super User."],
   ["Allow this app in {0}, then come back.", "Izinkan aplikasi ini di {0}, lalu kembali."],
   ["A list named \"{0}\" already exists.", "Daftar bernama “{0}” sudah ada."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
