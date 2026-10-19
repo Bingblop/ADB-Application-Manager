@@ -1,6 +1,9 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+  "Super User for apps": "アプリへの Super User",
+  "Manage which apps get root in your manager.": "どのアプリに root を与えるかを Root マネージャーで管理します。",
+  "Open manager": "マネージャーを開く",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "お使いの端末が Super User アクセスを取得できるか確認するか、Root マネージャーを開いて許可してください。",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root マネージャーが見つかりませんでした。KernelSU、APatch、または Magisk をインストールしてから戻ってください。",
   "Open root manager": "Root マネージャーを開く",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "スーパーユーザーを要求",
 "Root Features": "Root 機能",
 "Root Features need the Root working mode with su granted to this app.": "Root 機能には、su がこのアプリに許可された Root 動作モードが必要です。",
-"Root features": "Root 機能",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "スーパーユーザー（root）機能。動作モードが Root で、su がこのアプリにアクセスを許可すると解除されます。",
 "Super User access": "スーパーユーザー権限",
-"Super User is active — root features will appear here.": "スーパーユーザーが有効です — Root 機能はここに表示されます。",
-"They unlock once Super User is active.": "スーパーユーザーが有効になると解除されます。",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "この端末には su があります。「動作モード」で Root を選び、su が確認したらこのアプリを許可してください。",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root マネージャー（Magisk、KernelSU、APatch）がこのアプリに su を許可しませんでした。そちらで許可してから、もう一度 Root を選んでください。"
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "{0} を開いています — そこでどのアプリに Super User を与えるか管理します。"],
   ["Allow this app in {0}, then come back.", "{0} でこのアプリを許可してから戻ってください。"],
   ["A list named \"{0}\" already exists.", "「{0}」という名前のリストはすでに存在します。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],

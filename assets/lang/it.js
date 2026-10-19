@@ -1,6 +1,9 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+  "Super User for apps": "Super User per le app",
+  "Manage which apps get root in your manager.": "Gestisci quali app ottengono il root nel tuo gestore root.",
+  "Open manager": "Apri gestore",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Verifica se il tuo dispositivo può ottenere l'accesso Super User, oppure apri il gestore root per concederlo.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Nessun gestore root trovato. Installa KernelSU, APatch o Magisk, poi torna qui.",
   "Open root manager": "Apri il gestore root",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "Richiedi Superuser",
 "Root Features": "Funzioni Root",
 "Root Features need the Root working mode with su granted to this app.": "Le Funzioni Root richiedono la modalità operativa Root con su concesso a questa app.",
-"Root features": "Funzioni Root",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Funzioni Superuser (root). Si sbloccano quando la modalità operativa è Root e su ha concesso l’accesso a questa app.",
 "Super User access": "Accesso Superuser",
-"Super User is active — root features will appear here.": "Superuser è attivo — le funzioni root appariranno qui.",
-"They unlock once Super User is active.": "Si sbloccano quando Superuser è attivo.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Il dispositivo ha su. Scegli Root in Modalità operative e consenti questa app quando su lo chiede.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Il gestore root (Magisk, KernelSU, APatch) non ha concesso su a questa app. Consentilo lì, poi scegli di nuovo Root."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "Apertura di {0} — gestisci lì quali app ottengono il Super User."],
   ["Allow this app in {0}, then come back.", "Consenti questa app in {0}, poi torna qui."],
   ["A list named \"{0}\" already exists.", "Esiste già un elenco denominato «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} non è ancora collegato, quindi un pulsante Ask agent legge il web per te (gratis, senza chiave) finché non lo sarà. Aggiungi la sua chiave in Console → Terminale."],

@@ -1,6 +1,9 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+  "Super User for apps": "Super User pour les applis",
+  "Manage which apps get root in your manager.": "Gérez les applis qui obtiennent le root dans votre gestionnaire root.",
+  "Open manager": "Ouvrir le gestionnaire",
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Vérifiez si votre appareil peut obtenir l'accès Super User, ou ouvrez votre gestionnaire root pour l'accorder.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Aucun gestionnaire root trouvé. Installez KernelSU, APatch ou Magisk, puis revenez.",
   "Open root manager": "Ouvrir le gestionnaire root",
@@ -5104,15 +5107,13 @@ x: {
 "Request Super User": "Demander Superutilisateur",
 "Root Features": "Fonctions Root",
 "Root Features need the Root working mode with su granted to this app.": "Les Fonctions Root nécessitent le mode de fonctionnement Root avec su accordé à cette application.",
-"Root features": "Fonctions Root",
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fonctions Superutilisateur (root). Elles se débloquent lorsque le mode de fonctionnement est Root et que su a accordé l’accès à cette application.",
 "Super User access": "Accès Superutilisateur",
-"Super User is active — root features will appear here.": "Superutilisateur est actif — les fonctions root apparaîtront ici.",
-"They unlock once Super User is active.": "Elles se débloquent une fois Superutilisateur actif.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Votre appareil a su. Choisissez Root dans Modes de fonctionnement et autorisez cette application quand su le demande.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Votre gestionnaire de root (Magisk, KernelSU, APatch) n’a pas accordé su à cette application. Autorisez-la là-bas, puis choisissez Root à nouveau."
 },
 p: [
+  ["Opening {0} — manage which apps get Super User there.", "Ouverture de {0} — gérez-y les applis qui obtiennent le Super User."],
   ["Allow this app in {0}, then come back.", "Autorisez cette appli dans {0}, puis revenez."],
   ["A list named \"{0}\" already exists.", "Une liste nommée « {0} » existe déjà."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],
