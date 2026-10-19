@@ -3578,6 +3578,21 @@
             transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;          /* not min-height: a button that is made taller (a dialog's Done, 36 -> 44px) is that tall at once */
         }
 
+        .mode-start-out {
+            margin: var(--space-3) 0 0;
+            padding: var(--space-3) var(--space-3h);
+            max-height: 140px;
+            overflow: auto;
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: var(--fs-pill);
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         .mode-action-btn.primary {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
             color: var(--on-gradient);
@@ -10524,6 +10539,9 @@ Type any command above (e.g. pm list packages -d)</div>
                     <button class="mode-action-btn primary" onclick="handleShizukuTap()">
                         Authorize &amp; Use Shizuku
                     </button>
+                    <button class="mode-action-btn" id="shizukuStartBtn" onclick="startShizukuUI()">
+                        Start Shizuku (ADB)
+                    </button>
                     <button class="mode-action-btn" onclick="openShizukuAppUI()">
                         Open Shizuku
                     </button>
@@ -10531,6 +10549,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         Check Status
                     </button>
                 </div>
+                <pre class="mode-start-out" id="shizukuStartOut" translate="no" style="display:none"></pre>
             </div>
 
             <!-- Mode 4: Root (Superuser) -->
@@ -19170,6 +19189,45 @@ Type any command above (e.g. pm list packages -d)</div>
                 // only for the prompt this tap asked for: a grant given much later, from somewhere else, is not a request to open a shell
                 if (granted && Date.now() - rishAwaitingAuthAt < 120000) startRishShell();
             }
+        }
+
+        // Start the Shizuku service through the ADB connection (the installed Shizuku app's own start script); the answer comes to onShizukuStartResult
+        function startShizukuUI() {
+            haptic();
+            const b = window.AndroidBridge;
+            if (!b || !b.startShizukuViaAdb) { showToast('Starting Shizuku needs a newer app version'); return; }
+            const r = String(b.startShizukuViaAdb() || '');
+            if (r === 'busy') { showToast('Shizuku is already being started...'); return; }
+            if (r !== 'started_async') { showToast('Could not start Shizuku'); return; }
+            const btn = document.getElementById('shizukuStartBtn');
+            if (btn) btn.disabled = true;
+            const out = document.getElementById('shizukuStartOut');
+            if (out) { out.style.display = 'none'; out.textContent = ''; }
+            showToast('Starting Shizuku through ADB...');
+        }
+
+        // Called from MainActivity with {status, pkg, script, exit, text} when the start attempt is over
+        function onShizukuStartResult(res) {
+            const btn = document.getElementById('shizukuStartBtn');
+            if (btn) btn.disabled = false;
+            res = res || {};
+            const msg = {
+                started: 'Shizuku is running. Tap Authorize & Use Shizuku next.',
+                already_running: 'Shizuku is already running. Tap Authorize & Use Shizuku.',
+                not_installed: 'Shizuku is not installed',
+                no_adb: 'Connect ADB TCP or Wireless Debugging first, then start Shizuku.',
+                no_script: 'Shizuku has not written its start script yet. Open the Shizuku app once, then try again.',
+                failed: 'Shizuku did not start. What the start script printed is shown below.'
+            }[res.status] || 'Could not start Shizuku';
+            showToast(msg);
+            const out = document.getElementById('shizukuStartOut');
+            if (out) {
+                const t = String(res.text || '').trim();
+                out.textContent = t;
+                out.style.display = t && res.status !== 'started' ? '' : 'none';
+            }
+            if (res.status === 'no_script') openShizukuAppUI();
+            checkAllWorkingModes(false);
         }
 
         function openShizukuAppUI() {

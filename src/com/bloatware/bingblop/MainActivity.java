@@ -1198,6 +1198,48 @@ public class MainActivity extends Activity {
         return output;
     }
 
+    private final java.util.concurrent.atomic.AtomicBoolean shizukuStarting = new java.util.concurrent.atomic.AtomicBoolean();
+
+    private static JSONObject shizukuStartResult(String status, String pkg, ShizukuStart.Result r) {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("status", status);
+            o.put("pkg", pkg == null ? "" : pkg);
+            if (r != null) {
+                o.put("script", r.script);
+                o.put("exit", r.exit);
+                o.put("text", r.text);
+            }
+        } catch (Exception ignored) {}
+        return o;
+    }
+
+    /**
+     * Runs the start script the installed Shizuku app wrote (see {@link ShizukuStart}) through a ready ADB TCP or Wireless Debugging connection,
+     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Blocks for up to about 16 seconds,
+     * so it runs on the executor.
+     */
+    private JSONObject startShizukuNow() {
+        if (isShizukuBinderAlive()) return shizukuStartResult("already_running", installedShizukuPackage(), null);
+        String pkg = installedShizukuPackage();
+        if (pkg == null) return shizukuStartResult("not_installed", "", null);
+        String devices = adbDevicesOutput();
+        String target = isTargetReady(devices, tcpTarget()) ? tcpTarget()
+                : (adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget())) ? wirelessTarget() : null;
+        if (target == null) return shizukuStartResult("no_adb", pkg, null);
+        String cmd = ShizukuStart.command(pkg);
+        if (cmd == null) return shizukuStartResult("failed", pkg, null);
+        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd));
+        if (r.noScript) return shizukuStartResult("no_script", pkg, r);
+        boolean alive = false;
+        for (int i = 0; i < 16 && !activityDestroyed; i++) {
+            if (isShizukuBinderAlive()) { alive = true; break; }
+            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+        }
+        invalidateModeCache();
+        return shizukuStartResult(alive ? "started" : "failed", pkg, r);
+    }
+
     private String connectTcp(String host, int port, boolean select) {
         if (host == null || host.trim().isEmpty()) host = "127.0.0.1";
         if (port <= 0) port = 5555;
@@ -8240,6 +8282,36 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 return "error: " + t.getMessage();
             }
+        }
+
+        /**
+         * Starts the Shizuku service through ADB (the installed Shizuku app's own start script). Returns at once: "started_async" (the result comes
+         * to window.onShizukuStartResult({status, pkg, script, exit, text}), status being started, already_running, not_installed, no_adb,
+         * no_script or failed), or "busy" while an earlier start is still running.
+         */
+        @JavascriptInterface
+        public String startShizukuViaAdb() {
+            if (!shizukuStarting.compareAndSet(false, true)) return "busy";
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = startShizukuNow();
+                        } catch (Throwable t) {
+                            res = shizukuStartResult("failed", "", null);
+                        } finally {
+                            shizukuStarting.set(false);
+                        }
+                        notifyJs("window.onShizukuStartResult && window.onShizukuStartResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                shizukuStarting.set(false);
+                return "error";
+            }
+            return "started_async";
         }
 
         @JavascriptInterface
