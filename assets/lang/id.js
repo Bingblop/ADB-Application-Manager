@@ -1,6 +1,10 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+  "App components": "Komponen aplikasi",
+  "Enable or disable activities, services and receivers for any app.": "Aktifkan atau nonaktifkan activity, service, dan receiver aplikasi apa pun.",
+  "Open apps": "Buka aplikasi",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Buka aplikasi, lalu gunakan tab Activities dan Components-nya untuk mengaktifkan atau menonaktifkan setiap item.",
   "Super User for apps": "Super User untuk aplikasi",
   "Manage which apps get root in your manager.": "Atur aplikasi mana yang mendapat root di pengelola root Anda.",
   "Open manager": "Buka pengelola",

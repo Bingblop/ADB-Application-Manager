@@ -1,6 +1,10 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+  "App components": "Composants de l'appli",
+  "Enable or disable activities, services and receivers for any app.": "Activez ou désactivez les activités, services et receivers de n'importe quelle appli.",
+  "Open apps": "Ouvrir les applis",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Ouvrez une appli, puis utilisez ses onglets Activités et Composants pour activer ou désactiver chacun.",
   "Super User for apps": "Super User pour les applis",
   "Manage which apps get root in your manager.": "Gérez les applis qui obtiennent le root dans votre gestionnaire root.",
   "Open manager": "Ouvrir le gestionnaire",

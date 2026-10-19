@@ -1,6 +1,10 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+  "App components": "앱 구성 요소",
+  "Enable or disable activities, services and receivers for any app.": "어떤 앱의 액티비티, 서비스, 리시버든 켜거나 끕니다.",
+  "Open apps": "앱 열기",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "앱을 연 다음 액티비티 탭과 구성 요소 탭에서 각 항목을 켜거나 끄세요.",
   "Super User for apps": "앱용 Super User",
   "Manage which apps get root in your manager.": "어떤 앱이 루트를 받을지 루트 관리자에서 관리하세요.",
   "Open manager": "관리자 열기",

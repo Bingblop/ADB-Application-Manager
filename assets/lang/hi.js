@@ -1,6 +1,10 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+  "App components": "ऐप घटक",
+  "Enable or disable activities, services and receivers for any app.": "किसी भी ऐप की ऐक्टिविटी, सर्विस और रिसीवर चालू या बंद करें।",
+  "Open apps": "ऐप्स खोलें",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "कोई ऐप खोलें, फिर हर एक को चालू या बंद करने के लिए उसके Activities और Components टैब का उपयोग करें।",
   "Super User for apps": "ऐप्स के लिए Super User",
   "Manage which apps get root in your manager.": "अपने रूट मैनेजर में तय करें कि किन ऐप्स को रूट मिले।",
   "Open manager": "मैनेजर खोलें",
