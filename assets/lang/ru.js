@@ -3086,6 +3086,7 @@ x: {
 "Reload the overlays": "Перечитать оверлеи",
 "Reloaded": "Перечитано",
 "Reloading the app": "Перезагрузка приложения",
+"Restarting the app": "Перезапуск приложения",
 "Rem Updates": "Удалить обновления",
 "Remember my filters": "Запоминать мои фильтры",
 "Remember the devices I connect:": "Запоминать подключаемые устройства:",

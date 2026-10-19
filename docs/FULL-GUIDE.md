@@ -1023,7 +1023,8 @@ there is no Android screen for any of them, so they only ever show up once there
 shell with nothing to open. **Allow all** walks through the ones still missing, one after the other (leaving a screen without
 allowing does not stop the walk, and closing the sheet cancels the rest); with ADB, Shizuku or Root the app switches Usage
 access, Display over other apps and the three privileged-only accesses on for itself, so only All files access ever needs its
-own screen. **Not now** skips them all: the same sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android
+own screen, and then restarts (a toast says "Restarting the app"; it closes and comes back by itself a moment later, in a fresh
+process, so that what was granted holds everywhere). **Not now** skips them all: the same sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android
 10 and older there is no All-files switch, so **Allow** shows Android's own storage dialog (and, after "don't ask again", the
 app's settings page); the app asks Android 10 for its legacy file access so that permission is enough there.
 

@@ -3085,6 +3085,7 @@ x: {
 "Reload the overlays": "Muat ulang overlay",
 "Reloaded": "Dimuat ulang",
 "Reloading the app": "Memuat ulang aplikasi",
+"Restarting the app": "Memulai ulang aplikasi",
 "Rem Updates": "Hapus Pembaruan",
 "Remember my filters": "Ingat filter saya",
 "Remember the devices I connect:": "Ingat perangkat yang saya hubungkan:",

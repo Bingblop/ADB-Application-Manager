@@ -3156,6 +3156,7 @@
 {"k":"Restarting ADB in TCP mode (port 5555)...","ctx":"built by the code of: restart adb tcpip ui"},
 {"k":"Restarting System UI…","ctx":"built by the code of: xpw sys ui"},
 {"k":"Restarting or switching off the phone changes it.","ctx":"built by the code of: xpw render"},
+{"k":"Restarting the app","ctx":"built by the code of: perm restart"},
 {"k":"Restarts Android only; open apps close","ctx":"in the view-extrasettings"},
 {"k":"Restarts into fastboot mode","ctx":"in the view-extrasettings"},
 {"k":"Restarts into recovery mode","ctx":"in the view-extrasettings"},

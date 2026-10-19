@@ -3086,6 +3086,7 @@ x: {
 "Reload the overlays": "ओवरले फिर से लोड करें",
 "Reloaded": "फिर से लोड किया गया",
 "Reloading the app": "ऐप फिर से लोड हो रहा है",
+"Restarting the app": "ऐप फिर से शुरू हो रहा है",
 "Rem Updates": "अपडेट हटाएं",
 "Remember my filters": "मेरे फ़िल्टर याद रखें",
 "Remember the devices I connect:": "मेरे जोड़े डिवाइस याद रखें:",

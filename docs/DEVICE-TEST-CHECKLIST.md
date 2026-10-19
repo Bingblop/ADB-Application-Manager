@@ -583,6 +583,22 @@ Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap t
 - [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
 - [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
 
+## 33. Allow all restarts the app
+
+"Allow all" on the permissions sheet (and the one-time "Grant all remaining permissions" question) grants by command through the working mode, then the app
+restarts in a fresh process: the shell behind the working mode starts it again about two seconds after it closes. Earlier builds reloaded the page inside the
+same process, and on some phones the app closed and stayed closed. None of this has been run on a phone yet.
+
+- [ ] **First launch.** Install the app fresh with ADB TCP, Wireless Debugging, Shizuku or root ready, open it, and on the **Allow a few permissions** sheet tap
+      **Allow all**. Expected: a toast "Restarting the app", the app closes, and within a few seconds it opens again on its own, with the permissions granted
+      (About > Permissions shows them, or Settings > Application Permissions). If the app does not come back on its own, note that: it is the bug this build fixes.
+- [ ] **What is left.** When something had no command (Live updates on Android 16, or a permission the phone refused), the sheet opens again after the restart
+      with only those rows unfilled; Allow on one opens its Android screen as before.
+- [ ] **Nothing to grant.** Open the sheet from About with every permission already granted and tap **Allow all**: no restart, the sheet just closes.
+- [ ] **The question.** On a phone where the first-launch sheet was skipped, connect a working mode later: the question "Grant all remaining permissions with it
+      now? The app restarts afterwards." appears; OK: the same restart, and the app comes back.
+- [ ] **A single Allow.** Allow one permission by its own button: the sheet behaves as before (the page reloads, no process restart).
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

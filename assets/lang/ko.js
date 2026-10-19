@@ -3085,6 +3085,7 @@ x: {
 "Reload the overlays": "오버레이 다시 불러오기",
 "Reloaded": "다시 불러옴",
 "Reloading the app": "앱을 다시 불러오는 중",
+"Restarting the app": "앱을 다시 시작하는 중",
 "Rem Updates": "업데이트 제거",
 "Remember my filters": "필터 기억",
 "Remember the devices I connect:": "연결한 기기 기억:",
