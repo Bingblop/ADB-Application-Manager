@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "ライブアップデート",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "「アプリを停止」の通知の進行状況を、ステータスバーにライブアップデートとして表示します（Android 16 以降）。通知の許可と、スマートフォンの通知設定にあるこのアプリのスイッチも必要です。",
 "Saved Applications was turned off. It is on again to show this list.": "「保存したアプリ」はオフになっていました。このリストを表示するため、再びオンにしました。",
-"That saved list is not there any more.": "その保存リストはもうありません。"
+"That saved list is not there any more.": "その保存リストはもうありません。",
+"Check whether your device can get Super User access.": "この端末がスーパーユーザー権限を取得できるか確認します。",
+"Needs Super User": "スーパーユーザーが必要",
+"No su was found on this device. Root Features need Super User.": "この端末に su が見つかりません。Root 機能にはスーパーユーザーが必要です。",
+"Open Root Features to check if your device supports Super User?": "Root 機能を開いて、この端末がスーパーユーザーに対応しているか確認しますか？",
+"Request Super User": "スーパーユーザーを要求",
+"Root Features": "Root 機能",
+"Root Features need the Root working mode with su granted to this app.": "Root 機能には、su がこのアプリに許可された Root 動作モードが必要です。",
+"Root features": "Root 機能",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "スーパーユーザー（root）機能。動作モードが Root で、su がこのアプリにアクセスを許可すると解除されます。",
+"Super User access": "スーパーユーザー権限",
+"Super User is active — root features will appear here.": "スーパーユーザーが有効です — Root 機能はここに表示されます。",
+"Temporary root setup is coming in a later step.": "一時的な Root のセットアップは後のステップで追加されます。",
+"They unlock once Super User is active.": "スーパーユーザーが有効になると解除されます。",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "この端末には su があります。「動作モード」で Root を選び、su が確認したらこのアプリを許可してください。",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root マネージャー（Magisk、KernelSU、APatch）がこのアプリに su を許可しませんでした。そちらで許可してから、もう一度 Root を選んでください。"
 },
 p: [
   ["A list named \"{0}\" already exists.", "「{0}」という名前のリストはすでに存在します。"],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ この端末に適合（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}はこのアプリのキーと署名者が同じため、その場で更新できます"],
 ["✓ {0}: done", "✓ {0}：完了"],
-["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"]
+["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
+["Root Features tab: {0}", "Root 機能タブ：{0}"],
+["{0} needs Super User.", "{0} にはスーパーユーザーが必要です。"]
 ]
 };

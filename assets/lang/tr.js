@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "Canlı güncellemeler",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Uygulamaları durdur bildiriminin ilerleyişini durum çubuğunda Canlı Güncelleme olarak gösterir (Android 16 ve sonrası). Bildirimler ile telefonun bildirim ayarlarındaki bu uygulamaya ait anahtar da gerekir.",
 "Saved Applications was turned off. It is on again to show this list.": "Kayıtlı Uygulamalar kapalıydı. Bu listeyi göstermek için yeniden açıldı.",
-"That saved list is not there any more.": "Bu kayıtlı liste artık yok."
+"That saved list is not there any more.": "Bu kayıtlı liste artık yok.",
+"Check whether your device can get Super User access.": "Cihazınızın Superuser erişimi alıp alamayacağını kontrol edin.",
+"Needs Super User": "Superuser gerekir",
+"No su was found on this device. Root Features need Super User.": "Bu cihazda su bulunamadı. Root Özellikleri için Superuser gerekir.",
+"Open Root Features to check if your device supports Super User?": "Cihazınızın Superuser’ı destekleyip desteklemediğini kontrol etmek için Root Özellikleri açılsın mı?",
+"Request Super User": "Superuser iste",
+"Root Features": "Root Özellikleri",
+"Root Features need the Root working mode with su granted to this app.": "Root Özellikleri, su’nun bu uygulamaya verildiği Root çalışma modunu gerektirir.",
+"Root features": "Root özellikleri",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Superuser (root) özellikleri. Çalışma modu Root olduğunda ve su bu uygulamaya erişim verdiğinde açılır.",
+"Super User access": "Superuser erişimi",
+"Super User is active — root features will appear here.": "Superuser etkin — root özellikleri burada görünecek.",
+"Temporary root setup is coming in a later step.": "Geçici root kurulumu sonraki bir adımda gelecek.",
+"They unlock once Super User is active.": "Superuser etkin olduğunda açılır.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Cihazınızda su var. Çalışma Modları’ndan Root’u seçin ve su sorduğunda bu uygulamaya izin verin.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root yöneticiniz (Magisk, KernelSU, APatch) bu uygulamaya su vermedi. Orada izin verin, sonra Root’u yeniden seçin."
 },
 p: [
   ["A list named \"{0}\" already exists.", "“{0}” adında bir liste zaten var."],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ bu telefona uyuyor ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
-["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"]
+["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
+["Root Features tab: {0}", "Root Özellikleri sekmesi: {0}"],
+["{0} needs Super User.", "{0} için Superuser gerekir."]
 ]
 };

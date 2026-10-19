@@ -1,4 +1,4 @@
-1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","Installer/\nUpdater","File\nManager","Console","Live\nLogcat","Hidden\nSettings","Extra\nSettings","RRO/Monet\nCustomization","App\nStores","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
+1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","Installer/\nUpdater","File\nManager","Console","Live\nLogcat","Hidden\nSettings","Extra\nSettings","RRO/Monet\nCustomization","App\nStores","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","Root\nFeatures","About"]
    Saved Applications right after Application Manager: true
    About is the last tab, Task Manager and Connected Devices in a row before the patcher tabs, Console right before Live Logcat, no Terminal tab (it is a segment of Console): true
    no "Color" tab button: true

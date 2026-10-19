@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "Atualizações ao vivo",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra o andamento da notificação de Parar apps na barra de status como uma atualização ao vivo (Android 16 e posterior). Também precisa de Notificações e da chave deste app nas configurações de notificação do telefone.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplicativos salvos estava desativado. Foi reativado para mostrar esta lista.",
-"That saved list is not there any more.": "Essa lista salva não existe mais."
+"That saved list is not there any more.": "Essa lista salva não existe mais.",
+"Check whether your device can get Super User access.": "Verifique se o seu dispositivo pode obter acesso de Superusuário.",
+"Needs Super User": "Requer Superusuário",
+"No su was found on this device. Root Features need Super User.": "Nenhum su foi encontrado neste dispositivo. Os Recursos Root precisam de Superusuário.",
+"Open Root Features to check if your device supports Super User?": "Abrir Recursos Root para verificar se o seu dispositivo suporta Superusuário?",
+"Request Super User": "Solicitar Superusuário",
+"Root Features": "Recursos Root",
+"Root Features need the Root working mode with su granted to this app.": "Os Recursos Root precisam do modo de operação Root com su concedido a este app.",
+"Root features": "Recursos Root",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Recursos de Superusuário (root). Eles são desbloqueados quando o modo de operação é Root e o su concedeu acesso a este app.",
+"Super User access": "Acesso de Superusuário",
+"Super User is active — root features will appear here.": "Superusuário está ativo — os recursos root aparecerão aqui.",
+"Temporary root setup is coming in a later step.": "A configuração de root temporário virá em uma etapa posterior.",
+"They unlock once Super User is active.": "Eles são desbloqueados quando Superusuário está ativo.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Seu dispositivo tem su. Escolha Root em Modos de operação e permita este app quando o su pedir.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Seu gerenciador de root (Magisk, KernelSU, APatch) não concedeu su a este app. Permita lá e depois escolha Root novamente."
 },
 p: [
   ["A list named \"{0}\" already exists.", "Já existe uma lista chamada “{0}”."],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatível com este telefone ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ a v{0} tem o mesmo signatário que a chave deste app, então pode ser atualizada por cima"],
 ["✓ {0}: done", "✓ {0}: concluído"],
-["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"]
+["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"],
+["Root Features tab: {0}", "Aba Recursos Root: {0}"],
+["{0} needs Super User.", "{0} precisa de Superusuário."]
 ]
 };

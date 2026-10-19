@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "Actualizaciones en vivo",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Muestra el progreso de la notificación de Detener apps en la barra de estado como una actualización en vivo (Android 16 y posterior). También necesita Notificaciones y el interruptor de esta app en los ajustes de notificaciones del teléfono.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplicaciones guardadas estaba desactivado. Se activó de nuevo para mostrar esta lista.",
-"That saved list is not there any more.": "Esa lista guardada ya no existe."
+"That saved list is not there any more.": "Esa lista guardada ya no existe.",
+"Check whether your device can get Super User access.": "Comprueba si tu dispositivo puede obtener acceso de Superusuario.",
+"Needs Super User": "Requiere Superusuario",
+"No su was found on this device. Root Features need Super User.": "No se encontró su en este dispositivo. Las Funciones Root necesitan Superusuario.",
+"Open Root Features to check if your device supports Super User?": "¿Abrir Funciones Root para comprobar si tu dispositivo admite Superusuario?",
+"Request Super User": "Solicitar Superusuario",
+"Root Features": "Funciones Root",
+"Root Features need the Root working mode with su granted to this app.": "Las Funciones Root necesitan el modo de operación Root con su concedido a esta app.",
+"Root features": "Funciones Root",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Funciones de Superusuario (root). Se desbloquean cuando el modo de operación es Root y su ha concedido acceso a esta app.",
+"Super User access": "Acceso de Superusuario",
+"Super User is active — root features will appear here.": "Superusuario está activo — las funciones root aparecerán aquí.",
+"Temporary root setup is coming in a later step.": "La configuración de root temporal llegará en un paso posterior.",
+"They unlock once Super User is active.": "Se desbloquean cuando Superusuario está activo.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Tu dispositivo tiene su. Elige Root en Modos de operación y permite esta app cuando su lo pida.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Tu gestor de root (Magisk, KernelSU, APatch) no concedió su a esta app. Permítelo allí y luego elige Root de nuevo."
 },
 p: [
   ["A list named \"{0}\" already exists.", "Ya existe una lista llamada «{0}»."],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatible con este teléfono ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} tiene el mismo firmante que la clave de esta app, así que se puede actualizar en el lugar"],
 ["✓ {0}: done", "✓ {0}: listo"],
-["＋ Create “{0}” in {1}", "＋ Crear “{0}” en {1}"]
+["＋ Create “{0}” in {1}", "＋ Crear “{0}” en {1}"],
+["Root Features tab: {0}", "Pestaña Funciones Root: {0}"],
+["{0} needs Super User.", "{0} necesita Superusuario."]
 ]
 };

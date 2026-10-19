@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "التحديثات المباشرة",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "يعرض تقدّم إشعار «إيقاف التطبيقات» في شريط الحالة كتحديث مباشر (Android 16 والإصدارات الأحدث). ويحتاج أيضًا إلى الإشعارات وإلى مفتاح هذا التطبيق في إعدادات الإشعارات بالهاتف.",
 "Saved Applications was turned off. It is on again to show this list.": "كانت «التطبيقات المحفوظة» متوقفة. تم تشغيلها مجددًا لعرض هذه القائمة.",
-"That saved list is not there any more.": "هذه القائمة المحفوظة لم تعد موجودة."
+"That saved list is not there any more.": "هذه القائمة المحفوظة لم تعد موجودة.",
+"Check whether your device can get Super User access.": "تحقّق مما إذا كان جهازك يستطيع الحصول على صلاحية Superuser.",
+"Needs Super User": "يتطلب Superuser",
+"No su was found on this device. Root Features need Super User.": "لم يُعثر على su في هذا الجهاز. تحتاج ميزات Root إلى Superuser.",
+"Open Root Features to check if your device supports Super User?": "هل تريد فتح «ميزات Root» للتحقق مما إذا كان جهازك يدعم Superuser؟",
+"Request Super User": "طلب Superuser",
+"Root Features": "ميزات Root",
+"Root Features need the Root working mode with su granted to this app.": "تحتاج ميزات Root إلى وضع التشغيل Root مع منح su لهذا التطبيق.",
+"Root features": "ميزات Root",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "ميزات Superuser (root). تُفتح عندما يكون وضع التشغيل Root وقد منح su هذا التطبيق الوصول.",
+"Super User access": "صلاحية Superuser",
+"Super User is active — root features will appear here.": "Superuser مفعّل — ستظهر ميزات Root هنا.",
+"Temporary root setup is coming in a later step.": "إعداد Root المؤقت سيأتي في خطوة لاحقة.",
+"They unlock once Super User is active.": "تُفتح عندما يصبح Superuser مفعّلًا.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "جهازك يحتوي على su. اختر Root في «أوضاع التشغيل» واسمح لهذا التطبيق عندما يسأل su.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "مدير Root لديك (Magisk أو KernelSU أو APatch) لم يمنح su لهذا التطبيق. اسمح له هناك ثم اختر Root مجددًا."
 },
 p: [
   ["A list named \"{0}\" already exists.", "توجد بالفعل قائمة باسم «{0}»."],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ يناسب هذا الهاتف ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ الإصدار v{0} له الموقِّع نفسه لمفتاح هذا التطبيق، لذلك يمكن تحديثه في المكان نفسه"],
 ["✓ {0}: done", "✓ {0}: تم"],
-["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"]
+["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"],
+["Root Features tab: {0}", "تبويب ميزات Root: {0}"],
+["{0} needs Super User.", "{0} يتطلب Superuser."]
 ]
 };

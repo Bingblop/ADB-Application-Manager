@@ -5080,7 +5080,22 @@ x: {
 "Live updates": "实时更新",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "在状态栏中以实时更新的形式显示“停止应用”通知的进度（Android 16 及更高版本）。还需要“通知”权限，以及手机通知设置中此应用的开关。",
 "Saved Applications was turned off. It is on again to show this list.": "“已保存应用”已关闭，现已重新开启以显示此列表。",
-"That saved list is not there any more.": "该已保存列表已不存在。"
+"That saved list is not there any more.": "该已保存列表已不存在。",
+"Check whether your device can get Super User access.": "检查你的设备能否获得超级用户权限。",
+"Needs Super User": "需要超级用户",
+"No su was found on this device. Root Features need Super User.": "此设备上未找到 su。Root 功能需要超级用户。",
+"Open Root Features to check if your device supports Super User?": "打开“Root 功能”以检查你的设备是否支持超级用户？",
+"Request Super User": "请求超级用户",
+"Root Features": "Root 功能",
+"Root Features need the Root working mode with su granted to this app.": "Root 功能需要 Root 工作模式，并且 su 已授予此应用。",
+"Root features": "Root 功能",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "超级用户（root）功能。当工作模式为 Root 且 su 已授予此应用访问权限时解锁。",
+"Super User access": "超级用户权限",
+"Super User is active — root features will appear here.": "超级用户已激活 — Root 功能将显示在这里。",
+"Temporary root setup is coming in a later step.": "临时 Root 设置将在后续步骤中推出。",
+"They unlock once Super User is active.": "超级用户激活后即可解锁。",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "你的设备有 su。请在“工作模式”中选择 Root，并在 su 询问时允许此应用。",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "你的 Root 管理器（Magisk、KernelSU、APatch）未授予此应用 su。请在其中允许，然后再次选择 Root。"
 },
 p: [
   ["A list named \"{0}\" already exists.", "名为“{0}”的列表已存在。"],
@@ -6222,6 +6237,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ 适合此手机（{0}）"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} 的签名者与本应用的密钥相同，因此可以就地更新"],
 ["✓ {0}: done", "✓ {0}：已完成"],
-["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"]
+["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
+["Root Features tab: {0}", "Root 功能标签页：{0}"],
+["{0} needs Super User.", "{0} 需要超级用户。"]
 ]
 };
