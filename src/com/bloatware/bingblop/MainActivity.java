@@ -13686,8 +13686,12 @@ public class MainActivity extends Activity {
 
         /**
          * "Allow all" through the working mode: everything that has a command is granted at once ({@code appops set} and {@code pm grant}), restricted settings first,
-         * because Usage access needs it. (Live updates has no command: see {@link #requestLiveUpdatesAccess}.) Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
-         * its Android screen.
+         * because Usage access needs it. (Live updates has no command: see {@link #requestLiveUpdatesAccess}.) Answer: the permission status ({@link #getPermissionStatus}) after it,
+         * with {@code restarting: true} when something was granted: the app is then to run anew in a fresh process, so that what was allowed holds everywhere (the
+         * storage group among others). The app cannot do that from its own code, and a phone may end the process itself while a permission is set, so before the
+         * commands a watcher is left behind through the working mode ({@link AppRestart}) that starts the app again once the process is gone; the page shows its
+         * toast and calls {@link #restartApp}. Without a watcher (the shell cannot see this process) the page reloads itself, as before. What is still missing has
+         * no command and needs its Android screen.
          */
         @JavascriptInterface
         public String grantAllPermissions() {
@@ -13715,7 +13719,17 @@ public class MainActivity extends Activity {
                 if (!hasReadLogsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.READ_LOGS; ");
                 if (!hasBluetoothConnectAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.BLUETOOTH_CONNECT; ");
                 if (!hasNotificationAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.POST_NOTIFICATIONS; ");
-                if (sb.length() > 0) executeShell(sb.toString() + "true");
+                if (sb.length() > 0) {
+                    String before = getPermissionStatus();
+                    String watcher = null;
+                    try { watcher = AppRestart.watcherPid(executeShell(AppRestart.watchScript(android.os.Process.myPid(), AppRestart.component(pkg, MainActivity.class.getName())))); } catch (Throwable ignored) {}
+                    executeShell(sb.toString() + "true");
+                    String after = getPermissionStatus();
+                    if (watcher == null) return after;                                                                      // no watcher: the page reloads itself, as before
+                    if (after.equals(before)) { try { executeShell(AppRestart.killScript(watcher)); } catch (Throwable ignored) {} return after; }     // nothing was granted: no restart, and the watcher goes
+                    restartPending = true;
+                    try { JSONObject o = new JSONObject(after); o.put("restarting", true); return o.toString(); } catch (Exception e) { return after; }
+                }
             }
             return getPermissionStatus();
         }
@@ -13777,6 +13791,29 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try { recreate(); } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        private volatile boolean restartPending;       // set by grantAllPermissions once a watcher waits for this process to end: only then may restartApp end it
+
+        /**
+         * Ends this process after "Allow all" so that the watcher {@link #grantAllPermissions} left behind through the working mode ({@link AppRestart}) starts the
+         * app anew; the page shows its toast first, then calls this. The task goes too, so the app comes back fresh. Does nothing when no watcher waits (the
+         * app would otherwise just close).
+         */
+        @JavascriptInterface
+        public void restartApp() {
+            if (!restartPending) return;
+            restartPending = false;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { finishAndRemoveTask(); } catch (Throwable ignored) {}
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() { android.os.Process.killProcess(android.os.Process.myPid()); }
+                    }, 400);
                 }
             });
         }

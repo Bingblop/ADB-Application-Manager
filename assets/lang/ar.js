@@ -3086,6 +3086,7 @@ x: {
 "Reload the overlays": "إعادة تحميل الطبقات",
 "Reloaded": "تمت إعادة التحميل",
 "Reloading the app": "جارٍ إعادة تحميل التطبيق",
+"Restarting the app": "جارٍ إعادة تشغيل التطبيق",
 "Rem Updates": "إزالة التحديثات",
 "Remember my filters": "تذكّر عوامل التصفية الخاصة بي",
 "Remember the devices I connect:": "تذكّر الأجهزة التي أوصلها:",

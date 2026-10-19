@@ -31414,6 +31414,14 @@ Type any command above (e.g. pm list packages -d)</div>
         function permReload() {
             try { if (window.AndroidBridge && window.AndroidBridge.reloadApp) { showToast('Reloading the app'); setTimeout(() => window.AndroidBridge.reloadApp(), 350); } } catch (e) {}
         }
+        // "Allow all" granted something through the working mode: the app runs anew in a fresh process. This process ends (restartApp) and the watcher the app
+        // left behind through the working mode starts it again; the toast shows first. Until then nothing else reloads the page.
+        let permRestarting = false;
+        function permRestart() {
+            permRestarting = true;
+            showToast('Restarting the app');
+            try { if (window.AndroidBridge && window.AndroidBridge.restartApp) setTimeout(() => window.AndroidBridge.restartApp(), 600); } catch (e) {}
+        }
 
         // true when there is no way to tell (an old build or a browser), so nothing nags where nothing can be done
         function fileAccessGranted() {
@@ -31529,8 +31537,10 @@ Type any command above (e.g. pm list packages -d)</div>
             permRefresh();
             const b = window.AndroidBridge;
             if (isPrivilegedActive && b && b.grantAllPermissions) {
-                try { permStatus = JSON.parse(b.grantAllPermissions()) || permStatus; } catch (e) {}
+                let restarting = false;
+                try { permStatus = JSON.parse(b.grantAllPermissions()) || permStatus; restarting = !!permStatus.restarting; } catch (e) {}
                 permRefresh();
+                if (restarting) { permRender(); permRestart(); closePermSheet(false); return; }          // something was allowed: the app restarts in a fresh process; what is still missing, the sheet asks for after it
                 if (visiblePermDefs().every(d => permStatus[d.key])) { permRender(); closePermSheet(false); return; }          // closing starts the app again (something was allowed)
                 permRender();
             }
@@ -31569,12 +31579,14 @@ Type any command above (e.g. pm list packages -d)</div>
             modal.classList.remove('show');
             permWalk = [];
             const b = window.AndroidBridge;
-            if (permMode === 'intro') { try { if (b && b.saveSetting) b.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
+            // a restart with rows still open (no command for them, or the phone refused it): the first-launch sheet comes back after it with what is left
+            const left = permRestarting && visiblePermDefs().some(d => !permStatus[d.key] && !permLocked(d));
+            if (permMode === 'intro' && !left) { try { if (b && b.saveSetting) b.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
             // the sheet was seen with a working mode on: its "Allow all" was the offer, the one-time question does not come as well
             if (permMode !== 'files' && isPrivilegedActive) { permOfferDone = true; try { if (b && b.saveSetting) b.saveSetting(PERM_OFFER_KEY, '1'); } catch (e) {} }
             if (permMode !== 'files') {
                 permRefresh();
-                if (permSnap() !== permOpenSnap) { permOpenSnap = permSnap(); permAllUsed = false; permReload(); }          // something was allowed: start the app again
+                if (permSnap() !== permOpenSnap) { permOpenSnap = permSnap(); permAllUsed = false; if (!permRestarting) permReload(); }          // something was allowed: start the app again (unless the process is about to restart anyway)
             }
             if (permMode === 'files' && byUser !== false && !fileAccessGranted()) { permClosedAt = Date.now(); setPermRetry(null); }
         }
@@ -31663,9 +31675,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!b || !b.grantAllPermissions) return;
             permRefresh();
             const before = permSnap();
-            try { permStatus = JSON.parse(b.grantAllPermissions()) || permStatus; } catch (e) {}
+            let restarting = false;
+            try { permStatus = JSON.parse(b.grantAllPermissions()) || permStatus; restarting = !!permStatus.restarting; } catch (e) {}
             permRefresh();
-            if (permSnap() !== before) permReload();
+            if (restarting) permRestart();                                      // something was allowed: the app restarts in a fresh process
+            else if (permSnap() !== before) permReload();
             else showToast('The phone did not grant this permission');
         }
 

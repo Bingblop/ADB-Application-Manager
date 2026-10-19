@@ -74,8 +74,17 @@ exports.initScript = function (opts) {
     requestWriteSecureSettings() { calls.perms.push('secure_settings'); if (window.__mode.priv) { window.__perm.secure_settings = true; return 'granted'; } return 'settings'; },
     // 'dump' is not in the default window.__perm: like an older build of the app, the mock does not report it unless a test passes perm: { dump: false|true }
     requestDumpAccess() { calls.perms.push('dump'); if (window.__mode.priv) { window.__perm.dump = true; return 'granted'; } return 'settings'; },
-    // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one); the page then starts the app again (reloadApp)
-    grantAllPermissions() { calls.grantAll = (calls.grantAll || 0) + 1; if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk') window.__perm[k] = true; }); } return JSON.stringify(Object.assign({ sdk: window.__device.sdk }, window.__perm)); },
+    // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one). With opts.restart (v7.16: the app left a watcher
+    // behind through the working mode) the answer says restarting:true once something changed, and the page restarts the app (restartApp); without it the
+    // page starts itself again (reloadApp), as an older build does
+    grantAllPermissions() {
+      calls.grantAll = (calls.grantAll || 0) + 1;
+      let changed = false;
+      if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk' && window.__perm[k] !== true) { window.__perm[k] = true; changed = true; } }); }
+      const st = Object.assign({ sdk: window.__device.sdk }, window.__perm);
+      if (opts.restart && changed) st.restarting = true;
+      return JSON.stringify(st);
+    },
     // the adb lines for what is not held yet (opt-in: opts.grantCommands, so a test that does not look at the button never has it on the sheet); the real list is MainActivity.getGrantCommands
     getGrantCommands() {
       if (!opts.grantCommands) return '';
@@ -97,6 +106,7 @@ exports.initScript = function (opts) {
     copyToClipboard(t) { (calls.copied = calls.copied || []).push(t); },
     syncUsageGrant() { calls.sync = (calls.sync || 0) + 1; },
     reloadApp() { calls.reload = (calls.reload || 0) + 1; },
+    restartApp() { calls.restart = (calls.restart || 0) + 1; },
     requestRestrictedSettingsAccess() { calls.perms.push('restricted_settings'); if (window.__mode.priv) { window.__perm.restricted_settings = true; return 'granted'; } return 'settings'; },
     // ---- the device, for the splits ----
     getDeviceProfile() { return JSON.stringify(window.__device); },

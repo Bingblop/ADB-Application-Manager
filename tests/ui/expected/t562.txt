@@ -1,0 +1,16 @@
+1. first launch with a working mode: the sheet is up with its rows open: true files=open,restricted_settings=ok,usage=open,overlay=open,storage_legacy=ok,secure_settings=ok
+   Allow all: one grant call, the toast says "Restarting the app", and the sheet closes: true [{"grantAll":1,"restart":1,"reload":0,"perms":"","saved":1,"offer":1},["Restarting the app"]]
+   the app is asked to restart (restartApp), the page is not reloaded, and no Android screen opens: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":1,"offer":1}
+   no "Reloading the app" on top of it: true ["Restarting the app"]
+   nothing is left: the first-launch sheet is marked done, and so is the one-time question: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":1,"offer":1}
+2. one row left open: the app restarts all the same (something was granted) and does not walk on to its Android screen: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":0,"offer":1}
+   the first-launch sheet is not marked done, so it comes back after the restart with what is left: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":0,"offer":1}
+   after the restart the sheet is back, and only that row is open: true files=ok,restricted_settings=ok,usage=ok,overlay=open,storage_legacy=ok,secure_settings=ok
+   with one row left "Allow all" is away (its own Allow button is enough), as on any sheet: true
+3. from About, with two rows open: true files=ok,restricted_settings=ok,usage=open,overlay=open,storage_legacy=ok,secure_settings=ok
+   Allow all restarts the app the same way: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":0,"offer":1}
+4. the one-time question, answered yes: one grant call, the toast, a restart, no page reload: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":0,"offer":1}
+5. without the flag: the sheet closes and the page reloads itself ("Reloading the app"), no restart: true [{"grantAll":1,"restart":0,"reload":1,"perms":"","saved":0,"offer":1},["Reloading the app"]]
+   the question without the flag: a page reload, no restart: true {"grantAll":1,"restart":0,"reload":1,"perms":"","saved":0,"offer":1}
+6. nothing granted by command: no restart and no reload; the walk opens the Android screen for the first row left: true {"grantAll":1,"restart":0,"reload":0,"perms":"usage","saved":0,"offer":0}
+OK

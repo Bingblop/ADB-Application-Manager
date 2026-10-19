@@ -3085,6 +3085,7 @@ x: {
 "Reload the overlays": "Overlays neu laden",
 "Reloaded": "Neu geladen",
 "Reloading the app": "App wird neu geladen",
+"Restarting the app": "App wird neu gestartet",
 "Rem Updates": "Entf. Updates",
 "Remember my filters": "Meine Filter merken",
 "Remember the devices I connect:": "Von mir verbundene Geräte merken:",

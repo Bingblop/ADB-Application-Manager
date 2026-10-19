@@ -3085,6 +3085,7 @@ x: {
 "Reload the overlays": "重新加载叠加层",
 "Reloaded": "已重新加载",
 "Reloading the app": "正在重新加载应用",
+"Restarting the app": "正在重启应用",
 "Rem Updates": "卸载更新",
 "Remember my filters": "记住我的筛选条件",
 "Remember the devices I connect:": "记住我连接的设备：",

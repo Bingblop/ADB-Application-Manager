@@ -3086,6 +3086,7 @@ x: {
 "Reload the overlays": "オーバーレイを再読み込み",
 "Reloaded": "再読み込みしました",
 "Reloading the app": "アプリを再読み込みしています",
+"Restarting the app": "アプリを再起動しています",
 "Rem Updates": "削除された更新",
 "Remember my filters": "フィルターを記憶",
 "Remember the devices I connect:": "接続したデバイスを記憶：",

@@ -3086,6 +3086,7 @@ x: {
 "Reload the overlays": "Katmanları yeniden yükle",
 "Reloaded": "Yeniden yüklendi",
 "Reloading the app": "Uygulama yeniden yükleniyor",
+"Restarting the app": "Uygulama yeniden başlatılıyor",
 "Rem Updates": "Güncellemeleri kaldır",
 "Remember my filters": "Filtrelerimi hatırla",
 "Remember the devices I connect:": "Bağladığım cihazları hatırla:",
