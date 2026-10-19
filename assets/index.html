@@ -19211,6 +19211,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('shizukuStartBtn');
             if (btn) btn.disabled = false;
             res = res || {};
+            szAutoStarting = false;
             const msg = {
                 started: 'Shizuku is running. Tap Authorize & Use Shizuku next.',
                 already_running: 'Shizuku is already running. Tap Authorize & Use Shizuku.',
@@ -19228,6 +19229,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (res.status === 'no_script') openShizukuAppUI();
             checkAllWorkingModes(false);
+            if (permIntroWaiting) setTimeout(maybeShowPermIntro, 300);   // the first-launch sheet waited for a start it offered: go on now the attempt is over
         }
 
         function openShizukuAppUI() {
@@ -19317,8 +19319,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 loadPackageData();
                 setTimeout(maybeShowWhatsNew, 1200);
                 setTimeout(uadEnsureForList, 1600);
-                // Shizuku first (its own dialog), then the first-launch sheet, which waits for that answer so it can already grant through Shizuku
-                setTimeout(() => { szAutoReady = true; szAutoAsk(); }, 700);
+                // Shizuku first (started if it is installed but off, then its own dialog), then the first-launch sheet, which waits for that so it can grant through Shizuku
+                setTimeout(() => { szAutoReady = true; szAutoStart(); szAutoAsk(); }, 700);
                 setTimeout(maybeShowPermIntro, 2300);
                 setTimeout(maybeShowOldWebViewNotice, 1500);
             } else {
@@ -31547,6 +31549,13 @@ Type any command above (e.g. pm list packages -d)</div>
             let seen = '';
             try { seen = b.loadSetting('perm_intro_v62'); } catch (e) {}
             if (seen) return;
+            // a Shizuku start offered at launch is still running: the sheet comes after it finishes (onShizukuStartResult), so the authorize step can come first
+            const starting = Date.now() - szAutoStartAt;
+            if (szAutoStarting && starting < SZ_START_WAIT_MS) {
+                permIntroWaiting = true;
+                setTimeout(maybeShowPermIntro, SZ_START_WAIT_MS - starting + 50);
+                return;
+            }
             // the Shizuku dialog asked for at start is still up: the sheet comes after its answer (onShizukuPermissionResult), or after a while without one
             const asked = Date.now() - szAutoAskAt;
             if (szAutoAsking && asked < SZ_ANSWER_WAIT_MS) {
@@ -31641,11 +31650,59 @@ Type any command above (e.g. pm list packages -d)</div>
             return false;
         }
 
+        // ---- Start Shizuku at launch ----
+        // While no working mode is ready (no ADB TCP, Wireless Debugging or root) and the mode is Auto or Shizuku, a Shizuku that is installed but not running,
+        // with an ADB path to start it through, is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one).
+        // Starting needs an ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless pairing
+        // stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
+        const SZ_START_DENY_KEY = 'shizuku_autostart_denied', SZ_START_DENY_MAX = 2;
+        const SZ_START_WAIT_MS = 12000;   // how long the first-launch sheet waits for a start it offered (startShizukuNow polls the binder up to ~8 s)
+        let szStartTried = false;         // offered once per start of the page
+        let szAutoStarting = false, szAutoStartAt = 0;
+        function szStartDenials() {
+            try { return parseInt(window.AndroidBridge.loadSetting(SZ_START_DENY_KEY), 10) || 0; } catch (e) { return 0; }
+        }
+        function szCountStartDenial(started) {
+            const b = window.AndroidBridge;
+            if (!b || !b.saveSetting) return;
+            const n = szStartDenials();
+            try {
+                if (!started) b.saveSetting(SZ_START_DENY_KEY, String(n + 1));
+                else if (n) b.saveSetting(SZ_START_DENY_KEY, '0');
+            } catch (e) {}
+        }
+        // An ADB target the start command can run through: a connected or reachable TCP target, or a connected Wireless Debugging one (what startShizukuNow uses).
+        function szAdbPathReady(d) {
+            if (!d) return false;
+            const t = d.adbTcp || {}, w = d.adbWireless || {};
+            return !!(t.connected || t.portOpen || w.connected);
+        }
+        function szAutoStart() {
+            if (!szAutoReady || szStartTried || isPrivilegedActive) return false;
+            const b = window.AndroidBridge, d = lastModesData;
+            if (!b || !b.startShizukuViaAdb || !d) return false;
+            const configured = d.configuredMode || 'auto';
+            if (configured !== 'auto' && configured !== 'shizuku') return false;
+            const sz = d.shizuku || {};
+            if (!sz.installed || sz.running) return false;        // not installed, or already running (szAutoAsk then asks to authorize)
+            if (!szAdbPathReady(d)) return false;                 // no ADB path: it can only be started from the Shizuku app (wireless pairing), so no offer
+            if (szStartDenials() >= SZ_START_DENY_MAX) return false;
+            szStartTried = true;
+            if (typeof nextDialogTitle === 'function') nextDialogTitle('Start Shizuku');
+            const ok = confirm('Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?');
+            szCountStartDenial(ok);
+            if (!ok) return false;
+            szAutoStarting = true; szAutoStartAt = Date.now();
+            startShizukuUI();                                     // the card's own start path; onShizukuStartResult shows the outcome, then szAutoAsk asks to authorize
+            return true;
+        }
+
         // checkAllWorkingModes: the mode was just read again
         function permOnModeChange() {
             const m = document.getElementById('permModal');
             if (m && m.classList.contains('show')) { permRefresh(); permRender(); }          // a working mode came (or went): Allow by command, or the lock
             permMaybeOfferAdb();
+            szAutoStart();
             szAutoAsk();
         }
 
