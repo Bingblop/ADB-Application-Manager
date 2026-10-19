@@ -321,6 +321,7 @@
 <li><b>Backups of app data.</b> Backing up an app's APK, permissions and app ops works in any working mode, but including its <i>data</i> (logins, saved games, settings) is root-only. The Backup sheet says "Uses Root. The app is stopped while its data is copied." Without root, the switch is greyed out with the words "Needs Root, which was not found on this phone." Restoring data needs root too (<a href="#apps-backup">Backups</a>).</li>
 <li><b>Removing system apps directly.</b> With ADB or Shizuku, if Android refuses to remove a system app for your user, the app tries a fallback (a direct call to Android's package service); with root the app does not use that fallback. In every case the app's file stays in the system area.</li>
 <li>Root reaches places the shell user cannot, such as other apps' private folders. That is how data backup works.</li>
+<li><b>The Root Features tab.</b> Its rows unlock only with root: the hand-off to your root manager to manage which apps get root, and the switches for single parts of an app (activities, receivers, services, providers), which Android allows to root but refuses to the shell user. What each one does and what it risks is in <a href="#tab-rootfeatures">Root Features</a>.</li>
 </ul>
 
 <h4>Risks</h4>
