@@ -1,6 +1,10 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+  "App components": "应用组件",
+  "Enable or disable activities, services and receivers for any app.": "为任意应用启用或禁用 Activity、Service 和 Receiver。",
+  "Open apps": "打开应用",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "打开一个应用，然后在它的活动和组件标签页中启用或禁用每一项。",
   "Super User for apps": "应用的 Super User",
   "Manage which apps get root in your manager.": "在你的 Root 管理器中管理哪些应用获得 Root。",
   "Open manager": "打开管理器",

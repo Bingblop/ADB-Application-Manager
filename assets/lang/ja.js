@@ -1,6 +1,10 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+  "App components": "アプリのコンポーネント",
+  "Enable or disable activities, services and receivers for any app.": "任意のアプリのアクティビティ、サービス、レシーバーを有効または無効にします。",
+  "Open apps": "アプリを開く",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "アプリを開き、アクティビティタブとコンポーネントタブで各項目を有効または無効にします。",
   "Super User for apps": "アプリへの Super User",
   "Manage which apps get root in your manager.": "どのアプリに root を与えるかを Root マネージャーで管理します。",
   "Open manager": "マネージャーを開く",

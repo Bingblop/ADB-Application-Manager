@@ -28520,19 +28520,24 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
         function onRootFeaturesShown() { renderRootFeatures(); }
-        // the root features themselves. One so far - "Super User for apps": once this app has root, open the installed manager so the user manages which
-        // OTHER apps get Super User in its own Super User screen. Unlocked while Super User is active; a locked row with the reason otherwise, so the
-        // feature is still named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
-        function rootFeatureRows() {
-            const name = '<div class="rf-name">' + txT('Super User for apps')
-                + '<span>' + txT('Manage which apps get root in your manager.') + '</span></div>';
+        // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
+        // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
+        // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
+        // - "App components": a signpost to the Application Manager, where enabling/disabling an app's components already works (toggleComponent ->
+        //   setComponentEnabled -> ShellArgs.componentCommand); this row only surfaces that capability on the Root tab, it builds nothing new.
+        function rootFeatureRow(title, sub, btnLabel, btnId, onClick) {
+            const name = '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>';
             if (isRootActive()) {
                 return '<div class="rf-row">' + name
-                    + '<button type="button" class="op-mode-btn" id="rfSuAppsBtn" onclick="rootManageSuperuser()">' + txT('Open manager') + '</button></div>';
+                    + '<button type="button" class="op-mode-btn" id="' + btnId + '" onclick="' + onClick + '">' + txT(btnLabel) + '</button></div>';
             }
             return '<div class="rf-row is-locked">' + name
                 + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">' + txT('Locked') + '</button>'
                 + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + txT('Needs Super User') + '</span></div></div>';
+        }
+        function rootFeatureRows() {
+            return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()')
+                + rootFeatureRow('App components', 'Enable or disable activities, services and receivers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()');
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -28591,6 +28596,13 @@ Type any command above (e.g. pm list packages -d)</div>
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }
+        }
+        // App components: with root active, go to the Application Manager so the user picks an app and toggles its components in the inspector
+        // (toggleComponent -> setComponentEnabled -> ShellArgs.componentCommand, which already works under any privileged mode). This is only a
+        // signpost to that existing capability from the Root Features tab; it builds nothing new.
+        function rootManageComponents() {
+            switchView('apps');
+            showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
         }
         // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features.
         document.addEventListener('visibilitychange', function () {

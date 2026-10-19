@@ -1,6 +1,10 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+  "App components": "Uygulama bileşenleri",
+  "Enable or disable activities, services and receivers for any app.": "Herhangi bir uygulamanın activity, service ve receiver bileşenlerini aç veya kapat.",
+  "Open apps": "Uygulamaları aç",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Bir uygulama aç, ardından her birini açmak veya kapatmak için Etkinlikler ve Bileşenler sekmelerini kullan.",
   "Super User for apps": "Uygulamalar için Super User",
   "Manage which apps get root in your manager.": "Hangi uygulamaların root alacağını root yöneticinizde yönetin.",
   "Open manager": "Yöneticiyi aç",

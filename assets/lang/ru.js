@@ -1,6 +1,10 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+  "App components": "Компоненты приложения",
+  "Enable or disable activities, services and receivers for any app.": "Включайте или отключайте activity, службы и приёмники любого приложения.",
+  "Open apps": "Открыть приложения",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Откройте приложение, затем на вкладках Активности и Компоненты включайте или отключайте каждый элемент.",
   "Super User for apps": "Super User для приложений",
   "Manage which apps get root in your manager.": "Управляйте тем, какие приложения получают root, в вашем root-менеджере.",
   "Open manager": "Открыть менеджер",

@@ -1,6 +1,10 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+  "App components": "مكوّنات التطبيق",
+  "Enable or disable activities, services and receivers for any app.": "فعِّل أو عطِّل الأنشطة والخدمات والمستقبِلات لأي تطبيق.",
+  "Open apps": "فتح التطبيقات",
+  "Open an app, then use its Activities and Components tabs to enable or disable each one.": "افتح تطبيقًا، ثم استخدم علامتي تبويب الأنشطة والمكوّنات لتفعيل أو تعطيل كل عنصر.",
   "Super User for apps": "صلاحية Super User للتطبيقات",
   "Manage which apps get root in your manager.": "تحكّم في التطبيقات التي تحصل على الروت من مدير الروت لديك.",
   "Open manager": "فتح المدير",

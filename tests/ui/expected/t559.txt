@@ -5,6 +5,8 @@ ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is 
 ok      promptRootThenOpen goes straight on (true), switches nothing and asks nothing
 ok      the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no lock
 ok      Open manager (apps) launches the installed manager (openRootManager) and marks the status pending
+ok      the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)
+ok      Open apps goes to the Application Manager (switchView apps)
 ok      the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)
 ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
@@ -20,7 +22,7 @@ ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, th
 ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
 ok      a no: nothing opens, false
 ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab
-ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
+ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. no page errors
 errors: []
 all passed
