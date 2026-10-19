@@ -954,7 +954,7 @@ Two tiles and one widget run **without opening the app**:
 
 | | Does |
 |---|---|
-| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode |
+| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode and is lit only while a working mode is really active (dim with Automatic finding nothing, or Read-Only) |
 | **Stop apps** tile / **🛑 Stop apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
 
 Choose the quick list in **Saved Lists** with **🛑 Quick list** on a card. To add the tiles, swipe down twice,

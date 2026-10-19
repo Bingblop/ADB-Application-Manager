@@ -746,7 +746,12 @@ public class MainActivity extends Activity {
             public void run() {
                 String message;
                 try {
-                    if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
+                    if (QuickActions.ACTION_CYCLE_MODE.equals(action)) {
+                        message = quickCycleMode();
+                        // the mode just changed and the page may not be open to probe it: probe here (the cache was invalidated), so the
+                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh
+                        try { new AndroidBridge().getWorkingMode(); } catch (Throwable ignored) {}
+                    }
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
@@ -770,6 +775,26 @@ public class MainActivity extends Activity {
                 finish();
             }
         });
+    }
+
+    /**
+     * Keeps the Working mode tile's light in step with the probe. The tile runs without this activity, so the probe's resolved mode and
+     * whether it was available go to the preferences the tile reads (ModeTileLight.PREF_MODE / PREF_AVAILABLE); they are written only
+     * when they changed, and the tile is asked to refresh only when its light would change (it reads them again in onStartListening
+     * anyway, every time the panel opens).
+     */
+    private void publishModeTileLight(String resolved, boolean available) {
+        try {
+            String mode = resolved == null ? "" : resolved;
+            android.content.SharedPreferences p = QuickActions.prefs(this);
+            String oldMode = p.getString(ModeTileLight.PREF_MODE, "");
+            boolean oldAvailable = p.getBoolean(ModeTileLight.PREF_AVAILABLE, false);
+            if (mode.equals(oldMode) && available == oldAvailable) return;
+            p.edit().putString(ModeTileLight.PREF_MODE, mode).putBoolean(ModeTileLight.PREF_AVAILABLE, available).apply();
+            if (ModeTileLight.lit(oldMode, oldAvailable) != ModeTileLight.lit(mode, available)) {
+                android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, ModeTileService.class));
+            }
+        } catch (Throwable ignored) {}
     }
 
     /**
@@ -8491,6 +8516,7 @@ public class MainActivity extends Activity {
                 obj.put("activeMode", resolved);
                 obj.put("modeAvailable", available);
                 obj.put("isPrivileged", available && !"unprivileged".equals(resolved));
+                publishModeTileLight(resolved, available);
                 return obj.toString();
             } catch (Exception e) {
                 return "{\"activeMode\":\"unprivileged\",\"configuredMode\":\"auto\",\"isPrivileged\":false}";

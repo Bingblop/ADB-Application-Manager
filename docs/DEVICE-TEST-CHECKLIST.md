@@ -573,6 +573,16 @@ Needs Shizuku installed but not running, ADB TCP or Wireless Debugging reachable
 - [ ] **Declined twice, then quiet.** Open the app and tap **Cancel** on the offer, then open it again: it offers once more. Decline again, then open a third time: it no longer offers (asked at most twice). The Shizuku card's **Start Shizuku (ADB)** button still starts it by hand.
 - [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target reachable, or with Shizuku not installed: no launch dialog appears.
 
+## 32. Working mode tile light
+
+Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap the pencil, drag it in). The tile shows what the app last found when it checked the mode; it cannot check on its own, so it keeps that state until the app looks again (opening the app, or a tap on the tile). None of this has been run on a phone yet.
+
+- [ ] **Dim without a mode.** Set Working Modes to Read-Only, go back to the Apps tab so the app checks the mode, then pull down Quick Settings: the **Working mode** tile is dim (not lit) and says Read-Only under its name.
+- [ ] **Lit with a mode.** Connect ADB TCP, Wireless Debugging, Shizuku or Root (the Working Modes card shows it connected, authorized or granted), then pull down Quick Settings: the tile is lit. With the mode on Automatic and a connection found: lit as well.
+- [ ] **Follows a tap.** With one other mode ready, tap the tile: it says "Working mode: ..." and is lit. Tap again with nothing else reachable: it says "No other mode is ready. Using Automatic." and is lit only if Automatic still finds a connection, otherwise dim.
+- [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
+- [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
