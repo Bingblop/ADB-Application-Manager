@@ -1,6 +1,11 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Periksa apakah perangkat Anda bisa mendapatkan akses Super User, atau buka pengelola root untuk memberikannya.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Tidak ada pengelola root yang ditemukan. Pasang KernelSU, APatch, atau Magisk, lalu kembali.",
+  "Open root manager": "Buka pengelola root",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Root sementara diberikan di dalam pengelola root Anda (KernelSU, APatch, atau Magisk). Buka, izinkan aplikasi ini Super User di sana, lalu kembali. Fitur Root terbuka setelah su diberikan.",
+  "your root manager": "pengelola root Anda",
   "Create new list": "Buat daftar baru",
   "List name in use": "Nama daftar sudah dipakai",
   "Overwrite": "Timpa",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Hentikan aplikasi di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplikasi Tersimpan tadinya nonaktif. Kini aktif lagi untuk menampilkan daftar ini.",
 "That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada.",
-"Check whether your device can get Super User access.": "Periksa apakah perangkat Anda bisa mendapatkan akses Superuser.",
 "Needs Super User": "Perlu Superuser",
 "No su was found on this device. Root Features need Super User.": "su tidak ditemukan di perangkat ini. Fitur Root memerlukan Superuser.",
 "Open Root Features to check if your device supports Super User?": "Buka Fitur Root untuk memeriksa apakah perangkat Anda mendukung Superuser?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fitur Superuser (root). Terbuka saat mode kerja adalah Root dan su telah memberi aplikasi ini akses.",
 "Super User access": "Akses Superuser",
 "Super User is active — root features will appear here.": "Superuser aktif — fitur root akan muncul di sini.",
-"Temporary root setup is coming in a later step.": "Penyiapan root sementara akan hadir di langkah berikutnya.",
 "They unlock once Super User is active.": "Terbuka setelah Superuser aktif.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Perangkat Anda memiliki su. Pilih Root di Mode Kerja dan izinkan aplikasi ini saat su bertanya.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Pengelola root Anda (Magisk, KernelSU, APatch) tidak memberi su ke aplikasi ini. Izinkan di sana, lalu pilih Root lagi."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Izinkan aplikasi ini di {0}, lalu kembali."],
   ["A list named \"{0}\" already exists.", "Daftar bernama “{0}” sudah ada."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} belum terhubung. Tambahkan dulu kunci atau login-nya di Konsol → Terminal."],

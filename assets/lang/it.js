@@ -1,6 +1,11 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Verifica se il tuo dispositivo può ottenere l'accesso Super User, oppure apri il gestore root per concederlo.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Nessun gestore root trovato. Installa KernelSU, APatch o Magisk, poi torna qui.",
+  "Open root manager": "Apri il gestore root",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Il root temporaneo viene concesso all'interno del tuo gestore root (KernelSU, APatch o Magisk). Aprilo, concedi il Super User a questa app lì, poi torna qui. Le funzioni Root si sbloccano una volta concesso su.",
+  "your root manager": "il tuo gestore root",
   "Create new list": "Crea nuovo elenco",
   "List name in use": "Nome elenco già in uso",
   "Overwrite": "Sovrascrivi",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra l’avanzamento della notifica di Arresta app nella barra di stato come aggiornamento live (Android 16 e successivi). Servono anche le Notifiche e l’interruttore per questa app nelle impostazioni delle notifiche del telefono.",
 "Saved Applications was turned off. It is on again to show this list.": "App salvate era disattivato. Ora è di nuovo attivo per mostrare questo elenco.",
 "That saved list is not there any more.": "Quell’elenco salvato non esiste più.",
-"Check whether your device can get Super User access.": "Verifica se il dispositivo può ottenere l’accesso Superuser.",
 "Needs Super User": "Richiede Superuser",
 "No su was found on this device. Root Features need Super User.": "Nessun su trovato su questo dispositivo. Le Funzioni Root richiedono Superuser.",
 "Open Root Features to check if your device supports Super User?": "Aprire Funzioni Root per verificare se il dispositivo supporta Superuser?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Funzioni Superuser (root). Si sbloccano quando la modalità operativa è Root e su ha concesso l’accesso a questa app.",
 "Super User access": "Accesso Superuser",
 "Super User is active — root features will appear here.": "Superuser è attivo — le funzioni root appariranno qui.",
-"Temporary root setup is coming in a later step.": "La configurazione del root temporaneo arriverà in un passaggio successivo.",
 "They unlock once Super User is active.": "Si sbloccano quando Superuser è attivo.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Il dispositivo ha su. Scegli Root in Modalità operative e consenti questa app quando su lo chiede.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Il gestore root (Magisk, KernelSU, APatch) non ha concesso su a questa app. Consentilo lì, poi scegli di nuovo Root."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Consenti questa app in {0}, poi torna qui."],
   ["A list named \"{0}\" already exists.", "Esiste già un elenco denominato «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} non è ancora collegato, quindi un pulsante Ask agent legge il web per te (gratis, senza chiave) finché non lo sarà. Aggiungi la sua chiave in Console → Terminale."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} non è ancora connesso. Aggiungi prima la sua chiave o l'accesso in Console → Terminale."],

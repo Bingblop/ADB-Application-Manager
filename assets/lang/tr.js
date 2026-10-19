@@ -1,6 +1,11 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Cihazınızın Super User erişimi alıp alamayacağını kontrol edin veya vermek için root yöneticinizi açın.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root yöneticisi bulunamadı. KernelSU, APatch veya Magisk kurun, sonra geri dönün.",
+  "Open root manager": "Root yöneticisini aç",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Geçici root, root yöneticinizin (KernelSU, APatch veya Magisk) içinde verilir. Açın, orada bu uygulamaya Super User izni verin, sonra geri dönün. su verildiğinde Root özellikleri açılır.",
+  "your root manager": "root yöneticiniz",
   "Create new list": "Yeni liste oluştur",
   "List name in use": "Liste adı kullanımda",
   "Overwrite": "Üzerine yaz",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Uygulamaları durdur bildiriminin ilerleyişini durum çubuğunda Canlı Güncelleme olarak gösterir (Android 16 ve sonrası). Bildirimler ile telefonun bildirim ayarlarındaki bu uygulamaya ait anahtar da gerekir.",
 "Saved Applications was turned off. It is on again to show this list.": "Kayıtlı Uygulamalar kapalıydı. Bu listeyi göstermek için yeniden açıldı.",
 "That saved list is not there any more.": "Bu kayıtlı liste artık yok.",
-"Check whether your device can get Super User access.": "Cihazınızın Superuser erişimi alıp alamayacağını kontrol edin.",
 "Needs Super User": "Superuser gerekir",
 "No su was found on this device. Root Features need Super User.": "Bu cihazda su bulunamadı. Root Özellikleri için Superuser gerekir.",
 "Open Root Features to check if your device supports Super User?": "Cihazınızın Superuser’ı destekleyip desteklemediğini kontrol etmek için Root Özellikleri açılsın mı?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Superuser (root) özellikleri. Çalışma modu Root olduğunda ve su bu uygulamaya erişim verdiğinde açılır.",
 "Super User access": "Superuser erişimi",
 "Super User is active — root features will appear here.": "Superuser etkin — root özellikleri burada görünecek.",
-"Temporary root setup is coming in a later step.": "Geçici root kurulumu sonraki bir adımda gelecek.",
 "They unlock once Super User is active.": "Superuser etkin olduğunda açılır.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Cihazınızda su var. Çalışma Modları’ndan Root’u seçin ve su sorduğunda bu uygulamaya izin verin.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root yöneticiniz (Magisk, KernelSU, APatch) bu uygulamaya su vermedi. Orada izin verin, sonra Root’u yeniden seçin."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Bu uygulamaya {0} içinde izin verin, sonra geri dönün."],
   ["A list named \"{0}\" already exists.", "“{0}” adında bir liste zaten var."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} henüz bağlı değil. Önce Konsol → Terminal bölümünde anahtarını veya girişini ekleyin."],

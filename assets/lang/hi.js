@@ -1,6 +1,11 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "जांचें कि आपका डिवाइस Super User एक्सेस पा सकता है या नहीं, या इसे देने के लिए अपना रूट मैनेजर खोलें।",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "कोई रूट मैनेजर नहीं मिला। KernelSU, APatch या Magisk इंस्टॉल करें, फिर वापस आएं।",
+  "Open root manager": "रूट मैनेजर खोलें",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "अस्थायी रूट आपके रूट मैनेजर (KernelSU, APatch या Magisk) के भीतर दिया जाता है। उसे खोलें, वहाँ इस ऐप को Super User की अनुमति दें, फिर वापस आएं। su मिलते ही रूट फ़ीचर अनलॉक हो जाते हैं।",
+  "your root manager": "अपना रूट मैनेजर",
   "Create new list": "नई सूची बनाएँ",
   "List name in use": "सूची नाम पहले से उपयोग में है",
   "Overwrite": "ओवरराइट करें",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "“ऐप्स रोकें” सूचना की प्रगति को स्टेटस बार में लाइव अपडेट के रूप में दिखाता है (Android 16 और उसके बाद)। इसके लिए सूचनाएं और फ़ोन की सूचना सेटिंग में इस ऐप का स्विच भी चाहिए।",
 "Saved Applications was turned off. It is on again to show this list.": "सहेजे गए ऐप्स बंद था। इस सूची को दिखाने के लिए इसे फिर से चालू कर दिया गया है।",
 "That saved list is not there any more.": "वह सहेजी गई सूची अब मौजूद नहीं है।",
-"Check whether your device can get Super User access.": "जाँचें कि आपका डिवाइस सुपरयूज़र एक्सेस पा सकता है या नहीं।",
 "Needs Super User": "सुपरयूज़र चाहिए",
 "No su was found on this device. Root Features need Super User.": "इस डिवाइस पर su नहीं मिला। Root सुविधाओं के लिए सुपरयूज़र चाहिए।",
 "Open Root Features to check if your device supports Super User?": "यह जाँचने के लिए Root सुविधाएँ खोलें कि आपका डिवाइस सुपरयूज़र को सपोर्ट करता है या नहीं?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "सुपरयूज़र (root) सुविधाएँ। ये तब अनलॉक होती हैं जब वर्किंग मोड Root हो और su ने इस ऐप को एक्सेस दिया हो।",
 "Super User access": "सुपरयूज़र एक्सेस",
 "Super User is active — root features will appear here.": "सुपरयूज़र सक्रिय है — root सुविधाएँ यहाँ दिखेंगी।",
-"Temporary root setup is coming in a later step.": "अस्थायी root सेटअप बाद के चरण में आएगा।",
 "They unlock once Super User is active.": "सुपरयूज़र सक्रिय होते ही ये अनलॉक हो जाती हैं।",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "आपके डिवाइस में su है। वर्किंग मोड में Root चुनें और su पूछे तो इस ऐप को अनुमति दें।",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "आपके root मैनेजर (Magisk, KernelSU, APatch) ने इस ऐप को su नहीं दिया। वहाँ अनुमति दें, फिर Root दोबारा चुनें।"
 },
 p: [
+  ["Allow this app in {0}, then come back.", "{0} में इस ऐप को अनुमति दें, फिर वापस आएं।"],
   ["A list named \"{0}\" already exists.", "\"{0}\" नाम की एक सूची पहले से मौजूद है।"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} अभी जुड़ा नहीं है। पहले कंसोल → टर्मिनल में उसकी कुंजी या साइन-इन जोड़ें।"],

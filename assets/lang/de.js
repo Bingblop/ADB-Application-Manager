@@ -1,6 +1,11 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Prüfe, ob dein Gerät Super-User-Zugriff erhalten kann, oder öffne deinen Root-Manager, um ihn zu gewähren.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Kein Root-Manager gefunden. Installiere KernelSU, APatch oder Magisk und komm dann zurück.",
+  "Open root manager": "Root-Manager öffnen",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Temporärer Root wird in deinem Root-Manager (KernelSU, APatch oder Magisk) gewährt. Öffne ihn, erlaube dieser App dort Super User und komm dann zurück. Die Root-Funktionen werden freigeschaltet, sobald su gewährt ist.",
+  "your root manager": "deinen Root-Manager",
   "Create new list": "Neue Liste erstellen",
   "List name in use": "Listenname bereits vergeben",
   "Overwrite": "Überschreiben",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Zeigt den Fortschritt der Benachrichtigung „Apps beenden“ in der Statusleiste als Live-Update an (Android 16 und neuer). Dazu braucht es auch Benachrichtigungen und den Schalter für diese App in den Benachrichtigungseinstellungen des Telefons.",
 "Saved Applications was turned off. It is on again to show this list.": "„Gespeicherte Apps“ war ausgeschaltet. Es wurde wieder eingeschaltet, um diese Liste zu zeigen.",
 "That saved list is not there any more.": "Diese gespeicherte Liste gibt es nicht mehr.",
-"Check whether your device can get Super User access.": "Prüfen, ob dieses Gerät Superuser-Zugriff bekommen kann.",
 "Needs Super User": "Erfordert Superuser",
 "No su was found on this device. Root Features need Super User.": "Auf diesem Gerät wurde kein su gefunden. Root-Funktionen brauchen Superuser.",
 "Open Root Features to check if your device supports Super User?": "Root-Funktionen öffnen, um zu prüfen, ob dieses Gerät Superuser unterstützt?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Superuser-Funktionen (Root). Sie werden freigeschaltet, wenn der Betriebsmodus Root ist und su dieser App den Zugriff gewährt hat.",
 "Super User access": "Superuser-Zugriff",
 "Super User is active — root features will appear here.": "Superuser ist aktiv — die Root-Funktionen erscheinen hier.",
-"Temporary root setup is coming in a later step.": "Die Einrichtung eines temporären Root kommt in einem späteren Schritt.",
 "They unlock once Super User is active.": "Sie werden freigeschaltet, sobald Superuser aktiv ist.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Dieses Gerät hat su. Wählen Sie unter „Betriebsmodi“ Root und erlauben Sie diese App, wenn su fragt.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Ihr Root-Manager (Magisk, KernelSU, APatch) hat dieser App kein su gewährt. Erlauben Sie es dort und wählen Sie dann erneut Root."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Erlaube dieser App in {0} den Zugriff und komm dann zurück."],
   ["A list named \"{0}\" already exists.", "Eine Liste namens „{0}“ ist bereits vorhanden."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ist noch nicht verbunden, daher liest eine Ask-Agent-Schaltfläche für dich das Web (kostenlos, ohne Schlüssel), bis es so weit ist. Füge den Schlüssel unter Konsole → Terminal hinzu."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ist noch nicht verbunden. Fügen Sie zuerst unter Konsole → Terminal seinen Schlüssel oder seine Anmeldung hinzu."],

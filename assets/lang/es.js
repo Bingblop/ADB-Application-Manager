@@ -1,6 +1,11 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Comprueba si tu dispositivo puede obtener acceso de Super User, o abre tu gestor de root para concederlo.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "No se encontró ningún gestor de root. Instala KernelSU, APatch o Magisk y luego vuelve.",
+  "Open root manager": "Abrir gestor de root",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "El root temporal se concede dentro de tu gestor de root (KernelSU, APatch o Magisk). Ábrelo, permite el Super User a esta app allí y luego vuelve. Las funciones de root se desbloquean cuando se concede su.",
+  "your root manager": "tu gestor de root",
   "Create new list": "Crear una lista nueva",
   "List name in use": "Nombre de lista en uso",
   "Overwrite": "Sobrescribir",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Muestra el progreso de la notificación de Detener apps en la barra de estado como una actualización en vivo (Android 16 y posterior). También necesita Notificaciones y el interruptor de esta app en los ajustes de notificaciones del teléfono.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplicaciones guardadas estaba desactivado. Se activó de nuevo para mostrar esta lista.",
 "That saved list is not there any more.": "Esa lista guardada ya no existe.",
-"Check whether your device can get Super User access.": "Comprueba si tu dispositivo puede obtener acceso de Superusuario.",
 "Needs Super User": "Requiere Superusuario",
 "No su was found on this device. Root Features need Super User.": "No se encontró su en este dispositivo. Las Funciones Root necesitan Superusuario.",
 "Open Root Features to check if your device supports Super User?": "¿Abrir Funciones Root para comprobar si tu dispositivo admite Superusuario?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Funciones de Superusuario (root). Se desbloquean cuando el modo de operación es Root y su ha concedido acceso a esta app.",
 "Super User access": "Acceso de Superusuario",
 "Super User is active — root features will appear here.": "Superusuario está activo — las funciones root aparecerán aquí.",
-"Temporary root setup is coming in a later step.": "La configuración de root temporal llegará en un paso posterior.",
 "They unlock once Super User is active.": "Se desbloquean cuando Superusuario está activo.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Tu dispositivo tiene su. Elige Root en Modos de operación y permite esta app cuando su lo pida.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Tu gestor de root (Magisk, KernelSU, APatch) no concedió su a esta app. Permítelo allí y luego elige Root de nuevo."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Permite esta app en {0} y luego vuelve."],
   ["A list named \"{0}\" already exists.", "Ya existe una lista llamada «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} aún no está conectado, así que un botón Preguntar al agente lee la web por ti (gratis, sin clave) hasta que lo esté. Añade su clave en Consola → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} aún no está conectado. Añade primero su clave o inicio de sesión en Consola → Terminal."],

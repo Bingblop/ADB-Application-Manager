@@ -1,6 +1,11 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Проверьте, может ли устройство получить доступ Super User, или откройте root-менеджер, чтобы его предоставить.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root-менеджер не найден. Установите KernelSU, APatch или Magisk, затем вернитесь.",
+  "Open root manager": "Открыть root-менеджер",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Временный root предоставляется в вашем root-менеджере (KernelSU, APatch или Magisk). Откройте его, разрешите этому приложению Super User там, затем вернитесь. Функции Root разблокируются, как только предоставлен su.",
+  "your root manager": "ваш root-менеджер",
   "Create new list": "Создать новый список",
   "List name in use": "Имя списка уже занято",
   "Overwrite": "Перезаписать",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Показывает ход уведомления «Остановить приложения» в строке состояния как живое обновление (Android 16 и новее). Также нужны Уведомления и переключатель для этого приложения в настройках уведомлений телефона.",
 "Saved Applications was turned off. It is on again to show this list.": "«Сохранённые приложения» были отключены. Они снова включены, чтобы показать этот список.",
 "That saved list is not there any more.": "Этого сохранённого списка больше нет.",
-"Check whether your device can get Super User access.": "Проверить, может ли это устройство получить доступ Superuser.",
 "Needs Super User": "Нужен Superuser",
 "No su was found on this device. Root Features need Super User.": "На этом устройстве su не найден. Функциям Root нужен Superuser.",
 "Open Root Features to check if your device supports Super User?": "Открыть «Функции Root», чтобы проверить, поддерживает ли устройство Superuser?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Функции Superuser (root). Они открываются, когда режим работы — Root и su предоставил доступ этому приложению.",
 "Super User access": "Доступ Superuser",
 "Super User is active — root features will appear here.": "Superuser активен — функции root появятся здесь.",
-"Temporary root setup is coming in a later step.": "Настройка временного root появится на одном из следующих шагов.",
 "They unlock once Super User is active.": "Они откроются, как только Superuser станет активен.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "На устройстве есть su. Выберите Root в «Режимах работы» и разрешите это приложение, когда su спросит.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Ваш менеджер root (Magisk, KernelSU, APatch) не предоставил su этому приложению. Разрешите его там, затем снова выберите Root."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Разрешите этому приложению в {0}, затем вернитесь."],
   ["A list named \"{0}\" already exists.", "Список с именем «{0}» уже существует."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ещё не подключён. Сначала добавьте его ключ или вход в разделе «Консоль → Терминал»."],

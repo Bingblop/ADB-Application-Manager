@@ -13551,6 +13551,48 @@ public class MainActivity extends Activity {
             return "settings";
         }
 
+        /**
+         * The installed root manager this app would hand off to for su (KernelSU, APatch or Magisk), by the name people know it by, or "" when none
+         * is installed. The Root Features tab labels its "open manager" button with it. No root is used here: it only reads which manager app is present.
+         */
+        @JavascriptInterface
+        public String rootManagerName() {
+            RootManagers.Manager m = RootManagers.pick(installedRootManagers());
+            return m == null ? "" : m.label;
+        }
+
+        /**
+         * Opens the installed root manager (KernelSU, APatch or Magisk) with a normal launch intent so the user can grant this app Super User there.
+         * This holds no root or grant mechanics: the grant is approved inside the manager, and the app reads the result back afterwards through the
+         * usual working-mode check (the Root Features tab re-checks on resume and unlocks when su was granted). Answer: {"ok":true,"name":"KernelSU"}
+         * when a manager was opened, {"ok":false} when none of the known managers is installed.
+         */
+        @JavascriptInterface
+        public String openRootManager() {
+            final RootManagers.Manager m = RootManagers.pick(installedRootManagers());
+            if (m == null) return "{\"ok\":false}";
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent in = getPackageManager().getLaunchIntentForPackage(m.pkg);
+                        if (in != null) { in.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(in); }
+                    } catch (Exception ignored) {}
+                }
+            });
+            return "{\"ok\":true,\"name\":" + org.json.JSONObject.quote(m.label) + "}";
+        }
+
+        /** The known root managers that are installed on this phone (a launch intent exists for them). */
+        private java.util.Set<String> installedRootManagers() {
+            java.util.Set<String> s = new java.util.HashSet<String>();
+            PackageManager pm = getPackageManager();
+            for (RootManagers.Manager m : RootManagers.known()) {
+                try { if (pm.getLaunchIntentForPackage(m.pkg) != null) s.add(m.pkg); } catch (Throwable ignored) {}
+            }
+            return s;
+        }
+
         private String requestRuntimeForSheet(final String perm, int fromSdk) {
             if (Build.VERSION.SDK_INT < fromSdk) return "granted";
             if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";

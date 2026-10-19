@@ -1,6 +1,11 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Vérifiez si votre appareil peut obtenir l'accès Super User, ou ouvrez votre gestionnaire root pour l'accorder.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Aucun gestionnaire root trouvé. Installez KernelSU, APatch ou Magisk, puis revenez.",
+  "Open root manager": "Ouvrir le gestionnaire root",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "Le root temporaire s'accorde dans votre gestionnaire root (KernelSU, APatch ou Magisk). Ouvrez-le, autorisez-y le Super User pour cette appli, puis revenez. Les fonctions root se déverrouillent une fois su accordé.",
+  "your root manager": "votre gestionnaire root",
   "Create new list": "Créer une nouvelle liste",
   "List name in use": "Nom de liste déjà utilisé",
   "Overwrite": "Remplacer",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Affiche la progression de la notification Arrêter les applications dans la barre d’état sous forme de mise à jour en direct (Android 16 et versions ultérieures). Elle demande aussi les Notifications et l’interrupteur de cette application dans les réglages de notification du téléphone.",
 "Saved Applications was turned off. It is on again to show this list.": "Applications enregistrées était désactivé. Il est de nouveau activé pour afficher cette liste.",
 "That saved list is not there any more.": "Cette liste enregistrée n’existe plus.",
-"Check whether your device can get Super User access.": "Vérifiez si votre appareil peut obtenir l’accès Superutilisateur.",
 "Needs Super User": "Nécessite Superutilisateur",
 "No su was found on this device. Root Features need Super User.": "Aucun su n’a été trouvé sur cet appareil. Les Fonctions Root nécessitent Superutilisateur.",
 "Open Root Features to check if your device supports Super User?": "Ouvrir Fonctions Root pour vérifier si votre appareil prend en charge Superutilisateur ?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fonctions Superutilisateur (root). Elles se débloquent lorsque le mode de fonctionnement est Root et que su a accordé l’accès à cette application.",
 "Super User access": "Accès Superutilisateur",
 "Super User is active — root features will appear here.": "Superutilisateur est actif — les fonctions root apparaîtront ici.",
-"Temporary root setup is coming in a later step.": "La configuration d’un root temporaire arrivera dans une étape ultérieure.",
 "They unlock once Super User is active.": "Elles se débloquent une fois Superutilisateur actif.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Votre appareil a su. Choisissez Root dans Modes de fonctionnement et autorisez cette application quand su le demande.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Votre gestionnaire de root (Magisk, KernelSU, APatch) n’a pas accordé su à cette application. Autorisez-la là-bas, puis choisissez Root à nouveau."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Autorisez cette appli dans {0}, puis revenez."],
   ["A list named \"{0}\" already exists.", "Une liste nommée « {0} » existe déjà."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} n'est pas encore connecté. Ajoutez d'abord sa clé ou sa connexion dans Console → Terminal."],

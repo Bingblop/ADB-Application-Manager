@@ -1,6 +1,11 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "기기가 Super User 액세스를 받을 수 있는지 확인하거나, 루트 관리자를 열어 권한을 부여하세요.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "루트 관리자를 찾을 수 없습니다. KernelSU, APatch 또는 Magisk를 설치한 다음 돌아오세요.",
+  "Open root manager": "루트 관리자 열기",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "임시 루트는 루트 관리자(KernelSU, APatch 또는 Magisk) 안에서 부여됩니다. 열어서 거기서 이 앱에 Super User를 허용한 다음 돌아오세요. su가 부여되면 Root 기능이 잠금 해제됩니다.",
+  "your root manager": "루트 관리자",
   "Create new list": "새 목록 만들기",
   "List name in use": "이미 사용 중인 목록 이름",
   "Overwrite": "덮어쓰기",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "‘앱 중지’ 알림의 진행 상황을 상태 표시줄에 실시간 업데이트로 표시합니다(Android 16 이상). 알림 권한과 휴대전화 알림 설정의 이 앱 스위치도 필요합니다.",
 "Saved Applications was turned off. It is on again to show this list.": "저장된 앱이 꺼져 있었습니다. 이 목록을 표시할 수 있도록 다시 켰습니다.",
 "That saved list is not there any more.": "해당 저장 목록이 더 이상 없습니다.",
-"Check whether your device can get Super User access.": "이 기기가 슈퍼유저 권한을 얻을 수 있는지 확인합니다.",
 "Needs Super User": "슈퍼유저 필요",
 "No su was found on this device. Root Features need Super User.": "이 기기에서 su를 찾을 수 없습니다. Root 기능에는 슈퍼유저가 필요합니다.",
 "Open Root Features to check if your device supports Super User?": "Root 기능을 열어 이 기기가 슈퍼유저를 지원하는지 확인할까요?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "슈퍼유저(root) 기능입니다. 작동 모드가 Root이고 su가 이 앱에 접근을 허용하면 잠금이 해제됩니다.",
 "Super User access": "슈퍼유저 권한",
 "Super User is active — root features will appear here.": "슈퍼유저가 활성화되었습니다 — Root 기능이 여기에 표시됩니다.",
-"Temporary root setup is coming in a later step.": "임시 Root 설정은 이후 단계에서 제공됩니다.",
 "They unlock once Super User is active.": "슈퍼유저가 활성화되면 잠금이 해제됩니다.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "이 기기에는 su가 있습니다. 작동 모드에서 Root를 선택하고 su가 물으면 이 앱을 허용하세요.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root 관리자(Magisk, KernelSU, APatch)가 이 앱에 su를 허용하지 않았습니다. 거기서 허용한 뒤 Root를 다시 선택하세요."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "{0}에서 이 앱을 허용한 다음 돌아오세요."],
   ["A list named \"{0}\" already exists.", "\"{0}\"(이)라는 이름의 목록이 이미 있습니다."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0}은(는) 아직 연결되지 않았습니다. 먼저 콘솔 → 터미널에서 키 또는 로그인을 추가하세요."],

@@ -7825,11 +7825,12 @@
 
             <div class="color-card" id="rfSuCard">
                 <div class="color-card-title">Super User access</div>
-                <div class="rf-note">Check whether your device can get Super User access.</div>
+                <div class="rf-note">Check whether your device can get Super User access, or open your root manager to grant it.</div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="rfRequestBtn" onclick="rootRequestSuperUser()">Request Super User</button>
+                    <button class="mode-action-btn" id="rfOpenManagerBtn" onclick="rootOpenManager()">Open root manager</button>
                 </div>
-                <div class="rf-soon">Temporary root setup is coming in a later step.</div>
+                <div class="rf-soon" id="rfManagerNote">Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.</div>
             </div>
 
             <div class="color-card" id="rfFeaturesCard">
@@ -28554,6 +28555,28 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!window.AndroidBridge) { showToast('This works in the app on a phone, not in a browser.'); return; }
             selectModeUI('root');
         }
+        // Temporary root by hand-off: open the installed root manager (KernelSU, APatch or Magisk) so the grant is approved there, then read the
+        // status back when the app returns (rootGrantPending -> a fresh working-mode check that updates the gate). No grant mechanics live here: the
+        // app only launches the manager and reads su status afterwards.
+        let rootGrantPending = false;
+        function rootOpenManager() {
+            if (!window.AndroidBridge || !window.AndroidBridge.openRootManager) { showToast(txT('This works in the app on a phone, not in a browser.')); return; }
+            let res = {};
+            try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
+            if (res && res.ok) {
+                rootGrantPending = true;
+                showToast(txF('Allow this app in {0}, then come back.', res.name || txT('your root manager')));
+            } else {
+                showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
+            }
+        }
+        // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features.
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState !== 'visible' || !rootGrantPending) return;
+            rootGrantPending = false;
+            try { if (typeof checkAllWorkingModes === 'function') checkAllWorkingModes(true); } catch (e) {}
+            try { if (typeof renderRootFeatures === 'function') renderRootFeatures(); } catch (e) {}
+        });
         // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
         // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
         // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.

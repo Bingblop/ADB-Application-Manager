@@ -1,6 +1,11 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "Verifique se o seu dispositivo pode obter acesso Super User, ou abra o gerenciador de root para concedê-lo.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Nenhum gerenciador de root encontrado. Instale KernelSU, APatch ou Magisk e depois volte.",
+  "Open root manager": "Abrir gerenciador de root",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "O root temporário é concedido dentro do seu gerenciador de root (KernelSU, APatch ou Magisk). Abra-o, permita o Super User para este app ali e depois volte. Os recursos de Root são desbloqueados quando o su é concedido.",
+  "your root manager": "seu gerenciador de root",
   "Create new list": "Criar nova lista",
   "List name in use": "Nome de lista em uso",
   "Overwrite": "Substituir",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra o andamento da notificação de Parar apps na barra de status como uma atualização ao vivo (Android 16 e posterior). Também precisa de Notificações e da chave deste app nas configurações de notificação do telefone.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplicativos salvos estava desativado. Foi reativado para mostrar esta lista.",
 "That saved list is not there any more.": "Essa lista salva não existe mais.",
-"Check whether your device can get Super User access.": "Verifique se o seu dispositivo pode obter acesso de Superusuário.",
 "Needs Super User": "Requer Superusuário",
 "No su was found on this device. Root Features need Super User.": "Nenhum su foi encontrado neste dispositivo. Os Recursos Root precisam de Superusuário.",
 "Open Root Features to check if your device supports Super User?": "Abrir Recursos Root para verificar se o seu dispositivo suporta Superusuário?",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Recursos de Superusuário (root). Eles são desbloqueados quando o modo de operação é Root e o su concedeu acesso a este app.",
 "Super User access": "Acesso de Superusuário",
 "Super User is active — root features will appear here.": "Superusuário está ativo — os recursos root aparecerão aqui.",
-"Temporary root setup is coming in a later step.": "A configuração de root temporário virá em uma etapa posterior.",
 "They unlock once Super User is active.": "Eles são desbloqueados quando Superusuário está ativo.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Seu dispositivo tem su. Escolha Root em Modos de operação e permita este app quando o su pedir.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Seu gerenciador de root (Magisk, KernelSU, APatch) não concedeu su a este app. Permita lá e depois escolha Root novamente."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "Permita este app em {0} e depois volte."],
   ["A list named \"{0}\" already exists.", "Já existe uma lista chamada “{0}”."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ainda não está conectado, então um botão de consulta ao agente lê a web para você (grátis, sem chave) até que esteja. Adicione a chave dele em Console → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ainda não está conectado. Adicione primeiro a chave ou o login dele em Console → Terminal."],
