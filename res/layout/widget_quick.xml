@@ -63,7 +63,7 @@
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:background="@drawable/widget_btn"
-            android:text="Stop apps"
+            android:text="Kill Apps"
             android:textColor="#FF381E72"
             android:textSize="12sp"
             android:textStyle="bold" />

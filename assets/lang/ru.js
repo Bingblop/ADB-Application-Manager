@@ -1,6 +1,10 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+  "Create new list": "Создать новый список",
+  "List name in use": "Имя списка уже занято",
+  "Overwrite": "Перезаписать",
+  "Overwrite the existing list, or save this as a new separate list?": "Перезаписать существующий список или сохранить как новый отдельный список?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Тест может израсходовать до <1/> трафика: дойдя до этого объёма, он останавливается раньше.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Исследовательский агент за каждой кнопкой «Спросить агента», он же ищет приложение для обновления приложений. Он читает интернет и сопоставляет найденное, чтобы ответить, что такое скрытая настройка, разрешение, процесс, строка журнала или приложение. Это не агент для кода, и он ничего не меняет на телефоне. По умолчанию используется Perplexity: он сам ищет в интернете и называет источники. Его ключ задаётся в разделе «Консоль → Терминал».",
 "✓ Granted": "✓ Выдано",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "Стоп",
 "Stop Service": "Остановить службу",
 "Stop a process": "Остановить процесс",
-"Stop apps": "Остановить приложения",
+"Kill Apps": "Остановить приложения",
 "Stop background activity": "Остановить фоновую активность",
 "Stop what is running": "Прервать выполнение",
 "Stop when a patch fails": "Остановиться, если патч не сработал",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "Вкладка SD Maid: порт четырёх инструментов <1>SD Maid SE</1> от darken (d4rken-org, GPL-3.0), также в <2>Google Play</2>. Его значки, логотип и переводы не используются.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Пропускать альфа- и бета-сборки<1>Только если версия не введена</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "Мягкая перезагрузка перезапускает среду выполнения приложений Android (<1/>): экран на несколько секунд гаснет и все приложения закрываются, но телефон не проходит через экран загрузки. Задать это свойство может только Root, поэтому в других режимах плитка заблокирована.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Нажмите <1>Быстрый список</1> в списке, затем добавьте плитки или виджет: дважды потяните шторку вниз, нажмите значок карандаша и перетащите <2>Режим работы</2> и <3>Остановить приложения</3> на панель; либо долго нажмите на главном экране → Виджеты → ADB/Root Full System Toolbox. Они работают без открытия приложения.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Нажмите <1>Быстрый список</1> в списке, затем добавьте плитки или виджет: дважды потяните шторку вниз, нажмите значок карандаша и перетащите <2>Режим работы</2> и <3>Остановить приложения</3> на панель; либо долго нажмите на главном экране → Виджеты → ADB/Root Full System Toolbox. Они работают без открытия приложения.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Нажмите <1>Убрать</1>, чтобы исключить приложение из выбора. Групповые действия выполняются только для приложений из этого списка.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Нажмите команду, чтобы поместить её в поле ввода. Они выполняются в оболочке устройства, префикс <1>adb shell</1> не нужен.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Вкладка «Диспетчер задач» создана по образцу <1>RohitKushvaha01/TaskManager</1>.",
@@ -5079,10 +5083,11 @@ x: {
 "That saved list is not there any more.": "Этого сохранённого списка больше нет."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Список с именем «{0}» уже существует."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ещё не подключён, поэтому кнопка «Спросить агента» ищет ответ в интернете (бесплатно, без ключа). Добавьте его ключ в разделе «Консоль → Терминал»."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ещё не подключён. Сначала добавьте его ключ или вход в разделе «Консоль → Терминал»."],
 ["\"{0}\" is not a number of seconds.", "«{0}» — не число секунд."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "«{0}» теперь быстрый список. Добавьте плитку «Остановить приложения» или виджет, чтобы использовать его."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "«{0}» теперь быстрый список. Добавьте плитку «Остановить приложения» или виджет, чтобы использовать его."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} строк • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} строк • {2} • сравнивается только начало большого файла"],
 ["+{0} more", "+{0} ещё"],

@@ -1,6 +1,10 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+  "Create new list": "Neue Liste erstellen",
+  "List name in use": "Listenname bereits vergeben",
+  "Overwrite": "Überschreiben",
+  "Overwrite the existing list, or save this as a new separate list?": "Die vorhandene Liste überschreiben oder als neue, separate Liste speichern?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Ein Test kann bis zu <1/> Daten verbrauchen: Bei dieser Menge hört er vorzeitig auf.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Der Recherche-Agent hinter jeder Ask-Agent-Schaltfläche, den auch der App-Updater fragt, um eine App zu finden. Er liest das Web und wägt seine Funde ab, um zu beantworten, was eine versteckte Einstellung, eine Berechtigung, ein Prozess, eine Logzeile oder eine App ist. Er ist kein Coding-Agent und ändert nie etwas auf dem Telefon. Perplexity ist der Standard: Es durchsucht das Web selbstständig und nennt seine Quellen. Der Schlüssel dafür wird unter Konsole → Terminal eingerichtet.",
 "✓ Granted": "✓ Gewährt",
@@ -3614,7 +3618,7 @@ x: {
 "Stop": "Stopp",
 "Stop Service": "Service stoppen",
 "Stop a process": "Prozess beenden",
-"Stop apps": "Apps beenden",
+"Kill Apps": "Apps beenden",
 "Stop background activity": "Hintergrundaktivität stoppen",
 "Stop what is running": "Laufenden Vorgang stoppen",
 "Stop when a patch fails": "Stoppen, wenn ein Patch fehlschlägt",
@@ -5042,7 +5046,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "Tab „SD Maid“: eine Portierung der vier Werkzeuge von <1>SD Maid SE</1> von darken (d4rken-org, GPL-3.0), auch bei <2>Google Play</2>. Seine Symbole, sein Logo und seine Übersetzungen werden nicht verwendet.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Alpha- und Beta-Builds überspringen<1>Nur wenn keine Version eingegeben ist</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "Der sanfte Neustart startet Androids App-Laufzeit neu (<1/>): Der Bildschirm wird für ein paar Sekunden schwarz und jede App schließt, aber das Telefon geht nicht durch seinen Startbildschirm. Nur Root darf diese Eigenschaft setzen, deshalb ist die Kachel in den anderen Modi gesperrt.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Tippen Sie bei einer Liste auf <1>Schnellliste</1> und fügen Sie dann die Kacheln oder das Widget hinzu: Zweimal nach unten wischen, auf das Stiftsymbol tippen und <2>Betriebsmodus</2> und <3>Apps beenden</3> in Ihr Panel ziehen; oder den Startbildschirm lange drücken → Widgets → ADB/Root Full System Toolbox. Sie laufen, ohne die App zu öffnen.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Tippen Sie bei einer Liste auf <1>Schnellliste</1> und fügen Sie dann die Kacheln oder das Widget hinzu: Zweimal nach unten wischen, auf das Stiftsymbol tippen und <2>Betriebsmodus</2> und <3>Apps beenden</3> in Ihr Panel ziehen; oder den Startbildschirm lange drücken → Widgets → ADB/Root Full System Toolbox. Sie laufen, ohne die App zu öffnen.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Tippen Sie auf <1>Entfernen</1>, um eine App aus der Auswahl zu nehmen. Die Stapelaktionen werden nur auf die hier aufgeführten Apps angewendet.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Tippen Sie auf einen Befehl, um ihn ins Eingabefeld zu übernehmen. Diese laufen in der Shell auf dem Gerät – <1>adb shell</1> als Präfix nicht nötig.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Task-Manager-Tab nach dem Vorbild von <1>RohitKushvaha01/TaskManager</1>.",
@@ -5079,10 +5083,11 @@ x: {
 "That saved list is not there any more.": "Diese gespeicherte Liste gibt es nicht mehr."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Eine Liste namens „{0}“ ist bereits vorhanden."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} ist noch nicht verbunden, daher liest eine Ask-Agent-Schaltfläche für dich das Web (kostenlos, ohne Schlüssel), bis es so weit ist. Füge den Schlüssel unter Konsole → Terminal hinzu."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} ist noch nicht verbunden. Fügen Sie zuerst unter Konsole → Terminal seinen Schlüssel oder seine Anmeldung hinzu."],
 ["\"{0}\" is not a number of seconds.", "„{0}“ ist keine Sekundenzahl."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "„{0}“ ist jetzt die Schnellliste. Fügen Sie die Kachel „Apps beenden“ oder das Widget hinzu, um sie zu verwenden."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "„{0}“ ist jetzt die Schnellliste. Fügen Sie die Kachel „Apps beenden“ oder das Widget hinzu, um sie zu verwenden."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} Zeilen • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} Zeilen • {2} • bei großen Dateien wird nur der erste Teil verglichen"],
 ["+{0} more", "+{0} weitere"],

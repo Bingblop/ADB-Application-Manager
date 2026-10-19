@@ -4351,6 +4351,8 @@
         .rt-term { flex: 1 1 auto; min-height: 0; padding: var(--space-1) var(--space-1) 0 var(--space-2); overflow: hidden; }
         .rt-term .xterm { height: 100%; }
         .rt-term .xterm-viewport { background-color: var(--bg-card) !important; }
+        /* xterm.js lays out a fixed-width character grid and expects its cell spans to inherit the monospace font from .xterm. The global `* { font-family: var(--ui-font) }` reset (kept so form controls pick up the UI font) lands on those spans directly, which beats inheritance and renders the grid in a proportional font — glyphs then overflow their cells and overlap ("blended" text). Restore xterm's own monospace stack across its whole subtree so render matches the measured grid. */
+        .rt-term .xterm, .rt-term .xterm * { font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace !important; }
         .rt-note { position: absolute; left: 10px; right: 10px; top: 56px; padding: var(--space-3) var(--space-3h); border-radius: var(--radius-sm); background: var(--tint-bloat); border: 1px solid var(--line-bloat); color: color-mix(in srgb, var(--status-bloat) 82%, var(--text-main)); font-size: var(--fs-body); display: none; }
         .rt-keys { flex: 0 0 auto; background: var(--bg-sheet); border-top: 1px solid var(--border-glass); padding: var(--space-1) var(--space-1) var(--space-1); }
         .rt-keys .rt-row { display: flex; gap: var(--space-1); margin-top: var(--space-1); }
@@ -6179,7 +6181,7 @@
             </div>
             <div class="color-card cc" id="quickActionsHelp" data-cc="quickactions" data-cc-default="closed">
                 <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
+                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
             </div>
         </section>
 
@@ -10284,6 +10286,26 @@ Type any command above (e.g. pm list packages -d)</div>
         </div>
     </div>
 
+    <div class="modal-overlay" id="listNameCollisionModal" onclick="if(event.target===this) closeListNameCollisionModal()">
+        <div class="modal-sheet" style="max-width:440px;">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>List name in use</h3>
+                        <p id="listNameCollisionSubtitle"></p>
+                    </div>
+                </div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="closeListNameCollisionModal()">✕</button>
+            </div>
+            <div class="modal-helper">Overwrite the existing list, or save this as a new separate list?</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="justify-content:center;" onclick="resolveListNameCollision('overwrite')">Overwrite</button>
+                <button class="mode-action-btn" style="justify-content:center;" onclick="resolveListNameCollision('new')">Create new list</button>
+                <button class="mode-action-btn" style="justify-content:center;" onclick="closeListNameCollisionModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <span id="toastMsg">Ready</span>
@@ -13030,7 +13052,7 @@ Type any command above (e.g. pm list packages -d)</div>
             window.AndroidBridge.setQuickList(quickListId);
             renderSavedLists();
             const l = customLists.find(x => x.id === quickListId);
-            showToast(l ? `"${l.name}" is now the quick list. Add the "Stop apps" tile or the widget to use it.` : 'Quick list cleared');
+            showToast(l ? `"${l.name}" is now the quick list. Add the "Kill Apps" tile or the widget to use it.` : 'Quick list cleared');
         }
 
         function openListEditorModal(listId) {
@@ -13065,6 +13087,54 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onQuickStopOpen = onQuickStopOpen;
 
+        // A list is saved under a name another saved list already uses: ask whether to overwrite that list
+        // (keeping its id, so the quick-list / tile binding via quickListId survives) or save a separate new
+        // one, instead of silently creating a duplicate. Mirrors the deleteListModal sheet conventions.
+        let pendingListCollision = null;   // { onOverwrite, onCreate } for the name-in-use sheet
+
+        // the saved list whose trimmed name clashes with `name`, ignoring `excludeId` (the list being saved), or null
+        function listWithSameName(name, excludeId) {
+            return customLists.find(l => (l.name || '').trim() === name && l.id !== excludeId) || null;
+        }
+
+        function openListNameCollisionModal(name, onOverwrite, onCreate) {
+            haptic();
+            pendingListCollision = { onOverwrite, onCreate };
+            document.getElementById('listNameCollisionSubtitle').innerText = txF('A list named "{0}" already exists.', name);
+            document.getElementById('listNameCollisionModal').classList.add('show');
+        }
+
+        function closeListNameCollisionModal() {
+            haptic();
+            pendingListCollision = null;
+            document.getElementById('listNameCollisionModal').classList.remove('show');
+        }
+
+        function resolveListNameCollision(choice) {
+            const p = pendingListCollision;
+            pendingListCollision = null;
+            document.getElementById('listNameCollisionModal').classList.remove('show');
+            if (!p) return;
+            haptic();
+            if (choice === 'overwrite' && typeof p.onOverwrite === 'function') p.onOverwrite();
+            else if (choice === 'new' && typeof p.onCreate === 'function') p.onCreate();
+        }
+
+        // Replace an existing saved list in place: keep its id (so the quick-list / tile binding via
+        // quickListId survives) and position, update the given fields + updatedAt, persist and re-render, and
+        // nudge the widget if it is the current quick list - the same rule saveListFromEditor follows.
+        function overwriteSavedList(existing, fields) {
+            if (fields.name !== undefined) existing.name = fields.name;
+            if (fields.description !== undefined) existing.description = fields.description;
+            if (fields.packages !== undefined) existing.packages = fields.packages;
+            existing.updatedAt = Date.now();
+            persistSavedLists();
+            if (existing.id === quickListId && window.AndroidBridge && window.AndroidBridge.setQuickList) {
+                window.AndroidBridge.setQuickList(quickListId);
+            }
+            renderSavedLists();
+        }
+
         function saveListFromEditor() {
             const id = document.getElementById('listEditorId').value.trim();
             const name = document.getElementById('listEditorName').value.trim();
@@ -13074,7 +13144,20 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast('Please enter a list name');
                 return;
             }
-            const payload = { id: id || ('list_' + Date.now()), name, description, packages, updatedAt: Date.now() };
+            const selfId = id || ('list_' + Date.now());
+            const clash = listWithSameName(name, selfId);     // another list with the same name but a different id
+            if (clash) {
+                openListNameCollisionModal(name,
+                    () => editorOverwrite(selfId, name, description, packages, clash),
+                    () => editorCommit(selfId, name, description, packages));
+                return;
+            }
+            editorCommit(selfId, name, description, packages);
+        }
+
+        // today's behaviour: create (new id) or replace by id
+        function editorCommit(selfId, name, description, packages) {
+            const payload = { id: selfId, name, description, packages, updatedAt: Date.now() };
             const idx = customLists.findIndex(l => l.id === payload.id);
             if (idx >= 0) customLists[idx] = payload; else customLists.unshift(payload);
             persistSavedLists();
@@ -13086,6 +13169,18 @@ Type any command above (e.g. pm list packages -d)</div>
                 window.AndroidBridge.setQuickList(quickListId);
             }
             renderSavedLists();
+            closeListEditorModal();
+            showToast('Saved list: ' + name);
+        }
+
+        // overwrite the clashing list in place; if the editor was renaming a *different* existing list onto it,
+        // the rename merges the two, so drop the edited original (and repoint the quick list onto the survivor)
+        function editorOverwrite(selfId, name, description, packages, clash) {
+            if (selfId !== clash.id && customLists.some(l => l.id === selfId)) {
+                if (selfId === quickListId) quickListId = clash.id;
+                customLists = customLists.filter(l => l.id !== selfId);
+            }
+            overwriteSavedList(clash, { name, description, packages });
             closeListEditorModal();
             showToast('Saved list: ' + name);
         }
@@ -13113,11 +13208,24 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast('Please enter a list name');
                 return;
             }
-            customLists.unshift({ id: 'list_' + Date.now(), name, description: document.getElementById('saveListDesc').value.trim(), packages: Array.from(selectedPkgs), updatedAt: Date.now() });
-            persistSavedLists();
-            renderSavedLists();
-            closeSaveSelectedModal();
-            showToast('Saved selected apps to ' + name);
+            const description = document.getElementById('saveListDesc').value.trim();
+            const packages = Array.from(selectedPkgs);
+            const create = () => {
+                customLists.unshift({ id: 'list_' + Date.now(), name, description, packages, updatedAt: Date.now() });
+                persistSavedLists();
+                renderSavedLists();
+                closeSaveSelectedModal();
+                showToast('Saved selected apps to ' + name);
+            };
+            const clash = listWithSameName(name, null);
+            if (clash) {
+                // leave the Save sheet open behind the prompt so Cancel returns to it unchanged
+                openListNameCollisionModal(name,
+                    () => { overwriteSavedList(clash, { description, packages }); closeSaveSelectedModal(); showToast('Saved selected apps to ' + name); },
+                    create);
+                return;
+            }
+            create();
         }
 
         function recallSavedList(listId) {
@@ -14397,10 +14505,23 @@ Type any command above (e.g. pm list packages -d)</div>
             nextDialogTitle('Name this list');
             const name = prompt('Name for this list:', 'Debloat ' + new Date().toLocaleDateString(langLocale()));
             if (!name || !name.trim()) return;
-            customLists.unshift({ id: 'list_' + Date.now(), name: name.trim(), description: 'From the UAD-NG debloater', packages: Array.from(uadSelected), updatedAt: Date.now() });
-            persistSavedLists();
-            renderSavedLists();
-            showToast('Saved ' + uadSelected.size + ' packages to ' + name.trim());
+            const nm = name.trim();
+            const packages = Array.from(uadSelected);
+            const description = 'From the UAD-NG debloater';
+            const create = () => {
+                customLists.unshift({ id: 'list_' + Date.now(), name: nm, description, packages, updatedAt: Date.now() });
+                persistSavedLists();
+                renderSavedLists();
+                showToast('Saved ' + packages.length + ' packages to ' + nm);
+            };
+            const clash = listWithSameName(nm, null);
+            if (clash) {
+                openListNameCollisionModal(nm,
+                    () => { overwriteSavedList(clash, { description, packages }); showToast('Saved ' + packages.length + ' packages to ' + nm); },
+                    create);
+                return;
+            }
+            create();
         }
 
         // Uninstall (for user 0), Disable or Restore the selected packages, after a review step

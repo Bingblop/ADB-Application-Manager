@@ -1,6 +1,10 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+  "Create new list": "新建列表",
+  "List name in use": "列表名称已被使用",
+  "Overwrite": "覆盖",
+  "Overwrite the existing list, or save this as a new separate list?": "覆盖现有列表，还是另存为新的单独列表？",
 "A test can use up to <1/> of data: it stops early at that amount.": "一次测试最多可能消耗 <1/> 流量：达到该数量时会提前停止。",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "每个询问代理按钮背后的研究代理，也是应用更新器用来查找应用的代理。它会读取网页并权衡所得信息，来回答：某个隐藏设置、权限、进程、日志行或应用是什么。它不是编程代理，也绝不会更改手机上的任何内容。默认为 Perplexity：它会自行搜索网页并注明来源。其密钥在“控制台 → 终端”中设置。",
 "✓ Granted": "✓ 已授予",
@@ -3614,7 +3618,7 @@ x: {
 "Stop": "停止",
 "Stop Service": "停止服务",
 "Stop a process": "停止进程",
-"Stop apps": "停止应用",
+"Kill Apps": "停止应用",
 "Stop background activity": "停止后台活动",
 "Stop what is running": "停止正在运行的内容",
 "Stop when a patch fails": "补丁失败时停止",
@@ -5042,7 +5046,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "SD Maid 标签页：移植自 darken（d4rken-org，GPL-3.0）的 <1>SD Maid SE</1> 的四个工具，也可在 <2>Google Play</2> 获取。其图标、徽标和翻译未使用。",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "跳过 alpha 和 beta 版本<1>仅在未输入版本时</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "软重启会重启 Android 的应用运行时（<1/>）：屏幕黑几秒钟，所有应用关闭，但手机不会经过开机画面。只有 Root 能设置该属性，因此在其他模式下该图块被锁定。",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "在列表上点按<1>快捷列表</1>，然后添加图块或小部件：下拉两次，点按铅笔图标，把<2>工作模式</2>和<3>停止应用</3>拖入面板；或长按主屏幕 → 小部件 → ADB/Root Full System Toolbox。它们无需打开应用即可运行。",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "在列表上点按<1>快捷列表</1>，然后添加图块或小部件：下拉两次，点按铅笔图标，把<2>工作模式</2>和<3>停止应用</3>拖入面板；或长按主屏幕 → 小部件 → ADB/Root Full System Toolbox。它们无需打开应用即可运行。",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "点按<1>移除</1>可将应用从选择中去除。批量操作只会对此处列出的应用运行。",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "点按命令即可放入输入框。这些命令在设备端 shell 中运行，无需 <1>adb shell</1> 前缀。",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "“任务管理”标签页参照 <1>RohitKushvaha01/TaskManager</1> 设计。",
@@ -5079,10 +5083,11 @@ x: {
 "That saved list is not there any more.": "该已保存列表已不存在。"
 },
 p: [
+  ["A list named \"{0}\" already exists.", "名为“{0}”的列表已存在。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} 尚未连接，因此在连接之前，询问代理按钮会为你读取网页（免费，无需密钥）。请在“控制台 → 终端”中添加其密钥。"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} 尚未连接。请先在“控制台 → 终端”中添加它的密钥或登录。"],
 ["\"{0}\" is not a number of seconds.", "“{0}”不是秒数。"],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}”现在是快捷列表。添加“停止应用”图块或小部件即可使用。"],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "“{0}”现在是快捷列表。添加“停止应用”图块或小部件即可使用。"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} 行 • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} 行 • {2} • 仅比较大文件的前一部分"],
 ["+{0} more", "还有 {0} 项"],
