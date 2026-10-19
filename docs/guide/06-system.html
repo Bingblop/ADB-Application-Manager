@@ -1081,30 +1081,30 @@
   <p><b>Where to find it:</b> the tab named <b>Root Features</b> (two lines on the tab bar, <b>Root</b> on the bottom bar), right before <b>About</b>. It is on out of the box but not pinned to the bottom bar. If it is missing from the tab bar, it was switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
 
   <h4>What "Super User" means here</h4>
-  <p>Super User is this app's name for the <a href="#mode-root">Root</a> working mode once it really works: Root is your chosen mode <i>and</i> your root manager (KernelSU, KernelSU Next, APatch or Magisk) has granted this app <code>su</code>. From then on every command the app sends runs as the root user instead of the shell user that ADB, Wireless Debugging and Shizuku use: freezing, uninstalling, permissions, app ops, hidden settings, overlays, the Debloater, what you type in the Console and the Terminal, all of it. Root is one step above shell, and it is the step that Android's own protections do not cover, so read <a href="#rootfeatures-grant">Getting Super User</a> before you grant it.</p>
+  <p>Super User is this app's name for the <a href="#mode-root">Root</a> working mode once it really works: Root is your chosen mode <i>and</i> your root manager (KernelSU, KernelSU Next, APatch or Magisk) has granted this app <code>su</code>. From then on every command the app sends runs as the root user instead of the shell user that ADB, Wireless Debugging and Shizuku use: freezing, uninstalling, permissions, app ops, hidden settings, overlays, the Debloater, what you type in the Console's ADB Shell and in the Terminal's Working mode shell, all of it (the Terminal's sandbox and Termux shells run as this app and as Termux whatever the working mode). Root is one step above shell, and it is the step that Android's own protections do not cover, so read <a href="#rootfeatures-grant">Getting Super User</a> before you grant it.</p>
 
   <h4>What you see on the tab</h4>
   <p><b>The top card, "Root Features".</b> Its subtitle says it plainly: "Super User (root) features. They unlock when the working mode is Root and su has granted this app access." The chip on its right is the state of root for this app. It reads "Checking..." for a moment, then one of four words:</p>
   <table class="hg-table"><thead><tr><th>Chip</th><th>Meaning</th></tr></thead><tbody>
     <tr><td><b>ACTIVE</b> (green)</td><td>Super User is in use: Root is the working mode and <code>su</code> answered as root. The features are unlocked.</td></tr>
-    <tr><td><b>AVAILABLE</b> (orange)</td><td>The phone has a <code>su</code> program, but Root is not your chosen working mode, so the app has not asked it for anything yet.</td></tr>
+    <tr><td><b>AVAILABLE</b> (orange)</td><td>The phone has a <code>su</code> program, but Root is not your chosen working mode. The chip says nothing about whether this app is allowed: choosing Root is what asks.</td></tr>
     <tr><td><b>DENIED</b> (orange)</td><td>Root is your chosen mode, but your root manager did not grant it to this app, or you did not answer its question in time.</td></tr>
     <tr><td><b>NOT FOUND</b> (grey)</td><td>No <code>su</code> program on this phone. This is what an unrooted phone shows, always.</td></tr>
   </tbody></table>
   <p>These are the same four tags the Root card in <a href="#modes-overview">Working Modes</a> shows, read from the same check.</p>
-  <p><b>The "Needs Super User" box.</b> It sits under the top card whenever Super User is not active, and its one sentence says why: "No su was found on this device. Root Features need Super User." on an unrooted phone; "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again." after a refusal; or "Your device has su. Choose Root in Working Modes and allow this app when su asks." when the phone has root but Root is not your chosen mode. Its <b>Set Up</b> button opens the Working Modes sheet. The box goes away as soon as Super User is active.</p>
+  <p><b>The "Needs Super User" box.</b> It sits inside the top card, under its subtitle, whenever Super User is not active, and its one sentence says why: "No su was found on this device. Root Features need Super User." on an unrooted phone; "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again." after a refusal; or "Your device has su. Choose Root in Working Modes and allow this app when su asks." when the phone has root but Root is not your chosen mode. Its <b>Set Up</b> button opens the Working Modes sheet. The box goes away as soon as Super User is active.</p>
   <p><b>The "Super User access" card.</b> Shown only while Super User is not active, with two buttons, <b>Request Super User</b> and <b>Open root manager</b>, and a note under them that the grant happens inside your root manager, not in this app. What each button does, step by step, is in <a href="#rootfeatures-grant">Getting Super User</a>.</p>
-  <p><b>The "Features" card.</b> One row per root feature, each with a name, a line that says what it does, and a button. While Super User is active the button is live (<b>Open manager</b>, <b>Open apps</b>). While it is not, the button reads <b>Locked</b> and is greyed out, and a small lock with the words <i>Needs Super User</i> sits under the row. Locked rows are never hidden: you can always see what the tab would offer, and tapping a locked button does nothing. The rows are:</p>
+  <p><b>The "Features" card.</b> One row per root feature, each with a name, a line that says what it does, and a button. While Super User is active the button is live (<b>Open manager</b>, <b>Open apps</b>). While it is not, the button reads <b>Locked</b> and is greyed out, with a small lock and the words <i>Needs Super User</i> beside it at the right end of the row. Locked rows are never hidden: you can always see what the tab would offer, and tapping a locked button does nothing. The rows are:</p>
   <ul>
     <li><b>Super User for apps</b> ("Manage which apps get root in your manager."): see <a href="#rootfeatures-su-apps">Super User for apps</a>.</li>
     <li><b>App components</b> ("Enable or disable activities, services and receivers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
   </ul>
-  <p>The tab reads the state again by itself when the working mode changes and when you come back to the app from your root manager, so a grant you just approved shows up without a restart.</p>
+  <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart. If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
 
   <h4>What you are getting into</h4>
   <ul>
-    <li><b>This app does not root your phone, and cannot.</b> The buttons only ask a root manager that is already installed, or open it. On a phone without one (most phones as sold, and some cannot be rooted at all, Samsung phones sold in the United States among them) the chip reads <b>NOT FOUND</b>, <b>Open root manager</b> only says "No root manager was found. Install KernelSU, APatch or Magisk, then come back.", and the rows stay locked. That is all this tab will ever do there, and it is on purpose. What rooting involves and costs is in <a href="#mode-root">Root</a>: it normally erases the phone, voids the warranty and, on a Samsung, trips Knox for good.</li>
-    <li><b>The grant is the manager's, not the app's.</b> Your root manager decides whether this app gets <code>su</code>, for how long (once, or until you change it), and shows you the list of apps that have it. The app remembers only that you chose Root as the working mode; take the grant back in the manager and the chip reads <b>DENIED</b> at the next check.</li>
+    <li><b>This app does not root your phone, and cannot.</b> The buttons only ask a root manager that is already installed, or open it. On a phone without one (most phones as sold, and some cannot be rooted at all) the chip reads <b>NOT FOUND</b>, <b>Open root manager</b> only says "No root manager was found. Install KernelSU, APatch or Magisk, then come back.", and the rows stay locked. <b>Request Super User</b> still makes Root the chosen working mode, and with no <code>su</code> to answer, the badge reads "Root (Superuser) (not ready)" and nothing that needs privileges runs until you choose another mode in Working Modes. That is all this tab will ever do there, and it is on purpose. What rooting involves and costs is in <a href="#mode-root">Root</a>: it normally erases the phone, voids the warranty and, on a Samsung, trips Knox for good.</li>
+    <li><b>The grant is the manager's, not the app's.</b> Your root manager decides whether this app gets <code>su</code>, for how long (once, or until you change it), and shows you the list of apps that have it. The app remembers that you chose Root as the working mode and, until it asks again, <code>su</code>'s last answer; take the grant back in the manager and the chip still reads <b>ACTIVE</b> (while every root command fails) until the next fresh check: <b>Request Super User</b>, <b>Check Status</b> in Working Modes, or coming back after <b>Open root manager</b> or <b>Open manager</b>. From then on it reads <b>DENIED</b>.</li>
     <li><b>With Super User, every change you make is a root change.</b> The app's own safety nets stay (the review sheet of the Debloater, History with Undo, the Undo bar for hidden settings), but Android's do not: a command that the shell user would have been refused now goes through. An <b>Unsafe</b> item in the Debloater, a wrong hidden setting or an <code>rm</code> typed in the Terminal can reach the system itself. Read <a href="#safety">Staying safe</a> again before you work this way.</li>
     <li><b>Some apps will notice.</b> Banking, payment and some streaming apps refuse to run on a rooted phone whether or not this app has root. That is between them and your root manager; this app changes nothing about it.</li>
   </ul>
@@ -1119,7 +1119,7 @@
   <ul>
     <li>A rooted phone with a root manager installed: KernelSU, KernelSU Next, APatch or Magisk. The app looks for these four and no others. Rooting itself is not something this app does: see <a href="#mode-root">Root</a> for what it involves.</li>
     <li>Know where your manager lists the apps it has granted root to, so you can check the grant and cancel it later.</li>
-    <li>Any working mode. Requesting Super User switches the working mode to Root when the grant succeeds, so you do not have to change it first.</li>
+    <li>Any working mode. Requesting Super User makes Root the chosen working mode whether or not the grant succeeds, so you do not have to change it first (after a refusal Root stays chosen but not ready, as the next part says).</li>
   </ul>
 
   <h4>Way A: Request Super User</h4>
@@ -1137,13 +1137,13 @@
   <ol class="hg-steps">
     <li>Tap <b>Open root manager</b>. The app opens the first installed manager it finds, in the order KernelSU, KernelSU Next, APatch, Magisk, and a message says "Allow this app in KernelSU, then come back." (with the name of your manager). The app hands the manager nothing: it only opens it, the way the home screen would.</li>
     <li>In the manager, find ADB/Root Full System Toolbox in its list of apps and allow it. The screens differ between managers, and this guide does not describe them.</li>
-    <li>Come back to this app (Back, or the recent apps screen). The app checks the working modes again by itself the moment it is back on screen.</li>
+    <li>Come back to this app (Back, or the recent apps screen). Because you left through this button, the app checks the working modes again by itself the moment it is back on screen; a manager opened from the home screen gets no such check.</li>
     <li>If Root was already your chosen mode, the chip turns <b>ACTIVE</b> and the rows unlock. If it was not, the box now says "Your device has su. Choose Root in Working Modes and allow this app when su asks.": tap <b>Request Super User</b> (Way A) to finish.</li>
   </ol>
   <p>With no manager installed, the button only says "No root manager was found. Install KernelSU, APatch or Magisk, then come back." The app does not install one for you.</p>
 
   <h4>About "temporary root"</h4>
-  <p>The note on the card says that temporary root is granted inside your root manager. That is the whole of it: a grant is as temporary or as lasting as the manager makes it. Managers let you allow an app once or until you say otherwise, and a root set up by a manager can need to be set up again after a phone update. The app never keeps root for itself beyond the manager's answer. It asks <code>su</code> again when it needs to know (when you tap <b>Request Super User</b>, when you come back from the manager, and when you tap <b>Check Status</b> in Working Modes), and that answer is what the chip shows.</p>
+  <p>The note on the card says that temporary root is granted inside your root manager. That is the whole of it: a grant is as temporary or as lasting as the manager makes it. Managers let you allow an app once or until you say otherwise, and a root set up by a manager can need to be set up again after a phone update. The app never keeps root for itself beyond the manager's answer. It asks <code>su</code> again when it needs to know (when the app starts with Root as the chosen mode, when you tap <b>Request Super User</b>, when you come back after <b>Open root manager</b> or <b>Open manager</b>, and when you tap <b>Check Status</b> on the Shizuku card of Working Modes), and that answer is what the chip shows until the next time it asks.</p>
 
   <h4>What you are getting into</h4>
   <ul>
@@ -1165,7 +1165,7 @@
 
 <section id="rootfeatures-su-apps" data-title="Super User for apps" data-group="The tabs">
   <p class="hg-lead">Manage which <i>other</i> apps on the phone get root. The deciding is done in your root manager; this row takes you there, and that is all it does.</p>
-  <p><b>Where it is:</b> the <b>Root Features</b> tab, the first row of the <b>Features</b> card: "Super User for apps", "Manage which apps get root in your manager.", with the button <b>Open manager</b>. It is unlocked only while the chip reads <b>ACTIVE</b> (<a href="#tab-rootfeatures">Root Features</a>); otherwise the button reads <b>Locked</b> with <i>Needs Super User</i> under it.</p>
+  <p><b>Where it is:</b> the <b>Root Features</b> tab, the first row of the <b>Features</b> card: "Super User for apps", "Manage which apps get root in your manager.", with the button <b>Open manager</b>. It is unlocked only while the chip reads <b>ACTIVE</b> (<a href="#tab-rootfeatures">Root Features</a>); otherwise the button reads <b>Locked</b> with <i>Needs Super User</i> beside it.</p>
 
   <h4>What it does, exactly</h4>
   <ol class="hg-steps">
@@ -1173,10 +1173,10 @@
     <li>The manager opens on its own screen. The app sends it nothing: no list, no request, no app name. Find the manager's list of apps with root and allow or deny apps there, as the manager's own help describes.</li>
     <li>Come back. The app checks its own root status again, in case you changed this app's grant at the same time; if you did, the chip and the rows follow.</li>
   </ol>
-  <p>With no manager installed the message is "No root manager was found. Install KernelSU, APatch or Magisk, then come back.", which you cannot normally reach while the chip reads ACTIVE.</p>
+  <p>With no manager installed the message is "No root manager was found. Install KernelSU, APatch or Magisk, then come back.", which you only see while the chip reads ACTIVE if your <code>su</code> comes from something other than those four managers.</p>
 
   <h4>Why it is behind the gate</h4>
-  <p>The row only opens another app, which needs no root at all. It is locked with the other features anyway, because deciding which apps get root only makes sense on a phone that has root, and because it belongs next to the other root features rather than in a menu. On an unrooted phone the row is listed and locked, so you can see what you would get.</p>
+  <p>The row only opens another app, which needs no root at all. It is locked with the other features all the same, until Super User is active. On an unrooted phone the row is listed and locked, so you can see what you would get.</p>
 
   <h4>What you are getting into</h4>
   <ul>
@@ -1192,14 +1192,14 @@
   <p><b>Where it is:</b> the <b>Root Features</b> tab, the second row of the <b>Features</b> card: "App components", "Enable or disable activities, services and receivers for any app.", with the button <b>Open apps</b>. Locked (<b>Locked</b>, <i>Needs Super User</i>) until the chip reads <b>ACTIVE</b>.</p>
 
   <h4>Why this is a root feature</h4>
-  <p>Android lets the shell user (ADB over TCP, Wireless Debugging, and Shizuku when it was started by ADB) switch <i>whole apps</i> on and off, which is what Freeze does. A single part of an app it refuses: Android answers "Shell cannot change component state" unless the app is a test build. So in those modes the <b>ENABLE</b> and <b>DISABLE</b> buttons on a part run, fail with "Failed", and show you Android's refusal in the <b>Command Result</b> box; nothing changes. With Super User the same <code>pm enable</code> and <code>pm disable</code> commands run as root, and Android accepts them. Shizuku started with root counts as root for this.</p>
+  <p>Android lets the shell user (ADB over TCP, Wireless Debugging, and Shizuku when it was started by ADB) switch <i>whole apps</i> on and off, which is what Freeze does. A single part of an app it refuses: Android's answer begins "Shell cannot change component state" unless the app is a test build. So in those modes the <b>ENABLE</b> and <b>DISABLE</b> buttons on a part run, fail with "Failed", and show you Android's refusal in a results box titled <b>Toggle component</b>; nothing changes. With Super User the same <code>pm enable</code> and <code>pm disable</code> commands run as root, and Android accepts them. Shizuku started with root counts as root for this.</p>
 
   <h4>Step by step</h4>
   <ol class="hg-steps">
     <li>On <b>Root Features</b>, tap <b>Open apps</b>. The Application Manager opens and a message says "Open an app, then use its Activities and Components tabs to enable or disable each one."</li>
     <li>Find the app and open its menu (the <b>...</b> button at the right end of its row, or press and hold the row).</li>
     <li>For a screen, open the <b>Activities</b> tab; for a receiver, a service or a provider, the <b>Components</b> tab. Each row has the part's name, tags (<b>exported</b> or <b>unexported</b>, <b>disabled</b> when it is off) and buttons: <b>DISABLE</b> or <b>ENABLE</b>, plus <b>LAUNCH</b> on a screen and <b>STOP</b> on a service. <a href="#apps-menu">The app menu</a> describes the two tabs in full.</li>
-    <li>Tap <b>DISABLE</b> on the part. A message says "Component disabled" and the row gets the <b>disabled</b> tag. If Android refused, the message says "Failed" and the <b>Command Result</b> box shows Android's own words.</li>
+    <li>Tap <b>DISABLE</b> on the part. A message says "Component disabled" and the row gets the <b>disabled</b> tag. If Android refused, the message says "Failed" and a results box titled <b>Toggle component</b> shows Android's own words.</li>
     <li>To put it back, tap <b>ENABLE</b> on the same row: "Component enabled".</li>
   </ol>
 
