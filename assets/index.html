@@ -3716,7 +3716,7 @@
         .mt-btns button { flex: 1 1 0; min-width: 0; border: 1px solid var(--border-glass); background: transparent; color: var(--text-muted); border-radius: var(--radius-pill); padding: var(--space-2) var(--space-1); font-size: var(--fs-caption); font-weight:var(--fw-heavy); cursor: pointer; }
         .mt-btns button.danger { color: var(--status-bloat); }
         .ps-style-card .ps-desc { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); margin-top: var(--space-1); font-weight:var(--fw-semibold); }
-        /* v7.15: nine styles in three columns (two on a narrow screen: swatches and the name); the line of the chosen one is under the grid */
+        /* v7.15: the styles in three columns (two on a narrow screen: swatches and the name); the line of the chosen one is under the grid. v7.16: ten styles, so the last row holds one on a wide screen */
         #psStyleGrid { grid-template-columns: repeat(auto-fill, minmax(max(104px, calc((100% - 2 * var(--space-2)) / 3)), 1fr)); gap: var(--space-2); }          /* three a row while a tile keeps 104px (the longest name, "Нейтральный", fits), else two: no name breaks between letters */
         #psStyleGrid .palette-preset-card { padding: var(--space-3); min-width: 0; }
         #psStyleGrid .preset-strip { margin-bottom: var(--space-2); }
@@ -6240,7 +6240,7 @@
 
             <div class="color-card" id="paletteStyleCard">
                 <div class="color-card-title">Palette Style &amp; My Themes</div>
-                <div class="color-card-subtitle clamp-2">One source color, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
+                <div class="color-card-subtitle clamp-2">One source color, ten ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
 
                 <div class="color-row">
                     <div class="color-meta">
@@ -7959,7 +7959,7 @@
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
-                <div class="about-tip">Palette Style: the nine styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
+                <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -11216,7 +11216,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---------- Palette styles: a whole scheme from one source color ----------
-        // The nine styles are Google's Material 3 "dynamic scheme" variants. A color is described as hue, chroma and tone (HCT: the CAM16
+        // The ten styles are Google's Material 3 "dynamic scheme" variants (CMF is the one of the 2026 color spec). A color is described as hue, chroma and tone (HCT: the CAM16
         // appearance model's hue and chroma with L* as the tone), so a tone ladder of one palette always looks evenly lit. The method is the one
         // of Google's Material Color Utilities (Apache License 2.0), written again here in a few lines. Colors that cannot exist in sRGB
         // lose chroma until they can, the same way the original does.
@@ -11302,7 +11302,8 @@ Type any command above (e.g. pm list packages -d)</div>
             { id: 'EXPRESSIVE', name: 'Expressive', desc: 'Playful: the accents are turned far from your color.' },
             { id: 'FRUIT_SALAD', name: 'Fruit Salad', desc: 'A lively mix: the main color is turned back 50° and the accents are bold.' },
             { id: 'RAINBOW', name: 'Rainbow', desc: 'A strong accent on a plain grey background.' },
-            { id: 'MONOTONE', name: 'Monotone', desc: 'Greys only. No color at all.' }
+            { id: 'MONOTONE', name: 'Monotone', desc: 'Greys only. No color at all.' },
+            { id: 'CMF', name: 'CMF', desc: 'One hue, five strengths: your color in full for the accent, at half and three quarters for the other accents, a fifth for the surfaces. From the 2026 Material color spec.' }
         ];
         const PS_IDS = PS_STYLES.map(s => s.id);
         // [hue, chroma] of the five tonal palettes of a style, for a source color of hue h and chroma c
@@ -11317,6 +11318,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 case 'FRUIT_SALAD': return { p: [psDeg(h - 50), 48], s: [psDeg(h - 50), 36], t: [h, 36], n: [h, 10], nv: [h, 16] };
                 case 'RAINBOW': return { p: [h, 48], s: [h, 16], t: [psDeg(h + 60), 24], n: [h, 0], nv: [h, 0] };
                 case 'MONOTONE': return { p: [h, 0], s: [h, 0], t: [h, 0], n: [h, 0], nv: [h, 0] };
+                case 'CMF': return { p: [h, c], s: [h, c * 0.5], t: [h, c * 0.75], n: [h, c * 0.2], nv: [h, c * 0.2] };      // the 2026 spec's CMF scheme: one hue, the chroma at 1, 1/2, 3/4 and 1/5 (with one source color; a second one would give the tertiary)
                 default: return { p: [h, 36], s: [h, 16], t: [psDeg(h + 60), 24], n: [h, 6], nv: [h, 8] };      // TONAL_SPOT
             }
         }
@@ -31170,7 +31172,7 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Deleted the theme ' + t.name);
         }
 
-        // ---- Palette Style: nine styles of one source color ----
+        // ---- Palette Style: ten styles of one source color ----
         function renderStyleCards(mode) {
             const grid = document.getElementById('psStyleGrid');
             if (!grid) return;

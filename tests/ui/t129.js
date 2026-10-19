@@ -1,4 +1,4 @@
-// Settings > Theme: Palette Style. Nine styles (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone) turn one source color
+// Settings > Theme: Palette Style. Ten styles (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone, CMF) turn one source color
 // into a whole theme, in light and dark. The color engine is checked against known values (the HCT of pure red, green and blue; Tonal Spot of Material purple against
 // the Material 3 baseline), the styles against what they promise (grey stays grey, Monotone has no color), and every style stays readable for a spread of source colors.
 // The source color: automatic (wallpaper / Material purple) or picked; choosing a style or a source turns the generated palette on; the choice is saved and restored.
@@ -28,7 +28,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- the card ----
   const names = await ev(() => [...document.querySelectorAll('#psStyleGrid .preset-name')].map(e => e.innerText.trim()));
-  check('the Theme menu has a Palette Style card with the nine styles in order', JSON.stringify(names) === JSON.stringify(['Tonal Spot', 'Vibrant', 'Fidelity', 'Content', 'Neutral', 'Expressive', 'Fruit Salad', 'Rainbow', 'Monotone']), JSON.stringify(names));
+  check('the Theme menu has a Palette Style card with the ten styles in order', JSON.stringify(names) === JSON.stringify(['Tonal Spot', 'Vibrant', 'Fidelity', 'Content', 'Neutral', 'Expressive', 'Fruit Salad', 'Rainbow', 'Monotone', 'CMF']), JSON.stringify(names));
   check('each style says in a line what it does', await ev(() => [...document.querySelectorAll('#psStyleGrid .ps-desc')].every(e => e.innerText.trim().length > 20)));
   check('each tile shows four swatches', await ev(() => [...document.querySelectorAll('#psStyleGrid .preset-strip')].every(e => e.children.length === 4)));
   check('the card sits above the curated palettes', await ev(() => { const a = document.getElementById('paletteStyleCard'), c = document.querySelector('.palette-presets-grid:not(#psStyleGrid)'); return !!a && !!c && !!(a.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING); }));
@@ -57,11 +57,11 @@ const { chromium, PAGE } = require('./lib/pw');
   check('and the page uses its colors (accent, background, card, text)', (await css('--accent')) === v.cur.accent && (await css('--bg-base')) === v.cur.bg && (await css('--bg-card')) === v.cur.card && (await css('--text-main')) === v.cur.text);
   check('no curated palette stays marked', await ev(() => !document.querySelector('.palette-presets-grid:not(#psStyleGrid) .active')));
 
-  // ---- the nine differ, and keep their promise ----
+  // ---- the ten differ, and keep their promise ----
   const all = await ev(() => { const o = {}; PS_IDS.forEach(id => { o[id] = { dark: psScheme('#4285F4', id, 'dark'), light: psScheme('#4285F4', id, 'light') }; }); return o; });
   const keyOf = s => [s.accent, s.bg, s.card, s.secondary, s.frozen].join();
-  check('the nine styles give nine different themes (dark)', new Set(Object.values(all).map(x => keyOf(x.dark))).size === 9);
-  check('... and nine different themes (light)', new Set(Object.values(all).map(x => keyOf(x.light))).size === 9);
+  check('the ten styles give ten different themes (dark)', new Set(Object.values(all).map(x => keyOf(x.dark))).size === 10);
+  check('... and ten different themes (light)', new Set(Object.values(all).map(x => keyOf(x.light))).size === 10);
   const grey = h => { const x = h.replace('#', ''); return x.substr(0, 2) === x.substr(2, 2) && x.substr(2, 2) === x.substr(4, 2); };
   check('Monotone has no color: accent, backgrounds, text and accents are all grey (the green and red status colors stay)', ['accent', 'bg', 'surface', 'card', 'sheet', 'text', 'muted', 'secondary', 'frozen'].every(k => grey(all.MONOTONE.dark[k]) && grey(all.MONOTONE.light[k])), JSON.stringify(all.MONOTONE.dark));
   check('Rainbow has a plain grey background but a colored accent', grey(all.RAINBOW.dark.bg) && grey(all.RAINBOW.dark.card) && !grey(all.RAINBOW.dark.accent));
@@ -69,6 +69,7 @@ const { chromium, PAGE } = require('./lib/pw');
   check('Neutral is the quietest colored style: its accent has less chroma than Tonal Spot\'s', await ev(() => psHctFromHex(psScheme('#4285F4', 'NEUTRAL', 'dark').accent).c < psHctFromHex(psScheme('#4285F4', 'TONAL_SPOT', 'dark').accent).c));
   check('Fruit Salad turns the main color back 50 degrees; Expressive sends it far away', await ev(() => { const s = psHctFromHex('#4285F4').h, f = psHctFromHex(psScheme('#4285F4', 'FRUIT_SALAD', 'dark').accent).h, x = psHctFromHex(psScheme('#4285F4', 'EXPRESSIVE', 'dark').accent).h, d = (a, b2) => { const z = Math.abs(a - b2) % 360; return z > 180 ? 360 - z : z; }; return d(f, s - 50) < 8 && d(x, s + 240) < 8; }));
   check('Fidelity and Content keep the source color\'s chroma; Tonal Spot does not', await ev(() => { const c = psHctFromHex('#4285F4').c; const f = psHctFromHex(psScheme('#4285F4', 'FIDELITY', 'light').accent).c; const t = psHctFromHex(psScheme('#4285F4', 'TONAL_SPOT', 'light').accent).c; return f > t + 3 && c > 50; }));
+  check('CMF keeps the source hue in all five palettes: the chroma in full, at a half and at three quarters for the three accents, at a fifth for the surfaces', await ev(() => { const s = psHctFromHex('#4285F4'), P = psPalettes('CMF', s.h, s.c), a = psHctFromHex(psScheme('#4285F4', 'CMF', 'dark').accent), d = (x, y) => { const z = Math.abs(x - y) % 360; return z > 180 ? 360 - z : z; }; return [P.p, P.s, P.t, P.n, P.nv].every(p => p[0] === s.h) && P.p[1] === s.c && P.s[1] === s.c * 0.5 && P.t[1] === s.c * 0.75 && P.n[1] === s.c * 0.2 && P.nv[1] === s.c * 0.2 && d(a.h, s.h) < 8; }));
   check('Running stays green and Bloat stays red in every style', await ev(() => PS_IDS.every(id => ['dark', 'light'].every(m => { const s = psScheme('#E91E63', id, m), g = psHctFromHex(s.running).h, r = psHctFromHex(s.bloat).h; return g > 120 && g < 160 && (r < 40 || r > 340); }))));
 
   // ---- readable for any source color, in light and dark ----
