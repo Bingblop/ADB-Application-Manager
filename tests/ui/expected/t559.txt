@@ -1,0 +1,22 @@
+ok   1. the tab is in the registry right before About (Application Manager still first), on, in the tab bar, with its two-line label and its name
+ok      its own icon (not the fallback) and the short label "Root"; not pinned on the bottom bar by default
+ok   2. (A) Root in use and su granted: the tab opens and the gate is hidden
+ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area says Super User is active
+ok      promptRootThenOpen goes straight on (true), switches nothing and asks nothing
+ok      the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)
+ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
+ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
+ok      the gate names the way: choose Root in Working Modes
+ok      the placeholder says the temporary root setup comes in a later step
+ok      the gate's Set Up opens the Working Modes sheet
+ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now
+ok      su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false
+ok      after the denial the tag says DENIED and the gate says why
+ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked
+ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
+ok      a no: nothing opens, false
+ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab
+ok   6. at 360 px nothing is wider than the screen, the Request and the locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
+ok   7. no page errors
+errors: []
+all passed

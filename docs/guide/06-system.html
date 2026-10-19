@@ -1075,3 +1075,20 @@
     </tbody>
   </table>
 </section>
+
+<section id="tab-rootfeatures" data-title="Root Features" data-group="The tabs">
+  <p class="hg-lead">A home for the features that need <b>Super User</b> (root) access. They stay locked until this app is running in the Root working mode with <code>su</code> granted to it.</p>
+  <p><b>Where to find it:</b> the tab named <b>Root Features</b> (two lines on the tab bar), near the end of the bar. If it is missing, it is switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+
+  <h4>What "Super User" means here</h4>
+  <p>Super User is this app's name for the <b>Root</b> working mode: the app runs its commands through <code>su</code>, the way a root manager such as Magisk, KernelSU or APatch grants it. The card's status chip reads <b>ACTIVE</b> when Super User is in use, <b>AVAILABLE</b> or <b>DENIED</b> when the phone has <code>su</code> but it is not in use (or the manager refused this app), and <b>NOT FOUND</b> when the phone has no <code>su</code>.</p>
+
+  <h4>Turning it on</h4>
+  <ul>
+    <li><b>The phone already has Super User.</b> Choose <b>Root</b> in <a href="#modes-overview">Working modes</a> (the <b>Set Up</b> button on the tab's card opens it) and allow this app when <code>su</code> asks. The features then unlock.</li>
+    <li><b>Request Super User.</b> The tab has a <b>Request Super User</b> button that asks your root manager for <code>su</code> and, once it is granted, switches the working mode to Root for you.</li>
+    <li><b>The phone has no Super User yet.</b> A later version adds a temporary-root step here to check whether the device can get it; until then the card says so.</li>
+  </ul>
+
+  <div class="hg-note"><b>Note.</b> Root is not available on every phone, and system-less root from a manager such as KernelSU can be lost on a reboot (you grant it again the next time). What unlocks here depends on your device and your root manager.</div>
+</section>

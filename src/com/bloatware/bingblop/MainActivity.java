@@ -8390,6 +8390,8 @@ public class MainActivity extends Activity {
                 // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
                 boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
                 if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
+                // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
+                obj.put("rootWorkingModeActive", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;

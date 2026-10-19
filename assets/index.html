@@ -7775,6 +7775,52 @@
             <div class="sd-undo" id="sdUndo"><span id="sdUndoText"></span><button onclick="sdUndoDo()">Undo</button></div>
         </section>
 <!-- SDM:VIEW:END -->
+<!-- ROOTFEATURES:VIEW:BEGIN -->
+        <section id="view-rootfeatures" class="view-content">
+            <style>
+                .rf-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+                .rf-head .color-card-title { flex: 1 1 auto; margin: 0; min-width: 0; }
+                #rootGate { margin: var(--space-4) 0 0; }
+                .rf-note { font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
+                .rf-soon { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-3); font-style: italic; }
+                .rf-row { display: flex; align-items: center; gap: var(--space-3h); padding: var(--space-3) 0 0; border-top: 1px solid var(--fill-2); margin-top: var(--space-3); }
+                .rf-row .rf-name { flex: 1 1 auto; min-width: 0; font-size: var(--fs-item); font-weight: var(--fw-bold); }
+                .rf-row .rf-name span { display: block; font-size: var(--fs-pill); font-weight: var(--fw-medium); color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+                .rf-row.is-locked .rf-name { color: var(--text-muted); }
+                .rf-row .op-mode-btn { flex: 0 0 auto; min-height: var(--ctl-h); }
+            </style>
+
+            <div class="color-card" id="rfTop">
+                <div class="rf-head">
+                    <div class="color-card-title">Root Features</div>
+                    <span class="mode-status-tag inactive" id="rfStatusTag">Checking...</span>
+                </div>
+                <div class="color-card-subtitle">Super User (root) features. They unlock when the working mode is Root and su has granted this app access.</div>
+
+                <div class="mode-alert-card" id="rootGate" style="display:none;">
+                    <div class="mode-alert-body">
+                        <div class="mode-alert-title">Needs Super User</div>
+                        <div class="mode-alert-desc" id="rootGateDesc">Root Features need the Root working mode with su granted to this app.</div>
+                    </div>
+                    <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up</button>
+                </div>
+            </div>
+
+            <div class="color-card" id="rfSuCard">
+                <div class="color-card-title">Super User access</div>
+                <div class="rf-note">Check whether your device can get Super User access.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="rfRequestBtn" onclick="rootRequestSuperUser()">Request Super User</button>
+                </div>
+                <div class="rf-soon">Temporary root setup is coming in a later step.</div>
+            </div>
+
+            <div class="color-card" id="rfFeaturesCard">
+                <div class="color-card-title">Features</div>
+                <div id="rfFeatureList"></div>
+            </div>
+        </section>
+<!-- ROOTFEATURES:VIEW:END -->
         <section id="view-about" class="view-content">
             <style>
                 .auth-code-row { display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-4); }
@@ -11390,6 +11436,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
             { key: 'sdm', label: 'SD Maid', name: 'SD Maid' },
+            { key: 'rootfeatures', label: 'Root\nFeatures', name: 'Root Features' },          // v7.15.1: Super User features; unlocked by the root gate (isRootActive)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -11492,7 +11539,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'console', 'logcat', 'taskmgr' ...). When a tab is added, renamed or replaced in TAB_DEFS, update them with it:
         // a key that TAB_DEFS does not have is skipped, so nothing breaks, but the default pinned tab and the shortcuts of that tab are lost until it is done (t260 checks that every tab has an icon).
         const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'console'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings); Console: the ADB shell and the Terminal
-        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', about: 'About' };
+        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', rootfeatures: 'Root', about: 'About' };
         const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
             apps: '<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',
             'saved-lists': '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>',
@@ -11509,6 +11556,7 @@ Type any command above (e.g. pm list packages -d)</div>
             devices: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>',
             morphe: '<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
             sdm: '<path d="M18 2h-8L4.02 8 4 20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/>',
+            rootfeatures: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>',          // a shield with a check (Material "verified user"): Super User
             about: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
         };
         const BNAV_ICON_MORE = '<path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>';
@@ -12212,6 +12260,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName !== 'extrasettings' && typeof telLeave === 'function') { telLeave(); animLeave(); }     // the telemetry poll and the preview dots stop when the tab is left
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
+            if (viewName === 'rootfeatures' && typeof onRootFeaturesShown === 'function') onRootFeaturesShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
@@ -13457,6 +13506,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 try { if (typeof xqOnModeChange === 'function') xqOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
+                try { if (typeof rootOnModeChange === 'function') rootOnModeChange(); } catch (e) { console.error('Root Features tab: ' + e); }
                 try { if (typeof installerOnModeChange === 'function') installerOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
@@ -28276,6 +28326,72 @@ Type any command above (e.g. pm list packages -d)</div>
         logcatRenderKey();
         lcRestorePrefs();
         cdLcRestorePrefs();
+
+        // ---- Root Features tab (v7.15.1, step B1a: the gate and the surface; the Super User features themselves come in later steps) ----
+        // The gate: Root Features unlock only when the resolved working mode is Root AND su really granted it to this app. That is RootGate.active on the
+        // Java side, which getWorkingMode reports as rootWorkingModeActive; the page's own reading (a privileged mode that is root) is the same rule, and the
+        // Java verdict can only veto it (an older app that does not send the field changes nothing).
+        function isRootActive() {
+            const own = !!isPrivilegedActive && currentWorkingMode === 'root';
+            const d = lastModesData;
+            return own && !(d && d.rootWorkingModeActive === false);
+        }
+        function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
+        function onRootFeaturesShown() { renderRootFeatures(); }
+        // the placeholder of the feature area while Super User is not active: greyed, with the reason
+        function rootLockedRow() {
+            return '<div class="rf-row is-locked"><div class="rf-name">Root features<span>They unlock once Super User is active.</span></div>'
+                + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">Locked</button>'
+                + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>Needs Super User</span></div></div>';
+        }
+        function renderRootFeatures() {
+            const gate = document.getElementById('rootGate');
+            if (!gate) return;
+            const active = isRootActive();
+            const d = lastModesData || {};
+            const rootAvail = !!d.rootAvailable;
+            // the tag: green while Super User is in use, amber when su is on the phone but not in use (or was denied), grey without su
+            if (active) setTag('rfStatusTag', 'active', 'ACTIVE');
+            else if (rootAvail) setTag('rfStatusTag', 'warning', d.rootGranted === false ? 'DENIED' : 'AVAILABLE');
+            else setTag('rfStatusTag', 'inactive', 'NOT FOUND');
+            // the gate: shown whenever Super User is not active, with the reason and the way to Working Modes
+            gate.style.display = active ? 'none' : 'flex';
+            const desc = document.getElementById('rootGateDesc');
+            if (desc) desc.innerText = !rootAvail ? 'No su was found on this device. Root Features need Super User.'
+                : d.rootGranted === false ? 'Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.'
+                : 'Your device has su. Choose Root in Working Modes and allow this app when su asks.';
+            // the Super User card asks su on a phone that has it; it is put away while Super User is active
+            const su = document.getElementById('rfSuCard');
+            if (su) su.style.display = active ? 'none' : '';
+            // the feature area: a locked placeholder until Super User is active (no feature yet in this step)
+            const list = document.getElementById('rfFeatureList');
+            if (list) list.innerHTML = active ? '<div class="rf-note">Super User is active — root features will appear here.</div>' : rootLockedRow();
+        }
+        // Request Super User: the same path as Request Root Access in Working Modes (su asks; a yes makes Root the working mode and the mode change
+        // re-renders this tab). Whether a phone without su can get a temporary root is a later step.
+        function rootRequestSuperUser() {
+            if (!window.AndroidBridge) { showToast('This works in the app on a phone, not in a browser.'); return; }
+            selectModeUI('root');
+        }
+        // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
+        // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
+        // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.
+        function promptRootThenOpen(featureName) {
+            if (isRootActive()) return Promise.resolve(true);
+            const d = lastModesData || {};
+            if (d.rootAvailable && window.AndroidBridge) {
+                // su is there, the mode just is not Root: switch to it (su asks on its own) and go on when it grants
+                return new Promise(resolve => selectModeUI('root', () => resolve(isRootActive() ? true : rootOfferTab(featureName))));
+            }
+            return Promise.resolve(rootOfferTab(featureName));
+        }
+        function rootOfferTab(featureName) {
+            const why = featureName ? txF('{0} needs Super User.', featureName) + '\n\n' : '';
+            if (!confirm(why + txT('Open Root Features to check if your device supports Super User?'))) return false;
+            switchView('rootfeatures');
+            return false;
+        }
+        window.promptRootThenOpen = promptRootThenOpen;
 
         // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
         // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a

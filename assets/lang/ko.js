@@ -5076,7 +5076,22 @@ x: {
 "Live updates": "실시간 업데이트",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "‘앱 중지’ 알림의 진행 상황을 상태 표시줄에 실시간 업데이트로 표시합니다(Android 16 이상). 알림 권한과 휴대전화 알림 설정의 이 앱 스위치도 필요합니다.",
 "Saved Applications was turned off. It is on again to show this list.": "저장된 앱이 꺼져 있었습니다. 이 목록을 표시할 수 있도록 다시 켰습니다.",
-"That saved list is not there any more.": "해당 저장 목록이 더 이상 없습니다."
+"That saved list is not there any more.": "해당 저장 목록이 더 이상 없습니다.",
+"Check whether your device can get Super User access.": "이 기기가 슈퍼유저 권한을 얻을 수 있는지 확인합니다.",
+"Needs Super User": "슈퍼유저 필요",
+"No su was found on this device. Root Features need Super User.": "이 기기에서 su를 찾을 수 없습니다. Root 기능에는 슈퍼유저가 필요합니다.",
+"Open Root Features to check if your device supports Super User?": "Root 기능을 열어 이 기기가 슈퍼유저를 지원하는지 확인할까요?",
+"Request Super User": "슈퍼유저 요청",
+"Root Features": "Root 기능",
+"Root Features need the Root working mode with su granted to this app.": "Root 기능에는 이 앱에 su가 허용된 Root 작동 모드가 필요합니다.",
+"Root features": "Root 기능",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "슈퍼유저(root) 기능입니다. 작동 모드가 Root이고 su가 이 앱에 접근을 허용하면 잠금이 해제됩니다.",
+"Super User access": "슈퍼유저 권한",
+"Super User is active — root features will appear here.": "슈퍼유저가 활성화되었습니다 — Root 기능이 여기에 표시됩니다.",
+"Temporary root setup is coming in a later step.": "임시 Root 설정은 이후 단계에서 제공됩니다.",
+"They unlock once Super User is active.": "슈퍼유저가 활성화되면 잠금이 해제됩니다.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "이 기기에는 su가 있습니다. 작동 모드에서 Root를 선택하고 su가 물으면 이 앱을 허용하세요.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root 관리자(Magisk, KernelSU, APatch)가 이 앱에 su를 허용하지 않았습니다. 거기서 허용한 뒤 Root를 다시 선택하세요."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],
@@ -6217,6 +6232,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ 이 휴대전화에 맞음 ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}은(는) 이 앱의 키와 서명자가 같아 제자리에서 업데이트할 수 있습니다"],
 ["✓ {0}: done", "✓ {0}: 완료"],
-["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"]
+["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
+["Root Features tab: {0}", "Root 기능 탭: {0}"],
+["{0} needs Super User.", "{0}에는 슈퍼유저가 필요합니다."]
 ]
 };

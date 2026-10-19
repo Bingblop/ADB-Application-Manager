@@ -5076,7 +5076,22 @@ x: {
 "Live updates": "Mises à jour en direct",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Affiche la progression de la notification Arrêter les applications dans la barre d’état sous forme de mise à jour en direct (Android 16 et versions ultérieures). Elle demande aussi les Notifications et l’interrupteur de cette application dans les réglages de notification du téléphone.",
 "Saved Applications was turned off. It is on again to show this list.": "Applications enregistrées était désactivé. Il est de nouveau activé pour afficher cette liste.",
-"That saved list is not there any more.": "Cette liste enregistrée n’existe plus."
+"That saved list is not there any more.": "Cette liste enregistrée n’existe plus.",
+"Check whether your device can get Super User access.": "Vérifiez si votre appareil peut obtenir l’accès Superutilisateur.",
+"Needs Super User": "Nécessite Superutilisateur",
+"No su was found on this device. Root Features need Super User.": "Aucun su n’a été trouvé sur cet appareil. Les Fonctions Root nécessitent Superutilisateur.",
+"Open Root Features to check if your device supports Super User?": "Ouvrir Fonctions Root pour vérifier si votre appareil prend en charge Superutilisateur ?",
+"Request Super User": "Demander Superutilisateur",
+"Root Features": "Fonctions Root",
+"Root Features need the Root working mode with su granted to this app.": "Les Fonctions Root nécessitent le mode de fonctionnement Root avec su accordé à cette application.",
+"Root features": "Fonctions Root",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fonctions Superutilisateur (root). Elles se débloquent lorsque le mode de fonctionnement est Root et que su a accordé l’accès à cette application.",
+"Super User access": "Accès Superutilisateur",
+"Super User is active — root features will appear here.": "Superutilisateur est actif — les fonctions root apparaîtront ici.",
+"Temporary root setup is coming in a later step.": "La configuration d’un root temporaire arrivera dans une étape ultérieure.",
+"They unlock once Super User is active.": "Elles se débloquent une fois Superutilisateur actif.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Votre appareil a su. Choisissez Root dans Modes de fonctionnement et autorisez cette application quand su le demande.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Votre gestionnaire de root (Magisk, KernelSU, APatch) n’a pas accordé su à cette application. Autorisez-la là-bas, puis choisissez Root à nouveau."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],
@@ -6217,6 +6232,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatible avec ce téléphone ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} a le même signataire que la clé de cette application : elle peut être mise à jour sur place"],
 ["✓ {0}: done", "✓ {0} : terminé"],
-["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"]
+["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"],
+["Root Features tab: {0}", "Onglet Fonctions Root : {0}"],
+["{0} needs Super User.", "{0} nécessite Superutilisateur."]
 ]
 };

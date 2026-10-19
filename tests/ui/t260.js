@@ -49,7 +49,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // ---- 3. More: the tabs that are on and not pinned, in the saved order, three to a row ----
   await page.click('#bnav .bn-item[data-more]'); await page.waitForTimeout(500);
   const more = await ev(() => ({ open: document.getElementById('bnavMoreModal').classList.contains('show'), tiles: [...document.querySelectorAll('#bnavMoreGrid .bn-tile')].map(t => t.dataset.tab), cols: getComputedStyle(document.getElementById('bnavMoreGrid')).gridTemplateColumns.split(' ').length, title: document.getElementById('bnavMoreTitle').innerText, expanded: document.querySelector('#bnav .bn-item[data-more]').getAttribute('aria-expanded'), link: [...document.querySelectorAll('#bnavMoreModal .bn-custom')].map(x => x.innerText) }));
-  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,logcat,settings,overlays,store,taskmgr,devices,morphe,sdm,about', more.tiles.join());
+  check('5. More opens the sheet with every other tab, in the Feature List order, and About last', more.open && more.tiles.join() === 'saved-lists,debloater,files,logcat,settings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,about', more.tiles.join());
   check('   three columns, a title, the Customize tabs link, aria-expanded on the slot', more.cols === 3 && more.title === 'More tabs' && more.link.join() === 'Customize tabs' && more.expanded === 'true', JSON.stringify([more.cols, more.title, more.link, more.expanded]));
   await page.screenshot({ path: 'more_sheet.png' });
   await page.click('#bnavMoreGrid .bn-tile[data-tab="logcat"]'); await page.waitForTimeout(500);

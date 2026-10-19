@@ -5076,7 +5076,22 @@ x: {
 "Live updates": "Pembaruan langsung",
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Hentikan aplikasi di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplikasi Tersimpan tadinya nonaktif. Kini aktif lagi untuk menampilkan daftar ini.",
-"That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada."
+"That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada.",
+"Check whether your device can get Super User access.": "Periksa apakah perangkat Anda bisa mendapatkan akses Superuser.",
+"Needs Super User": "Perlu Superuser",
+"No su was found on this device. Root Features need Super User.": "su tidak ditemukan di perangkat ini. Fitur Root memerlukan Superuser.",
+"Open Root Features to check if your device supports Super User?": "Buka Fitur Root untuk memeriksa apakah perangkat Anda mendukung Superuser?",
+"Request Super User": "Minta Superuser",
+"Root Features": "Fitur Root",
+"Root Features need the Root working mode with su granted to this app.": "Fitur Root memerlukan mode kerja Root dengan su yang diberikan ke aplikasi ini.",
+"Root features": "Fitur Root",
+"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fitur Superuser (root). Terbuka saat mode kerja adalah Root dan su telah memberi aplikasi ini akses.",
+"Super User access": "Akses Superuser",
+"Super User is active — root features will appear here.": "Superuser aktif — fitur root akan muncul di sini.",
+"Temporary root setup is coming in a later step.": "Penyiapan root sementara akan hadir di langkah berikutnya.",
+"They unlock once Super User is active.": "Terbuka setelah Superuser aktif.",
+"Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Perangkat Anda memiliki su. Pilih Root di Mode Kerja dan izinkan aplikasi ini saat su bertanya.",
+"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Pengelola root Anda (Magisk, KernelSU, APatch) tidak memberi su ke aplikasi ini. Izinkan di sana, lalu pilih Root lagi."
 },
 p: [
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
@@ -6217,6 +6232,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ cocok dengan ponsel ini ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
-["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"]
+["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
+["Root Features tab: {0}", "Tab Fitur Root: {0}"],
+["{0} needs Super User.", "{0} memerlukan Superuser."]
 ]
 };
