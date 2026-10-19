@@ -1,6 +1,10 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+  "Create new list": "إنشاء قائمة جديدة",
+  "List name in use": "اسم القائمة مُستخدَم بالفعل",
+  "Overwrite": "استبدال",
+  "Overwrite the existing list, or save this as a new separate list?": "هل تريد استبدال القائمة الحالية أم حفظها كقائمة جديدة منفصلة؟",
 "A test can use up to <1/> of data: it stops early at that amount.": "قد يستهلك الاختبار حتى <1/> من البيانات: ويتوقف مبكرًا عند بلوغ هذا المقدار.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "وكيل البحث الذي يقف وراء كل زر «اسأل الوكيل»، والذي يطلب منه محدّث التطبيقات العثور على تطبيق. يقرأ الويب ويوازن ما يجده ليجيب عن: ما هو الإعداد المخفي أو الإذن أو العملية أو سطر السجل أو التطبيق. ليس وكيل برمجة ولا يغيّر أي شيء على الهاتف أبدًا. Perplexity هو الافتراضي: يبحث في الويب بنفسه ويذكر مصادره. يُضبط مفتاحه في وحدة التحكم ← الطرفية.",
 "✓ Granted": "✓ ممنوح",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "إيقاف",
 "Stop Service": "إيقاف الخدمة",
 "Stop a process": "إيقاف عملية",
-"Stop apps": "إيقاف التطبيقات",
+"Kill Apps": "إيقاف التطبيقات",
 "Stop background activity": "إيقاف النشاط في الخلفية",
 "Stop what is running": "إيقاف ما يعمل حاليًا",
 "Stop when a patch fails": "التوقف عند فشل تصحيح",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "تبويب SD Maid: نقل لأدوات <1>SD Maid SE</1> الأربع من darken (d4rken-org، GPL-3.0)، وهو متاح أيضًا على <2>Google Play</2>. لا تُستخدم أيقوناته وشعاره وترجماته.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "تخطي الإصدارات ألفا وبيتا<1>فقط عندما لا يُكتب إصدار</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "تعيد إعادة التشغيل الخفيفة تشغيل بيئة تطبيقات Android (<1/>): تسودّ الشاشة لبضع ثوانٍ وتُغلق كل التطبيقات، لكن الهاتف لا يمرّ بشاشة الإقلاع. لا يستطيع ضبط تلك الخاصية إلا Root، لذا تُقفل البلاطة في الأوضاع الأخرى.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "انقر على <1>القائمة السريعة</1> في إحدى القوائم، ثم أضف البلاطات أو الأداة: اسحب لأسفل مرتين، وانقر على أيقونة القلم واسحب <2>وضع التشغيل</2> و<3>إيقاف التطبيقات</3> إلى لوحتك؛ أو اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← ADB/Root Full System Toolbox. تعمل دون فتح التطبيق.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "انقر على <1>القائمة السريعة</1> في إحدى القوائم، ثم أضف البلاطات أو الأداة: اسحب لأسفل مرتين، وانقر على أيقونة القلم واسحب <2>وضع التشغيل</2> و<3>إيقاف التطبيقات</3> إلى لوحتك؛ أو اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← ADB/Root Full System Toolbox. تعمل دون فتح التطبيق.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "انقر على <1>إزالة</1> لإخراج تطبيق من التحديد. لا تُنفَّذ الإجراءات الجماعية إلا على التطبيقات المدرجة هنا.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "اضغط على أمر لإدراجه في حقل الإدخال. تعمل هذه الأوامر في shell الجهاز — دون الحاجة إلى البادئة <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "تبويب «مدير المهام» مستوحى من <1>RohitKushvaha01/TaskManager</1>.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "مدير Root لديك (Magisk أو KernelSU أو APatch) لم يمنح su لهذا التطبيق. اسمح له هناك ثم اختر Root مجددًا."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "توجد بالفعل قائمة باسم «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} غير متصل بعد. أضف مفتاحه أو تسجيل دخوله أولًا في وحدة التحكم ← الطرفية."],
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "«{0}» هي الآن القائمة السريعة. أضف بلاطة «إيقاف التطبيقات» أو الأداة لاستخدامها."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "«{0}» هي الآن القائمة السريعة. أضف بلاطة «إيقاف التطبيقات» أو الأداة لاستخدامها."],
 ["+{0} / −{1} lines • {2}", "الأسطر +{0} / −{1} • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "الأسطر +{0} / −{1} • {2} • تتم مقارنة الجزء الأول فقط من الملف الكبير"],
 ["+{0} more", "+{0} أخرى"],

@@ -1,6 +1,10 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+  "Create new list": "Créer une nouvelle liste",
+  "List name in use": "Nom de liste déjà utilisé",
+  "Overwrite": "Remplacer",
+  "Overwrite the existing list, or save this as a new separate list?": "Remplacer la liste existante ou l’enregistrer comme une nouvelle liste distincte ?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Un test peut utiliser jusqu’à <1/> de données : il s’arrête plus tôt une fois cette quantité atteinte.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "L'agent de recherche derrière chaque bouton Demander à l'agent, et celui que l'Application Updater interroge pour trouver une app. Il parcourt le web et pèse ce qu'il trouve pour répondre : ce qu'est un réglage caché, une autorisation, un processus, une ligne de journal ou une app. Ce n'est pas un agent de programmation et il ne modifie jamais rien sur le téléphone. Perplexity est le choix par défaut : il cherche sur le web de lui-même et cite ses sources. Sa clé se configure dans Console → Terminal.",
 "✓ Granted": "✓ Accordé",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "Arrêter",
 "Stop Service": "Arrêter le service",
 "Stop a process": "Arrêter un processus",
-"Stop apps": "Arrêter les applications",
+"Kill Apps": "Arrêter les applications",
 "Stop background activity": "Arrêter l’activité en arrière-plan",
 "Stop what is running": "Arrêter ce qui s’exécute",
 "Stop when a patch fails": "S’arrêter quand un patch échoue",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "Onglet SD Maid : un portage des quatre outils de <1>SD Maid SE</1> de darken (d4rken-org, GPL-3.0), aussi sur <2>Google Play</2>. Ses icônes, son logo et ses traductions ne sont pas utilisés.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Ignorer les versions alpha et bêta<1>Seulement si aucune version n'est saisie</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "Le redémarrage à chaud relance l’environnement d’exécution des applis d’Android (<1/>) : l’écran devient noir quelques secondes et chaque appli se ferme, mais le téléphone ne passe pas par son écran de démarrage. Seul Root peut définir cette propriété ; la tuile est donc verrouillée dans les autres modes.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Appuyez sur <1>Liste rapide</1> sur une liste, puis ajoutez les tuiles ou le widget : balayez deux fois vers le bas, appuyez sur le crayon et faites glisser <2>Mode de fonctionnement</2> et <3>Arrêter les applications</3> dans votre panneau ; ou appuyez longuement sur l’écran d’accueil → Widgets → ADB/Root Full System Toolbox. Ils s’exécutent sans ouvrir l’application.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Appuyez sur <1>Liste rapide</1> sur une liste, puis ajoutez les tuiles ou le widget : balayez deux fois vers le bas, appuyez sur le crayon et faites glisser <2>Mode de fonctionnement</2> et <3>Arrêter les applications</3> dans votre panneau ; ou appuyez longuement sur l’écran d’accueil → Widgets → ADB/Root Full System Toolbox. Ils s’exécutent sans ouvrir l’application.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Appuyez sur <1>Retirer</1> pour retirer une application de la sélection. Les actions groupées ne s’exécutent que sur les applications listées ici.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Appuyez sur une commande pour la placer dans le champ de saisie. Elles s’exécutent dans le shell de l’appareil — pas besoin du préfixe <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Onglet Gestionnaire de tâches inspiré de <1>RohitKushvaha01/TaskManager</1>.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Votre gestionnaire de root (Magisk, KernelSU, APatch) n’a pas accordé su à cette application. Autorisez-la là-bas, puis choisissez Root à nouveau."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Une liste nommée « {0} » existe déjà."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} n'est pas encore connecté : un bouton Demander à l'agent consulte donc le web pour vous (gratuit, sans clé) en attendant. Ajoutez sa clé dans Console → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} n'est pas encore connecté. Ajoutez d'abord sa clé ou sa connexion dans Console → Terminal."],
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "« {0} » est maintenant la liste rapide. Ajoutez la tuile « Arrêter les applications » ou le widget pour l’utiliser."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "« {0} » est maintenant la liste rapide. Ajoutez la tuile « Arrêter les applications » ou le widget pour l’utiliser."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} lignes • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} lignes • {2} • seule la première partie d’un gros fichier est comparée"],
 ["+{0} more", "+{0} de plus"],

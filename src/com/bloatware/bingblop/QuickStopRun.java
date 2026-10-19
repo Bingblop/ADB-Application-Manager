@@ -158,6 +158,9 @@ public final class QuickStopRun {
     /** The run that is going, or null. */
     public static synchronized QuickStopRun active() { return active; }
 
+    /** Whether the Kill Apps tile should show its ACTIVE (lit) state: only while a run is going; idle (no run) is INACTIVE. */
+    public static synchronized boolean tileActive() { return active != null; }
+
     /** Cancel for the run that is going; false when none is. */
     public static synchronized boolean cancelActive() {
         QuickStopRun r = active;

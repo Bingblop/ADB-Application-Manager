@@ -886,7 +886,9 @@ public class MainActivity extends Activity {
         for (int i = 0; pkgs != null && i < pkgs.length(); i++) listed.add(pkgs.optString(i));
         final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
         QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
-        if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Stop apps is already running. Tap Cancel in its notification to stop it.";
+        if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
+        // light the Kill Apps tile for the length of the run (finishQuickAction turns it off again when the run ends)
+        try { android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, StopListTileService.class)); } catch (Throwable ignored) {}
         try {
             AndroidBridge bridge = new AndroidBridge();
             for (String pkg : run.targets()) {

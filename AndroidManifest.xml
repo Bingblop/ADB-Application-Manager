@@ -104,6 +104,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Long-press on a Quick Settings tile opens the app: one QS_TILE_PREFERENCES activity serves all tiles (SystemUI passes the tile via EXTRA_COMPONENT_NAME, which we ignore). An alias to MainActivity, so no second launcher icon appears. -->
+        <activity-alias
+            android:name=".TilePreferencesActivity"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Shizuku delivers its binder to the app through this provider -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
@@ -154,7 +165,7 @@
         <service
             android:name=".StopListTileService"
             android:exported="true"
-            android:label="Stop apps"
+            android:label="Kill Apps"
             android:icon="@drawable/ic_stat"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

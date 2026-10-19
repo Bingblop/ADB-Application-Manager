@@ -1,6 +1,10 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+  "Create new list": "नई सूची बनाएँ",
+  "List name in use": "सूची नाम पहले से उपयोग में है",
+  "Overwrite": "ओवरराइट करें",
+  "Overwrite the existing list, or save this as a new separate list?": "मौजूदा सूची को ओवरराइट करें या इसे एक अलग नई सूची के रूप में सहेजें?",
 "A test can use up to <1/> of data: it stops early at that amount.": "एक टेस्ट में अधिकतम <1/> डेटा लग सकता है: इतना होते ही यह पहले ही रुक जाता है।",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "हर एजेंट से पूछें बटन के पीछे का रिसर्च एजेंट, और वही जिससे ऐप अपडेटर ऐप खोजने को कहता है। यह वेब पढ़ता है और जो मिलता है उसे परखकर बताता है: छिपी सेटिंग, अनुमति, प्रोसेस, लॉग लाइन या ऐप क्या है। यह कोडिंग एजेंट नहीं है और फ़ोन में कभी कुछ नहीं बदलता। Perplexity डिफ़ॉल्ट है: यह खुद वेब खोजता है और अपने स्रोत बताता है। इसकी कुंजी कंसोल → टर्मिनल में सेट होती है।",
 "✓ Granted": "✓ दी गई",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "रोकें",
 "Stop Service": "सेवा रोकें",
 "Stop a process": "प्रोसेस रोकें",
-"Stop apps": "ऐप्स रोकें",
+"Kill Apps": "ऐप्स रोकें",
 "Stop background activity": "बैकग्राउंड गतिविधि रोकें",
 "Stop what is running": "जो चल रहा है उसे रोकें",
 "Stop when a patch fails": "पैच विफल होने पर रुकें",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "SD Maid टैब: darken (d4rken-org, GPL-3.0) के <1>SD Maid SE</1> के चार औज़ारों का पोर्ट, <2>Google Play</2> पर भी। इसके आइकन, लोगो और अनुवाद इस्तेमाल नहीं होते।",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "अल्फ़ा और बीटा बिल्ड छोड़ें<1>केवल जब कोई वर्शन टाइप न किया हो</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "सॉफ़्ट रीबूट Android के ऐप रनटाइम को रीस्टार्ट करता है (<1/>): स्क्रीन कुछ सेकंड के लिए काली हो जाती है और हर ऐप बंद हो जाता है, पर फ़ोन अपनी बूट स्क्रीन से नहीं गुज़रता। वह प्रॉपर्टी केवल Root ही सेट कर सकता है, इसलिए दूसरे मोड में यह टाइल लॉक रहती है।",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "किसी सूची पर <1>क्विक सूची</1> पर टैप करें, फिर टाइल या विजेट जोड़ें: दो बार नीचे स्वाइप करें, पेंसिल आइकन पर टैप करें और <2>वर्किंग मोड</2> व <3>ऐप्स रोकें</3> को अपने पैनल में खींचें; या होम स्क्रीन को देर तक दबाएं → विजेट → ADB/Root Full System Toolbox। ये ऐप खोले बिना चलते हैं।",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "किसी सूची पर <1>क्विक सूची</1> पर टैप करें, फिर टाइल या विजेट जोड़ें: दो बार नीचे स्वाइप करें, पेंसिल आइकन पर टैप करें और <2>वर्किंग मोड</2> व <3>ऐप्स रोकें</3> को अपने पैनल में खींचें; या होम स्क्रीन को देर तक दबाएं → विजेट → ADB/Root Full System Toolbox। ये ऐप खोले बिना चलते हैं।",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "किसी ऐप को चयन से हटाने के लिए <1>हटाएं</1> पर टैप करें। बैच कार्रवाइयां सिर्फ़ यहां सूचीबद्ध ऐप्स पर चलती हैं।",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "किसी कमांड को इनपुट में डालने के लिए उस पर टैप करें। ये ऑन-डिवाइस शेल में चलती हैं — <1>adb shell</1> प्रीफ़िक्स की ज़रूरत नहीं।",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "टास्क मैनेजर टैब <1>RohitKushvaha01/TaskManager</1> पर आधारित है।",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "आपके root मैनेजर (Magisk, KernelSU, APatch) ने इस ऐप को su नहीं दिया। वहाँ अनुमति दें, फिर Root दोबारा चुनें।"
 },
 p: [
+  ["A list named \"{0}\" already exists.", "\"{0}\" नाम की एक सूची पहले से मौजूद है।"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} अभी कनेक्ट नहीं है, इसलिए जब तक वह नहीं होता, एजेंट से पूछें बटन आपके लिए वेब पढ़ता है (मुफ़्त, कुंजी नहीं चाहिए)। उसकी कुंजी कंसोल → टर्मिनल में जोड़ें।"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} अभी जुड़ा नहीं है। पहले कंसोल → टर्मिनल में उसकी कुंजी या साइन-इन जोड़ें।"],
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” अब क्विक सूची है। इसे इस्तेमाल करने के लिए \"ऐप्स रोकें\" टाइल या विजेट जोड़ें।"],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "“{0}” अब क्विक सूची है। इसे इस्तेमाल करने के लिए \"ऐप्स रोकें\" टाइल या विजेट जोड़ें।"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} पंक्तियां • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} पंक्तियां • {2} • बड़ी फ़ाइल का सिर्फ़ शुरुआती हिस्सा तुलना में लिया गया"],
 ["+{0} more", "+{0} और"],

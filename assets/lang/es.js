@@ -1,6 +1,10 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+  "Create new list": "Crear una lista nueva",
+  "List name in use": "Nombre de lista en uso",
+  "Overwrite": "Sobrescribir",
+  "Overwrite the existing list, or save this as a new separate list?": "¿Sobrescribir la lista existente o guardarla como una lista nueva aparte?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Una prueba puede usar hasta <1/> de datos: se detiene antes al llegar a esa cantidad.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "El agente de investigación detrás de cada botón Preguntar al agente, y el que usa el Actualizador de aplicaciones para encontrar una app. Lee la web y sopesa lo que encuentra para responder qué es un ajuste oculto, un permiso, un proceso, una línea de registro o una app. No es un agente de programación y nunca cambia nada en el teléfono. Perplexity es el predeterminado: busca en la web por sí mismo y cita sus fuentes. Su clave se configura en Consola → Terminal.",
 "✓ Granted": "✓ Concedido",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "Detener",
 "Stop Service": "Detener servicio",
 "Stop a process": "Detener un proceso",
-"Stop apps": "Detener apps",
+"Kill Apps": "Detener apps",
 "Stop background activity": "Detener la actividad en segundo plano",
 "Stop what is running": "Detener lo que se está ejecutando",
 "Stop when a patch fails": "Detenerse cuando falle un parche",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "Pestaña SD Maid: una adaptación de las cuatro herramientas de <1>SD Maid SE</1> de darken (d4rken-org, GPL-3.0), también en <2>Google Play</2>. Sus iconos, logotipo y traducciones no se usan.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Omitir versiones alfa y beta<1>Solo cuando no se escribe ninguna versión</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "El reinicio suave reinicia el entorno de ejecución de apps de Android (<1/>): la pantalla se pone en negro unos segundos y todas las apps se cierran, pero el teléfono no pasa por su pantalla de arranque. Solo Root puede fijar esa propiedad, así que la ficha está bloqueada en los demás modos.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Toca <1>Lista rápida</1> en una lista y luego agrega los mosaicos o el widget: desliza hacia abajo dos veces, toca el lápiz y arrastra <2>Modo de operación</2> y <3>Detener apps</3> a tu panel; o mantén pulsada la pantalla de inicio → Widgets → ADB/Root Full System Toolbox. Funcionan sin abrir la app.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Toca <1>Lista rápida</1> en una lista y luego agrega los mosaicos o el widget: desliza hacia abajo dos veces, toca el lápiz y arrastra <2>Modo de operación</2> y <3>Detener apps</3> a tu panel; o mantén pulsada la pantalla de inicio → Widgets → ADB/Root Full System Toolbox. Funcionan sin abrir la app.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Toca <1>Quitar</1> para sacar una app de la selección. Las acciones por lotes solo se ejecutan en las apps de esta lista.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Toca un comando para pasarlo al campo de entrada. Se ejecutan en el shell del dispositivo: no hace falta el prefijo <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Pestaña Gestor de tareas basada en <1>RohitKushvaha01/TaskManager</1>.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Tu gestor de root (Magisk, KernelSU, APatch) no concedió su a esta app. Permítelo allí y luego elige Root de nuevo."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Ya existe una lista llamada «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} aún no está conectado, así que un botón Preguntar al agente lee la web por ti (gratis, sin clave) hasta que lo esté. Añade su clave en Consola → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} aún no está conectado. Añade primero su clave o inicio de sesión en Consola → Terminal."],
 ["\"{0}\" is not a number of seconds.", "«{0}» no es un número de segundos."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” es ahora la lista rápida. Agrega el mosaico “Detener apps” o el widget para usarla."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "“{0}” es ahora la lista rápida. Agrega el mosaico “Detener apps” o el widget para usarla."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} líneas • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} líneas • {2} • solo se compara la primera parte de un archivo grande"],
 ["+{0} more", "+{0} más"],

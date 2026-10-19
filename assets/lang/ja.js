@@ -1,6 +1,10 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+  "Create new list": "新しいリストを作成",
+  "List name in use": "リスト名は使用中です",
+  "Overwrite": "上書き",
+  "Overwrite the existing list, or save this as a new separate list?": "既存のリストを上書きしますか、それとも別の新しいリストとして保存しますか？",
 "A test can use up to <1/> of data: it stops early at that amount.": "1 回のテストで最大 <1/> のデータを使うことがあります。その量に達すると早めに止まります。",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "すべての「エージェントに質問」ボタンと、アプリのアップデーターがアプリを探すときに使うリサーチエージェントです。Webを読み取り、見つけた内容を吟味して、隠し設定・権限・プロセス・ログの行・アプリが何であるかを答えます。コーディングエージェントではなく、端末を変更することは一切ありません。既定はPerplexityで、自分でWebを検索し、情報源も示します。キーはコンソール → ターミナルで設定します。",
 "✓ Granted": "✓ 付与済み",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "停止",
 "Stop Service": "サービスを停止",
 "Stop a process": "プロセスを停止",
-"Stop apps": "アプリを停止",
+"Kill Apps": "アプリを停止",
 "Stop background activity": "バックグラウンド動作を停止",
 "Stop what is running": "実行中の処理を停止",
 "Stop when a patch fails": "パッチが失敗したら停止",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "SD Maid タブ：darken（d4rken-org、GPL-3.0）の <1>SD Maid SE</1> の 4 つのツールの移植版。<2>Google Play</2> にもあります。そのアイコン、ロゴ、翻訳は使っていません。",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "アルファ版・ベータ版を除外<1>バージョンを入力していない場合のみ</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "ソフト再起動は Android のアプリランタイムを再起動します（<1/>）。画面が数秒黒くなりすべてのアプリが閉じますが、起動画面は通りません。そのプロパティを設定できるのは Root だけなので、他のモードではタイルがロックされます。",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "リストの<1>クイックリスト</1>をタップしてから、タイルまたはウィジェットを追加します。下に 2 回スワイプし、鉛筆アイコンをタップして、<2>動作モード</2>と<3>アプリを停止</3>をパネルにドラッグします。または、ホーム画面を長押し → ウィジェット → ADB/Root Full System Toolbox。アプリを開かずに実行できます。",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "リストの<1>クイックリスト</1>をタップしてから、タイルまたはウィジェットを追加します。下に 2 回スワイプし、鉛筆アイコンをタップして、<2>動作モード</2>と<3>アプリを停止</3>をパネルにドラッグします。または、ホーム画面を長押し → ウィジェット → ADB/Root Full System Toolbox。アプリを開かずに実行できます。",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "<1>削除</1>をタップすると、アプリを選択から外せます。一括操作は、ここに表示されているアプリにのみ実行されます。",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "コマンドをタップすると入力欄に入ります。これらは端末上のシェルで実行されるため、<1>adb shell</1>は不要です。",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "タスク管理タブは、<1>RohitKushvaha01/TaskManager</1>をモデルにしています。",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root マネージャー（Magisk、KernelSU、APatch）がこのアプリに su を許可しませんでした。そちらで許可してから、もう一度 Root を選んでください。"
 },
 p: [
+  ["A list named \"{0}\" already exists.", "「{0}」という名前のリストはすでに存在します。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} はまだ接続されていません。先にコンソール → ターミナルでそのキーまたはサインインを追加してください。"],
 ["\"{0}\" is not a number of seconds.", "「{0}」は秒数ではありません。"],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "「{0}」がクイックリストになりました。使うには「アプリを停止」タイルまたはウィジェットを追加してください。"],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "「{0}」がクイックリストになりました。使うには「アプリを停止」タイルまたはウィジェットを追加してください。"],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} 行 • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} 行 • {2} • 大きなファイルは先頭部分のみ比較"],
 ["+{0} more", "他{0}件"],

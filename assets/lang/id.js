@@ -1,6 +1,10 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+  "Create new list": "Buat daftar baru",
+  "List name in use": "Nama daftar sudah dipakai",
+  "Overwrite": "Timpa",
+  "Overwrite the existing list, or save this as a new separate list?": "Timpa daftar yang ada, atau simpan sebagai daftar baru terpisah?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Satu tes dapat memakai hingga <1/> data: tes berhenti lebih awal saat mencapai jumlah itu.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Agen riset di balik setiap tombol Tanya agen, sekaligus agen yang ditanyai Pembaru Aplikasi untuk menemukan aplikasi. Ia membaca web dan menimbang temuannya untuk menjawab: apa itu setelan tersembunyi, izin, proses, baris log, atau aplikasi. Ini bukan agen pemrograman dan tidak pernah mengubah apa pun di ponsel. Perplexity adalah bawaannya: ia mencari web sendiri dan menyebutkan sumbernya. Kuncinya diatur di Konsol → Terminal.",
 "✓ Granted": "✓ Diberikan",
@@ -3614,7 +3618,7 @@ x: {
 "Stop": "Berhenti",
 "Stop Service": "Hentikan Service",
 "Stop a process": "Hentikan proses",
-"Stop apps": "Hentikan aplikasi",
+"Kill Apps": "Hentikan aplikasi",
 "Stop background activity": "Hentikan aktivitas latar belakang",
 "Stop what is running": "Hentikan yang sedang berjalan",
 "Stop when a patch fails": "Berhenti saat patch gagal",
@@ -5042,7 +5046,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "Tab SD Maid: porting dari empat alat <1>SD Maid SE</1> oleh darken (d4rken-org, GPL-3.0), juga di <2>Google Play</2>. Ikon, logo, dan terjemahannya tidak dipakai.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Lewati build alfa dan beta<1>Hanya bila tidak ada versi yang diketik</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "Mulai ulang lunak memulai ulang runtime aplikasi Android (<1/>): layar menjadi hitam beberapa detik dan semua aplikasi tertutup, tetapi ponsel tidak melewati layar boot-nya. Hanya Root yang boleh mengatur properti itu, jadi ubinnya terkunci di mode lain.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Ketuk <1>Daftar cepat</1> pada sebuah daftar, lalu tambahkan ubin atau widget: geser ke bawah dua kali, ketuk ikon pensil dan seret <2>Mode kerja</2> serta <3>Hentikan aplikasi</3> ke panel Anda; atau tekan lama layar utama → Widget → ADB/Root Full System Toolbox. Semuanya berjalan tanpa membuka aplikasi.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Ketuk <1>Daftar cepat</1> pada sebuah daftar, lalu tambahkan ubin atau widget: geser ke bawah dua kali, ketuk ikon pensil dan seret <2>Mode kerja</2> serta <3>Hentikan aplikasi</3> ke panel Anda; atau tekan lama layar utama → Widget → ADB/Root Full System Toolbox. Semuanya berjalan tanpa membuka aplikasi.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Ketuk <1>Hapus</1> untuk mengeluarkan aplikasi dari pilihan. Tindakan batch hanya dijalankan pada aplikasi yang tercantum di sini.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Ketuk perintah untuk memasukkannya ke kolom input. Perintah ini berjalan di shell perangkat — tidak perlu awalan <1>adb shell</1>.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Tab Manajer Tugas dibuat berdasarkan <1>RohitKushvaha01/TaskManager</1>.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Pengelola root Anda (Magisk, KernelSU, APatch) tidak memberi su ke aplikasi ini. Izinkan di sana, lalu pilih Root lagi."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "Daftar bernama “{0}” sudah ada."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} belum terhubung, jadi tombol Tanya agen membaca web untuk Anda (gratis, tanpa kunci) sampai terhubung. Tambahkan kuncinya di Konsol → Terminal."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} belum terhubung. Tambahkan dulu kunci atau login-nya di Konsol → Terminal."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bukan angka detik."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” kini menjadi daftar cepat. Tambahkan ubin “Hentikan aplikasi” atau widget untuk menggunakannya."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "“{0}” kini menjadi daftar cepat. Tambahkan ubin “Hentikan aplikasi” atau widget untuk menggunakannya."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} baris • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} baris • {2} • hanya bagian pertama file besar yang dibandingkan"],
 ["+{0} more", "+{0} lainnya"],

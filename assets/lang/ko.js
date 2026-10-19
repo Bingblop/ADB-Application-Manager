@@ -1,6 +1,10 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+  "Create new list": "새 목록 만들기",
+  "List name in use": "이미 사용 중인 목록 이름",
+  "Overwrite": "덮어쓰기",
+  "Overwrite the existing list, or save this as a new separate list?": "기존 목록을 덮어쓰시겠습니까, 아니면 별도의 새 목록으로 저장하시겠습니까?",
 "A test can use up to <1/> of data: it stops early at that amount.": "테스트 한 번에 최대 <1/>의 데이터를 사용할 수 있으며, 그 양에 도달하면 일찍 멈춥니다.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "모든 질문 에이전트 버튼과, 앱 업데이트 도구가 앱을 찾을 때 묻는 리서치 에이전트입니다. 웹을 읽고 찾은 내용을 따져 숨겨진 설정, 권한, 프로세스, 로그 줄 또는 앱이 무엇인지 답합니다. 코딩 에이전트가 아니며 휴대폰을 절대 변경하지 않습니다. 기본값은 Perplexity로, 직접 웹을 검색하고 출처를 밝힙니다. 키는 콘솔 → 터미널에서 설정합니다.",
 "✓ Granted": "✓ 부여됨",
@@ -3614,7 +3618,7 @@ x: {
 "Stop": "중지",
 "Stop Service": "서비스 중지",
 "Stop a process": "프로세스 중지",
-"Stop apps": "앱 중지",
+"Kill Apps": "앱 중지",
 "Stop background activity": "백그라운드 활동 중지",
 "Stop what is running": "실행 중인 작업 중지",
 "Stop when a patch fails": "패치 실패 시 중지",
@@ -5042,7 +5046,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "SD Maid 탭: darken(d4rken-org, GPL-3.0)의 <1>SD Maid SE</1> 도구 네 가지를 이식한 것으로 <2>Google Play</2>에도 있습니다. 해당 아이콘, 로고, 번역은 사용하지 않습니다.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "알파 및 베타 빌드 건너뛰기<1>버전을 입력하지 않았을 때만</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "소프트 재부팅은 Android의 앱 런타임을 재시작합니다(<1/>). 화면이 몇 초 검게 되고 모든 앱이 닫히지만 부팅 화면은 거치지 않습니다. 그 속성을 설정할 수 있는 것은 Root뿐이므로 다른 모드에서는 타일이 잠깁니다.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "목록에서 <1>빠른 목록</1>을 누른 다음 타일이나 위젯을 추가하세요: 아래로 두 번 스와이프하고 연필 아이콘을 눌러 <2>작동 모드</2>와 <3>앱 중지</3>를 패널로 끌어 놓거나, 홈 화면을 길게 눌러 → 위젯 → ADB/Root Full System Toolbox를 선택합니다. 앱을 열지 않아도 실행됩니다.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "목록에서 <1>빠른 목록</1>을 누른 다음 타일이나 위젯을 추가하세요: 아래로 두 번 스와이프하고 연필 아이콘을 눌러 <2>작동 모드</2>와 <3>앱 중지</3>를 패널로 끌어 놓거나, 홈 화면을 길게 눌러 → 위젯 → ADB/Root Full System Toolbox를 선택합니다. 앱을 열지 않아도 실행됩니다.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "앱을 선택에서 빼려면 <1>제거</1>를 누르세요. 일괄 작업은 여기에 나열된 앱에만 실행됩니다.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "명령을 누르면 입력란에 들어갑니다. 기기 내 셸에서 실행되므로 <1>adb shell</1> 접두사가 필요 없습니다.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "<1>RohitKushvaha01/TaskManager</1>를 참고해 만든 작업 관리자 탭입니다.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root 관리자(Magisk, KernelSU, APatch)가 이 앱에 su를 허용하지 않았습니다. 거기서 허용한 뒤 Root를 다시 선택하세요."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "\"{0}\"(이)라는 이름의 목록이 이미 있습니다."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}이(가) 아직 연결되지 않아 연결될 때까지 질문 에이전트 버튼은 웹을 읽어 줍니다(무료, 키 불필요). 콘솔 → 터미널에서 키를 추가하세요."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0}은(는) 아직 연결되지 않았습니다. 먼저 콘솔 → 터미널에서 키 또는 로그인을 추가하세요."],
 ["\"{0}\" is not a number of seconds.", "“{0}”은(는) 초 단위 숫자가 아닙니다."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "\"{0}\" 목록이 이제 빠른 목록입니다. 사용하려면 \"앱 중지\" 타일이나 위젯을 추가하세요."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "\"{0}\" 목록이 이제 빠른 목록입니다. 사용하려면 \"앱 중지\" 타일이나 위젯을 추가하세요."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1}줄 • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1}줄 • {2} • 큰 파일은 앞부분만 비교됨"],
 ["+{0} more", "+{0}개 더"],

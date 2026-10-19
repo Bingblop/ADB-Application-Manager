@@ -1,6 +1,10 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+  "Create new list": "Yeni liste oluştur",
+  "List name in use": "Liste adı kullanımda",
+  "Overwrite": "Üzerine yaz",
+  "Overwrite the existing list, or save this as a new separate list?": "Mevcut listenin üzerine mi yazılsın, yoksa ayrı bir yeni liste olarak mı kaydedilsin?",
 "A test can use up to <1/> of data: it stops early at that amount.": "Bir test en fazla <1/> veri kullanabilir: bu miktara ulaşınca erken durur.",
 "The research agent behind every Ask agent button, and the one the Application Updater asks to find an app. It reads the web and weighs what it finds to answer: what a hidden setting, a permission, a process, a log line or an app is. It is not a coding agent and it never changes anything on the phone. Perplexity is the default: it searches the web by itself and names its sources. Its key is set up in Console → Terminal.": "Her Sor aracısı düğmesinin arkasındaki ve Uygulama Güncelleyici'nin bir uygulamayı bulmak için sorduğu araştırma aracısı. Web'i okur ve bulduklarını tartarak şunun yanıtını verir: gizli bir ayar, bir izin, bir işlem, bir günlük satırı veya bir uygulama nedir. Kodlama aracısı değildir ve telefonda hiçbir şeyi değiştirmez. Varsayılan Perplexity'dir: web'i kendisi arar ve kaynaklarını belirtir. Anahtarı Konsol → Terminal bölümünde ayarlanır.",
 "✓ Granted": "✓ Verildi",
@@ -3615,7 +3619,7 @@ x: {
 "Stop": "Durdur",
 "Stop Service": "Service’i durdur",
 "Stop a process": "Bir işlemi durdur",
-"Stop apps": "Uygulamaları durdur",
+"Kill Apps": "Uygulamaları durdur",
 "Stop background activity": "Arka plan etkinliğini durdur",
 "Stop what is running": "Çalışan işlemi durdur",
 "Stop when a patch fails": "Bir yama başarısız olunca dur",
@@ -5043,7 +5047,7 @@ x: {
 "SD Maid tab: a port of the four tools of <1>SD Maid SE</1> by darken (d4rken-org, GPL-3.0), also on <2>Google Play</2>. Its icons, logo and translations are not used.": "SD Maid sekmesi: darken’ın (d4rken-org, GPL-3.0) <1>SD Maid SE</1> uygulamasının dört aracının bir taşıması; <2>Google Play</2>’de de var. Simgeleri, logosu ve çevirileri kullanılmaz.",
 "Skip alpha and beta builds<1>Only when no version is typed</1>": "Alfa ve beta derlemelerini atla<1>Yalnızca sürüm yazılmadığında</1>",
 "Soft reboot restarts Android's app runtime (<1/>): the screen goes black for a few seconds and every app closes, but the phone does not go through its boot screen. Only Root may set that property, so the tile is locked in the other modes.": "Yumuşak yeniden başlatma, Android'in uygulama çalışma zamanını yeniden başlatır (<1/>): ekran birkaç saniye kararır ve her uygulama kapanır ama telefon açılış ekranından geçmez. O özelliği yalnızca Root ayarlayabilir; bu yüzden kutucuk diğer modlarda kilitlidir.",
-"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Stop apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Bir listede <1>Hızlı liste</1> düğmesine dokunun, sonra kutucukları veya widget’ı ekleyin: ekranı iki kez aşağı kaydırın, kalem simgesine dokunun ve <2>Çalışma modu</2> ile <3>Uygulamaları durdur</3> kutucuklarını panelinize sürükleyin; veya ana ekrana uzun basın → Widget’lar → ADB/Root Full System Toolbox. Uygulamayı açmadan çalışırlar.",
+"Tap <1>Quick list</1> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <2>Working mode</2> and <3>Kill Apps</3> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.": "Bir listede <1>Hızlı liste</1> düğmesine dokunun, sonra kutucukları veya widget’ı ekleyin: ekranı iki kez aşağı kaydırın, kalem simgesine dokunun ve <2>Çalışma modu</2> ile <3>Uygulamaları durdur</3> kutucuklarını panelinize sürükleyin; veya ana ekrana uzun basın → Widget’lar → ADB/Root Full System Toolbox. Uygulamayı açmadan çalışırlar.",
 "Tap <1>Remove</1> to take an app out of the selection. The batch actions only run on the apps listed here.": "Bir uygulamayı seçimden çıkarmak için <1>Kaldır</1> düğmesine dokunun. Toplu işlemler yalnızca burada listelenen uygulamalarda çalışır.",
 "Tap a command to drop it in the input. These run in the on-device shell — no <1>adb shell</1> prefix needed.": "Bir komutu giriş alanına bırakmak için ona dokunun. Bunlar cihaz üzerindeki shell’de çalışır — <1>adb shell</1> ön eki gerekmez.",
 "Task Manager tab modeled on <1>RohitKushvaha01/TaskManager</1>.": "Görev Yöneticisi sekmesi <1>RohitKushvaha01/TaskManager</1> örnek alınarak hazırlandı.",
@@ -5094,10 +5098,11 @@ x: {
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root yöneticiniz (Magisk, KernelSU, APatch) bu uygulamaya su vermedi. Orada izin verin, sonra Root’u yeniden seçin."
 },
 p: [
+  ["A list named \"{0}\" already exists.", "“{0}” adında bir liste zaten var."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} henüz bağlı değil, bu yüzden bağlanana kadar Sor aracısı düğmesi sizin için web'i okur (ücretsiz, anahtar gerekmez). Anahtarını Konsol → Terminal bölümünde ekleyin."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} henüz bağlı değil. Önce Konsol → Terminal bölümünde anahtarını veya girişini ekleyin."],
 ["\"{0}\" is not a number of seconds.", "“{0}” bir saniye sayısı değil."],
-["\"{0}\" is now the quick list. Add the \"Stop apps\" tile or the widget to use it.", "“{0}” artık hızlı liste. Kullanmak için “Uygulamaları durdur” kutucuğunu veya widget’ı ekleyin."],
+["\"{0}\" is now the quick list. Add the \"Kill Apps\" tile or the widget to use it.", "“{0}” artık hızlı liste. Kullanmak için “Uygulamaları durdur” kutucuğunu veya widget’ı ekleyin."],
 ["+{0} / −{1} lines • {2}", "+{0} / −{1} satır • {2}"],
 ["+{0} / −{1} lines • {2} • only the first part of a large file is compared", "+{0} / −{1} satır • {2} • büyük bir dosyanın yalnızca ilk kısmı karşılaştırıldı"],
 ["+{0} more", "+{0} daha"],
