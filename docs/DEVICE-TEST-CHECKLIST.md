@@ -565,6 +565,14 @@ Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and
 - [ ] **A failed start.** If Shizuku does not start (for example a Shizuku version whose start script needs another way), the toast says so and the text the script printed appears under the buttons. Please copy that text into the report: it is what we need to adjust the command for that version.
 - [ ] **Double tap.** Tap twice quickly: one start runs; the second tap says it is already being started.
 
+## 31. Shizuku offered to start at launch
+
+Needs Shizuku installed but not running, ADB TCP or Wireless Debugging reachable (connected earlier, so a target is saved) and the working mode set to Shizuku (or Auto). None of this has been run on a phone yet.
+
+- [ ] **Offered on launch.** Restart the phone (or stop Shizuku) so Shizuku is not running, with ADB TCP or Wireless Debugging reachable and the mode on Shizuku, then open the app. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
+- [ ] **Declined twice, then quiet.** Open the app and tap **Cancel** on the offer, then open it again: it offers once more. Decline again, then open a third time: it no longer offers (asked at most twice). The Shizuku card's **Start Shizuku (ADB)** button still starts it by hand.
+- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target reachable, or with Shizuku not installed: no launch dialog appears.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
