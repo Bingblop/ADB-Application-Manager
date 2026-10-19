@@ -7,7 +7,9 @@ ok      the Java verdict can veto: Root reported as the privileged mode but root
 ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
 ok      the gate names the way: choose Root in Working Modes
-ok      the placeholder says the temporary root setup comes in a later step
+ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button
+ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
+ok      with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now
 ok      su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false
@@ -16,7 +18,7 @@ ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, th
 ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
 ok      a no: nothing opens, false
 ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab
-ok   6. at 360 px nothing is wider than the screen, the Request and the locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
+ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. no page errors
 errors: []
 all passed

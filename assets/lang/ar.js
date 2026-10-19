@@ -1,6 +1,11 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "تحقّق مما إذا كان جهازك يمكنه الحصول على صلاحية Super User، أو افتح مدير الروت لمنحها.",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "لم يُعثر على مدير روت. ثبّت KernelSU أو APatch أو Magisk، ثم عُد.",
+  "Open root manager": "فتح مدير الروت",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "يُمنح الروت المؤقت داخل مدير الروت لديك (KernelSU أو APatch أو Magisk). افتحه، واسمح لهذا التطبيق بصلاحية Super User هناك، ثم عُد. تُفتح ميزات الروت بمجرد منح su.",
+  "your root manager": "مدير الروت لديك",
   "Create new list": "إنشاء قائمة جديدة",
   "List name in use": "اسم القائمة مُستخدَم بالفعل",
   "Overwrite": "استبدال",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "يعرض تقدّم إشعار «إيقاف التطبيقات» في شريط الحالة كتحديث مباشر (Android 16 والإصدارات الأحدث). ويحتاج أيضًا إلى الإشعارات وإلى مفتاح هذا التطبيق في إعدادات الإشعارات بالهاتف.",
 "Saved Applications was turned off. It is on again to show this list.": "كانت «التطبيقات المحفوظة» متوقفة. تم تشغيلها مجددًا لعرض هذه القائمة.",
 "That saved list is not there any more.": "هذه القائمة المحفوظة لم تعد موجودة.",
-"Check whether your device can get Super User access.": "تحقّق مما إذا كان جهازك يستطيع الحصول على صلاحية Superuser.",
 "Needs Super User": "يتطلب Superuser",
 "No su was found on this device. Root Features need Super User.": "لم يُعثر على su في هذا الجهاز. تحتاج ميزات Root إلى Superuser.",
 "Open Root Features to check if your device supports Super User?": "هل تريد فتح «ميزات Root» للتحقق مما إذا كان جهازك يدعم Superuser؟",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "ميزات Superuser (root). تُفتح عندما يكون وضع التشغيل Root وقد منح su هذا التطبيق الوصول.",
 "Super User access": "صلاحية Superuser",
 "Super User is active — root features will appear here.": "Superuser مفعّل — ستظهر ميزات Root هنا.",
-"Temporary root setup is coming in a later step.": "إعداد Root المؤقت سيأتي في خطوة لاحقة.",
 "They unlock once Super User is active.": "تُفتح عندما يصبح Superuser مفعّلًا.",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "جهازك يحتوي على su. اختر Root في «أوضاع التشغيل» واسمح لهذا التطبيق عندما يسأل su.",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "مدير Root لديك (Magisk أو KernelSU أو APatch) لم يمنح su لهذا التطبيق. اسمح له هناك ثم اختر Root مجددًا."
 },
 p: [
+  ["Allow this app in {0}, then come back.", "اسمح لهذا التطبيق في {0}، ثم عُد."],
   ["A list named \"{0}\" already exists.", "توجد بالفعل قائمة باسم «{0}»."],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0} غير متصل بعد، لذا يقرأ زر «اسأل الوكيل» الويب نيابةً عنك (مجانًا ودون مفتاح) إلى أن يتصل. أضف مفتاحه في وحدة التحكم ← الطرفية."],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} غير متصل بعد. أضف مفتاحه أو تسجيل دخوله أولًا في وحدة التحكم ← الطرفية."],

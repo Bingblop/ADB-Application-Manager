@@ -1,6 +1,11 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+  "Check whether your device can get Super User access, or open your root manager to grant it.": "お使いの端末が Super User アクセスを取得できるか確認するか、Root マネージャーを開いて許可してください。",
+  "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root マネージャーが見つかりませんでした。KernelSU、APatch、または Magisk をインストールしてから戻ってください。",
+  "Open root manager": "Root マネージャーを開く",
+  "Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.": "一時的な root はお使いの Root マネージャー（KernelSU、APatch、または Magisk）内で付与されます。開いて、そこでこのアプリに Super User を許可してから戻ってください。su が付与されると Root 機能のロックが解除されます。",
+  "your root manager": "お使いの Root マネージャー",
   "Create new list": "新しいリストを作成",
   "List name in use": "リスト名は使用中です",
   "Overwrite": "上書き",
@@ -5093,7 +5098,6 @@ x: {
 "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "「アプリを停止」の通知の進行状況を、ステータスバーにライブアップデートとして表示します（Android 16 以降）。通知の許可と、スマートフォンの通知設定にあるこのアプリのスイッチも必要です。",
 "Saved Applications was turned off. It is on again to show this list.": "「保存したアプリ」はオフになっていました。このリストを表示するため、再びオンにしました。",
 "That saved list is not there any more.": "その保存リストはもうありません。",
-"Check whether your device can get Super User access.": "この端末がスーパーユーザー権限を取得できるか確認します。",
 "Needs Super User": "スーパーユーザーが必要",
 "No su was found on this device. Root Features need Super User.": "この端末に su が見つかりません。Root 機能にはスーパーユーザーが必要です。",
 "Open Root Features to check if your device supports Super User?": "Root 機能を開いて、この端末がスーパーユーザーに対応しているか確認しますか？",
@@ -5104,12 +5108,12 @@ x: {
 "Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "スーパーユーザー（root）機能。動作モードが Root で、su がこのアプリにアクセスを許可すると解除されます。",
 "Super User access": "スーパーユーザー権限",
 "Super User is active — root features will appear here.": "スーパーユーザーが有効です — Root 機能はここに表示されます。",
-"Temporary root setup is coming in a later step.": "一時的な Root のセットアップは後のステップで追加されます。",
 "They unlock once Super User is active.": "スーパーユーザーが有効になると解除されます。",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "この端末には su があります。「動作モード」で Root を選び、su が確認したらこのアプリを許可してください。",
 "Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.": "Root マネージャー（Magisk、KernelSU、APatch）がこのアプリに su を許可しませんでした。そちらで許可してから、もう一度 Root を選んでください。"
 },
 p: [
+  ["Allow this app in {0}, then come back.", "{0} でこのアプリを許可してから戻ってください。"],
   ["A list named \"{0}\" already exists.", "「{0}」という名前のリストはすでに存在します。"],
 ["{0} is not connected yet, so an Ask agent button reads the web for you (free, no key) until it is. Add its key in Console → Terminal.", "{0}はまだ接続されていないため、接続するまで「エージェントに質問」ボタンはWebを読み取って答えます(無料、キー不要)。コンソール → ターミナルでキーを追加してください。"],
 ["{0} is not connected yet. Add its key or sign-in in Console → Terminal first.", "{0} はまだ接続されていません。先にコンソール → ターミナルでそのキーまたはサインインを追加してください。"],

@@ -18,6 +18,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     window.__calls = { selectWorkingMode: [] };
     // what the phone reports as its working mode; a test sets the state (and whether su would grant a switch to Root)
     window.__wm = { state: 'root', suGrants: true };
+    // which root manager (if any) openRootManager would hand off to
+    window.__rootMgr = { ok: true, name: 'KernelSU' };
     const WM = {
       root: { activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true },
       rootVetoed: { activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: false },
@@ -31,6 +33,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       loadSetting(k) { return window.__kv[k] !== undefined ? window.__kv[k] : ''; },
       saveSetting(k, v) { window.__kv[k] = v; },
       loadPackages() { return '[]'; },
+      openRootManager() { window.__calls.openRootManager = (window.__calls.openRootManager || 0) + 1; return JSON.stringify(window.__rootMgr || { ok: false }); },
+      rootManagerName() { return (window.__rootMgr && window.__rootMgr.ok) ? window.__rootMgr.name : ''; },
       getWorkingMode() { return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, WM[window.__wm.state])); },
       selectWorkingMode(mode) {
         window.__calls.selectWorkingMode.push(mode);
@@ -69,7 +73,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await setMode('shizuku', true);
   check('3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there', (await disp('#rootGate')) === 'flex' && (await tag()) === 'warning AVAILABLE' && (await lockedRow()) && /Needs Super User/.test(await text('#rfFeatureList')) && (await disp('#rfSuCard')) !== 'none', await tag());
   check('   the gate names the way: choose Root in Working Modes', /Choose Root in Working Modes/.test(await text('#rootGateDesc')));
-  check('   the placeholder says the temporary root setup comes in a later step', /Temporary root setup is coming in a later step\./.test(await text('#rfSuCard')));
+  check('   the su card explains temporary root is granted in the root manager and offers the Open root manager button', /Temporary root is granted inside your root manager/.test(await text('#rfSuCard')) && (await ev(() => !!document.getElementById('rfOpenManagerBtn'))));
+  // the hand-off: Open root manager launches the installed manager and marks the grant pending so the status is read back on return
+  await ev(() => { window.__calls.openRootManager = 0; window.__rootMgr = { ok: true, name: 'KernelSU' }; rootGrantPending = false; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  check('   Open root manager launches the installed manager (openRootManager) and marks the grant pending', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === true)));
+  await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  check('   with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)));
+  await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   await page.click('#rootGate .mode-alert-btn'); await sleep(50);
   check('   the gate\'s Set Up opens the Working Modes sheet', await ev(() => document.getElementById('modesModal').classList.contains('show')));
   await ev(() => closeWorkingModesModal()); await sleep(50);
@@ -109,7 +121,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const btns = [...v.querySelectorAll('.mode-action-btn, .op-mode-btn')].filter(b => b.getClientRects().length).map(b => ({ id: b.id || b.className, h: Math.round(b.getBoundingClientRect().height) }));
     return { wide: document.documentElement.scrollWidth - innerWidth, btns, tagOneLine: document.getElementById('rfStatusTag').getBoundingClientRect().height < 24, lockedOpacity: getComputedStyle(v.querySelector('.op-mode-btn.locked')).opacity };
   });
-  check('6. at 360 px nothing is wider than the screen, the Request and the locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed', geo.wide <= 0 && geo.btns.length === 2 && geo.btns.every(x => x.h >= 36) && geo.tagOneLine && +geo.lockedOpacity < 1, JSON.stringify(geo));
+  check('6. at 360 px nothing is wider than the screen, the Request, Open-manager and locked buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed', geo.wide <= 0 && geo.btns.length === 3 && geo.btns.every(x => x.h >= 36) && geo.tagOneLine && +geo.lockedOpacity < 1, JSON.stringify(geo));
   await page.screenshot({ path: 'rootfeatures_locked.png', fullPage: true });
 
   check('7. no page errors', errors.length === 0, errors.join(' | '));
