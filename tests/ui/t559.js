@@ -7,12 +7,14 @@
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
 // nothing, a yes goes the way of Request Super User (selectWorkingMode('root'); a refusal puts the mode chosen before back, T-052); with Root
 // already chosen nothing is asked. Open root manager that finds no known manager says
-// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
+// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018; with Magisk tap Request Super User first, with another
+// manager allow the app first, T-059), and asks to install one only without su; so does Open manager
 // on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
 // manager's list (Magisk lists an app only after it has asked su, T-019).
 // Then the Help Guide (T-029): its Root Features topic names the Features card, the Super User for apps row
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
-// plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
+// plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
+// Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
@@ -215,7 +217,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
-  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. Open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
+  const hiddenMgrToast = await text('#toastMsg');
+  // T-059: in the order that works: Magisk lists an app only after it has asked su (the note above), so with Magisk Request Super User comes first;
+  // another manager lists every app, so it is allowed there first
+  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. With Magisk, tap Request Super User first and allow this app when Magisk asks\. With another manager, open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
   await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'Magisk' }; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
@@ -316,6 +321,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const gTab = plain['tab-rootfeatures'] || '', gSuApps = plain['rootfeatures-su-apps'] || '';
   check('7. the guide\'s Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card', /The "Features" card/.test(gTab) && /Super User for apps/.test(gTab) && /Open manager/.test(gTab) && /Open root manager/.test(gTab) && !/later version|until then the card says so/i.test(gTab), gTab.slice(0, 160));
   check('   its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return', /opens the way its icon on the home screen opens it/.test(gSuApps) && /not on its list of apps with root/.test(gSuApps) && /Come back\. The app checks its own root status again/.test(gSuApps), gSuApps.slice(0, 160));
+  // T-059: the hidden-manager paragraph quotes the toast as the page shows it, and "not in Magisk's list" holds only until the app has asked su
+  // once: the same paragraph names DENIED (su asked and refused), so it says what to do when Magisk then says no without asking
+  const gGrant = plain['rootfeatures-grant'] || '';
+  check('   its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk\'s list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)', hiddenMgrToast.length > 0 && gGrant.includes('"' + hiddenMgrToast + '"') && /until this app has asked once, it is not in Magisk's list/.test(gGrant) && /\(a chip that reads DENIED means it has\) and Magisk now says no without showing its question/.test(gGrant) && !/so the app is not in its list yet/.test(gGrant), (gGrant.match(/Because the phone has.{0,200}/) || [''])[0]);
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 

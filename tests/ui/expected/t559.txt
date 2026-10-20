@@ -29,7 +29,7 @@ ok      T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root"
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
 ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
-ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)
+ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)
 ok      a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending
 ok      back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent
 ok      onAppResume with nothing pending reads nothing fresh
@@ -55,6 +55,7 @@ ok      Request Super User asks su through selectWorkingMode("root") (the path o
 ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
 ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
+ok      its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk's list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)
 ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
 ok   8. no page errors
 errors: []
