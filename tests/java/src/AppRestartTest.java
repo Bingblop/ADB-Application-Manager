@@ -160,7 +160,12 @@ public class AppRestartTest {
 
       // D. without setsid on PATH (the plain sh branch), with a hang-up to the whole group of the shell that started the watcher, as adbd sends when the
       // app's connection drops: the watcher ignores it and still starts the app again
-      check("D: the minimal PATH has no setsid", readWithin(new ProcessBuilder("sh", "-c", "command -v setsid || echo none").redirectErrorStream(true).start(), 5000).trim().equals("none") || true);   // informative only: the branch is chosen inside the script with the PATH below
+      // the script picks its branch with the PATH it runs with: probe that same PATH (the fake am's folder and the minimal one), so the runs below really
+      // take the plain sh branch
+      ProcessBuilder probe = new ProcessBuilder("sh", "-c", "command -v setsid || echo none").redirectErrorStream(true);
+      probe.environment().put("PATH", bin + ":" + minimal);
+      String noSetsid = readWithin(probe.start(), 5000).trim();
+      check("D: the minimal PATH has no setsid (so the script takes its plain sh branch)", noSetsid.equals("none"), noSetsid);
       Process d = app();
       String script = AppRestart.watchScript((int) d.pid(), USER, COMP);
       String outD;
