@@ -39117,8 +39117,12 @@ Type any command above (e.g. pm list packages -d)</div>
             // what the list sent back says: true when one of these overlays is listed on, false when it came whole and none is, null without one
             const onNow = whole && ids.length ? ids.some(id => ovlList.some(o => o.id === id && o.state === 1)) : null;
             if (action === 'fabricate') {
-                // listed on: written (so Revert and Undo switch it off); no answer: it may be on; refused, or listed but not on: as it was before
-                if ((r.ok || r.state === 1 || onNow === true) && ids.length) ovlRootRemember(ovlRootRecord({ ids, t: Date.now(), black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : '', carried));
+                // listed on: written (so Revert and Undo switch it off); no answer: it may be on; refused, or listed but not on: as it was before.
+                // Written: the earlier record's ids the list sent back still shows on are kept with this write's (T-071: after an update from
+                // Android 13 the per-colour overlays of a 13-era write are not this write's ids, and only the record lets Undo, Default and
+                // Apply with nothing on switch them off)
+                const kept = whole && was && Array.isArray(was.ids) ? was.ids.filter(id => typeof id === 'string' && ovlList.some(o => o.id === id && o.state === 1)) : [];
+                if ((r.ok || r.state === 1 || onNow === true) && ids.length) ovlRootRemember(ovlRootRecord({ ids: Array.from(new Set(ids.concat(kept))), t: Date.now(), black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : '', carried));
                 else if ((r.unknown || r.timedOut) && ids.length) ovlRootRemember(ovlRootRecord({ ids: Array.from(new Set((was ? was.ids : []).concat(ids))), t: Date.now(), pending: true, black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : '', carried));
                 else ovlRootRemember(prior === undefined ? null : prior);
             } else if (r.ok || onNow === false) ovlRootRemember(null);       // off, or not listed on at all: nothing of this app's is on any more

@@ -206,6 +206,31 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   with nothing written the question does not mention the overlay; Cancel changes nothing', dialogs.length === 1 && !/pure black/.test(dialogs[0]) && (await calls()).restore.length === 0 && (await calls()).fab.length === 0, dialogs[0]);
   answer = true;
 
+  // 6b) T-071: an update from Android 13 to 14. The 13-era record names one overlay per colour; the first write on 14 is the one overlay
+  //     aam_monet. The earlier ids the list still shows on stay in the record, so switching Pure black off later switches them off too;
+  //     earlier ids the list shows off (or does not list) are not kept
+  const N1 = AAM + '_neutral1_900', N2 = AAM + '_neutral2_900';
+  const seed13 = state => ev(([n1, n2, st]) => {
+    kvSet('ovl_root_applied', { ids: [n1, n2], t: Date.now() - 86400000, black: true, profile: 'P12' });
+    window.__ovl.filter(o => o.id === n1 || o.id === n2).forEach(o => { o.state = st; });
+    const m = window.__ovl.find(o => o.id === 'com.android.shell:aam_monet'); if (m) m.state = 0;
+    window.__sdk = 34; ovlReadPalette(); kvSet('ovl_black', true); ovlRender();
+  }, [N1, N2, state]);
+  await seed13(1); await sleep(200); await reset();
+  await apply();
+  k = await calls();
+  let rec13 = await kv('ovl_root_applied');
+  check('6b. after an update to Android 14, the first Pure black write (11 entries, one overlay) keeps the 13-era ids the list still shows on', k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 11 && !!rec13 && JSON.stringify(rec13.ids) === JSON.stringify([AAM, N1, N2]) && rec13.pending !== true && (await toast()) === 'Pure black overlay written', JSON.stringify([k.fab.map(f => f.action), rec13]));
+  await page.locator('#ovlBlackSw').click(); await sleep(80); await reset();
+  await apply();
+  k = await calls();
+  check('    the switch off and Apply: the disable names all three, and none of them is listed on afterwards', k.fab.length === 1 && k.fab[0].action === 'disable' && JSON.stringify(k.fab[0].ids) === JSON.stringify([AAM, N1, N2]) && (await kv('ovl_root_applied')) === null && (await ev(() => window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).every(o => o.state === 0))), JSON.stringify(k.fab));
+  await seed13(0); await sleep(200); await reset();
+  await apply();
+  rec13 = await kv('ovl_root_applied');
+  check('    13-era ids the list shows off (Android dropped them at boot) are not kept: the record names aam_monet alone', !!rec13 && JSON.stringify(rec13.ids) === JSON.stringify([AAM]), JSON.stringify(rec13));
+  await ev(() => { kvSet('ovl_root_applied', null); window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).forEach(o => { o.state = 0; }); window.__sdk = 33; ovlReadPalette(); ovlRender(); });
+
   // 8) failures
   await ev(() => { window.__sdk = 34; ovlReadPalette(); window.__fabDeny = 'Android did not take the colours'; }); await reset();
   await apply();
