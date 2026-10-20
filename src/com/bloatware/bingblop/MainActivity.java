@@ -781,8 +781,9 @@ public class MainActivity extends Activity {
     /**
      * Keeps the Working mode tile's light in step with the probe. The tile runs without this activity, so the probe's resolved mode and
      * whether it was available go to the preferences the tile reads (ModeTileLight.PREF_MODE / PREF_AVAILABLE); they are written only
-     * when they changed, and the tile is asked to refresh only when its light would change (it reads them again in onStartListening
-     * anyway, every time the panel opens).
+     * when they changed. The tile is a passive one (no ACTIVE_TILE meta-data): Android calls its onStartListening, where it reads the keys
+     * again, every time the Quick Settings panel opens, and a panel already open keeps the light it showed until it is opened again.
+     * requestListeningState is not called here: Android ignores it for a passive tile.
      */
     private void publishModeTileLight(String resolved, boolean available) {
         try {
@@ -792,9 +793,6 @@ public class MainActivity extends Activity {
             boolean oldAvailable = p.getBoolean(ModeTileLight.PREF_AVAILABLE, false);
             if (mode.equals(oldMode) && available == oldAvailable) return;
             p.edit().putString(ModeTileLight.PREF_MODE, mode).putBoolean(ModeTileLight.PREF_AVAILABLE, available).apply();
-            if (ModeTileLight.lit(oldMode, oldAvailable) != ModeTileLight.lit(mode, available)) {
-                android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, ModeTileService.class));
-            }
         } catch (Throwable ignored) {}
     }
 

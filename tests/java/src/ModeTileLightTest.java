@@ -83,7 +83,10 @@ public class ModeTileLightTest {
     check("source: the fallback answer of a failed probe leaves the light as it was", probe != null && probe.indexOf("catch (Exception e)") >= 0 && !probe.substring(probe.indexOf("catch (Exception e)")).contains("publishModeTileLight"));
     String publish = bodyOf(m, "private void publishModeTileLight(String resolved, boolean available) {");
     check("source: publishModeTileLight writes both keys to the preferences the tile reads", publish != null && publish.contains("QuickActions.prefs(this)") && publish.contains("putString(ModeTileLight.PREF_MODE, mode)") && publish.contains("putBoolean(ModeTileLight.PREF_AVAILABLE, available)"));
-    check("source: ... only when they changed, and asks the tile to refresh only when the light changes", publish != null && publish.contains("if (mode.equals(oldMode) && available == oldAvailable) return;") && publish.contains("ModeTileLight.lit(oldMode, oldAvailable) != ModeTileLight.lit(mode, available)") && publish.contains("requestListeningState(this, new android.content.ComponentName(this, ModeTileService.class))"));
+    check("source: ... only when they changed", publish != null && publish.contains("if (mode.equals(oldMode) && available == oldAvailable) return;"));
+    // T-036: TileService.requestListeningState "is only applicable to tiles that have META_DATA_ACTIVE_TILE defined as true ... and will do
+    // nothing otherwise" (Android reference); this tile is passive (checked below), so the call would promise a refresh that never comes
+    check("source: ... and does not call requestListeningState, which Android ignores for a passive tile", publish != null && !publish.contains("requestListeningState"));
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
 
