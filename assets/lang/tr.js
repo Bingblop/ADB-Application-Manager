@@ -7,7 +7,7 @@ x: {
 "Also writes this style's 2025 colors with root, in place of Android's.": "Root ile bu stilin 2025 renklerini de, Android'in renklerinin yerine yazar.",
 "Color spec": "Renk belirtimi",
 "Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Doğruluk, İçerik, Tek Renk ve CMF: Android'de ayarı olmayan, bu uygulamanın hesapladığı renkler.",
-"Google's newer tuning: calmer accents, light and dark tuned apart.": "Google'ın daha yeni ayarı: daha sakin vurgular, açık ve koyu ayrı ayarlanmış.",
+"Google's newer tuning of the same styles.": "Google'ın aynı stiller için daha yeni ayarı.",
 "One color family: accents and backgrounds are your color at different strengths.": "Tek renk ailesi: vurgular ve arka planlar, renginizin farklı güçlerdeki hâlleridir.",
 "Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Doğruluk, İçerik ve Tek Renk 2021 renklerini korur. Temel tonlar, Uygula'ya dokunduğunuz anda telefonun açık veya koyu modunu izler; modu değiştirdikten sonra Uygula'ya yeniden dokunun.",
 "Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Root ile Tonal Spot, Vibrant, Expressive ve Spritz'i yeniden renklendirir. CMF için 2026 gerekir.",

@@ -7,7 +7,7 @@ x: {
 "Also writes this style's 2025 colors with root, in place of Android's.": "Root से इस स्टाइल के 2025 वाले रंग भी, Android के रंगों की जगह लिखता है।",
 "Color spec": "कलर स्पेक",
 "Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "सटीकता, सामग्री, मोनोक्रोम और CMF: वे रंग जिनके लिए Android में कोई सेटिंग नहीं है, इस ऐप द्वारा गणना किए गए।",
-"Google's newer tuning: calmer accents, light and dark tuned apart.": "Google की नई ट्यूनिंग: शांत एक्सेंट, लाइट और डार्क अलग-अलग ट्यून किए गए।",
+"Google's newer tuning of the same styles.": "उन्हीं स्टाइल के लिए Google की नई ट्यूनिंग।",
 "One color family: accents and backgrounds are your color at different strengths.": "एक ही रंग परिवार: एक्सेंट और बैकग्राउंड आपका ही रंग हैं, अलग-अलग गहराई में।",
 "Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, सटीकता, सामग्री और मोनोक्रोम अपने 2021 वाले रंग रखते हैं। बेस शेड उसी लाइट या डार्क मोड के अनुसार बनते हैं जिसमें फ़ोन लागू करें टैप करते समय होता है; मोड बदलने के बाद फिर से लागू करें टैप करें।",
 "Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Root से Tonal Spot, Vibrant, Expressive और Spritz के रंग बदलता है। CMF के लिए 2026 चाहिए।",

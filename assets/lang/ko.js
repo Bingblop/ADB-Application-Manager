@@ -7,7 +7,7 @@ x: {
 "Also writes this style's 2025 colors with root, in place of Android's.": "Root로 이 스타일의 2025 색상도 Android 색상 대신 기록합니다.",
 "Color spec": "색상 사양",
 "Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "충실도, 콘텐츠, 단색, CMF: Android에 설정이 없는 색상으로, 이 앱이 계산합니다.",
-"Google's newer tuning: calmer accents, light and dark tuned apart.": "Google의 새 조정: 더 차분한 강조색, 라이트와 다크를 따로 조정합니다.",
+"Google's newer tuning of the same styles.": "같은 스타일에 대한 Google의 새 조정.",
 "One color family: accents and backgrounds are your color at different strengths.": "하나의 색상 계열: 강조색과 배경 모두 선택한 색을 다른 강도로 사용합니다.",
 "Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, 충실도, 콘텐츠, 단색은 2021 색상을 유지합니다. 기본 색조는 적용을 탭할 때 휴대전화의 라이트 또는 다크 모드를 따르므로, 모드를 바꾼 뒤에는 적용을 다시 탭하세요.",
 "Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Root로 Tonal Spot, Vibrant, Expressive, Spritz의 색을 바꿉니다. CMF에는 2026이 필요합니다.",

@@ -7,7 +7,7 @@ x: {
 "Also writes this style's 2025 colors with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2025 через Root, вместо цветов Android.",
 "Color spec": "Цветовая спецификация",
 "Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Точность, Содержимое, Монохром и CMF: цвета, для которых в Android нет настройки; их вычисляет это приложение.",
-"Google's newer tuning: calmer accents, light and dark tuned apart.": "Новая настройка Google: акценты спокойнее, светлая и тёмная темы настроены по отдельности.",
+"Google's newer tuning of the same styles.": "Новая настройка Google для тех же стилей.",
 "One color family: accents and backgrounds are your color at different strengths.": "Одно семейство цветов: акценты и фон — это ваш цвет разной силы.",
 "Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Точность, Содержимое и Монохром сохраняют цвета 2021 года. Базовые оттенки следуют светлому или тёмному режиму, в котором телефон находится, когда вы нажимаете «Применить»; после переключения нажмите «Применить» ещё раз.",
 "Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Перекрашивает Tonal Spot, Vibrant, Expressive и Spritz через Root. Для CMF нужна 2026.",

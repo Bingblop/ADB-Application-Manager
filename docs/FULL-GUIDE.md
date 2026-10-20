@@ -805,7 +805,7 @@ style the palette is worked out with:
 - **Color spec** (the second control of that card, between Pure black and More styles; Android 14 or newer with Super User, locked like
   More styles: *Needs Super User*, *Needs Android 14* on 12 and 13, *Update the app* without the overlay bridge or the spec maths):
   **2021** (the colors Android computes itself; the default, and what Android 12 to 16 build their own theme with), **2025** (Google's newer
-  tuning: calmer accents, light and dark tuned apart) and **2026** (the 2025 tuning, plus the CMF style), kept in `ovl_spec`. Google's own
+  tuning of the same styles) and **2026** (the 2025 tuning, plus the CMF style), kept in `ovl_spec`. Google's own
   rule (Material Color Utilities' `maybeFallbackSpecVersion`) gives the newer colors to Tonal Spot, Vibrant, Expressive and Spritz only
   (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021. At 2025 or 2026, with one
   of those four in the style list and More styles on **Off**, **Apply theme** writes the theme setting as before and then that style's 2025
