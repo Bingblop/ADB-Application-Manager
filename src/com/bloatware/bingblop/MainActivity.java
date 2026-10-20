@@ -801,11 +801,26 @@ public class MainActivity extends Activity {
      * (60101 = 6.1.1, 90000 = 9.0) and, on older One UI, from Build.VERSION.SEM_PLATFORM_INT (150000 = 6.0: take away 90000).
      */
     private String oneUiVersion() {
+        return oneUiVersion(null);
+    }
+
+    /** Build.MANUFACTURER or Build.BRAND says samsung. */
+    private static boolean isSamsung() {
+        return "samsung".equalsIgnoreCase(Build.MANUFACTURER) || "samsung".equalsIgnoreCase(Build.BRAND);
+    }
+
+    /**
+     * oneUiVersion(), and in propertyUnset[0] (when given) whether getprop ro.build.version.oneui ran and printed nothing, that is the
+     * property is not set (false when getprop failed, timed out or printed anything else): MonetProfile.oneUi tells "not One UI" from "could
+     * not be read" with it.
+     */
+    private String oneUiVersion(boolean[] propertyUnset) {
         try {
-            if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
+            if (!isSamsung()) return "";
             int v = 0;
             try {
                 String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (propertyUnset != null) propertyUnset[0] = line.isEmpty();
                 if (line.matches("\\d{4,7}")) v = Integer.parseInt(line);
             } catch (Throwable ignored) {}
             if (v <= 0) {
@@ -817,6 +832,47 @@ public class MainActivity extends Activity {
             return AppExtras.oneUi(v);
         } catch (Throwable t) {
             return "";
+        }
+    }
+
+    /** The theme-colour profile, worked out once: the build, the colour names it has and One UI do not change while the app runs. */
+    private volatile MonetProfile.Result monetProfileCache;
+
+    /**
+     * Which Android build family builds this phone's theme colours (MonetProfile): the SDK level, which of MonetProfile.PROBES the
+     * framework has (getIdentifier(name, "color", "android") != 0) and the One UI version (MonetProfile.oneUi: a Samsung phone whose
+     * version could not be read counts as One UI). A lookup that throws, or a One UI version that could not be read, leaves the answer
+     * locked (fail closed) and is not kept, so the next call looks again.
+     */
+    private MonetProfile.Result monetProfile() {
+        MonetProfile.Result r = monetProfileCache;
+        if (r != null) return r;
+        boolean[] unset = {false};
+        String version = oneUiVersion(unset);
+        String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);
+        Set<String> present = new HashSet<String>();
+        try {
+            Resources res = getResources();
+            for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, "color", "android") != 0) present.add(name);
+        } catch (Throwable t) {
+            return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUi);
+        }
+        r = MonetProfile.of(Build.VERSION.SDK_INT, present, oneUi);
+        if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetProfileCache = r;
+        return r;
+    }
+
+    /**
+     * The phone's contrast setting, the value SystemUI builds the theme colours at (UiModeManager.getContrast, Android 14 and newer),
+     * through MonetProfile.contrast; 0 before Android 14 or when it cannot be read. Read on every call: it changes in Settings.
+     */
+    private double systemContrast() {
+        if (Build.VERSION.SDK_INT < 34) return 0;
+        try {
+            android.app.UiModeManager um = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+            return um == null ? 0 : MonetProfile.contrast(um.getContrast());
+        } catch (Throwable t) {
+            return 0;
         }
     }
 
@@ -4969,6 +5025,14 @@ public class MainActivity extends Activity {
                 o.put("error", "Material You colors need Android 12 or newer (this phone runs Android " + Build.VERSION.RELEASE + ").");
                 return o.toString();
             }
+            // for the root-only colours: the Android build family they are computed for ("profile", MonetProfile's id or "unknown", and
+            // "profileReason": ok, notYet, oneUi or unknown), the build itself (the page keeps it with the colours it wrote, so it can
+            // tell when Android was updated after) and the contrast SystemUI computes at
+            MonetProfile.Result profile = monetProfile();
+            o.put("profile", profile.profile);
+            o.put("profileReason", profile.reason);
+            o.put("build", Build.FINGERPRINT == null ? "" : Build.FINGERPRINT);
+            o.put("contrast", systemContrast());
             int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
             String[] names = {"accent1", "accent2", "accent3", "neutral1", "neutral2"};
             JSONArray t = new JSONArray();
@@ -8894,7 +8958,10 @@ public class MainActivity extends Activity {
             return "started";
         }
 
-        /** The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2), read without any privileged mode. */
+        /**
+         * The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2, wallpaper) and what the root-only colours are
+         * computed for (profile, profileReason, build, contrast), read without any privileged mode.
+         */
         @JavascriptInterface
         public String getSystemPalette() {
             return systemPaletteJson();

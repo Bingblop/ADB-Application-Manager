@@ -67,14 +67,16 @@ Other components
 * Android Open Source Project (Google) - Apache-2.0 - the descriptions of Android's own settings in the Hidden Settings tab (assets/hsinfo.js) are
   taken in part from the documentation of Settings.java; tools/hsinfo/ holds the extract and the script that builds the file.
 * Android Open Source Project (Google) and Material Color Utilities 0.4.0 (Google LLC) - Apache-2.0 - assets/monet.js, the colours of More styles
-  (Fidelity, Content, Monochrome) on the RRO/Monet Customization tab: a port of Android 14's SystemUI monet engine (frameworks/base
+  (Fidelity, Content, Monochrome) on the RRO/Monet Customization tab on Android 14: a port of Android 14's SystemUI monet engine (frameworks/base
   android14-release, packages/SystemUI/monet and theme/DynamicColors.kt), read beside the npm package @material/material-color-utilities 0.4.0
   (https://github.com/material-foundation/material-color-utilities). The file's header carries both copyright lines and names what was taken
   from where and what was changed.
 * Material Color Utilities on GitHub (Google LLC; branch main, commit bd811e4, 2026) - Apache-2.0 - assets/monet.js, part 2: the 2025 and 2026
   color specs and the CMF style of the Color spec and More styles cards on the RRO/Monet Customization tab, ported from its typescript/ tree
-  (https://github.com/material-foundation/material-color-utilities, commit bd811e4ca2ab94c4ce3cadc89c19b1820b9704b3). The file's header names
-  the files taken, what part 2 shares with part 1 and what it leaves out.
+  (https://github.com/material-foundation/material-color-utilities, commit bd811e4ca2ab94c4ce3cadc89c19b1820b9704b3), and on Android 15 QPR1,
+  15 QPR2 and 16.0 the colours of More styles at the 2021 spec too (with its Fidelity and Content cases and TemperatureCache). The names and
+  the order the colours are written in on each Android release follow that release's SystemUI theme code (Android Open Source Project,
+  Apache-2.0). The file's header names the files taken, what part 2 shares with part 1 and what it leaves out.
 * RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
 * Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
 
