@@ -66,6 +66,19 @@ public class RootManagersTest {
 
   static String read(File f) throws Exception { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
 
+  /** The source of the method whose declaration starts with {@code sig}, through its closing brace ("" when it is not there). */
+  static String methodBody(String src, String sig) {
+    int i = src.indexOf(sig);
+    if (i < 0) return "";
+    int depth = 0;
+    for (int j = src.indexOf('{', i); j >= 0 && j < src.length(); j++) {
+      char c = src.charAt(j);
+      if (c == '{') depth++;
+      else if (c == '}' && --depth == 0) return src.substring(i, j + 1);
+    }
+    return "";
+  }
+
   static void sourceScan() throws Exception {
     File dir = findUp("src/com/bloatware/bingblop");
     File pageFile = findUp("assets/index.html");
@@ -77,6 +90,15 @@ public class RootManagersTest {
     check("source: AndroidBridge exposes openRootManager", m.contains("public String openRootManager()"));
     check("source: openRootManager uses a launch intent (hands off, grants nothing)", m.contains("getLaunchIntentForPackage") && m.contains("RootManagers.pick("));
     check("source: AndroidBridge reports the installed manager name", m.contains("public String rootManagerName()"));
+    // T-021: the answer follows the start. openRootManager starts the manager itself (not posted to the UI thread with ok sent at once), answers
+    // ok:true only after startActivity returned, and answers ok:false when the launch intent is gone or Android refuses the start
+    String open = methodBody(m, "public String openRootManager()");
+    int started = open.indexOf("startActivity(in)"), okTrue = open.indexOf("\"{\\\"ok\\\":true"), caught = open.indexOf("} catch (Exception e) {");
+    check("source: openRootManager starts the manager on the bridge thread, not in a posted Runnable whose failure is dropped",
+        started > 0 && !open.contains("runOnUiThread") && !open.contains("catch (Exception ignored)"), open);
+    check("source: openRootManager answers ok:true only after startActivity returned", started > 0 && okTrue > started, open);
+    check("source: a refused start answers ok:false", caught > started && open.substring(caught, Math.min(open.length(), caught + 80)).contains("return \"{\\\"ok\\\":false"), open);
+    check("source: a launch intent that is gone by then answers ok:false", open.contains("if (in == null) return \"{\\\"ok\\\":false"), open);
 
     // the page: the button, the pending flag, and the status read-back on resume (feeds RootGate)
     check("source: the page defines rootOpenManager", h.contains("function rootOpenManager("));

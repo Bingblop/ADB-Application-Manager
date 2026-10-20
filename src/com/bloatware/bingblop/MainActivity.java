@@ -13743,21 +13743,24 @@ public class MainActivity extends Activity {
          * Opens the installed root manager (KernelSU, APatch or Magisk) with a normal launch intent so the user can grant this app Super User there.
          * This holds no root or grant mechanics: the grant is approved inside the manager, and the app reads the result back afterwards through the
          * usual working-mode check (the Root Features tab re-checks on resume and unlocks when su was granted). Answer: {"ok":true,"name":"KernelSU"}
-         * when a manager was opened, {"ok":false} when none of the known managers is installed.
+         * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed or the start did not happen.
          */
         @JavascriptInterface
         public String openRootManager() {
-            final RootManagers.Manager m = RootManagers.pick(installedRootManagers());
+            RootManagers.Manager m = RootManagers.pick(installedRootManagers());
             if (m == null) return "{\"ok\":false}";
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent in = getPackageManager().getLaunchIntentForPackage(m.pkg);
-                        if (in != null) { in.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(in); }
-                    } catch (Exception ignored) {}
-                }
-            });
+            // The start runs here, on the bridge thread, and decides the answer (as composeEmail does): Activity.startActivity may be called from any
+            // thread and throws when Android refuses the start (ActivityNotFoundException, SecurityException). Posting it to the UI thread and
+            // answering ok at once would let the page say "Allow this app in X" although nothing opened. A start that Android drops without telling
+            // the caller (a background-start block) cannot be seen from here; after an ok the page still reads su back when the app is shown again.
+            try {
+                Intent in = getPackageManager().getLaunchIntentForPackage(m.pkg);
+                if (in == null) return "{\"ok\":false}";             // disabled or removed since installedRootManagers() looked
+                in.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(in);
+            } catch (Exception e) {
+                return "{\"ok\":false}";
+            }
             return "{\"ok\":true,\"name\":" + org.json.JSONObject.quote(m.label) + "}";
         }
 
