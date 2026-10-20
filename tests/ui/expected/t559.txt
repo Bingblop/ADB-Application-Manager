@@ -14,6 +14,7 @@ ok      and back: a mode change while on the tab re-renders it (rootOnModeChange
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
 ok      the gate names the way: choose Root in Working Modes
 ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button
+ok      the hand-off note reads as the card's text: upright, the size of the line above the buttons
 ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
 ok      back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending
 ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone

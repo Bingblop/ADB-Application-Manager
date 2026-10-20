@@ -97,6 +97,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there', (await disp('#rootGate')) === 'flex' && (await tag()) === 'warning AVAILABLE' && (await lockedRow()) && /Needs Super User/.test(await text('#rfFeatureList')) && (await disp('#rfSuCard')) !== 'none', await tag());
   check('   the gate names the way: choose Root in Working Modes', /Choose Root in Working Modes/.test(await text('#rootGateDesc')));
   check('   the su card explains temporary root is granted in the root manager and offers the Open root manager button', /Temporary root is granted inside your root manager/.test(await text('#rfSuCard')) && (await ev(() => !!document.getElementById('rfOpenManagerBtn'))));
+  // the note under the buttons is the step to take, styled as the card's text (body size, upright), not as a small italic "coming soon" footnote
+  const noteLook = await ev(() => { const n = getComputedStyle(document.getElementById('rfManagerNote')), intro = getComputedStyle(document.querySelector('#rfSuCard .rf-note')); return { style: n.fontStyle, size: n.fontSize, introSize: intro.fontSize }; });
+  check('   the hand-off note reads as the card\'s text: upright, the size of the line above the buttons', noteLook.style === 'normal' && noteLook.size === noteLook.introSize, JSON.stringify(noteLook));
   // the hand-off: Open root manager launches the installed manager and marks the grant pending so the status is read back on return
   await ev(() => { window.__calls.openRootManager = 0; window.__rootMgr = { ok: true, name: 'KernelSU' }; rootGrantPending = false; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
