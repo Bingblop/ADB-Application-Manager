@@ -17,4 +17,5 @@ ok   2. "busy" from the phone side: a sentence, the button stays usable
 ok      any other reply: "Could not start Shizuku", the button stays usable
 ok   3. a bridge without the method: says the app is too old, nothing thrown
 ok   4. at 320 px the text box stays inside its card and the page does not scroll sideways
+ok   5. in German every start answer that asks for a step says "Sie", none says "du"
 all checks passed

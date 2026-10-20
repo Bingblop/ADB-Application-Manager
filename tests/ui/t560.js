@@ -1,7 +1,7 @@
 // v7.16.0: "Start Shizuku (ADB)" in the Shizuku card of Working Modes: the button asks the phone side once and waits for its answer, a second tap while it
 // runs is refused, each answer (started, already running, not installed, no ADB connection, no start script, failed) gets its own sentence, the script's
-// own text is shown as data only when the start failed, "no start script" opens the Shizuku app, a bridge without the method says so, and at 320 px nothing
-// sticks out sideways.
+// own text is shown as data only when the start failed, "no start script" opens the Shizuku app, a bridge without the method says so, at 320 px nothing
+// sticks out sideways, and in German the answers say "Sie" as the card's other sentences do.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -88,6 +88,16 @@ const { chromium, PAGE } = require('./lib/pw');
     await answer(page, { status: 'failed', pkg: 'x.y', script: '/s', exit: 1, text: 'A'.repeat(300) + ' ' + '/very/long/path/'.repeat(20) });
     const over = await page.evaluate(() => { const sheet = document.getElementById('modeCardShizuku'); const r = sheet.getBoundingClientRect(); const o = document.getElementById('shizukuStartOut').getBoundingClientRect(); return { cardRight: Math.round(r.right), outRight: Math.round(o.right), vw: window.innerWidth, sw: document.documentElement.scrollWidth }; });
     check('4. at 320 px the text box stays inside its card and the page does not scroll sideways', over.outRight <= over.cardRight && over.sw <= over.vw, JSON.stringify(over));
+    await page.close();
+  }
+
+  // 5. German: the answers that tell the user what to do next say "Sie", as the card's other sentences do ("Starten Sie es in der Shizuku-App ..."), never "du"
+  {
+    const { page, errors } = await open(400, 860, true, 'started_async');
+    await page.evaluate(() => I18N.set('de')); await page.waitForTimeout(500);
+    const seen = [];
+    for (const status of ['started', 'already_running', 'no_adb', 'no_script']) { await answer(page, { status, pkg: 'x.y', text: '' }); seen.push(await toast(page)); }
+    check('5. in German every start answer that asks for a step says "Sie", none says "du"', seen.every(s => /\bSie\b/.test(s) && !/\b(Tippe|Öffne|Verbinde|starte|versuche)\b/.test(s)) && errors.length === 0, JSON.stringify(seen) + ' ' + errors.join(' | '));
     await page.close();
   }
 
