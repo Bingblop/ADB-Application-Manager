@@ -4,9 +4,15 @@
 // component toggles with no extra prompt; disabling a SYSTEM app's component asks for confirmation first (enabling does not).
 // The bulk activity toggle (Activity Launcher) is Root-gated the same way. T-054: without su the funnel offers the Root Features tab, and a yes
 // closes the sheet the tap came from (the app sheet, the Activity Launcher) so the tab is on screen; a no leaves the sheet open. T-055: with su on
-// the phone the funnel switches to Root, and the rows are drawn unlocked then even when the retried toggle stops at a Cancel.
+// the phone the funnel switches to Root, and the rows are drawn unlocked then even when the retried toggle stops at a Cancel. T-051: the Help
+// Guide (built assets/guide.js), FULL-GUIDE.md and the device checklist describe this control as it is: padlocked with "Needs Super User (Root)"
+// in every mode but Root (Shizuku started with root included), nothing sent off Root, the Root way on a tap, the system-app confirm, each
+// quoted as the page shows it; no "runs, says Failed" off Root.
 // Deterministic ok/FAIL lines and a summary.
-const { chromium, PAGE } = require('./lib/pw');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { chromium, PAGE, REPO } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
 (async () => {
@@ -82,6 +88,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   dialogs = []; answer = true; await ev(() => { window.__calls.toggle = []; });
   await ev(() => toggleComponent('com.a.Svc', false)); await sleep(60);
   check('3. disabling a system app component asks to confirm, naming the component and the system app and the risk', dialogs.length === 1 && /^confirm: Disable Svc of the system app com\.sys\? This can break the app or the system UI\./.test(dialogs[0]), JSON.stringify(dialogs));
+  const sysConfirm = (dialogs[0] || '').replace(/^confirm: /, '');
   check('   a yes carries the toggle through', (await ev(() => window.__calls.toggle.join())) === 'com.a.Svc:false', JSON.stringify(await ev(() => window.__calls.toggle)));
   dialogs = []; answer = false; await ev(() => { window.__calls.toggle = []; });
   await ev(() => toggleComponent('com.a.Svc', false)); await sleep(60);
@@ -111,6 +118,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.click('#compsContainer .perm-toggle-btn[data-comp="com.a.BootRcv"]'); await sleep(80);
   let o = await afterOffer();
   check('6. T-054 the app sheet: a tap on the locked DISABLE, OK on the offer: the app sheet is closed and Root Features is the view on screen, no pm command', o.view === 'rootfeatures' && o.sheets.length === 0 && o.top === 'page' && o.pm === 0 && o.dialogs.length === 1 && /Open Root Features/.test(o.dialogs[0]), JSON.stringify(o));
+  const rootOffer = (o.dialogs[0] || '').replace(/^confirm: /, '').replace(/\s+/g, ' ');
   await ev(() => switchView('apps')); await sleep(40);
   await openComps('com.usr');
   dialogs = []; answer = false;
@@ -152,7 +160,31 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the Activity Launcher\'s Disable selected: switches to Root, Cancel on Change activities runs nothing, and its rows are drawn unlocked', alsLocks0.length === 2 && alsLocks0.every(Boolean) && a7.root && a7.sel === 'root' && a7.pm === 0 && a7.dialogs.length === 1 && /^confirm: Disable 1 activity\?/.test(a7.dialogs[0]) && a7.locks.length === 2 && !a7.locks.some(Boolean) && a7.sheets.join() === 'appListSheet', JSON.stringify([alsLocks0, a7]));
   await ev(() => closeAppListSheet()); await sleep(40);
 
-  check('8. no page errors', errors.length === 0, errors.join(' | '));
+  // ---- 8. T-051: the guide describes this control as it is. Read the built in-app guide (assets/guide.js), FULL-GUIDE.md and the device
+  // checklist: the lock's reason, the Root Features offer and the system-app question are quoted as the page shows them (tog1.title, rootOffer and
+  // sysConfirm above, the refusal toast from the page's source), and nothing says the button runs and says "Failed" off Root, or that Shizuku
+  // started with root counts as root
+  const sb = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), sb);
+  const g = {};
+  ((sb.window.HELP_GUIDE || {}).sections || []).forEach(s => { g[s.id] = s.html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' '); });
+  const lockQ = '"' + ((tog1 && tog1.title) || '?') + '"';
+  const sysTail = sysConfirm.replace(/^.*? of the system app \S+\? /, '');
+  const pageSrc = fs.readFileSync(path.join(REPO, 'assets', 'index.html'), 'utf8');
+  const refusal = 'Super User was not granted. The working mode stays';
+  const gMenu = g['apps-menu'] || '', gComp = g['rootfeatures-components'] || '';
+  check('8. T-051 the guide\'s app menu topic: ENABLE/DISABLE carries the padlock ' + lockQ + ' in every mode but Root and sends nothing, a tap goes the Root way; no "runs, says Failed", no "(started by ADB)"',
+    gMenu.includes('padlock, which here means ' + lockQ) && /sends nothing to Android/.test(gMenu) && /switches the working mode to Root/.test(gMenu) && !/runs, says "Failed"/.test(gMenu) && !/started by ADB/.test(gMenu), (gMenu.match(/DISABLE or ENABLE: switches that one screen.{0,300}/) || [''])[0]);
+  check('   its App components under Super User topic: the same padlock, Shizuku started with root included; the switch to Root, the refusal toast and the Root Features offer as the page words them; the system-app question; no "fail with Failed"',
+    gComp.includes('padlock, which here means ' + lockQ) && /Shizuku started with root is no exception/.test(gComp) && gComp.includes(refusal) && pageSrc.includes("'" + refusal + " {0}.'") && rootOffer.length > 0 && gComp.includes('"' + rootOffer + '"')
+      && sysTail.length > 0 && sysTail !== sysConfirm && gComp.includes('of the system app') && gComp.includes(sysTail + '"') && !/fail with "Failed"/.test(gComp) && !/counts as root for this/.test(gComp), JSON.stringify([rootOffer, sysTail, (gComp.match(/Why this is a root feature.{0,200}/) || [''])[0]]));
+  const ckl = fs.readFileSync(path.join(REPO, 'docs', 'DEVICE-TEST-CHECKLIST.md'), 'utf8');
+  const fullG = fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').replace(/\s+/g, ' ');
+  check('   the other lock paragraphs (Read-Only\'s lock symbol, the quick start, Troubleshooting), FULL-GUIDE.md and the device checklist name the ENABLE/DISABLE padlock as Root-only',
+    (g['mode-readonly'] || '').includes(lockQ) && !/the ENABLE, DISABLE and STOP buttons/.test(g['mode-readonly'] || '') && (g['quick-start'] || '').includes(lockQ) && (g['troubleshooting'] || '').includes(lockQ)
+      && fullG.includes(lockQ) && /Enable \/ Disable\*\* on an activity or component works in Root mode only/.test(fullG) && ckl.includes(lockQ) && !/only install-time permissions keep the lock\./.test(ckl), lockQ);
+
+  check('9. no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
   process.exit(bad ? 1 : 0);

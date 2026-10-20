@@ -121,7 +121,7 @@
 <tr><td>Orange badge "Setup Mode (Read-Only)" and an orange banner</td><td>No working mode is ready. The app can look and cannot change.</td><td>Tap the badge, or <b>Set Up</b>, and pick a mode (<a href="#modes-overview">Working modes</a>).</td></tr>
 <tr><td>A sheet <b>Working Mode Required</b></td><td>The button you tapped changes something and needs a mode.</td><td>Tap <b>Set Up Working Mode</b>. Nothing was changed.</td></tr>
 <tr><td>Badge orange, ending "(not ready)"</td><td>You chose that mode but it is not connected now: Wireless Debugging went off with the Wi-Fi, Shizuku stopped, the phone restarted, or (for Root) your root manager has not allowed this app.</td><td>Open the badge sheet, read the tag on that card, finish the setup (below).</td></tr>
-<tr><td>A padlock on a button</td><td>No working mode. On an install-time permission the padlock is permanent.</td><td>Set up a mode. Install-time permissions stay locked.</td></tr>
+<tr><td>A padlock on a button</td><td>No working mode. On an install-time permission the padlock is permanent. On ENABLE or DISABLE of a screen or component it means "Needs Super User (Root)": those work in Root mode only.</td><td>Set up a mode. Install-time permissions stay locked. For ENABLE and DISABLE, see <a href="#rootfeatures-components">App components under Super User</a>.</td></tr>
 <tr><td>The orange banner has gone</td><td>You tapped its X (it returns at the next start), or a mode is on.</td><td>Nothing is wrong.</td></tr>
 <tr><td>It worked yesterday, orange today</td><td>A restart switches off ADB over TCP and stops Shizuku, and Wireless Debugging gets a new port.</td><td>See the table in <a href="#modes-overview">Working modes</a>. Root survives a restart.</td></tr>
 </tbody>

@@ -999,7 +999,11 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 - **Activities**: all activities (exported and unexported) with **Launch**, **Enable / Disable** and an exported filter. Unexported
   activities launch through ADB / Shizuku / Root; a launch that goes through just opens the activity, and Android's answer is
   shown only if it refuses
-- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state
+- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state.
+  **Enable / Disable** on an activity or component works in Root mode only: in every other mode (Read-Only, ADB, Wireless
+  Debugging and Shizuku, Shizuku started with root included) the button carries a padlock, which here means "Needs Super User
+  (Root)", and sends nothing to Android. A tap switches the working mode to Root when the phone has `su` (a no from `su` puts the
+  mode you had back and offers the Root Features tab), else it offers that tab. Disabling a part of a system app asks to confirm first
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
 - **Features**: the `uses-feature` list, each marked required or optional and *on this phone* or not (the OpenGL ES version is

@@ -14,5 +14,8 @@ ok      the Activity Launcher: Disable selected, OK on the offer: the Activity L
 ok      a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen
 ok   7. T-055 su on the phone, a system app: the tap switches to Root (su grants), Cancel on the system-app confirm runs nothing, and every row is drawn unlocked (no lock, no Root reason)
 ok      the Activity Launcher's Disable selected: switches to Root, Cancel on Change activities runs nothing, and its rows are drawn unlocked
-ok   8. no page errors
+ok   8. T-051 the guide's app menu topic: ENABLE/DISABLE carries the padlock "Needs Super User (Root)" in every mode but Root and sends nothing, a tap goes the Root way; no "runs, says Failed", no "(started by ADB)"
+ok      its App components under Super User topic: the same padlock, Shizuku started with root included; the switch to Root, the refusal toast and the Root Features offer as the page words them; the system-app question; no "fail with Failed"
+ok      the other lock paragraphs (Read-Only's lock symbol, the quick start, Troubleshooting), FULL-GUIDE.md and the device checklist name the ENABLE/DISABLE padlock as Root-only
+ok   9. no page errors
 all passed
