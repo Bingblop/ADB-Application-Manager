@@ -7973,6 +7973,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
+                <div class="about-tip">More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -38198,10 +38199,13 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const before = ovlRaw;
             const style = ovlStyle, source = ovlSource;
+            // a root style's source colour, taken now: the theme write below replaces the setting it may come from, and the overlay must carry
+            // what the preview shows
+            const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
             ovlBusy = true;
             ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style }), 60000);
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed }), 60000);
         }
 
         function ovlReset() {
@@ -38248,7 +38252,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 };
                 // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both
                 const follow = kind === 'undo' ? null : ovlRootFollowUp(kind);
-                if (follow) ovlRootRun(follow, finish); else finish();
+                if (follow) ovlRootRun(follow, finish, chosen.seed); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
                 const unsure = !!(r.timedOut || r.unknown);
@@ -38328,13 +38332,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlRootRemember(rec) { kvSet('ovl_root_applied', rec); if (kvGet('ovl_black_applied', null) != null) kvSet('ovl_black_applied', null); }
         function ovlSdk() { const p = ovlPalette; return p && typeof p.sdk === 'number' && p.sdk > 0 ? p.sdk : 0; }
 
-        // The source colour of a root style: the colour above (source "A color"); else the colour the theme setting carries; else the first of
-        // the wallpaper's own colours (the palette bridge's "wallpaper") with a chroma of at least 5 (Android's own MIN_CHROMA rule when it picks
-        // a seed from a wallpaper); else Google blue, as Android itself falls back. from: 'color' | 'wallpaper' | 'blue' for the line under the preview.
+        // The source colour of a root style: the colour above (source "A color"); else the colour the theme setting carries for the wallpaper
+        // (its colour source home_wallpaper or lock_wallpaper: a custom colour the phone uses now is not the wallpaper's, and Apply with the
+        // source Wallpaper drops it); else the first of the wallpaper's own colours (the palette bridge's "wallpaper") with a chroma of at least
+        // 5 (Android's own MIN_CHROMA rule when it picks a seed from a wallpaper); else Google blue, as Android itself falls back.
+        // from: 'color' | 'wallpaper' | 'blue' for the line under the preview. Apply takes it once, when it is tapped (ovlApply), so the overlay
+        // carries the colours the preview showed although the theme write changes the setting this reads.
         function ovlRootSeed() {
             if (ovlSource === 'preset') return { hex: ovlColor, from: 'color' };
             const t = ovlTheme;
-            if (t && t.color) return { hex: t.color, from: 'wallpaper' };
+            if (t && t.color && (t.source === 'home_wallpaper' || t.source === 'lock_wallpaper')) return { hex: t.color, from: 'wallpaper' };
             const p = ovlPalette, list = p && Array.isArray(p.wallpaper) ? p.wallpaper : [];
             for (const w of list) {
                 const h = ovlNormalizeHex(typeof w === 'string' ? w : '');
@@ -38360,11 +38367,12 @@ Type any command above (e.g. pm list packages -d)</div>
         // dark, the 12 fixed colours, computed from the seed); Pure black's entries then replace the style's values where both name a resource (it
         // is the user's explicit override) and are added otherwise, so no resource is named twice (OverlayRules.fabricatePlanOk refuses that).
         // With a style in it the OVL_ROOT_LEAD entries come first (the Java side looks the first four up); Pure black alone keeps its own plan and order.
-        function ovlBuildRootPlan(sdk) {
+        // seed: the source colour Apply took when it was tapped ({ hex }, from ovlRootSeed); without one it is taken now.
+        function ovlBuildRootPlan(sdk, seed) {
             const black = ovlBlackOn(), style = sdk >= OVL_ROOT_MIN_SDK && ovlMonetOk() ? ovlRootStyle() : '';
             if (!style) return { style: '', black, entries: black ? ovlBuildBlackPlan(sdk) : [] };
             const rows = new Map();
-            for (const e of MonetPlan.entries(style, ovlRootSeed().hex)) rows.set(e.resource, e.argb);
+            for (const e of MonetPlan.entries(style, seed && seed.hex ? seed.hex : ovlRootSeed().hex)) rows.set(e.resource, e.argb);
             if (black) for (const e of ovlBuildBlackPlan(sdk)) rows.set(e.resource, e.argb);
             const entries = [];
             for (const name of OVL_ROOT_LEAD) { const r = OVL_FAB_RES + name; if (rows.has(r)) { entries.push({ resource: r, argb: rows.get(r) }); rows.delete(r); } }
@@ -38487,11 +38495,12 @@ Type any command above (e.g. pm list packages -d)</div>
             box.innerHTML = '<div class="ovl-preview-title">Preview</div>' + rows + '<div class="sdb-note" id="ovlRootSource">' + escapeHtml(source) + '</div>';
         }
 
-        // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered
-        function ovlRootRun(action, after) {
+        // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered.
+        // seed: the source colour Apply took when it was tapped (a fabricate after the theme write), else none
+        function ovlRootRun(action, after, seed) {
             const sdk = ovlSdk(), applied = ovlRootApplied(), prior = ovlRootAppliedRaw();
             // what the call carries: the plan going out, or (for a disable) what the overlay on the phone holds, so the answer's words name it
-            const plan = action === 'fabricate' ? ovlBuildRootPlan(sdk) : { style: applied ? applied.style : '', black: !!(applied && applied.black), entries: null };
+            const plan = action === 'fabricate' ? ovlBuildRootPlan(sdk, seed) : { style: applied ? applied.style : '', black: !!(applied && applied.black), entries: null };
             const expected = plan.entries ? ovlRootIds(sdk, plan.entries) : null;
             const req = action === 'disable' ? { action: 'disable', ids: applied ? applied.ids : [] } : { action: 'fabricate', entries: plan.entries };
             // Remembered before it goes out, as ovlApply remembers the theme: the overlay coming on repaints every app and may restart this

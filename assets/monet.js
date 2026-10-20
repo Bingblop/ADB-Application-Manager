@@ -39,12 +39,18 @@
  *     under 70 is disliked; 0.4.0 says 65), TonalPalette.tone (no averaging of tones 98 and 100 for a yellow at tone 99), and the
  *     whole DynamicColor machinery (Android 14 adjusts tones with toneMinContrast/toneMaxContrast, ToneDeltaConstraint and the
  *     Albers viewing-conditions step for Fidelity and Content; 0.4.0 has ContrastCurve and ToneDeltaPair instead), and the role
- *     tones of MaterialDynamicColors (on_*_container is tone 10 in light here, 30 in 0.4.0). What the oracle run showed: every
- *     primitive (HCT, CAM16, the solver, Contrast, TemperatureCache, viewing conditions), every palette hue and chroma, every one of
- *     the 65 shade entries, the 12 fixed colours and the 12 Android-only roles agree with 0.4.0 bit for bit; the roles that differ
- *     do so only through the points above (two visible ones: the key colour of a chroma-0 palette is tone 2, not T50, because
- *     CAM16 gives greys a chroma near 2 at T50 and the Android search walks down until it rounds to 0; outline is tone 49 in light,
- *     the "enableLightForeground" rule, not 50).
+ *     tones of MaterialDynamicColors (on_*_container is tone 10 in light here, 30 in 0.4.0). What the oracle run showed (seeds
+ *     6750A4 1B6EF3 B5651D 00FF00 808080, all nine styles, light and dark): every primitive (HCT, CAM16, the solver, Contrast,
+ *     TemperatureCache, viewing conditions), every palette hue and chroma, every one of the 65 shade entries, the 12 fixed colours
+ *     and the 8 control_* and text_* roles (0.4.0 has no such roles; they were compared as the palette tones Android 14 defines them
+ *     by, taken from 0.4.0's palettes) agree with 0.4.0 bit for bit. The 5 palette_key_color_* roles follow Android 14's key colour
+ *     search, a linear walk from T50: a chroma-0 palette gets tone 2, not T50 (CAM16 gives greys a chroma near 2 at T50 and the walk
+ *     goes down until it rounds to 0), and other palettes can sit a tone off 0.4.0's bisection. Every other role that differs does so
+ *     through the DynamicColor machinery above (for Fidelity and Content the primary roles and the containers can move by several
+ *     tones: ToneDeltaConstraint, Albers and the contrast clamp) and the role tones named above (on_*_container; outline is tone 49
+ *     in light, the "enableLightForeground" rule, not 50). A second oracle, Android 14's own monet Java (android14-release) compiled
+ *     and run for the same seeds and styles, gave the same value as this file for every entry compared (palettes, shades, the 44
+ *     roles light and dark, the fixed colours and the order of entries()).
  *
  * The maths is all doubles; Android's ColorScheme.kt feeds Shades.of with the seed's hue and chroma as floats (its framework Cam
  * class), so a palette entry computed here may differ from the phone's own by one RGB step in rare cases. Not checked on a device.

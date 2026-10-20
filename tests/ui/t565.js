@@ -5,12 +5,14 @@
 // are monet.js's values, 94 of them computed bit for bit by @material/material-color-utilities 0.4.0 too, the 14 that differ follow AOSP
 // 14 as the monet.js header says: Fidelity/Content primary_light, outline tone 49 in light, the key colour of a chroma-0 palette), and
 // Monochrome's rows are greys; (b) the card: a locked row without Super User (no bridge call), "Needs Android 14" with Super User on
-// Android 13, "Update the app" without the maths, the radio group on Android 14 (kv ovl_root_style, persists, survives a redraw), the
-// preview (five rows of 13 swatches, a tap copies) and its source line for each source (the colour above, the wallpaper colour the setting
-// carries, the wallpaper colours the bridge reports with the chroma rule, nothing readable: Google blue); the hint sentence for each
-// combination; (c) Apply: with a root style the bridge gets the 165-entry plan after the theme setting, the four lookups first; with Pure
-// black on as well still 165 with surface_dark and neutral1_900 black; Pure black alone keeps PR 2's plan (11 on Android 14, 2 on 13,
-// a remembered style counting for nothing there); Off with Pure black off after a write sends a disable; Undo and Revert disable; the
+// Android 13, "Update the app" without the maths or without overlayFabricate (an older APK), the radio group on Android 14 (kv
+// ovl_root_style, persists, survives a redraw), the preview (five rows of 13 swatches, a tap copies) and its source line for each source
+// (the colour above, the wallpaper colour the setting carries, the wallpaper colours the bridge reports with the chroma rule, nothing
+// readable: Google blue; a custom colour the setting carries is not the wallpaper's); the hint sentence for each combination; (c) Apply:
+// with a root style the bridge gets the 165-entry plan after the theme setting, the four lookups first; with Pure black on as well still
+// 165 with surface_dark and neutral1_900 black; Pure black alone keeps PR 2's plan (11 on Android 14, 2 on 13, a remembered style counting
+// for nothing there); from the source Wallpaper with a colour in the setting, the plan the preview showed although the theme write drops
+// that colour (the seed is taken when Apply is tapped); Off with Pure black off after a write sends a disable; Undo and Revert disable; the
 // record (kv ovl_root_applied with black and style, written before the write) and PR 2's key read as a fallback; the toasts, the note and
 // the failure sheets name what the overlay carries.
 const { chromium, PAGE } = require('./lib/pw');
@@ -117,6 +119,10 @@ const MORE_SUB = 'Fidelity, Content and Monochrome: colors Android has no settin
   await setSdk(34); m = await more();
   check('B3. Android 14 with Super User but without the colour maths (monet.js not loaded): a locked row saying Update the app', m.locked && m.lock === 'Update the app' && !m.radios && (await ev(() => ovlRootLive() && !ovlRootStyleLive() && ovlSdk() === 34)), JSON.stringify([m.lock, m.radios]));
   await ev(() => { window.MonetPlan = window.__mp; ovlRender(); });
+  // an APK too old to write overlays (no overlayFabricate), with the maths there and Super User on Android 14: both rows locked, Update the app
+  await ev(() => { window.__fabSaved = window.AndroidBridge.overlayFabricate; delete window.AndroidBridge.overlayFabricate; ovlRender(); }); m = await more(); c = await card();
+  check('   without overlayFabricate (an older APK), Super User on Android 14: More styles is a locked row saying Update the app, as the Pure black row is, and the line under the card says why', m.locked && m.lock === 'Update the app' && m.lockBtn && m.lockBtn.disabled && !m.radios && !m.preview && c.locked && !c.sw && m.note === 'This version of the app cannot write color overlays. Update it, then come back.' && m.rootHint === '', JSON.stringify([m.lock, m.note, m.rootHint, c]));
+  await ev(() => { window.AndroidBridge.overlayFabricate = window.__fabSaved; ovlRender(); });
 
   // B4: live on Android 14: the radio group
   m = await more();
@@ -147,6 +153,11 @@ const MORE_SUB = 'Fidelity, Content and Monochrome: colors Android has no settin
   check('   the phone reports wallpaper colours: the first with a chroma of at least 5 is the seed (the grey 808080 is passed over), the line names it', m.preview.source === 'From your wallpaper (#B5651D)' && m.preview.accent1[7] === '#B1621A' && m.preview.rows === 5, JSON.stringify([m.preview.source, m.preview.accent1[7]]));
   await ev(() => { window.__db.secure.theme_customization_overlay_packages = '{"android.theme.customization.system_palette":"6750a4","android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"TONAL_SPOT","_applied_timestamp":1700000000000}'; ovlReadTheme(); }); await sleep(150); m = await more();
   check('   the setting carries the wallpaper\'s colour: that is the seed, before the bridge\'s list', m.preview.source === 'From your wallpaper (#6750A4)' && m.preview.accent1[7] === '#7F68BE' && (await ev(() => ovlSource === 'home_wallpaper')), JSON.stringify([m.preview.source, m.preview.accent1[7]]));
+  await ev(() => { window.__db.secure.theme_customization_overlay_packages = '{"android.theme.customization.system_palette":"6750a4","android.theme.customization.color_source":"preset","android.theme.customization.theme_style":"TONAL_SPOT","_applied_timestamp":1700000000000}'; ovlReadTheme(); }); await sleep(150); m = await more();
+  check('   the setting carries a custom colour (source preset, 6750A4) while the page is on Wallpaper: not the wallpaper\'s, so the bridge\'s list decides (B5651D)', m.preview.source === 'From your wallpaper (#B5651D)' && m.preview.accent1[7] === '#B1621A' && (await ev(() => ovlSource === 'home_wallpaper' && ovlTheme.source === 'preset' && ovlTheme.color === '6750A4')), JSON.stringify([m.preview.source, m.preview.accent1[7]]));
+  await ev(() => { window.__wallpaper = ['808080']; ovlReadPalette(); }); await sleep(150); m = await more();
+  check('   the same with only a grey wallpaper colour: Google blue, not the custom colour', m.preview.source === 'From Google blue: no wallpaper color could be read' && m.preview.accent1[7] === blue500, JSON.stringify([m.preview.source, m.preview.accent1[7]]));
+  await ev(() => { window.__wallpaper = ['808080', 'B5651D', '6750A4']; ovlReadPalette(); }); await sleep(150);
   await ev(() => ovlPickColor('B5651D')); await sleep(80); m = await more();
   check('   source A color: the colour above is the seed, the line says so', m.preview.source === 'From the color above (#B5651D)' && m.preview.accent1[7] === '#B1621A', JSON.stringify([m.preview.source, m.preview.accent1[7]]));
   await ev(() => ovlPickColor('#6750a4')); await sleep(80); m = await more();
@@ -242,6 +253,16 @@ const MORE_SUB = 'Fidelity, Content and Monochrome: colors Android has no settin
   check('   Content with B5651D: the plan is MonetPlan.entries(CONTENT, B5651D) (accent3_500 pinned), the first four as always', plan.entries && (await sameAs(plan, 'CONTENT', 'B5651D')) === 'same' && byRes(plan)['android:color/system_accent3_500'] === '0xFF757C0C' && JSON.stringify(plan.entries.slice(0, 4).map(e => e.resource)) === JSON.stringify(LEAD) && (await kv('ovl_root_applied')).style === 'CONTENT', await sameAs(plan, 'CONTENT', 'B5651D'));
   await ev(() => ovlPickRootStyle('OFF')); await reset(); await apply();
   check('   Off: removed again', (await calls()).fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null);
+  // Apply from the source Wallpaper while the setting carries the wallpaper's colour: the write drops that colour, the overlay keeps the preview's
+  await ev(() => { window.__wallpaper = ['B5651D']; window.__db.secure.theme_customization_overlay_packages = '{"android.theme.customization.system_palette":"6750a4","android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"TONAL_SPOT","_applied_timestamp":1700000000000}'; ovlReadTheme(); ovlReadPalette(); ovlSetSource('home_wallpaper'); ovlPickRootStyle('FIDELITY'); }); await sleep(200); m = await more();
+  const shown = m.preview.accent1[7];
+  check('   source Wallpaper, the setting carrying 6750A4 for the wallpaper, the phone reporting B5651D: the preview is 6750A4\'s', m.preview.source === 'From your wallpaper (#6750A4)' && shown === '#7F68BE', JSON.stringify([m.preview.source, shown]));
+  await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
+  check('   Apply writes the setting with the wallpaper as its source and no colour, then the plan the preview showed: MonetPlan.entries(FIDELITY, 6750A4), its accent1_500 the eighth Accent 1 swatch', k.apply.length === 1 && k.apply[0].source === 'home_wallpaper' && k.apply[0].hex === '' && plan.action === 'fabricate' && (await sameAs(plan, 'FIDELITY', '6750A4')) === 'same' && byRes(plan)['android:color/system_accent1_500'] === '0xFF' + shown.slice(1), JSON.stringify([k.apply, await sameAs(plan, 'FIDELITY', '6750A4'), byRes(plan)['android:color/system_accent1_500']]));
+  m = await more();
+  check('   afterwards the setting carries no colour: the preview shows what the next Apply would write, from the wallpaper colour the phone reports', m.preview.source === 'From your wallpaper (#B5651D)' && m.preview.accent1[7] === '#B1621A' && (await ev(() => ovlTheme.color === '' && ovlTheme.source === 'home_wallpaper')), JSON.stringify([m.preview.source, m.preview.accent1[7]]));
+  await ev(() => { window.__wallpaper = null; ovlReadPalette(); ovlPickColor('B5651D'); ovlPickRootStyle('OFF'); }); await sleep(150); await reset(); await apply();
+  check('   Off with the colour above again: removed', (await calls()).fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null);
 
   // C8: PR 2's record (kv ovl_black_applied) is read as a fallback
   await ev(() => { kvSet('ovl_root_applied', null); kvSet('ovl_black_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now() - 5000 }); window.__ovl.find(o => o.id === 'com.android.shell:aam_monet').state = 1; ovlRender(); }); m = await more();

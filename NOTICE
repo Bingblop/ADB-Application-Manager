@@ -66,6 +66,11 @@ Other components
 * Shizuku API (RikkaApps) - MIT/Apache-2.0 - shell access through Shizuku.
 * Android Open Source Project (Google) - Apache-2.0 - the descriptions of Android's own settings in the Hidden Settings tab (assets/hsinfo.js) are
   taken in part from the documentation of Settings.java; tools/hsinfo/ holds the extract and the script that builds the file.
+* Android Open Source Project (Google) and Material Color Utilities 0.4.0 (Google LLC) - Apache-2.0 - assets/monet.js, the colours of More styles
+  (Fidelity, Content, Monochrome) on the RRO/Monet Customization tab: a port of Android 14's SystemUI monet engine (frameworks/base
+  android14-release, packages/SystemUI/monet and theme/DynamicColors.kt), read beside the npm package @material/material-color-utilities 0.4.0
+  (https://github.com/material-foundation/material-color-utilities). The file's header carries both copyright lines and names what was taken
+  from where and what was changed.
 * RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
 * Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
 
