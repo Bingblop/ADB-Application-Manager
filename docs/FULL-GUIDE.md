@@ -814,7 +814,7 @@ style the palette is worked out with:
   measured against libmonet android14-qpr3, Fidelity and Content differ in about 1 in 10 role values at contrast 0 (on-colors and the
   light outline), Monochrome in the light outline only, about 4 in 10 at a higher contrast; shades and Pure black are the same), 15 QPR1 (`P15Q1`, 165
   entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
-  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all four rows, with Super User or without:
+  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all five rows, with Super User or without:
   15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
   libmonet, 16 QPR1/QPR2 compute at spec 2025 with changes of their own and write `_light`/`_dark` palette names, 17 at 2026
   with the fixed colors in both modes), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
@@ -871,10 +871,10 @@ style the palette is worked out with:
   15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
   what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
-  `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
+  `accents` when a Secondary or tertiary accent is set, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
   Messages then speak of the *theme overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
-- **Intensity** (the fourth control of that card, under More styles; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
+- **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
   styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
   when `monet.js` has no `MonetPlan.lib.adjustOf`; the locked row keeps its line): three native range sliders, **Accent saturation**,
   **Background saturation** and **Background lightness**, 0 to 200 % in steps of 5, 100 % when never moved, the row's line *100% leaves
@@ -901,6 +901,35 @@ style the palette is worked out with:
   nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for CMF;
   on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42. **Reset** then Apply,
   **Undo** and **Default** switch the overlay off as for More styles. Not yet tried on a rooted phone.
+- **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14, 15 QPR1/QPR2 or
+  16.0, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
+  overlay bridge or when `monet.js` has no `MonetPlan.lib.accentsOf`; the locked row keeps its line): the row's line *Your own colors for
+  the second and third accent. The main color stays as it is.* and two entries, **Secondary accent** and **Tertiary accent**, each the
+  color bubble of Settings' Granular Color Pickers (the swatch and `#RRGGBB` when set, a dashed empty circle and *From the style* when
+  not), with a **Clear** text button on a set entry. Tapping an entry opens the page's color popup (titled *Secondary accent* or
+  *Tertiary accent*) at the stored color (*Current color #E91E63 • Apply theme writes it to the phone*) or, unset, at the key color the
+  style gives that row now, for the style Apply would write without the accents and the sliders (*The style gives #7B748A now • Apply
+  theme writes your color to the phone*); its **Apply** stores the color (an unchanged one too), **Cancel** stores nothing, and neither
+  calls the bridge. Kept in `ovl_accent_secondary` and `ovl_accent_tertiary` (`RRGGBB` in capitals; `''`, nothing or any other value
+  is "from the style"). The maths is `opts.accents = { secondary, tertiary }` in `assets/monet.js`, both parts, a rule written for this
+  project: for a color X the scheme of the same style, spec, mode, contrast and profile is built from X as the seed (X as it is: the
+  Google-blue rule for greys is not applied), and its primary palette P replaces the secondary (accent2) or tertiary (accent3) palette
+  before the shades, the roles, the fixed colors and `palette_key_color_*` are derived; where P's hue is not X's within 0.5 degrees
+  (Expressive at 2021, seed hue + 240, and Fruit Salad at every spec, seed hue - 50), the palette at X's hue with P's chroma takes its
+  place. So the hue picked is kept in every style and the style sets the chroma: at 2021 that of the style's primary, 36 Tonal Spot, 200
+  Vibrant, 40 Expressive, 48 Rainbow and Fruit Salad, 12 Spritz, on every profile and for every color (the styles' own secondary /
+  tertiary: 16/24, 24/32, 24/32, 16/24, 36/36, 8/16); Fidelity, Content and CMF keep X's chroma; at 2025 Tonal Spot and Expressive differ
+  between light and dark and Spritz gives blue hues 12, others 8. Grey colors give a colored row at the style's chroma in the stock
+  styles (808080 and FFFFFF teal, 000000 pink). The accents come before `opts.adjust`, so Accent saturation scales them. Only accent2 and
+  the secondary roles (accent3 and the tertiary roles) change; Monochrome's entries are the same with them, so under Monochrome the page
+  passes none. With an accent set, **Apply theme** writes a style's colors with root: a More style as before, with the accents, else the
+  list style at the spec Google's rule gives it (2021 included); the 2021 hints are *Also writes this style's colors with root.* and
+  *Also writes this style's colors and pure black with root.*, the 2025, adjusted and More style ones are reused, and a second sentence
+  names the accents (*Secondary accent: your color.*, *Tertiary accent: your color.*, *Secondary and tertiary accents: your colors.*).
+  Apply takes the colors at the tap; the preview follows them as they are stored. With none set, the plans, hints and records are the
+  ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
+  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Undo** and **Default** switch the overlay off as for More
+  styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
