@@ -226,6 +226,11 @@ public class AppRestartTest {
     int watch = grant.indexOf("AppRestart.watchScript(android.os.Process.myPid(), AppRestart.component(pkg, MainActivity.class.getName()))");
     int cmds = grant.indexOf("executeShell(sb.toString() + \"true\")");
     check("the watcher is left behind through the working mode before the grant commands run (a phone that ends the process for a grant still gets the app back)", watch > 0 && cmds > watch);
+    // Android 11 ends the app's uid when REQUEST_INSTALL_PACKAGES becomes allowed (StorageManagerService), which cuts the commands after it under ADB: it goes last
+    String list = between(grant, "StringBuilder sb = new StringBuilder();", "if (sb.length() > 0) {");
+    int inst = list.indexOf("if (!hasInstallUnknownAccess()) sb.append(\"appops set \").append(pkg).append(\" REQUEST_INSTALL_PACKAGES allow; \");");
+    check("Install unknown apps is the last grant command (on Android 11 granting it ends the app's uid, so nothing after it would run)",
+        inst > 0 && list.indexOf("sb.append(", list.indexOf("\n", inst)) < 0 && list.indexOf("MANAGE_EXTERNAL_STORAGE allow") > 0 && list.indexOf("android.permission.POST_NOTIFICATIONS") < inst, list);
     check("the status is read before and after, and the watcher is ended when nothing changed", grant.contains("String before = getPermissionStatus();") && grant.contains("String after = getPermissionStatus();") && grant.contains("if (after.equals(before)) { try { executeShell(AppRestart.killScript(watcher)); }"));
     check("without a watcher the page reloads itself as before", grant.contains("if (watcher == null) return after;"));
     check("something granted with a watcher waiting: restarting is flagged and told to the page", grant.contains("restartPending = true;") && grant.contains("o.put(\"restarting\", true)"));

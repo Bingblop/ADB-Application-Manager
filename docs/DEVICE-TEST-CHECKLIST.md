@@ -597,6 +597,9 @@ same process, and on some phones the app closed and stayed closed. None of this 
       (About > Permissions shows them, or Settings > Application Permissions). If the app does not come back on its own, note that: it is the bug this build fixes.
 - [ ] **What is left.** When something had no command (Live updates on Android 16, or a permission the phone refused), the sheet opens again after the restart
       with only those rows unfilled; Allow on one opens its Android screen as before.
+- [ ] **Android 11, Install unknown apps.** On Android 11 the phone ends the app the moment Install unknown apps is allowed by command (Android 12 and later do
+      not), so that command runs last. Fresh install on Android 11 with ADB TCP or Wireless Debugging, first-launch sheet, **Allow all**: the app comes back once
+      with every row that has a command granted, and the sheet does not come back asking for a second Allow all.
 - [ ] **Nothing to grant.** Open the sheet from About with every permission already granted and tap **Allow all**: no restart, the sheet just closes.
 - [ ] **The question.** On a phone where the first-launch sheet was skipped, connect a working mode later: the question "Grant all remaining permissions with it
       now? The app restarts afterwards." appears; OK: the same restart, and the app comes back.

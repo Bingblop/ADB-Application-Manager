@@ -13864,7 +13864,6 @@ public class MainActivity extends Activity {
                     sb.append("pm grant ").append(pkg).append(" android.permission.PACKAGE_USAGE_STATS; ");
                 }
                 if (!hasOverlayAccess()) sb.append("appops set ").append(pkg).append(" SYSTEM_ALERT_WINDOW allow; ");
-                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
                 if (!hasLegacyStorageAccess()) {
                     sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
                     sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
@@ -13874,6 +13873,10 @@ public class MainActivity extends Activity {
                 if (!hasReadLogsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.READ_LOGS; ");
                 if (!hasBluetoothConnectAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.BLUETOOTH_CONNECT; ");
                 if (!hasNotificationAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.POST_NOTIFICATIONS; ");
+                // last: on Android 11 the phone ends this app's uid when this op becomes allowed (StorageManagerService.onAppOpsChanged; from Android 12 only
+                // when it is taken away, and All files access ends it only when denied); that takes the adb client and server this app started with it and
+                // can cut the commands after it under ADB (likely Shizuku too), so everything else is granted first; the watcher brings the app back
+                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
                 if (sb.length() > 0) {
                     String before = getPermissionStatus();
                     String watcher = null;
