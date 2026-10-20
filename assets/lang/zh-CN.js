@@ -1,6 +1,16 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "同时通过 Root 写入此样式的颜色和纯黑。",
+"Also writes this style's colors with root.": "同时通过 Root 写入此样式的颜色。",
+"From the style": "来自样式",
+"Secondary accent": "第二强调色",
+"Secondary accent: your color.": "第二强调色：你的颜色。",
+"Secondary and tertiary accents": "第二和第三强调色",
+"Secondary and tertiary accents: your colors.": "第二和第三强调色：你的颜色。",
+"Tertiary accent": "第三强调色",
+"Tertiary accent: your color.": "第三强调色：你的颜色。",
+"Your own colors for the second and third accent. The main color stays as it is.": "为第二和第三强调色使用你自己的颜色。主色保持不变。",
 "100% leaves Android's colors as they are.": "100% 时 Android 的颜色保持不变。",
 "Accent saturation": "强调色饱和度",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "同时通过 Root 写入 CMF 样式的颜色（经“强度”滑块调整），取代上方的样式。",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "已创建 {0}（{1} 个文件，{2} → {3}，已设密码保护）"],
 ["Created {0} ({1} files, {2} → {3})", "已创建 {0}（{1} 个文件，{2} → {3}）"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "已创建 {0}（{1} 个文件，{2} → {3}，已设密码保护）"],
+["Current color #{0} • Apply theme writes it to the phone", "当前颜色 #{0} • “应用主题”会把它写入手机"],
 ["Current color #{0} • applies to dark mode", "当前颜色 #{0} • 用于深色模式"],
 ["Current color #{0} • applies to light mode", "当前颜色 #{0} • 用于浅色模式"],
 ["Current color #{0} • the palette style builds light and dark from it", "当前颜色 #{0} • 调色板样式据此生成浅色和深色"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "无法运行自检：{0}"],
 ["The shell did not start: {0}", "Shell 未能启动：{0}"],
 ["The speed test could not start: {0}", "无法开始速度测试：{0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "样式当前给出 #{0} • “应用主题”会把你的颜色写入手机"],
 ["The value is too long ({0} characters at most)", "值太长（最多 {0} 个字符）"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "值太长，adb 无法传递（加引号后为 {0} 字节，最多约 {1}）"],
 ["Theme: {0}", "主题：{0}"],

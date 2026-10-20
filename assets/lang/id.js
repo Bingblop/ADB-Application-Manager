@@ -1,6 +1,16 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "Juga menulis warna gaya ini dan hitam pekat dengan Root.",
+"Also writes this style's colors with root.": "Juga menulis warna gaya ini dengan Root.",
+"From the style": "Dari gaya",
+"Secondary accent": "Aksen sekunder",
+"Secondary accent: your color.": "Aksen sekunder: warna Anda.",
+"Secondary and tertiary accents": "Aksen sekunder dan tersier",
+"Secondary and tertiary accents: your colors.": "Aksen sekunder dan tersier: warna Anda.",
+"Tertiary accent": "Aksen tersier",
+"Tertiary accent: your color.": "Aksen tersier: warna Anda.",
+"Your own colors for the second and third accent. The main color stays as it is.": "Warna Anda sendiri untuk aksen kedua dan ketiga. Warna utama tetap seperti apa adanya.",
 "100% leaves Android's colors as they are.": "Pada 100%, warna Android tetap seperti apa adanya.",
 "Accent saturation": "Saturasi aksen",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Juga menulis warna CMF dengan Root, menggantikan gaya di atas, disesuaikan oleh penggeser Intensitas.",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "Dibuat {0} ({1} file, {2} → {3}, dilindungi kata sandi)"],
 ["Created {0} ({1} files, {2} → {3})", "Dibuat {0} ({1} file, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "Dibuat {0} ({1} file, {2} → {3}, dilindungi kata sandi)"],
+["Current color #{0} • Apply theme writes it to the phone", "Warna saat ini #{0} • Terapkan tema menulisnya ke ponsel"],
 ["Current color #{0} • applies to dark mode", "Warna saat ini #{0} • berlaku untuk mode gelap"],
 ["Current color #{0} • applies to light mode", "Warna saat ini #{0} • berlaku untuk mode terang"],
 ["Current color #{0} • the palette style builds light and dark from it", "Warna saat ini #{0} • gaya palet membangun terang dan gelap darinya"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "Uji mandiri tidak dapat dijalankan: {0}"],
 ["The shell did not start: {0}", "Shell tidak dapat dimulai: {0}"],
 ["The speed test could not start: {0}", "Tes kecepatan tidak bisa dimulai: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "Gaya ini memberi #{0} sekarang • Terapkan tema menulis warna Anda ke ponsel"],
 ["The value is too long ({0} characters at most)", "Nilai terlalu panjang (maksimal {0} karakter)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "Nilai terlalu panjang untuk dibawa adb ({0} byte setelah diberi tanda kutip, maksimal sekitar {1})"],
 ["Theme: {0}", "Tema: {0}"],

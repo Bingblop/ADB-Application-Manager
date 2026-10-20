@@ -1,6 +1,16 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "Также записывает цвета этого стиля и чисто чёрный через Root.",
+"Also writes this style's colors with root.": "Также записывает цвета этого стиля через Root.",
+"From the style": "Из стиля",
+"Secondary accent": "Второй акцент",
+"Secondary accent: your color.": "Второй акцент: ваш цвет.",
+"Secondary and tertiary accents": "Второй и третий акценты",
+"Secondary and tertiary accents: your colors.": "Второй и третий акценты: ваши цвета.",
+"Tertiary accent": "Третий акцент",
+"Tertiary accent: your color.": "Третий акцент: ваш цвет.",
+"Your own colors for the second and third accent. The main color stays as it is.": "Ваши собственные цвета для второго и третьего акцента. Основной цвет остаётся как есть.",
 "100% leaves Android's colors as they are.": "При 100 % цвета Android остаются как есть.",
 "Accent saturation": "Насыщенность акцента",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Также записывает цвета CMF через Root, вместо стиля выше, с поправкой ползунками «Интенсивность».",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "Архив {0} создан (файлов: {1}, {2} → {3}, защищён паролем)"],
 ["Created {0} ({1} files, {2} → {3})", "Архив {0} создан (файлов: {1}, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "Архив {0} создан (файлов: {1}, {2} → {3}, защищён паролем)"],
+["Current color #{0} • Apply theme writes it to the phone", "Текущий цвет #{0} • «Применить тему» запишет его в телефон"],
 ["Current color #{0} • applies to dark mode", "Текущий цвет #{0} • применяется к тёмной теме"],
 ["Current color #{0} • applies to light mode", "Текущий цвет #{0} • применяется к светлой теме"],
 ["Current color #{0} • the palette style builds light and dark from it", "Текущий цвет #{0} • стиль палитры строит из него светлую и тёмную"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "Не удалось выполнить самопроверку: {0}"],
 ["The shell did not start: {0}", "Оболочка не запустилась: {0}"],
 ["The speed test could not start: {0}", "Не удалось начать тест скорости: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "Стиль сейчас даёт #{0} • «Применить тему» запишет ваш цвет в телефон"],
 ["The value is too long ({0} characters at most)", "Значение слишком длинное (не больше {0} симв.)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "Значение слишком длинное для adb ({0} байт в кавычках, не больше примерно {1})"],
 ["Theme: {0}", "Тема: {0}"],

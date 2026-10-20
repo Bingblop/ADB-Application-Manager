@@ -1,6 +1,16 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "このスタイルの色とピュアブラックも、Rootで書き込みます。",
+"Also writes this style's colors with root.": "このスタイルの色も、Rootで書き込みます。",
+"From the style": "スタイルから",
+"Secondary accent": "2番目のアクセント",
+"Secondary accent: your color.": "2番目のアクセント：あなたの色。",
+"Secondary and tertiary accents": "2番目と3番目のアクセント",
+"Secondary and tertiary accents: your colors.": "2番目と3番目のアクセント：あなたの色。",
+"Tertiary accent": "3番目のアクセント",
+"Tertiary accent: your color.": "3番目のアクセント：あなたの色。",
+"Your own colors for the second and third accent. The main color stays as it is.": "2番目と3番目のアクセントにあなた自身の色を使います。メインの色はそのままです。",
 "100% leaves Android's colors as they are.": "100%ならAndroidの色はそのままです。",
 "Accent saturation": "アクセントの彩度",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "強度スライダーで調整したCMFの色も、Rootで上のスタイルの代わりに書き込みます。",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "{0} を作成しました({1} 個のファイル、{2} → {3}、パスワード保護あり)"],
 ["Created {0} ({1} files, {2} → {3})", "{0} を作成しました({1} 個のファイル、{2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "{0} を作成しました({1} 個のファイル、{2} → {3}、パスワード保護あり)"],
+["Current color #{0} • Apply theme writes it to the phone", "現在の色 #{0} • 「テーマを適用」でスマートフォンに書き込みます"],
 ["Current color #{0} • applies to dark mode", "現在の色 #{0} • ダークモードに適用"],
 ["Current color #{0} • applies to light mode", "現在の色 #{0} • ライトモードに適用"],
 ["Current color #{0} • the palette style builds light and dark from it", "現在の色 #{0} • パレットスタイルがこれからライトとダークを作ります"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "セルフテストを実行できませんでした: {0}"],
 ["The shell did not start: {0}", "シェルを起動できませんでした：{0}"],
 ["The speed test could not start: {0}", "速度テストを開始できませんでした: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "スタイルの今の色 #{0} • 「テーマを適用」であなたの色をスマートフォンに書き込みます"],
 ["The value is too long ({0} characters at most)", "値が長すぎます（最大{0}文字）"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "値が長すぎてadbで送れません（引用符付きで{0}バイト、上限は約{1}バイト）"],
 ["Theme: {0}", "テーマ：{0}"],

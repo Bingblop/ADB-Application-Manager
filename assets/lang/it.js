@@ -1,6 +1,16 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "Scrive anche i colori di questo stile e il nero puro con Root.",
+"Also writes this style's colors with root.": "Scrive anche i colori di questo stile con Root.",
+"From the style": "Dallo stile",
+"Secondary accent": "Accento secondario",
+"Secondary accent: your color.": "Accento secondario: il tuo colore.",
+"Secondary and tertiary accents": "Accenti secondario e terziario",
+"Secondary and tertiary accents: your colors.": "Accenti secondario e terziario: i tuoi colori.",
+"Tertiary accent": "Accento terziario",
+"Tertiary accent: your color.": "Accento terziario: il tuo colore.",
+"Your own colors for the second and third accent. The main color stays as it is.": "I tuoi colori per il secondo e il terzo accento. Il colore principale resta com’è.",
 "100% leaves Android's colors as they are.": "Al 100% i colori di Android restano come sono.",
 "Accent saturation": "Saturazione dell’accento",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Scrive anche i colori CMF con Root, al posto dello stile qui sopra, regolati dai cursori Intensità.",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "Creato {0} ({1} file, {2} → {3}, protetto da password)"],
 ["Created {0} ({1} files, {2} → {3})", "Creato {0} ({1} file, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "Creato {0} ({1} file, {2} → {3}, protetto da password)"],
+["Current color #{0} • Apply theme writes it to the phone", "Colore attuale #{0} • Applica tema lo scrive sul telefono"],
 ["Current color #{0} • applies to dark mode", "Colore attuale #{0} • si applica alla modalità scura"],
 ["Current color #{0} • applies to light mode", "Colore attuale #{0} • si applica alla modalità chiara"],
 ["Current color #{0} • the palette style builds light and dark from it", "Colore attuale #{0} • lo stile della palette ne ricava chiaro e scuro"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "Impossibile eseguire l’autotest: {0}"],
 ["The shell did not start: {0}", "La shell non si è avviata: {0}"],
 ["The speed test could not start: {0}", "Impossibile avviare il test di velocità: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "Lo stile dà #{0} ora • Applica tema scrive il tuo colore sul telefono"],
 ["The value is too long ({0} characters at most)", "Il valore è troppo lungo (massimo {0} caratteri)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "Il valore è troppo lungo perché adb lo trasmetta ({0} byte tra apici, al massimo circa {1})"],
 ["Theme: {0}", "Tema: {0}"],

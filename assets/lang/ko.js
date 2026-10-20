@@ -1,6 +1,16 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "이 스타일의 색상과 순수한 검은색도 Root로 기록합니다.",
+"Also writes this style's colors with root.": "이 스타일의 색상도 Root로 기록합니다.",
+"From the style": "스타일에서",
+"Secondary accent": "두 번째 강조 색상",
+"Secondary accent: your color.": "두 번째 강조 색상: 내 색상.",
+"Secondary and tertiary accents": "두 번째와 세 번째 강조 색상",
+"Secondary and tertiary accents: your colors.": "두 번째와 세 번째 강조 색상: 내 색상.",
+"Tertiary accent": "세 번째 강조 색상",
+"Tertiary accent: your color.": "세 번째 강조 색상: 내 색상.",
+"Your own colors for the second and third accent. The main color stays as it is.": "두 번째와 세 번째 강조 색상에 내 색상을 씁니다. 기본 색상은 그대로 유지됩니다.",
 "100% leaves Android's colors as they are.": "100%이면 Android 색상이 그대로 유지됩니다.",
 "Accent saturation": "강조 색상 채도",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "강도 슬라이더로 조정한 CMF 색상도 Root로 위 스타일 대신 기록합니다.",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "{0} 생성됨 ({1}개 파일, {2} → {3}, 비밀번호로 보호됨)"],
 ["Created {0} ({1} files, {2} → {3})", "{0} 생성됨 ({1}개 파일, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "{0} 생성됨 ({1}개 파일, {2} → {3}, 비밀번호로 보호됨)"],
+["Current color #{0} • Apply theme writes it to the phone", "현재 색상 #{0} • 테마 적용을 누르면 휴대전화에 기록됩니다"],
 ["Current color #{0} • applies to dark mode", "현재 색상 #{0} • 다크 모드에 적용"],
 ["Current color #{0} • applies to light mode", "현재 색상 #{0} • 라이트 모드에 적용"],
 ["Current color #{0} • the palette style builds light and dark from it", "현재 색상 #{0} • 팔레트 스타일이 이것으로 라이트와 다크를 만듭니다"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "자가 테스트를 실행할 수 없습니다: {0}"],
 ["The shell did not start: {0}", "셸이 시작되지 않았습니다: {0}"],
 ["The speed test could not start: {0}", "속도 테스트를 시작할 수 없습니다: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "지금 스타일의 색상 #{0} • 테마 적용을 누르면 내 색상이 휴대전화에 기록됩니다"],
 ["The value is too long ({0} characters at most)", "값이 너무 깁니다(최대 {0}자)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "값이 너무 길어 adb로 전달할 수 없습니다(따옴표 포함 {0}바이트, 최대 약 {1}바이트)"],
 ["Theme: {0}", "테마: {0}"],
