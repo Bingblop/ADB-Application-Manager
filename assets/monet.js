@@ -161,6 +161,43 @@
  * class), so a P14 palette entry computed here may differ from the phone's own by one RGB step in rare cases (Android 15 and 16 take
  * their shades from libmonet's palettes, doubles). Not checked on a device.
  *
+ * Intensity (opts.adjust): the root card's three sliders. These formulas are this project's own (not Android's, not Google's library's,
+ * not another app's). They act on the scheme's tonal palettes before anything is derived from them, so the 65 shades, the roles and the
+ * fixed colours all come from the same adjusted palettes; the error palette is never touched. No phone computes these colours itself.
+ *   Accent saturation, a = accentSat / 100: the primary, secondary and tertiary palettes become the palettes of the same hue with chroma
+ *     x a (the part's own TonalPalette.fromHueAndChroma, key colour included). The HCT solver clips each tone to the sRGB gamut, so above
+ *     100 the display's maximum is the ceiling (Vibrant's primary, chroma 200, is there already at 100).
+ *   Background saturation, b = bgSat / 100: the neutral and neutral variant palettes, chroma x b.
+ *   Background lightness, v = bgLight: the neutral and neutral variant palettes, asked for tone t, give their colour at tone
+ *     f(t) = clamp(t + K * (v - 100) * d(t), 0, 100), K = ADJUST_TONE_STEP = 0.1 (ten tones at the slider ends) and d(t) = min(1, t / 10,
+ *     (100 - t) / 10) (adjustRamp): tones 0 and 100 never move (white stays white, black stays black), tone 99 moves a tenth as far as
+ *     tones 10 to 90, tone 95 half as far; hue and chroma stay. Above 100 is lighter, below darker.
+ *   The roles: the engine still solves every tone (contrast curves, tone-delta pairs, Android 14's Albers step for Fidelity and Content)
+ *     on the adjusted palettes' hue and chroma; the tone map comes after it: a role on a neutral palette gets the colour at f of the tone
+ *     the engine picked (part 1: DynamicColor.getHct; part 2: the palette's getHct, and in the 2025 delegate's chroma-multiplier path,
+ *     which asks no palette for a tone, Hct.from at f(tone)). Text and its background then move by different amounts near the ends, so
+ *     contrast can drop. Measured (WCAG ratio; the saturation sliders at 100, contrast level 0, the six seeds above, light and dark
+ *     together; P14 and P16 gave the same numbers), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07
+ *     for the nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for
+ *     CMF at 2026; on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42 at 2021, 4.84 / 5.38 / 4.13 at 2025, 4.92 / 5.41 /
+ *     4.42 for CMF. Most of the drop is in light mode at 200 (the text lightens ten tones, the surface at most two); the lowest
+ *     on_surface ratio at 2021 is in dark mode at 0 (the text darkens ten tones, the surface six).
+ *   The shades: P14 (Android 14's rule) shade s at tone f(shadeTone(s)), the palette's hue, and chroma min(40, c) x the factor for
+ *     shades 10 and 50, c x the factor for the others (c: the chroma before the sliders); P15Q1, P15Q2 and P16 tone f(trunc((1000 - s) /
+ *     10)) at chroma c x the factor. Shade 0 (white) and shade 1000 (black) never move; at 200 shades 10, 50 and 100 of a neutral row
+ *     reach white, at 0 shade 900 reaches black.
+ *   A palette with no chroma (every Monochrome palette, Rainbow's neutrals) is unchanged by the saturation sliders: 0 x anything is 0.
+ *   What was checked (scripts on this container): no adjust, adjust null or {}, and all three at 100 give the file's results from before
+ *   the option byte for byte (entries(), palettes() and roles() for no profile, P14, P15Q1, P15Q2 and P16, every style id and alias, no
+ *   spec, 2021, 2025 and 2026, seeds 6750A4 1B6EF3 B5651D 00FF00 808080 FFDE3F, light and dark, no contrast, 0 and 0.5: 26,328 results).
+ *   Part 2 against Google's library at bd811e4 with its palettes adjusted by a separate script written from the definitions above:
+ *   entries(), palettes(), roles() and scheme()'s six palettes (hue, chroma, key colour, tones 0 to 100), the six seeds, contrast 0 and
+ *   0.5, light and dark; the nine styles at 2021 for P16, P15Q2 and P15Q1 at 10 slider settings, Tonal Spot, Vibrant, Expressive and
+ *   Spritz at 2025 and 2026 and CMF at 2026 for P16 and P15Q2 at 9: no difference. P14 at 2021 against the file from before the option
+ *   run by hand (its engine on the adjusted palettes, the tone map after), 8 settings, contrast 0 and 0.5: every role, fixed colour and
+ *   scheme() palette; P14's shades at 2021, 2025 and 2026 by the rule above: no difference. A changed K, a changed d, the cap, each
+ *   tone-map step left out and an adjusted error palette each make at least one of these checks fail. None of it was run on a device.
+ *
  * API (window.MonetPlan in the page, module.exports in node):
  *   MonetPlan.STYLES                       the ten style ids this file knows: TONAL_SPOT VIBRANT EXPRESSIVE RAINBOW FRUIT_SALAD SPRITZ
  *                                          FIDELITY CONTENT MONOCHROMATIC CMF (NEUTRAL and MONOCHROME are accepted as aliases)
@@ -174,7 +211,7 @@
  *   MonetPlan.seed(style, argb)            the seed the style really uses: a seed with chroma under 5 becomes Google blue, except for
  *                                          Fidelity and Content (they keep it) and Monochrome (no difference); CMF follows the rule
  *                                          like the stock styles; 0 / nothing is Google blue
- *   opts = { spec, dark, profile, contrast }  optional on the four calls below. spec: one of SPECS, '2021' when left out. profile:
+ *   opts = { spec, dark, profile, contrast, adjust }  optional on the four calls below. spec: one of SPECS, '2021' when left out. profile:
  *                                          one of PROFILES, 'P14' when left out; any other value throws ('Profile not supported').
  *                                          contrast: the phone's contrast level, a number from -1 to 1 (clamped), 0 when left out;
  *                                          anything but a number throws. dark: the mode the phone is in; for P15Q1, P15Q2 and P16,
@@ -182,9 +219,14 @@
  *                                          65 shades come from the scheme of that mode, for P14 at 2021 from the light one. No opts,
  *                                          or P14 at contrast 0, gives the same results as before the profiles, byte for byte, and
  *                                          a spec the style falls back to 2021 at the same as before part 2. CMF with any spec but
- *                                          '2026' throws, as upstream's SchemeCmf does.
+ *                                          '2026' throws, as upstream's SchemeCmf does. adjust: the Intensity sliders (above),
+ *                                          { accentSat, bgSat, bgLight }, each a percentage, 100 when left out, clamped to 0..200; a
+ *                                          value that is not a number throws, as an adjust that is not an object does. No adjust, null,
+ *                                          {} or all three at 100 give the results without it, byte for byte.
  *   MonetPlan.palettes(style, argb, opts)  { seed, style, accent1..neutral2: { hue, chroma, key: 'RRGGBB', shades: ['RRGGBB' x 13] } },
- *                                          the shades in SHADE_KEYS order by the profile's rule
+ *                                          the shades in SHADE_KEYS order by the profile's rule. With adjust: the adjusted palette's
+ *                                          chroma (the chroma asked for, which the display may not reach) and key colour (Background
+ *                                          lightness moves the tones a palette gives, not its key colour)
  *   MonetPlan.roles(style, argb, isDark, opts)  the profile's roles as [{ name, argb }] (argb a '0xAARRGGBB' string), in its order:
  *                                          44 for P14 and P15Q1, 50 for P15Q2 and P16
  *   MonetPlan.entries(style, argb, opts)   the overlay entries [{ resource, argb }] the profile's SystemUI writes, in its order. P14,
@@ -192,7 +234,8 @@
  *                                          the 12 fixed colours from the light scheme. P15Q1, 165, and P15Q2 and P16, 177: 65 palette
  *                                          entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
  *                                          the light scheme; SystemUI's custom colours are not included
- *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise), for tests
+ *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with adjust its
+ *                                          five palettes are AdjustedPalette objects, the error palette the scheme's own), for tests
  *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2)
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
  */
@@ -808,9 +851,11 @@
     const TonePolarity = { DARKER: 'DARKER', LIGHTER: 'LIGHTER', NO_PREFERENCE: 'NO_PREFERENCE' };
     class ToneDeltaConstraint { constructor(delta, keepAway, keepAwayPolarity) { this.delta = delta; this.keepAway = keepAway; this.keepAwayPolarity = keepAwayPolarity; } }
     class DynamicColor {
-        constructor(hue, chroma, tone, opacity, background, toneMinContrast, toneMaxContrast, toneDeltaConstraint) {
+        // palette: the role's palette (fromPalette), kept only for the Intensity sliders' tone map in getHct; Android 14 has no such field
+        constructor(hue, chroma, tone, opacity, background, toneMinContrast, toneMaxContrast, toneDeltaConstraint, palette) {
             this.hue = hue; this.chroma = chroma; this.tone = tone; this.opacity = opacity; this.background = background;
             this.toneMinContrast = toneMinContrast; this.toneMaxContrast = toneMaxContrast; this.toneDeltaConstraint = toneDeltaConstraint;
+            this.palette = palette || null;
             this.hctCache = new Map();
         }
         static fromPalette(palette, tone, background, toneDeltaConstraint) {
@@ -821,7 +866,7 @@
                 tone, null, background,
                 scheme => DynamicColor.toneMinContrastDefault(tone, background, scheme, toneDeltaConstraint),
                 scheme => DynamicColor.toneMaxContrastDefault(tone, background, scheme, toneDeltaConstraint),
-                toneDeltaConstraint);
+                toneDeltaConstraint, palette);
         }
         static backgroundHasBackground(background, scheme) {
             return background !== null && background(scheme) !== null && background(scheme).background !== null && background(scheme).background(scheme) !== null;
@@ -904,7 +949,10 @@
         getHct(scheme) {
             const cached = this.hctCache.get(scheme);
             if (cached !== undefined) return cached;
-            const answer = Hct.from(this.hue(scheme), this.chroma(scheme), this.getTone(scheme));
+            // the Intensity sliders (AdjustedPalette, in the API part): a palette with a tone map gives the colour at the mapped tone of the
+            // tone the engine picked (Background lightness); an Android 14 palette has none, and the colour is Android 14's
+            const hue = this.hue(scheme), chroma = this.chroma(scheme), tone = this.getTone(scheme), palette = this.palette === null ? null : this.palette(scheme);
+            const answer = Hct.from(hue, chroma, palette && palette.mapTone ? palette.mapTone(tone) : tone);
             if (this.hctCache.size > 4) this.hctCache.clear();
             this.hctCache.set(scheme, answer);
             return answer;
@@ -1572,8 +1620,10 @@
                 const multiplier = color.chromaMultiplier ? color.chromaMultiplier(scheme) : 1;
                 if (multiplier === 1) return palette.getHct(tone);
                 const chroma = palette.chroma * multiplier;
-                if (tone === 99 && Hct.isYellow(palette.hue)) return TonalPalette.fromHueAndChroma(palette.hue, chroma).getHct(tone);
-                return Hct.from(palette.hue, chroma, tone);
+                // the Intensity sliders (AdjustedPalette, in the API part; upstream has no such step): the colour at the palette's mapped tone
+                const at = palette.mapTone ? palette.mapTone(tone) : tone;
+                if (at === 99 && Hct.isYellow(palette.hue)) return TonalPalette.fromHueAndChroma(palette.hue, chroma).getHct(at);
+                return Hct.from(palette.hue, chroma, at);
             },
             getTone(scheme, color) {
                 const toneDeltaPair = color.toneDeltaPair ? color.toneDeltaPair(scheme) : undefined;
@@ -2613,6 +2663,66 @@
         if (typeof c !== 'number' || !Number.isFinite(c)) throw new Error('Unknown contrast: ' + c);
         return Math.min(1.0, Math.max(-1.0, c)) || 0.0;
     }
+    // ---------- Intensity (opts.adjust): the root card's three sliders. This project's own formulas, applied to a scheme's tonal palettes
+    // before anything is derived from them (the 65 shades, the roles, the fixed colours); the error palette is never touched ----------
+    const ADJUST_KEYS = ['accentSat', 'bgSat', 'bgLight'];
+    // Background lightness: a neutral palette asked for tone t gives the colour at tone t + ADJUST_TONE_STEP * (v - 100) * adjustRamp(t),
+    // clamped to 0..100. K = 0.1: ten tone steps at the slider ends (v = 0 or 200). d(t) = min(1, t / 10, (100 - t) / 10): tones 0 and
+    // 100 never move (white stays white, black stays black), 99 moves a tenth as far, 95 half as far, 10 to 90 the whole way
+    const ADJUST_TONE_STEP = 0.1, ADJUST_RAMP_TONES = 10;
+    function adjustRamp(t) { return Math.min(1, t / ADJUST_RAMP_TONES, (100 - t) / ADJUST_RAMP_TONES); }
+    function adjustTone(t, v) { return clampDouble(0, 100, t + ADJUST_TONE_STEP * (v - 100) * adjustRamp(t)); }
+    // opts.adjust -> { accentSat, bgSat, bgLight } (percent, 100 when left out, clamped to 0..200), or null when there is none or all
+    // three are 100 (then nothing is adjusted: every result is the one without adjust). A value that is not a number throws, as an
+    // adjust that is not an object does
+    function adjustOf(opts) {
+        const a = opts ? opts.adjust : undefined;
+        if (a === undefined || a === null) return null;
+        if (typeof a !== 'object' || Array.isArray(a)) throw new Error('Unknown adjust: ' + a);
+        const out = {};
+        for (const k of ADJUST_KEYS) {
+            const v = a[k];
+            if (v === undefined || v === null) out[k] = 100;
+            else if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error('Unknown adjust.' + k + ': ' + v);
+            else out[k] = Math.min(200, Math.max(0, v));
+        }
+        return out.accentSat === 100 && out.bgSat === 100 && out.bgLight === 100 ? null : out;
+    }
+    // a palette as the sliders leave it: the palette of the same hue with chroma x factor (the part's own TonalPalette.fromHueAndChroma,
+    // so its key colour is that part's search; factor 1 keeps the palette itself), whose tone t is that palette's colour at mapTone(t)
+    // (adjustTone for Background lightness, else t). Part 1's DynamicColor.getHct and part 2's chroma-multiplier path read mapTone;
+    // every other reader sees an ordinary palette (hue, chroma, keyColor, tone, getHct)
+    class AdjustedPalette {
+        constructor(Palette, base, factor, light) {
+            const inner = factor === 1 ? base : Palette.fromHueAndChroma(base.hue, base.chroma * factor);
+            this.inner = inner; this.hue = inner.hue; this.chroma = inner.chroma; this.keyColor = inner.keyColor;
+            this.baseChroma = base.chroma; this.chromaFactor = factor; this.light = light;
+        }
+        mapTone(t) { return this.light === 100 ? t : adjustTone(t, this.light); }
+        tone(t) { return this.inner.tone(this.mapTone(t)); }
+        getHct(t) { return this.inner.getHct(this.mapTone(t)); }
+    }
+    // the scheme with its five palettes adjusted (Palette: the part's TonalPalette); a palette the sliders leave alone stays as it is
+    function adjustScheme(s, adj, Palette) {
+        if (!adj) return s;
+        const a = adj.accentSat / 100, b = adj.bgSat / 100, v = adj.bgLight;
+        const wrap = (p, factor, light) => factor === 1 && light === 100 ? p : new AdjustedPalette(Palette, p, factor, light);
+        s.primaryPalette = wrap(s.primaryPalette, a, 100);
+        s.secondaryPalette = wrap(s.secondaryPalette, a, 100);
+        s.tertiaryPalette = wrap(s.tertiaryPalette, a, 100);
+        s.neutralPalette = wrap(s.neutralPalette, b, v);
+        s.neutralVariantPalette = wrap(s.neutralVariantPalette, b, v);
+        return s;
+    }
+    // P14's 13 shades of a row: part 1's shadesOf (Android 14's rule). On an adjusted palette, the same rule: shade s at tone
+    // mapTone(shadeTone(s)), the palette's hue, and the shade's own chroma (capped at 40 for shades 10 and 50) x the factor
+    function shadesP14(p) {
+        if (!(p instanceof AdjustedPalette)) return shadesOf(p);
+        return SHADE_KEYS.map(shade => {
+            const chroma = (shade === 10 || shade === 50 ? Math.min(40.0, p.baseChroma) : p.baseChroma) * p.chromaFactor;
+            return Hct.from(p.hue, chroma, p.mapTone(shadeTone(shade))).toInt();
+        });
+    }
     // frameworks/libs/systemui monet DynamicColors.java (android15-qpr2-release = android16-release): the 44 roles plus six more, each
     // named by generateSysUINames (DynamicColor.name with palette_key_color moved to the front) and the list sorted by name; the
     // fixed colours sorted the same way. Android 15 QPR1's DynamicColors keeps Android 14's 44 names and order (the lists above).
@@ -2630,13 +2740,17 @@
     const SHADE_WRITE_ORDER = [0, 800, 100, 900, 200, 1000, 10, 300, 400, 50, 500, 600, 700];
     // frameworks/libs/systemui monet TonalPalette.getAtTone: shade s is libmonet tone((int) ((1000 - s) / 10)) of the palette's hue and
     // chroma, so shade 500 is tone 50, with no chroma cap (part 1's shadesOf is Android 14's rule)
-    function shadeA15(palette, shade) { return MCU.Hct.from(palette.hue, palette.chroma, Math.trunc((1000 - shade) / 10)).toInt(); }
+    // (on an adjusted palette: its hue and chroma, at mapTone of that tone)
+    function shadeA15(palette, shade) {
+        const tone = Math.trunc((1000 - shade) / 10);
+        return MCU.Hct.from(palette.hue, palette.chroma, palette.mapTone ? palette.mapTone(tone) : tone).toInt();
+    }
     // P14: part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026).
-    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for.
+    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for, its palettes adjusted by opts.adjust.
     function scheme(style, color, isDark, opts) {
-        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), argb = seed(style, color);
-        if (profile === 'P14' && !inPart2(variant, spec)) return makeScheme(variant, Hct.fromInt(argb), !!isDark, contrast);
-        return MCU.schemeOf(variant, MCU.Hct.fromInt(argb), !!isDark, contrast, spec);
+        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), adj = adjustOf(opts), argb = seed(style, color);
+        if (profile === 'P14' && !inPart2(variant, spec)) return adjustScheme(makeScheme(variant, Hct.fromInt(argb), !!isDark, contrast), adj, TonalPalette);
+        return adjustScheme(MCU.schemeOf(variant, MCU.Hct.fromInt(argb), !!isDark, contrast, spec), adj, MCU.TonalPalette);
     }
     // a role's colour on a scheme of either part. Part 2: upstream's role of that name, or, for the Android-only roles, part 1's
     // definition on a scheme that carries part 2's palettes (those roles read the palettes' hue and chroma, isDark and the contrast level)
@@ -2656,7 +2770,7 @@
         const out = { seed: hex6(s.sourceColorArgb), style: String(style).toUpperCase() };
         for (const [row, field] of PALETTE_ROWS) {
             const p = s[field];
-            const shades = profile === 'P14' ? shadesOf(p) : SHADE_KEYS.map(shade => shadeA15(p, shade));
+            const shades = profile === 'P14' ? shadesP14(p) : SHADE_KEYS.map(shade => shadeA15(p, shade));
             out[row] = { hue: p.hue, chroma: p.chroma, key: hex6(p.keyColor.toInt()), shades: shades.map(hex6) };
         }
         return out;
@@ -2681,7 +2795,7 @@
         if (profile === 'P14') {
             const base = inPart2(variant, spec) && opts && opts.dark ? dark : light;
             for (const [row, field] of PALETTE_ROWS) {
-                const shades = shadesOf(base[field]);
+                const shades = shadesP14(base[field]);
                 SHADE_KEYS.forEach((shade, i) => add(row + '_' + shade, shades[i]));
             }
             for (const s of [dark, light]) {
@@ -2702,6 +2816,7 @@
         hct, seed: (style, color) => hex6(seed(style, color)), specFor, palettes, roles, entries, scheme,
         lib: { Hct, Cam16, HctSolver, ViewingConditions, Contrast, TonalPalette, TemperatureCache, DislikeAnalyzer, DynamicScheme, DynamicColor, Variant, MDC,
             ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
-            schemePalettes, shadesOf, shadeTone, shadeA15, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf, mcu: MCU }
+            schemePalettes, shadesOf, shadeTone, shadeA15, shadesP14, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf,
+            adjustOf, adjustTone, adjustRamp, adjustScheme, AdjustedPalette, ADJUST_TONE_STEP, ADJUST_RAMP_TONES, mcu: MCU }
     };
 });
