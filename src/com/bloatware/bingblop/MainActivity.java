@@ -1242,8 +1242,9 @@ public class MainActivity extends Activity {
 
     /**
      * Runs the start script the installed Shizuku app wrote (see {@link ShizukuStart}) through a ready ADB TCP or Wireless Debugging connection,
-     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Blocks for up to about 16 seconds,
-     * so it runs on the executor.
+     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Usually a few seconds; the bound is
+     * about 36 seconds (adb devices 2.5 s, a reconnect of 5 s when the link had dropped, the script up to ShizukuStart.SCRIPT_TIMEOUT_MS = 20 s,
+     * then the binder poll of 16 x 500 ms), so it runs on the executor.
      */
     private JSONObject startShizukuNow() {
         if (isShizukuBinderAlive()) return shizukuStartResult("already_running", installedShizukuPackage(), null);
@@ -1255,7 +1256,7 @@ public class MainActivity extends Activity {
         if (target == null) return shizukuStartResult("no_adb", pkg, null);
         String cmd = ShizukuStart.command(pkg);
         if (cmd == null) return shizukuStartResult("failed", pkg, null);
-        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd));
+        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd, ShizukuStart.SCRIPT_TIMEOUT_MS));     // not the 8 s of a plain command: a slow start is not cut off
         if (r.noScript) return shizukuStartResult("no_script", pkg, r);
         boolean alive = false;
         for (int i = 0; i < 16 && !activityDestroyed; i++) {
@@ -1285,11 +1286,15 @@ public class MainActivity extends Activity {
     }
 
     private String runAdbShell(String target, String cmd) {
-        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+        return runAdbShell(target, cmd, 8000);
+    }
+
+    private String runAdbShell(String target, String cmd, int timeoutMs) {
+        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         if (output != null && output.contains("device '") && output.contains("' not found")) {
             // The connection dropped (e.g. adbd restarted). Reconnect once without changing the mode.
             runProcessWithTimeout(buildAdbProcess("connect", target), 5000);
-            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         }
         return output != null ? output : "";
     }

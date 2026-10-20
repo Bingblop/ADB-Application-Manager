@@ -17,6 +17,13 @@ final class ShizukuStart {
     static final String NO_SCRIPT = "NO_START_SCRIPT";
     static final String SCRIPT_MARK = "SCRIPT:";
     static final String EXIT_MARK = "EXIT:";
+    /**
+     * How long the start script may run before the adb client is stopped. Shizuku's starter forks a detached server (setsid, its output on
+     * /dev/null) and returns, normally within a few seconds; what comes before the fork (copying the starter, `pm path` on a busy phone just after
+     * a restart) can be slow, and stopping the client then may take the script down with it before Shizuku is started. Only a phone shows how
+     * long that takes, so the script gets well over the 8 s of an ordinary adb shell command.
+     */
+    static final int SCRIPT_TIMEOUT_MS = 20000;
 
     /** True for a plain package name; anything else is never put into a command. */
     static boolean validPackage(String pkg) {
