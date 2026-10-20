@@ -62,7 +62,9 @@ Android will use your wallpaper’s colors with the Tonal Spot style again.
    no answer at all: after the page's own timeout the sheet says No answer from the device (timed out) and that the phone may still apply it: true {"shown":true,"title":"Could not write the pure black overlay","body":"Could not write the pure black overlay\nFAILED\nMonet · root overlay\nNo answer from the device (timed out)\n\nThe phone may still apply it. It is looked at again in a moment."}
    the overlay is remembered as possibly written, so Undo, Revert and Apply with the switch off still switch it off; the theme bar offers Undo: true [{"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"pending":true,"black":true,"style":"","build":"google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys"},"The pure black overlay may be written on this phone."]
    and the overlay list is read again shortly (after 2.5 s): true 1
-   a disable of an overlay Android does not list: the sheet says so, and the overlay is forgotten (nothing of it is on): true {"shown":true,"title":"Could not remove the pure black overlay","body":"Could not remove the pure black overlay\nFAILED\nMonet · root overlay\nThat overlay is not listed any more (com.android.shell:aam_monet)"}
+   a disable of an overlay Android does not list: nothing of it is on, so the toast says removed, no failure sheet, and the overlay is forgotten: true [false,"Pure black overlay removed"]
+   a disable whose overlay is listed off: removed, no sheet, record cleared: true [false,"Pure black overlay removed"]
+   a disable whose overlay is still listed on: the failure toast and sheet, the record kept: true ["Could not remove the pure black overlay","The pure black overlay was not removed"]
    a disable without an answer keeps the overlay remembered (it may still be on): true
    an answer that comes after the page gave up on it is not taken for a live one: true
    but makes the list be read again, quietly: true 1

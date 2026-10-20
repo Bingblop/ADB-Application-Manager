@@ -271,10 +271,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await sleep(2600);
   check('   and the overlay list is read again shortly (after 2.5 s)', (await calls()).list === 1, String((await calls()).list));
   // a disable whose overlays Android does not list at all (the write never ran: the app restarted first): the Java side calls it a
-  // refusal, but nothing of this app's is on, so the record goes and the next Apply does not try again
+  // refusal, but nothing of this app's is on, so the record goes, the next Apply does not try again, and it counts as removed (T-073)
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), pending: true }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: -2, ids: [id], error: 'That overlay is not listed any more (' + id + ')', list: [['android.theme.customization.accent_color', 'android', 1], [id + '_other', 'android', 1]] }, 'disable', null, null); }, AAM);
   s = await sheet();
-  check('   a disable of an overlay Android does not list: the sheet says so, and the overlay is forgotten (nothing of it is on)', s.shown && s.title === 'Could not remove the pure black overlay' && /not listed any more/.test(s.body) && (await kv('ovl_root_applied')) === null && (await card()).note === '', JSON.stringify(s));
+  check('   a disable of an overlay Android does not list: nothing of it is on, so the toast says removed, no failure sheet, and the overlay is forgotten', !s.shown && (await toast()) === 'Pure black overlay removed' && (await kv('ovl_root_applied')) === null && (await card()).note === '', JSON.stringify([s.shown, await toast()]));
+  // listed but off is the same; listed on is a real failure and keeps the sheet
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: 0, ids: [id], error: 'x', list: [[id, 'android', 0]] }, 'disable', null, null); }, AAM);
+  s = await sheet();
+  check('   a disable whose overlay is listed off: removed, no sheet, record cleared', !s.shown && (await toast()) === 'Pure black overlay removed' && (await kv('ovl_root_applied')) === null, JSON.stringify([s.shown, await toast()]));
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: 1, ids: [id], error: 'Android did not switch it off (' + id + ')', list: [[id, 'android', 1]] }, 'disable', null, null); }, AAM);
+  s = await sheet();
+  check('   a disable whose overlay is still listed on: the failure toast and sheet, the record kept', s.shown && s.title === 'Could not remove the pure black overlay' && (await toast()) === 'The pure black overlay was not removed' && JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '"]', JSON.stringify([s.title, await toast()]));
   await closeAll();
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, unknown: true, ids: [id], error: 'No answer from the device' }, 'disable', null, null); }, AAM);
   check('   a disable without an answer keeps the overlay remembered (it may still be on)', JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '"]');

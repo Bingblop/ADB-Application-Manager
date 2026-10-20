@@ -39135,7 +39135,9 @@ Type any command above (e.g. pm list packages -d)</div>
             // its colours Android does not show, so the toast and the sheet say that, not "was not written" (T-072); the record above keeps it
             const ownColors = action === 'fabricate' && !r.ok && !r.unknown && !r.timedOut && ids.length > 0
                 && (whole ? ids.every(id => ovlList.some(o => o.id === id && o.state === 1)) : r.state === 1);
-            if (r.ok) showToast(action === 'fabricate' ? words.written : words.removed);
+            // a disable whose read-back shows nothing of this app's on (refused only because Android does not list the overlay, or lists it
+            // off) did what it was for: the removed toast, no failure sheet (T-073)
+            if (r.ok || (action !== 'fabricate' && onNow === false)) showToast(action === 'fabricate' ? words.written : words.removed);
             else {
                 showToast(ownColors ? words.onOwn : action === 'fabricate' ? words.notWritten : words.notRemoved);
                 ovlRootFailure(action, r, ownColors ? Object.assign({}, words, { writeTitle: words.onOwn }) : words);
