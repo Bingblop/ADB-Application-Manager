@@ -66,6 +66,19 @@ public class RootManagersTest {
 
   static String read(File f) throws Exception { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
 
+  /** The source of the method whose declaration starts with {@code sig}, through its closing brace ("" when it is not there). */
+  static String methodBody(String src, String sig) {
+    int i = src.indexOf(sig);
+    if (i < 0) return "";
+    int depth = 0;
+    for (int j = src.indexOf('{', i); j >= 0 && j < src.length(); j++) {
+      char c = src.charAt(j);
+      if (c == '{') depth++;
+      else if (c == '}' && --depth == 0) return src.substring(i, j + 1);
+    }
+    return "";
+  }
+
   static void sourceScan() throws Exception {
     File dir = findUp("src/com/bloatware/bingblop");
     File pageFile = findUp("assets/index.html");
@@ -76,12 +89,37 @@ public class RootManagersTest {
     // MainActivity: the bridge opens the manager with a plain launch intent (no grant mechanics) and reports which one
     check("source: AndroidBridge exposes openRootManager", m.contains("public String openRootManager()"));
     check("source: openRootManager uses a launch intent (hands off, grants nothing)", m.contains("getLaunchIntentForPackage") && m.contains("RootManagers.pick("));
-    check("source: AndroidBridge reports the installed manager name", m.contains("public String rootManagerName()"));
+    // T-024: the page takes the manager's name from openRootManager's answer; no separate bridge method nobody calls, no stand-in string no answer leaves room for
+    check("source: no rootManagerName bridge method (the page never called it)", !m.contains("rootManagerName"));
+    check("source: the ok answer carries the manager's name", methodBody(m, "public String openRootManager()").contains("return \"{\\\"ok\\\":true,\\\"name\\\":\" + name + \"}\";"));
+    check("source: the page toasts use that name with no unreachable stand-in", !h.contains("txT('your root manager')"));
+    // T-021: the answer follows the start. openRootManager starts the manager itself (not posted to the UI thread with ok sent at once), answers
+    // ok:true only after startActivity returned, and answers ok:false when the launch intent is gone or Android refuses the start
+    String open = methodBody(m, "public String openRootManager()");
+    int started = open.indexOf("startActivity(in)"), okTrue = open.indexOf("\"{\\\"ok\\\":true"), caught = open.indexOf("} catch (Exception e) {");
+    check("source: openRootManager starts the manager on the bridge thread, not in a posted Runnable whose failure is dropped",
+        started > 0 && !open.contains("runOnUiThread") && !open.contains("catch (Exception ignored)"), open);
+    check("source: openRootManager answers ok:true only after startActivity returned", started > 0 && okTrue > started, open);
+    check("source: a refused start answers ok:false", caught > started && open.substring(caught, Math.min(open.length(), caught + 80)).contains("return \"{\\\"ok\\\":false"), open);
+    check("source: a launch intent that is gone by then answers ok:false", open.contains("if (in == null) return \"{\\\"ok\\\":false"), open);
+    // T-026: both failed starts say so (reason "launch", with the manager's name), so the page does not answer "install a root manager" to a
+    // phone that has one, and both hand-off buttons on the page tell that case apart
+    String launchFailed = "return \"{\\\"ok\\\":false,\\\"reason\\\":\\\"launch\\\",\\\"name\\\":\" + name + \"}\";";
+    check("source: the null intent and the refused start both answer reason launch with the name",
+        open.split(java.util.regex.Pattern.quote(launchFailed), -1).length - 1 == 2, open);
+    String jsOpen = methodBody(h, "function rootOpenManager("), jsApps = methodBody(h, "function rootManageSuperuser(");
+    check("source: Open root manager and Open manager both have a branch for a manager that did not start",
+        jsOpen.contains("res.reason === 'launch'") && jsApps.contains("res.reason === 'launch'"), jsOpen + "\n" + jsApps);
 
     // the page: the button, the pending flag, and the status read-back on resume (feeds RootGate)
     check("source: the page defines rootOpenManager", h.contains("function rootOpenManager("));
     check("source: rootOpenManager calls the bridge", h.contains("AndroidBridge.openRootManager"));
     check("source: a grant that was approved in the manager is read back on resume", h.contains("rootGrantPending") && h.contains("checkAllWorkingModes(true)"));
     check("source: the Root Features su card offers the hand-off button", h.contains("onclick=\"rootOpenManager()\""));
+    // T-030: the Super User for apps row is the second caller of the same hand-off: its button is wired, it calls the bridge, and a manager that
+    // started arms the same read-back on return
+    check("source: the Super User for apps row calls the bridge", h.contains("function rootManageSuperuser(") && h.contains("'rootManageSuperuser()'"));
+    check("source: Open manager (apps) opens the manager through the bridge and marks the status pending",
+        jsApps.contains("AndroidBridge.openRootManager()") && jsApps.contains("rootGrantPending = true"), jsApps);
   }
 }

@@ -7839,7 +7839,7 @@
                     <button class="mode-action-btn primary" id="rfRequestBtn" onclick="rootRequestSuperUser()">Request Super User</button>
                     <button class="mode-action-btn" id="rfOpenManagerBtn" onclick="rootOpenManager()">Open root manager</button>
                 </div>
-                <div class="rf-soon" id="rfManagerNote">Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.</div>
+                <div class="rf-note" id="rfManagerNote">Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.</div>
             </div>
 
             <div class="color-card" id="rfFeaturesCard">
@@ -28527,7 +28527,7 @@ Type any command above (e.g. pm list packages -d)</div>
         lcRestorePrefs();
         cdLcRestorePrefs();
 
-        // ---- Root Features tab (v7.15.1, step B1a: the gate and the surface; the Super User features themselves come in later steps) ----
+        // ---- Root Features tab (v7.15.1): the gate, the Super User card and the feature rows (Super User for apps, App components) ----
         // The gate: Root Features unlock only when the resolved working mode is Root AND su really granted it to this app. That is RootGate.active on the
         // Java side, which getWorkingMode reports as rootWorkingModeActive; the page's own reading (a privileged mode that is root) is the same rule, and the
         // Java verdict can only veto it (an older app that does not send the field changes nothing).
@@ -28540,7 +28540,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // cannot change components of apps it does not own, and Kyle scoped the control to Root. LAUNCH and STOP keep the ordinary working-mode lock.
         function compToggleLocked() { return !isRootActive(); }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
-        function onRootFeaturesShown() { renderRootFeatures(); }
+        // ACTIVE is su's last answer, kept in memory (isRootGranted): a grant taken back in the root manager since then would still read ACTIVE here and
+        // leave the rows unlocked (T-044). So a tab about to open unlocked asks su once more first (the fresh check of Check Status), and a no locks it.
+        // Only then: a locked tab asks nothing (no second su prompt right after a refusal), and coming back to the app does not ask either (a manager's
+        // prompt takes the app off screen, so asking on every return could ask again and again).
+        function onRootFeaturesShown() { if (isRootActive()) checkAllWorkingModes(true); renderRootFeatures(); }
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
         // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
@@ -28561,7 +28565,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function rootFeatureRows() {
             return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()')
-                + rootFeatureRow('App components', 'Enable or disable activities, services and receivers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()');
+                + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()');
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -28582,19 +28586,37 @@ Type any command above (e.g. pm list packages -d)</div>
             // the Super User card asks su on a phone that has it; it is put away while Super User is active
             const su = document.getElementById('rfSuCard');
             if (su) su.style.display = active ? 'none' : '';
-            // the feature area: a locked placeholder until Super User is active (no feature yet in this step)
+            // the feature area: the Super User for apps and App components rows, unlocked while Super User is active and listed locked otherwise
             const list = document.getElementById('rfFeatureList');
             if (list) list.innerHTML = rootFeatureRows();
         }
-        // Request Super User: the same path as Request Root Access in Working Modes (su asks; a yes makes Root the working mode and the mode change
-        // re-renders this tab). Whether a phone without su can get a temporary root is a later step.
+        // Asking su from here goes through the switch to Root (selectWorkingMode runs `su -c id`; a yes makes Root the working mode and the mode change
+        // re-renders this tab). Working Modes keeps Root chosen when su says no (Root was picked there on purpose), but here the switch is only the way to
+        // ask (T-043): after a refusal, a timeout or on a phone without su the mode chosen before comes back as it was (setWorkingMode only writes the
+        // choice back: no prompt, no reconnect), read back by a new check; the toast says so only when that check shows it. Root chosen before stays chosen.
+        function rootAskSu(afterSelect) {
+            const prev = (lastModesData || {}).configuredMode;
+            selectModeUI('root', res => {
+                if (res && !res.ok && prev && prev !== 'root' && MODE_LABELS[prev] && window.AndroidBridge.setWorkingMode) {
+                    try { window.AndroidBridge.setWorkingMode(prev); } catch (e) {}
+                    checkAllWorkingModes(false);
+                    if ((lastModesData || {}).configuredMode === prev) showToast(txF('Super User was not granted. The working mode stays {0}.', txT(MODE_LABELS[prev])));
+                    loadPackageData();
+                }
+                if (afterSelect) afterSelect(res);
+            });
+        }
+        // Request Super User: asks su the way Request Root Access in Working Modes does, but a refusal keeps the mode the user had (rootAskSu).
+        // Whether a phone without su can get a temporary root is a later step.
         function rootRequestSuperUser() {
             if (!window.AndroidBridge) { showToast('This works in the app on a phone, not in a browser.'); return; }
-            selectModeUI('root');
+            rootAskSu();
         }
         // Temporary root by hand-off: open the installed root manager (KernelSU, APatch or Magisk) so the grant is approved there, then read the
         // status back when the app returns (rootGrantPending -> a fresh working-mode check that updates the gate). No grant mechanics live here: the
-        // app only launches the manager and reads su status afterwards.
+        // app only launches the manager and reads su status afterwards. The bridge answers ok only once the manager was started; reason 'launch'
+        // means a manager is installed but Android did not start it, which is not the "install one" case (nothing is pending then either). Both of
+        // those answers carry the manager's name, so the toasts need no stand-in for it.
         let rootGrantPending = false;
         function rootOpenManager() {
             if (!window.AndroidBridge || !window.AndroidBridge.openRootManager) { showToast(txT('This works in the app on a phone, not in a browser.')); return; }
@@ -28602,7 +28624,13 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Allow this app in {0}, then come back.', res.name || txT('your root manager')));
+                showToast(txF('Allow this app in {0}, then come back.', res.name));
+            } else if (res && res.reason === 'launch') {
+                showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
+            } else if ((lastModesData || {}).rootAvailable) {
+                // su is on the phone, so it is rooted: the manager is most likely there under a package name the app does not know (Magisk's
+                // "Hide the Magisk app" gives it a random one). Telling the user to install a root manager would send them after one they have.
+                showToast(txT('Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.'));
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }
@@ -28616,7 +28644,13 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name || txT('your root manager')));
+                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name));
+            } else if (res && res.reason === 'launch') {
+                showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
+            } else if (isRootActive()) {
+                // su already answers as root, so the phone has a manager the app cannot find by one of the four known package names (a Magisk
+                // hidden with "Hide the Magisk app", a renamed build): asking the user to install one would be wrong.
+                showToast(txT('Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.'));
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }
@@ -28628,13 +28662,33 @@ Type any command above (e.g. pm list packages -d)</div>
             switchView('apps');
             showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
         }
-        // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features.
-        document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState !== 'visible' || !rootGrantPending) return;
+        // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features. The way back is
+        // taken from whichever of three signs comes first (the pending mark makes it one read): the page shown again (the manager covered this
+        // app); the activity resuming (onAppResume: Android 9 and older pause, but do not hide, the other window of a split screen); and the window
+        // getting focus back (Android 10 and newer can keep both windows of a split screen or freeform resumed and shown, so neither of the other
+        // two comes). Whether the WebView hands that window focus on to the page there, only a device can show; the listener costs nothing without
+        // a hand-off. A hidden page reads nothing: onAppResume also runs after a wallpaper or theme change, which can come while the user is still
+        // in the manager, and the mark has to wait for the way back.
+        function rootGrantReadBack() {
+            if (!rootGrantPending || document.visibilityState !== 'visible') return;
             rootGrantPending = false;
             try { if (typeof checkAllWorkingModes === 'function') checkAllWorkingModes(true); } catch (e) {}
             try { if (typeof renderRootFeatures === 'function') renderRootFeatures(); } catch (e) {}
-        });
+            try { rootOfferSwitchAfterManager(); } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', rootGrantReadBack);
+        window.addEventListener('focus', rootGrantReadBack);
+        // The fresh check above counts su as granted only while Root is the chosen working mode (MainActivity.probeWorkingMode; Auto never resolves
+        // to Root), so a grant just approved in the manager unlocks nothing while the mode is Auto, Shizuku or ADB. Offer the switch to Root then,
+        // through the path of Request Super User. It asks first instead of switching by itself: selectWorkingMode('root') keeps Root as the chosen
+        // mode even when su denies, so a silent switch would replace a working mode with a Root that is not ready whenever the user came back
+        // without allowing the app. Only a device shows how often that happens; asking is the safer way.
+        function rootOfferSwitchAfterManager() {
+            const d = lastModesData || {};
+            if (!window.AndroidBridge || !d.rootAvailable || isRootActive() || d.configuredMode === 'root') return;
+            if (!confirm(txT('Switch the working mode to Root now? Root Features unlock once su grants this app access.'))) return;
+            selectModeUI('root');
+        }
         // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
         // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
         // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.
@@ -28642,12 +28696,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (isRootActive()) return Promise.resolve(true);
             const d = lastModesData || {};
             if (d.rootAvailable && window.AndroidBridge) {
-                // su is there, the mode just is not Root: switch to it (su asks on its own) and go on when it grants
-                return new Promise(resolve => selectModeUI('root', () => resolve(isRootActive() ? true : rootOfferTab(featureName))));
+                // su is there, the mode just is not Root: switch to it (su asks on its own) and go on when it grants; a refusal keeps the mode the user had
+                return new Promise(resolve => rootAskSu(() => resolve(isRootActive() ? true : rootOfferTab(featureName))));
             }
             return Promise.resolve(rootOfferTab(featureName));
         }
         function rootOfferTab(featureName) {
+            if (!tabNeed('rootfeatures')) return false;              // switched off in Settings > Feature List: say so, never offer a tab that cannot open (T-046)
             const why = featureName ? txF('{0} needs Super User.', featureName) + '\n\n' : '';
             if (!confirm(why + txT('Open Root Features to check if your device supports Super User?'))) return false;
             switchView('rootfeatures');
@@ -31817,6 +31872,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function onAppResume() {
+            if (typeof rootGrantReadBack === 'function') { try { rootGrantReadBack(); } catch (e) {} }     // back from a root-manager hand-off without being hidden
             permOnChange();
             if (typeof mpHResumed === 'function') { try { mpHResumed(); } catch (e) {} }
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back

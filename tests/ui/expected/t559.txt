@@ -5,24 +5,54 @@ ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is 
 ok      promptRootThenOpen goes straight on (true), switches nothing and asks nothing
 ok      the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no lock
 ok      Open manager (apps) launches the installed manager (openRootManager) and marks the status pending
+ok      with root ACTIVE but no known manager (hidden or renamed), Open manager says it was not found by its usual name, not "install one", and marks nothing pending (T-025)
+ok      a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending
+ok      back from Open manager (the page shown again): one fresh status read, the mark spent, the tab re-rendered (revoked there -> DENIED, rows locked)
 ok      the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)
 ok      Open apps goes to the Application Manager (switchView apps)
+ok      its line names every kind the inspector can enable or disable: activities, receivers, services and providers (T-033)
 ok      the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)
 ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
+ok      T-044: after a grant is taken back in the manager, the quiet check still reads the remembered yes (Root active, no fresh check asked)
+ok      opening the tab unlocked asks su again (one fresh check): it now reads DENIED, the gate shows and the rows are locked
+ok      a tab that opens locked asks nothing more (no second su prompt after a no)
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
 ok      the gate names the way: choose Root in Working Modes
 ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button
+ok      the hand-off note reads as the card's text: upright, the size of the line above the buttons
 ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
-ok      with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)
+ok      back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending
+ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
+ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
+ok      the note says to come back and let the app switch to Root
+ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
+ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)
+ok      a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending
+ok      back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent
+ok      onAppResume with nothing pending reads nothing fresh
+ok      back by the window getting focus again (Android 10+ can keep both windows resumed and shown): a fresh status read, the mark spent
+ok      while the page is hidden (the user still in the manager) nothing is read and the mark waits; shown again, one fresh read
+ok      each of those ways back offered the switch to Root once (T-017), and the declined offers switched nothing
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now
 ok      su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false
 ok      after the denial the tag says DENIED and the gate says why
+ok      T-043: the denied switch puts Shizuku back (setWorkingMode("shizuku") after selectWorkingMode("root")): chosen and privileged again, the badge reads Shizuku
 ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked
+ok      Open root manager with no su and no manager: the install message, nothing pending
 ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
 ok      a no: nothing opens, false
-ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab
+ok      T-046: the tab switched off: no question, the toast says it is turned off and where to turn it on, nothing opens, false
+ok   5. T-043 Request Super User from Shizuku, su says no: Root is asked (selectWorkingMode "root"), then Shizuku is put back (setWorkingMode "shizuku")
+ok      Shizuku is chosen and privileged again (badge Shizuku), the tag reads DENIED with the reason, the rows stay locked
+ok      the toast says so: "Super User was not granted. The working mode stays Shizuku ADB (UID 2000)."
+ok      no su, Automatic chosen: the switch fails and Automatic is put back (configuredMode auto), the tag reads NOT FOUND
+ok      Root already chosen and su says no again: Root stays chosen (no setWorkingMode), DENIED
+ok      Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab and puts nothing back
 ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
-ok   7. no page errors
+ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
+ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
+ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
+ok   8. no page errors
 errors: []
 all passed
