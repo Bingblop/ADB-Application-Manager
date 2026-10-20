@@ -5,7 +5,7 @@
  * (psPalettes, psScheme in index.html) does not use this file.
  *
  * Copyright 2021-2026 Google LLC
- * Copyright (C) 2021-2023 The Android Open Source Project
+ * Copyright (C) 2019-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Two parts. Part 1 is Android 14's engine, for all nine styles; it computes spec 2021, the spec Android 14, 15 and 16 build their
- * own theme with (their ColorScheme passes none). Part 2 is Google's Material Color Utilities at main: the 2025 and 2026 colour specs
- * and the CMF style. The API sends a style to part 2 only where Google's rule gives it a spec other than 2021 (Tonal Spot, Vibrant,
- * Expressive and Spritz at 2025 or 2026, CMF at 2026), so every result at spec 2021 is part 1's, the same as before part 2 was added.
+ * Two parts. Part 1 is Android 14's engine, for all nine styles at spec 2021. Part 2 is Google's Material Color Utilities at main: the
+ * 2021, 2025 and 2026 colour specs and the CMF style. Which part computes a result depends on the profile, the Android build the
+ * colours are for (see "Profiles" below). P14, and no profile: part 2 gets a style only where Google's rule gives it a spec other than
+ * 2021 (Tonal Spot, Vibrant, Expressive and Spritz at 2025 or 2026, CMF at 2026), so every P14 result at spec 2021 is part 1's, the
+ * same as before part 2 was added. P15Q1, P15Q2 and P16 (Android 15 QPR1, 15 QPR2 and 16.0): part 2 at every spec, 2021 included.
+ * Android 14, 15 and 16.0 build their own theme at spec 2021 (15.0 with an older libmonet); Android 16 QPR1 and QPR2 build it at
+ * 2025 with changes of their own, and Android 17 at 2026 (read in the AOSP sources, not run): no profile here serves those.
  *
  * Part 1, provenance (what was ported from where; the Java is AOSP frameworks/base at refs/heads/android14-release, the TypeScript is
  * Google's npm package @material/material-color-utilities 0.4.0; both Apache-2.0):
@@ -63,30 +66,34 @@
  *   dynamiccolor/variant.ts (CMF), hct/cam16.ts (the hue and chroma of Cam16.fromInt), hct/hct.ts, contrast/contrast.ts,
  *   dislike/dislike_analyzer.ts, palettes/tonal_palette.ts (with its KeyColor), dynamiccolor/contrast_curve.ts, tone_delta_pair.ts,
  *   dynamic_color.ts (DynamicColor, extendSpecVersion, ColorCalculationDelegateImpl2021 and ColorCalculationDelegateImpl2025),
- *   color_spec_2021.ts (the base class 2025 extends), color_spec_2025.ts, color_spec_2026.ts, material_dynamic_colors.ts (its one
- *   ColorSpecDelegateImpl2026), dynamic_scheme.ts (maybeFallbackSpecVersion, getPiecewiseHue, getRotatedHue, the palette delegates
- *   2021 and 2025), scheme/scheme_cmf.ts, and scheme_tonal_spot.ts, scheme_vibrant.ts, scheme_expressive.ts, scheme_neutral.ts,
- *   scheme_rainbow.ts, scheme_fruit_salad.ts and scheme_monochrome.ts, each the DynamicScheme constructor with its variant (schemeOf).
+ *   color_spec_2021.ts (spec 2021, and the base class 2025 extends), color_spec_2025.ts, color_spec_2026.ts,
+ *   material_dynamic_colors.ts (its one ColorSpecDelegateImpl2026), dynamic_scheme.ts (maybeFallbackSpecVersion, getPiecewiseHue,
+ *   getRotatedHue, the palette delegates 2021 and 2025, the 2021 one with its Fidelity and Content cases: the source colour's own
+ *   chroma, and a tertiary palette from the temperature cache, fixed by DislikeAnalyzer), temperature/temperature_cache.ts
+ *   (TemperatureCache), scheme/scheme_cmf.ts, and
+ *   scheme_tonal_spot.ts, scheme_vibrant.ts, scheme_expressive.ts, scheme_neutral.ts, scheme_rainbow.ts, scheme_fruit_salad.ts,
+ *   scheme_fidelity.ts, scheme_content.ts and scheme_monochrome.ts, each the DynamicScheme constructor with its variant (schemeOf).
  *   Shared with part 1 because they are equal to main: the colour and maths utilities, ViewingConditions.DEFAULT (every field) and
  *   HctSolver (its three tables as text; solveToInt for 2,074,883 inputs, random and on the palettes' grid, no difference). Kept
  *   apart because they differ: Cam16 (main's chroma takes Math.sqrt(a * a + b * b), part 1 Java's hypot: the chroma differs by up to
  *   7.1e-14 for 3,914,617 of the 16,777,216 colours, and SchemeCmf's palettes take the seed's chroma as it is), Contrast (main
  *   clamps the tones in ratioOfTones; a 'farther' tone pair can ask for a tone outside 0..100), TonalPalette (key colour by
- *   bisection, tone 99 of a yellow averaged), DislikeAnalyzer (65, not 70) and getRotatedHue (a hue on a breakpoint takes that
- *   interval's rotation; part 1's only takes hues strictly between two breakpoints).
+ *   bisection, tone 99 of a yellow averaged), DislikeAnalyzer (65, not 70), TemperatureCache (the same algorithm as part 1's, on
+ *   this part's Hct; its raw temperature takes Math.sqrt(a * a + b * b) where part 1 Java's takes hypot) and getRotatedHue (a hue
+ *   on a breakpoint takes that interval's rotation; part 1's only takes hues strictly between two breakpoints).
  *   Left out: the watch platform (every platform === 'watch' branch, and mainTone, dimTone, containerTone and the 2025
  *   findDesiredChromaByTone, which only the watch uses); a second source colour (the API passes one; color_spec_2026.ts's and
- *   SchemeCmf's reads of it fall back to the source colour, as upstream's do with one colour); spec 2021's Fidelity and Content in
- *   part 2 (they need temperature/temperature_cache.ts, not ported; the API computes them in part 1); color_spec.ts (the interfaces),
+ *   SchemeCmf's reads of it fall back to the source colour, as upstream's do with one colour); color_spec.ts (the interfaces),
  *   blend/, quantize/, score/, palettes/core_palette.ts and core_palettes.ts, scheme/scheme.ts and scheme_android.ts, utils/
  *   image_utils.ts, string_utils.ts, theme_utils.ts and test_utils.ts, DynamicScheme's per-role getters and toString, and the
- *   deprecated static members of MaterialDynamicColors. Contrast levels other than 0 are ported but the API does not use them.
+ *   deprecated static members of MaterialDynamicColors. The API passes the contrast level it is given (opts.contrast, 0 by default).
  *   The dim roles (primary_dim and the like) are ported though Android does not write them, so the oracle check covers every role.
  *   Android's own roles that the library does not have (control_activated, control_normal, control_highlight, text_primary_inverse,
  *   text_secondary_and_tertiary_inverse, text_primary_inverse_disable_only, text_secondary_and_tertiary_inverse_disabled,
- *   text_hint_inverse) keep part 1's Android 14 definition, evaluated on part 2's palettes, and the 65 shades keep part 1's rule
- *   (Android 14's Shades.of) on part 2's palettes, taken from the scheme of the mode asked for (opts.dark), as Android 16's
- *   ThemeOverlayController takes them from the mode the phone is in.
+ *   text_hint_inverse) keep part 1's Android 14 definition, evaluated on part 2's palettes (libmonet on Android 15 and 16 defines
+ *   them the same way at 2021: the profile oracle below). The 65 shades are taken from the scheme of the mode asked for (opts.dark),
+ *   as Android 15's and 16's ThemeOverlayController takes them from the mode the phone is in; for P14 with part 1's rule (Android
+ *   14's Shades.of), for P15Q1, P15Q2 and P16 with Android 15's and 16's (below).
  *   What the oracle run showed (the library at that commit, bundled with esbuild and run in node; seeds 6750A4 1B6EF3 B5651D 00FF00
  *   808080 FFDE3F, the grey taken to Google blue as the API does; Tonal Spot, Vibrant, Expressive and Spritz at 2025, and at 2026,
  *   which gives them 2025; CMF at 2026; light and dark): every palette's hue, chroma and key colour (error included), every role
@@ -94,18 +101,60 @@
  *   roles() and entries() for every upstream role, the 8 Android roles against Android 14's palette tones on the library's palettes,
  *   and the 65 shades for dark and light. Hct.fromInt agrees for all 16,777,216 colours, TonalPalette on a hue x chroma grid
  *   (1,384,320 values), Contrast on 1,000,000 random calls; part 2 at spec 2021 (seven variants) and at contrast levels -1, -0.5, 0.5
- *   and 1 agrees too.
+ *   and 1 agrees too. Fidelity and Content at spec 2021 (ported with the profiles), against the same bundle: every palette (hue and
+ *   chroma exactly, key colour, tones 0 to 100; error included) and the 59 roles both define, for the six seeds above at contrast 0,
+ *   0.5 and 1 and 56 more seeds (black, white, a grey, primaries, yellows, 40 random) at -1, -0.5, 0, 0.25, 0.5, 0.75 and 1, light
+ *   and dark: no difference in 9,840 palettes, 993,840 tones and 96,760 role values.
  *   With no opts, with spec 2021, and at 2025 and 2026 for Rainbow, Fruit Salad, Fidelity, Content and Monochrome, every entries(),
  *   palettes(), roles() and seed() result for the nine older styles and the six seeds is the same as before part 2, byte for byte.
- *   Android computes only 2021 itself, so no phone gives 2025, 2026 or CMF colours to compare with; none of it was run on a device.
+ *   No phone this file serves computes 2025, 2026 or CMF colours itself, so there is nothing on a phone to compare them with; none of
+ *   it was run on a device.
  *
- * The maths is all doubles; Android's ColorScheme.kt feeds Shades.of with the seed's hue and chroma as floats (its framework Cam
- * class), so a palette entry computed here may differ from the phone's own by one RGB step in rare cases. Not checked on a device.
+ * Profiles P15Q1, P15Q2 and P16, provenance (AOSP, Apache-2.0, read at the branch heads refs/heads/android15-qpr1-release,
+ * android15-qpr2-release and android16-release): what SystemUI writes there.
+ *   frameworks/base packages/SystemUI/src/com/android/systemui/theme/ThemeOverlayController.java: createOverlays,
+ *     createNeutralOverlay, createAccentOverlay, createDynamicOverlay, assignTonalPaletteToOverlay and assignColorsToOverlay (the
+ *     same on the three branches): the neutral overlay (neutral1, neutral2) and the accent overlay (accent1-3) from the scheme of the
+ *     mode the phone is in, each role as _light (light scheme) then _dark (dark scheme), the fixed colours unsuffixed from the light
+ *     scheme, both schemes at the phone's contrast (UiModeManager.getContrast()), then SystemUI's custom colours.
+ *   frameworks/libs/systemui monet/src/com/android/systemui/monet/: ColorScheme.java (the scheme of a style; the seed rule: Google
+ *     blue for no colour and, except for Content, for a chroma under 5), TonalPalette.java (getAtTone: shade s is libmonet's
+ *     tone((int) ((1000 - s) / 10)), so shade 500 is tone 50 and nothing caps the chroma; allShadesMapped, a HashMap of SHADE_KEYS made
+ *     by Collectors.toMap, gives the write order 0, 800, 100, 900, 200, 1000, 10, 300, 400, 50, 500, 600, 700), DynamicColors.java
+ *     (15 QPR1: Android 14's 44 roles and 12 fixed colours in Android 14's order; 15 QPR2 and 16.0, the same file: 50 roles, the 44
+ *     plus inverse_surface, inverse_on_surface, inverse_primary, shadow, scrim and surface_tint, named by generateSysUINames
+ *     (palette_key_color moved to the front) and sorted by name, and the 12 fixed colours sorted by name).
+ *   external/libmonet (android15-qpr2-release, the same tree as android15-qpr1-release, and android16-release): the maths those
+ *     call, spec 2021 for every style; part 2 computes it. Where they differ from part 2: libmonet's TonalPalette does not average
+ *     tone 99 of a yellow (the shades here take Hct.from directly, and no role at spec 2021 asked a yellow palette for tone 99 in
+ *     153,000 plans: 3,400 seeds, the nine styles, five contrast levels); its getRotatedHue skips a hue exactly on a breakpoint (no
+ *     sRGB colour of chroma 5 or more has a hue within 1e-9 of one, the closest is 9.3e-7 away); its Cam16 takes Math.toDegrees and
+ *     Math.hypot (hue and chroma can differ from part 2's in the last bits). The oracle found no output any of these changes.
+ *   Not written: SystemUI's custom colours (their names and maths differ per branch). Flags.COLOR_FIDELITY, which SystemUI passes
+ *     to MaterialDynamicColors, is taken as off (an unreleasedFlag; its value on shipping builds was not checked). The seed: the
+ *     API's rule (seed() below) keeps a grey for Monochrome where SystemUI takes Google blue; a chroma-0 scheme gives the same colours
+ *     for either (the oracle compares SystemUI's choice of seed with the API's).
+ *   What the oracle run showed: SystemUI's own ColorScheme.java, TonalPalette.java and DynamicColors.java of each branch, compiled
+ *   with that branch's libmonet (stubs only for Android classes the computation does not reach) and driven by the six functions
+ *   above, transcribed, against entries(style, seed, { spec: '2021', dark, profile, contrast }): the seven styles SystemUI builds
+ *   (Tonal Spot, Vibrant, Expressive, Spritz, Rainbow, Fruit Salad, Monochrome), seeds 6750A4 1B6EF3 B5651D 00FF00 808080 FFDE3F,
+ *   contrast 0, 0.5 and 1, light and dark: the same resources in the same order with the same values (P15Q1: 252 plans of 165
+ *   entries; P15Q2 and P16: 252 plans of 177), and the same for Content (through SystemUI's ColorScheme) and Fidelity (libmonet's
+ *   SchemeFidelity with SystemUI's write order); 56 more seeds at contrast -1, -0.5, 0, 0.25, 0.5, 0.75 and 1 (7,056 plans per
+ *   profile, 3,662,064 entries in all): no difference. P16's write order equals the list made by hand from the sources (177).
+ *   Profile P14 at contrast 0.5 and 1 (part 1, new with the contrast option): the 44 roles and 12 fixed colours equal Android 14.0's
+ *   own monet Java (android14-release) compiled and run, for the nine styles and the six seeds, light and dark (32,400 values).
+ *
+ * The maths is all doubles; Android 14's ColorScheme.kt feeds Shades.of with the seed's hue and chroma as floats (its framework Cam
+ * class), so a P14 palette entry computed here may differ from the phone's own by one RGB step in rare cases (Android 15 and 16 take
+ * their shades from libmonet's palettes, doubles). Not checked on a device.
  *
  * API (window.MonetPlan in the page, module.exports in node):
  *   MonetPlan.STYLES                       the ten style ids this file knows: TONAL_SPOT VIBRANT EXPRESSIVE RAINBOW FRUIT_SALAD SPRITZ
  *                                          FIDELITY CONTENT MONOCHROMATIC CMF (NEUTRAL and MONOCHROME are accepted as aliases)
  *   MonetPlan.SPECS                        the colour specs: '2021' '2025' '2026'
+ *   MonetPlan.PROFILES                     the Android builds this file computes for: 'P14' (Android 14), 'P15Q1' (15 QPR1), 'P15Q2'
+ *                                          (15 QPR2), 'P16' (16.0)
  *   MonetPlan.specFor(style, spec)         the spec the style really gets on a phone (upstream's maybeFallbackSpecVersion): CMF keeps
  *                                          the spec, TONAL_SPOT VIBRANT EXPRESSIVE SPRITZ turn 2026 into 2025, every other style is
  *                                          always 2021; no spec is 2021; an unknown spec or style throws
@@ -113,16 +162,25 @@
  *   MonetPlan.seed(style, argb)            the seed the style really uses: a seed with chroma under 5 becomes Google blue, except for
  *                                          Fidelity and Content (they keep it) and Monochrome (no difference); CMF follows the rule
  *                                          like the stock styles; 0 / nothing is Google blue
- *   opts = { spec, dark }                  optional on the four calls below. spec: one of SPECS, '2021' when left out. dark: at 2025
- *                                          and 2026, where light and dark palettes differ, the palettes and the 65 shades come from
- *                                          the dark scheme instead of the light one. No opts, or a spec the style falls back to 2021
- *                                          at, gives the same results as before part 2. CMF with any spec but '2026' throws, as
- *                                          upstream's SchemeCmf does.
- *   MonetPlan.palettes(style, argb, opts)  { seed, style, accent1..neutral2: { hue, chroma, key: 'RRGGBB', shades: ['RRGGBB' x 13] } }
- *   MonetPlan.roles(style, argb, isDark, opts)  the 44 roles Android writes as [{ name, argb }] (argb a '0xAARRGGBB' string)
- *   MonetPlan.entries(style, argb, opts)   the 165 overlay entries [{ resource, argb }]: 65 palette entries, the 44 roles for dark then
- *                                          light (as Android writes them), the 12 fixed colours from the light scheme
- *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's at 2021, part 2's otherwise), for tests
+ *   opts = { spec, dark, profile, contrast }  optional on the four calls below. spec: one of SPECS, '2021' when left out. profile:
+ *                                          one of PROFILES, 'P14' when left out; any other value throws ('Profile not supported').
+ *                                          contrast: the phone's contrast level, a number from -1 to 1 (clamped), 0 when left out;
+ *                                          anything but a number throws. dark: the mode the phone is in; for P15Q1, P15Q2 and P16,
+ *                                          and for P14 at 2025 and 2026 (where light and dark palettes differ), the palettes and the
+ *                                          65 shades come from the scheme of that mode, for P14 at 2021 from the light one. No opts,
+ *                                          or P14 at contrast 0, gives the same results as before the profiles, byte for byte, and
+ *                                          a spec the style falls back to 2021 at the same as before part 2. CMF with any spec but
+ *                                          '2026' throws, as upstream's SchemeCmf does.
+ *   MonetPlan.palettes(style, argb, opts)  { seed, style, accent1..neutral2: { hue, chroma, key: 'RRGGBB', shades: ['RRGGBB' x 13] } },
+ *                                          the shades in SHADE_KEYS order by the profile's rule
+ *   MonetPlan.roles(style, argb, isDark, opts)  the profile's roles as [{ name, argb }] (argb a '0xAARRGGBB' string), in its order:
+ *                                          44 for P14 and P15Q1, 50 for P15Q2 and P16
+ *   MonetPlan.entries(style, argb, opts)   the overlay entries [{ resource, argb }] the profile's SystemUI writes, in its order. P14,
+ *                                          165: 65 palette entries (accent1 first, SHADE_KEYS order), the 44 roles for dark then light,
+ *                                          the 12 fixed colours from the light scheme. P15Q1, 165, and P15Q2 and P16, 177: 65 palette
+ *                                          entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
+ *                                          the light scheme; SystemUI's custom colours are not included
+ *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise), for tests
  *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2)
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
  */
@@ -1050,12 +1108,12 @@
     }
     // ==========================================================================================================================
     // Part 2: Google's Material Color Utilities at main, commit bd811e4ca2ab94c4ce3cadc89c19b1820b9704b3 (2026-10-19), typescript/:
-    // the 2025 and 2026 colour specs (Tonal Spot, Vibrant, Expressive and Spritz at 2025) and the CMF style (2026 only). Upstream's
-    // names are kept so a reader can follow this part next to its source. Platform phone only (the watch branches are left out),
-    // one source colour, contrast level 0 (the contrast curves are ported whole). Part 1's colour utilities, ViewingConditions and
-    // HctSolver are shared (equal to main bit for bit); what this part keeps of its own, and why, is in the header. The API below
-    // sends every scheme whose spec falls back to 2021 (upstream's maybeFallbackSpecVersion) to part 1, so this part serves 2025 and
-    // 2026; its own 2021 path (the base classes 2025 extends) is reachable through lib.mcu only.
+    // the 2021, 2025 and 2026 colour specs (Tonal Spot, Vibrant, Expressive and Spritz at 2025; every style at 2021) and the CMF style
+    // (2026 only). Upstream's names are kept so a reader can follow this part next to its source. Platform phone only (the watch
+    // branches are left out), one source colour, any contrast level. Part 1's colour utilities, ViewingConditions and HctSolver are
+    // shared (equal to main bit for bit); what this part keeps of its own, and why, is in the header. For profile P14 the API sends
+    // every scheme whose spec falls back to 2021 (upstream's maybeFallbackSpecVersion) to part 1, so this part serves 2025 and 2026;
+    // for P15Q1, P15Q2 and P16 it serves every spec, 2021 included.
     // ==========================================================================================================================
     const MCU = (function () {
         // ---------- dynamiccolor/variant.ts (the same names and values as part 1's Variant, plus CMF) ----------
@@ -1135,7 +1193,7 @@
         };
 
         // ---------- dislike/dislike_analyzer.ts (main: a tone under 65 is disliked; part 1 keeps Android 14's 70). Only spec 2021's
-        // Fidelity and Content reach it, which the API computes in part 1 ----------
+        // Fidelity and Content reach it (their tertiary palette and tertiary container) ----------
         const DislikeAnalyzer = {
             isDisliked(hct) {
                 const huePasses = Math.round(hct.hue) >= 90.0 && Math.round(hct.hue) <= 111.0;
@@ -1145,6 +1203,151 @@
             },
             fixIfDisliked(hct) { return DislikeAnalyzer.isDisliked(hct) ? Hct.from(hct.hue, hct.chroma, 70.0) : hct; }
         };
+
+        // ---------- temperature/temperature_cache.ts: the warm/cold order of the hues at the input's chroma and tone, for the
+        // tertiary palette of spec 2021's Fidelity (the complement) and Content (the third of three analogous colours). The same
+        // algorithm as part 1's TemperatureCache (Android 14's Java), on this part's Hct; the temperature's chroma takes
+        // Math.sqrt(a * a + b * b), part 1's Math.hypot ----------
+        class TemperatureCache {
+            constructor(input) {
+                this.input = input;
+                this.hctsByTempCache = []; this.hctsByHueCache = []; this.tempsByHctCache = new Map();
+                this.inputRelativeTemperatureCache = -1.0; this.complementCache = null;
+            }
+            // the 361 hues and the input, coldest first (a stable sort)
+            get hctsByTemp() {
+                if (this.hctsByTempCache.length > 0) return this.hctsByTempCache;
+                const hcts = this.hctsByHue.concat([this.input]);
+                const temperaturesByHct = this.tempsByHct;
+                hcts.sort((a, b) => temperaturesByHct.get(a) - temperaturesByHct.get(b));
+                this.hctsByTempCache = hcts;
+                return hcts;
+            }
+            get warmest() { return this.hctsByTemp[this.hctsByTemp.length - 1]; }
+            get coldest() { return this.hctsByTemp[0]; }
+            // count colours analogous to the input, from a circle of divisions colours spaced by equal steps of temperature
+            analogous(count, divisions) {
+                if (count === undefined) count = 5;
+                if (divisions === undefined) divisions = 12;
+                const startHue = Math.round(this.input.hue);
+                const startHct = this.hctsByHue[startHue];
+                let lastTemp = this.relativeTemperature(startHct);
+                const allColors = [startHct];
+                let absoluteTotalTempDelta = 0.0;
+                for (let i = 0; i < 360; i++) {
+                    const hue = sanitizeDegreesInt(startHue + i);
+                    const hct = this.hctsByHue[hue];
+                    const temp = this.relativeTemperature(hct);
+                    const tempDelta = Math.abs(temp - lastTemp);
+                    lastTemp = temp;
+                    absoluteTotalTempDelta += tempDelta;
+                }
+                let hueAddend = 1;
+                const tempStep = absoluteTotalTempDelta / divisions;
+                let totalTempDelta = 0.0;
+                lastTemp = this.relativeTemperature(startHct);
+                while (allColors.length < divisions) {
+                    const hue = sanitizeDegreesInt(startHue + hueAddend);
+                    const hct = this.hctsByHue[hue];
+                    const temp = this.relativeTemperature(hct);
+                    const tempDelta = Math.abs(temp - lastTemp);
+                    totalTempDelta += tempDelta;
+                    const desiredTotalTempDeltaForIndex = allColors.length * tempStep;
+                    let indexSatisfied = totalTempDelta >= desiredTotalTempDeltaForIndex;
+                    let indexAddend = 1;
+                    // a hue is added again while its temperature still reaches the next step (white and black have no analogues)
+                    while (indexSatisfied && allColors.length < divisions) {
+                        allColors.push(hct);
+                        const desiredTotalTempDeltaForIndex = (allColors.length + indexAddend) * tempStep;
+                        indexSatisfied = totalTempDelta >= desiredTotalTempDeltaForIndex;
+                        indexAddend++;
+                    }
+                    lastTemp = temp;
+                    hueAddend++;
+                    if (hueAddend > 360) {
+                        while (allColors.length < divisions) allColors.push(hct);
+                        break;
+                    }
+                }
+                const answers = [this.input];
+                const increaseHueCount = Math.floor((count - 1) / 2.0);
+                for (let i = 1; i < (increaseHueCount + 1); i++) {
+                    let index = 0 - i;
+                    while (index < 0) index = allColors.length + index;
+                    if (index >= allColors.length) index = index % allColors.length;
+                    answers.splice(0, 0, allColors[index]);
+                }
+                const decreaseHueCount = count - increaseHueCount - 1;
+                for (let i = 1; i < (decreaseHueCount + 1); i++) {
+                    let index = i;
+                    while (index < 0) index = allColors.length + index;
+                    if (index >= allColors.length) index = index % allColors.length;
+                    answers.push(allColors[index]);
+                }
+                return answers;
+            }
+            // the colour on the other side of the warm/cold divide, nearest the input's inverse relative temperature
+            get complement() {
+                if (this.complementCache != null) return this.complementCache;
+                const coldestHue = this.coldest.hue, coldestTemp = this.tempsByHct.get(this.coldest);
+                const warmestHue = this.warmest.hue, warmestTemp = this.tempsByHct.get(this.warmest);
+                const range = warmestTemp - coldestTemp;
+                const startHueIsColdestToWarmest = TemperatureCache.isBetween(this.input.hue, coldestHue, warmestHue);
+                const startHue = startHueIsColdestToWarmest ? warmestHue : coldestHue;
+                const endHue = startHueIsColdestToWarmest ? coldestHue : warmestHue;
+                const directionOfRotation = 1.0;
+                let smallestError = 1000.0;
+                let answer = this.hctsByHue[Math.round(this.input.hue)];
+                const complementRelativeTemp = 1.0 - this.inputRelativeTemperature;
+                for (let hueAddend = 0.0; hueAddend <= 360.0; hueAddend += 1.0) {
+                    const hue = sanitizeDegreesDouble(startHue + directionOfRotation * hueAddend);
+                    if (!TemperatureCache.isBetween(hue, startHue, endHue)) continue;
+                    const possibleAnswer = this.hctsByHue[Math.round(hue)];
+                    const relativeTemp = (this.tempsByHct.get(possibleAnswer) - coldestTemp) / range;
+                    const error = Math.abs(complementRelativeTemp - relativeTemp);
+                    if (error < smallestError) { smallestError = error; answer = possibleAnswer; }
+                }
+                this.complementCache = answer;
+                return this.complementCache;
+            }
+            relativeTemperature(hct) {
+                const range = this.tempsByHct.get(this.warmest) - this.tempsByHct.get(this.coldest);
+                const differenceFromColdest = this.tempsByHct.get(hct) - this.tempsByHct.get(this.coldest);
+                if (range === 0.0) return 0.5;        // no spread (at T100 there is only white)
+                return differenceFromColdest / range;
+            }
+            get inputRelativeTemperature() {
+                if (this.inputRelativeTemperatureCache >= 0.0) return this.inputRelativeTemperatureCache;
+                this.inputRelativeTemperatureCache = this.relativeTemperature(this.input);
+                return this.inputRelativeTemperatureCache;
+            }
+            get tempsByHct() {
+                if (this.tempsByHctCache.size > 0) return this.tempsByHctCache;
+                const allHcts = this.hctsByHue.concat([this.input]);
+                const temperaturesByHct = new Map();
+                for (const e of allHcts) temperaturesByHct.set(e, TemperatureCache.rawTemperature(e));
+                this.tempsByHctCache = temperaturesByHct;
+                return temperaturesByHct;
+            }
+            // hues 0 to 360 at the input's chroma and tone (361 colours; 0 and 360 are the same hue)
+            get hctsByHue() {
+                if (this.hctsByHueCache.length > 0) return this.hctsByHueCache;
+                const hcts = [];
+                for (let hue = 0.0; hue <= 360.0; hue += 1.0) hcts.push(Hct.from(hue, this.input.chroma, this.input.tone));
+                this.hctsByHueCache = hcts;
+                return this.hctsByHueCache;
+            }
+            static isBetween(angle, a, b) {
+                if (a < b) return a <= angle && angle <= b;
+                return a <= angle || angle <= b;
+            }
+            static rawTemperature(color) {
+                const lab = labFromArgb(color.toInt());
+                const hue = sanitizeDegreesDouble(Math.atan2(lab[2], lab[1]) * 180.0 / Math.PI);
+                const chroma = Math.sqrt((lab[1] * lab[1]) + (lab[2] * lab[2]));
+                return -0.5 + 0.02 * Math.pow(chroma, 1.07) * Math.cos(sanitizeDegreesDouble(hue - 50.0) * Math.PI / 180.0);
+            }
+        }
 
         // ---------- palettes/tonal_palette.ts: the key colour by bisection around T50 (part 1: Android 14's linear walk), tone 99 of a
         // yellow as the average of tones 98 and 100 (part 1: no averaging) ----------
@@ -2138,15 +2341,14 @@
             }
         }
         const P = TonalPalette.fromHueAndChroma;
-        // DynamicSchemePalettesDelegateImpl2021: the five palettes of spec 2021 (the same tables as part 1's schemePalettes, with upstream's
-        // TonalPalette). Fidelity and Content are left out: they exist only at 2021, which the API computes in part 1, and their tertiary
-        // needs upstream's temperature cache, which is not ported (part 1's TemperatureCache serves part 1)
-        function notPorted(variant) { return new Error('Spec 2021 ' + variant + ' is computed by part 1 (monet.js), not ported here'); }
+        // DynamicSchemePalettesDelegateImpl2021: the five palettes of spec 2021 (the same tables as part 1's schemePalettes, with
+        // upstream's TonalPalette). Fidelity and Content take the source colour's own chroma, and their tertiary comes from the
+        // temperature cache above
         class DynamicSchemePalettesDelegateImpl2021 {
             getPrimaryPalette(variant, sourceColorHct, isDark, platform, contrastLevel) {
                 const h = sourceColorHct.hue;
                 switch (variant) {
-                    case Variant.CONTENT: case Variant.FIDELITY: throw notPorted(variant);
+                    case Variant.CONTENT: case Variant.FIDELITY: return P(h, sourceColorHct.chroma);
                     case Variant.FRUIT_SALAD: return P(sanitizeDegreesDouble(h - 50.0), 48.0);
                     case Variant.MONOCHROME: return P(h, 0.0);
                     case Variant.NEUTRAL: return P(h, 12.0);
@@ -2160,7 +2362,7 @@
             getSecondaryPalette(variant, sourceColorHct, isDark, platform, contrastLevel) {
                 const h = sourceColorHct.hue;
                 switch (variant) {
-                    case Variant.CONTENT: case Variant.FIDELITY: throw notPorted(variant);
+                    case Variant.CONTENT: case Variant.FIDELITY: return P(h, Math.max(sourceColorHct.chroma - 32.0, sourceColorHct.chroma * 0.5));
                     case Variant.FRUIT_SALAD: return P(sanitizeDegreesDouble(h - 50.0), 36.0);
                     case Variant.MONOCHROME: return P(h, 0.0);
                     case Variant.NEUTRAL: return P(h, 8.0);
@@ -2174,7 +2376,8 @@
             getTertiaryPalette(variant, sourceColorHct, isDark, platform, contrastLevel) {
                 const h = sourceColorHct.hue;
                 switch (variant) {
-                    case Variant.CONTENT: case Variant.FIDELITY: throw notPorted(variant);
+                    case Variant.CONTENT: return TonalPalette.fromHct(DislikeAnalyzer.fixIfDisliked(new TemperatureCache(sourceColorHct).analogous(3, 6)[2]));
+                    case Variant.FIDELITY: return TonalPalette.fromHct(DislikeAnalyzer.fixIfDisliked(new TemperatureCache(sourceColorHct).complement));
                     case Variant.FRUIT_SALAD: return P(h, 36.0);
                     case Variant.MONOCHROME: return P(h, 0.0);
                     case Variant.NEUTRAL: return P(h, 16.0);
@@ -2187,7 +2390,7 @@
             getNeutralPalette(variant, sourceColorHct, isDark, platform, contrastLevel) {
                 const h = sourceColorHct.hue;
                 switch (variant) {
-                    case Variant.CONTENT: case Variant.FIDELITY: throw notPorted(variant);
+                    case Variant.CONTENT: case Variant.FIDELITY: return P(h, sourceColorHct.chroma / 8.0);
                     case Variant.FRUIT_SALAD: return P(h, 10.0);
                     case Variant.MONOCHROME: return P(h, 0.0);
                     case Variant.NEUTRAL: return P(h, 2.0);
@@ -2201,7 +2404,7 @@
             getNeutralVariantPalette(variant, sourceColorHct, isDark, platform, contrastLevel) {
                 const h = sourceColorHct.hue;
                 switch (variant) {
-                    case Variant.CONTENT: case Variant.FIDELITY: throw notPorted(variant);
+                    case Variant.CONTENT: case Variant.FIDELITY: return P(h, (sourceColorHct.chroma / 8.0) + 4.0);
                     case Variant.FRUIT_SALAD: return P(h, 16.0);
                     case Variant.MONOCHROME: return P(h, 0.0);
                     case Variant.NEUTRAL: return P(h, 2.0);
@@ -2327,15 +2530,15 @@
             return new DynamicScheme({ sourceColorHct, variant, contrastLevel, isDark, specVersion });
         }
 
-        return { Variant, Hct, Contrast, DislikeAnalyzer, TonalPalette, KeyColor, ContrastCurve, ToneDeltaPair, DynamicColor, extendSpecVersion,
+        return { Variant, Hct, Contrast, DislikeAnalyzer, TemperatureCache, TonalPalette, KeyColor, ContrastCurve, ToneDeltaPair, DynamicColor, extendSpecVersion,
             ColorCalculationDelegateImpl2021, ColorCalculationDelegateImpl2025, ColorSpecDelegateImpl2021, ColorSpecDelegateImpl2025, ColorSpecDelegateImpl2026,
             colorSpec, tMaxC, tMinC, findBestToneForChroma, getCurve, DynamicScheme, DynamicSchemePalettesDelegateImpl2021, DynamicSchemePalettesDelegateImpl2025,
             SchemeCmf, schemeOf };
     })();
 
     // ==========================================================================================================================
-    // The API. A style at a spec that falls back to 2021 (upstream's rule, specFor below) is computed by part 1 exactly as in PR 3;
-    // a style whose spec stays 2025 or 2026, and CMF at any spec, by part 2.
+    // The API. Profile P14 (the default): a style at a spec that falls back to 2021 (upstream's rule, specFor below) is computed by
+    // part 1 exactly as in PR 3, a style whose spec stays 2025 or 2026, and CMF at any spec, by part 2. P15Q1, P15Q2, P16: part 2.
     // ==========================================================================================================================
     const SPECS = ['2021', '2025', '2026'];
     const API_STYLES = STYLES.concat(['CMF']);
@@ -2381,11 +2584,47 @@
         if (variant === Variant.FIDELITY || variant === Variant.CONTENT || variant === Variant.MONOCHROME) return argb;
         return Hct.fromInt(argb).chroma < MIN_CHROMA ? GOOGLE_BLUE : argb;
     }
-    // part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026)
+    // ---------- The profiles: which Android build's SystemUI the output follows (the page detects it, MonetProfile.java) ----------
+    // P14: Android 14 (part 1 at 2021, as in PR 3; also what no profile gives). P15Q1, P15Q2, P16: Android 15 QPR1, 15 QPR2 and 16.0,
+    // whose SystemUI computes spec 2021 with external/libmonet (android15-qpr2-release, the same tree as android15-qpr1-release, and
+    // android16-release): part 2 at 2021, the other specs as for P14. Any other profile is an error (the page writes nothing then).
+    const PROFILES = ['P14', 'P15Q1', 'P15Q2', 'P16'];
+    function profileOf(opts) {
+        const p = opts && opts.profile !== undefined && opts.profile !== null ? String(opts.profile) : 'P14';
+        if (PROFILES.indexOf(p) < 0) throw new Error('Profile not supported: ' + opts.profile);
+        return p;
+    }
+    // the phone's contrast (UiModeManager.getContrast(), -1..1; 0 when none is given), which every profile's SystemUI passes to its schemes
+    function contrastOf(opts) {
+        const c = opts ? opts.contrast : undefined;
+        if (c === undefined || c === null) return 0.0;
+        if (typeof c !== 'number' || !Number.isFinite(c)) throw new Error('Unknown contrast: ' + c);
+        return Math.min(1.0, Math.max(-1.0, c)) || 0.0;
+    }
+    // frameworks/libs/systemui monet DynamicColors.java (android15-qpr2-release = android16-release): the 44 roles plus six more, each
+    // named by generateSysUINames (DynamicColor.name with palette_key_color moved to the front) and the list sorted by name; the
+    // fixed colours sorted the same way. Android 15 QPR1's DynamicColors keeps Android 14's 44 names and order (the lists above).
+    const byName = (a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+    const ROLES_A15Q2 = ALL_DYNAMIC_COLORS_MAPPED.concat([['inverse_surface', 'inverseSurface'], ['inverse_on_surface', 'inverseOnSurface'],
+        ['inverse_primary', 'inversePrimary'], ['shadow', 'shadow'], ['scrim', 'scrim'], ['surface_tint', 'surfaceTint']]).sort(byName);
+    const FIXED_A15Q2 = FIXED_COLORS_MAPPED.slice().sort(byName);
+    const PROFILE_COLORS = { P14: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED], P15Q1: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED],
+        P15Q2: [ROLES_A15Q2, FIXED_A15Q2], P16: [ROLES_A15Q2, FIXED_A15Q2] };
+    // ThemeOverlayController (frameworks/base, android15-qpr1-release, android15-qpr2-release, android16-release) writes the neutral
+    // overlay (neutral1, neutral2) before the accent one (accent1-3), each row in the order of a HashMap of SHADE_KEYS (TonalPalette's
+    // Collectors.toMap), then for each role _light and _dark, then the fixed colours
+    const PALETTE_WRITE_ROWS = [['neutral1', 'neutralPalette'], ['neutral2', 'neutralVariantPalette'], ['accent1', 'primaryPalette'],
+        ['accent2', 'secondaryPalette'], ['accent3', 'tertiaryPalette']];
+    const SHADE_WRITE_ORDER = [0, 800, 100, 900, 200, 1000, 10, 300, 400, 50, 500, 600, 700];
+    // frameworks/libs/systemui monet TonalPalette.getAtTone: shade s is libmonet tone((int) ((1000 - s) / 10)) of the palette's hue and
+    // chroma, so shade 500 is tone 50, with no chroma cap (part 1's shadesOf is Android 14's rule)
+    function shadeA15(palette, shade) { return MCU.Hct.from(palette.hue, palette.chroma, Math.trunc((1000 - shade) / 10)).toInt(); }
+    // P14: part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026).
+    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for.
     function scheme(style, color, isDark, opts) {
-        const variant = variantOf(style), spec = specOf(opts), argb = seed(style, color);
-        if (!inPart2(variant, spec)) return makeScheme(variant, Hct.fromInt(argb), !!isDark, 0.0);
-        return MCU.schemeOf(variant, MCU.Hct.fromInt(argb), !!isDark, 0.0, spec);
+        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), argb = seed(style, color);
+        if (profile === 'P14' && !inPart2(variant, spec)) return makeScheme(variant, Hct.fromInt(argb), !!isDark, contrast);
+        return MCU.schemeOf(variant, MCU.Hct.fromInt(argb), !!isDark, contrast, spec);
     }
     // a role's colour on a scheme of either part. Part 2: upstream's role of that name, or, for the Android-only roles, part 1's
     // definition on a scheme that carries part 2's palettes (those roles read the palettes' hue and chroma, isDark and the contrast level)
@@ -2397,44 +2636,60 @@
         if (ANDROID_ONLY_ROLES.indexOf(role) >= 0) return MDC[role]().getArgb(androidView(s));
         return MCU.colorSpec[role]().getArgb(s);
     }
-    // the palettes of the light scheme (PR 3), or at 2025 and 2026 of the scheme of the mode opts.dark names
+    // P14: the palettes of the light scheme (PR 3), at 2025 and 2026 of the scheme of the mode opts.dark names, with part 1's shades.
+    // P15Q1, P15Q2, P16: of the scheme of the mode opts.dark names, with Android 15/16's shades. Shades in SHADE_KEYS order.
     function palettes(style, color, opts) {
-        const variant = variantOf(style), spec = specOf(opts);
-        const s = scheme(style, color, inPart2(variant, spec) && !!(opts && opts.dark), opts);
+        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts);
+        const s = scheme(style, color, (profile !== 'P14' || inPart2(variant, spec)) && !!(opts && opts.dark), opts);
         const out = { seed: hex6(s.sourceColorArgb), style: String(style).toUpperCase() };
         for (const [row, field] of PALETTE_ROWS) {
             const p = s[field];
-            out[row] = { hue: p.hue, chroma: p.chroma, key: hex6(p.keyColor.toInt()), shades: shadesOf(p).map(hex6) };
+            const shades = profile === 'P14' ? shadesOf(p) : SHADE_KEYS.map(shade => shadeA15(p, shade));
+            out[row] = { hue: p.hue, chroma: p.chroma, key: hex6(p.keyColor.toInt()), shades: shades.map(hex6) };
         }
         return out;
     }
+    // the profile's roles (44, or 50 on P15Q2 and P16) on the scheme of the mode isDark names, in the profile's order
     function roles(style, color, isDark, opts) {
         const s = scheme(style, color, isDark, opts);
-        return ALL_DYNAMIC_COLORS_MAPPED.map(([name, role]) => ({ name, argb: hex8(roleArgb(s, role)) }));
+        return PROFILE_COLORS[profileOf(opts)][0].map(([name, role]) => ({ name, argb: hex8(roleArgb(s, role)) }));
     }
-    // the 165 entries: the 65 shades (part 1's rule) of the light scheme's palettes, at 2025 and 2026 of the scheme for opts.dark (as
-    // Android 16's ThemeOverlayController takes them from the mode the phone is in); the 44 roles of the dark scheme, then of the light
-    // one; the 12 fixed colours of the light scheme
+    // What the profile's SystemUI writes, in its order (the custom SystemUI colours of 15 and 16 are not part of it).
+    // P14, 165 entries: the 65 shades (part 1's rule) of the light scheme's palettes, at 2025 and 2026 of the scheme for opts.dark (as
+    // Android 16's ThemeOverlayController takes them from the mode the phone is in), accent1-3 then neutral1-2 in SHADE_KEYS order; the
+    // 44 roles of the dark scheme, then of the light one; the 12 fixed colours of the light scheme.
+    // P15Q1 (165) and P15Q2 and P16 (177): the 65 shades (Android 15/16's rule) of the scheme for opts.dark, neutral1-2 then accent1-3,
+    // each row in SHADE_WRITE_ORDER; each role _light then _dark (44 roles in Android 14's order, or 50 sorted by name); the 12 fixed
+    // colours of the light scheme (in Android 14's order, or sorted by name)
     function entries(style, color, opts) {
-        const variant = variantOf(style), spec = specOf(opts);
+        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts);
         const light = scheme(style, color, false, opts), dark = scheme(style, color, true, opts), out = [];
-        const base = inPart2(variant, spec) && opts && opts.dark ? dark : light;
-        for (const [row, field] of PALETTE_ROWS) {
-            const shades = shadesOf(base[field]);
-            SHADE_KEYS.forEach((shade, i) => out.push({ resource: 'android:color/system_' + row + '_' + shade, argb: hex8(shades[i]) }));
+        const [roleList, fixedList] = PROFILE_COLORS[profile];
+        const add = (name, argb) => out.push({ resource: 'android:color/system_' + name, argb: hex8(argb) });
+        if (profile === 'P14') {
+            const base = inPart2(variant, spec) && opts && opts.dark ? dark : light;
+            for (const [row, field] of PALETTE_ROWS) {
+                const shades = shadesOf(base[field]);
+                SHADE_KEYS.forEach((shade, i) => add(row + '_' + shade, shades[i]));
+            }
+            for (const s of [dark, light]) {
+                const suffix = s.isDark ? 'dark' : 'light';
+                for (const [name, role] of roleList) add(name + '_' + suffix, roleArgb(s, role));
+            }
+        } else {
+            const current = opts && opts.dark ? dark : light;
+            for (const [row, field] of PALETTE_WRITE_ROWS) for (const shade of SHADE_WRITE_ORDER) add(row + '_' + shade, shadeA15(current[field], shade));
+            for (const [name, role] of roleList) { add(name + '_light', roleArgb(light, role)); add(name + '_dark', roleArgb(dark, role)); }
         }
-        for (const s of [dark, light]) {
-            const suffix = s.isDark ? 'dark' : 'light';
-            for (const [name, role] of ALL_DYNAMIC_COLORS_MAPPED) out.push({ resource: 'android:color/system_' + name + '_' + suffix, argb: hex8(roleArgb(s, role)) });
-        }
-        for (const [name, role] of FIXED_COLORS_MAPPED) out.push({ resource: 'android:color/system_' + name, argb: hex8(roleArgb(light, role)) });
+        for (const [name, role] of fixedList) add(name, roleArgb(light, role));
         return out;
     }
 
     return {
-        STYLES: API_STYLES, SPECS, GOOGLE_BLUE: hex6(GOOGLE_BLUE), MIN_CHROMA, SHADE_KEYS,
+        STYLES: API_STYLES, SPECS, PROFILES, GOOGLE_BLUE: hex6(GOOGLE_BLUE), MIN_CHROMA, SHADE_KEYS,
         hct, seed: (style, color) => hex6(seed(style, color)), specFor, palettes, roles, entries, scheme,
         lib: { Hct, Cam16, HctSolver, ViewingConditions, Contrast, TonalPalette, TemperatureCache, DislikeAnalyzer, DynamicScheme, DynamicColor, Variant, MDC,
-            ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ANDROID_ONLY_ROLES, schemePalettes, shadesOf, shadeTone, parseArgb, hex6, hex8, variantOf, mcu: MCU }
+            ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
+            schemePalettes, shadesOf, shadeTone, shadeA15, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf, mcu: MCU }
     };
 });
