@@ -88,6 +88,12 @@ public class ModeTileLightTest {
     // T-036: TileService.requestListeningState "is only applicable to tiles that have META_DATA_ACTIVE_TILE defined as true ... and will do
     // nothing otherwise" (Android reference); this tile is passive (checked below), so the call would promise a refresh that never comes
     check("source: ... and does not call requestListeningState, which Android ignores for a passive tile", publish != null && !publish.contains("requestListeningState"));
+    // T-060: the end of a tile tap (finishQuickAction) asked the same passive tile for a refresh that never comes; the tile shows the new
+    // light when the panel is opened again (the tap's startActivityAndCollapse closed it). The widget refresh stays: a widget is redrawn
+    String finish = bodyOf(m, "private void finishQuickAction(final String message) {");
+    check("source: finishQuickAction still refreshes the home-screen widget", finish != null && finish.contains("QuickWidgetProvider.refreshAll(MainActivity.this);"));
+    check("source: ... and sends no requestListeningState to the passive Working mode tile", finish != null && !finish.contains("requestListeningState(") && !finish.contains("ModeTileService"));
+    check("source: MainActivity calls requestListeningState nowhere (both tiles are passive, so Android would ignore it)", !m.contains("requestListeningState("));
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
 

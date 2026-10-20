@@ -749,8 +749,9 @@ public class MainActivity extends Activity {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) {
                         message = quickCycleMode();
                         // the mode just changed and the page may not be open to probe it: probe here (the cache was invalidated), so the
-                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh. This window asks no su (see
-                        // probeWorkingMode), so its answer is not kept: the app's next look probes, and asks su, by itself.
+                        // light the probe publishes (publishModeTileLight) follows the new mode; the passive tile reads it the next time the
+                        // panel opens. This window asks no su (see probeWorkingMode), so its answer is not kept: the app's next look probes,
+                        // and asks su, by itself.
                         try { new AndroidBridge().getWorkingMode(); } catch (Throwable ignored) {}
                         invalidateModeCache();
                     }
@@ -770,9 +771,8 @@ public class MainActivity extends Activity {
             public void run() {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 QuickWidgetProvider.refreshAll(MainActivity.this);
-                try {
-                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, ModeTileService.class));
-                } catch (Throwable ignored) {}
+                // No tile refresh: both tiles are passive (no ACTIVE_TILE meta-data) and Android ignores requestListeningState for a passive
+                // tile. Each tile reads its state in onStartListening the next time the panel opens (the tap's startActivityAndCollapse closed it).
                 finish();
             }
         });
