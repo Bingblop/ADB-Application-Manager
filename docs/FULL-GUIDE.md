@@ -799,7 +799,9 @@ style the palette is worked out with:
   (`cmd overlay fabricate`, which Android's overlay service accepts from root alone, so ADB and Shizuku get locked rows, as on
   the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
   also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
-  Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
+  Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it (listed
+  on with a color that comes back as Android's: the toast and the sheet's title say *The pure black overlay is on, but Android shows
+  its own colors*, or *The theme overlay is on, but Android shows its own colors* with a style's colors, and the record is kept), and
   **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
   fabricated overlay). **Undo** (the bar after Apply or Default, also after a restart) puts back what was there before the
   change: the old theme and this app's overlay as it was, switched off when there was none, written again when there was one

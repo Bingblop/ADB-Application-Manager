@@ -38793,12 +38793,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (style) return {
                 written: 'Theme overlay written', removed: 'Theme overlay removed', notWritten: 'The theme overlay was not written', notRemoved: 'The theme overlay was not removed',
                 writeTitle: 'Could not write the theme overlay', removeTitle: 'Could not remove the theme overlay',
-                on: 'The theme overlay is written on this phone.', maybe: 'The theme overlay may be written on this phone.'
+                on: 'The theme overlay is written on this phone.', maybe: 'The theme overlay may be written on this phone.',
+                onOwn: 'The theme overlay is on, but Android shows its own colors'
             };
             return {
                 written: 'Pure black overlay written', removed: 'Pure black overlay removed', notWritten: 'The pure black overlay was not written', notRemoved: 'The pure black overlay was not removed',
                 writeTitle: 'Could not write the pure black overlay', removeTitle: 'Could not remove the pure black overlay',
-                on: 'The pure black overlay is written on this phone.', maybe: 'The pure black overlay may be written on this phone.'
+                on: 'The pure black overlay is written on this phone.', maybe: 'The pure black overlay may be written on this phone.',
+                onOwn: 'The pure black overlay is on, but Android shows its own colors'
             };
         }
         // the sentence under Apply for what the overlay write adds to the theme setting: one whole sentence per combination, each translated as one.
@@ -39129,10 +39131,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if ((r.unknown || r.timedOut) && ids.length) ovlRootRemember(ovlRootRecord({ ids: Array.from(new Set((was ? was.ids : []).concat(ids))), t: Date.now(), pending: true, black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : '', carried));
                 else ovlRootRemember(prior === undefined ? null : prior);
             } else if (r.ok || onNow === false) ovlRootRemember(null);       // off, or not listed on at all: nothing of this app's is on any more
+            // refused with every overlay of the write listed on (a looked-up colour is not the one sent): the overlay is written and on, it is
+            // its colours Android does not show, so the toast and the sheet say that, not "was not written" (T-072); the record above keeps it
+            const ownColors = action === 'fabricate' && !r.ok && !r.unknown && !r.timedOut && ids.length > 0
+                && (whole ? ids.every(id => ovlList.some(o => o.id === id && o.state === 1)) : r.state === 1);
             if (r.ok) showToast(action === 'fabricate' ? words.written : words.removed);
             else {
-                showToast(action === 'fabricate' ? words.notWritten : words.notRemoved);
-                ovlRootFailure(action, r, words);
+                showToast(ownColors ? words.onOwn : action === 'fabricate' ? words.notWritten : words.notRemoved);
+                ovlRootFailure(action, r, ownColors ? Object.assign({}, words, { writeTitle: words.onOwn }) : words);
                 if (r.unknown || r.timedOut || r.state === -2) ovlRefreshLater('list');
             }
             ovlWatchPalette();
