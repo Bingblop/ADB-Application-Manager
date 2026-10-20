@@ -31504,6 +31504,13 @@ Type any command above (e.g. pm list packages -d)</div>
         // "Allow all" granted something through the working mode: the app runs anew in a fresh process. This process ends (restartApp) and the watcher the app
         // left behind through the working mode starts it again; the toast shows first. Until then nothing else reloads the page.
         let permRestarting = false;
+        // The first-launch sheet closed for that restart with rows left: after it a row that only a working mode can grant shows a lock until the mode is
+        // seen again (the adb server starts anew, Wireless debugging connects again), and maybeShowPermIntro must not take that lock for "nothing left"
+        const PERM_INTRO_LEFT_KEY = 'perm_intro_left';
+        function permIntroLeftMark(on) {
+            const b = window.AndroidBridge;
+            try { if (b && b.loadSetting && b.saveSetting && !!b.loadSetting(PERM_INTRO_LEFT_KEY) !== !!on) b.saveSetting(PERM_INTRO_LEFT_KEY, on ? '1' : ''); } catch (e) {}
+        }
         function permRestart() {
             permRestarting = true;
             showToast('Restarting the app');
@@ -31669,6 +31676,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // a restart with rows still open (no command for them, or the phone refused it): the first-launch sheet comes back after it with what is left
             const left = permRestarting && visiblePermDefs().some(d => !permStatus[d.key] && !permLocked(d));
             if (permMode === 'intro' && !left) { try { if (b && b.saveSetting) b.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
+            if (permMode === 'intro') permIntroLeftMark(left);
             // the sheet was seen with a working mode on: its "Allow all" was the offer, the one-time question does not come as well
             if (permMode !== 'files' && isPrivilegedActive) { permOfferDone = true; try { if (b && b.saveSetting) b.saveSetting(PERM_OFFER_KEY, '1'); } catch (e) {} }
             if (permMode !== 'files') {
@@ -31725,7 +31733,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             permRefresh();
-            if (visiblePermDefs().every(d => permStatus[d.key] || permLocked(d))) { try { b.saveSetting('perm_intro_v62', '1'); } catch (e) {} return; }
+            // a locked row (no working mode) leaves nothing to allow, except after the restart that left rows open: then the lock may only mean the mode
+            // is not back yet, and the sheet comes back all the same (its rows unlock once the mode is seen)
+            let afterRestart = '';
+            try { afterRestart = b.loadSetting(PERM_INTRO_LEFT_KEY); } catch (e) {}
+            if (visiblePermDefs().every(d => permStatus[d.key] || (!afterRestart && permLocked(d)))) { try { b.saveSetting('perm_intro_v62', '1'); } catch (e) {} permIntroLeftMark(false); return; }
             permIntroWaiting = false;
             openPermSheet('intro');
         }

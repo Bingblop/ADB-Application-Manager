@@ -596,7 +596,9 @@ same process, and on some phones the app closed and stayed closed. None of this 
       **Allow all**. Expected: a toast "Restarting the app", the app closes, and within a few seconds it opens again on its own, with the permissions granted
       (About > Permissions shows them, or Settings > Application Permissions). If the app does not come back on its own, note that: it is the bug this build fixes.
 - [ ] **What is left.** When something had no command (Live updates on Android 16, or a permission the phone refused), the sheet opens again after the restart
-      with only those rows unfilled; Allow on one opens its Android screen as before.
+      with only those rows unfilled; Allow on one opens its Android screen as before. With Wireless Debugging, where the connection takes a moment to come
+      back after the restart, a refused row that only a working mode can grant (Read Logs, DUMP) may show a lock at first: the sheet still opens, and the row
+      gets its Allow button once the mode is back.
 - [ ] **Android 11, Install unknown apps.** On Android 11 the phone ends the app the moment Install unknown apps is allowed by command (Android 12 and later do
       not), so that command runs last. Fresh install on Android 11 with ADB TCP or Wireless Debugging, first-launch sheet, **Allow all**: the app comes back once
       with every row that has a command granted, and the sheet does not come back asking for a second Allow all.

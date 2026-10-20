@@ -13,4 +13,9 @@
 5. without the flag: the sheet closes and the page reloads itself ("Reloading the app"), no restart: true [{"grantAll":1,"restart":0,"reload":1,"perms":"","saved":0,"offer":1},["Reloading the app"]]
    the question without the flag: a page reload, no restart: true {"grantAll":1,"restart":0,"reload":1,"perms":"","saved":0,"offer":1}
 6. nothing granted by command: no restart and no reload; the walk opens the Android screen for the first row left: true {"grantAll":1,"restart":0,"reload":0,"perms":"usage","saved":0,"offer":0}
+7. Allow all, the phone refuses Read Logs: a restart, the first-launch sheet is not marked done, and the app notes that rows were left: true {"grantAll":1,"restart":1,"reload":0,"perms":"","saved":0,"offer":1}
+   back after the restart before the working mode is: the sheet is up, Read Logs locked for now, the sheet not marked done: true files=ok,restricted_settings=ok,usage=ok,overlay=ok,storage_legacy=ok,secure_settings=ok,read_logs=locked
+   the working mode is back: Read Logs has its Allow button: true files=ok,restricted_settings=ok,usage=ok,overlay=ok,storage_legacy=ok,secure_settings=ok,read_logs=open
+   Not now: now the sheet is marked done, and the note is cleared: true {"grantAll":0,"restart":0,"reload":0,"perms":"","saved":1,"offer":1}
+   a first launch without a working mode and only locked rows open: no sheet (nothing to allow), marked done, as before: true {"grantAll":0,"restart":0,"reload":0,"perms":"","saved":1,"offer":0}
 OK
