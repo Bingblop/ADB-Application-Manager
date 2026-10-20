@@ -801,7 +801,8 @@ style the palette is worked out with:
   also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
   **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
-  fabricated overlay). Not yet tried on a rooted phone.
+  fabricated overlay). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
+  while it reads Applying… counts for the next Apply only. Not yet tried on a rooted phone.
 - **Which Android versions:** each Android release builds its theme colors its own way (the shade rule, the list of
   roles and their names, the write order, the color spec), so the app computes the root colors for the build family the phone is
   and writes them with that release's names in its order; everything else is locked (fail closed). `MonetProfile` (Java, no

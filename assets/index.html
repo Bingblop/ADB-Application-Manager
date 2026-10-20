@@ -38265,13 +38265,15 @@ Type any command above (e.g. pm list packages -d)</div>
             // is the one this tap writes; where a style's colours can be written (More styles live: not on a locked profile, where Apply asks the
             // bridge for nothing more), so is the phone's contrast, read from the phone now (the roles are computed at it), and so are the Intensity
             // sliders (null with all three at 100, or where their row is not live) and the Secondary and tertiary accents (null with none set, or
-            // where their row is not live): moving one or picking another colour after the tap changes nothing of this Apply
+            // where their row is not live), and the Pure black switch, the More style and the Color spec (T-067): moving one or picking another
+            // colour, style or spec after the tap changes nothing of this Apply (the controls stay usable; the next Apply takes the new choice)
             const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
             const dark = systemPrefersDark(), contrast = ovlRootStyleLive() ? ovlContrast(true) : undefined, adjust = ovlRootAdjOn(), accents = ovlRootAccOn();
+            const black = ovlBlackOn(), more = ovlRootStyle(), spec = ovlSpecNow();
             ovlBusy = true;
             ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark, contrast, adjust, accents }), 60000);
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark, contrast, adjust, accents, black, more, spec }), 60000);
         }
 
         function ovlReset() {
@@ -38317,8 +38319,9 @@ Type any command above (e.g. pm list packages -d)</div>
                     ovlWatchPalette();
                 };
                 // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both.
-                // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode, the contrast, the sliders, the accents), so the overlay is the one the preview showed
-                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style, chosen.adjust, chosen.accents);
+                // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode, the contrast, the sliders, the accents,
+                // Pure black, the More style and the spec), so the overlay is the one the preview showed
+                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style, chosen.adjust, chosen.accents, chosen);
                 if (follow) ovlRootRun(follow, finish, chosen); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
@@ -38552,11 +38555,12 @@ Type any command above (e.g. pm list packages -d)</div>
         // colours (null with none set, or with no style; ovlRootAccOn when left out); Monochrome takes none (its rows are greys whatever colour
         // they come from: monet.js gives the same colours with them, so they neither make the app write a style nor go into the record).
         // sdk: the phone's Android level (the role resources exist from 14). None as well without a profile to compute for (ovlMonetProfile: a
-        // locked phone). The plan builder, the hint, the preview and the follow-up all ask this function.
-        function ovlRootPlanStyle(listStyle, sdk, adjust, accents) {
+        // locked phone). tap: what Apply took when it was tapped ({ more, spec }: the More style and the Color spec then); left out, or a part
+        // of it, as they are stored now. The plan builder, the hint, the preview and the follow-up all ask this function.
+        function ovlRootPlanStyle(listStyle, sdk, adjust, accents, tap) {
             const none = { style: '', spec: '2021', adjust: null, accents: null };
             if (!(sdk >= OVL_ROOT_MIN_SDK) || !ovlMonetOk() || !ovlMonetProfile()) return none;
-            const more = ovlRootStyle(), spec = ovlSpecNow(), adj = adjust === undefined ? ovlRootAdjOn() : (adjust && !ovlAdjIsDefault(adjust) ? adjust : null);
+            const more = tap && typeof tap.more === 'string' ? tap.more : ovlRootStyle(), spec = tap && typeof tap.spec === 'string' ? tap.spec : ovlSpecNow(), adj = adjust === undefined ? ovlRootAdjOn() : (adjust && !ovlAdjIsDefault(adjust) ? adjust : null);
             const acc = ovlAccSetOnly(accents === undefined ? ovlRootAccOn() : accents);
             try {
                 if (more) return { style: more, spec: ovlSpecApiOk() ? MonetPlan.specFor(more, spec) : '2021', adjust: adj, accents: more === 'MONOCHROMATIC' ? null : acc };
@@ -38568,7 +38572,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return none;
         }
         // the same while the controls are live (the hint, the preview and the follow-up), else none
-        function ovlRootPlanOn(listStyle, adjust, accents) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk(), adjust, accents) : { style: '', spec: '2021', adjust: null, accents: null }; }
+        function ovlRootPlanOn(listStyle, adjust, accents, tap) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk(), adjust, accents, tap) : { style: '', spec: '2021', adjust: null, accents: null }; }
         // the opts monet.js takes: the spec, the mode whose 65 shades are written (at 2025 and 2026 on Android 14, and on every profile after
         // it), the profile (its shade rule, role list, names and write order), the phone's contrast, the Intensity sliders (adjust, only when
         // one is not at 100) and the Secondary and tertiary accents (accents, only the set ones, only when one is). For Android 14 at contrast 0
@@ -38670,11 +38674,12 @@ Type any command above (e.g. pm list packages -d)</div>
         // and 2026, every profile after it), the roles are written for both modes either way. The colours are those of the phone's profile
         // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0) at its contrast,
         // adjusted by the Intensity sliders as at.adjust says (taken at the tap; the sliders as they are now when at has none), with the
-        // Secondary and tertiary accents at.accents names (likewise).
+        // Secondary and tertiary accents at.accents names (likewise); Pure black, the More style and the spec as at.black, at.more and at.spec
+        // say (likewise).
         // profile, build, adjust and accents: what the record keeps (ovlRootRecord).
         function ovlBuildRootPlan(sdk, at) {
             at = at || {};
-            const black = ovlBlackOn() && !ovlRootLock(), pick = ovlRootPlanStyle(typeof at.style === 'string' ? at.style : ovlStyle, sdk, at.adjust, at.accents), style = pick.style;
+            const black = (typeof at.black === 'boolean' ? at.black : ovlBlackOn()) && !ovlRootLock(), pick = ovlRootPlanStyle(typeof at.style === 'string' ? at.style : ovlStyle, sdk, at.adjust, at.accents, at), style = pick.style;
             const profile = ovlProfileState().id, build = ovlBuild();
             if (!style) return { style: '', spec: '2021', black, entries: black ? ovlBuildBlackPlan(sdk) : [], profile, build, adjust: null, accents: null };
             const seed = at.seed && at.seed.hex ? at.seed.hex : ovlRootSeed().hex;
@@ -38695,12 +38700,14 @@ Type any command above (e.g. pm list packages -d)</div>
         // what Apply (kind 'apply') or Revert (kind 'reset') does for this app's overlay besides the theme setting:
         // 'fabricate' (write it: Pure black is on, or ovlRootPlanStyle gives a style), 'disable' (switch it off: nothing is on any more, but it is
         // on the phone), or null. listStyle: the list style Apply writes (the one it took when tapped; the page's own for the hint); adjust and
-        // accents: the Intensity sliders and the Secondary and tertiary accents Apply took when tapped (left out: as they are now). On a locked
+        // accents: the Intensity sliders and the Secondary and tertiary accents Apply took when tapped (left out: as they are now); tap: Pure
+        // black, the More style and the spec it took ({ black, more, spec }; left out, or a part of it: as stored now). On a locked
         // profile nothing is on (Pure black, the styles, the sliders and the accents count only while their rows are live), so Apply switches an
         // overlay written before off.
-        function ovlRootFollowUp(kind, listStyle, adjust, accents) {
+        function ovlRootFollowUp(kind, listStyle, adjust, accents, tap) {
             if (!ovlRootLive()) return null;
-            if (kind !== 'reset' && ((ovlBlackOn() && ovlBlackLive()) || ovlRootPlanOn(listStyle, adjust, accents).style)) return 'fabricate';
+            const black = tap && typeof tap.black === 'boolean' ? tap.black : ovlBlackOn();
+            if (kind !== 'reset' && ((black && ovlBlackLive()) || ovlRootPlanOn(listStyle, adjust, accents, tap).style)) return 'fabricate';
             return ovlRootApplied() ? 'disable' : null;
         }
         // Colours written on another build of Android (the record's build is not the phone's, as after a system update): the note under the card,
@@ -39023,7 +39030,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered.
-        // at: what Apply took when it was tapped ({ seed, style, dark, contrast, adjust }: a fabricate after the theme write), else none
+        // at: what Apply took when it was tapped ({ seed, style, dark, contrast, adjust, accents, black, more, spec }: a fabricate after the theme write), else none
         function ovlRootRun(action, after, at) {
             const sdk = ovlSdk(), applied = ovlRootApplied(), prior = ovlRootAppliedRaw();
             // what the call carries: the plan going out, or (for a disable) what the overlay on the phone holds, so the answer's words name it

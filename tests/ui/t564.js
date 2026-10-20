@@ -131,6 +131,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   now nothing follows the theme: the hint is plain, the line gone', c.rootHint === '' && c.note === '' && !c.sw.on, JSON.stringify(c));
   await reset(); await apply();
   check('   Apply with the switch off and nothing written does not call the bridge at all', (await calls()).fab.length === 0 && (await calls()).apply.length === 1);
+  // 5b) T-067: the switch is taken when Apply is tapped: flipped while the button reads Applying… (it stays usable), it changes nothing of
+  //     this Apply and counts for the next one
+  await ev(() => { window.__delay = 400; }); await reset();
+  await page.locator('#ovlApplyBtn').click(); await sleep(80);
+  let busyFlip = await ev(() => ({ busy: ovlBusy, disabled: document.getElementById('ovlBlackSw').disabled === true }));
+  await page.locator('#ovlBlackSw').click();
+  await settle(); await sleep(100);
+  k = await calls();
+  check('5b. off when Apply is tapped, switched on while it is busy: no overlay is written (no bridge call); the switch is on for the next Apply', busyFlip.busy && !busyFlip.disabled && k.apply.length === 1 && k.fab.length === 0 && (await kv('ovl_black')) === true && (await kv('ovl_root_applied')) === null, JSON.stringify([busyFlip, k.fab]));
+  await reset();
+  await page.locator('#ovlApplyBtn').click(); await sleep(80);
+  await page.locator('#ovlBlackSw').click();
+  await settle(); await sleep(100);
+  k = await calls();
+  check('    on when Apply is tapped, switched off while it is busy: the pure black overlay is written all the same (11 entries) and remembered; the switch is off for the next Apply', k.apply.length === 1 && k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 11 && ((await kv('ovl_root_applied')) || {}).black === true && (await kv('ovl_black')) === false, JSON.stringify([k.fab.map(f => f.action), await kv('ovl_root_applied'), await kv('ovl_black')]));
+  await ev(() => { window.__delay = 20; kvSet('ovl_root_applied', null); window.__ovl.find(x => x.id === 'com.android.shell:aam_monet').state = 0; ovlRender(); });
 
   // 6) Android 13: one overlay per colour
   await ev(() => { window.__sdk = 33; ovlReadPalette(); kvSet('ovl_black', true); ovlRender(); }); await reset();
