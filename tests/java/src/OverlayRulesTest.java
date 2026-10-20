@@ -164,6 +164,11 @@ public class OverlayRulesTest {
             "   [ -n \"$val\" ] || { echo \"Error: failed to resolve $res\" >&2; exit 1; }\n" +
             "   hex=$(printf '%s' \"${val#0x}\" | tr 'A-F' 'a-f')\n" +
             "   case \"$(cat \"$OVL_FAKE/lookupstyle\" 2>/dev/null)\" in ref) echo \"@0x7f0600ab -> #$hex\";; upper) echo \"#$(printf '%s' \"$hex\" | tr 'a-f' 'A-F')\";; *) echo \"#$hex\";; esac;;\n" +
+            " set-priority) id=$1; pri=$2\n" +        // the real one: set-priority [--user USER_ID] PACKAGE PARENT|lowest|highest; prints nothing on success, returns 1 without a word on an unknown overlay
+            "   [ -f \"$OVL_FAKE/nopriority\" ] && { echo \"Error: Unknown option: --user\"; exit 1; }\n" +
+            "   [ -n \"$pri\" ] || { echo \"Error: Argument expected after \\\"$id\\\"\"; exit 1; }\n" +
+            "   grep -q \" $id\\$\" \"$f\" || exit 1\n" +
+            "   echo \"$id $pri\" >> \"$OVL_FAKE/priority\";;\n" +
             " *) echo \"Overlay manager (overlay) commands:\"; exit 1;;\n" +
             "esac\n");
         // a fake `settings`: settings get|put <ns> <key> [value]; files $OVL_FAKE/settings/<ns>__<key>
@@ -853,6 +858,7 @@ public class OverlayRulesTest {
             + "chmod 644 '/tmp/aam_test.xml'\n"
             + "cmd overlay fabricate --user current --target android --name 'aam_monet' --file '/tmp/aam_test.xml'\n"
             + "cmd overlay enable --user current 'com.android.shell:aam_monet'\n"
+            + "cmd overlay set-priority --user current 'com.android.shell:aam_monet' highest\n"
             + "rm -f '/tmp/aam_test.xml'\n" + tail + lookups2);
         eq("sdk 35: the 34 form", OverlayRules.fabricateScript(35, black, "/tmp/aam_test.xml"), f34);
         String f36 = OverlayRules.fabricateScript(36, black, "/tmp/aam_test.xml");
@@ -866,7 +872,9 @@ public class OverlayRulesTest {
             "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral1_900' 'android:color/system_neutral1_900' 0x1c '0xFF000000'\n"
             + "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral2_900' 'android:color/system_neutral2_900' 0x1c '0xFF000000'\n"
             + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral1_900'\n"
-            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail + lookups2);
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\n"
+            + "cmd overlay set-priority --user current 'com.android.shell:aam_monet_neutral1_900' highest\n"
+            + "cmd overlay set-priority --user current 'com.android.shell:aam_monet_neutral2_900' highest\n" + tail + lookups2);
         eq("sdk 31 and 32: the 33 form", OverlayRules.fabricateScript(31, black) + OverlayRules.fabricateScript(32, black), f33 + f33);
         is("sdk 33: no file, no heredoc", !f33.contains("<<") && !f33.contains("--file") && !f33.contains("/data/system"));
         throwsIae("sdk 30: no Material You", () -> OverlayRules.fabricateScript(30, black));
@@ -892,6 +900,41 @@ public class OverlayRulesTest {
         // every command names the running user (except the fabricate on 16, whose parser has none)
         for (String line : (f34 + f33).split("\n")) if (line.startsWith("cmd overlay") || line.contains("; cmd overlay")) is("names the user: " + line, line.contains(" --user current"));
         for (String line : f36.split("\n")) if (line.startsWith("cmd overlay") && !line.startsWith("cmd overlay fabricate")) is("16 names the user: " + line, line.contains(" --user current"));
+
+        // ---- the priority line: above Android's own theme overlays, after the enable, one per overlay written, --user on every release ----
+        String pri34 = "cmd overlay set-priority --user current 'com.android.shell:aam_monet' highest\n";
+        eq("priority command: the id quoted, highest", OverlayRules.priorityCommand(FAB), pri34.trim());
+        eq("priority command quotes its id", OverlayRules.priorityCommand("it's"), "cmd overlay set-priority --user current 'it'\\''s' highest");
+        is("sdk 34: set-priority right after the enable and before the file is removed", f34.contains("cmd overlay enable --user current 'com.android.shell:aam_monet'\n" + pri34 + "rm -f '/tmp/aam_test.xml'\n"));
+        is("sdk 36: set-priority keeps --user (Android 12 to 16 all parse it on this verb)", f36.contains("cmd overlay enable --user current 'com.android.shell:aam_monet'\n" + pri34));
+        is("sdk 33: one set-priority per overlay, after the enables, before the read-back", f33.contains("cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\ncmd overlay set-priority --user current 'com.android.shell:aam_monet_neutral1_900' highest\ncmd overlay set-priority --user current 'com.android.shell:aam_monet_neutral2_900' highest\n" + tail));
+        eq("one set-priority per overlay: 34 one, 33 two, 36 one", (f34.split("set-priority", -1).length - 1) + ":" + (f33.split("set-priority", -1).length - 1) + ":" + (f36.split("set-priority", -1).length - 1), "1:2:1");
+        eq("eleven entries on 33: eleven set-priority lines", OverlayRules.fabricateScript(33, eleven).split("cmd overlay set-priority ", -1).length - 1, 11);
+        is("no set-priority in a disable", !OverlayRules.disableScript(ids33).contains("set-priority") && !OverlayRules.disableScript(ids34).contains("set-priority"));
+
+        // ---- a root-style plan: the 65 palette entries, the 44 roles light and dark, the 12 fixed colours = 165, control_highlight with its alpha ----
+        String[] roles = {"primary_container", "on_primary_container", "primary", "on_primary", "secondary_container", "on_secondary_container", "secondary", "on_secondary",
+            "tertiary_container", "on_tertiary_container", "tertiary", "on_tertiary", "background", "on_background", "surface", "on_surface", "surface_container_low",
+            "surface_container_lowest", "surface_container", "surface_container_high", "surface_container_highest", "surface_bright", "surface_dim", "surface_variant",
+            "on_surface_variant", "outline", "outline_variant", "error", "on_error", "error_container", "on_error_container", "control_activated", "control_normal",
+            "control_highlight", "text_primary_inverse", "text_secondary_and_tertiary_inverse", "text_primary_inverse_disable_only", "text_secondary_and_tertiary_inverse_disabled",
+            "text_hint_inverse", "palette_key_color_primary", "palette_key_color_secondary", "palette_key_color_tertiary", "palette_key_color_neutral", "palette_key_color_neutral_variant"};
+        String[] fixed = {"primary_fixed", "primary_fixed_dim", "on_primary_fixed", "on_primary_fixed_variant", "secondary_fixed", "secondary_fixed_dim", "on_secondary_fixed",
+            "on_secondary_fixed_variant", "tertiary_fixed", "tertiary_fixed_dim", "on_tertiary_fixed", "on_tertiary_fixed_variant"};
+        List<OverlayRules.FabEntry> full = new ArrayList<OverlayRules.FabEntry>();
+        for (String row : new String[] {"accent1", "accent2", "accent3", "neutral1", "neutral2"}) for (int sh : new int[] {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}) full.add(fe("android:color/system_" + row + "_" + sh, "0xFF6750A4"));
+        for (String mode : new String[] {"dark", "light"}) for (String r : roles) full.add(fe("android:color/system_" + r + "_" + mode, r.equals("control_highlight") ? (mode.equals("dark") ? "0x33FFFFFF" : "0x1F000000") : "0xFF101010"));
+        for (String r : fixed) full.add(fe("android:color/system_" + r, "0xFF202020"));
+        eq("a root-style plan has 165 entries", full.size(), 165);
+        eq("165 entries with alpha values pass", OverlayRules.fabricatePlanProblem(full), null);
+        OverlayRules.fabricatePlanOk(full);
+        eq("165 entries on 34: still one overlay", OverlayRules.fabricateIds(34, full).toString(), "[" + FAB + "]");
+        String f165 = OverlayRules.fabricateScript(34, full, "/tmp/x.xml");
+        eq("165 entries on 34: one fabricate, one enable, one set-priority, four lookups", (f165.split("cmd overlay fabricate ", -1).length - 1) + ":" + (f165.split("cmd overlay enable ", -1).length - 1) + ":" + (f165.split("cmd overlay set-priority ", -1).length - 1) + ":" + (f165.split("cmd overlay lookup ", -1).length - 1), "1:1:1:4");
+        is("165 items in the file, the alpha values as given", OverlayRules.fabricateXml(full).split("<item ", -1).length - 1 == 165 && f165.contains("<item target=\"color/system_control_highlight_light\" value=\"0x1F000000\"/>") && f165.contains("value=\"0x33FFFFFF\""));
+        List<OverlayRules.FabEntry> full166 = new ArrayList<OverlayRules.FabEntry>(full); full166.add(fe("android:color/system_accent1_500", "0xFF000000"));
+        is("the same plan with a resource twice is refused (166th entry names accent1_500 again)", OverlayRules.fabricatePlanProblem(full166) != null && OverlayRules.fabricatePlanProblem(full166).startsWith("Entry 166 ") && OverlayRules.fabricatePlanProblem(full166).contains("twice"));
+        throwsIae("and builds no script", () -> OverlayRules.fabricateScript(34, full166));
 
         // ---- the disable script ----
         eq("disable script", OverlayRules.disableScript(ids34), "cmd overlay disable --user current 'com.android.shell:aam_monet'\n" + tail);
@@ -1034,7 +1077,9 @@ public class OverlayRulesTest {
         eq("sh 34: the list carries the stock overlay too", r34.change.all.size(), 2);
         eq("sh 34: the fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet]\n[--file]\n[" + XML + "]\n");
         eq("sh 34: the enable's argv", cmdCall(1), "[overlay]\n[enable]\n[--user]\n[current]\n[" + FAB + "]\n");
-        eq("sh 34: then the list and two lookups, nothing else", cmdCall(2).startsWith("[overlay]\n[list]\n") + ":" + cmdCall(3).startsWith("[overlay]\n[lookup]\n[--user]\n[current]\n[android]\n[" + N1 + "]\n") + ":" + cmdCall(4).startsWith("[overlay]\n[lookup]\n") + ":" + cmdCall(5), "true:true:true:null");
+        eq("sh 34: the set-priority's argv, right after the enable", cmdCall(2), "[overlay]\n[set-priority]\n[--user]\n[current]\n[" + FAB + "]\n[highest]\n");
+        eq("sh 34: Android was asked to put the overlay above every other", read(fakeDir.resolve("priority")), FAB + " highest\n");
+        eq("sh 34: then the list and two lookups, nothing else", cmdCall(3).startsWith("[overlay]\n[list]\n") + ":" + cmdCall(4).startsWith("[overlay]\n[lookup]\n[--user]\n[current]\n[android]\n[" + N1 + "]\n") + ":" + cmdCall(5).startsWith("[overlay]\n[lookup]\n") + ":" + cmdCall(6), "true:true:true:null");
         eq("sh 34: the colours Android holds", read(fakeDir.resolve("colors")), N1 + " 0xFF000000 " + FAB + "\n" + N2 + " 0xFF000000 " + FAB + "\n");
         // a second apply replaces the overlay (same name), still one line in the list
         String o34b = viaReader(runShell(OverlayRules.fabricateScript(34, plan(N1, "0xFF101010", N2, "0xFF101010"), XML.toString())));
@@ -1048,6 +1093,14 @@ public class OverlayRulesTest {
         is("sh 34 under umask 077: ok", v34u.ok);
         eq("sh 34 under umask 077: the file Android read was mode 644", read(fakeDir.resolve("last.mode")), "-rw-r--r--\n");
         eq("sh 34 under umask 077: the file Android read is the xml (the leftover replaced)", read(fakeDir.resolve("last.xml")), xmlText);
+        // the set-priority refused (an older option parser, say): its exit status and its words decide nothing, the read-back and the lookups do
+        write(fakeDir.resolve("nopriority"), "");
+        Files.deleteIfExists(fakeDir.resolve("priority"));
+        OverlayRules.FabResult rNoPri = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString()))));
+        OverlayRules.FabVerdict vNoPri = OverlayRules.judgeFabricate("fabricate", ids34, black, rNoPri);
+        is("sh 34 with set-priority refused: still ok (the overlay is on and shows the colours)", vNoPri.ok && !vNoPri.unknown && vNoPri.state == 1);
+        is("sh 34 with set-priority refused: Android's words are in the answer, and nothing was reprioritised", rNoPri.change.answer.contains("Unknown option: --user") && read(fakeDir.resolve("priority")) == null);
+        Files.deleteIfExists(fakeDir.resolve("nopriority"));
         // disable: the stock colour is back
         Files.deleteIfExists(fakeDir.resolve("cmd.log"));
         OverlayRules.FabVerdict dv34 = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids34)))));
@@ -1068,6 +1121,7 @@ public class OverlayRulesTest {
         eq("sh 33: both really on", overlayState(ids33.get(0)) + overlayState(ids33.get(1)), "11");
         eq("sh 33: the first fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet_neutral1_900]\n[" + N1 + "]\n[0x1c]\n[0xFF000000]\n");
         eq("sh 33: the lookups", r33.lookups.get(N1) + "|" + r33.lookups.get(N2), "#ff000000|#ff000000");
+        eq("sh 33: both overlays asked to the top, in the plan's order", read(fakeDir.resolve("priority")), ids33.get(0) + " highest\n" + ids33.get(1) + " highest\n");
         is("sh 33: no file written", !Files.exists(fakeDir.resolve("last.xml")));
         OverlayRules.FabVerdict dv33 = OverlayRules.judgeFabricate("disable", ids33, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids33)))));
         is("sh 33 disable: ok", dv33.ok); eq("sh 33 disable: both off", overlayState(ids33.get(0)) + overlayState(ids33.get(1)), "00");
@@ -1083,6 +1137,7 @@ public class OverlayRulesTest {
         is("sh 16 with the 36 form: ok", v36.ok); eq("sh 16: on", overlayState(FAB), "1");
         eq("sh 16: the fabricate's argv has no --user", cmdCall(0), "[overlay]\n[fabricate]\n[--target]\n[android]\n[--name]\n[aam_monet]\n[--file]\n[" + XML + "]\n");
         eq("sh 16: the enable keeps --user", cmdCall(1), "[overlay]\n[enable]\n[--user]\n[current]\n[" + FAB + "]\n");
+        eq("sh 16: the set-priority keeps --user too", cmdCall(2), "[overlay]\n[set-priority]\n[--user]\n[current]\n[" + FAB + "]\n[highest]\n");
         // not root (what Shizuku or ADB would see): refused, in Android's words
         resetFake();
         write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");

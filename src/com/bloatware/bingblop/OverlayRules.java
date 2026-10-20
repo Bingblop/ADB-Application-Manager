@@ -967,6 +967,16 @@ final class OverlayRules {
         return sb.append("</overlay>\n").toString();
     }
 
+    /**
+     * Puts an overlay this app wrote above every other mutable overlay of its target ({@code cmd overlay set-priority ... highest}), so
+     * SystemUI's own fabricated theme overlays (com.android.systemui:accent, :neutral, :dynamic) do not win over it. Every release from
+     * Android 12 to 16 parses {@code --user} on this verb (OverlayManagerShellCommand.runSetPriority). Its exit status decides nothing:
+     * the read-back and the lookups do (a lookup that answers Android's colour instead of ours is an error, as {@link #judgeFabricate} says).
+     */
+    static String priorityCommand(String id) {
+        return "cmd overlay set-priority --user current " + BackupScripts.quote(id) + " highest";
+    }
+
     /** The read-back every fabricate and disable script ends with: the whole list between the markers, as {@link #changeScript} has it. */
     static String readBackTail() {
         return "echo " + GET_MARK + "; " + listCommand() + "; echo " + END_MARK + "\n";
@@ -999,11 +1009,11 @@ final class OverlayRules {
      * ({@link #FAB_FILE} in the app; a path of its own in the test). Three forms:
      * <ul>
      * <li>Android 12 and 13: one fabricate per entry, each its own overlay named for the entry, then one enable per overlay (one
-     *     name cannot hold two entries there, and registering a name again replaces it).</li>
+     *     name cannot hold two entries there, and registering a name again replaces it), then one {@link #priorityCommand} per overlay.</li>
      * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), made readable
-     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed.</li>
-     * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable and
-     *     lookup keep it).</li>
+     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, one {@link #priorityCommand}, the file removed.</li>
+     * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable,
+     *     set-priority and lookup keep it).</li>
      * </ul>
      * Then the read-back tail and the lookup block. Every argument is single-quoted, and the plan is checked first, so nothing a page
      * could send becomes shell code; a plan that fails the check throws IllegalArgumentException before any text is built.
@@ -1022,6 +1032,7 @@ final class OverlayRules {
             sb.append("chmod 644 ").append(BackupScripts.quote(file)).append('\n');
             sb.append(head).append(BackupScripts.quote(FAB_NAME)).append(" --file ").append(BackupScripts.quote(file)).append('\n');
             sb.append(changeCommand("enable", FAB_ID)).append('\n');
+            sb.append(priorityCommand(FAB_ID)).append('\n');
             sb.append("rm -f ").append(BackupScripts.quote(file)).append('\n');
         } else {
             for (FabEntry e : plan) {
@@ -1030,6 +1041,7 @@ final class OverlayRules {
                         .append(" 0x1c ").append(BackupScripts.quote(e.argb)).append('\n');
             }
             for (FabEntry e : plan) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
+            for (FabEntry e : plan) sb.append(priorityCommand(FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
         }
         sb.append(readBackTail());
         sb.append(lookupBlock(plan));
