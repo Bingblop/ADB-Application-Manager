@@ -3,20 +3,26 @@
 // (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2), 17 (P17), an Android this app does not know (unknown), a profile it is
 // told is fine but cannot compute, a phone with a One UI version, and an older APK that reports no profile on Android 15 and 16: the three
 // rows (Pure black, Color spec, More styles) are locked with their reason, with Super User and without; nothing in the card can be used,
-// the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only. An older
+// the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only, without
+// asking the bridge for the palette (where the contrast comes from) when tapped. An older
 // APK on Android 14 keeps working as before (PR 3's plan, a record without profile and build). (b) A locked phone with an overlay written
 // before (as after an update to a build not supported yet): the note says it is on, and Apply, Default and Undo switch it off; nothing is
 // written. (c) Android 16.0 (P16): the plan is 177 entries, the four lookups first and then SystemUI's order (the palettes neutral1,
 // neutral2, accent1, accent2, accent3 in its shade write order; the 50 roles sorted by name, each _light then _dark; the 12 fixed colours
 // sorted by name), shade 500 is tone 50, the fixed colours come from the light scheme; the profile and the phone's contrast reach the plan
 // (contrast 0.5 changes the roles and the fixed colours, not the shades), the contrast is read from the phone when Apply is tapped; Pure
-// black with it and alone; the preview; a list style at 2025. (d) Android 15 QPR1 (P15Q1): 165 entries with Android 14's 44 names in its
+// black with it and alone; the preview; a list style at 2025; Content (its 2021 tertiary palette from TemperatureCache.analogous) and
+// Monochrome in More styles. (d) Android 15 QPR1 (P15Q1): 165 entries with Android 14's 44 names in its
 // order; Android 15 QPR2 (P15Q2): 177; Android 14 (P14): PR 3's plan. (e) The record: profile (when it is not P14) and build; old records
 // read as P14 without a build. (f) The note for colours written on another build ("Android was updated..."): when it shows and when not;
 // nothing runs by itself; Apply writes them for the build the phone runs and the note goes. (g) The new words in German.
-// Every value pinned below comes from the oracle: SystemUI's own code compiled and run in a harness (pr5-oracle/lm, SysuiDump.java: the
-// android16-release ThemeOverlayController order and resource names with compiled libmonet a16; android15-qpr1-release for P15Q1), the case
-// FIDELITY, seed 6750A4, spec 2021, dark mode, contrast 0 and 0.5; monet.js gives the same 177 (165) values in each case.
+// Every value pinned below comes from an oracle kept outside the repository (SysuiDump.java): ThemeOverlayController's write sequence and
+// resource names (android16-release; android15-qpr1-release for P15Q1), transcribed, run with SystemUI's monet classes of that branch
+// compiled on its libmonet (a16; a15-qpr2 for P15Q1). Content and Monochrome come from SystemUI's own ColorScheme (its Content and
+// Monochrome styles; ThemeOverlayController itself never asks for Content). Fidelity, which SystemUI never builds, is libmonet's
+// SchemeFidelity on the raw seed with SystemUI's TonalPalette wrappers and the same write sequence: the reference for it (Google's library
+// at spec 2021), not a value Android writes. The cases: FIDELITY 6750A4 at contrast 0 and 0.5, CONTENT B5651D and MONOCHROMATIC 6750A4 at
+// 0, all spec 2021, dark mode; monet.js gives the same 177 (165) values in each case, and so does a second dump of the same kind made apart.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -50,13 +56,21 @@ const order = (roles, fixed) => PAL_ROWS.map(r => SHADE_ORDER.map(s => r + '_' +
 const planOrder = (roles, fixed) => LEAD.concat(order(roles, fixed).filter(r => !LEAD.includes(r)));
 // Oracle pins, P16, FIDELITY 6750A4, spec 2021, dark mode (resource suffix: value)
 const SHADE500 = { accent1_500: '0xFF8069BF', accent2_500: '0xFF7C7296', accent3_500: '0xFF91731D', neutral1_500: '0xFF79767D', neutral2_500: '0xFF7A7582' };
-// the same five on Android 14 (Android 14's shade rule, tone 49.6: t565's pins for Fidelity 6750A4)
+// the same five on Android 14 (Android 14's shade rule, tone 49.6): monet.js's P14 output for Fidelity 6750A4 (t565 pins accent1_500)
 const SHADE500_P14 = { accent1_500: '0xFF7F68BE', accent2_500: '0xFF7B7195', accent3_500: '0xFF90721C', neutral1_500: '0xFF78757C', neutral2_500: '0xFF797481' };
 const P16_C0 = { primary_light: '0xFF4F378A', primary_dark: '0xFFCFBCFF', surface_light: '0xFFFDF7FF', surface_dark: '0xFF141218', on_primary_container_dark: '0xFFE0D2FF', outline_dark: '0xFF948E9C', accent1_100: '0xFFE9DDFF',
   surface_tint_light: '0xFF6750A4', inverse_surface_dark: '0xFFE6E0E9', inverse_primary_light: '0xFFCFBCFF', inverse_on_surface_dark: '0xFF322F35', scrim_light: '0xFF000000', shadow_dark: '0xFF000000',
   primary_fixed: '0xFFE9DDFF', on_primary_fixed: '0xFF22005D', secondary_fixed_dim: '0xFFCDC0E9' };
 const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surface_dark: '0xFF141218', on_primary_container_dark: '0xFF000000', outline_dark: '0xFFB6AFBD', accent1_100: '0xFFE9DDFF',
   primary_fixed: '0xFF765FB4', on_primary_fixed: '0xFFFFFFFF', secondary_fixed_dim: '0xFF595072' };
+// Oracle pins, P16, CONTENT B5651D, spec 2021, dark mode, contrast 0: the first eight come from the tertiary palette (TemperatureCache's
+// analogous colours), the rest from the primary, secondary and neutral ones
+const CONTENT_P16 = { accent3_500: '0xFF767D0E', accent3_100: '0xFFE2EA75', tertiary_light: '0xFF5B6000', tertiary_dark: '0xFFC6CE5C', tertiary_container_dark: '0xFF8F972B',
+  on_tertiary_container_light: '0xFFFFFFD8', palette_key_color_tertiary_dark: '0xFF787F11', tertiary_fixed: '0xFFE2EA75',
+  accent1_500: '0xFFB2631B', primary_light: '0xFF8F4900', primary_dark: '0xFFFFB781', secondary_dark: '0xFFF0BC97', surface_dark: '0xFF19120D' };
+// Oracle pins, P16, MONOCHROMATIC 6750A4, spec 2021, dark mode, contrast 0
+const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral1_500: '0xFF777777', primary_light: '0xFF000000', primary_dark: '0xFFFFFFFF', on_primary_dark: '0xFF1B1B1B',
+  primary_container_dark: '0xFFD4D4D4', tertiary_dark: '0xFFE2E2E2', surface_dark: '0xFF131313', primary_fixed: '0xFF5E5E5E' };
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
@@ -93,13 +107,16 @@ const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surfa
   const LIVE = '["ovlBlackSw","2021","2025","2026","OFF","FIDELITY","CONTENT","MONOCHROMATIC"]';
   const preview = () => ev(() => { const pv = document.getElementById('ovlRootPreview'); const rows = pv ? Array.from(pv.querySelectorAll('.ovl-pal')) : []; return { rows: rows.length, accent1: rows[0] ? Array.from(rows[0].querySelectorAll('.ovl-chip')).map(c => c.dataset.hex) : [] }; });
   const settle = () => page.waitForFunction(() => !ovlBusy && sdbReqs.size === 0, null, { timeout: 8000, polling: 25 }).then(() => true, () => false);
-  const apply = async () => { await page.locator('#ovlApplyBtn').click(); await settle(); await sleep(100); };
+  const apply = async () => { await ev(() => { window.__palBefore = window.__ovlCalls.palette; window.__palAtTap = -1; }); await page.locator('#ovlApplyBtn').click(); await settle(); await sleep(100); };
+  // the getSystemPalette reads Apply made when tapped: those before its theme write (themeApply), the last time apply() ran
+  const tapReads = () => ev(() => window.__palAtTap);
   const byRes = plan => Object.fromEntries(((plan && plan.entries) || []).map(e => [e.resource.replace(RES, ''), e.argb]));
   const pinsOff = (plan, pins) => { const r = byRes(plan); return Object.keys(pins).filter(k => r[k] !== pins[k]).map(k => k + ' ' + r[k] + ' != ' + pins[k]); };
   const sameAs = (plan, style, seed, opts) => ev(([entries, style, seed, opts]) => { const want = MonetPlan.entries(style, seed, opts || undefined); if (!entries || want.length !== entries.length) return 'count ' + (entries || []).length + ' vs ' + want.length; const have = Object.fromEntries(entries.map(e => [e.resource, e.argb])); const off = want.filter(e => have[e.resource] !== e.argb).map(e => e.resource + ' ' + have[e.resource] + ' != ' + e.argb); return off.length ? off.slice(0, 5).join('; ') : 'same'; }, [plan && plan.entries, style, seed, opts || null]);
   const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T') : 'null'; };
   const waitFab = () => page.waitForFunction(() => window.__ovlCalls.fab.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {});
   await ev(() => { window.__toasts = []; const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; });
+  await ev(() => { const b = window.AndroidBridge, real = b.themeApply; b.themeApply = function () { window.__palAtTap = window.__ovlCalls.palette - window.__palBefore; return real.apply(this, arguments); }; });
 
   // ---- (a) locks ----
   await ev(() => switchView('overlays')); await sleep(300);
@@ -127,8 +144,8 @@ const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surfa
     check('A1. ' + label + ': Pure black, Color spec and More styles are locked with "' + reason + '"; nothing in the card can be used; no preview, no hint, no note', lockedAll(c, reason) && !c.preview && c.hint === '' && c.note === '' && c.stale === '', JSON.stringify(c));
     await reset();
     const h = await ev(() => { ovlToggleBlack(); ovlPickRootStyle('MONOCHROMATIC'); ovlPickSpec('2026'); return [kvGet('ovl_black', null), kvGet('ovl_root_style', null), kvGet('ovl_spec', null)]; });
-    await apply(); const k = await calls();
-    check('   the switch, More styles and Color spec change nothing (handlers called directly); Apply writes the theme setting only, no overlay call', JSON.stringify(h) === '[true,"FIDELITY","2025"]' && k.apply.length === 1 && k.fab.length === 0 && (await kv('ovl_root_applied')) === null, JSON.stringify([h, k.apply.length, k.fab]));
+    await apply(); const k = await calls(), reads = await tapReads();
+    check('   the switch, More styles and Color spec change nothing (handlers called directly); Apply writes the theme setting only, no overlay call, and asks the bridge for no palette (the contrast) when tapped', JSON.stringify(h) === '[true,"FIDELITY","2025"]' && k.apply.length === 1 && k.fab.length === 0 && (await kv('ovl_root_applied')) === null && reads === 0, JSON.stringify([h, k.apply.length, k.fab, reads]));
   }
   await setRoot(false); await phone({ sdk: 36, profile: 'P16Q1', build: B16 }); c = await card();
   check('A2. without Super User the profile\'s reason shows, not Needs Super User (root would not unlock it), and no note about Root', lockedAll(c, NOT_YET) && c.note === '', JSON.stringify(c));
@@ -168,10 +185,11 @@ const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surfa
   await phone({ sdk: 36, profile: 'P16', build: B16, contrast: 0 }); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
   const names = (plan.entries || []).map(e => e.resource);
   check('C1. P16, Fidelity 6750A4, dark mode, contrast 0: overlayFabricate with 177 entries, no resource twice, the four lookups first and then SystemUI\'s order (palettes neutral1, neutral2, accent1-3 in its shade order; 50 roles each _light then _dark; 12 fixed colours)', k.fab.length === 1 && plan.action === 'fabricate' && names.length === 177 && new Set(names).size === 177 && JSON.stringify(names) === JSON.stringify(planOrder(ROLES50, FIXED16)), JSON.stringify([plan.action, names.length, names.slice(0, 6)]));
+  check('   Apply read the phone\'s contrast when tapped: one getSystemPalette call before the theme write (none on a locked profile, A1)', (await tapReads()) === 1, await tapReads());
   const roleSet = names.filter(n => /_light$/.test(n)).map(n => n.replace(RES, '').replace(/_light$/, '')), fixedSet = names.map(n => n.replace(RES, '')).filter(n => FIXED16.includes(n));
   check('   the roles are SystemUI\'s 50 (Android 14\'s 44 and inverse_surface, inverse_on_surface, inverse_primary, shadow, scrim, surface_tint), each light and dark; the 12 fixed colours unsuffixed', roleSet.length === 50 && ROLES50.every(r => names.includes(RES + r + '_light') && names.includes(RES + r + '_dark')) && ROLES44.every(r => ROLES50.includes(r)) && NEW6.every(r => ROLES50.includes(r)) && fixedSet.length === 12, JSON.stringify([roleSet.length, fixedSet.length]));
   const tones = await ev(([a, b]) => [MonetPlan.hct(a).tone, MonetPlan.hct(b).tone].map(t => Math.round(t * 10) / 10), [byRes(plan).accent1_500.slice(4), SHADE500_P14.accent1_500.slice(4)]);
-  check('C2. shade 500 is tone 50 (Android 15 and 16\'s rule): accent1-3 and neutral1-2 500 as the oracle has them, not Android 14\'s (its rule asks for tone 49.6: t565\'s pins); measured, accent1_500\'s tone is 50 here and 49.7 on Android 14', pinsOff(plan, SHADE500).length === 0 && Object.keys(SHADE500).every(n => SHADE500[n] !== SHADE500_P14[n]) && tones[0] === 50 && tones[1] === 49.7, JSON.stringify([pinsOff(plan, SHADE500), tones]));
+  check('C2. shade 500 is tone 50 (Android 15 and 16\'s rule): accent1-3 and neutral1-2 500 as the oracle has them, not Android 14\'s (its rule asks for tone 49.6: monet.js\'s P14 output, t565 pins accent1_500); measured, accent1_500\'s tone is 50 here and 49.7 on Android 14', pinsOff(plan, SHADE500).length === 0 && Object.keys(SHADE500).every(n => SHADE500[n] !== SHADE500_P14[n]) && tones[0] === 50 && tones[1] === 49.7, JSON.stringify([pinsOff(plan, SHADE500), tones]));
   check('   the roles, the fixed colours and accent1_100: ' + Object.keys(P16_C0).length + ' values pinned from the oracle (one value of each of the six roles new on 15 QPR2 among them); primary_light is not Android 14\'s Fidelity one (0xFF513A8D)', pinsOff(plan, P16_C0).length === 0 && P16_C0.primary_light !== '0xFF513A8D', pinsOff(plan, P16_C0).join('; '));
   check('C3. the profile reaches the plan: it is MonetPlan.entries(FIDELITY, 6750A4, { spec 2021, dark, profile P16, contrast 0 }), and not the Android 14 one', (await sameAs(plan, 'FIDELITY', '6750A4', { spec: '2021', dark: true, profile: 'P16', contrast: 0 })) === 'same' && (await sameAs(plan, 'FIDELITY', '6750A4', { spec: '2021', dark: true, profile: 'P14', contrast: 0 })) !== 'same', await sameAs(plan, 'FIDELITY', '6750A4', { spec: '2021', dark: true, profile: 'P16', contrast: 0 }));
   check('   the record keeps the profile and the build: P16 and the phone\'s build', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P16","build":"' + B16 + '"}' && (await ev(() => { const a = ovlRootApplied(); return a.profile + ' ' + a.build; })) === 'P16 ' + B16, await rec());
@@ -180,7 +198,7 @@ const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surfa
   await reset(); await apply(); plan = (await calls()).fab[0] || {};
   const darkFixed = await ev(() => { const s = MonetPlan.scheme('FIDELITY', '6750A4', true, { spec: '2021', profile: 'P16', contrast: 0.5 }), cs = MonetPlan.lib.mcu.colorSpec; return [MonetPlan.lib.hex8(cs.primaryFixed().getArgb(s)), MonetPlan.lib.hex8(cs.onPrimaryFixed().getArgb(s))]; });
   check('C4. contrast 0.5 set in Settings after the tab was read (the page\'s copy says ' + cached + '): Apply reads it when tapped; the roles change (' + Object.keys(P16_C05).length + ' values pinned from the oracle at 0.5: primary_light 0xFF3E2578 for 0xFF4F378A, outline_dark, on_primary_container_dark), the shades do not (shade 500 as at 0)', cached === 0 && pinsOff(plan, P16_C05).length === 0 && pinsOff(plan, SHADE500).length === 0 && (await sameAs(plan, 'FIDELITY', '6750A4', { spec: '2021', dark: true, profile: 'P16', contrast: 0.5 })) === 'same', JSON.stringify([cached, pinsOff(plan, P16_C05), pinsOff(plan, SHADE500)]));
-  check('   the fixed colours come from the light scheme: in dark mode primary_fixed is 0xFF765FB4 and on_primary_fixed 0xFFFFFFFF (SystemUI writes these in both modes), not the dark scheme\'s ' + darkFixed.join(' and '), byRes(plan).primary_fixed === '0xFF765FB4' && byRes(plan).on_primary_fixed === '0xFFFFFFFF' && darkFixed[0] !== '0xFF765FB4' && darkFixed[1] !== '0xFFFFFFFF', JSON.stringify(darkFixed));
+  check('   the fixed colours come from the light scheme: in dark mode primary_fixed is 0xFF765FB4 and on_primary_fixed 0xFFFFFFFF (SystemUI\'s write sequence takes them from the light scheme in both modes), not the dark scheme\'s ' + darkFixed.join(' and '), byRes(plan).primary_fixed === '0xFF765FB4' && byRes(plan).on_primary_fixed === '0xFFFFFFFF' && darkFixed[0] !== '0xFF765FB4' && darkFixed[1] !== '0xFFFFFFFF', JSON.stringify(darkFixed));
   await ev(() => { window.__dark = false; }); await reset(); await apply(); const lightPlan = (await calls()).fab[0] || {}; await ev(() => { window.__dark = true; });
   check('   the same fixed colours in light mode (the plan is entries(..., dark false), its 12 fixed colours equal the dark-mode plan\'s)', (await sameAs(lightPlan, 'FIDELITY', '6750A4', { spec: '2021', dark: false, profile: 'P16', contrast: 0.5 })) === 'same' && FIXED16.every(n => byRes(lightPlan)[n] === byRes(plan)[n]), await sameAs(lightPlan, 'FIDELITY', '6750A4', { spec: '2021', dark: false, profile: 'P16', contrast: 0.5 }));
   // taken at the tap: changed between the tap and the answer, both ways
@@ -212,7 +230,15 @@ const P16_C05 = { primary_light: '0xFF3E2578', primary_dark: '0xFFE3D6FF', surfa
   // a list style at 2025 on P16
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_spec', '2025'); ovlPickStyle('TONAL_SPOT'); ovlRender(); }); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
   check('C8. Tonal Spot in the list at 2025 on P16 (contrast 0.5): the setting gets TONAL_SPOT, the overlay entries(TONAL_SPOT, 6750A4, { spec 2025, dark, profile P16, contrast 0.5 }), 177; the record says 2025 and P16', k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && plan.entries && plan.entries.length === 177 && (await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true, profile: 'P16', contrast: 0.5 })) === 'same' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","spec":"2025","profile":"P16","build":"' + B16 + '"}', JSON.stringify([await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true, profile: 'P16', contrast: 0.5 }), await rec()]));
-  await ev(() => { kvSet('ovl_spec', '2021'); kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); });
+  // Content and Monochrome in More styles on P16: part 2's 2021 Content (its tertiary palette from TemperatureCache.analogous) and Monochrome
+  await ev(() => { kvSet('ovl_spec', '2021'); kvSet('ovl_root_style', 'CONTENT'); ovlPickColor('B5651D'); });
+  await phone({ sdk: 36, profile: 'P16', build: B16, contrast: 0 }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
+  const contentSame = await sameAs(plan, 'CONTENT', 'B5651D', { spec: '2021', dark: true, profile: 'P16', contrast: 0 });
+  check('C9. Content (More styles) on P16, B5651D, dark mode, contrast 0: 177 entries in the order of C1, MonetPlan.entries(CONTENT, B5651D, { spec 2021, dark, profile P16, contrast 0 }), not the Android 14 plan; ' + Object.keys(CONTENT_P16).length + ' values pinned from the oracle (accent3_500, the tertiary roles and tertiary_fixed among them); the record says Content and P16', plan.entries && JSON.stringify(plan.entries.map(e => e.resource)) === JSON.stringify(planOrder(ROLES50, FIXED16)) && contentSame === 'same' && pinsOff(plan, CONTENT_P16).length === 0 && (await sameAs(plan, 'CONTENT', 'B5651D', { spec: '2021', dark: true, profile: 'P14', contrast: 0 })) !== 'same' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"CONTENT","profile":"P16","build":"' + B16 + '"}', JSON.stringify([contentSame, pinsOff(plan, CONTENT_P16), await rec()]));
+  await ev(() => { kvSet('ovl_root_style', 'MONOCHROMATIC'); ovlPickColor('6750A4'); }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
+  const monoSame = await sameAs(plan, 'MONOCHROMATIC', '6750A4', { spec: '2021', dark: true, profile: 'P16', contrast: 0 });
+  check('C10. Monochrome (More styles) on P16, 6750A4, dark mode, contrast 0: MonetPlan.entries(MONOCHROMATIC, 6750A4, { spec 2021, dark, profile P16, contrast 0 }); ' + Object.keys(MONO_P16).length + ' values pinned from the oracle; shade 500 is 0xFF777777 (tone 50), not Android 14\'s 0xFF767676', plan.entries && plan.entries.length === 177 && monoSame === 'same' && pinsOff(plan, MONO_P16).length === 0 && (await ev(() => MonetPlan.entries('MONOCHROMATIC', '6750A4', { spec: '2021', dark: true, profile: 'P14', contrast: 0 }).find(e => /_accent1_500$/.test(e.resource)).argb)) === '0xFF767676', JSON.stringify([monoSame, pinsOff(plan, MONO_P16)]));
+  await ev(() => { kvSet('ovl_spec', '2021'); kvSet('ovl_root_style', 'FIDELITY'); ovlPickColor('6750A4'); ovlRender(); });
 
   // ---- (d) Android 15 QPR1, 15 QPR2 and 14 ----
   await phone({ sdk: 35, profile: 'P15Q1', build: B15 }); c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {};

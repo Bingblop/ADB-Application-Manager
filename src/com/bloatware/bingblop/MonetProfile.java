@@ -99,7 +99,8 @@ public final class MonetProfile {
 
     /**
      * The decision. {@code sdk} is Build.VERSION.SDK_INT, {@code present} the names of {@link #PROBES} the phone has (null when they
-     * could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without one).
+     * could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without one; {@link #oneUi} gives
+     * it, {@link #ONE_UI_UNREAD} for a Samsung phone whose version could not be read).
      * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first.
      */
     public static Result of(int sdk, Set<String> present, String oneUi) {
@@ -121,6 +122,23 @@ public final class MonetProfile {
             return unknown();
         }
         return unknown();                                            // below Android 12 (no Material You) and every SDK level after 37
+    }
+
+    /** The One UI value {@link #oneUi} gives a Samsung phone whose version could not be read: not blank, so {@link #of} treats it as One UI. */
+    public static final String ONE_UI_UNREAD = "?";
+
+    /**
+     * The One UI value to decide with. {@code samsung}: Build.MANUFACTURER or Build.BRAND is samsung; {@code version}: the One UI version
+     * read ("6.1.1"; "" or null when none was); {@code propertyUnset}: getprop ro.build.version.oneui ran and printed nothing (the property
+     * is not set; false when getprop failed, timed out or printed something that is not a version). A version read is the answer. A Samsung
+     * phone without one gives "" only when the property is not set (a Samsung phone running another build of Android); when it could not be
+     * read, {@link #ONE_UI_UNREAD}, which counts as One UI (fail closed; MainActivity does not keep that answer, so the next call reads
+     * again). Any other phone: "".
+     */
+    public static String oneUi(boolean samsung, String version, boolean propertyUnset) {
+        if (!samsung) return "";
+        if (version != null && !version.trim().isEmpty()) return version.trim();
+        return propertyUnset ? "" : ONE_UI_UNREAD;
     }
 
     /**

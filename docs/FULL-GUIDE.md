@@ -815,7 +815,9 @@ style the palette is worked out with:
   15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
   libmonet, 16 QPR1/QPR2 compute at spec 2025 with changes of their own and write `_light`/`_dark` palette names, 17 at 2026
   with the fixed colors in both modes), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
-  with its own service, by other developers' reports, not checked). An older APK that reports no profile counts as *Update the
+  with its own service, by other developers' reports, not checked); a Samsung phone whose One UI version cannot be read (getprop
+  fails or times out and `SEM_PLATFORM_INT` gives none) is locked the same way, and that answer is not kept, while one whose
+  `ro.build.version.oneui` is not set (another build of Android) is decided by its names. An older APK that reports no profile counts as *Update the
   app* on SDK 35 and up. Lock order: *Update the app* (no overlay bridge), the version lock, *Needs Super User*. A locked card's
   note says only whether an overlay written before is still on; with Super User, Apply (a disable), **Default** and **Undo**
   switch it off. On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses

@@ -11,8 +11,9 @@ import java.util.Set;
 
 /**
  * MonetProfile, which Android build family builds the theme colours (finding T-049): every release row (supported, not supported yet),
- * One UI, unknown SDK levels, missing names, the order of the probe tests, every combination of the probe names, the contrast value; and
- * (source scans) how MainActivity looks the names up and what getSystemPalette reports (profile, profileReason, build, contrast).
+ * One UI (and a Samsung phone whose One UI version could not be read), unknown SDK levels, missing names, the order of the probe tests,
+ * every combination of the probe names, the contrast value; and (source scans) how MainActivity looks the names up and reads One UI, and
+ * what getSystemPalette reports (profile, profileReason, build, contrast).
  */
 public class MonetProfileTest {
   static int fails = 0, n = 0;
@@ -83,6 +84,18 @@ public class MonetProfileTest {
     eq("One UI when the names could not be read", of(36, null, "8.0"), "unknown/oneUi");
     eq("a version with spaces around it is still One UI", of(36, A16, " 8.5 "), "unknown/oneUi");
     eq("an empty, blank or missing version is not One UI", of(36, A16, "") + " " + of(36, A16, "   ") + " " + of(36, A16, null), "P16/ok P16/ok P16/ok");
+
+    // ---- the One UI value MainActivity decides with (MonetProfile.oneUi): a Samsung phone whose version could not be read is One UI
+    eq("not a Samsung: no One UI, whatever was read", MonetProfile.oneUi(false, "", false) + "|" + MonetProfile.oneUi(false, "8.0", true) + "|" + MonetProfile.oneUi(false, null, false), "||");
+    eq("a Samsung with a version read: that version", MonetProfile.oneUi(true, "6.1.1", false) + "|" + MonetProfile.oneUi(true, "8.0", true), "6.1.1|8.0");
+    eq("... trimmed", MonetProfile.oneUi(true, " 8.5 ", false), "8.5");
+    eq("a Samsung without a version, the property not set (another build of Android on a Samsung phone): not One UI", MonetProfile.oneUi(true, "", true), "");
+    eq("a Samsung without a version, the property not read (getprop failed or timed out): the marker", MonetProfile.oneUi(true, "", false), MonetProfile.ONE_UI_UNREAD);
+    eq("... the same for a null or blank version", MonetProfile.oneUi(true, null, false) + MonetProfile.oneUi(true, "  ", false), MonetProfile.ONE_UI_UNREAD + MonetProfile.ONE_UI_UNREAD);
+    check("the marker is not blank", MonetProfile.ONE_UI_UNREAD != null && !MonetProfile.ONE_UI_UNREAD.trim().isEmpty());
+    eq("the marker locks as One UI on every profile the page computes (fail closed)", of(34, A14, MonetProfile.oneUi(true, "", false)) + " " + of(35, A15Q1, MonetProfile.ONE_UI_UNREAD) + " "
+        + of(35, A15Q2, MonetProfile.ONE_UI_UNREAD) + " " + of(36, A16, MonetProfile.ONE_UI_UNREAD) + " " + of(36, null, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi unknown/oneUi unknown/oneUi unknown/oneUi unknown/oneUi");
+    eq("a Samsung phone without One UI (property not set) is decided by its names like any other", of(36, A16, MonetProfile.oneUi(true, "", true)) + " " + of(34, A14, MonetProfile.oneUi(true, null, true)), "P16/ok P14/ok");
 
     // ---- the order of the tests: on 35 inverse_surface, then theme_notif, then on_theme_app_ring; on 36 QPR2, then QPR1, then 16.0
     eq("35: inverse_surface wins over theme_notif and on_theme_app_ring", of(35, names(INV, NOTIF, RING), ""), "P15Q2/ok");
@@ -177,13 +190,25 @@ public class MonetProfileTest {
     if (look != null) {
       check("source: it looks every probe name up as a colour of package android, present when the id is not 0",
           look.contains("for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, \"color\", \"android\") != 0) present.add(name);"));
-      check("source: it decides with the SDK level, the names found and the One UI version",
-          look.contains("MonetProfile.of(Build.VERSION.SDK_INT, present, oneUiVersion())"));
+      check("source: it decides with the SDK level, the names found and the One UI value of MonetProfile.oneUi (Samsung, the version, the property read)",
+          look.contains("String version = oneUiVersion(unset);") && look.contains("String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);")
+          && look.contains("MonetProfile.of(Build.VERSION.SDK_INT, present, oneUi)") && !look.contains("oneUiVersion())"));
       check("source: a lookup that throws gives no names (unknown on 35 and 36) and is not kept",
-          look.contains("catch (Throwable t) {") && look.contains("return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUiVersion());")
+          look.contains("catch (Throwable t) {") && look.contains("return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUi);")
           && look.indexOf("monetProfileCache = r;") > look.indexOf("catch (Throwable t) {"));
+      check("source: an answer from a One UI version that could not be read is not kept (the next call reads again)",
+          look.contains("if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetProfileCache = r;"));
       check("source: the answer is worked out once (kept in a volatile field)", look.contains("MonetProfile.Result r = monetProfileCache;")
           && look.contains("if (r != null) return r;") && m.contains("private volatile MonetProfile.Result monetProfileCache;"));
+    }
+    String ver = bodyOf(m, "private String oneUiVersion(boolean[] propertyUnset) {");
+    check("source: MainActivity has oneUiVersion(boolean[])", ver != null);
+    if (ver != null) {
+      check("source: it says the property is not set only when getprop printed nothing (an error or a timeout prints text)",
+          ver.contains("if (propertyUnset != null) propertyUnset[0] = line.isEmpty();")
+          && ver.indexOf("runProcessWithTimeout(new ProcessBuilder(\"getprop\", \"ro.build.version.oneui\"), 2000).trim();") >= 0
+          && ver.indexOf("propertyUnset[0] = line.isEmpty();") > ver.indexOf("runProcessWithTimeout(new ProcessBuilder(\"getprop\", \"ro.build.version.oneui\"), 2000).trim();"));
+      check("source: the other callers keep the old oneUiVersion() (device info, telemetry)", m.contains("private String oneUiVersion() {\n        return oneUiVersion(null);\n    }"));
     }
 
     String con = bodyOf(m, "private double systemContrast() {");

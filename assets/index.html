@@ -38209,9 +38209,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const style = ovlStyle, source = ovlSource;
             // a root style's source colour, taken now: the theme write below replaces the setting it may come from, and the overlay must carry
             // what the preview shows; so is the light or dark mode the phone is in (where the 65 base shades follow it), and the list style (style)
-            // is the one this tap writes; with the root controls live, so is the phone's contrast, read from the phone now (the roles are computed at it)
+            // is the one this tap writes; where a style's colours can be written (More styles live: not on a locked profile, where Apply asks the
+            // bridge for nothing more), so is the phone's contrast, read from the phone now (the roles are computed at it)
             const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
-            const dark = systemPrefersDark(), contrast = ovlRootLive() ? ovlContrast(true) : undefined;
+            const dark = systemPrefersDark(), contrast = ovlRootStyleLive() ? ovlContrast(true) : undefined;
             ovlBusy = true;
             ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
             ovlRender();
@@ -38319,9 +38320,11 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_MORE_SUB_2026 = 'Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.';
         // every style an overlay this app wrote may carry: a More style, CMF, or a style of the list above written at spec 2025
         const OVL_RECORD_STYLE_IDS = OVL_STYLE_IDS.concat(OVL_ROOT_STYLE_IDS.filter(id => id !== ''));
-        // Google's colour specs (Material Color Utilities): 2021 is what Android 12 to 16 compute themselves (their ColorScheme passes no spec),
-        // 2025 and 2026 exist only as colours this app writes. Google's own rule (MonetPlan.specFor, upstream's maybeFallbackSpecVersion) gives
-        // 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and 2021 to every other style.
+        // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (15.0 with an older libmonet);
+        // 16 QPR1 and QPR2 compute 2025 and 17 computes 2026, and there the root rows are locked (ovlProfileState). On the families this page
+        // writes for, 2025 and 2026 exist only as colours this app writes. Google's own rule (MonetPlan.specFor, upstream's
+        // maybeFallbackSpecVersion) gives 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and 2021 to every
+        // other style.
         const OVL_SPECS = [
             { id: '2021', desc: 'The colors Android computes itself.' },
             { id: '2025', desc: 'Google\'s newer tuning of the same styles.' },

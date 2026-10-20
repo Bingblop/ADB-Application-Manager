@@ -143,7 +143,12 @@
  *   SchemeFidelity with SystemUI's write order); 56 more seeds at contrast -1, -0.5, 0, 0.25, 0.5, 0.75 and 1 (7,056 plans per
  *   profile, 3,662,064 entries in all): no difference. P16's write order equals the list made by hand from the sources (177).
  *   Profile P14 at contrast 0.5 and 1 (part 1, new with the contrast option): the 44 roles and 12 fixed colours equal Android 14.0's
- *   own monet Java (android14-release) compiled and run, for the nine styles and the six seeds, light and dark (32,400 values).
+ *   own monet Java (android14-release) compiled and run with the seed this file uses (seed() below: Google blue for a grey in the six
+ *   list styles), for the nine styles and the six seeds, light and dark (32,400 values). Android 14's SystemUI itself builds its roles
+ *   from the raw seed (ThemeOverlayController.dynamicSchemeFromStyle takes the colour as it is; only its ColorScheme, which gives the
+ *   palettes, takes Google blue), so for a grey seed in Tonal Spot, Vibrant, Expressive, Spritz, Rainbow and Fruit Salad, P14's roles
+ *   are not what Android 14 computes, at any contrast (808080, Tonal Spot, light, contrast 0: primary 0xFF006874 there, 0xFF475D92
+ *   here). That was so before the profiles too and is not changed by them.
  *
  * The maths is all doubles; Android 14's ColorScheme.kt feeds Shades.of with the seed's hue and chroma as floats (its framework Cam
  * class), so a P14 palette entry computed here may differ from the phone's own by one RGB step in rare cases (Android 15 and 16 take
