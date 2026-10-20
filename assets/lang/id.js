@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "{0} disalin"],
 ["{0} core", "{0} inti"],
 ["{0} cores", "{0} inti"],
+["{0} could not be opened from here. Open it from your home screen.", "{0} tidak dapat dibuka dari sini. Buka dari layar utama."],
 ["{0} d ago", "{0} hr lalu"],
 ["{0} days ago", "{0} hari lalu"],
 ["{0} declared · {1} granted · {2} you can change", "{0} dideklarasikan · {1} diberikan · {2} dapat Anda ubah"],

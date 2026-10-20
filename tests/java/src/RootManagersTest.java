@@ -99,6 +99,14 @@ public class RootManagersTest {
     check("source: openRootManager answers ok:true only after startActivity returned", started > 0 && okTrue > started, open);
     check("source: a refused start answers ok:false", caught > started && open.substring(caught, Math.min(open.length(), caught + 80)).contains("return \"{\\\"ok\\\":false"), open);
     check("source: a launch intent that is gone by then answers ok:false", open.contains("if (in == null) return \"{\\\"ok\\\":false"), open);
+    // T-026: both failed starts say so (reason "launch", with the manager's name), so the page does not answer "install a root manager" to a
+    // phone that has one, and both hand-off buttons on the page tell that case apart
+    String launchFailed = "return \"{\\\"ok\\\":false,\\\"reason\\\":\\\"launch\\\",\\\"name\\\":\" + name + \"}\";";
+    check("source: the null intent and the refused start both answer reason launch with the name",
+        open.split(java.util.regex.Pattern.quote(launchFailed), -1).length - 1 == 2, open);
+    String jsOpen = methodBody(h, "function rootOpenManager("), jsApps = methodBody(h, "function rootManageSuperuser(");
+    check("source: Open root manager and Open manager both have a branch for a manager that did not start",
+        jsOpen.contains("res.reason === 'launch'") && jsApps.contains("res.reason === 'launch'"), jsOpen + "\n" + jsApps);
 
     // the page: the button, the pending flag, and the status read-back on resume (feeds RootGate)
     check("source: the page defines rootOpenManager", h.contains("function rootOpenManager("));

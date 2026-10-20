@@ -5880,6 +5880,7 @@
 {"k":"{0} copied","ctx":"built by the code of: copy store text"},
 {"k":"{0} core","ctx":"built by the code of: tm render cpu"},
 {"k":"{0} cores","ctx":"built by the code of: tm render cpu"},
+{"k":"{0} could not be opened from here. Open it from your home screen.","ctx":"built by the code of: root open manager"},
 {"k":"{0} d ago","ctx":"built by the code of: sdb ago"},
 {"k":"{0} days ago","ctx":"built by the code of: format age"},
 {"k":"{0} declared · {1} granted · {2} you can change","ctx":"built by the code of: als render"},

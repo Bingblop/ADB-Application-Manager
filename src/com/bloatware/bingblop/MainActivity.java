@@ -13743,25 +13743,28 @@ public class MainActivity extends Activity {
          * Opens the installed root manager (KernelSU, APatch or Magisk) with a normal launch intent so the user can grant this app Super User there.
          * This holds no root or grant mechanics: the grant is approved inside the manager, and the app reads the result back afterwards through the
          * usual working-mode check (the Root Features tab re-checks on resume and unlocks when su was granted). Answer: {"ok":true,"name":"KernelSU"}
-         * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed or the start did not happen.
+         * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed; and
+         * {"ok":false,"reason":"launch","name":"KernelSU"} when one is installed but the start did not happen, so the page does not tell the user to
+         * install a manager they have.
          */
         @JavascriptInterface
         public String openRootManager() {
             RootManagers.Manager m = RootManagers.pick(installedRootManagers());
             if (m == null) return "{\"ok\":false}";
+            String name = org.json.JSONObject.quote(m.label);
             // The start runs here, on the bridge thread, and decides the answer (as composeEmail does): Activity.startActivity may be called from any
             // thread and throws when Android refuses the start (ActivityNotFoundException, SecurityException). Posting it to the UI thread and
             // answering ok at once would let the page say "Allow this app in X" although nothing opened. A start that Android drops without telling
             // the caller (a background-start block) cannot be seen from here; after an ok the page still reads su back when the app is shown again.
             try {
                 Intent in = getPackageManager().getLaunchIntentForPackage(m.pkg);
-                if (in == null) return "{\"ok\":false}";             // disabled or removed since installedRootManagers() looked
+                if (in == null) return "{\"ok\":false,\"reason\":\"launch\",\"name\":" + name + "}";   // disabled or removed since installedRootManagers() looked
                 in.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(in);
             } catch (Exception e) {
-                return "{\"ok\":false}";
+                return "{\"ok\":false,\"reason\":\"launch\",\"name\":" + name + "}";
             }
-            return "{\"ok\":true,\"name\":" + org.json.JSONObject.quote(m.label) + "}";
+            return "{\"ok\":true,\"name\":" + name + "}";
         }
 
         /** The known root managers that are installed on this phone (a launch intent exists for them). */

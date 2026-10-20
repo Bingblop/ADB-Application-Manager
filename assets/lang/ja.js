@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "{0}をコピーしました"],
 ["{0} core", "{0} 個のコア"],
 ["{0} cores", "{0} 個のコア"],
+["{0} could not be opened from here. Open it from your home screen.", "ここから {0} を開けませんでした。ホーム画面から開いてください。"],
 ["{0} d ago", "{0}日前"],
 ["{0} days ago", "{0}日前"],
 ["{0} declared · {1} granted · {2} you can change", "宣言{0}個 · 許可{1}個 · 変更可能{2}個"],

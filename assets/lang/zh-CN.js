@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "已复制 {0}"],
 ["{0} core", "{0} 个核心"],
 ["{0} cores", "{0} 个核心"],
+["{0} could not be opened from here. Open it from your home screen.", "无法从这里打开 {0}。请从主屏幕打开它。"],
 ["{0} d ago", "{0} 天前"],
 ["{0} days ago", "{0} 天前"],
 ["{0} declared · {1} granted · {2} you can change", "已声明 {0} 项 · 已授予 {1} 项 · 可更改 {2} 项"],

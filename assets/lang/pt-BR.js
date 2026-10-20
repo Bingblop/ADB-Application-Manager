@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "{0} copiado"],
 ["{0} core", "{0} núcleo"],
 ["{0} cores", "{0} núcleos"],
+["{0} could not be opened from here. Open it from your home screen.", "Não foi possível abrir {0} a partir daqui. Abra pela tela inicial."],
 ["{0} d ago", "há {0} d"],
 ["{0} days ago", "há {0} dias"],
 ["{0} declared · {1} granted · {2} you can change", "Declaradas: {0} · Concedidas: {1} · Alteráveis por você: {2}"],

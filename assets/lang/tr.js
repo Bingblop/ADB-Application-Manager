@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "{0} kopyalandı"],
 ["{0} core", "{0} çekirdek"],
 ["{0} cores", "{0} çekirdek"],
+["{0} could not be opened from here. Open it from your home screen.", "{0} buradan açılamadı. Ana ekrandan açın."],
 ["{0} d ago", "{0} gün önce"],
 ["{0} days ago", "{0} gün önce"],
 ["{0} declared · {1} granted · {2} you can change", "{0} bildirilmiş · {1} verilmiş · {2} değiştirebileceğiniz"],

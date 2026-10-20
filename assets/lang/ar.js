@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "تم نسخ {0}"],
 ["{0} core", "{0} نواة"],
 ["{0} cores", "{0} نوى"],
+["{0} could not be opened from here. Open it from your home screen.", "تعذّر فتح {0} من هنا. افتحه من الشاشة الرئيسية."],
 ["{0} d ago", "قبل {0} ي"],
 ["{0} days ago", "قبل {0} من الأيام"],
 ["{0} declared · {1} granted · {2} you can change", "المُعلنة: {0} · الممنوحة: {1} · القابلة للتغيير: {2}"],

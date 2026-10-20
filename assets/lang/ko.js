@@ -6015,6 +6015,7 @@ p: [
 ["{0} copied", "{0} 복사됨"],
 ["{0} core", "코어 {0}개"],
 ["{0} cores", "코어 {0}개"],
+["{0} could not be opened from here. Open it from your home screen.", "여기에서 {0} 앱을 열 수 없습니다. 홈 화면에서 여세요."],
 ["{0} d ago", "{0}일 전"],
 ["{0} days ago", "{0}일 전"],
 ["{0} declared · {1} granted · {2} you can change", "선언됨 {0}개 · 부여됨 {1}개 · 변경 가능 {2}개"],

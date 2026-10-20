@@ -57,6 +57,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const tag = () => ev(() => { const t = document.getElementById('rfStatusTag'); return t.className.replace('mode-status-tag', '').trim() + ' ' + t.innerText; });
   const lockedRow = () => ev(() => !!document.querySelector('#rfFeatureList .rf-row.is-locked .op-mode-btn.locked') && !!document.querySelector('#rfFeatureList .pm-lock'));
   const view = () => ev(() => currentViewName());
+  const toastText = () => ev(() => document.getElementById('toastMsg').textContent);
 
   // ---- 1. the registry
   const reg = await ev(() => ({ idx: TAB_DEFS.findIndex(t => t.key === 'rootfeatures'), n: TAB_DEFS.length, first: TAB_DEFS[0].key, last: TAB_DEFS[TAB_DEFS.length - 1].key, label: tabDef('rootfeatures').label, name: tabDef('rootfeatures').name, icon: !!BNAV_ICONS.rootfeatures && bnavIcon('rootfeatures').indexOf(BNAV_ICON_FALLBACK) < 0, short: bnavShort('rootfeatures'), pinned: tabDefaultPinned().includes('rootfeatures'), on: tabIsOn('rootfeatures'), inBar: !!document.querySelector('.tab-btn[data-tab="rootfeatures"]') }));
@@ -76,7 +77,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; });
   await page.click('#rfSuAppsBtn'); await sleep(50);
   check('   with root ACTIVE but no known manager (hidden or renamed), Open manager says it was not found by its usual name, not "install one", and marks nothing pending (T-025)', (await text('#toastMsg')) === 'Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.' && (await ev(() => rootGrantPending === false)), await text('#toastMsg'));
-  await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: true, name: 'KernelSU' }; });
+  // a manager that is installed but did not start (the bridge answers reason 'launch'): no "Opening ..." toast, nothing pending, not the "install one" text
+  await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'KernelSU' }; });
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  check('   a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending', (await toastText()) === 'KernelSU could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
+  await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the second active-state feature: "App components" is a signpost to the Application Manager (no new backend; the component toggle already lives in the app inspector)
   check('   the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)', /App components/.test(await text('#rfFeatureList')) && (await ev(() => !!document.getElementById('rfComponentsBtn'))));
   await page.click('#rfComponentsBtn'); await sleep(50);
@@ -117,6 +122,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. Open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
+  await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'Magisk' }; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   await page.click('#rootGate .mode-alert-btn'); await sleep(50);
   check('   the gate\'s Set Up opens the Working Modes sheet', await ev(() => document.getElementById('modesModal').classList.contains('show')));
