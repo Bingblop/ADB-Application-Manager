@@ -40,12 +40,23 @@ public class ExtractSpaceTest {
         return true;
     }
 
-    /** Sets the reserve so that about {@code room} bytes may still be written, restores it afterwards. */
-    static long reserveFor(File dir, long room) { return Math.max(0, dir.getUsableSpace() - room); }
+    static long bytesUnder(File f) {
+        if (f.isFile()) return f.length();
+        long n = 0; File[] kids = f.listFiles();
+        if (kids != null) for (File k : kids) n += bytesUnder(k);
+        return n;
+    }
+
+    /**
+     * Gives the extraction into {@code dir} a disk of its own: {@code room} bytes beyond the reserve are free, and every byte written under
+     * {@code dir} takes that much away, as on a real disk. The machine's real disk is shared with other processes, whose writes and deletes moved
+     * its free space between two entries and made these checks pass or fail at random (T-066). Undone with {@code ZipTool.usableSpace = realDisk}.
+     */
+    static void fakeRoom(final File dir, final long room) { ZipTool.usableSpace = d -> ZipTool.freeSpaceReserve + room - bytesUnder(dir); }
 
     public static void main(String[] args) throws Exception {
         File root = Files.createTempDirectory("extractspace").toFile();
-        long saved = ZipTool.freeSpaceReserve;
+        final java.util.function.ToLongFunction<File> realDisk = ZipTool.usableSpace;
         try {
             // --- a zip: 3 MB of zeros declared and held (a few KB deflated), and a small file
             File zip = new File(root, "bomb.zip");
@@ -57,13 +68,13 @@ public class ExtractSpaceTest {
             check("the zip is tiny against what it holds (" + zip.length() + " bytes for 3 MB)", zip.length() < 20000, null);
             ZipTool.Archive a = ZipTool.open(zip);
             File out = new File(root, "out-zip"); out.mkdirs();
-            ZipTool.freeSpaceReserve = reserveFor(out, 1 << 20);
+            fakeRoom(out, 1 << 20);
             List<String> problems = new ArrayList<String>();
             ZipTool.extractTree(a, "", out, null, problems);
             check("with about 1 MB of room the 3 MB entry is refused in words and the small one is extracted: " + problems,
                 !new File(out, "big.bin").exists() && new File(out, "small.txt").length() == 100 && problems.toString().contains("Not enough free space"), null);
             check("... and no partial file is left", noPartFiles(out), null);
-            ZipTool.freeSpaceReserve = saved;
+            ZipTool.usableSpace = realDisk;
             File out2 = new File(root, "out-zip-ok"); out2.mkdirs();
             ZipTool.extractTree(a, "", out2, null, new ArrayList<String>());
             check("with the normal reserve both entries are extracted", new File(out2, "big.bin").length() == (3L << 20) && new File(out2, "small.txt").length() == 100, null);
@@ -74,12 +85,20 @@ public class ExtractSpaceTest {
                 zeros(z, "a.bin", 700 << 10); zeros(z, "b.bin", 700 << 10); zeros(z, "c.bin", 700 << 10);
             }
             File out3 = new File(root, "out-three"); out3.mkdirs();
-            ZipTool.freeSpaceReserve = reserveFor(out3, 1000 << 10);
+            fakeRoom(out3, 1000 << 10);
             List<String> p3 = new ArrayList<String>();
             ZipTool.extractTree(ZipTool.open(three), "", out3, null, p3);
             int written = 0; for (String n : new String[] {"a.bin", "b.bin", "c.bin"}) if (new File(out3, n).exists()) written++;
-            check("three 700 KB entries with 1000 KB of room: the first fits, the others are refused (" + written + " written, " + p3.size() + " notes)", written == 1 && p3.size() == 2, p3.toString());
-            ZipTool.freeSpaceReserve = saved;
+            check("three 700 KB entries with 1000 KB of room: the first fits, the others are refused (" + written + " written, " + p3.size() + " notes)",
+                new File(out3, "a.bin").length() == (700 << 10) && written == 1 && p3.size() == 2 && p3.get(0).startsWith("b.bin") && p3.get(1).startsWith("c.bin"), p3.toString());
+            File out3b = new File(root, "out-three-1500"); out3b.mkdirs();
+            fakeRoom(out3b, 1500 << 10);
+            List<String> p3b = new ArrayList<String>();
+            ZipTool.extractTree(ZipTool.open(three), "", out3b, null, p3b);
+            check("... and with 1500 KB of room the first two fit and only the third is refused: " + p3b,
+                new File(out3b, "a.bin").exists() && new File(out3b, "b.bin").exists() && !new File(out3b, "c.bin").exists() && p3b.size() == 1 && p3b.get(0).startsWith("c.bin"), null);
+            check("... and no partial file is left", noPartFiles(out3) && noPartFiles(out3b), null);
+            ZipTool.usableSpace = realDisk;
 
             // --- a GNU sparse tar: 600 MB declared, about 10 KB on disk
             if (have("tar") && run("truncate", "-s", "600M", new File(root, "sp.bin").getPath()) == 0
@@ -89,13 +108,13 @@ public class ExtractSpaceTest {
                 ZipTool.Archive ta = ArchiveIoSource.open(tar, "tar", null);
                 check("the listing shows the full size", ta.entries.get(0).size == (600L << 20), String.valueOf(ta.entries.get(0).size));
                 File out4 = new File(root, "out-tar"); out4.mkdirs();
-                ZipTool.freeSpaceReserve = reserveFor(out4, 1 << 20);
+                fakeRoom(out4, 1 << 20);
                 List<String> p4 = new ArrayList<String>();
                 long t0 = System.currentTimeMillis();
                 ZipTool.extractTree(ta, "", out4, null, p4);
                 check("with about 1 MB of room the sparse entry is refused before anything is written (" + (System.currentTimeMillis() - t0) + " ms): " + p4,
                     !new File(out4, "sp.bin").exists() && noPartFiles(out4) && p4.toString().contains("Not enough free space"), null);
-                ZipTool.freeSpaceReserve = saved;
+                ZipTool.usableSpace = realDisk;
             } else System.out.println("SKIP sparse tar (no tar / truncate)");
 
             // --- a 7z of zeros
@@ -106,15 +125,15 @@ public class ExtractSpaceTest {
                 if (run("7z", "a", "-mx=9", sz.getPath(), z0.getPath()) == 0) {
                     ZipTool.Archive za = ArchiveIoSource.open(sz, "7z", null);
                     File out5 = new File(root, "out-7z"); out5.mkdirs();
-                    ZipTool.freeSpaceReserve = reserveFor(out5, 1 << 20);
+                    fakeRoom(out5, 1 << 20);
                     List<String> p5 = new ArrayList<String>();
                     ZipTool.extractTree(za, "", out5, null, p5);
                     check("a 7z of 20 MB of zeros (" + sz.length() + " bytes) is refused with about 1 MB of room: " + p5, !new File(out5, "zeros.bin").exists() && noPartFiles(out5) && p5.toString().contains("Not enough free space"), null);
-                    ZipTool.freeSpaceReserve = saved;
+                    ZipTool.usableSpace = realDisk;
                 }
             } else System.out.println("SKIP 7z (not installed)");
         } finally {
-            ZipTool.freeSpaceReserve = saved;
+            ZipTool.usableSpace = realDisk;
         }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
         System.out.println("ALL PASSED");
