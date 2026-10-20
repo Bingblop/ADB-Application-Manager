@@ -38693,8 +38693,11 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // The source colour of a root style: the colour above (source "A color"); else the colour the theme setting carries for the wallpaper
         // (its colour source home_wallpaper or lock_wallpaper: a custom colour the phone uses now is not the wallpaper's, and Apply with the
-        // source Wallpaper drops it); else the first of the wallpaper's own colours (the palette bridge's "wallpaper") with a chroma of at least
-        // 5 (Android's own MIN_CHROMA rule when it picks a seed from a wallpaper); else Google blue, as Android itself falls back.
+        // source Wallpaper drops it); else the first of the wallpaper's own colours (the palette bridge's "wallpaper": WallpaperColors' main
+        // colours of the wallpaper set last, lock or home as SystemUI picks it) with a chroma of at least 5 (MonetPlan.MIN_CHROMA); else Google
+        // blue, as Android itself falls back. T-079: this is not Android's own choice. SystemUI ranks the wallpaper's whole colour map by hue
+        // (ColorScheme.getSeedColors) and takes main colours with MIN_CHROMA only for a wallpaper without populations; that map is not public,
+        // so the colour here may differ from the one Android picks (the preview's line names the one taken).
         // from: 'color' | 'wallpaper' | 'blue' for the line under the preview. Apply takes it once, when it is tapped (ovlApply), so the overlay
         // carries the colours the preview showed although the theme write changes the setting this reads.
         function ovlRootSeed() {

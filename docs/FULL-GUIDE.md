@@ -872,8 +872,9 @@ style the palette is worked out with:
   Content with MCU main's TemperatureCache, checked against those releases' SystemUI and libmonet compiled and run; CMF from part 2,
   see Color spec; Android 14 to 17 accept Monochrome as a theme style, none Fidelity or Content, and 17's code has a CMF case that it
   does not accept as a style) from the custom color, else the wallpaper's
-  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first wallpaper color Android
-  reports that is not almost grey), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
+  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first main color Android
+  reports for the wallpaper set last, lock or home by WallpaperManager id as SystemUI does, that is not almost grey; SystemUI ranks
+  the whole color map by hue, which apps cannot read, so this may differ from the color Android picks), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
   list style Color spec recolors) shows the five rows (13 shades each) and names the source.
   **Apply theme** still writes the theme setting from the style list first and then the overlay on top: 165 colors on Android 14 and
   15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in

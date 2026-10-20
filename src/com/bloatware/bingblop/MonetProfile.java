@@ -152,4 +152,14 @@ public final class MonetProfile {
         if (raw > 1f) return 1;
         return raw;
     }
+
+    /**
+     * Whether the lock-screen wallpaper is the one set most recently, so its colours are the ones SystemUI seeds the theme from: SystemUI's
+     * ThemeOverlayController.getLatestWallpaperType takes the lock wallpaper when its WallpaperManager id is higher than the home
+     * (system) wallpaper's, else the home one (android14-release). getWallpaperId answers a negative number for a kind that is not set
+     * (no separate lock wallpaper), which is never higher than a set home wallpaper's id.
+     */
+    public static boolean lockWallpaperIsLatest(int lockId, int systemId) {
+        return lockId > systemId;
+    }
 }
