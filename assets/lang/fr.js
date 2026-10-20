@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "L’overlay du thème est peut-être écrit sur ce téléphone.",
   "The theme overlay is written on this phone.": "L’overlay du thème est écrit sur ce téléphone.",
   "The theme overlay is switched off too.": "L’overlay du thème est aussi désactivé.",
+  "The overlay stays on: switching it off needs Super User.": "L’overlay reste activé : le désactiver nécessite Superutilisateur.",
   "Create new list": "Créer une nouvelle liste",
   "List name in use": "Nom de liste déjà utilisé",
   "Overwrite": "Remplacer",

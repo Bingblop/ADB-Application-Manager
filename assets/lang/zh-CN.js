@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "主题叠加层可能已写入此手机。",
   "The theme overlay is written on this phone.": "主题叠加层已写入此手机。",
   "The theme overlay is switched off too.": "主题叠加层也会一并关闭。",
+  "The overlay stays on: switching it off needs Super User.": "叠加层保持开启：要关闭它需要超级用户。",
   "Create new list": "新建列表",
   "List name in use": "列表名称已被使用",
   "Overwrite": "覆盖",

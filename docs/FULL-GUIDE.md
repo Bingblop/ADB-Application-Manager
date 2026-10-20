@@ -834,7 +834,9 @@ style the palette is worked out with:
   `ro.build.version.oneui` is not set (another build of Android) is decided by its names. An older APK that reports no profile counts as *Update the
   app* on SDK 35 and up. Lock order: *Update the app* (no overlay bridge), the version lock, *Needs Super User*. A locked card's
   note says only whether an overlay written before is still on; with Super User, Apply (a disable), **Default** and **Undo**
-  switch it off. On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
+  switch it off. Without Super User the note is *Shizuku and ADB cannot write these colors; Root can.* with the *is written* / *may be
+  written* line under it when an overlay is still on, and **Default** (which then writes the theme setting only) ends its question with *The overlay stays
+  on: switching it off needs Super User.* On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
   49.6), with no chroma cap, from the scheme of the mode the phone is in at Apply; SystemUI's own 21 or 22 custom colors (clock,
   shade, notification, widget and others) are not written and keep Android's values for the list style. Phone makers can change
   Android's color engine and names; none of this was checked on a phone.

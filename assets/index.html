@@ -38283,7 +38283,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlReset() {
             if (!ovlGuardWrite()) return;
             // what Revert switches off besides: this app's overlay, named by what it carries (the root style's colours, or pure black alone)
-            if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.' + (ovlRootFollowUp('reset') !== 'disable' ? '' : ovlRootAppliedStyle() ? '\n\nThe theme overlay is switched off too.' : '\n\nThe pure black overlay is switched off too.'))) return;
+            // an overlay of this app's that Default cannot switch off without Super User (T-078) is named, so the question promises no more than it does
+            const kept = !!ovlRootApplied() && ovlRootBridgeOk() && !isRootActive();
+            if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.' + (ovlRootFollowUp('reset') !== 'disable' ? (kept ? '\n\nThe overlay stays on: switching it off needs Super User.' : '') : ovlRootAppliedStyle() ? '\n\nThe theme overlay is switched off too.' : '\n\nThe pure black overlay is switched off too.'))) return;
             const before = ovlRaw;
             ovlBusy = true;
             ovlRemember(before, { kind: 'reset', prev: ovlRootApplied() });
@@ -38998,8 +39000,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 draw(rootLockedRow('More styles', OVL_MORE_SUB, reason));
                 drawAdj(rootLockedRow('Intensity', OVL_ADJ_SUB, reason));
                 drawAcc(rootLockedRow(OVL_ACC_TITLE, OVL_ACC_SUB, reason));
-                const was = lock ? ovlRootApplied() : null, w = was ? ovlRootWords(was.style) : null;
-                say(!bridge ? 'This version of the app cannot write color overlays. Update it, then come back.' : lock ? (was ? (was.pending ? w.maybe : w.on) : '') : 'Shizuku and ADB cannot write these colors; Root can.');
+                // without Super User too, an overlay written before is named under the Shizuku sentence (T-078: it stays on, and only root switches it
+                // off); its own line, so each sentence is looked up in the dictionaries as it is
+                const was = bridge ? ovlRootApplied() : null, w = was ? ovlRootWords(was.style) : null, wasLine = was ? (was.pending ? w.maybe : w.on) : '';
+                say(!bridge ? 'This version of the app cannot write color overlays. Update it, then come back.' : lock ? wasLine : 'Shizuku and ADB cannot write these colors; Root can.' + (wasLine ? '\n' + wasLine : ''));
                 ovlRenderRootStale();
                 return;
             }

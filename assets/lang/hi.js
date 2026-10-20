@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "थीम ओवरले शायद इस फ़ोन पर लिखा हुआ है।",
   "The theme overlay is written on this phone.": "थीम ओवरले इस फ़ोन पर लिखा हुआ है।",
   "The theme overlay is switched off too.": "थीम ओवरले भी बंद कर दिया जाएगा।",
+  "The overlay stays on: switching it off needs Super User.": "ओवरले चालू रहता है: इसे बंद करने के लिए सुपरयूज़र चाहिए।",
   "Create new list": "नई सूची बनाएँ",
   "List name in use": "सूची नाम पहले से उपयोग में है",
   "Overwrite": "ओवरराइट करें",

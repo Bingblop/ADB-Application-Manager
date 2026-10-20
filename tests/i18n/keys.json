@@ -4035,6 +4035,7 @@
 {"k":"The numbers refresh every five seconds while this tab is on screen and stop when you leave it. Nothing needs a working mode, and nothing is changed. Copy report puts the same numbers in plain text on the clipboard.","ctx":"in the view-extrasettings"},
 {"k":"The old code is gone. Anything you gave it to has to be given the new one.","ctx":"built by the code of: auth refresh"},
 {"k":"The older storage permission some apps still check for.","ctx":"built by the code of: top level"},
+{"k":"The overlay stays on: switching it off needs Super User.","ctx":"built by the code of: ovl reset"},
 {"k":"The pairing code has 6 digits","ctx":"built by the code of: cd pair"},
 {"k":"The password is used only for this archive, only while it is open. It is never saved.","ctx":"in a sheet (pw)"},
 {"k":"The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.","ctx":"built by the code of: mp fail hint"},

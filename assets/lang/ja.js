@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "テーマのオーバーレイはこの端末に書き込まれている可能性があります。",
   "The theme overlay is written on this phone.": "テーマのオーバーレイはこの端末に書き込まれています。",
   "The theme overlay is switched off too.": "テーマのオーバーレイもオフになります。",
+  "The overlay stays on: switching it off needs Super User.": "オーバーレイはオンのままです。オフにするにはスーパーユーザーが必要です。",
   "Create new list": "新しいリストを作成",
   "List name in use": "リスト名は使用中です",
   "Overwrite": "上書き",

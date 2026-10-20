@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "قد تكون طبقة السمة مكتوبة على هذا الهاتف.",
   "The theme overlay is written on this phone.": "طبقة السمة مكتوبة على هذا الهاتف.",
   "The theme overlay is switched off too.": "ستُطفأ طبقة السمة أيضًا.",
+  "The overlay stays on: switching it off needs Super User.": "تبقى الطبقة مفعّلة: إيقافها يتطلب Superuser.",
   "Create new list": "إنشاء قائمة جديدة",
   "List name in use": "اسم القائمة مُستخدَم بالفعل",
   "Overwrite": "استبدال",

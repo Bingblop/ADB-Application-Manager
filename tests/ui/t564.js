@@ -60,6 +60,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { kvSet('ovl_black', true); kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now() }); ovlRender(); });      // remembered from a rooted session: still locked, still no call
   c = await card();
   check('   a switch and an overlay remembered from a rooted session change nothing while locked', c.locked && c.rootHint === '', JSON.stringify([c.locked, c.rootHint]));
+  check('   the line under it also says the overlay from that session is still written (T-078: without Super User it stays on)', c.note === 'Shizuku and ADB cannot write these colors; Root can.\nThe pure black overlay is written on this phone.', JSON.stringify(c.note));
+  await reset(); dialogs.length = 0; answer = false; await page.locator('#ovlResetBtn').click(); await sleep(200); answer = true;
+  check('   Default\'s question says the overlay stays on, since switching it off needs Super User; cancelled, nothing is written', dialogs.length === 1 && /Tonal Spot style again\.\n\nThe overlay stays on: switching it off needs Super User\.$/.test(dialogs[0]) && (await calls()).fab.length === 0 && (await calls()).apply.length === 0, JSON.stringify(dialogs));
+  await ev(() => { kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now(), pending: true, style: 'FIDELITY' }); ovlRender(); }); c = await card();
+  check('   a pending theme record: the line says the theme overlay may be written', c.note === 'Shizuku and ADB cannot write these colors; Root can.\nThe theme overlay may be written on this phone.', JSON.stringify(c.note));
+  await ev(() => { kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now() }); ovlRender(); });
   await reset(); await apply();
   let k = await calls();
   check('   Apply writes the theme setting as before and never calls overlayFabricate', k.apply.length === 1 && k.fab.length === 0 && (await snack()) === 'Theme applied' && (await undoShown()), JSON.stringify([k.apply.length, k.fab.length, await snack()]));

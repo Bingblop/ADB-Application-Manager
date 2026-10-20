@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "Overlay tema mungkin sudah ditulis di ponsel ini.",
   "The theme overlay is written on this phone.": "Overlay tema sudah ditulis di ponsel ini.",
   "The theme overlay is switched off too.": "Overlay tema juga dimatikan.",
+  "The overlay stays on: switching it off needs Super User.": "Overlay tetap aktif: untuk menonaktifkannya perlu Superuser.",
   "Create new list": "Buat daftar baru",
   "List name in use": "Nama daftar sudah dipakai",
   "Overwrite": "Timpa",

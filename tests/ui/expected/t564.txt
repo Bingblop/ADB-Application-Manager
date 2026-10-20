@@ -5,6 +5,9 @@
    the hint under Apply says nothing about the overlay: true ["This is already what the phone uses.",""]
    nothing of the card is interactive (its only button is disabled): true
    a switch and an overlay remembered from a rooted session change nothing while locked: true [true,""]
+   the line under it also says the overlay from that session is still written (T-078: without Super User it stays on): true "Shizuku and ADB cannot write these colors; Root can.\nThe pure black overlay is written on this phone."
+   Default's question says the overlay stays on, since switching it off needs Super User; cancelled, nothing is written: true ["Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.\n\nThe overlay stays on: switching it off needs Super User."]
+   a pending theme record: the line says the theme overlay may be written: true "Shizuku and ADB cannot write these colors; Root can.\nThe theme overlay may be written on this phone."
    Apply writes the theme setting as before and never calls overlayFabricate: true [1,0,"Theme applied"]
    its Undo puts the theme back only (the overlay cannot be touched without root): true
 2. with Super User the row unlocks: a switch (role switch), off, no Locked button, no caption, no line: true {"shown":true,"title":"Root-only theme controls","rows":1,"locked":false,"lockBtn":null,"lock":"","name":"Pure black backgrounds True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.","sw":{"on":false,"checked":"false","role":"switch"},"note":"","hint":"This is already what the phone uses.","main":"This is already what the phone uses.","rootHint":""}
@@ -94,8 +97,8 @@ Android will use your wallpaper’s colors with the Tonal Spot style again.
     no answer to the Undo's theme write, the setting put back all the same: "No answer" first and no overlay yet; then the overlay from before is written with the usual toasts: true [{"fab":0,"toasts":["No answer: the theme may still change"]},{"fab":["fabricate:11"],"toasts":["No answer: the theme may still change","Pure black overlay written","Theme put back"],"applied":{"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"black":true,"style":"","build":"google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys"}}]
     no answer and the setting not put back: nothing is written, the toast says the theme was not changed: true [{"fab":0,"toasts":["No answer: the theme may still change"]},{"fab":[],"toasts":["No answer: the theme may still change","The theme was not changed"],"applied":{"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"black":true}}]
 14. dark 320px, unlocked: nothing sticks out sideways, the switch is drawn, the line says it is on the phone: true {"sw":320,"cw":320,"bad":[],"swH":26,"on":true,"note":"The pure black overlay is written on this phone."}
-    dark 320px, locked: either, with the Locked button at least 36 px tall: true {"sw":320,"cw":320,"bad":[],"swH":36,"on":false,"note":"Shizuku and ADB cannot write these colors; Root can."}
+    dark 320px, locked: either, with the Locked button at least 36 px tall: true {"sw":320,"cw":320,"bad":[],"swH":36,"on":false,"note":"Shizuku and ADB cannot write these colors; Root can.\nThe pure black overlay is written on this phone."}
 14. light 320px, unlocked: nothing sticks out sideways, the switch is drawn, the line says it is on the phone: true {"sw":320,"cw":320,"bad":[],"swH":26,"on":true,"note":"The pure black overlay is written on this phone."}
-    light 320px, locked: either, with the Locked button at least 36 px tall: true {"sw":320,"cw":320,"bad":[],"swH":36,"on":false,"note":"Shizuku and ADB cannot write these colors; Root can."}
+    light 320px, locked: either, with the Locked button at least 36 px tall: true {"sw":320,"cw":320,"bad":[],"swH":36,"on":false,"note":"Shizuku and ADB cannot write these colors; Root can.\nThe pure black overlay is written on this phone."}
 no page errors: true
 ALL OK

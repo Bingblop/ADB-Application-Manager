@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "테마 오버레이가 이 휴대전화에 기록되어 있을 수 있습니다.",
   "The theme overlay is written on this phone.": "테마 오버레이가 이 휴대전화에 기록되어 있습니다.",
   "The theme overlay is switched off too.": "테마 오버레이도 함께 꺼집니다.",
+  "The overlay stays on: switching it off needs Super User.": "오버레이는 켜진 상태로 남습니다. 끄려면 슈퍼유저가 필요합니다.",
   "Create new list": "새 목록 만들기",
   "List name in use": "이미 사용 중인 목록 이름",
   "Overwrite": "덮어쓰기",

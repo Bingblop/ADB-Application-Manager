@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "Tema katmanı bu telefona yazılmış olabilir.",
   "The theme overlay is written on this phone.": "Tema katmanı bu telefona yazılmış durumda.",
   "The theme overlay is switched off too.": "Tema katmanı da kapatılır.",
+  "The overlay stays on: switching it off needs Super User.": "Katman açık kalır: kapatmak için Superuser gerekir.",
   "Create new list": "Yeni liste oluştur",
   "List name in use": "Liste adı kullanımda",
   "Overwrite": "Üzerine yaz",

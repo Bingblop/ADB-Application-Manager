@@ -86,6 +86,7 @@ x: {
   "The theme overlay may be written on this phone.": "Оверлей темы, возможно, записан на этом телефоне.",
   "The theme overlay is written on this phone.": "Оверлей темы записан на этом телефоне.",
   "The theme overlay is switched off too.": "Оверлей темы тоже будет выключен.",
+  "The overlay stays on: switching it off needs Super User.": "Оверлей остаётся включённым: чтобы его выключить, нужен Superuser.",
   "Create new list": "Создать новый список",
   "List name in use": "Имя списка уже занято",
   "Overwrite": "Перезаписать",
