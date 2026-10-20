@@ -19229,18 +19229,19 @@ Type any command above (e.g. pm list packages -d)</div>
             if (btn) btn.disabled = false;
             res = res || {};
             szAutoStarting = false;
+            const t = String(res.text || '').trim();
             const msg = {
                 started: 'Shizuku is running. Tap Authorize & Use Shizuku next.',
                 already_running: 'Shizuku is already running. Tap Authorize & Use Shizuku.',
                 not_installed: 'Shizuku is not installed',
                 no_adb: 'Connect ADB TCP or Wireless Debugging first, then start Shizuku.',
                 no_script: 'Shizuku has not written its start script yet. Open the Shizuku app once, then try again.',
-                failed: 'Shizuku did not start. What the start script printed is shown below.'
+                // the box below is shown only with text in it: a start that failed before the script ran (or a script that printed nothing) does not point at it
+                failed: t ? 'Shizuku did not start. What the start script printed is shown below.' : 'Shizuku did not start.'
             }[res.status] || 'Could not start Shizuku';
             showToast(msg);
             const out = document.getElementById('shizukuStartOut');
             if (out) {
-                const t = String(res.text || '').trim();
                 out.textContent = t;
                 out.style.display = t && res.status !== 'started' ? '' : 'none';
             }

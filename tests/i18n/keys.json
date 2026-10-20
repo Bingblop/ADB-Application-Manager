@@ -3481,6 +3481,7 @@
 {"k":"Shizuku and ADB cannot write these colors; Root can. Choose Root in Working Modes, then tap Apply again.","ctx":"built by the code of: ovl root failure"},
 {"k":"Shizuku authorization denied","ctx":"built by the code of: on shizuku permission result"},
 {"k":"Shizuku authorized. Using Shizuku mode.","ctx":"built by the code of: handle shizuku tap"},
+{"k":"Shizuku did not start.","ctx":"built by the code of: on shizuku start result"},
 {"k":"Shizuku did not start. What the start script printed is shown below.","ctx":"built by the code of: on shizuku start result"},
 {"k":"Shizuku has not written its start script yet. Open the Shizuku app once, then try again.","ctx":"built by the code of: on shizuku start result"},
 {"k":"Shizuku is already being started...","ctx":"built by the code of: start shizuku ui"},

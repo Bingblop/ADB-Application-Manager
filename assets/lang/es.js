@@ -3483,6 +3483,7 @@ x: {
 "Shizuku and ADB cannot write these colors; Root can. Choose Root in Working Modes, then tap Apply again.": "Shizuku y ADB no pueden escribir estos colores; Root sí. Elige Root en Modos de operación y vuelve a tocar Aplicar.",
 "Shizuku authorization denied": "Autorización de Shizuku denegada",
 "Shizuku authorized. Using Shizuku mode.": "Shizuku autorizado. Se usa el modo Shizuku.",
+"Shizuku did not start.": "Shizuku no se inició.",
 "Shizuku did not start. What the start script printed is shown below.": "Shizuku no se inició. Abajo se muestra lo que imprimió el script de inicio.",
 "Shizuku has not written its start script yet. Open the Shizuku app once, then try again.": "Shizuku aún no ha escrito su script de inicio. Abre la app Shizuku una vez y vuelve a intentarlo.",
 "Shizuku is already being started...": "Shizuku ya se está iniciando...",

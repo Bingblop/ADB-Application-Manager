@@ -42,7 +42,7 @@ const { chromium, PAGE } = require('./lib/pw');
       ['not_installed', 'Shizuku is not installed'],
       ['no_adb', 'Connect ADB TCP or Wireless Debugging first, then start Shizuku.'],
       ['no_script', 'Shizuku has not written its start script yet. Open the Shizuku app once, then try again.'],
-      ['failed', 'Shizuku did not start. What the start script printed is shown below.'],
+      ['failed', 'Shizuku did not start.'],     // no script text (a failure before the script ran, or a script that printed nothing): nothing "below" to point at
     ];
     for (const [status, msg] of cases) {
       await answer(page, { status, pkg: 'moe.shizuku.privileged.api', script: '/sdcard/Android/data/moe.shizuku.privileged.api/start.sh', exit: 0, text: '' });
@@ -53,6 +53,10 @@ const { chromium, PAGE } = require('./lib/pw');
     await answer(page, { status: 'failed', pkg: 'x.y', script: '/s', exit: 3, text: 'exec app_process failed\n<b>not html</b>' });
     const f = await state(page);
     check('   a failed start shows the script text as plain text', f.outShown && f.out === 'exec app_process failed\n<b>not html</b>' && (await page.evaluate(() => document.getElementById('shizukuStartOut').children.length)) === 0, JSON.stringify(f));
+    check('   and only then the sentence points at the text below', (await toast(page)) === 'Shizuku did not start. What the start script printed is shown below.', (await toast(page)));
+    await answer(page, { status: 'failed', pkg: '' });
+    const g = await state(page);
+    check('   a failure with no text at all (the phone side threw): the short sentence, the box hidden and empty', (await toast(page)) === 'Shizuku did not start.' && !g.outShown && g.out === '', (await toast(page)) + ' ' + JSON.stringify(g));
     await answer(page, { status: 'started', pkg: 'x.y', script: '/s', exit: 0, text: 'Shizuku is running' });
     check('   a start that worked hides the text again', !(await state(page)).outShown);
     check('   an answer with nothing in it is "Could not start Shizuku" and does not throw', await (async () => { await answer(page, null); return (await toast(page)) === 'Could not start Shizuku'; })());

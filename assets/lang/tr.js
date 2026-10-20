@@ -3483,6 +3483,7 @@ x: {
 "Shizuku and ADB cannot write these colors; Root can. Choose Root in Working Modes, then tap Apply again.": "Shizuku ve ADB bu renkleri yazamaz; Root yazabilir. Çalışma Modları’nda Root’u seçin, sonra Uygula’ya yeniden dokunun.",
 "Shizuku authorization denied": "Shizuku yetkilendirmesi reddedildi",
 "Shizuku authorized. Using Shizuku mode.": "Shizuku yetkilendirildi. Shizuku modu kullanılıyor.",
+"Shizuku did not start.": "Shizuku başlamadı.",
 "Shizuku did not start. What the start script printed is shown below.": "Shizuku başlamadı. Başlatma betiğinin yazdıkları aşağıda gösteriliyor.",
 "Shizuku has not written its start script yet. Open the Shizuku app once, then try again.": "Shizuku başlatma betiğini henüz yazmadı. Shizuku uygulamasını bir kez açın, sonra tekrar deneyin.",
 "Shizuku is already being started...": "Shizuku zaten başlatılıyor...",
