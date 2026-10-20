@@ -14,6 +14,9 @@ ok      Open apps goes to the Application Manager (switchView apps)
 ok      its line names every kind the inspector can enable or disable: activities, receivers, services and providers (T-033)
 ok      the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)
 ok      and back: a mode change while on the tab re-renders it (rootOnModeChange)
+ok      T-044: after a grant is taken back in the manager, the quiet check still reads the remembered yes (Root active, no fresh check asked)
+ok      opening the tab unlocked asks su again (one fresh check): it now reads DENIED, the gate shows and the rows are locked
+ok      a tab that opens locked asks nothing more (no second su prompt after a no)
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
 ok      the gate names the way: choose Root in Working Modes
 ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button

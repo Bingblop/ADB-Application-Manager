@@ -14,7 +14,8 @@
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
-// (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. Deterministic output: ok / FAIL lines and the summary.
+// (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
+// (getWorkingModeFresh), so a grant taken back in the root manager locks it; a locked tab asks nothing. Deterministic output: ok / FAIL lines and the summary.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -62,8 +63,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         const s = WM[window.__wm.state], refusal = window.__wm.refused && s.rootAvailable && s.configuredMode !== 'root' ? { rootGranted: false } : {};
         return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, s, refusal));
       },
-      // the explicit (fresh) read the page asks for on the way back from the manager; counted so a check can see it happen
-      getWorkingModeFresh() { window.__calls.fresh = (window.__calls.fresh || 0) + 1; return this.getWorkingMode(); },
+      // like probeAndCacheMode(true): while Root is chosen su is asked again (a grant taken back in the manager, revoked, now reads as a refusal); in the
+      // other modes su's last answer is forgotten
+      getWorkingModeFresh() {
+        window.__calls.fresh = (window.__calls.fresh || 0) + 1;
+        if (WM[window.__wm.state].configuredMode === 'root') {
+          if (window.__wm.revoked && window.__wm.state === 'root') window.__wm.state = 'rootDenied';
+          window.__wm.refused = window.__wm.state !== 'root';
+        } else window.__wm.refused = false;
+        return window.AndroidBridge.getWorkingMode();
+      },
       // like the Java side: the mode is chosen whatever su answers (ok false: chosen but not ready); with no su the test command cannot even start
       selectWorkingMode(mode) {
         window.__calls.selectWorkingMode.push(mode);
@@ -151,6 +160,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)', !(await ev(() => isRootActive())) && (await disp('#rootGate')) === 'flex' && (await lockedRow()));
   await setMode('root');
   check('   and back: a mode change while on the tab re-renders it (rootOnModeChange)', (await ev(() => isRootActive())) && (await disp('#rootGate')) === 'none' && !(await lockedRow()));
+  // T-044: ACTIVE is su's last answer. The grant is taken back in the root manager while the app is on another tab: the quiet checks still read the
+  // remembered yes, so opening the tab unlocked asks su again (one fresh check) and the no locks it
+  const fresh = () => ev(() => window.__calls.fresh || 0);
+  await ev(() => { switchView('apps'); window.__calls.fresh = 0; window.__wm.revoked = true; checkAllWorkingModes(false); }); await sleep(50);
+  check('   T-044: after a grant is taken back in the manager, the quiet check still reads the remembered yes (Root active, no fresh check asked)', (await ev(() => isRootActive())) && (await fresh()) === 0);
+  await ev(() => switchView('rootfeatures')); await sleep(50);
+  check('   opening the tab unlocked asks su again (one fresh check): it now reads DENIED, the gate shows and the rows are locked', (await fresh()) === 1 && (await tag()) === 'warning DENIED' && (await disp('#rootGate')) === 'flex' && (await lockedRow()) && !(await ev(() => isRootActive())), JSON.stringify([await fresh(), await tag()]));
+  await ev(() => { switchView('apps'); window.__calls.fresh = 0; switchView('rootfeatures'); }); await sleep(50);
+  check('   a tab that opens locked asks nothing more (no second su prompt after a no)', (await fresh()) === 0 && (await tag()) === 'warning DENIED', JSON.stringify([await fresh(), await tag()]));
+  await ev(() => { window.__wm.revoked = false; window.__wm.refused = false; }); await setMode('root');
 
   // ---- 3. (B) su on the phone, the mode is Shizuku
   await setMode('shizuku', true);

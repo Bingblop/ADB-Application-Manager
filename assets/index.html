@@ -28540,7 +28540,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // cannot change components of apps it does not own, and Kyle scoped the control to Root. LAUNCH and STOP keep the ordinary working-mode lock.
         function compToggleLocked() { return !isRootActive(); }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
-        function onRootFeaturesShown() { renderRootFeatures(); }
+        // ACTIVE is su's last answer, kept in memory (isRootGranted): a grant taken back in the root manager since then would still read ACTIVE here and
+        // leave the rows unlocked (T-044). So a tab about to open unlocked asks su once more first (the fresh check of Check Status), and a no locks it.
+        // Only then: a locked tab asks nothing (no second su prompt right after a refusal), and coming back to the app does not ask either (a manager's
+        // prompt takes the app off screen, so asking on every return could ask again and again).
+        function onRootFeaturesShown() { if (isRootActive()) checkAllWorkingModes(true); renderRootFeatures(); }
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
         // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
