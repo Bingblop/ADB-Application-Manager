@@ -3774,7 +3774,7 @@ x: {
 "Temperature": "温度",
 "Temperature unit": "温度の単位",
 "Temporary files that are created when transferring data between Android devices.": "Android デバイス間でデータを転送するときに作られる一時ファイル。",
-"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.": "一時的な root はお使いの Root マネージャー（KernelSU、APatch、または Magisk）内で付与されます。開いて、そこでこのアプリに Super User を許可してから戻り、アプリを Root に切り替えてください。su が付与されると Root 機能のロックが解除されます。",
+"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.": "一時的な root はお使いの Root マネージャー（KernelSU、APatch、または Magisk）内で付与されます。開いて、そこでこのアプリに Super User を許可してから戻り、アプリを Root に切り替えてください。このアプリが一覧にない場合（Magisk は su を要求したことのあるアプリだけを表示します）、先に「スーパーユーザーを要求」をタップしてください。su が付与されると Root 機能のロックが解除されます。",
 "Temporary system files": "システムの一時ファイル",
 "Terminal": "ターミナル",
 "Terminal input": "ターミナルの入力欄",

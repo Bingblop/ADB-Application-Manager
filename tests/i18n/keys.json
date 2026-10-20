@@ -3778,7 +3778,7 @@
 {"k":"Temperature","ctx":"built by the code of: tm render cpu"},
 {"k":"Temperature unit","ctx":"in the view-taskmgr"},
 {"k":"Temporary files that are created when transferring data between Android devices.","ctx":"built by the code of: top level"},
-{"k":"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.","ctx":"in the view-rootfeatures"},
+{"k":"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.","ctx":"in the view-rootfeatures"},
 {"k":"Temporary system files","ctx":"built by the code of: top level"},
 {"k":"Terminal","ctx":"in the Settings (the gear in the header) / Console tab / the page"},
 {"k":"Terminal input","ctx":"in the Console tab"},

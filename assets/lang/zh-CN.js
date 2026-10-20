@@ -3773,7 +3773,7 @@ x: {
 "Temperature": "温度",
 "Temperature unit": "温度单位",
 "Temporary files that are created when transferring data between Android devices.": "在 Android 设备之间传输数据时创建的临时文件。",
-"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.": "临时 Root 在你的 Root 管理器（KernelSU、APatch 或 Magisk）中授予。打开它，在其中允许此应用获得 Super User，然后返回并让应用切换到 Root。授予 su 后，Root 功能即解锁。",
+"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.": "临时 Root 在你的 Root 管理器（KernelSU、APatch 或 Magisk）中授予。打开它，在其中允许此应用获得 Super User，然后返回并让应用切换到 Root。如果此应用不在其列表中（Magisk 只列出已请求过 su 的应用），请先点按“请求超级用户”。授予 su 后，Root 功能即解锁。",
 "Temporary system files": "系统临时文件",
 "Terminal": "终端",
 "Terminal input": "终端输入",

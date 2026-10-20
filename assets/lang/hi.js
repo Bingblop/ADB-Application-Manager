@@ -3774,7 +3774,7 @@ x: {
 "Temperature": "तापमान",
 "Temperature unit": "तापमान की इकाई",
 "Temporary files that are created when transferring data between Android devices.": "Android डिवाइस के बीच डेटा भेजते समय बनने वाली अस्थायी फ़ाइलें।",
-"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.": "अस्थायी रूट आपके रूट मैनेजर (KernelSU, APatch या Magisk) के भीतर दिया जाता है। उसे खोलें, वहाँ इस ऐप को Super User की अनुमति दें, फिर वापस आएं और ऐप को Root पर स्विच करने दें। su मिलते ही रूट फ़ीचर अनलॉक हो जाते हैं।",
+"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.": "अस्थायी रूट आपके रूट मैनेजर (KernelSU, APatch या Magisk) के भीतर दिया जाता है। उसे खोलें, वहाँ इस ऐप को Super User की अनुमति दें, फिर वापस आएं और ऐप को Root पर स्विच करने दें। अगर यह ऐप उसकी सूची में नहीं है (Magisk किसी ऐप को तभी दिखाता है जब वह su माँग चुका हो), तो पहले “सुपरयूज़र का अनुरोध करें” पर टैप करें। su मिलते ही रूट फ़ीचर अनलॉक हो जाते हैं।",
 "Temporary system files": "अस्थायी सिस्टम फ़ाइलें",
 "Terminal": "टर्मिनल",
 "Terminal input": "टर्मिनल इनपुट",

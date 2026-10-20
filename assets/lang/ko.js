@@ -3773,7 +3773,7 @@ x: {
 "Temperature": "온도",
 "Temperature unit": "온도 단위",
 "Temporary files that are created when transferring data between Android devices.": "Android 기기 간에 데이터를 전송할 때 만들어지는 임시 파일.",
-"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.": "임시 루트는 루트 관리자(KernelSU, APatch 또는 Magisk) 안에서 부여됩니다. 열어서 거기서 이 앱에 Super User를 허용한 다음 돌아와서 앱이 Root로 전환하게 하세요. su가 부여되면 Root 기능이 잠금 해제됩니다.",
+"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.": "임시 루트는 루트 관리자(KernelSU, APatch 또는 Magisk) 안에서 부여됩니다. 열어서 거기서 이 앱에 Super User를 허용한 다음 돌아와서 앱이 Root로 전환하게 하세요. 이 앱이 목록에 없으면(Magisk는 su를 요청한 적이 있는 앱만 표시합니다) 먼저 ‘슈퍼유저 요청’을 누르세요. su가 부여되면 Root 기능이 잠금 해제됩니다.",
 "Temporary system files": "임시 시스템 파일",
 "Terminal": "터미널",
 "Terminal input": "터미널 입력",

@@ -18,6 +18,7 @@ ok      back from the manager with Shizuku chosen: the page asks to switch to Ro
 ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
+ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
 ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now

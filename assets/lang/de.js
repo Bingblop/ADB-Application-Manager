@@ -3773,7 +3773,7 @@ x: {
 "Temperature": "Temperatur",
 "Temperature unit": "Temperatureinheit",
 "Temporary files that are created when transferring data between Android devices.": "Temporäre Dateien, die bei der Datenübertragung zwischen Android-Geräten entstehen.",
-"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.": "Temporärer Root wird in deinem Root-Manager (KernelSU, APatch oder Magisk) gewährt. Öffne ihn, erlaube dieser App dort Super User, komm dann zurück und lass die App zu Root wechseln. Die Root-Funktionen werden freigeschaltet, sobald su gewährt ist.",
+"Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. If this app is not in its list (Magisk lists an app only after it has asked for su), tap Request Super User first. Root Features unlock once su is granted.": "Temporärer Root wird in deinem Root-Manager (KernelSU, APatch oder Magisk) gewährt. Öffne ihn, erlaube dieser App dort Super User, komm dann zurück und lass die App zu Root wechseln. Steht diese App nicht in seiner Liste (Magisk führt eine App erst auf, nachdem sie su angefragt hat), tippe zuerst auf „Superuser anfordern“. Die Root-Funktionen werden freigeschaltet, sobald su gewährt ist.",
 "Temporary system files": "Temporäre Systemdateien",
 "Terminal": "Terminal",
 "Terminal input": "Terminal-Eingabe",

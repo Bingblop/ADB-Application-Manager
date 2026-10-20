@@ -6,7 +6,8 @@
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
 // nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
 // it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
-// on the unlocked Super User for apps row while root is ACTIVE (T-025). Deterministic output: ok / FAIL lines and the summary.
+// on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
+// manager's list (Magisk lists an app only after it has asked su, T-019). Deterministic output: ok / FAIL lines and the summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
@@ -110,6 +111,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await comeBack();
   check('   with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch', dialogs.length === 0 && (await ev(() => window.__calls.selectWorkingMode.length)) === 0, JSON.stringify(dialogs));
   check('   the note says to come back and let the app switch to Root', /then come back and let the app switch to Root\./.test(await text('#rfManagerNote')));
+  // T-019: Magisk lists an app in its Superuser screen only after the app has asked su once, and su is asked only through Root; the note says so
+  check('   the note says what to do when the app is not in the manager\'s list (Magisk): Request Super User first', /If this app is not in its list \(Magisk lists an app only after it has asked for su\), tap Request Super User first\./.test(await text('#rfManagerNote')), await text('#rfManagerNote'));
   await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
