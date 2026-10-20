@@ -78,16 +78,57 @@ public class OverlayRulesTest {
         return null;
     }
 
+    // ---- the fabricated overlay: plans, and the wiring read from the source ----
+
+    static OverlayRules.FabEntry fe(String resource, String argb) { return new OverlayRules.FabEntry(resource, argb); }
+
+    /** A plan from resource / value pairs. */
+    static List<OverlayRules.FabEntry> plan(String... rv) {
+        List<OverlayRules.FabEntry> p = new ArrayList<OverlayRules.FabEntry>();
+        for (int i = 0; i + 1 < rv.length; i += 2) p.add(fe(rv[i], rv[i + 1]));
+        return p;
+    }
+
+    /** One lookup block as the script prints it. */
+    static String lookupBlock(String resource, String answer) { return "@@OVL-LOOKUP " + resource + "@@\n" + answer + "\n@@OVL-LOOKUP-END@@\n"; }
+
+    /** The arguments of the n-th `cmd` call (0-based) as the fake logged them: one per line, each in brackets. */
+    static String cmdCall(int n) throws IOException {
+        String log = read(fakeDir.resolve("cmd.log"));
+        if (log == null) return null;
+        String[] calls = log.split("(?m)^---\n");
+        // calls[0] is the empty text before the first "---"
+        return n + 1 < calls.length ? calls[n + 1] : null;
+    }
+
+    static File findUp(String rel) {
+        File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+        for (int i = 0; d != null && i < 8; i++, d = d.getParentFile()) { File f = new File(d, rel); if (f.exists()) return f; }
+        return null;
+    }
+
+    static String bodyOf(String src, String sig) {
+        int i = src.indexOf(sig);
+        if (i < 0 || src.indexOf(sig, i + 1) >= 0) return null;
+        int open = src.indexOf('{', i), depth = 0, k = open;
+        for (; k < src.length(); k++) { char ch = src.charAt(k); if (ch == '{') depth++; else if (ch == '}') { depth--; if (depth == 0) break; } }
+        return src.substring(i, k + 1);
+    }
+
     public static void main(String[] a) throws Exception {
         fakeDir = Files.createTempDirectory("ovlfake");
         fakeBin = fakeDir.resolve("bin");
         Files.createDirectories(fakeBin);
-        // a fake `cmd`: "cmd overlay list|enable|disable ID", state in $OVL_FAKE/overlays as "<target> <1|0|-1> <id>"; logs its arguments one per line
+        // a fake `cmd`: "cmd overlay list|enable|disable ID", state in $OVL_FAKE/overlays as "<target> <1|0|-1> <id>"; logs its arguments one per line.
+        // Also fabricate (registers com.android.shell:<name> off, keeps its colours in $OVL_FAKE/colors as "<resource> <0xAARRGGBB> <id>"; refuses without
+        // root when $OVL_FAKE/noroot exists, refuses --user when $OVL_FAKE/sdk is 36 or more, cannot read the file when $OVL_FAKE/unreadable exists)
+        // and lookup (the colour of an enabled overlay for the resource, else the stock one from $OVL_FAKE/stock "<resource> <0xAARRGGBB>", else an
+        // error on stderr; $OVL_FAKE/lookupstyle "ref" prints "@ref -> #colour", "upper" prints upper-case; $OVL_FAKE/ignore makes the framework keep the stock colour)
         write(fakeBin.resolve("cmd"),
             "#!/bin/sh\n" +
             "{ echo '---'; for x in \"$@\"; do printf '[%s]\\n' \"$x\"; done; } >> \"$OVL_FAKE/cmd.log\"\n" +
             "[ \"$1\" = overlay ] || { echo \"cmd: Can't find service: $1\"; exit 1; }\n" +
-            "verb=$2; shift 2; if [ \"$1\" = --user ]; then shift 2; fi\n" +        // the real one takes --user <id>|current after the verb
+            "verb=$2; shift 2; user=0; if [ \"$1\" = --user ]; then shift 2; user=1; fi\n" +        // the real one takes --user <id>|current after the verb
             "f=\"$OVL_FAKE/overlays\"\n" +
             "case \"$verb\" in\n" +
             " list) last=; while read -r tgt st id; do if [ \"$tgt\" != \"$last\" ]; then [ -n \"$last\" ] && echo; echo \"$tgt\"; last=$tgt; fi; case $st in 1) echo \"[x] $id\";; 0) echo \"[ ] $id\";; *) echo \"--- $id\";; esac; done < \"$f\"; echo;;\n" +
@@ -97,6 +138,31 @@ public class OverlayRulesTest {
             "   if grep -q \" 1 FIXED:$id\\$\" \"$f\"; then :; fi\n" +
             "   if [ -f \"$OVL_FAKE/immutable\" ] && grep -qx \"$id\" \"$OVL_FAKE/immutable\" && [ $want = 0 ]; then exit 0; fi\n" +
             "   tmp=\"$f.tmp\"; while read -r tgt st oid; do if [ \"$oid\" = \"$id\" ]; then echo \"$tgt $want $oid\"; else echo \"$tgt $st $oid\"; fi; done < \"$f\" > \"$tmp\"; mv \"$tmp\" \"$f\";;\n" +
+            " fabricate)\n" +
+            "   [ -f \"$OVL_FAKE/noroot\" ] && { echo \"Error: must be root to fabricate overlays through the shell\"; exit 1; }\n" +
+            "   if [ -f \"$OVL_FAKE/sdk\" ] && [ \"$(cat \"$OVL_FAKE/sdk\")\" -ge 36 ] && [ \"$user\" = 1 ]; then echo \"Error: Unknown option: --user\"; exit 1; fi\n" +
+            "   tgt=; name=; file=\n" +
+            "   while [ $# -gt 0 ]; do case \"$1\" in --target) tgt=$2; shift 2;; --name) name=$2; shift 2;; --file) file=$2; shift 2;; *) break;; esac; done\n" +
+            "   [ \"$tgt\" = android ] && [ -n \"$name\" ] || { echo \"Error: --target and --name are required\"; exit 1; }\n" +
+            "   id=\"com.android.shell:$name\"; touch \"$f\"\n" +
+            "   [ -f \"$OVL_FAKE/colors\" ] && { grep -v \" $id\\$\" \"$OVL_FAKE/colors\" > \"$OVL_FAKE/colors.tmp\"; mv \"$OVL_FAKE/colors.tmp\" \"$OVL_FAKE/colors\"; }\n" +
+            "   if [ -n \"$file\" ]; then\n" +
+            "     [ -f \"$file\" ] && [ ! -f \"$OVL_FAKE/unreadable\" ] || { echo \"Error: failed to read $file\"; exit 1; }\n" +
+            "     cp \"$file\" \"$OVL_FAKE/last.xml\"\n" +
+            "     grep -o '<item target=\"[^\"]*\" value=\"[^\"]*\"/>' \"$file\" | sed -e 's/<item target=\"\\([^\"]*\\)\" value=\"\\([^\"]*\\)\"\\/>/android:\\1 \\2/' | while read -r res val; do echo \"$res $val $id\"; done >> \"$OVL_FAKE/colors\"\n" +
+            "   else\n" +
+            "     [ \"$2\" = 0x1c ] && [ -n \"$3\" ] || { echo \"Error: unsupported value: $2 $3\"; exit 1; }\n" +
+            "     echo \"$1 $3 $id\" >> \"$OVL_FAKE/colors\"\n" +
+            "   fi\n" +
+            "   grep -v \" $id\\$\" \"$f\" > \"$f.tmp\"; mv \"$f.tmp\" \"$f\"; echo \"$tgt 0 $id\" >> \"$f\";;\n" +      // registering a name again replaces it; a fresh overlay is off
+            " lookup)\n" +
+            "   res=$2; val=\n" +
+            "   if [ -f \"$OVL_FAKE/missing\" ] && grep -qx \"$res\" \"$OVL_FAKE/missing\"; then echo \"Error: failed to resolve $res\" >&2; exit 1; fi\n" +      // a resource this Android does not have
+            "   if [ ! -f \"$OVL_FAKE/ignore\" ] && [ -f \"$OVL_FAKE/colors\" ]; then while read -r r v id; do [ \"$r\" = \"$res\" ] || continue; grep -q \" 1 $id\\$\" \"$f\" && val=$v; done < \"$OVL_FAKE/colors\"; fi\n" +
+            "   if [ -z \"$val\" ] && [ -f \"$OVL_FAKE/stock\" ]; then val=$(grep \"^$res \" \"$OVL_FAKE/stock\" | head -1 | cut -d' ' -f2); fi\n" +
+            "   [ -n \"$val\" ] || { echo \"Error: failed to resolve $res\" >&2; exit 1; }\n" +
+            "   hex=$(printf '%s' \"${val#0x}\" | tr 'A-F' 'a-f')\n" +
+            "   case \"$(cat \"$OVL_FAKE/lookupstyle\" 2>/dev/null)\" in ref) echo \"@0x7f0600ab -> #$hex\";; upper) echo \"#$(printf '%s' \"$hex\" | tr 'a-f' 'A-F')\";; *) echo \"#$hex\";; esac;;\n" +
             " *) echo \"Overlay manager (overlay) commands:\"; exit 1;;\n" +
             "esac\n");
         // a fake `settings`: settings get|put <ns> <key> [value]; files $OVL_FAKE/settings/<ns>__<key>
@@ -719,6 +785,362 @@ public class OverlayRulesTest {
         is("a theme write with no answer is unknown", !uv.ok && uv.unknown);
         uv = OverlayRules.judgeTheme("{}", OverlayRules.parseTheme("@@OVL-GET@@\nnull\n@@OVL-END@@\n"));
         is("a theme write that was not kept is not unknown", !uv.ok && !uv.unknown);
+
+        // ================= root-only theme: the fabricated overlay (pure black) =================
+        final String N1 = "android:color/system_neutral1_900", N2 = "android:color/system_neutral2_900";
+        final String FAB = "com.android.shell:aam_monet";
+        final List<OverlayRules.FabEntry> black = plan(N1, "0xFF000000", N2, "0xFF000000");
+        final List<String> ids34 = Arrays.asList(FAB);
+        final List<String> ids33 = Arrays.asList("com.android.shell:aam_monet_neutral1_900", "com.android.shell:aam_monet_neutral2_900");
+
+        // ---- the plan's checks: hostile names, values and counts never reach a shell ----
+        eq("the pure-black plan passes", OverlayRules.fabricatePlanProblem(black), null);
+        OverlayRules.fabricatePlanOk(black);
+        eq("14+ role entries pass", OverlayRules.fabricatePlanProblem(plan("android:color/system_surface_container_lowest_dark", "0xFF0E0E0E", "android:color/system_background_dark", "0xFF000000")), null);
+        eq("lower-case hex passes", OverlayRules.fabricatePlanProblem(plan(N1, "0xff0e0e0e")), null);
+        String[][] badEntries = {
+            {N1, "0xFF00000"}, {N1, "0xFF0000000"}, {N1, "FF000000"}, {N1, "#FF000000"}, {N1, "0xFF00000G"}, {N1, "0XFF000000"}, {N1, " 0xFF000000"},
+            {N1, "0xFF000000\n"}, {N1, ""}, {N1, null}, {N1, "0xFF000000'; touch canaryF1; echo '"}, {N1, "0xFF000000 0xFF000000"}, {N1, "0xＦＦ000000"},
+            {"android:color/accent_device_default", "0xFF000000"}, {"android:color/system_Neutral1_900", "0xFF000000"}, {N1 + " ", "0xFF000000"},
+            {"android:color/system_", "0xFF000000"}, {N1 + "/../x", "0xFF000000"}, {"color/system_neutral1_900", "0xFF000000"},
+            {"com.android.systemui:color/system_neutral1_900", "0xFF000000"}, {"android:string/system_neutral1_900", "0xFF000000"},
+            {N1 + "'; touch canaryF2; echo '", "0xFF000000"}, {N1 + "$(touch canaryF3)", "0xFF000000"}, {N1 + "\nAAM_OVL_EOF\ntouch canaryF4", "0xFF000000"},
+            {N1 + "\" value=\"0xFF000000\"/><item target=\"color/x", "0xFF000000"}, {"android:color/system_néutral1_900", "0xFF000000"},
+            {"", "0xFF000000"}, {null, "0xFF000000"}, {"ANDROID:COLOR/SYSTEM_NEUTRAL1_900", "0xFF000000"}, {"android:color/system-neutral1-900", "0xFF000000"},
+        };
+        for (String[] b : badEntries) {
+            String what = String.valueOf(b[0]).replace("\n", "\\n") + " = " + String.valueOf(b[1]).replace("\n", "\\n");
+            String prob = OverlayRules.fabricatePlanProblem(plan(b[0], b[1]));
+            is("bad entry refused: " + what, prob != null);
+            is("bad entry named by number, not echoed: " + what, prob != null && prob.startsWith("Entry 1 ") && !prob.contains("touch") && !prob.contains("canary") && !prob.contains("\n"));
+            throwsIae("bad entry throws: " + what, () -> OverlayRules.fabricatePlanOk(plan(b[0], b[1])));
+            throwsIae("bad entry builds no script: " + what, () -> OverlayRules.fabricateScript(34, plan(b[0], b[1])));
+            throwsIae("bad entry builds no script (33): " + what, () -> OverlayRules.fabricateScript(33, plan(b[0], b[1])));
+        }
+        is("a good entry after a bad one is still refused", OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N2, "nope")) != null && OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N2, "nope")).startsWith("Entry 2 "));
+        is("an empty plan", OverlayRules.fabricatePlanProblem(new ArrayList<OverlayRules.FabEntry>()) != null);
+        is("no plan", OverlayRules.fabricatePlanProblem(null) != null);
+        throwsIae("no plan throws", () -> OverlayRules.fabricatePlanOk(null));
+        List<OverlayRules.FabEntry> withNull = plan(N1, "0xFF000000"); withNull.add(null);
+        is("a null entry", OverlayRules.fabricatePlanProblem(withNull) != null);
+        is("a resource named twice", OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")) != null && OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")).contains("twice"));
+        List<OverlayRules.FabEntry> big200 = new ArrayList<OverlayRules.FabEntry>(), big201 = new ArrayList<OverlayRules.FabEntry>();
+        for (int i = 0; i < 201; i++) { OverlayRules.FabEntry e = fe("android:color/system_x" + i, "0xFF000000"); if (i < 200) big200.add(e); big201.add(e); }
+        eq("200 entries pass", OverlayRules.fabricatePlanProblem(big200), null);
+        is("201 entries are too many", OverlayRules.fabricatePlanProblem(big201) != null && OverlayRules.fabricatePlanProblem(big201).contains("200"));
+        throwsIae("201 entries throw", () -> OverlayRules.fabricateScript(34, big201));
+
+        // ---- the identifiers written ----
+        eq("ids on 34: one overlay", OverlayRules.fabricateIds(34, black).toString(), "[" + FAB + "]");
+        eq("ids on 35 and 36: the same", OverlayRules.fabricateIds(35, black).toString() + OverlayRules.fabricateIds(36, black).toString(), "[" + FAB + "][" + FAB + "]");
+        eq("ids on 33: one per entry, named for it", OverlayRules.fabricateIds(33, black).toString(), "[com.android.shell:aam_monet_neutral1_900, com.android.shell:aam_monet_neutral2_900]");
+        eq("ids on 31 and 32: the same", OverlayRules.fabricateIds(31, black).toString(), OverlayRules.fabricateIds(32, black).toString());
+        for (String id : OverlayRules.fabricateIds(33, big200)) eq("every 33 id is one of ours: " + id, OverlayRules.fabricateIdProblem(id), null);
+        eq("the 14+ id is one of ours", OverlayRules.fabricateIdProblem(FAB), null);
+        throwsIae("ids check the plan", () -> OverlayRules.fabricateIds(33, plan(N1, "nope")));
+        eq("entry name", OverlayRules.entryOverlayName(fe("android:color/system_surface_container_lowest_dark", "0xFF000000")), "aam_monet_surface_container_lowest_dark");
+
+        // ---- the three script forms, exactly ----
+        String tail = "echo @@OVL-GET@@; cmd overlay list --user current; echo @@OVL-END@@\n";
+        String lookups2 = "echo '@@OVL-LOOKUP android:color/system_neutral1_900@@'; cmd overlay lookup --user current android 'android:color/system_neutral1_900' 2>&1; echo @@OVL-LOOKUP-END@@\n"
+                + "echo '@@OVL-LOOKUP android:color/system_neutral2_900@@'; cmd overlay lookup --user current android 'android:color/system_neutral2_900' 2>&1; echo @@OVL-LOOKUP-END@@\n";
+        String xmlText = "<overlay>\n  <item target=\"color/system_neutral1_900\" value=\"0xFF000000\"/>\n  <item target=\"color/system_neutral2_900\" value=\"0xFF000000\"/>\n</overlay>\n";
+        eq("the xml", OverlayRules.fabricateXml(black), xmlText);
+        String f34 = OverlayRules.fabricateScript(34, black, "/tmp/aam_test.xml");
+        eq("sdk 34: the file form", f34,
+            "cat > '/tmp/aam_test.xml' <<'AAM_OVL_EOF'\n" + xmlText + "AAM_OVL_EOF\n"
+            + "cmd overlay fabricate --user current --target android --name 'aam_monet' --file '/tmp/aam_test.xml'\n"
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet'\n"
+            + "rm -f '/tmp/aam_test.xml'\n" + tail + lookups2);
+        eq("sdk 35: the 34 form", OverlayRules.fabricateScript(35, black, "/tmp/aam_test.xml"), f34);
+        String f36 = OverlayRules.fabricateScript(36, black, "/tmp/aam_test.xml");
+        eq("sdk 36: the same without --user on the fabricate", f36, f34.replace("cmd overlay fabricate --user current --target", "cmd overlay fabricate --target"));
+        is("sdk 36: enable, list and lookup keep --user", f36.contains("cmd overlay enable --user current 'com.android.shell:aam_monet'\n") && f36.contains(tail) && f36.endsWith(lookups2));
+        eq("sdk 37: the 36 form", OverlayRules.fabricateScript(37, black, "/tmp/aam_test.xml"), f36);
+        eq("the app writes its file under /data/system", OverlayRules.fabricateScript(34, black), f34.replace("/tmp/aam_test.xml", "/data/system/aam_monet.xml"));
+        eq("the app's file constant", OverlayRules.FAB_FILE, "/data/system/aam_monet.xml");
+        String f33 = OverlayRules.fabricateScript(33, black);
+        eq("sdk 33: one fabricate per entry, then one enable per overlay", f33,
+            "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral1_900' 'android:color/system_neutral1_900' 0x1c '0xFF000000'\n"
+            + "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral2_900' 'android:color/system_neutral2_900' 0x1c '0xFF000000'\n"
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral1_900'\n"
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail + lookups2);
+        eq("sdk 31 and 32: the 33 form", OverlayRules.fabricateScript(31, black) + OverlayRules.fabricateScript(32, black), f33 + f33);
+        is("sdk 33: no file, no heredoc", !f33.contains("<<") && !f33.contains("--file") && !f33.contains("/data/system"));
+        throwsIae("sdk 30: no Material You", () -> OverlayRules.fabricateScript(30, black));
+        throwsIae("no file name", () -> OverlayRules.fabricateScript(34, black, ""));
+        // the heredoc: a quoted delimiter (nothing in the body is expanded), the body exactly the xml, the delimiter alone on its line, then the commands
+        is("heredoc delimiter quoted", f34.startsWith("cat > '/tmp/aam_test.xml' <<'AAM_OVL_EOF'\n<overlay>\n"));
+        is("heredoc closed on its own line before the fabricate", f34.contains("</overlay>\nAAM_OVL_EOF\ncmd overlay fabricate"));
+        is("the file is removed after the write", f34.indexOf("rm -f '/tmp/aam_test.xml'") > f34.indexOf("--file '/tmp/aam_test.xml'") && f34.indexOf("rm -f") < f34.indexOf("@@OVL-GET@@"));
+        is("a file name with a quote is still one word", OverlayRules.fabricateScript(34, black, "/tmp/it's.xml").contains("cat > '/tmp/it'\\''s.xml' <<'AAM_OVL_EOF'"));
+        // lookups: the first four entries, no more
+        List<OverlayRules.FabEntry> eleven = new ArrayList<OverlayRules.FabEntry>();
+        for (String r : new String[] {"neutral1_900", "neutral2_900", "background_dark", "surface_dark", "surface_dim_dark", "surface_container_lowest_dark", "surface_container_low_dark", "surface_container_dark", "surface_container_high_dark", "surface_container_highest_dark", "surface_bright_dark"}) eleven.add(fe("android:color/system_" + r, "0xFF000000"));
+        String f11 = OverlayRules.fabricateScript(34, eleven, "/tmp/x.xml");
+        eq("eleven entries: four lookups", f11.split("cmd overlay lookup ", -1).length - 1, 4);
+        is("the four are the first four", f11.contains("'android:color/system_surface_dark' 2>&1") && !f11.contains("lookup --user current android 'android:color/system_surface_dim_dark'"));
+        eq("lookupEntries of two", OverlayRules.lookupEntries(black).size(), 2);
+        eq("lookupEntries of eleven", OverlayRules.lookupEntries(eleven).get(3).resource, "android:color/system_surface_dark");
+        is("eleven items in the file", OverlayRules.fabricateXml(eleven).split("<item ", -1).length - 1 == 11 && f11.contains(OverlayRules.fabricateXml(eleven)));
+        eq("eleven entries on 33: eleven fabricates, eleven enables", OverlayRules.fabricateScript(33, eleven).split("cmd overlay fabricate ", -1).length - 1 + ":" + (OverlayRules.fabricateScript(33, eleven).split("cmd overlay enable ", -1).length - 1), "11:11");
+        // every command names the running user (except the fabricate on 16, whose parser has none)
+        for (String line : (f34 + f33).split("\n")) if (line.startsWith("cmd overlay") || line.contains("; cmd overlay")) is("names the user: " + line, line.contains(" --user current"));
+        for (String line : f36.split("\n")) if (line.startsWith("cmd overlay") && !line.startsWith("cmd overlay fabricate")) is("16 names the user: " + line, line.contains(" --user current"));
+
+        // ---- the disable script ----
+        eq("disable script", OverlayRules.disableScript(ids34), "cmd overlay disable --user current 'com.android.shell:aam_monet'\n" + tail);
+        eq("disable script of two", OverlayRules.disableScript(ids33), "cmd overlay disable --user current 'com.android.shell:aam_monet_neutral1_900'\ncmd overlay disable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail);
+        is("no lookups after a disable", !OverlayRules.disableScript(ids33).contains("lookup"));
+        for (String bad : new String[] {"com.android.systemui:aam_monet", "com.android.shell:aam_monet; touch canaryF5", "com.android.shell:aam_monet_", "com.android.shell:aam_monetx", "com.android.shell:AAM_MONET",
+                "com.android.shell:aam_monet_Neutral", "com.android.shell:", "aam_monet", "com.android.shell:aam_monet\n", "", "android.theme.customization.accent_color", "com.android.shell:aam_monet'", "com.android.shell:aam_monet:x", "-com.android.shell:aam_monet"}) {
+            is("foreign or odd id refused: " + bad.replace("\n", "\\n"), OverlayRules.fabricateIdProblem(bad) != null);
+            throwsIae("foreign or odd id builds no disable: " + bad.replace("\n", "\\n"), () -> OverlayRules.disableScript(Arrays.asList(FAB, bad)));
+        }
+        is("null id refused", OverlayRules.fabricateIdProblem(null) != null);
+        throwsIae("no ids", () -> OverlayRules.disableScript(new ArrayList<String>()));
+        throwsIae("null ids", () -> OverlayRules.disableScript(null));
+        throwsIae("an id twice", () -> OverlayRules.disableScript(Arrays.asList(FAB, FAB)));
+        List<String> many = new ArrayList<String>(); for (int i = 0; i < 201; i++) many.add("com.android.shell:aam_monet_x" + i);
+        throwsIae("201 ids", () -> OverlayRules.disableScript(many));
+        OverlayRules.disablePlanOk(many.subList(0, 200));
+
+        // ---- the lookup's answer ----
+        eq("lookup: #aarrggbb", OverlayRules.lookupColor("#ff000000"), "#ff000000");
+        eq("lookup: ref -> #aarrggbb", OverlayRules.lookupColor("@0x7f06012c -> #ff000000"), "#ff000000");
+        eq("lookup: two arrows, the last wins", OverlayRules.lookupColor("@0x7f06012c -> @0x7f0600ab -> #ff1b1b1b"), "#ff1b1b1b");
+        eq("lookup: Error line", OverlayRules.lookupColor("Error: failed to resolve resource android:color/system_neutral1_900"), null);
+        eq("lookup: error after an arrow", OverlayRules.lookupColor("@0x7f06012c -> Error: nope"), null);
+        eq("lookup: empty", OverlayRules.lookupColor(""), null);
+        eq("lookup: blank", OverlayRules.lookupColor(" \n\t "), null);
+        eq("lookup: null", OverlayRules.lookupColor(null), null);
+        eq("lookup: upper-case input", OverlayRules.lookupColor("#FF000000"), "#ff000000");
+        eq("lookup: upper-case ref with a newline", OverlayRules.lookupColor("@0x7F06012C -> #FF1B1B1B\n"), "#ff1b1b1b");
+        eq("lookup: spaces around", OverlayRules.lookupColor("  #ff1b1b1b  "), "#ff1b1b1b");
+        eq("lookup: a short alpha is padded", OverlayRules.lookupColor("#1b1b1b"), "#001b1b1b");
+        eq("lookup: one digit is padded", OverlayRules.lookupColor("#f"), "#0000000f");
+        eq("lookup: nine digits is not a colour", OverlayRules.lookupColor("#ff0000000"), null);
+        eq("lookup: not hex", OverlayRules.lookupColor("#ggffffff"), null);
+        eq("lookup: no hash", OverlayRules.lookupColor("ff000000"), null);
+        eq("lookup: 0x form", OverlayRules.lookupColor("0xff000000"), null);
+        eq("lookup: trailing words", OverlayRules.lookupColor("#ff000000 extra"), null);
+        eq("lookup: a warning before the value", OverlayRules.lookupColor("WARNING: linker: something\n#ff000000"), "#ff000000");
+        eq("lookup: a number is not a colour", OverlayRules.lookupColor("42"), null);
+        eq("expected form", OverlayRules.expectedLookup("0xFF1B1B1B"), "#ff1b1b1b");
+        eq("expected form of black", OverlayRules.expectedLookup("0xFF000000"), "#ff000000");
+        // the blocks
+        Map<String, String> lk2 = OverlayRules.parseLookups(lookupBlock(N1, "#ff000000") + lookupBlock(N2, "@ref -> #ff000000"));
+        eq("two blocks paired", lk2.get(N1) + "|" + lk2.get(N2), "#ff000000|@ref -> #ff000000");
+        eq("a block cut short is no answer", OverlayRules.parseLookups(lookupBlock(N1, "#ff000000") + "@@OVL-LOOKUP " + N2 + "@@\n#ff00").size(), 1);
+        Map<String, String> lkGap = OverlayRules.parseLookups("@@OVL-LOOKUP " + N1 + "@@\nError: boom\n" + lookupBlock(N2, "#ff000000"));
+        eq("a block whose end never came is skipped, the next is read", lkGap.containsKey(N1) + "|" + lkGap.get(N2), "false|#ff000000");
+        eq("no blocks", OverlayRules.parseLookups("android\n[x] a.b\n").size() + OverlayRules.parseLookups("").size() + OverlayRules.parseLookups(null).size(), 0);
+        eq("an empty answer is kept as empty", OverlayRules.parseLookups(lookupBlock(N1, "")).get(N1), "");
+        eq("a mark without the closing @@", OverlayRules.parseLookups("@@OVL-LOOKUP " + N1 + "\n#ff000000\n@@OVL-LOOKUP-END@@\n").size(), 0);
+        OverlayRules.FabResult pf1 = OverlayRules.parseFabricate("@@OVL-GET@@\nandroid\n[x] " + FAB + "\n@@OVL-END@@\n" + lookupBlock(N1, "#ff000000"));
+        is("parseFabricate: the list and the lookups apart", pf1.change.all != null && pf1.change.all.size() == 1 && pf1.change.all.get(0).state == 1 && "#ff000000".equals(pf1.lookups.get(N1)));
+        eq("parseFabricate: the answer is what came before the list", OverlayRules.parseFabricate("java.lang.SecurityException: commit failed\n@@OVL-GET@@\nandroid\n@@OVL-END@@\n" + lookupBlock(N1, "#ff000000")).change.answer, "java.lang.SecurityException: commit failed");
+        is("parseFabricate: lookups without a list", OverlayRules.parseFabricate(lookupBlock(N1, "#ff000000")).change.all == null);
+        is("parseFabricate: null", OverlayRules.parseFabricate(null).change.all == null && OverlayRules.parseFabricate(null).lookups.isEmpty());
+
+        // ---- every verdict, from read-backs written by hand ----
+        String listOn = "@@OVL-GET@@\nandroid\n[x] android.theme.customization.accent_color\n[x] " + FAB + "\n@@OVL-END@@\n";
+        String listOff = listOn.replace("[x] " + FAB, "[ ] " + FAB);
+        String listGone = "@@OVL-GET@@\nandroid\n[x] android.theme.customization.accent_color\n@@OVL-END@@\n";
+        String listNA = listOn.replace("[x] " + FAB, "--- " + FAB);
+        String good2 = lookupBlock(N1, "#ff000000") + lookupBlock(N2, "#ff000000");
+        OverlayRules.FabVerdict jv;
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + good2));
+        is("listed on + colours right: ok", jv.ok && !jv.unknown && jv.error.isEmpty()); eq("its state", jv.state, 1);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "@0x7f06012c -> #FF000000") + lookupBlock(N2, "#ff000000")));
+        is("a reference and upper case still count", jv.ok);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn));
+        is("listed on, no lookups: unknown", !jv.ok && jv.unknown); is("unknown says which", jv.error.contains("system_neutral1_900") && jv.error.contains("system_neutral2_900")); eq("unanswered", jv.unanswered.size(), 2);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "#ff000000") + lookupBlock(N2, "Error: failed to resolve " + N2)));
+        is("one lookup an error: unknown", !jv.ok && jv.unknown); eq("the unanswered one", jv.unanswered.toString(), "[" + N2 + "]");
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "#ff000000") + lookupBlock(N2, "")));
+        is("an empty lookup: unknown", !jv.ok && jv.unknown);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "#ff1b1b1b") + lookupBlock(N2, "#ff000000")));
+        is("another colour: refused, not unknown", !jv.ok && !jv.unknown); is("its words", jv.error.startsWith("Android did not take the colours") && jv.error.contains("system_neutral1_900")); eq("mismatched", jv.mismatched.toString(), "[" + N1 + "]");
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "#ff1b1b1b") + lookupBlock(N2, "Error: x")));
+        is("a wrong colour and a missing one: the refusal wins", !jv.ok && !jv.unknown && jv.error.startsWith("Android did not take the colours"));
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOn + lookupBlock(N1, "#000000") + lookupBlock(N2, "#ff000000")));
+        is("transparent black is another colour", !jv.ok && !jv.unknown);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOff + good2));
+        is("listed off: refused", !jv.ok && !jv.unknown); eq("off state", jv.state, 0); is("off words", jv.error.startsWith("Android did not switch it on") && jv.error.contains(FAB)); eq("missing", jv.missing.toString(), "[" + FAB + "]");
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listGone + good2));
+        is("not listed: refused", !jv.ok && !jv.unknown); eq("gone state", jv.state, -2); is("gone words", jv.error.startsWith("Android did not register the overlay"));
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate("Error: must be root to fabricate overlays through the shell\n" + listGone + good2));
+        is("not listed with Android's reason: its words", !jv.ok && jv.error.contains("must be root"));
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate("java.lang.SecurityException: commit failed\n" + listGone));
+        eq("commit failed", jv.error, OverlayRules.NO_REASON);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listNA + good2));
+        is("unavailable", !jv.ok && jv.state == -1 && jv.error.contains("unavailable"));
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(""));
+        is("no answer: unknown", !jv.ok && jv.unknown); eq("no answer words", jv.error, "No answer from the device");
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate("@@OVL-GET@@\nandroid\n[x] " + FAB + "\n"));
+        is("list cut short: unknown", !jv.ok && jv.unknown);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate("[Process timed out after 30000ms]"));
+        is("timed out: unknown", !jv.ok && jv.unknown);
+        jv = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate("@@OVL-GET@@\ncmd: Can't find service: overlay\n@@OVL-END@@\n"));
+        is("a listing that failed: unknown, its words", !jv.ok && jv.unknown && jv.error.contains("Can't find service"));
+        is("lookups never decide on their own: a list that says off wins over right colours", !OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(listOff + good2)).unknown);
+        // the 12/13 form: two overlays
+        String list33 = "@@OVL-GET@@\nandroid\n[x] " + ids33.get(0) + "\n[x] " + ids33.get(1) + "\n@@OVL-END@@\n";
+        jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33 + good2));
+        is("33: both on: ok", jv.ok && jv.state == 1);
+        jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33.replace("[x] " + ids33.get(1), "[ ] " + ids33.get(1)) + good2));
+        is("33: one off: refused, named", !jv.ok && !jv.unknown && jv.error.contains("aam_monet_neutral2_900") && !jv.error.contains("aam_monet_neutral1_900")); eq("33: the first one's state", jv.state, 1);
+        jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33.replace("[x] " + ids33.get(0) + "\n", "") + good2));
+        is("33: the first not listed: state -2", !jv.ok && jv.state == -2 && jv.error.contains("did not register"));
+        // disable
+        jv = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(listOff));
+        is("disable: listed off: ok, no lookups needed", jv.ok && jv.state == 0);
+        jv = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(listOn));
+        is("disable: still on: refused", !jv.ok && !jv.unknown && jv.error.startsWith("Android did not switch it off"));
+        jv = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(listGone));
+        is("disable: not listed: refused, in words", !jv.ok && jv.error.startsWith("That overlay is not listed any more"));
+        jv = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(""));
+        is("disable: no answer: unknown", jv.unknown);
+        jv = OverlayRules.judgeFabricate("disable", ids33, null, OverlayRules.parseFabricate(list33.replace("[x]", "[ ]")));
+        is("disable 33: both off: ok", jv.ok);
+        jv = OverlayRules.judgeFabricate("disable", ids34, black, OverlayRules.parseFabricate(listOff + lookupBlock(N1, "#ff1b1b1b")));
+        is("disable: a lookup that happens to be there is not judged", jv.ok);
+
+        // ---- through a real shell: the fake overlay manager now fabricates and looks up ----
+        final Path STOCK = fakeDir.resolve("stock");
+        final String stock = N1 + " 0xFF1B1B1B\n" + N2 + " 0xFF1A1C1C\nandroid:color/system_surface_dark 0xFF131313\n";
+        final Path XML = fakeDir.resolve("aam_test.xml");
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        // before anything: the lookup shows the stock colour
+        eq("stock colour before", OverlayRules.lookupColor(viaReader(runShell("cmd overlay lookup --user current android '" + N1 + "' 2>&1"))), "#ff1b1b1b");
+        Files.deleteIfExists(fakeDir.resolve("cmd.log"));
+        // the 14/15 form
+        String o34 = viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString())));
+        OverlayRules.FabResult r34 = OverlayRules.parseFabricate(o34);
+        OverlayRules.FabVerdict v34 = OverlayRules.judgeFabricate("fabricate", ids34, black, r34);
+        is("sh 34: ok", v34.ok && !v34.unknown); eq("sh 34: state", v34.state, 1); eq("sh 34: answer", r34.change.answer, "");
+        eq("sh 34: really on", overlayState(FAB), "1");
+        eq("sh 34: the file Android read is the xml", read(fakeDir.resolve("last.xml")), xmlText);
+        is("sh 34: the file is gone afterwards", !Files.exists(XML));
+        eq("sh 34: the lookups paired with their resources", r34.lookups.get(N1) + "|" + r34.lookups.get(N2), "#ff000000|#ff000000");
+        eq("sh 34: the list carries the stock overlay too", r34.change.all.size(), 2);
+        eq("sh 34: the fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet]\n[--file]\n[" + XML + "]\n");
+        eq("sh 34: the enable's argv", cmdCall(1), "[overlay]\n[enable]\n[--user]\n[current]\n[" + FAB + "]\n");
+        eq("sh 34: then the list and two lookups, nothing else", cmdCall(2).startsWith("[overlay]\n[list]\n") + ":" + cmdCall(3).startsWith("[overlay]\n[lookup]\n[--user]\n[current]\n[android]\n[" + N1 + "]\n") + ":" + cmdCall(4).startsWith("[overlay]\n[lookup]\n") + ":" + cmdCall(5), "true:true:true:null");
+        eq("sh 34: the colours Android holds", read(fakeDir.resolve("colors")), N1 + " 0xFF000000 " + FAB + "\n" + N2 + " 0xFF000000 " + FAB + "\n");
+        // a second apply replaces the overlay (same name), still one line in the list
+        String o34b = viaReader(runShell(OverlayRules.fabricateScript(34, plan(N1, "0xFF101010", N2, "0xFF101010"), XML.toString())));
+        OverlayRules.FabVerdict v34b = OverlayRules.judgeFabricate("fabricate", ids34, plan(N1, "0xFF101010", N2, "0xFF101010"), OverlayRules.parseFabricate(o34b));
+        is("sh 34 again: ok", v34b.ok); eq("sh 34 again: still one overlay of ours", read(fakeDir.resolve("overlays")).split(FAB, -1).length - 1, 1);
+        eq("sh 34 again: the new colour", OverlayRules.lookupColor(viaReader(runShell("cmd overlay lookup --user current android '" + N1 + "' 2>&1"))), "#ff101010");
+        // disable: the stock colour is back
+        Files.deleteIfExists(fakeDir.resolve("cmd.log"));
+        OverlayRules.FabVerdict dv34 = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids34)))));
+        is("sh 34 disable: ok", dv34.ok && dv34.state == 0); eq("sh 34 disable: really off", overlayState(FAB), "0");
+        eq("sh 34 disable: the stock colour is back", OverlayRules.lookupColor(viaReader(runShell("cmd overlay lookup --user current android '" + N1 + "' 2>&1"))), "#ff1b1b1b");
+        eq("sh 34 disable: argv", cmdCall(0), "[overlay]\n[disable]\n[--user]\n[current]\n[" + FAB + "]\n");
+        is("sh 34 disable: the overlay stays listed, off", read(fakeDir.resolve("overlays")).contains("android 0 " + FAB));
+        // disable twice is fine (already off)
+        is("sh 34 disable twice: ok", OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids34))))).ok);
+        // the 12/13 form: one overlay per entry
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        String o33 = viaReader(runShell(OverlayRules.fabricateScript(33, black)));
+        OverlayRules.FabResult r33 = OverlayRules.parseFabricate(o33);
+        OverlayRules.FabVerdict v33 = OverlayRules.judgeFabricate("fabricate", ids33, black, r33);
+        is("sh 33: ok", v33.ok && !v33.unknown);
+        eq("sh 33: both really on", overlayState(ids33.get(0)) + overlayState(ids33.get(1)), "11");
+        eq("sh 33: the first fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet_neutral1_900]\n[" + N1 + "]\n[0x1c]\n[0xFF000000]\n");
+        eq("sh 33: the lookups", r33.lookups.get(N1) + "|" + r33.lookups.get(N2), "#ff000000|#ff000000");
+        is("sh 33: no file written", !Files.exists(fakeDir.resolve("last.xml")));
+        OverlayRules.FabVerdict dv33 = OverlayRules.judgeFabricate("disable", ids33, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids33)))));
+        is("sh 33 disable: ok", dv33.ok); eq("sh 33 disable: both off", overlayState(ids33.get(0)) + overlayState(ids33.get(1)), "00");
+        // Android 16: a fabricate with --user is an error there, so the 34 form registers nothing and the 36 form works
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock); write(fakeDir.resolve("sdk"), "36");
+        OverlayRules.FabVerdict v34on16 = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString())))));
+        is("sh 16 with the 34 form: refused, Android's reason", !v34on16.ok && !v34on16.unknown && v34on16.error.contains("Unknown option"));
+        eq("sh 16 with the 34 form: nothing registered", overlayState(FAB), null);
+        Files.deleteIfExists(fakeDir.resolve("cmd.log"));
+        OverlayRules.FabVerdict v36 = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(36, black, XML.toString())))));
+        is("sh 16 with the 36 form: ok", v36.ok); eq("sh 16: on", overlayState(FAB), "1");
+        eq("sh 16: the fabricate's argv has no --user", cmdCall(0), "[overlay]\n[fabricate]\n[--target]\n[android]\n[--name]\n[aam_monet]\n[--file]\n[" + XML + "]\n");
+        eq("sh 16: the enable keeps --user", cmdCall(1), "[overlay]\n[enable]\n[--user]\n[current]\n[" + FAB + "]\n");
+        // not root (what Shizuku or ADB would see): refused, in Android's words
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock); write(fakeDir.resolve("noroot"), "");
+        OverlayRules.FabVerdict vnr = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString())))));
+        is("sh not root: refused", !vnr.ok && !vnr.unknown && vnr.error.contains("must be root")); eq("sh not root: nothing registered", overlayState(FAB), null);
+        is("sh not root: the file is still removed", !Files.exists(XML));
+        is("sh not root: advice has no Xiaomi hint", !OverlayRules.advice(vnr.error).contains("USB debugging"));
+        // the file cannot be read inside system_server (the /data/system hypothesis failing): refused, named
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock); write(fakeDir.resolve("unreadable"), "");
+        OverlayRules.FabVerdict vur = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString())))));
+        is("sh unreadable file: refused with the reason", !vur.ok && !vur.unknown && vur.error.contains("failed to read"));
+        // the overlay goes on but the framework keeps its own colour: refused, not a warning
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock); write(fakeDir.resolve("ignore"), "");
+        OverlayRules.FabVerdict vig = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString())))));
+        is("sh colours not taken: refused", !vig.ok && !vig.unknown && vig.error.startsWith("Android did not take the colours")); eq("sh colours not taken: the overlay is on all the same", overlayState(FAB), "1");
+        // a lookup that answers with a reference, or in upper case
+        for (String style : new String[] {"ref", "upper"}) {
+            resetFake();
+            write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+            write(STOCK, stock); write(fakeDir.resolve("lookupstyle"), style);
+            OverlayRules.FabResult rs = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, black, XML.toString()))));
+            is("sh lookup style " + style + ": ok", OverlayRules.judgeFabricate("fabricate", ids34, black, rs).ok);
+            is("sh lookup style " + style + ": the raw text kept", style.equals("ref") ? rs.lookups.get(N1).startsWith("@0x") && rs.lookups.get(N1).endsWith(" -> #ff000000") : rs.lookups.get(N1).equals("#FF000000"));
+        }
+        // a resource the phone does not have: the lookup's error (stderr) lands between the marks, and the outcome is unknown, not ok
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, N1 + " 0xFF1B1B1B\n"); write(fakeDir.resolve("missing"), "android:color/system_nope_900\n");
+        List<OverlayRules.FabEntry> nopePlan = plan(N1, "0xFF000000", "android:color/system_nope_900", "0xFF000000");
+        OverlayRules.FabResult rNope = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, nopePlan, XML.toString()))));
+        OverlayRules.FabVerdict vNope = OverlayRules.judgeFabricate("fabricate", ids34, nopePlan, rNope);
+        is("sh unknown resource: the error text is paired", rNope.lookups.get("android:color/system_nope_900") != null && rNope.lookups.get("android:color/system_nope_900").startsWith("Error: failed to resolve"));
+        is("sh unknown resource: unknown, not ok", !vNope.ok && vNope.unknown && vNope.error.contains("system_nope_900"));
+        // the eleven-entry plan of Android 14 (pure black), end to end
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        OverlayRules.FabResult rEleven = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, eleven, XML.toString()))));
+        is("sh eleven: ok", OverlayRules.judgeFabricate("fabricate", ids34, eleven, rEleven).ok); eq("sh eleven: four lookups came", rEleven.lookups.size(), 4);
+        eq("sh eleven: eleven colours held", read(fakeDir.resolve("colors")).split("\n").length, 11);
+        // canaries: none of the hostile entries above ran anything
+        for (int i = 1; i <= 5; i++) is("no canaryF" + i, !Files.exists(fakeDir.resolve("canaryF" + i)));
+
+        // ---- the wiring in MainActivity (it cannot be compiled here: read from the source) ----
+        File srcDir = findUp("src/com/bloatware/bingblop");
+        if (srcDir == null) {
+            System.out.println("SKIP source scan: the repository was not found above " + System.getProperty("user.dir"));
+        } else {
+            String m = new String(Files.readAllBytes(new File(srcDir, "MainActivity.java").toPath()), StandardCharsets.UTF_8);
+            String bridge = bodyOf(m, "public String overlayFabricate(final int req, final String planJson) {");
+            is("source: the bridge exists once, with @JavascriptInterface", bridge != null && m.contains("@JavascriptInterface\n        public String overlayFabricate("));
+            is("source: the bridge checks the plan before queueing", bridge != null && bridge.indexOf("OverlayRules.fabricatePlanOk(") < bridge.indexOf("submitSettingsJob(") && bridge.indexOf("OverlayRules.disablePlanOk(") < bridge.indexOf("submitSettingsJob("));
+            is("source: a refused plan answers with the reason", bridge != null && bridge.contains("catch (IllegalArgumentException bad)") && bridge.contains("return \"error: \" + bad.getMessage();"));
+            is("source: the job goes through the settings executor", bridge != null && bridge.contains("submitSettingsJob(") && bridge.contains("overlayFabricateJob(req, op, entries, ids, queuedAt);"));
+            String job = bodyOf(m, "private void overlayFabricateJob(int req, String op, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {");
+            is("source: the job exists once", job != null);
+            is("source: the job is gated by RootGate.active before any shell", job != null && job.contains("RootGate.active(mode, suGranted)") && job.indexOf("RootGate.active(") < job.indexOf("runPrivilegedShell("));
+            is("source: su is asked only in root mode", job != null && job.contains("\"root\".equals(mode) && isRootGranted()"));
+            is("source: not root answers needsPrivilege", job != null && job.contains("res.put(\"needsPrivilege\", true);") && job.contains("res.put(\"error\", \"Needs Super User\");"));
+            is("source: the shell runs as root, with the fabricate or disable script", job != null && job.contains("runPrivilegedShell(\"root\", script, 30000)") && job.contains("OverlayRules.disableScript(ids)") && job.contains("OverlayRules.fabricateScript(sdk, entries)"));
+            is("source: the verdict comes from the read-back", job != null && job.contains("OverlayRules.parseFabricate(out)") && job.contains("OverlayRules.judgeFabricate(op, wrote,"));
+            is("source: the answer goes to onOverlayFab with ids and op", job != null && job.contains("settingsReply(\"onOverlayFab\", res)") && job.contains("res.put(\"ids\", idArr);") && job.contains("res.put(\"op\", op);"));
+            is("source: a release build logs no script", job != null && job.contains("if (isDebuggableBuild()) Log.d(TAG, \"overlayFabricate [\" + op + \"]: \" + script") && job.contains("else Log.d(TAG, \"overlayFabricate [\" + op + \"]: \" + script.length() + \" chars"));
+            is("source: nothing new to stop (the settings executor is shut down in onDestroy)", m.contains("settingsExecutor.shutdown();") && !m.contains("fabricateExecutor") && !m.contains("fabricateThread"));
+        }
 
         System.out.println(n + " checks, " + fails + " failed");
         System.exit(fails == 0 ? 0 : 1);

@@ -848,6 +848,345 @@ final class OverlayRules {
         return t.toString();
     }
 
+    // ---- root-only theme: this app's fabricated colour overlay ----
+    //
+    // `cmd overlay fabricate` writes a colour overlay straight into the overlay manager, and refuses anyone but root (the shell
+    // user Shizuku and ADB run as is turned away with "must be root"). The page hands over a plan of {resource, argb} entries; what
+    // is written, in which of the three command forms Android has had, and how the result is read back is decided here.
+
+    /** The shell registers every fabricated overlay under its own package, so this app's overlay is com.android.shell:aam_monet (the Help Guide names it so the user can find it in the overlay list). */
+    static final String FAB_OWNER = "com.android.shell";
+    static final String FAB_NAME = "aam_monet";
+    static final String FAB_ID = FAB_OWNER + ":" + FAB_NAME;
+    /**
+     * Where the Android 14+ form writes the overlay's XML. {@code cmd overlay fabricate --file} opens the file inside system_server,
+     * so it must be readable there: /data/system (label system_data_file) should be, the app's own folder and /data/local/tmp are
+     * not expected to be. A hypothesis until it has run on a rooted phone.
+     */
+    static final String FAB_FILE = "/data/system/aam_monet.xml";
+    static final String FAB_HEREDOC = "AAM_OVL_EOF";
+    static final int MAX_FAB_ENTRIES = 200;
+    /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first). */
+    static final int FAB_LOOKUPS = 4;
+    static final String LOOKUP_MARK = "@@OVL-LOOKUP ";            // + the resource + "@@", on a line of its own
+    static final String LOOKUP_END = "@@OVL-LOOKUP-END@@";
+    /** The first Android with Material You (the plan's resources exist from here). */
+    static final int FAB_MIN_SDK = 31;
+    /** The first Android with the {@code --file} form (one overlay holding every entry); before it, one fabricate per entry. */
+    static final int FAB_FILE_SDK = 34;
+    /** The first Android whose fabricate option parser has no {@code --user} (an unknown option is an error there). */
+    static final int FAB_NO_USER_SDK = 36;
+
+    private static final Pattern FAB_RESOURCE = Pattern.compile("android:color/system_[a-z0-9_]+");
+    private static final Pattern FAB_VALUE = Pattern.compile("0x[0-9A-Fa-f]{8}");
+    private static final Pattern FAB_OVERLAY_NAME = Pattern.compile("aam_monet(_[a-z0-9_]+)?");
+    /** What a lookup prints for a colour: Integer.toHexString pads nothing, so an alpha below 0x10 prints fewer than eight digits. */
+    private static final Pattern LOOKUP_COLOR = Pattern.compile("#[0-9a-f]{1,8}");
+    private static final String FAB_RESOURCE_PREFIX = "android:color/system_";
+
+    /** One entry of a plan: a framework colour resource and the colour it is to show. */
+    static final class FabEntry {
+        final String resource;      // android:color/system_neutral1_900
+        final String argb;          // 0xAARRGGBB
+
+        FabEntry(String resource, String argb) {
+            this.resource = resource;
+            this.argb = argb;
+        }
+    }
+
+    /**
+     * Null when the plan can be written, else why not: a resource that is not {@code android:color/system_<name>}, a value that is not
+     * {@code 0xAARRGGBB}, a resource named twice (on Android 12 and 13 the second would replace the first), no entries, or more than
+     * {@link #MAX_FAB_ENTRIES}. Nothing of the entry itself is echoed back: the words name the entry by its number.
+     */
+    static String fabricatePlanProblem(List<FabEntry> plan) {
+        if (plan == null || plan.isEmpty()) return "The plan has no entries";
+        if (plan.size() > MAX_FAB_ENTRIES) return "The plan has too many entries (" + MAX_FAB_ENTRIES + " at most)";
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        for (int i = 0; i < plan.size(); i++) {
+            FabEntry e = plan.get(i);
+            if (e == null || e.resource == null || !FAB_RESOURCE.matcher(e.resource).matches()) return "Entry " + (i + 1) + " does not name a system colour (android:color/system_...)";
+            if (e.argb == null || !FAB_VALUE.matcher(e.argb).matches()) return "Entry " + (i + 1) + " is not a colour (0xAARRGGBB)";
+            if (!seen.add(e.resource)) return "Entry " + (i + 1) + " names a resource twice";
+        }
+        return null;
+    }
+
+    /** The plan's checks as a gate: anything outside the allowed shapes throws IllegalArgumentException (with the reason) before a shell is built. */
+    static void fabricatePlanOk(List<FabEntry> plan) {
+        String p = fabricatePlanProblem(plan);
+        if (p != null) throw new IllegalArgumentException(p);
+    }
+
+    /** Null when the identifier names an overlay this app writes (com.android.shell:aam_monet, or aam_monet_<entry> on Android 12 and 13), else why not. */
+    static String fabricateIdProblem(String id) {
+        if (id == null || id.isEmpty()) return "No overlay named";
+        if (!id.startsWith(FAB_OWNER + ":")) return "That overlay was not written by this app";
+        String name = id.substring(FAB_OWNER.length() + 1);
+        if (!FAB_OVERLAY_NAME.matcher(name).matches()) return "That overlay was not written by this app";
+        return idProblem(id);
+    }
+
+    /** The disable plan's checks as a gate (ids only): every id must be one of this app's, named once, at most {@link #MAX_FAB_ENTRIES}. */
+    static void disablePlanOk(List<String> ids) {
+        if (ids == null || ids.isEmpty()) throw new IllegalArgumentException("No overlay named");
+        if (ids.size() > MAX_FAB_ENTRIES) throw new IllegalArgumentException("Too many overlays named (" + MAX_FAB_ENTRIES + " at most)");
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        for (String id : ids) {
+            String p = fabricateIdProblem(id);
+            if (p != null) throw new IllegalArgumentException(p);
+            if (!seen.add(id)) throw new IllegalArgumentException("An overlay is named twice");
+        }
+    }
+
+    /** The overlay name an entry gets on Android 12 and 13 (one overlay per entry): aam_monet_neutral1_900 for android:color/system_neutral1_900. */
+    static String entryOverlayName(FabEntry e) {
+        return FAB_NAME + "_" + e.resource.substring(FAB_RESOURCE_PREFIX.length());
+    }
+
+    /** The identifiers a plan is written under: one (com.android.shell:aam_monet) from Android 14, one per entry before it. Checks the plan first. */
+    static List<String> fabricateIds(int sdk, List<FabEntry> plan) {
+        fabricatePlanOk(plan);
+        List<String> ids = new ArrayList<String>();
+        if (sdk >= FAB_FILE_SDK) {
+            ids.add(FAB_ID);
+        } else {
+            for (FabEntry e : plan) ids.add(FAB_OWNER + ":" + entryOverlayName(e));
+        }
+        return ids;
+    }
+
+    /** The XML the Android 14+ form reads: one item per entry, the target without its package (the shell prefixes android:). */
+    static String fabricateXml(List<FabEntry> plan) {
+        StringBuilder sb = new StringBuilder("<overlay>\n");
+        for (FabEntry e : plan) {
+            sb.append("  <item target=\"").append(e.resource.substring("android:".length())).append("\" value=\"").append(e.argb).append("\"/>\n");
+        }
+        return sb.append("</overlay>\n").toString();
+    }
+
+    /** The read-back every fabricate and disable script ends with: the whole list between the markers, as {@link #changeScript} has it. */
+    static String readBackTail() {
+        return "echo " + GET_MARK + "; " + listCommand() + "; echo " + END_MARK + "\n";
+    }
+
+    /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan. */
+    static List<FabEntry> lookupEntries(List<FabEntry> plan) {
+        return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
+    }
+
+    /**
+     * One lookup per checked entry, each between a mark naming its resource and the closing mark, so the parser can pair each answer
+     * with its resource. The lookup's error goes to stderr, which is folded in so it lands between the marks too.
+     */
+    static String lookupBlock(List<FabEntry> plan) {
+        StringBuilder sb = new StringBuilder();
+        for (FabEntry e : lookupEntries(plan)) {
+            sb.append("echo ").append(BackupScripts.quote(LOOKUP_MARK + e.resource + "@@")).append("; cmd overlay lookup --user current android ")
+                    .append(BackupScripts.quote(e.resource)).append(" 2>&1; echo ").append(LOOKUP_END).append('\n');
+        }
+        return sb.toString();
+    }
+
+    static String fabricateScript(int sdk, List<FabEntry> plan) {
+        return fabricateScript(sdk, plan, FAB_FILE);
+    }
+
+    /**
+     * The script that writes a plan and reads back what became of it; {@code file} is where the Android 14+ form puts its XML
+     * ({@link #FAB_FILE} in the app; a path of its own in the test). Three forms:
+     * <ul>
+     * <li>Android 12 and 13: one fabricate per entry, each its own overlay named for the entry, then one enable per overlay (one
+     *     name cannot hold two entries there, and registering a name again replaces it).</li>
+     * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), one fabricate
+     *     with {@code --file}, one enable, the file removed.</li>
+     * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable and
+     *     lookup keep it).</li>
+     * </ul>
+     * Then the read-back tail and the lookup block. Every argument is single-quoted, and the plan is checked first, so nothing a page
+     * could send becomes shell code; a plan that fails the check throws IllegalArgumentException before any text is built.
+     */
+    static String fabricateScript(int sdk, List<FabEntry> plan, String file) {
+        fabricatePlanOk(plan);
+        if (sdk < FAB_MIN_SDK) throw new IllegalArgumentException("Material You colours need Android 12 or newer");
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("No file to write the overlay to");
+        String head = "cmd overlay fabricate " + (sdk >= FAB_NO_USER_SDK ? "" : "--user current ") + "--target android --name ";
+        StringBuilder sb = new StringBuilder();
+        if (sdk >= FAB_FILE_SDK) {
+            sb.append("cat > ").append(BackupScripts.quote(file)).append(" <<'").append(FAB_HEREDOC).append("'\n");
+            sb.append(fabricateXml(plan));
+            sb.append(FAB_HEREDOC).append('\n');
+            sb.append(head).append(BackupScripts.quote(FAB_NAME)).append(" --file ").append(BackupScripts.quote(file)).append('\n');
+            sb.append(changeCommand("enable", FAB_ID)).append('\n');
+            sb.append("rm -f ").append(BackupScripts.quote(file)).append('\n');
+        } else {
+            for (FabEntry e : plan) {
+                // 0x1c is TYPE_INT_COLOR_ARGB8, the type the shell's own help example uses
+                sb.append(head).append(BackupScripts.quote(entryOverlayName(e))).append(' ').append(BackupScripts.quote(e.resource))
+                        .append(" 0x1c ").append(BackupScripts.quote(e.argb)).append('\n');
+            }
+            for (FabEntry e : plan) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
+        }
+        sb.append(readBackTail());
+        sb.append(lookupBlock(plan));
+        return sb.toString();
+    }
+
+    /** Switches off every overlay this app wrote (checked by {@link #disablePlanOk}), then the read-back tail; no lookups (the list says whether each is off). */
+    static String disableScript(List<String> ids) {
+        disablePlanOk(ids);
+        StringBuilder sb = new StringBuilder();
+        for (String id : ids) sb.append(changeCommand("disable", id)).append('\n');
+        return sb.append(readBackTail()).toString();
+    }
+
+    /** What a fabricate or disable script printed: the answer and the list as {@link #parseChange} reads them, and each lookup's text by resource. */
+    static final class FabResult {
+        ChangeResult change = new ChangeResult();
+        Map<String, String> lookups = new LinkedHashMap<String, String>();     // resource -> what its lookup printed (trimmed), for every block that came whole
+    }
+
+    static FabResult parseFabricate(String out) {
+        FabResult r = new FabResult();
+        if (out == null) {
+            r.change = parseChange(null);
+            return r;
+        }
+        int lk = out.indexOf(LOOKUP_MARK);
+        r.change = parseChange(lk < 0 ? out : out.substring(0, lk));
+        if (lk >= 0) r.lookups = parseLookups(out.substring(lk));
+        return r;
+    }
+
+    /** The lookup blocks that came whole (both marks), resource -> text between them. A block cut short is not an answer. */
+    static Map<String, String> parseLookups(String out) {
+        Map<String, String> m = new LinkedHashMap<String, String>();
+        if (out == null) return m;
+        int i = out.indexOf(LOOKUP_MARK);
+        while (i >= 0) {
+            int ms = i + LOOKUP_MARK.length();
+            int me = out.indexOf("@@", ms);
+            if (me < 0) break;
+            String res = out.substring(ms, me);
+            int body = me + 2;
+            int end = out.indexOf(LOOKUP_END, body);
+            int next = out.indexOf(LOOKUP_MARK, body);
+            if (end < 0) break;
+            if (next >= 0 && next < end) {          // this block's closing mark never came; the next block starts
+                i = next;
+                continue;
+            }
+            m.put(res, out.substring(body, end).trim());
+            i = out.indexOf(LOOKUP_MARK, end + LOOKUP_END.length());
+        }
+        return m;
+    }
+
+    /**
+     * The colour a lookup printed, as {@code #aarrggbb} in lower case: the text after the last {@code " -> "} when the resource is a
+     * reference ({@code @ref -> #aarrggbb}), trimmed and lower-cased, padded to eight digits. Null when it printed an error, nothing,
+     * or anything that is not one colour. Without {@code --verbose} the lookup prints one line; should a warning precede it, the
+     * last line is the value.
+     */
+    static String lookupColor(String answer) {
+        if (answer == null) return null;
+        String t = answer.trim();
+        if (t.isEmpty()) return null;
+        int nl = t.lastIndexOf('\n');
+        if (nl >= 0) t = t.substring(nl + 1).trim();
+        int arrow = t.lastIndexOf(" -> ");
+        if (arrow >= 0) t = t.substring(arrow + 4).trim();
+        t = t.toLowerCase(Locale.US);
+        if (!LOOKUP_COLOR.matcher(t).matches()) return null;
+        StringBuilder sb = new StringBuilder("#");
+        for (int k = t.length() - 1; k < 8; k++) sb.append('0');
+        return sb.append(t, 1, t.length()).toString();
+    }
+
+    /** A plan value (0xAARRGGBB) the way a lookup prints it (#aarrggbb). */
+    static String expectedLookup(String argb) {
+        return "#" + argb.substring(2).toLowerCase(Locale.US);
+    }
+
+    static final class FabVerdict {
+        boolean ok;
+        boolean unknown;                                        // the list never came, or an overlay is on but a lookup gave no colour
+        String error = "";
+        int state = -2;                                         // what the list says the first overlay is now (1, 0, -1, or -2 when not listed)
+        final List<String> missing = new ArrayList<String>();   // ids not listed, or not in the wanted state
+        final List<String> mismatched = new ArrayList<String>(); // resources whose lookup showed another colour
+        final List<String> unanswered = new ArrayList<String>(); // resources whose lookup gave no colour
+    }
+
+    /**
+     * Whether a fabricate ({@code op} "fabricate") or a disable worked, from the read-back alone: every id listed in the wanted state,
+     * and, for a fabricate, every looked-up entry showing its colour. A well-formed answer with another colour is a refusal ("Android
+     * did not take the colours"); a missing, empty or malformed answer leaves the outcome unknown. Nothing is decided from the
+     * commands' own text.
+     */
+    static FabVerdict judgeFabricate(String op, List<String> ids, List<FabEntry> plan, FabResult r) {
+        FabVerdict v = new FabVerdict();
+        ChangeResult c = r.change;
+        if (c.all == null) {
+            v.unknown = true;
+            String why = c.listError.isEmpty() ? c.answer : c.listError;
+            v.error = why.isEmpty() ? "No answer from the device" : summary(why);
+            return v;
+        }
+        int want = "disable".equals(op) ? 0 : 1;
+        boolean first = true;
+        boolean unlisted = false;
+        boolean unavailable = false;
+        for (String id : ids) {
+            Overlay found = null;
+            for (Overlay o : c.all) {
+                if (o.id.equals(id)) {
+                    found = o;
+                    break;
+                }
+            }
+            if (first) {
+                v.state = found == null ? -2 : found.state;
+                first = false;
+            }
+            if (found == null) {
+                unlisted = true;
+                v.missing.add(id);
+            } else if (found.state != want) {
+                if (found.state < 0) unavailable = true;
+                v.missing.add(id);
+            }
+        }
+        if (!v.missing.isEmpty()) {
+            String names = joinTables(v.missing);
+            if (commitFailed(c.answer)) v.error = NO_REASON;
+            else if (looksLikeFailure(c.answer)) v.error = summary(c.answer);
+            else if (unlisted) v.error = want == 1 ? "Android did not register the overlay (" + names + ")" : "That overlay is not listed any more (" + names + ")";
+            else if (unavailable) v.error = "Android lists this overlay as unavailable, so it cannot be switched (" + names + ")";
+            else v.error = want == 1 ? "Android did not switch it on (" + names + ")" : "Android did not switch it off (" + names + ")";
+            return v;
+        }
+        if (want == 1 && plan != null) {
+            for (FabEntry e : lookupEntries(plan)) {
+                String got = lookupColor(r.lookups.get(e.resource));
+                if (got == null) v.unanswered.add(e.resource);
+                else if (!got.equals(expectedLookup(e.argb))) v.mismatched.add(e.resource);
+            }
+            if (!v.mismatched.isEmpty()) {
+                v.error = "Android did not take the colours (" + joinTables(v.mismatched) + ")";
+                return v;
+            }
+            if (!v.unanswered.isEmpty()) {
+                v.unknown = true;
+                v.error = "The overlay is on, but Android did not say what colour it shows for " + joinTables(v.unanswered);
+                return v;
+            }
+        }
+        v.ok = true;
+        return v;
+    }
+
     // ---- words for failures ----
 
     static boolean looksLikeFailure(String text) {
