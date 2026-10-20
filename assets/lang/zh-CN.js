@@ -1,6 +1,9 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "写入这些颜色后，Android 已更新。点按“应用主题”，为此版本写入这些颜色。",
+"Not supported on One UI": "不支持 One UI",
+"Not supported on this Android version yet": "暂不支持此 Android 版本",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "同时通过 Root 写入 CMF 样式的颜色和纯黑，取代上方的样式。",
 "Also writes the CMF colors with root, in place of the style above.": "同时通过 Root 写入 CMF 样式的颜色，取代上方的样式。",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "同时通过 Root 写入此样式的 2025 版颜色和纯黑，取代 Android 自己的颜色。",

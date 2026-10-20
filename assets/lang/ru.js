@@ -1,6 +1,9 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "Android обновился после записи этих цветов. Нажмите «Применить тему», чтобы записать их для этой версии.",
+"Not supported on One UI": "Не поддерживается в One UI",
+"Not supported on this Android version yet": "Пока не поддерживается в этой версии Android",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Также записывает цвета CMF и чисто чёрный через Root, вместо стиля выше.",
 "Also writes the CMF colors with root, in place of the style above.": "Также записывает цвета CMF через Root, вместо стиля выше.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2025 и чисто чёрный через Root, вместо цветов Android.",

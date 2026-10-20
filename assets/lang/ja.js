@@ -1,6 +1,9 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "これらの色を書き込んだ後にAndroidが更新されました。「テーマを適用」をタップして、このバージョン用に書き込んでください。",
+"Not supported on One UI": "One UIでは非対応",
+"Not supported on this Android version yet": "このAndroidバージョンではまだ非対応",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "RootでCMFの色とピュアブラックも、上のスタイルの代わりに書き込みます。",
 "Also writes the CMF colors with root, in place of the style above.": "RootでCMFの色も、上のスタイルの代わりに書き込みます。",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Rootでこのスタイルの2025年版の色とピュアブラックも、Androidの色の代わりに書き込みます。",

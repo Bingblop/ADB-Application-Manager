@@ -1,6 +1,9 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "Android wurde aktualisiert, nachdem diese Farben geschrieben wurden. Tippe auf Design anwenden, um sie für diese Version zu schreiben.",
+"Not supported on One UI": "Unter One UI nicht unterstützt",
+"Not supported on this Android version yet": "Auf dieser Android-Version noch nicht unterstützt",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Schreibt mit Root auch die CMF-Farben und reines Schwarz, anstelle des Stils oben.",
 "Also writes the CMF colors with root, in place of the style above.": "Schreibt mit Root auch die CMF-Farben, anstelle des Stils oben.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Schreibt mit Root auch die 2025er-Farben dieses Stils und reines Schwarz, anstelle der Farben von Android.",

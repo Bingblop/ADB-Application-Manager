@@ -1,6 +1,9 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "Bu renkler yazıldıktan sonra Android güncellendi. Bu sürüm için yazmak üzere Temayı uygula'ya dokunun.",
+"Not supported on One UI": "One UI'da desteklenmiyor",
+"Not supported on this Android version yet": "Bu Android sürümünde henüz desteklenmiyor",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Root ile CMF renklerini ve saf siyahı da, yukarıdaki stilin yerine yazar.",
 "Also writes the CMF colors with root, in place of the style above.": "Root ile CMF renklerini de, yukarıdaki stilin yerine yazar.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Root ile bu stilin 2025 renklerini ve saf siyahı da, Android'in renklerinin yerine yazar.",

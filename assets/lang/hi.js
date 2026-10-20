@@ -1,6 +1,9 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "ये रंग लिखे जाने के बाद Android अपडेट हुआ। इस वर्शन के लिए इन्हें लिखने के लिए थीम लागू करें टैप करें।",
+"Not supported on One UI": "One UI पर समर्थित नहीं",
+"Not supported on this Android version yet": "इस Android वर्शन पर अभी समर्थित नहीं",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Root से CMF के रंग और प्योर ब्लैक भी, ऊपर की स्टाइल की जगह लिखता है।",
 "Also writes the CMF colors with root, in place of the style above.": "Root से CMF के रंग भी, ऊपर की स्टाइल की जगह लिखता है।",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Root से इस स्टाइल के 2025 वाले रंग और प्योर ब्लैक भी, Android के रंगों की जगह लिखता है।",

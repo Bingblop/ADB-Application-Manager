@@ -1,6 +1,9 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "Android diperbarui setelah warna ini ditulis. Ketuk Terapkan tema untuk menulisnya untuk versi ini.",
+"Not supported on One UI": "Tidak didukung di One UI",
+"Not supported on this Android version yet": "Belum didukung di versi Android ini",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Juga menulis warna CMF dan hitam pekat dengan Root, menggantikan gaya di atas.",
 "Also writes the CMF colors with root, in place of the style above.": "Juga menulis warna CMF dengan Root, menggantikan gaya di atas.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Juga menulis warna 2025 gaya ini dan hitam pekat dengan Root, menggantikan warna Android.",

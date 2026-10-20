@@ -35,6 +35,15 @@ module.exports.initScript = function () {
   window.__fabUnknown = false;    // no answer from the shell: unknown
   window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
   window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
+  // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
+  // MonetProfile.of does without One UI and without the colour names (31-33 P12, 34 P14, anything else unknown), a string is reported as it
+  // is, null leaves profile and profileReason out (an older APK); __profileReason: undefined is 'ok' for P12 P14 P15Q1 P15Q2 P16, 'notYet' for
+  // P15 P16Q1 P16Q2 P17 and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
+  // are, and left out when null.
+  window.__profile = undefined;
+  window.__profileReason = undefined;
+  window.__build = 'google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys';
+  window.__contrast = 0;
 
   // a believable palette for a seed colour: tones of one hue (the real Monet engine does far more, this is only to see colours move)
   function hexToHsl(hex) {
@@ -158,6 +167,14 @@ module.exports.initScript = function () {
     if (window.__sdk < 31) return JSON.stringify({ ok: false, sdk: window.__sdk, error: 'Material You colors need Android 12 or newer (this phone runs Android ' + (window.__sdk === 28 ? 9 : 11) + ').' });
     const o = Object.assign({}, window.__palette, { sdk: window.__sdk });      // the Android level follows the knob, whenever the palette was made
     if (Array.isArray(window.__wallpaper)) o.wallpaper = window.__wallpaper.slice();        // PR 3: WallpaperColors, when the phone reports them
+    if (window.__profile !== null) {                                                        // T-049: the profile, its reason, the build, the contrast
+      const sdk = window.__sdk, p = typeof window.__profile === 'string' ? window.__profile : sdk >= 31 && sdk <= 33 ? 'P12' : sdk === 34 ? 'P14' : 'unknown';
+      o.profile = p;
+      o.profileReason = typeof window.__profileReason === 'string' ? window.__profileReason
+        : ['P12', 'P14', 'P15Q1', 'P15Q2', 'P16'].includes(p) ? 'ok' : ['P15', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'notYet' : 'unknown';
+    }
+    if (window.__build !== null) o.build = window.__build;
+    if (window.__contrast !== null) o.contrast = window.__contrast;
     return JSON.stringify(o);
   };
   // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise

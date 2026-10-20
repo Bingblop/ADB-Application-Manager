@@ -1,6 +1,9 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "تم تحديث Android بعد كتابة هذه الألوان. انقر على «تطبيق السمة» لكتابتها لهذا الإصدار.",
+"Not supported on One UI": "غير مدعوم على One UI",
+"Not supported on this Android version yet": "غير مدعوم على إصدار Android هذا بعد",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "يكتب أيضًا ألوان CMF والأسود الخالص عبر Root، بدلًا من النمط أعلاه.",
 "Also writes the CMF colors with root, in place of the style above.": "يكتب أيضًا ألوان CMF عبر Root، بدلًا من النمط أعلاه.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "يكتب أيضًا ألوان 2025 لهذا النمط والأسود الخالص عبر Root، بدلًا من ألوان Android.",

@@ -1,6 +1,9 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Android was updated after these colors were written. Tap Apply theme to write them for this version.": "이 색상을 기록한 뒤 Android가 업데이트되었습니다. 이 버전에 맞게 기록하려면 테마 적용을 탭하세요.",
+"Not supported on One UI": "One UI에서는 지원 안 됨",
+"Not supported on this Android version yet": "이 Android 버전에서는 아직 지원 안 됨",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Root로 CMF 색상과 순수한 검은색도 위 스타일 대신 기록합니다.",
 "Also writes the CMF colors with root, in place of the style above.": "Root로 CMF 색상도 위 스타일 대신 기록합니다.",
 "Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Root로 이 스타일의 2025 색상과 순수한 검은색도 Android 색상 대신 기록합니다.",
