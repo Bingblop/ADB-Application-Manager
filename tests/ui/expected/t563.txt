@@ -1,0 +1,12 @@
+ok   1. off root the ENABLE/DISABLE control is locked, with the lock icon and the "Needs Super User (Root)" reason
+ok      LAUNCH/STOP keep the ordinary working-mode lock (not root): STOP is not locked while privileged
+ok      a tap off root runs no pm command (setComponentEnabled not called) and funnels through the root prompt
+ok   2. on root the control is unlocked (no lock icon, no Root reason)
+ok      a user app component toggles straight away, no confirmation dialog
+ok   3. disabling a system app component asks to confirm, naming the component and the system app and the risk
+ok      a yes carries the toggle through
+ok      a no leaves it alone (nothing run)
+ok   4. enabling a system app component does not prompt (only disabling warns)
+ok   5. the bulk toggle off root runs no pm command and funnels through the root prompt
+ok   6. no page errors
+all passed

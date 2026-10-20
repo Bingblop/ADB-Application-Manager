@@ -1,6 +1,8 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Needs Super User (Root)": "يتطلب Superuser (Root)",
+"Enabling or disabling a component": "تفعيل مكوّن أو تعطيله",
   "App components": "مكوّنات التطبيق",
   "Enable or disable activities, services and receivers for any app.": "فعِّل أو عطِّل الأنشطة والخدمات والمستقبِلات لأي تطبيق.",
   "Open apps": "فتح التطبيقات",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "لم تستجب على شبكتك. إذا طبّقتها فقد يفقد هذا الهاتف الإنترنت؛ والعودة تكون بـ تلقائي أو إيقاف.",
 "Direct download": "تنزيل مباشر",
 "Disable": "تعطيل",
-"Disable component": "تعطيل المكوّن",
-"Disable components": "تعطيل المكوّنات",
 "Disable packages": "تعطيل الحزم",
 "Disable selected": "تعطيل المحدد",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "عطّل التطبيقات أو علّقها أو ألغِ تثبيتها كما تشاء، ثم احفظها هنا.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "تفعيل / تعطيل",
 "Enable / Disable (dynamic)": "تفعيل / تعطيل (ديناميكي)",
 "Enable an app": "تفعيل تطبيق",
-"Enable component": "تفعيل المكوّن",
-"Enable components": "تفعيل المكوّنات",
 "Enable selected": "تفعيل المحدد",
 "Enable the service": "تفعيل الخدمة",
 "Enable with the working mode": "التفعيل عبر وضع التشغيل",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: تم"],
 ["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"],
 ["Root Features tab: {0}", "تبويب ميزات Root: {0}"],
-["{0} needs Super User.", "{0} يتطلب Superuser."]
+["{0} needs Super User.", "{0} يتطلب Superuser."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "تعطيل {0} من تطبيق النظام {1}؟ قد يؤدي ذلك إلى تعطّل التطبيق أو واجهة النظام. يمكنك إعادة تفعيله من هنا."]
 ]
 };

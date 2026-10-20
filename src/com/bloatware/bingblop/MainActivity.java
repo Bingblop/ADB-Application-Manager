@@ -4015,6 +4015,16 @@ public class MainActivity extends Activity {
         return manifestEnabled;
     }
 
+    /** The explicit pm override of a component (ENABLED/DISABLED), or null when none is set (the manifest default is in force). Used to read a toggle back from the real state. */
+    private Boolean componentOverrideState(String pkg, String name) {
+        try {
+            int st = getPackageManager().getComponentEnabledSetting(new android.content.ComponentName(pkg, name));
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) return Boolean.TRUE;
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) return Boolean.FALSE;
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     private JSONObject componentEntry(String pkg, String name, boolean exported, boolean manifestEnabled, String permission) throws Exception {
         JSONObject o = new JSONObject();
         o.put("name", name);
@@ -12490,7 +12500,12 @@ public class MainActivity extends Activity {
             return prefs.getString("kv_" + key, "");
         }
 
-        /** Enables or disables one component (pm enable/disable pkg/component) via the active backend. */
+        /**
+         * Enables or disables one component (pm enable/disable pkg/component). Super User (Root) only in v7.15.1, for every app:
+         * the ADB/Shizuku shell uid cannot change components of apps it does not own (a system-app toggle from uid 2000 just fails),
+         * and the feature was scoped to Root. The page keeps the control locked off root; this is the enforcing floor for every caller.
+         * Success is read from the component's real state (AGENTS.md), not from pm's printed text.
+         */
         @JavascriptInterface
         public String setComponentEnabled(String pkg, String component, boolean enable) {
             JSONObject r = new JSONObject();
@@ -12499,12 +12514,16 @@ public class MainActivity extends Activity {
                 if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
-                if ("standard".equals(resolveExecMode())) {
-                    r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
+                if (!"root".equals(resolveExecMode())) {
+                    r.put("ok", false); r.put("needsRoot", true);
+                    r.put("output", "Error: enabling or disabling a component needs Super User (Root)."); return r.toString();
                 }
                 String out = executeShell(cmd);
-                String low = out == null ? "" : out.toLowerCase();
-                r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
+                // Decide success by reading the component's real state back: after the command the pm override must be exactly
+                // what was asked. No override (the manifest default still in force) means the command did not take -> not ok.
+                String full = component.startsWith(".") ? pkg + component : component;
+                Boolean state = componentOverrideState(pkg, full);
+                r.put("ok", state != null && state.booleanValue() == enable);
                 r.put("output", out != null ? out.trim() : "");
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}

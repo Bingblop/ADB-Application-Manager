@@ -13470,6 +13470,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function lockedNow() { return !isPrivilegedActive; }
         function lk(on) { return on ? LOCK_ICON + ' ' : ''; }
         const NEEDS_MODE = 'Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)';
+        // v7.15.1: enabling/disabling a component is Super User (Root) only, so its lock names Root (the lock on LAUNCH/STOP still names a working mode).
+        const NEEDS_ROOT_COMP = 'Needs Super User (Root)';
         function guardPrivilege(actionName) {
             if (!isPrivilegedActive) {
                 openPrivilegeRequiredModal(actionName);
@@ -20133,7 +20135,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         ${agentBtnHtml('component', a.name, ['Part of the app: ' + inspectedPkg, 'Type: activity', 'Exported: ' + (a.exported ? 'yes' : 'no'), a.permission ? 'Needs permission: ' + a.permission : ''])}
                     </div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
                         <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!a.exported && lockedNow())}LAUNCH</button>
-                        <button class="perm-toggle-btn ${lockedNow() ? 'locked' : (a.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
+                        <button class="perm-toggle-btn ${compToggleLocked() ? 'locked' : (a.enabled === false ? 'granted' : 'revoked')}"${compToggleLocked() ? ` title="${NEEDS_ROOT_COMP}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${lk(compToggleLocked())}${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
                     </div></div>`;
                 }).join('') : '<div class="list-empty">' + (acts.length ? 'No activities match.' : 'No activities.') + '</div>';
                 const chosen = acts.filter(a => alsSel.has(a.name));
@@ -20168,7 +20170,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const acts = (inspectorData && inspectorData.activityInfo) || [];
             const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
             if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
-            if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' components')) return;
+            if (!isRootActive()) { if (!(await promptRootThenOpen(txT('Enabling or disabling a component')))) return; }
             nextDialogTitle('Change activities');
             if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
             if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
@@ -28520,6 +28522,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = lastModesData;
             return own && !(d && d.rootWorkingModeActive === false);
         }
+        // Enabling or disabling a component is Super User (Root) only (v7.15.1), for every app, user and system alike: the ADB/Shizuku shell uid
+        // cannot change components of apps it does not own, and Kyle scoped the control to Root. LAUNCH and STOP keep the ordinary working-mode lock.
+        function compToggleLocked() { return !isRootActive(); }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
         function onRootFeaturesShown() { renderRootFeatures(); }
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
@@ -29860,7 +29865,8 @@ Type any command above (e.g. pm list packages -d)</div>
             let btns = '';
             if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!c.exported && lockedNow())}${c.exported ? 'LAUNCH' : 'LAUNCH (SHELL)'}</button>`;
             if (k.stop) btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : 'revoked'}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">${lk(lockedNow())}STOP</button>`;
-            btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (c.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
+            const ctLocked = compToggleLocked();
+            btns += `<button class="perm-toggle-btn ${ctLocked ? 'locked' : (c.enabled === false ? 'granted' : 'revoked')}"${ctLocked ? ` title="${NEEDS_ROOT_COMP}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${lk(ctLocked)}${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
             return `
                 <div class="perm-row">
                     <div class="perm-info">
@@ -29925,9 +29931,16 @@ Type any command above (e.g. pm list packages -d)</div>
         // both lists, after something changed in either
         function renderComponentTabs() { renderActivitiesList(); renderComponentsList(); }
 
-        // Enable or disable a component (pm enable/disable) and reflect the new state locally.
+        // Enable or disable a component (pm enable/disable) and reflect the new state locally. Super User (Root) only in v7.15.1
+        // (both user and system apps): off root, run the attempt-to-prompt funnel (switch to Root when su is there, else offer
+        // the Root Features tab) and retry once it is granted, instead of firing a pm command the shell uid cannot carry out.
         function toggleComponent(name, enable) {
-            if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' component')) return;
+            if (!isRootActive()) { promptRootThenOpen(txT('Enabling or disabling a component')).then(ok => { if (ok) toggleComponent(name, enable); }); return; }
+            // A system app's component is part of the OS, so disabling one can break the app or the system UI: confirm first. The app is
+            // known from the Applications list (the same place openStandbyModal reads it); a disabled component stays listed and its row flips to ENABLE.
+            const app = (typeof allApps !== 'undefined' && allApps) ? allApps.find(a => a.pkg === inspectedPkg) : null;
+            const isSystemApp = !!(app && app.isSystem) || !!(inspectorData && inspectorData.isSystem);
+            if (isSystemApp && !enable && !confirm(txF('Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.', name.split('.').pop(), inspectedPkg))) return;
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled || !inspectedPkg) return;
             let r;

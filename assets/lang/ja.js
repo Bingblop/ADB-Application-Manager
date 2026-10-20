@@ -1,6 +1,8 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Needs Super User (Root)": "スーパーユーザー (Root) が必要",
+"Enabling or disabling a component": "コンポーネントの有効化または無効化",
   "App components": "アプリのコンポーネント",
   "Enable or disable activities, services and receivers for any app.": "任意のアプリのアクティビティ、サービス、レシーバーを有効または無効にします。",
   "Open apps": "アプリを開く",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "お使いのネットワークでは応答しませんでした。適用すると、この端末のインターネットが切れることがあります。元に戻すには「自動」か「オフ」を使ってください。",
 "Direct download": "直接ダウンロード",
 "Disable": "無効にする",
-"Disable component": "コンポーネントを無効にする",
-"Disable components": "コンポーネントを無効にする",
 "Disable packages": "パッケージを無効にする",
 "Disable selected": "選択項目を無効にする",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "好きなようにアプリを無効化、一時停止、アンインストールしてから、ここに保存してください。",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "有効化 / 無効化",
 "Enable / Disable (dynamic)": "有効化 / 無効化（動的）",
 "Enable an app": "アプリを有効にする",
-"Enable component": "コンポーネントを有効にする",
-"Enable components": "コンポーネントを有効にする",
 "Enable selected": "選択項目を有効にする",
 "Enable the service": "サービスを有効にする",
 "Enable with the working mode": "動作モードで有効にする",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}：完了"],
 ["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
 ["Root Features tab: {0}", "Root 機能タブ：{0}"],
-["{0} needs Super User.", "{0} にはスーパーユーザーが必要です。"]
+["{0} needs Super User.", "{0} にはスーパーユーザーが必要です。"],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "システムアプリ {1} の {0} を無効にしますか？アプリやシステム UI が壊れる可能性があります。ここで再び有効にできます。"]
 ]
 };

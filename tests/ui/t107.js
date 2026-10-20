@@ -1,6 +1,8 @@
-// The lock on every button that cannot change anything in the current state: without a working mode, the permission toggles, the app op modes and the
-// Enable / Disable / Stop / Launch (unexported) buttons of activities, services, receivers and providers carry it; with a working mode only an install-time
-// permission (and an unexported activity's Launch nothing) is locked.
+// The lock on every button that cannot change anything in the current state. Three tiers:
+//  - without a working mode: the permission toggles, the app op modes and the Enable / Disable / Stop / Launch (unexported) buttons all carry it;
+//  - with a working mode that is not root: the permission toggles, app op modes, Stop and exported Launch unlock, but Enable / Disable stay locked
+//    (v7.15.1 made the component toggle Super User only) and an install-time permission and an unexported Launch stay locked;
+//  - with Super User (root): the Enable / Disable buttons unlock too.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -18,8 +20,13 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(500);
-  const snap = async (priv) => {
-    await page.evaluate(p => { isPrivilegedActive = p; closeInspector(); openInspector('com.x'); }, priv);
+  const snap = async (priv, root) => {
+    await page.evaluate(a => {
+      isPrivilegedActive = a.priv;
+      currentWorkingMode = a.root ? 'root' : (a.priv ? 'adb_tcp' : 'unprivileged');
+      lastModesData = { rootWorkingModeActive: !!a.root };
+      closeInspector(); openInspector('com.x');
+    }, { priv, root });
     await page.waitForTimeout(400);
     const out = {};
     for (const tab of ['perms', 'ops', 'acts', 'comps']) {
@@ -29,8 +36,9 @@ const { chromium, PAGE } = require('./lib/pw');
     }
     return out;
   };
-  console.log('without a working mode:', JSON.stringify(await snap(false)));
-  console.log('with a working mode:', JSON.stringify(await snap(true)));
+  console.log('without a working mode:', JSON.stringify(await snap(false, false)));
+  console.log('with a working mode (not root):', JSON.stringify(await snap(true, false)));
+  console.log('with Super User (root):', JSON.stringify(await snap(true, true)));
   console.log('the lock is written once in the page (LOCK_ICON):', await page.evaluate(() => LOCK_ICON === '\u{1F512}' && lk(true) === '\u{1F512} ' && lk(false) === ''));
   console.log('errors:', JSON.stringify(errors));
   await b.close();

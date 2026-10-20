@@ -1,6 +1,8 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"Needs Super User (Root)": "Nécessite Superutilisateur (Root)",
+"Enabling or disabling a component": "Activer ou désactiver un composant",
   "App components": "Composants de l'appli",
   "Enable or disable activities, services and receivers for any app.": "Activez ou désactivez les activités, services et receivers de n'importe quelle appli.",
   "Open apps": "Ouvrir les applis",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "N’a pas répondu sur votre réseau. Si vous l’appliquez, ce téléphone peut perdre sa connexion Internet ; Automatique ou Désactivé permet de revenir en arrière.",
 "Direct download": "Téléchargement direct",
 "Disable": "Désactiver",
-"Disable component": "Désactiver le composant",
-"Disable components": "Désactiver les composants",
 "Disable packages": "Désactiver les packages",
 "Disable selected": "Désactiver la sélection",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Désactivez, suspendez ou désinstallez des applications à votre guise, puis enregistrez-les ici.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Activer / Désactiver",
 "Enable / Disable (dynamic)": "Activer / Désactiver (dynamique)",
 "Enable an app": "Activer une application",
-"Enable component": "Activer le composant",
-"Enable components": "Activer les composants",
 "Enable selected": "Activer la sélection",
 "Enable the service": "Activer le service",
 "Enable with the working mode": "Activer avec le mode de fonctionnement",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0} : terminé"],
 ["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"],
 ["Root Features tab: {0}", "Onglet Fonctions Root : {0}"],
-["{0} needs Super User.", "{0} nécessite Superutilisateur."]
+["{0} needs Super User.", "{0} nécessite Superutilisateur."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Désactiver {0} de l’app système {1} ? Cela peut casser l’app ou l’interface système. Vous pouvez le réactiver ici."]
 ]
 };

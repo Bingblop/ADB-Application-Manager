@@ -1,6 +1,8 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Needs Super User (Root)": "슈퍼유저 (Root) 필요",
+"Enabling or disabling a component": "구성요소 사용 설정 또는 사용 중지",
   "App components": "앱 구성 요소",
   "Enable or disable activities, services and receivers for any app.": "어떤 앱의 액티비티, 서비스, 리시버든 켜거나 끕니다.",
   "Open apps": "앱 열기",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "이 네트워크에서 응답하지 않았습니다. 적용하면 이 휴대폰의 인터넷이 끊길 수 있습니다. 되돌리려면 자동 또는 꺼짐을 사용하세요.",
 "Direct download": "직접 다운로드",
 "Disable": "사용 중지",
-"Disable component": "구성요소 사용 중지",
-"Disable components": "구성요소 사용 중지",
 "Disable packages": "패키지 사용 중지",
 "Disable selected": "선택 항목 사용 중지",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "원하는 대로 앱을 사용 중지, 일시중지 또는 삭제한 다음 여기에 저장하세요.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "사용 설정 / 사용 중지",
 "Enable / Disable (dynamic)": "사용 설정 / 사용 중지 (상태에 따라)",
 "Enable an app": "앱 사용 설정",
-"Enable component": "구성요소 사용 설정",
-"Enable components": "구성요소 사용 설정",
 "Enable selected": "선택 항목 사용 설정",
 "Enable the service": "서비스 사용",
 "Enable with the working mode": "작동 모드로 사용",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: 완료"],
 ["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
 ["Root Features tab: {0}", "Root 기능 탭: {0}"],
-["{0} needs Super User.", "{0}에는 슈퍼유저가 필요합니다."]
+["{0} needs Super User.", "{0}에는 슈퍼유저가 필요합니다."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "시스템 앱 {1}의 {0}을(를) 사용 중지할까요? 앱이나 시스템 UI가 손상될 수 있습니다. 여기에서 다시 사용 설정할 수 있습니다."]
 ]
 };
