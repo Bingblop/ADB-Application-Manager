@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Нужен Android 14",
 "More styles": "Ещё стили",
 "Monochrome": "Монохром",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "Как «Точность», но с третьим акцентом, подобранным к вашему цвету.",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "Как «Точность», но третий акцент берётся из оттенков, соседних с вашим цветом.",
 "From Google blue: no wallpaper color could be read": "Из синего Google: цвет обоев прочитать не удалось",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "Точность, Содержимое и Монохром: цвета, для которых в Android нет настройки; их вычисляет это приложение.",
 "Could not write the theme overlay": "Не удалось записать оверлей темы",

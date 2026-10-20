@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Requer Android 14",
 "More styles": "Mais estilos",
 "Monochrome": "Monocromático",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "Como Fidelidade, com um terceiro acento escolhido para acompanhar sua cor.",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "Como Fidelidade, com um terceiro acento em um tom vizinho da sua cor.",
 "From Google blue: no wallpaper color could be read": "Do azul do Google: nenhuma cor do papel de parede pôde ser lida",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "Fidelidade, Conteúdo e Monocromático: cores para as quais o Android não tem ajuste, calculadas por este app.",
 "Could not write the theme overlay": "Não foi possível gravar o overlay do tema",

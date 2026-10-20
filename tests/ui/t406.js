@@ -26,5 +26,15 @@ if (fs.existsSync(tmp)) {
 }
 const ck = node([path.join(TESTS, 'i18n', 'check.js'), '--strict']);
 check('every dictionary in assets/lang/ has every string of keys.json and none the page does not have (i18n/check.js --strict)', ck.status === 0, (ck.stdout || '').split('\n').filter(l => /ERROR|warn/.test(l)).slice(0, 6).join(' | '));
+// German addresses the reader as Sie (T-010, T-075): the More styles strings of PR 3 and the theme preview line must not say du next to the
+// Sie-form "Aus Ihrem Hintergrundbild" of Colors in use
+{
+  const win = {};
+  new Function('window', fs.readFileSync(path.join(TESTS, '..', 'assets', 'lang', 'de.js'), 'utf8'))(win);
+  const de = win.__LANGS && win.__LANGS.de, px = new Map(((de && de.p) || []).map(e => [e[0], e[1]]));
+  const vals = ['Like Fidelity, with a third accent chosen to sit beside your color.', 'Accents keep your exact color; backgrounds take a faint tint of it.', 'From your wallpaper'].map(k => de && de.x[k]).concat([px.get('From your wallpaper (#{0})')]);
+  const du = vals.filter(v => typeof v !== 'string' || /\b(du|dich|dir|dein|deine|deiner|deinem|deinen|deines)\b/i.test(v));
+  check('de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[3] || ''), JSON.stringify(du));
+}
 console.log(failed ? failed + ' FAILED' : 'all passed');
 process.exit(failed ? 1 : 0);

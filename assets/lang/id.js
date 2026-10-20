@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Perlu Android 14",
 "More styles": "Gaya lainnya",
 "Monochrome": "Monokrom",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "Seperti Fidelitas, dengan aksen ketiga yang dipilih agar serasi dengan warna Anda.",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "Seperti Fidelitas, dengan aksen ketiga yang dipilih dari warna yang bersebelahan dengan warna Anda.",
 "From Google blue: no wallpaper color could be read": "Dari biru Google: tidak ada warna wallpaper yang dapat dibaca",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "Fidelitas, Konten, dan Monokrom: warna yang tidak punya pengaturan di Android, dihitung oleh aplikasi ini.",
 "Could not write the theme overlay": "Tidak dapat menulis overlay tema",

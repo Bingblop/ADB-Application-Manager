@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Android 14が必要",
 "More styles": "その他のスタイル",
 "Monochrome": "モノクロ",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "忠実度と同様ですが、あなたの色に合う3つ目のアクセントが選ばれます。",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "忠実度と同様ですが、3つ目のアクセントにはあなたの色の隣にある色相が選ばれます。",
 "From Google blue: no wallpaper color could be read": "Googleブルーから：壁紙の色を読み取れませんでした",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "忠実度、コンテンツ、モノクロ：Androidに設定がない色で、このアプリが計算します。",
 "Could not write the theme overlay": "テーマのオーバーレイを書き込めませんでした",

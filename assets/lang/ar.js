@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "يتطلب Android 14",
 "More styles": "أنماط إضافية",
 "Monochrome": "أحادي اللون",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "مثل الدقة، مع لون تمييز ثالث يُختار ليناسب لونك.",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "مثل الدقة، مع لون تمييز ثالث يُختار من الألوان المجاورة للونك.",
 "From Google blue: no wallpaper color could be read": "من أزرق Google: تعذّرت قراءة أي لون من الخلفية",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "الدقة والمحتوى وأحادي اللون: ألوان لا إعداد لها في Android، يحسبها هذا التطبيق.",
 "Could not write the theme overlay": "تعذّرت كتابة طبقة السمة",

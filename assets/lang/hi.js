@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Android 14 चाहिए",
 "More styles": "और स्टाइल",
 "Monochrome": "मोनोक्रोम",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "सटीकता जैसा, साथ में एक तीसरा एक्सेंट जो आपके रंग के साथ मेल खाता है।",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "सटीकता जैसा, साथ में एक तीसरा एक्सेंट जो आपके रंग के पड़ोसी रंगों में से चुना जाता है।",
 "From Google blue: no wallpaper color could be read": "Google नीले से: वॉलपेपर का कोई रंग पढ़ा नहीं जा सका",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "सटीकता, सामग्री और मोनोक्रोम: वे रंग जिनके लिए Android में कोई सेटिंग नहीं है, इस ऐप द्वारा गणना किए गए।",
 "Could not write the theme overlay": "थीम ओवरले नहीं लिखा जा सका",

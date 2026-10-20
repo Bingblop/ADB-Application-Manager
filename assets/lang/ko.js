@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "Android 14 필요",
 "More styles": "더 많은 스타일",
 "Monochrome": "단색",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "충실도와 같지만, 선택한 색과 어울리는 세 번째 강조색이 더해집니다.",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "충실도와 같지만, 선택한 색과 이웃한 색조의 세 번째 강조색이 더해집니다.",
 "From Google blue: no wallpaper color could be read": "Google 파란색 기준: 배경화면 색상을 읽을 수 없었습니다",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "충실도, 콘텐츠, 단색: Android에 설정이 없는 색상으로, 이 앱이 계산합니다.",
 "Could not write the theme overlay": "테마 오버레이를 기록할 수 없습니다",

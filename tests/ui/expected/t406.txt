@@ -3,4 +3,5 @@ ok   tests/i18n/keys.json has every string of the page (run node i18n/extract.js
 ok   tests/i18n/keys.json has no string the page lost
 ok   texts of txT/txF with a ">" in them ("Settings > Battery") are listed
 ok   every dictionary in assets/lang/ has every string of keys.json and none the page does not have (i18n/check.js --strict)
+ok   de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does
 all passed

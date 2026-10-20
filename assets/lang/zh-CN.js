@@ -47,7 +47,7 @@ x: {
 "Needs Android 14": "需要 Android 14",
 "More styles": "更多样式",
 "Monochrome": "单色",
-"Like Fidelity, with a third accent chosen to sit beside your color.": "与保真度类似，另选一种与你的颜色相配的第三强调色。",
+"Like Fidelity, with a third accent chosen to sit beside your color.": "与保真度类似，另选一种与你的颜色相邻的色相作为第三强调色。",
 "From Google blue: no wallpaper color could be read": "来自 Google 蓝：无法读取壁纸颜色",
 "Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.": "保真度、内容和单色：Android 没有对应设置的颜色，由本应用计算。",
 "Could not write the theme overlay": "无法写入主题叠加层",
