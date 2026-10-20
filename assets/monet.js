@@ -149,6 +149,13 @@
  *   palettes, takes Google blue), so for a grey seed in Tonal Spot, Vibrant, Expressive, Spritz, Rainbow and Fruit Salad, P14's roles
  *   are not what Android 14 computes, at any contrast (808080, Tonal Spot, light, contrast 0: primary 0xFF006874 there, 0xFF475D92
  *   here). That was so before the profiles too and is not changed by them.
+ *   Android 14's quarterly updates (android14-qpr1, -qpr2 and -qpr3-release) compute the same 44 roles and 12 fixed colours with an
+ *   early libmonet (com.google.ux.material.libmonet, through DynamicColors.kt's MaterialDynamicColors) instead of SystemUI's own
+ *   monet; their palettes and shades are 14.0's. No framework colour name tells 14.0 from QPR1 or QPR2 (QPR3 adds system_error_*), so
+ *   P14 is 14.0's maths on every Android 14 build. Measured against libmonet android14-qpr3-release compiled and run (the six seeds,
+ *   light and dark): at contrast 0 Fidelity and Content differ in 58-59 of 672 role and fixed values (the on-colours and
+ *   outline_light), the seven styles SystemUI accepts (Monochrome among them) in outline_light only (6 of 672); at contrast 0.5 and 1
+ *   about 40 % differ. Not handled yet.
  *
  * The maths is all doubles; Android 14's ColorScheme.kt feeds Shades.of with the seed's hue and chroma as floats (its framework Cam
  * class), so a P14 palette entry computed here may differ from the phone's own by one RGB step in rare cases (Android 15 and 16 take

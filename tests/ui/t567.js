@@ -279,6 +279,11 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   check('   on a locked profile (P16Q1): no such note (Apply would not write them), the note says the overlay is on', c.stale === '' && c.note === 'The theme overlay is written on this phone.', JSON.stringify([c.stale, c.note]));
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY' }); }, AAM); await phone({ sdk: 36, profile: 'P16', build: B16b }); c = await card();
   check('   a record from before the profiles (no build): no such note', c.stale === '', c.stale);
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: true, style: '', profile: 'P16', build: b }); kvSet('ovl_black', true); kvSet('ovl_root_style', ''); ovlRender(); }, [AAM, B16]); c = await card();
+  check('   Pure black alone, written on the old build and on again (its entries are the same on every build): no such note; the hint says Apply writes pure black', c.stale === '' && c.hint === 'Also writes the pure black overlay with root.', JSON.stringify([c.stale, c.hint]));
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P16', build: b }); ovlRender(); }, [AAM, B16]); c = await card();
+  check('   a style written on the old build, Pure black alone on now (Apply would write no style): no such note', c.stale === '' && c.hint === 'Also writes the pure black overlay with root.', JSON.stringify([c.stale, c.hint]));
+  await ev(() => { kvSet('ovl_black', false); kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); });
   await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P16', build: b }); ovlRender(); }, [AAM, B16]); c = await card();
   check('F3. back to the record of the old build on the new one: the note shows', c.stale === STALE, c.stale);
   await reset(); await apply(); c = await card(); k = await calls();

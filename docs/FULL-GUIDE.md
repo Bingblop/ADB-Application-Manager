@@ -809,7 +809,10 @@ style the palette is worked out with:
   finds (`system_inverse_surface_light`, `system_theme_notif_light`, `system_on_theme_app_ring_light`, `system_primary_dim_light`,
   `system_semantic_red_container_high_light`) and the One UI version; `getSystemPalette` reports it as `profile` and
   `profileReason`, with `build` (`Build.FINGERPRINT`) and `contrast` (`UiModeManager.getContrast()` on Android 14+, held to
-  [-1, 1], 0 when it cannot be read). Live: Android 12 and 13 (`P12`, Pure black only), 14 (`P14`), 15 QPR1 (`P15Q1`, 165
+  [-1, 1], 0 when it cannot be read). Live: Android 12 and 13 (`P12`, Pure black only), 14 (`P14`: Android 14.0's own maths on every
+  Android 14 build; 14 QPR1-QPR3 compute their roles with an early libmonet and no color name tells 14.0 from QPR1/QPR2, so there,
+  measured against libmonet android14-qpr3, Fidelity and Content differ in about 1 in 10 role values at contrast 0 (on-colors and the
+  light outline), Monochrome in the light outline only, about 4 in 10 at a higher contrast; shades and Pure black are the same), 15 QPR1 (`P15Q1`, 165
   entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
   inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all three rows, with Super User or without:
   15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
@@ -827,7 +830,8 @@ style the palette is worked out with:
 - **Contrast and Android updates:** a style's roles and fixed colors are computed at the phone's contrast read when **Apply theme**
   is tapped (the palettes, the preview and Pure black do not depend on it); after changing the contrast in Settings, tap Apply
   again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
-  phone's are both known and differ and Apply would write the colors, a note under the card reads *Android was updated after
+  phone's are both known and differ, the record carries a style's colors and Apply would write a style's colors (Pure black alone is the
+  same on every build and gives none), a note under the card reads *Android was updated after
   these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. After an update to a
   locked release the rows lock instead and the overlay stays on (an overlay's entries whose names the new release lacks are
   skipped, read in idmap2) until it is switched off.

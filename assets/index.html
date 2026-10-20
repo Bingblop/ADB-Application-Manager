@@ -7978,7 +7978,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
-                <div class="about-tip">More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.</div>
+                <div class="about-tip">More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -38287,7 +38287,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // the gate is isRootActive, not re-derived here). With it: the Pure black switch (kv ovl_black, off by default) and, on Android 14 and
         // newer, the Color spec radio group (kv ovl_spec: '2021' | '2025' | '2026'; Google's newer colour specs, computed by monet.js part 2)
         // and the More styles radio group (kv ovl_root_style: '' | FIDELITY | CONTENT | MONOCHROMATIC | CMF, CMF only at spec 2026; the colours
-        // Android has no setting for, computed by monet.js as Android 14's own engine would). Apply keeps writing the secure setting as before
+        // Android has no setting for, computed by monet.js as the phone's Android release would: see ovlProfileState). Apply keeps writing the secure setting as before
         // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the 165 entries of the
         // style ovlRootPlanStyle picks, a More style or the list style at 2025, Pure black's entries replacing where both name a resource), or
         // switches it off again (nothing on any more after an earlier write: kv ovl_root_applied holds the overlay ids and what they carry;
@@ -38535,11 +38535,12 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // Colours written on another build of Android (the record's build is not the phone's, as after a system update): the note under the card,
         // while Apply would write them again (for the build the phone runs now). It runs nothing by itself. A record without a build (one from
-        // before the profiles) and an answer without one (an older APK) say nothing.
+        // before the profiles) and an answer without one (an older APK) say nothing. Only a style's colours count, on both sides: Pure black's
+        // entries are the same on every build, so a record of Pure black alone, or an Apply that would write Pure black alone, gives no note.
         function ovlRootStaleNote() {
             const a = ovlRootApplied(), now = ovlBuild();
-            if (!a || !a.build || !now || a.build === now) return '';
-            return ovlRootFollowUp('apply', ovlStyle) === 'fabricate' ? OVL_STALE_NOTE : '';
+            if (!a || !a.style || !a.build || !now || a.build === now) return '';
+            return ovlRootFollowUp('apply', ovlStyle) === 'fabricate' && ovlRootPlanOn(ovlStyle).style ? OVL_STALE_NOTE : '';
         }
         function ovlRenderRootStale() {
             const el = document.getElementById('ovlRootStale');
