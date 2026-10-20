@@ -12,5 +12,7 @@ ok   6. T-054 the app sheet: a tap on the locked DISABLE, OK on the offer: the a
 ok      Cancel on the offer leaves the app sheet open where it was and opens nothing
 ok      the Activity Launcher: Disable selected, OK on the offer: the Activity Launcher is closed and Root Features is the view on screen, no pm command
 ok      a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen
-ok   7. no page errors
+ok   7. T-055 su on the phone, a system app: the tap switches to Root (su grants), Cancel on the system-app confirm runs nothing, and every row is drawn unlocked (no lock, no Root reason)
+ok      the Activity Launcher's Disable selected: switches to Root, Cancel on Change activities runs nothing, and its rows are drawn unlocked
+ok   8. no page errors
 all passed

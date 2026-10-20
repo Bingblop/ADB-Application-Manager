@@ -3,7 +3,8 @@
 // and a tap funnels through promptRootThenOpen instead of firing a doomed pm command. On root the control works: a user app's
 // component toggles with no extra prompt; disabling a SYSTEM app's component asks for confirmation first (enabling does not).
 // The bulk activity toggle (Activity Launcher) is Root-gated the same way. T-054: without su the funnel offers the Root Features tab, and a yes
-// closes the sheet the tap came from (the app sheet, the Activity Launcher) so the tab is on screen; a no leaves the sheet open.
+// closes the sheet the tap came from (the app sheet, the Activity Launcher) so the tab is on screen; a no leaves the sheet open. T-055: with su on
+// the phone the funnel switches to Root, and the rows are drawn unlocked then even when the retried toggle stops at a Cancel.
 // Deterministic ok/FAIL lines and a summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
@@ -20,6 +21,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     window.__wm = { state: 'adb' };
     const WM = {
       adb:  { activeMode: 'adb_tcp', configuredMode: 'auto', modeAvailable: true, isPrivileged: true, rootAvailable: false, rootWorkingModeActive: false },
+      // the same with su on the phone: the funnel switches to Root by itself, and su grants it (selectWorkingMode below)
+      adbSu: { activeMode: 'adb_tcp', configuredMode: 'auto', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootWorkingModeActive: false },
       root: { activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true },
       none: { activeMode: 'unprivileged', configuredMode: 'auto', modeAvailable: false, isPrivileged: false, rootAvailable: false, rootWorkingModeActive: false },
     };
@@ -127,7 +130,29 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   o = await afterOffer();
   check('   a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen', o.view === 'rootfeatures' && o.sheets.length === 0 && o.top === 'page' && o.pm === 0 && o.dialogs.length === 1, JSON.stringify(o));
 
-  check('7. no page errors', errors.length === 0, errors.join(' | '));
+  // ---- 7. T-055: with su on the phone the funnel switches to Root by itself (su grants here). The rows are drawn again then, so the lock and the
+  // Root reason go away even when the retried toggle stops: Cancel on the system-app confirm, or Cancel on Change activities
+  const toggleLocks = sel => ev(s => [...document.querySelectorAll(s + ' .perm-toggle-btn')].filter(x => /ENABLE|DISABLE/.test(x.innerText))
+    .map(x => x.classList.contains('locked') || x.innerText.indexOf('🔒') >= 0 || !!x.getAttribute('title')), sel);
+  await ev(() => switchView('apps')); await sleep(40);
+  await setMode('adbSu');
+  await openComps('com.sys');
+  const locks0 = await toggleLocks('#compsContainer');
+  dialogs = []; answer = false; await ev(() => { window.__calls.toggle = []; window.__calls.selectWorkingMode = []; });
+  await page.click('#compsContainer .perm-toggle-btn[data-comp="com.a.BootRcv"]'); await sleep(300);
+  let a7 = { root: await ev(() => isRootActive()), sel: await ev(() => window.__calls.selectWorkingMode.join()), pm: await ev(() => window.__calls.toggle.length), dialogs: dialogs.slice(), locks: await toggleLocks('#compsContainer'), sheets: await sheets() };
+  check('7. T-055 su on the phone, a system app: the tap switches to Root (su grants), Cancel on the system-app confirm runs nothing, and every row is drawn unlocked (no lock, no Root reason)', locks0.length === 3 && locks0.every(Boolean) && a7.root && a7.sel === 'root' && a7.pm === 0 && a7.dialogs.length === 1 && /of the system app com\.sys\?/.test(a7.dialogs[0]) && a7.locks.length === 3 && !a7.locks.some(Boolean) && a7.sheets.join() === 'inspectorModal', JSON.stringify([locks0, a7]));
+  await ev(() => closeInspector()); await sleep(40);
+  await setMode('adbSu');
+  await ev(() => { openAppListSheet('acts', 'com.usr'); alsSel.clear(); alsSel.add('com.a.Main'); alsRender(); }); await sleep(80);
+  const alsLocks0 = await toggleLocks('#alsList');
+  dialogs = []; answer = false; await ev(() => { window.__calls.toggle = []; window.__calls.selectWorkingMode = []; });
+  await ev(() => alsBulkComp(false)); await sleep(80);
+  a7 = { root: await ev(() => isRootActive()), sel: await ev(() => window.__calls.selectWorkingMode.join()), pm: await ev(() => window.__calls.toggle.length), dialogs: dialogs.slice(), locks: await toggleLocks('#alsList'), sheets: await sheets() };
+  check('   the Activity Launcher\'s Disable selected: switches to Root, Cancel on Change activities runs nothing, and its rows are drawn unlocked', alsLocks0.length === 2 && alsLocks0.every(Boolean) && a7.root && a7.sel === 'root' && a7.pm === 0 && a7.dialogs.length === 1 && /^confirm: Disable 1 activity\?/.test(a7.dialogs[0]) && a7.locks.length === 2 && !a7.locks.some(Boolean) && a7.sheets.join() === 'appListSheet', JSON.stringify([alsLocks0, a7]));
+  await ev(() => closeAppListSheet()); await sleep(40);
+
+  check('8. no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
   process.exit(bad ? 1 : 0);

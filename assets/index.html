@@ -20215,7 +20215,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const acts = (inspectorData && inspectorData.activityInfo) || [];
             const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
             if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
-            if (!isRootActive()) { if (!(await promptRootThenOpen(txT('Enabling or disabling a component')))) return; }
+            if (!isRootActive()) {
+                const granted = await promptRootThenOpen(txT('Enabling or disabling a component'));
+                renderComponentTabs();                // the funnel may have changed the mode: the rows' Root lock is drawn again (T-055), whatever comes next
+                if (!granted) return;
+            }
             nextDialogTitle('Change activities');
             if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
             if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
@@ -30043,8 +30047,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // Enable or disable a component (pm enable/disable) and reflect the new state locally. Super User (Root) only in v7.15.1
         // (both user and system apps): off root, run the attempt-to-prompt funnel (switch to Root when su is there, else offer
         // the Root Features tab) and retry once it is granted, instead of firing a pm command the shell uid cannot carry out.
+        // The rows are drawn again after the funnel (T-055): it may have changed the mode, and the retry below redraws them only when it
+        // completes (not after Cancel on the system-app confirm, nor after a failure).
         function toggleComponent(name, enable) {
-            if (!isRootActive()) { promptRootThenOpen(txT('Enabling or disabling a component')).then(ok => { if (ok) toggleComponent(name, enable); }); return; }
+            if (!isRootActive()) { promptRootThenOpen(txT('Enabling or disabling a component')).then(ok => { renderComponentTabs(); if (ok) toggleComponent(name, enable); }); return; }
             // A system app's component is part of the OS, so disabling one can break the app or the system UI: confirm first. The app is
             // known from the Applications list (the same place openStandbyModal reads it); a disabled component stays listed and its row flips to ENABLE.
             const app = (typeof allApps !== 'undefined' && allApps) ? allApps.find(a => a.pkg === inspectedPkg) : null;
