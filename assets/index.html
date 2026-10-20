@@ -5972,6 +5972,15 @@
                         <button type="button" class="batch-tool-link" onclick="ovlRefreshTheme()">Reload</button>
                     </div>
                 </div>
+
+                <!-- Root-only theme controls: colours written into Android as an overlay (cmd overlay fabricate), which only Root can do.
+                     Locked rows without Super User (rootLockedRow, as on the Root Features tab); the live controls are drawn by ovlRenderRoot. -->
+                <div class="color-card" id="ovlRootCard">
+                    <div class="color-card-title">Root-only theme controls</div>
+                    <div class="color-card-subtitle" style="margin-bottom:0;">Written into Android as a color overlay, which only Root can do. Apply writes it along with the theme.</div>
+                    <div id="ovlRootCards"></div>
+                    <div class="sdb-note" id="ovlRootNote"></div>
+                </div>
             </div>
 
             <div id="ovlListPanel" style="display:none;">
@@ -28532,15 +28541,18 @@ Type any command above (e.g. pm list packages -d)</div>
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
         // - "App components": a signpost to the Application Manager, where enabling/disabling an app's components already works (toggleComponent ->
         //   setComponentEnabled -> ShellArgs.componentCommand); this row only surfaces that capability on the Root tab, it builds nothing new.
-        function rootFeatureRow(title, sub, btnLabel, btnId, onClick) {
-            const name = '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>';
-            if (isRootActive()) {
-                return '<div class="rf-row">' + name
-                    + '<button type="button" class="op-mode-btn" id="' + btnId + '" onclick="' + onClick + '">' + txT(btnLabel) + '</button></div>';
-            }
-            return '<div class="rf-row is-locked">' + name
+        function rootFeatureName(title, sub) { return '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>'; }
+        // a feature that waits on root: the name, a disabled Locked button and the reason (Needs Super User, unless the caller names another one,
+        // as the Overlays tab's root controls do when the app itself is too old to write them)
+        function rootLockedRow(title, sub, reason) {
+            return '<div class="rf-row is-locked">' + rootFeatureName(title, sub)
                 + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">' + txT('Locked') + '</button>'
-                + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + txT('Needs Super User') + '</span></div></div>';
+                + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + txT(reason || 'Needs Super User') + '</span></div></div>';
+        }
+        function rootFeatureRow(title, sub, btnLabel, btnId, onClick) {
+            if (!isRootActive()) return rootLockedRow(title, sub);
+            return '<div class="rf-row">' + rootFeatureName(title, sub)
+                + '<button type="button" class="op-mode-btn" id="' + btnId + '" onclick="' + onClick + '">' + txT(btnLabel) + '</button></div>';
         }
         function rootFeatureRows() {
             return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()')
@@ -38085,6 +38097,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (r.timedOut || r.unknown) text += '\n\nThe phone may still apply it. It is looked at again in a moment.';
             if (r.advice) text += '\n\n' + r.advice;
             if (r.warning) text += '\n\n' + r.warning;                    // e.g. a switch that could not be put back after the refusal
+            if (r.detail) text += '\n\n' + r.detail;                      // e.g. what Android printed for each colour of the pure black overlay
             if (r.needsPrivilege) text = 'Needs ADB, Wireless Debugging, Shizuku or Root.\n\nConnect one in Working Modes, then try again.';
             showCommandResults(title, sub, [{ name: title, pkg: sub, output: text, success: false }]);
         }
@@ -38106,7 +38119,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function ovlReset() {
             if (!ovlGuardWrite()) return;
-            if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.')) return;
+            if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.' + (ovlRootFollowUp('reset') === 'disable' ? '\n\nThe pure black overlay is switched off too.' : ''))) return;
             const before = ovlRaw;
             ovlBusy = true;
             ovlRemember(before, { kind: 'reset' });
@@ -38138,10 +38151,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 }
                 ovlSettle(kind !== 'undo' ? was : null, { kind });
                 const msg = (kind === 'reset' ? 'Theme reset to the default' : kind === 'undo' ? 'Theme put back' : 'Theme applied') + (r.warning ? ', but a switch would not change' : '');
-                if (kind !== 'undo' && was != null) sdbSnack(msg, () => ovlUndoTheme(was));
-                else showToast(msg);
-                if (r.warning) showToast(r.warning);
-                ovlWatchPalette();
+                const finish = () => {
+                    // the Undo puts the theme back and, when this app wrote the pure black overlay, switches that off first
+                    if (kind !== 'undo' && was != null) sdbSnack(msg, () => ovlRootDisableThen(() => ovlUndoTheme(was)));
+                    else showToast(msg);
+                    if (r.warning) showToast(r.warning);
+                    ovlWatchPalette();
+                };
+                // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both
+                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind);
+                if (follow) ovlRootRun(follow, finish); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
                 const unsure = !!(r.timedOut || r.unknown);
@@ -38157,6 +38176,131 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlAddRecent(hex) {
             ovlRecent = [hex].concat(ovlRecent.filter(h => h !== hex)).slice(0, OVL_RECENT_MAX);
             kvSet('ovl_recent', ovlRecent);
+        }
+
+        // ---- Root-only theme controls: colours Android takes only from an overlay written as root (cmd overlay fabricate) ----
+        // The card group under "How this works". Without Super User every control is a locked row (rootLockedRow, as on the Root Features tab;
+        // the gate is isRootActive, not re-derived here); with it, the one control of this step is the Pure black switch (kv ovl_black, off by
+        // default). Apply keeps writing the secure setting as before and, with Super User, additionally writes the pure black overlay (the switch
+        // on) or switches it off again (the switch off after an earlier write: kv ovl_black_applied holds the overlay ids). Revert and the Undo
+        // bar switch it off too. The bridge is overlayFabricate(req, planJson) -> window.onOverlayFab(json): the Java side checks the plan,
+        // takes the overlay ids from its own SDK_INT and decides from the read-back (OverlayRules.judgeFabricate), never from the page.
+        const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark grays. Light mode is unchanged.';
+        // the panels' greys: tones 4, 6, 8, 11, 14 and 18 of a neutral grey (HCT chroma 0), each psHex(hue, 0, tone) as the page computes it
+        // (the hue is immaterial at chroma 0); kept as constants so the plan is a fixed table (t564 checks them against psHex)
+        const OVL_BLACK_TONES = { 4: '0E0E0E', 6: '131313', 8: '181818', 11: '1D1D1D', 14: '242424', 18: '2C2C2C' };
+        const OVL_FAB_ID_PREFIX = 'com.android.shell:aam_monet';          // this app's overlay (one from Android 14; one per colour, with a suffix, on 12 and 13)
+        const OVL_FAB_RES = 'android:color/system_';                     // every resource the plan may name starts so (OverlayRules.fabricatePlanOk refuses the rest)
+
+        function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }
+        // the controls are live when the app can write overlays, Super User is active and the phone has Material You at all
+        function ovlRootLive() { return ovlRootBridgeOk() && isRootActive() && ovlThemeSupported(); }
+        function ovlBlackOn() { return kvGet('ovl_black', false) === true; }
+        // { ids, t } while this app's pure black overlay may be on the phone (written and not switched off since), else null
+        function ovlBlackApplied() {
+            const a = kvGet('ovl_black_applied', null);
+            if (!a || typeof a !== 'object' || !Array.isArray(a.ids)) return null;
+            const ids = a.ids.filter(id => typeof id === 'string' && id.startsWith(OVL_FAB_ID_PREFIX));
+            return ids.length ? { ids, t: a.t } : null;
+        }
+        function ovlSdk() { const p = ovlPalette; return p && typeof p.sdk === 'number' && p.sdk > 0 ? p.sdk : 0; }
+
+        // The plan of {resource, argb}: the two darkest neutral shades black on every Android 12+, and from Android 14 the dark background and
+        // surface roles as well (black, and the containers in the greys above). Android 12 and 13 have no role resources, so they get the two
+        // entries only (which is also why they do not get a repaint per resource). The sdk picks the entry set and nothing else; an unknown
+        // sdk (0) gets the two entries every phone has. The resources are the first four that the Java side looks up afterwards.
+        function ovlBuildBlackPlan(sdk) {
+            const black = '0xFF000000', grey = t => '0xFF' + OVL_BLACK_TONES[t];
+            const rows = [['neutral1_900', black], ['neutral2_900', black]];                        // android:color/system_ + this
+            if (sdk >= 34) rows.push(['background_dark', black], ['surface_dark', black], ['surface_dim_dark', black],
+                ['surface_container_lowest_dark', grey(4)], ['surface_container_low_dark', grey(6)], ['surface_container_dark', grey(8)],
+                ['surface_container_high_dark', grey(11)], ['surface_container_highest_dark', grey(14)], ['surface_bright_dark', grey(18)]);
+            return rows.map(r => { const name = r[0]; return { resource: OVL_FAB_RES + name, argb: r[1] }; });
+        }
+        // the ids the Java side writes a plan under (its own rule, from its own SDK_INT; this copy only names what to switch off after no answer came)
+        function ovlBlackIds(sdk, entries) {
+            return sdk >= 34 ? [OVL_FAB_ID_PREFIX] : entries.map(e => { const name = e.resource.slice(OVL_FAB_RES.length); return OVL_FAB_ID_PREFIX + '_' + name; });
+        }
+
+        // what Apply (kind 'apply') or Revert (kind 'reset') does for the pure black overlay besides the theme setting:
+        // 'fabricate' (write it), 'disable' (switch it off), or null (nothing)
+        function ovlRootFollowUp(kind) {
+            if (!ovlRootLive()) return null;
+            if (kind !== 'reset' && ovlBlackOn()) return 'fabricate';
+            return ovlBlackApplied() ? 'disable' : null;
+        }
+
+        function ovlToggleBlack() {
+            if (!ovlRootLive()) return;
+            kvSet('ovl_black', !ovlBlackOn());
+            haptic();
+            ovlRenderRoot();
+            ovlRenderActions();
+        }
+
+        function ovlRenderRoot() {
+            const card = document.getElementById('ovlRootCard'), box = document.getElementById('ovlRootCards'), note = document.getElementById('ovlRootNote');
+            if (!card || !box || !note) return;
+            const say = text => { note.innerText = text; note.style.display = text ? '' : 'none'; };
+            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; say(''); return; }      // hidden with the rest of Material You
+            card.style.display = '';
+            const bridge = ovlRootBridgeOk();
+            if (!bridge || !isRootActive()) {
+                // locked: the same row as a Root Feature that waits on root; an app too old to write overlays says so instead
+                box.innerHTML = rootLockedRow('Pure black backgrounds', OVL_BLACK_SUB, bridge ? null : 'Update the app');
+                say(bridge ? 'Shizuku and ADB cannot write these colors; Root can.' : 'This version of the app cannot write color overlays. Update it, then come back.');
+                return;
+            }
+            const on = ovlBlackOn();
+            box.innerHTML = '<div class="rf-row">' + rootFeatureName('Pure black backgrounds', OVL_BLACK_SUB)
+                + '<button type="button" class="sdb-sw' + (on ? ' on' : '') + '" id="ovlBlackSw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" aria-label="' + txT('Pure black backgrounds') + '" onclick="ovlToggleBlack()"><span></span></button></div>';
+            say(ovlBlackApplied() ? 'The pure black overlay is written on this phone.' : '');
+        }
+
+        // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered
+        function ovlRootRun(action, after) {
+            const sdk = ovlSdk(), applied = ovlBlackApplied();
+            const entries = action === 'fabricate' ? ovlBuildBlackPlan(sdk) : null;
+            const plan = action === 'disable' ? { action: 'disable', ids: applied ? applied.ids : [] } : { action: 'fabricate', entries };
+            ovlBusy = true;
+            ovlRender();
+            sdbRequest(id => window.AndroidBridge.overlayFabricate(id, JSON.stringify(plan)), r => ovlRootDone(r, action, entries ? ovlBlackIds(sdk, entries) : null, after), 60000);
+        }
+
+        function ovlRootDone(r, action, expectedIds, after) {
+            ovlBusy = false;
+            if (Array.isArray(r.list) && r.list.length) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; }
+            const ids = Array.isArray(r.ids) && r.ids.length ? r.ids.filter(id => typeof id === 'string') : (expectedIds || []);
+            if (action === 'fabricate') {
+                // the overlay may be on the phone whenever Android listed it on, or no answer came: remembered, so Revert and Undo switch it off
+                if ((r.ok || r.unknown || r.timedOut || r.state === 1) && ids.length) kvSet('ovl_black_applied', { ids, t: Date.now() });
+            } else if (r.ok) kvSet('ovl_black_applied', null);
+            if (r.ok) showToast(action === 'fabricate' ? 'Pure black overlay written' : 'Pure black overlay removed');
+            else {
+                showToast(action === 'fabricate' ? 'The pure black overlay was not written' : 'The pure black overlay was not removed');
+                ovlRootFailure(action, r);
+                if (r.unknown || r.timedOut || r.state === -2) ovlRefreshLater('list');
+            }
+            ovlWatchPalette();
+            ovlRender();
+            if (typeof after === 'function') after(r);
+        }
+
+        function ovlRootFailure(action, r) {
+            const f = Object.assign({}, r);
+            if (r.needsPrivilege) { f.needsPrivilege = false; f.error = 'Needs Super User'; f.advice = 'Shizuku and ADB cannot write these colors; Root can. Choose Root in Working Modes, then tap Apply again.'; }
+            if (r.lookups && typeof r.lookups === 'object') {
+                const lines = Object.keys(r.lookups).map(k => k + ' → ' + String(r.lookups[k]).replace(/\s+/g, ' ').trim());
+                if (lines.length) f.detail = 'What Android reports for each color:\n' + lines.join('\n');
+            }
+            ovlFailure(action === 'fabricate' ? 'Could not write the pure black overlay' : 'Could not remove the pure black overlay', 'Monet · root overlay', f);
+        }
+
+        // Undo (the bar after Apply, and the one a restart brings back): switch the overlay off first when this app wrote it, then put the theme back
+        function ovlRootDisableThen(fn) {
+            if (!ovlBlackApplied() || !ovlRootLive()) { fn(); return; }
+            if (ovlBusy) { showToast('Still applying the last change…'); return; }
+            ovlRootRun('disable', () => fn());
         }
 
         // ---- drawing the theme half ----
@@ -38302,7 +38446,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (reset) reset.disabled = ovlBusy || !supported;
             const t = ovlTheme;
             const same = t && ((ovlSource === 'preset' && t.source === 'preset' && t.color === ovlColor) || (ovlSource === 'home_wallpaper' && (t.source === 'home_wallpaper' || t.source === 'default'))) && (t.style || 'TONAL_SPOT') === ovlStyle;
-            if (hint) hint.innerText = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
+            if (hint) {
+                const main = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
+                // what Apply does for the pure black overlay besides (Super User only); its own sentence, so each one is translated whole
+                const follow = ovlUsable() && supported ? ovlRootFollowUp('apply') : null;
+                const root = follow === 'fabricate' ? 'Also writes the pure black overlay with root.' : follow === 'disable' ? 'Also removes the pure black overlay.' : '';
+                hint.innerHTML = (main ? '<span>' + escapeHtml(main) + '</span>' : '') + (root ? ' <span id="ovlApplyHintRoot">' + escapeHtml(root) + '</span>' : '');
+            }
         }
 
         function ovlRenderRecent() {
@@ -38663,7 +38813,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function ovlRender() {
             ovlRenderChrome();
-            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); }
+            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); ovlRenderRoot(); }
             else ovlRenderList();
         }
 
@@ -38701,7 +38851,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec.sub === 'theme' || rec.sub === 'list') ovlSub = rec.sub;
             switchView('overlays');
             const u = rec.undo;
-            if (typeof u === 'string') setTimeout(() => { sdbSnack('Theme changed', () => ovlUndoTheme(u)); }, 700);
+            if (typeof u === 'string') setTimeout(() => { sdbSnack('Theme changed', () => ovlRootDisableThen(() => ovlUndoTheme(u))); }, 700);
             else if (u && typeof u === 'object' && u.overlay && ovlRemoteOp(u.op)) setTimeout(() => { sdbSnack('Overlay changed', () => { ovlReadListThen(() => ovlSet(u.overlay, u.op, { quiet: true })); }); }, 700);
             // the answer may have gone to a page that was already gone: once the phone has been asked again, do what that answer would have done
             if (rec.kind === 'apply' && !rec.done) ovlPendingFinish = rec;
@@ -38740,9 +38890,17 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (what === 'theme') ovlReadTheme(); else if (!ovlListLoading) ovlReadList();
             }, 2500);
         }
+        // the pure black overlay's answer: late (the page gave up on it) still means the phone may have changed, so the list and the colours are looked at again
+        function ovlOnFabReply(json) {
+            let r = null;
+            try { r = JSON.parse(json); } catch (e) { return; }
+            if (r && !sdbReqs.has(r.req) && !r.stale) { ovlRefreshLater('list'); ovlWatchPalette(); return; }
+            sdbOnReply(json);
+        }
         window.onOverlayList = sdbOnReply;
         window.onOverlayOp = ovlOnReply;
         window.onThemeOp = ovlOnReply;
+        window.onOverlayFab = ovlOnFabReply;
 
         (function ovlInitEvents() {
             const pal = document.getElementById('ovlPalette');
