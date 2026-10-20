@@ -17,7 +17,7 @@ module.exports.initScript = function () {
   ];
   for (let t = 2; t < targets.length; t++) for (let i = 0; i < 40; i++) ov.push([targets[t], i % 3 === 0 ? 1 : i % 3 === 1 ? 0 : (i % 7 === 2 ? -1 : 0), 'overlay.' + targets[t].split('.').pop() + '.n' + String(i).padStart(2, '0') + (i % 9 === 0 ? '.theme.color' : '')]);
   window.__ovl = ov.map(r => ({ target: r[0], state: r[1], id: r[2] }));
-  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0 };
+  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [] };
   window.__ovlDeny = {};          // id -> error text: the change is refused
   window.__ovlFixed = {};         // id -> true: stays on whatever is asked
   window.__ovlNoAnswer = false;
@@ -26,6 +26,13 @@ module.exports.initScript = function () {
   window.__themeWarning = null;   // text: the theme is written, but the Samsung switch would not change
   window.__sdk = 34;
   window.__paletteDelay = 600;    // how long Android takes to repaint after a theme change
+  // the root-only theme controls (overlayFabricate): __root makes the working mode Root with su granted (isRootActive() true) once
+  // checkAllWorkingModes() has read it again; the __fab* knobs shape the answer
+  window.__root = false;
+  window.__fabNeedsRoot = false;  // the Java gate says no (needsPrivilege), whatever the page thinks
+  window.__fabDeny = null;        // error text: the overlay is listed on but Android did not take the colours (the judge's refusal)
+  window.__fabUnknown = false;    // no answer from the shell: unknown
+  window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
 
   // a believable palette for a seed colour: tones of one hue (the real Monet engine does far more, this is only to see colours move)
   function hexToHsl(hex) {
@@ -145,6 +152,65 @@ module.exports.initScript = function () {
   b.getSystemPalette = function () {
     window.__ovlCalls.palette++;
     if (window.__sdk < 31) return JSON.stringify({ ok: false, sdk: window.__sdk, error: 'Material You colors need Android 12 or newer (this phone runs Android ' + (window.__sdk === 28 ? 9 : 11) + ').' });
-    return JSON.stringify(window.__palette);
+    return JSON.stringify(Object.assign({}, window.__palette, { sdk: window.__sdk }));      // the Android level follows the knob, whenever the palette was made
+  };
+  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise
+  const baseWorkingMode = b.getWorkingMode;
+  b.getWorkingMode = function () {
+    if (!window.__root) return baseWorkingMode.call(this);
+    return JSON.stringify({ activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: false, running: false, authorized: false } });
+  };
+  // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
+  // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
+  // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
+  // four), judged from those, as window.onOverlayFab(json).
+  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
+  b.overlayFabricate = function (req, planJson) {
+    let plan;
+    try { plan = JSON.parse(planJson); } catch (e) { return 'error: the plan is not JSON'; }
+    window.__ovlCalls.fab.push(plan);
+    const op = plan.action || 'fabricate';
+    if (op === 'fabricate') {
+      const es = plan.entries;
+      if (!Array.isArray(es) || !es.length) return 'error: The plan has no entries';
+      if (es.length > 200) return 'error: The plan has too many entries (200 at most)';
+      const seen = new Set();
+      for (let i = 0; i < es.length; i++) {
+        const e = es[i] || {};
+        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a system colour (android:color/system_...)';
+        if (typeof e.argb !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(e.argb)) return 'error: Entry ' + (i + 1) + ' is not a colour (0xAARRGGBB)';
+        if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
+        seen.add(e.resource);
+      }
+    } else if (op === 'disable') {
+      const ids = plan.ids;
+      if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
+      if (ids.length > 200) return 'error: Too many overlays named (200 at most)';
+      const seenIds = new Set();
+      for (const id of ids) {
+        if (typeof id !== 'string' || !new RegExp('^' + FAB_OWNER + FAB_NAME + '(_[a-z0-9_]+)?$').test(id)) return 'error: That overlay was not written by this app';
+        if (seenIds.has(id)) return 'error: An overlay is named twice';
+        seenIds.add(id);
+      }
+    } else return 'error: unknown action';
+    if (window.__fabNoAnswer) return 'started';
+    setTimeout(() => {
+      const r = { req, op, mode: window.__root ? 'root' : 'adb_tcp' };
+      if (window.__fabNeedsRoot || !window.__root) { r.ok = false; r.needsPrivilege = true; r.error = 'Needs Super User'; window.onOverlayFab(JSON.stringify(r)); return; }
+      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_RES.length)));
+      r.ids = ids;
+      if (window.__fabUnknown) { r.ok = false; r.unknown = true; r.error = 'No answer from the device'; window.onOverlayFab(JSON.stringify(r)); return; }
+      ids.forEach(id => { let o = window.__ovl.find(x => x.id === id); if (!o) { o = { target: 'android', state: 0, id }; window.__ovl.push(o); } o.state = op === 'disable' ? 0 : 1; });
+      r.state = window.__ovl.find(x => x.id === ids[0]).state;
+      r.list = wire();
+      if (op === 'fabricate') {
+        r.lookups = {};
+        plan.entries.slice(0, 4).forEach(e => { r.lookups[e.resource] = window.__fabDeny ? '#ff1b1b1b' : '#' + e.argb.slice(2).toLowerCase(); });
+        if (window.__fabDeny) { r.ok = false; r.error = window.__fabDeny; r.advice = 'Android kept its own colours. The overlay is listed on; tap Apply again after the next repaint.'; }
+        else r.ok = true;
+      } else r.ok = true;
+      window.onOverlayFab(JSON.stringify(r));
+    }, window.__delay);
+    return 'started';
   };
 };

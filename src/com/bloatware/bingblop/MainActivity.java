@@ -4802,6 +4802,74 @@ public class MainActivity extends Activity {
         settingsReply("onOverlayOp", res);
     }
 
+    /**
+     * Writes this app's fabricated colour overlay (op "fabricate", the plan's entries) or switches off the overlays it wrote (op
+     * "disable", their ids) with root, and reports it as window.onOverlayFab(json): req, op, ids (the overlay identifiers written or
+     * switched off), ok, state (the first overlay as the list has it: 1 on, 0 off, -1 cannot be switched, -2 not listed), list, answer,
+     * lookups (resource -> what Android printed for it), error, advice, needsPrivilege, unknown, mode.
+     * Root only (RootGate.active): cmd overlay fabricate turns away anyone but root, and Shizuku and ADB run as the shell user, so the
+     * gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
+     * (OverlayRules.judgeFabricate), never by the commands' own text.
+     */
+    private void overlayFabricateJob(int req, String op, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("op", op);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onOverlayFab", res);
+                return;
+            }
+            String mode = activeWorkingMode;
+            res.put("mode", mode);
+            // su is asked only while Root is the chosen mode (probeWorkingMode does the same): a root manager's prompt must not pop up in another mode
+            boolean suGranted = "root".equals(mode) && isRootGranted();
+            if (!RootGate.active(mode, suGranted)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs Super User");
+            } else {
+                int sdk = Build.VERSION.SDK_INT;
+                boolean disable = "disable".equals(op);
+                List<String> wrote = disable ? ids : OverlayRules.fabricateIds(sdk, entries);
+                JSONArray idArr = new JSONArray();
+                for (String id : wrote) idArr.put(id);
+                res.put("ids", idArr);
+                String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, entries);
+                String out = runPrivilegedShell("root", script, 30000);
+                // the script is long, not secret, but a release build logs sizes only (the rule is general); a debuggable build the whole exchange
+                if (isDebuggableBuild()) Log.d(TAG, "overlayFabricate [" + op + "]: " + script + " -> " + (out != null ? out.trim() : ""));
+                else Log.d(TAG, "overlayFabricate [" + op + "]: " + script.length() + " chars -> " + (out != null ? out.length() : 0) + " chars");
+                OverlayRules.FabResult fr = OverlayRules.parseFabricate(out);
+                OverlayRules.FabVerdict v = OverlayRules.judgeFabricate(op, wrote, disable ? null : entries, fr);
+                res.put("ok", v.ok);
+                res.put("state", v.state);
+                if (v.unknown) res.put("unknown", true);
+                // an empty list after a change is not "this phone has no overlays": the page keeps the list it has and looks again
+                if (fr.change.all != null && !fr.change.all.isEmpty()) res.put("list", overlaysToJson(fr.change.all));
+                if (!fr.change.answer.isEmpty()) res.put("answer", clipAnswer(fr.change.answer));
+                if (!fr.lookups.isEmpty()) {
+                    JSONObject lk = new JSONObject();
+                    for (Map.Entry<String, String> e : fr.lookups.entrySet()) lk.put(e.getKey(), clipAnswer(e.getValue()));
+                    res.put("lookups", lk);
+                }
+                if (!v.ok) {
+                    res.put("error", v.error);
+                    res.put("advice", OverlayRules.advice(fr.change.answer + "\n" + fr.change.listError));
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onOverlayFab", res);
+    }
+
     private void saveFlagSnapshot(String snapshot) {
         if (snapshot == null || snapshot.isEmpty()) prefs.edit().remove("ovl_flag_snap").apply();
         else prefs.edit().putString("ovl_flag_snap", snapshot).apply();
@@ -8698,6 +8766,55 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     overlayOpJob(req, op, id, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
+         * Writes this app's fabricated colour overlay with root, or switches it off. The plan is JSON: {"action":"fabricate",
+         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
+         * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
+         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than 200 entries, or an id
+         * that is not one of this app's overlays is refused with "error: ...". Returns "started". The answer arrives as
+         * window.onOverlayFab(json); without Super User it says needsPrivilege.
+         */
+        @JavascriptInterface
+        public String overlayFabricate(final int req, final String planJson) {
+            JSONObject plan;
+            try {
+                plan = new JSONObject(planJson == null ? "" : planJson);
+            } catch (Exception notJson) {
+                return "error: the plan is not JSON";
+            }
+            final String op = plan.optString("action", "fabricate");
+            final List<OverlayRules.FabEntry> entries = new ArrayList<OverlayRules.FabEntry>();
+            final List<String> ids = new ArrayList<String>();
+            try {
+                if ("disable".equals(op)) {
+                    JSONArray a = plan.optJSONArray("ids");
+                    int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);      // past the cap the check refuses it; no need to copy a huge array first
+                    for (int i = 0; i < n; i++) ids.add(a.optString(i, ""));
+                    OverlayRules.disablePlanOk(ids);
+                } else if ("fabricate".equals(op)) {
+                    JSONArray a = plan.optJSONArray("entries");
+                    int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);
+                    for (int i = 0; i < n; i++) {
+                        JSONObject e = a.optJSONObject(i);
+                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null)));
+                    }
+                    OverlayRules.fabricatePlanOk(entries);
+                } else {
+                    return "error: unknown action";
+                }
+            } catch (IllegalArgumentException bad) {
+                return "error: " + bad.getMessage();
+            }
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    overlayFabricateJob(req, op, entries, ids, queuedAt);
                 }
             })) return "error: the app is closing";
             return "started";
