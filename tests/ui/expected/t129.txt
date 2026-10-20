@@ -24,6 +24,7 @@ ok   Neutral is the quietest colored style: its accent has less chroma than Tona
 ok   Fruit Salad turns the main color back 50 degrees; Expressive sends it far away
 ok   Fidelity and Content keep the source color's chroma; Tonal Spot does not
 ok   CMF keeps the source hue in all five palettes: the chroma in full, at a half and at three quarters for the three accents, at a fifth for the surfaces
+ok   CMF in dark mode keeps three accents for 26 strong source colors (#E91E63, #FF0000, #4285F4 and the picker's colors): accent, second accent and frozen at least 5 tones apart, the frozen and system status colors apart too
 ok   Running stays green and Bloat stays red in every style
 ok   every style stays readable (text 7:1, muted and accent 4.5:1, card accents 3.5:1) for 320 combinations of source color, style and mode
 ok   in light mode the same style is its light version

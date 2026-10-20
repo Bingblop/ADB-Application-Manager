@@ -11368,7 +11368,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const dark = mode !== 'light', at = (p, tone) => psHex(p[0], p[1], tone);
             const mono = style === 'MONOTONE';
             const accent = at(P.p, dark ? (mono ? 90 : 80) : (mono ? 25 : 40));
-            const sec = at(P.s, dark ? 80 : 40);
+            // CMF's three accent palettes share one hue and differ only in chroma. At tone 80 a strong source color has more chroma than the colors
+            // there can hold, so in dark mode all three came out as one color (#E91E63: #FFB2BE three times). In dark mode its second accent sits at
+            // tone 65, where the 2026 spec puts CMF's dark secondary, and the third (frozen) at 72, between the two: three colors again.
+            const cmfDark = dark && style === 'CMF';
+            const sec = at(P.s, cmfDark ? 65 : dark ? 80 : 40);
             return {
                 accent: accent,
                 bg: at(P.n, dark ? 6 : 98),
@@ -11378,8 +11382,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 text: at(P.n, dark ? 90 : 10),
                 muted: at(P.nv, dark ? 80 : 30),
                 secondary: sec,
-                system: dark ? at(P.s, 80) : at(P.s, 40),
-                frozen: at(P.t, dark ? 80 : 40),
+                system: sec,
+                frozen: at(P.t, cmfDark ? 72 : dark ? 80 : 40),
                 running: psHex(142, 34, dark ? 80 : 36),
                 bloat: psHex(25, 84, dark ? 80 : 40)
             };

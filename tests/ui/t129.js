@@ -70,6 +70,17 @@ const { chromium, PAGE } = require('./lib/pw');
   check('Fruit Salad turns the main color back 50 degrees; Expressive sends it far away', await ev(() => { const s = psHctFromHex('#4285F4').h, f = psHctFromHex(psScheme('#4285F4', 'FRUIT_SALAD', 'dark').accent).h, x = psHctFromHex(psScheme('#4285F4', 'EXPRESSIVE', 'dark').accent).h, d = (a, b2) => { const z = Math.abs(a - b2) % 360; return z > 180 ? 360 - z : z; }; return d(f, s - 50) < 8 && d(x, s + 240) < 8; }));
   check('Fidelity and Content keep the source color\'s chroma; Tonal Spot does not', await ev(() => { const c = psHctFromHex('#4285F4').c; const f = psHctFromHex(psScheme('#4285F4', 'FIDELITY', 'light').accent).c; const t = psHctFromHex(psScheme('#4285F4', 'TONAL_SPOT', 'light').accent).c; return f > t + 3 && c > 50; }));
   check('CMF keeps the source hue in all five palettes: the chroma in full, at a half and at three quarters for the three accents, at a fifth for the surfaces', await ev(() => { const s = psHctFromHex('#4285F4'), P = psPalettes('CMF', s.h, s.c), a = psHctFromHex(psScheme('#4285F4', 'CMF', 'dark').accent), d = (x, y) => { const z = Math.abs(x - y) % 360; return z > 180 ? 360 - z : z; }; return [P.p, P.s, P.t, P.n, P.nv].every(p => p[0] === s.h) && P.p[1] === s.c && P.s[1] === s.c * 0.5 && P.t[1] === s.c * 0.75 && P.n[1] === s.c * 0.2 && P.nv[1] === s.c * 0.2 && d(a.h, s.h) < 8; }));
+  // the three CMF accents share one hue: at one tone a strong source color clipped all three to the same color in dark mode (#E91E63: #FFB2BE three times)
+  const cmf = await ev(() => {
+    const seeds = [...new Set(['#E91E63', '#FF0000', '#4285F4', '#0000FF', '#FF00FF', '#B00020'].concat(CP_COLORS.filter(c => psHctFromHex(c).c > 12)))], bad = [];
+    for (const sd of seeds) {
+      const s = psScheme(sd, 'CMF', 'dark'), ink = statusInk(s, false), x = [s.accent, s.secondary, s.frozen], t = x.map(c => psHctFromHex(c).t), fr = ink(s.frozen);
+      const apart = Math.min(Math.abs(t[0] - t[1]), Math.abs(t[0] - t[2]), Math.abs(t[1] - t[2]));
+      if (new Set(x).size < 3 || apart < 5 || new Set([s.accent, s.secondary, fr]).size < 3 || fr === ink(s.system)) bad.push(sd + ' ' + x.join('/') + ' ink ' + fr + '/' + ink(s.system));
+    }
+    return { n: seeds.length, bad };
+  });
+  check('CMF in dark mode keeps three accents for ' + cmf.n + ' strong source colors (#E91E63, #FF0000, #4285F4 and the picker\'s colors): accent, second accent and frozen at least 5 tones apart, the frozen and system status colors apart too', cmf.bad.length === 0, cmf.bad.slice(0, 4).join(' | '));
   check('Running stays green and Bloat stays red in every style', await ev(() => PS_IDS.every(id => ['dark', 'light'].every(m => { const s = psScheme('#E91E63', id, m), g = psHctFromHex(s.running).h, r = psHctFromHex(s.bloat).h; return g > 120 && g < 160 && (r < 40 || r > 340); }))));
 
   // ---- readable for any source color, in light and dark ----
