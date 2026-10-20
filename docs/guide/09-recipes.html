@@ -696,3 +696,28 @@
 
 <p><b>Read more:</b> <a href="#prefs">Settings (the gear)</a>, <a href="#modes-overview">Working modes</a>, <a href="#recipe-find-big-apps">Find the apps that take the most space</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
 </section>
+
+<section id="recipe-root-features" data-title="Unlock Root Features on a rooted phone, and take root back" data-group="How do I...?">
+<p class="hg-lead">At the end, the Root Features tab reads ACTIVE, you know exactly what the app may now do, and you know the two taps that take root away from it again.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A phone that is already rooted, with KernelSU, KernelSU Next, APatch or Magisk installed. This app roots nothing: on any other phone the tab reads <b>NOT FOUND</b> and stops there (<a href="#mode-root">Root</a> says what rooting involves).</li>
+<li>The <b>Root Features</b> tab, right before About (<a href="#feature-list">switch it on</a> if it is missing).</li>
+<li>Ten minutes, and a backup of anything you would miss (<a href="#safety">Staying safe</a>).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>Root Features</b>. Read the chip on the top card: <b>AVAILABLE</b> means the phone has <code>su</code> and you can go on; <b>NOT FOUND</b> means stop here.</li>
+<li>Tap <b>Request Super User</b>. Your root manager asks (Magisk does; the list managers do not, see step 3); tap <b>Grant</b> and, in Magisk, pick "Once" in the drop-down. The message "Using Root (Superuser)" appears, the badge turns violet, the chip reads <b>ACTIVE</b>, and the two rows under <b>Features</b> unlock.</li>
+<li>If the manager did not ask (KernelSU, for one, keeps a list instead), tap <b>Open root manager</b>, allow ADB/Root Full System Toolbox in the manager's list, come back and tap <b>Request Super User</b> again.</li>
+<li>Try one small root-only thing to see that it works: in the menu of an app you installed yourself, on the <b>Activities</b> tab, tap <b>DISABLE</b> on one unexported screen, read "Component disabled", then tap <b>ENABLE</b> on the same row (<a href="#rootfeatures-components">App components under Super User</a>).</li>
+<li>To take root back: open your root manager, deny this app in its list, then tap the badge, open <b>Working Modes &amp; ADB Setup</b> and choose another mode. Back on Root Features the chip reads <b>AVAILABLE</b> and the rows are <b>Locked</b> again.</li>
+</ol>
+<p>From the moment the chip reads ACTIVE, every button in the app acts as root: the Debloater, the app menus, hidden settings, the Console's ADB Shell and the Terminal's Working mode shell. Nothing asks "are you sure, as root?" beyond the questions the app always asked. Keep to the four rules in <a href="#safety">Staying safe</a>.</p>
+
+<div class="hg-warn"><b>Undo.</b> Step 5 is the undo. A part you disabled in step 4 stays disabled until you ENABLE it, so do that before you give root up: ENABLE needs root as much as DISABLE did.</div>
+
+<p><b>Read more:</b> <a href="#tab-rootfeatures">Root Features</a>, <a href="#rootfeatures-grant">Getting Super User</a>, <a href="#rootfeatures-su-apps">Super User for apps</a>, <a href="#rootfeatures-components">App components under Super User</a>, <a href="#mode-root">Root</a>.</p>
+</section>

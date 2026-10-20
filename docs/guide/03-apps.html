@@ -241,14 +241,14 @@
   <p>Each row has small tags: <b>exported</b> (other apps may open it) or <b>unexported</b> (only the app itself normally can), <b>disabled</b> when it is off, and <b>protected</b> when using it needs a permission. The buttons are:</p>
   <ul>
     <li><b>LAUNCH</b>: opens that screen. For an unexported activity the button reads <b>LAUNCH (SHELL)</b>.</li>
-    <li><b>DISABLE</b> or <b>ENABLE</b>: switches that one screen off or on (<code>pm disable</code> or <code>pm enable</code> on the single component).</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b>: switches that one screen off or on (<code>pm disable</code> or <code>pm enable</code> on the single component). <b>Root only:</b> Android refuses a change to a single part from the shell user, so in ADB, Wireless Debugging and Shizuku (started by ADB) mode the button runs, says "Failed", and a results box titled <b>Toggle component</b> shows Android's answer, which begins "Shell cannot change component state". See <a href="#rootfeatures-components">App components under Super User</a>.</li>
   </ul>
 
   <h5>Components</h5>
   <p>A component is one working part of an app that is not a screen. The tab lists three kinds: <b>Receivers</b> (parts that listen for events such as the phone starting up), <b>Services</b> (parts that work in the background) and <b>Providers</b> (parts that share data with other apps). Each heading shows how many there are, and the tab's pill shows the total. Use the search box and the chips <b>All</b>, <b>Exported</b> and <b>Unexported</b>. The tags are the same as on the Activities tab. The buttons are:</p>
   <ul>
     <li><b>STOP</b> (services only): stops that service.</li>
-    <li><b>DISABLE</b> or <b>ENABLE</b> (all three kinds): switches that one part off or on. Providers and receivers have only this button.</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b> (all three kinds): switches that one part off or on. Providers and receivers have only this button. Root only, as on the Activities tab: the shell user is refused (<a href="#rootfeatures-components">App components under Super User</a>).</li>
   </ul>
 
   <h5>Launching hidden activities</h5>
@@ -320,7 +320,7 @@
       <tr><td>Logs</td><td>Opens Live Logcat, but it needs a working mode to read the log</td><td>Works</td></tr>
       <tr><td>Permissions</td><td>You can read the list. Toggles show a padlock.</td><td>Runtime ones can be changed</td></tr>
       <tr><td>App Ops</td><td>Not available</td><td>Works</td></tr>
-      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>Everything works</td></tr>
+      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>LAUNCH and STOP work on exported parts, and LAUNCH (SHELL) on unexported screens; STOP on an unexported service is refused to the shell user too, so it needs Root. ENABLE / DISABLE on a single part works in Root mode only; in ADB, Wireless Debugging and Shizuku (started by ADB) mode Android refuses it (<a href="#rootfeatures-components">why</a>)</td></tr>
     </tbody>
   </table>
 
