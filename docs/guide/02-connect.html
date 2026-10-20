@@ -307,7 +307,7 @@
 <h4>How the app knows that root really works</h4>
 <p>Having a <code>su</code> program is not enough: your root manager may have refused this app. So, while Root is your chosen mode, the app asks <code>su</code> to run <code>id</code> and counts Root as working only when the answer says <code>uid=0</code> (the root user). The four tags mean:</p>
 <table class="hg-table"><thead><tr><th>Tag</th><th>Meaning</th></tr></thead><tbody>
-<tr><td><b>NOT FOUND</b></td><td>No <code>su</code> program on the phone.</td></tr>
+<tr><td><b>NOT FOUND</b></td><td>No <code>su</code> program the app can see. KernelSU, KernelSU Next and APatch show <code>su</code> only to the apps they allow, so on such a phone this app has to be allowed there first.</td></tr>
 <tr><td><b>AVAILABLE</b></td><td>A <code>su</code> program exists, but Root is not your chosen mode. The app has not asked it anything, so no root prompt appears.</td></tr>
 <tr><td><b>ACTIVE</b></td><td>Root is your chosen mode and <code>su</code> answered <code>uid=0</code>. The badge is violet.</td></tr>
 <tr><td><b>DENIED</b> (orange)</td><td>Root is your chosen mode, but <code>su</code> did not answer <code>uid=0</code>: your root manager refused this app, or you did not answer in time. The badge reads "Root (Superuser) (not ready)".</td></tr>
@@ -333,7 +333,7 @@
 
 <h4>If it does not work</h4>
 <ul>
-<li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled. Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
+<li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled, or, with KernelSU, KernelSU Next or APatch, it has not allowed this app yet (they show <code>su</code> only to the apps they allow: allow the app in the manager's list, or use <b>Open root manager</b> on Root Features, see <a href="#rootfeatures-grant">Getting Super User</a>). Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
 <li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
 <li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager (Magisk, KernelSU or APatch), find ADB/Root Full System Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
 </ul>

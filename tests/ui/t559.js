@@ -15,7 +15,8 @@
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
 // Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
-// No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053).
+// No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053). No topic calls
+// NOT FOUND final: KernelSU (Next) and APatch show su only to the apps they allow, and Open root manager is the way out (T-057).
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
@@ -334,6 +335,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   T-053 no topic recommends Magisk\'s "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action',
     [gTab, gGrant, gRecipe].every(s => !onceAdvice.test(s)) && [gTab, gGrant, gRecipe].every(s => /"60 mins"/.test(s)) && /"Once" covers one request only/.test(gGrant) && /Magisk would ask again for every action/.test(gGrant) && /"Once"[^.]*covers this one request only/.test(gRecipe),
     JSON.stringify([gTab, gGrant, gRecipe].map(s => (s.match(/.{0,80}"Once".{0,120}/) || [''])[0])));
+  // T-057: KernelSU (Next) and APatch show su only to the apps they allow, so before this app is allowed the chip can read NOT FOUND on a rooted
+  // phone, and Open root manager (which finds those managers by package name, whatever su says) is the way out. No topic calls NOT FOUND final
+  const gMode = plain['mode-root'] || '', gTrouble = plain['troubleshooting'] || '';
+  const notAllowed = /show su only to the apps they allow/;
+  check('   T-057 NOT FOUND is not final with KernelSU or APatch: the chip table, If it does not work, the recipe, Root mode and Troubleshooting say su is shown only to allowed apps and point to Open root manager; a renamed build that gets "No root manager was found" is covered',
+    notAllowed.test(gTab) && /This is what an unrooted phone shows, always/.test(gTab) === false && /Open root manager/.test((gTab.match(/NOT FOUND \(grey\).{0,400}/) || [''])[0])
+      && notAllowed.test(gGrant) && !/stays there\. The phone has no su that the app can see: it is not rooted, or the manager is disabled\. Nothing on this tab can change that/.test(gGrant) && /A renamed build of KernelSU or APatch can get this message too/.test(gGrant)
+      && notAllowed.test(gRecipe) && !/NOT FOUND means stop here\./.test(gRecipe) && notAllowed.test(gMode) && notAllowed.test(gTrouble),
+    JSON.stringify([(gTab.match(/NOT FOUND \(grey\).{0,200}/) || [''])[0], (gGrant.match(/The chip reads NOT FOUND.{0,200}/) || [''])[0]]));
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 

@@ -709,7 +709,7 @@
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>Open <b>Root Features</b>. Read the chip on the top card: <b>AVAILABLE</b> means the phone has <code>su</code> and you can go on; <b>NOT FOUND</b> means stop here.</li>
+<li>Open <b>Root Features</b>. Read the chip on the top card: <b>AVAILABLE</b> means the phone has <code>su</code> and you can go on; <b>NOT FOUND</b> means stop here, except with KernelSU, KernelSU Next or APatch, which show <code>su</code> only to the apps they allow: then do step 3 first.</li>
 <li>Tap <b>Request Super User</b>. Your root manager asks (Magisk does; the list managers do not, see step 3); tap <b>Grant</b> and, in Magisk, first pick a time limit such as "60 mins" in the drop-down ("Once" covers this one request only, so Magisk would ask again at step 4 and at every root action after it). The message "Using Root (Superuser)" appears, the badge turns violet, the chip reads <b>ACTIVE</b>, and the two rows under <b>Features</b> unlock.</li>
 <li>If the manager did not ask (KernelSU, for one, keeps a list instead), tap <b>Open root manager</b>, allow ADB/Root Full System Toolbox in the manager's list, come back and tap <b>Request Super User</b> again.</li>
 <li>Try one small root-only thing to see that it works: in the menu of an app you installed yourself, on the <b>Activities</b> tab, tap <b>DISABLE</b> on one unexported screen, read "Component disabled", then tap <b>ENABLE</b> on the same row (<a href="#rootfeatures-components">App components under Super User</a>).</li>
