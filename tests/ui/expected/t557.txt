@@ -18,6 +18,11 @@ C2. editor Overwrite: still one list: true ["My List"]
 C3. editor Overwrite: kept id, 3 packages, new description: true {"n":1,"keep":{"pkgs":3,"desc":"via editor"},"collisionShown":false,"saveShown":false,"calls":[],"names":["My List"],"ids":["list_keep"]}
 C4. editor Create new list: a second list is created with a different id: true count=2 distinct-new=true
 C5. editing a list without renaming does not prompt and saves in place: true {"n":1,"keep":{"pkgs":2,"desc":"old desc"},"collisionShown":false,"saveShown":false,"calls":[],"names":["My List"],"ids":["list_keep"]}
+C6. editor rename onto an existing name: the collision prompt is shown and nothing is saved yet: true ["My List","Other"]
+C7. editor rename, Create new list: a third list is created: true ["My List","My List","Other"]
+C8. ... the edited list keeps its own name, apps and description: true {"name":"Other","pkgs":"com.b","desc":"other desc"}
+C9. ... the new list has the typed name and apps, and an id of its own: true [{"name":"My List","pkgs":"com.c"},3]
+C10. ... the list that had the name is untouched: true {"pkgs":2,"desc":"old desc"}
 D1. Overwrite of the quick list nudges the widget: true ["quicklist:\"list_keep\""]
 errors: []
 ALL OK

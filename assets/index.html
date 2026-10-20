@@ -13227,9 +13227,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const selfId = id || ('list_' + Date.now());
             const clash = listWithSameName(name, selfId);     // another list with the same name but a different id
             if (clash) {
+                // "Create new list" makes a new list: when the editor holds an existing list that is being renamed onto the clash, the new
+                // list gets an id of its own, so the edited list keeps its name and apps instead of being renamed in place
+                const newId = customLists.some(l => l.id === selfId) ? 'list_' + Date.now() : selfId;
                 openListNameCollisionModal(name,
                     () => editorOverwrite(selfId, name, description, packages, clash),
-                    () => editorCommit(selfId, name, description, packages));
+                    () => editorCommit(newId, name, description, packages));
                 return;
             }
             editorCommit(selfId, name, description, packages);
