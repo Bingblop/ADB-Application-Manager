@@ -1,6 +1,16 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "Root ile bu stilin renklerini ve saf siyahı da yazar.",
+"Also writes this style's colors with root.": "Root ile bu stilin renklerini de yazar.",
+"From the style": "Stilden",
+"Secondary accent": "İkincil vurgu",
+"Secondary accent: your color.": "İkincil vurgu: renginiz.",
+"Secondary and tertiary accents": "İkincil ve üçüncül vurgular",
+"Secondary and tertiary accents: your colors.": "İkincil ve üçüncül vurgular: renkleriniz.",
+"Tertiary accent": "Üçüncül vurgu",
+"Tertiary accent: your color.": "Üçüncül vurgu: renginiz.",
+"Your own colors for the second and third accent. The main color stays as it is.": "İkinci ve üçüncü vurgu için kendi renkleriniz. Ana renk olduğu gibi kalır.",
 "100% leaves Android's colors as they are.": "%100'de Android'in renkleri olduğu gibi kalır.",
 "Accent saturation": "Vurgu doygunluğu",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Root ile Yoğunluk kaydırıcılarıyla ayarlanmış CMF renklerini de, yukarıdaki stilin yerine yazar.",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "Oluşturuldu: {0} ({1} dosya, {2} → {3}, şifre korumalı)"],
 ["Created {0} ({1} files, {2} → {3})", "Oluşturuldu: {0} ({1} dosya, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "Oluşturuldu: {0} ({1} dosya, {2} → {3}, şifre korumalı)"],
+["Current color #{0} • Apply theme writes it to the phone", "Geçerli renk #{0} • Temayı uygula bunu telefona yazar"],
 ["Current color #{0} • applies to dark mode", "Geçerli renk #{0} • koyu moda uygulanır"],
 ["Current color #{0} • applies to light mode", "Geçerli renk #{0} • açık moda uygulanır"],
 ["Current color #{0} • the palette style builds light and dark from it", "Geçerli renk #{0} • palet stili açığı ve koyuyu bundan oluşturur"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "Kendi kendine test çalıştırılamadı: {0}"],
 ["The shell did not start: {0}", "Shell başlamadı: {0}"],
 ["The speed test could not start: {0}", "Hız testi başlatılamadı: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "Stil şu an #{0} veriyor • Temayı uygula renginizi telefona yazar"],
 ["The value is too long ({0} characters at most)", "Değer çok uzun (en fazla {0} karakter)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "Değer adb’nin taşıyamayacağı kadar uzun (tırnak içine alındığında {0} bayt, en fazla yaklaşık {1})"],
 ["Theme: {0}", "Tema: {0}"],

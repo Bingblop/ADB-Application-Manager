@@ -1,6 +1,16 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "Root से इस स्टाइल के रंग और प्योर ब्लैक भी लिखता है।",
+"Also writes this style's colors with root.": "Root से इस स्टाइल के रंग भी लिखता है।",
+"From the style": "स्टाइल से",
+"Secondary accent": "दूसरा एक्सेंट",
+"Secondary accent: your color.": "दूसरा एक्सेंट: आपका रंग।",
+"Secondary and tertiary accents": "दूसरा और तीसरा एक्सेंट",
+"Secondary and tertiary accents: your colors.": "दूसरा और तीसरा एक्सेंट: आपके रंग।",
+"Tertiary accent": "तीसरा एक्सेंट",
+"Tertiary accent: your color.": "तीसरा एक्सेंट: आपका रंग।",
+"Your own colors for the second and third accent. The main color stays as it is.": "दूसरे और तीसरे एक्सेंट के लिए आपके अपने रंग। मुख्य रंग जैसा है वैसा ही रहता है।",
 "100% leaves Android's colors as they are.": "100% पर Android के रंग जैसे हैं वैसे ही रहते हैं।",
 "Accent saturation": "एक्सेंट सैचुरेशन",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Root से CMF के रंग भी, तीव्रता स्लाइडरों से एडजस्ट करके, ऊपर की स्टाइल की जगह लिखता है।",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "{0} बनाया गया ({1} फ़ाइल, {2} → {3}, पासवर्ड से सुरक्षित)"],
 ["Created {0} ({1} files, {2} → {3})", "{0} बनाया गया ({1} फ़ाइलें, {2} → {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "{0} बनाया गया ({1} फ़ाइलें, {2} → {3}, पासवर्ड से सुरक्षित)"],
+["Current color #{0} • Apply theme writes it to the phone", "मौजूदा रंग #{0} • थीम लागू करें इसे फ़ोन पर लिखता है"],
 ["Current color #{0} • applies to dark mode", "मौजूदा रंग #{0} • डार्क मोड पर लागू"],
 ["Current color #{0} • applies to light mode", "मौजूदा रंग #{0} • लाइट मोड पर लागू"],
 ["Current color #{0} • the palette style builds light and dark from it", "मौजूदा रंग #{0} • पैलेट स्टाइल इससे लाइट और डार्क बनाता है"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "स्व-परीक्षण नहीं चल सका: {0}"],
 ["The shell did not start: {0}", "शेल शुरू नहीं हुआ: {0}"],
 ["The speed test could not start: {0}", "स्पीड टेस्ट शुरू नहीं हो सका: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "स्टाइल अभी #{0} देता है • थीम लागू करें आपका रंग फ़ोन पर लिखता है"],
 ["The value is too long ({0} characters at most)", "मान बहुत लंबा है (अधिकतम {0} अक्षर)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "मान adb के लिए बहुत लंबा है (कोट होने पर {0} बाइट, अधिकतम लगभग {1})"],
 ["Theme: {0}", "थीम: {0}"],

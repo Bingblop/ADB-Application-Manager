@@ -1,6 +1,16 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Also writes this style's colors and pure black with root.": "يكتب أيضًا ألوان هذا النمط والأسود الخالص عبر Root.",
+"Also writes this style's colors with root.": "يكتب أيضًا ألوان هذا النمط عبر Root.",
+"From the style": "من النمط",
+"Secondary accent": "لون التمييز الثاني",
+"Secondary accent: your color.": "لون التمييز الثاني: لونك.",
+"Secondary and tertiary accents": "لونا التمييز الثاني والثالث",
+"Secondary and tertiary accents: your colors.": "لونا التمييز الثاني والثالث: ألوانك.",
+"Tertiary accent": "لون التمييز الثالث",
+"Tertiary accent: your color.": "لون التمييز الثالث: لونك.",
+"Your own colors for the second and third accent. The main color stays as it is.": "ألوانك الخاصة للون التمييز الثاني والثالث. يبقى اللون الرئيسي كما هو.",
 "100% leaves Android's colors as they are.": "عند 100% تبقى ألوان Android كما هي.",
 "Accent saturation": "تشبع لون التمييز",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "يكتب أيضًا ألوان CMF عبر Root، بدلًا من النمط أعلاه، معدّلةً بمنزلقات «الشدة».",
@@ -5371,6 +5381,7 @@ p: [
 ["Created {0} ({1} file, {2} → {3}, password-protected)", "تم إنشاء {0} (الملفات: {1}، {2} ← {3}، محمي بكلمة مرور)"],
 ["Created {0} ({1} files, {2} → {3})", "تم إنشاء {0} (الملفات: {1}، {2} ← {3})"],
 ["Created {0} ({1} files, {2} → {3}, password-protected)", "تم إنشاء {0} (الملفات: {1}، {2} ← {3}، محمي بكلمة مرور)"],
+["Current color #{0} • Apply theme writes it to the phone", "اللون الحالي #{0} • «تطبيق السمة» يكتبه على الهاتف"],
 ["Current color #{0} • applies to dark mode", "اللون الحالي #{0} • ينطبق على الوضع الداكن"],
 ["Current color #{0} • applies to light mode", "اللون الحالي #{0} • ينطبق على الوضع الفاتح"],
 ["Current color #{0} • the palette style builds light and dark from it", "اللون الحالي #{0} • يبني نمط لوحة الألوان الفاتح والداكن منه"],
@@ -5831,6 +5842,7 @@ p: [
 ["The self-test could not run: {0}", "تعذّر تشغيل الاختبار الذاتي: {0}"],
 ["The shell did not start: {0}", "لم يبدأ Shell: {0}"],
 ["The speed test could not start: {0}", "تعذّر بدء اختبار السرعة: {0}"],
+["The style gives #{0} now • Apply theme writes your color to the phone", "يعطي النمط الآن #{0} • «تطبيق السمة» يكتب لونك على الهاتف"],
 ["The value is too long ({0} characters at most)", "القيمة طويلة جدًا (الحد الأقصى {0} من الأحرف)"],
 ["The value is too long for adb to carry ({0} bytes once quoted, about {1} at most)", "القيمة أطول مما يستطيع adb نقله ({0} بايت بعد وضع علامات الاقتباس، والحد الأقصى نحو {1})"],
 ["Theme: {0}", "السمة: {0}"],
