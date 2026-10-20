@@ -918,7 +918,9 @@ style the palette is worked out with:
   (Expressive at 2021, seed hue + 240, and Fruit Salad at every spec, seed hue - 50), the palette at X's hue with P's chroma takes its
   place. So the hue picked is kept in every style and the style sets the chroma: at 2021 that of the style's primary, 36 Tonal Spot, 200
   Vibrant, 40 Expressive, 48 Rainbow and Fruit Salad, 12 Spritz, on every profile and for every color (the styles' own secondary /
-  tertiary: 16/24, 24/32, 24/32, 16/24, 36/36, 8/16); Fidelity, Content and CMF keep X's chroma; at 2025 Tonal Spot and Expressive differ
+  tertiary: 16/24, 24/32, 24/32, 16/24, 36/36, 8/16); Fidelity, Content and CMF keep X's chroma (under CMF the tertiary and
+  tertiary_container roles, and so the tertiary fixed colors, keep the seed's tone: CMF's 2026 rules take it from a second source
+  color and the app gives CMF one, the seed; 6750A4 with FFDE3F gives tertiary_container 6F5E00); at 2025 Tonal Spot and Expressive differ
   between light and dark and Spritz gives blue hues 12, others 8. Grey colors give a colored row at the style's chroma in the stock
   styles (808080 and FFFFFF teal, 000000 pink). The accents come before `opts.adjust`, so Accent saturation scales them. Only accent2 and
   the secondary roles (accent3 and the tertiary roles) change; Monochrome's entries are the same with them, so under Monochrome the page

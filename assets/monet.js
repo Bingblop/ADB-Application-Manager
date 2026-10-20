@@ -212,9 +212,13 @@
  * written for this project. No phone computes these colours itself. For a colour X set for a row:
  *   1. The scheme of the same style, spec, mode, contrast and profile (so the same part) is built from X as the seed, and its primary
  *      palette P is taken. X is taken as it is: seed()'s grey rule (Android's ColorScheme turns a source colour with chroma under 5
- *      into Google blue) is not applied to a colour picked for a row. With step 2 that rule would change only Spritz at 2025 and 2026
- *      (its chroma depends on whether the hue is blue) and CMF (a grey would take Google blue's chroma); measured with 808080, 404040,
- *      000000 and FFFFFF, P14 and P16, light and dark. The mode is the one of the scheme X's palette goes into: entries() builds a
+ *      into Google blue) is not applied to a colour picked for a row. Measured with two mutants of this file (X as the secondary,
+ *      808080, 404040, 000000 and FFFFFF, whose chroma is under 5, and 7F8085 and A0A090, whose chroma is not and which change
+ *      nothing; every style and spec, P14 and P16, light and dark): seed() applied to X itself would turn a grey X into Google blue,
+ *      hue included, in every style but Fidelity, Content and Monochrome (seed()'s exemptions), so Tonal Spot's accent2_500 for 808080
+ *      on P14 at 2021 would be 5F75AB (blue) in place of 27818D (teal); seed() applied only to the seed of X's scheme, with step 2
+ *      still keeping X's hue, would change only Spritz at 2025 and 2026 (its chroma depends on whether the hue is blue) and CMF (a
+ *      grey would take Google blue's chroma). The mode is the one of the scheme X's palette goes into: entries() builds a
  *      light and a dark scheme and each gets the palette of X's scheme of its own mode (at 2021 they are the same; at 2025 Tonal
  *      Spot's and Expressive's chroma differ).
  *   2. If P's hue is X's hue (within ACCENT_HUE_TOLERANCE, 0.5 degrees), P is used as it is; otherwise the palette at X's hue with P's
@@ -234,6 +238,14 @@
  *      rules apply on top. The primary, neutral, neutral variant and error palettes are never touched: nothing outside the row and its
  *      roles changes.
  *   4. The accents come before the Intensity sliders: Accent saturation scales the replaced palettes too.
+ *   CMF (spec 2026) and the tertiary: the 2026 rules (color_spec_2026.ts, ported in part 2) take the tone of tertiary and
+ *   tertiary_container, and so of the tertiary fixed colours, from the scheme's second source colour, or from its source colour when it
+ *   has only one; this file gives CMF one source colour, the seed. Step 3 replaces the tertiary palette only (as in every style), so
+ *   with a tertiary accent those roles are X's hue and chroma at the seed's tone, and tertiary_container is not X. Measured against
+ *   Google's library at bd811e4 with X as SchemeCmf's second source colour (seed 6750A4, X FFDE3F, contrast 0, P16): the tertiary
+ *   palettes are the same; light mode gives tertiary 615200 and tertiary_container 6F5E00 here, 6F5E00 and FFDE3F there. Giving X to
+ *   CMF as a second source colour for these tones is a choice left open (the brief's rule replaces the palette). The 2026 secondary
+ *   roles take their tones from the secondary palette itself (tMaxC / tMinC), so a secondary accent is not concerned.
  *   Monochrome: P has chroma 0, so the row stays the same grey; every colour written is unchanged (palettes() and scheme() report X's
  *   hue for that row, which a chroma-0 colour does not show). Fidelity and Content keep X's hue and chroma; their key colour
  *   (palettes().key, palette_key_color_secondary / _tertiary) is the palette's own key colour search at that hue and chroma, as for the

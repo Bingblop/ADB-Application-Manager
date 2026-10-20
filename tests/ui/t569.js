@@ -1,21 +1,23 @@
-// Secondary and tertiary accents (ColorBlendr PR 7): the row under Intensity in the Overlays tab's Root-only theme controls card (two
-// entries, Secondary accent and Tertiary accent, each a colour from the page's colour picker or "From the style"; kv ovl_accent_secondary and
+// Secondary and tertiary accents (ColorBlendr PR 7): the row under Intensity in the Overlays tab's Root-only theme controls card (two entries,
+// Secondary accent and Tertiary accent, each a colour from the page's colour picker or "From the style"; kv ovl_accent_secondary and
 // ovl_accent_tertiary, 'RRGGBB' in capitals) and what Apply writes with them (monet.js's opts.accents). (a) Locks, as Intensity and More
 // styles have them: Update the app (no overlayFabricate, or a monet.js without the accents), the build family's lock (T-049), Needs Super
-// User; Needs Android 14 on Android 12 and 13; stored colours count for nothing there and the handlers change nothing. (b) Live on Android 14
-// (P14) and 16.0 (P16); what the store reads as set. (c) Picking a colour through the colour picker sheet: it starts at the colour the style
-// gives the row (or the one set), its Apply stores the colour (one saveSetting) and changes the preview and the hint, and no other bridge
-// method is called than the page's reads (no theme or overlay call); Cancel stores nothing. (d) Clear. (e) Apply: a list style at 2021 with
-// the sliders at 100 and an accent set is written by the app (MonetPlan.entries with the same accents) on P16 and P14, the record keeps the
-// accents; the values are the ones of the tap; both accents with the sliders and with a More style; Monochrome takes none; none set writes
-// what PR 6 writes; Pure black wins. (f) The hint in every variant. (g) The record (old records read as none) and the note for colours
-// written on another build. (h) The maths through the page's MonetPlan: identity with none set, the rows a colour changes and the ones it
-// leaves alone, the hue kept in Expressive and Fruit Salad, Fidelity's key colour, Monochrome, accents before the sliders, what throws, and
-// values pinned from oracles that do not use the new monet.js (kept outside the repository): for P16 and P15Q2 at 2021 and 2025 and CMF at
-// 2026, Google's Material Color Utilities (TypeScript, main bd811e4) with the scheme built from X as the seed by its own Scheme class, its
-// primary palette (or, where its hue is not X's, the palette at X's hue with that chroma) put in as the secondary or tertiary palette, then
-// the sliders, a new DynamicScheme and its roles; for P14 the monet.js from before the accents (a231777c) run by hand the same way with
-// Android 14's shade rule. (j) German. (k) The row at 320 px in English and German.
+// User; Needs Android 14 on Android 12 and 13; stored colours count for nothing there and the handlers change nothing and call no
+// AndroidBridge method. (b) Live on Android 14 (P14) and 16.0 (P16); what the store reads as set. (c) Picking a colour through the colour
+// picker sheet: it starts at the colour the style gives the row (the style Apply would write without the accents and the sliders: a More style
+// and the spec count, the sliders do not) or at the one set; its Apply stores the colour (one saveSetting) and changes the preview and the
+// hint, and no other bridge method is called than the page's reads (no theme or overlay call); Cancel stores nothing. (d) Clear. (e) Apply: a
+// list style at 2021 with the sliders at 100 and an accent set is written by the app (MonetPlan.entries with the same accents) on P16 and P14,
+// the record keeps the accents; the values are the ones of the tap; both accents with the sliders and with a More style; Monochrome takes
+// none; none set writes what PR 6 writes; Pure black wins. (f) The hint in every variant. (g) The record (old records read as none) and the
+// note for colours written on another build. (h) The maths through the page's MonetPlan: identity with none set, the rows a colour changes and
+// the ones it leaves alone, the hue kept in Expressive and Fruit Salad, Fidelity's key colour, Monochrome, accents before the sliders, what
+// throws, and values pinned (a grey accent among them, under Fidelity, Tonal Spot and CMF) from oracles that do not use the new monet.js (kept
+// outside the repository): for P16 and P15Q2 at 2021 and 2025 and CMF at 2026, Google's Material Color Utilities (TypeScript, main bd811e4)
+// with the scheme built from X as the seed by its own Scheme class, its primary palette (or, where its hue is not X's, the palette at X's hue
+// with that chroma) put in as the secondary or tertiary palette, then the sliders, a new DynamicScheme and its roles; for P14 the monet.js
+// from before the accents (a231777c) run by hand the same way with Android 14's shade rule. (j) German. (k) The row at 320 px in English and
+// German.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -66,7 +68,12 @@ const PINS = [
   ['P16', 'CMF', '6750A4', '2026', { secondary: 'E91E63', tertiary: 'FFD600' }, { accentSat: 150, bgSat: 100, bgLight: 100 }, { secondary_light: '0xFFBE004C', secondary_dark: '0xFFFF6D8D', on_secondary_container_light: '0xFF30000D', tertiary_light: '0xFF625100', tertiary_dark: '0xFFBA9C00', tertiary_fixed_dim: '0xFF625100', primary_light: '0xFF5F2CCA' }],
   // a grey accent is taken as it is (seed()'s grey rule, Google blue, is for a wallpaper colour): under Fidelity it keeps its own low chroma
   ['P16', 'FIDELITY', '6750A4', '2021', { secondary: '808080' }, null, { accent2_500: '0xFF777777', accent2_100: '0xFFE3E2E2', secondary_light: '0xFF5E5E5E', secondary_dark: '0xFFC7C6C6', palette_key_color_secondary_light: '0xFF777777', accent1_500: '0xFF8069BF', primary_light: '0xFF4F378A' }],
-  ['P14', 'FIDELITY', '6750A4', '2021', { secondary: '808080' }, null, { accent2_500: '0xFF767676', accent2_100: '0xFFE3E2E2', secondary_light: '0xFF5E5E5E', secondary_dark: '0xFFC7C6C6', palette_key_color_secondary_light: '0xFF777777', accent1_500: '0xFF7F68BE', primary_light: '0xFF513A8D' }]
+  ['P14', 'FIDELITY', '6750A4', '2021', { secondary: '808080' }, null, { accent2_500: '0xFF767676', accent2_100: '0xFFE3E2E2', secondary_light: '0xFF5E5E5E', secondary_dark: '0xFFC7C6C6', palette_key_color_secondary_light: '0xFF777777', accent1_500: '0xFF7F68BE', primary_light: '0xFF513A8D' }],
+  // and where seed() would turn it into Google blue (it exempts only Fidelity, Content and Monochrome): Tonal Spot gives the grey's own hue
+  // (teal for 808080) at the style's chroma, CMF the grey's own chroma
+  ['P16', 'TONAL_SPOT', '6750A4', '2021', { secondary: '808080' }, null, { accent2_10: '0xFFF6FEFF', accent2_100: '0xFF9EEFFD', accent2_500: '0xFF29828E', accent2_800: '0xFF00363D', secondary_light: '0xFF006874', secondary_dark: '0xFF82D3E0', secondary_container_light: '0xFF9EEFFD', palette_key_color_secondary_light: '0xFF28828E', accent1_500: '0xFF7E6EA9', primary_light: '0xFF65558F' }],
+  ['P14', 'TONAL_SPOT', '6750A4', '2021', { secondary: '808080' }, null, { accent2_10: '0xFFF6FEFF', accent2_100: '0xFF9EEFFD', accent2_500: '0xFF27818D', accent2_800: '0xFF00363D', secondary_light: '0xFF006874', secondary_dark: '0xFF82D3E0', secondary_container_light: '0xFF9EEFFD', palette_key_color_secondary_light: '0xFF28828E', accent1_500: '0xFF7D6DA8', primary_light: '0xFF65558F' }],
+  ['P16', 'CMF', '6750A4', '2026', { secondary: '808080' }, null, { accent2_10: '0xFFFDFCFB', accent2_100: '0xFFE3E2E2', accent2_500: '0xFF777777', accent2_800: '0xFF303031', secondary_light: '0xFF5F5F5F', secondary_dark: '0xFF9E9E9E', secondary_container_light: '0xFFE3E2E2', palette_key_color_secondary_light: '0xFF777777', accent1_500: '0xFF8069BF', primary_light: '0xFF5B4497' }]
 ];
 const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] === profile && p[1] === style && p[3] === spec && JSON.stringify(p[4]) === JSON.stringify(accents) && JSON.stringify(p[5]) === JSON.stringify(adjust))[6];
 (async () => {
@@ -143,17 +150,20 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
     if (typeof ovlAccSet !== 'function') return 'no handlers';
     window.__bc.length = 0; ovlAccOpen('secondary'); const opened = document.getElementById('colorPickModal').classList.contains('show'); if (opened) closeColorPicker();
     ovlAccSet('secondary', '2962FF'); ovlAccSet('tertiary', 'FFD600'); ovlAccClear('secondary');
-    const w = window.__bc.filter(c => c[0] === 'saveSetting');
-    return [kvGet('ovl_accent_secondary', null), kvGet('ovl_accent_tertiary', null), w.length, opened];
+    // every AndroidBridge method the three handlers called (none while locked: not a write, a read, a vibration or a palette read), named
+    // after the count when there is one
+    const w = window.__bc.map(c => c[0]);
+    return [kvGet('ovl_accent_secondary', null), kvGet('ovl_accent_tertiary', null), w.length, opened].concat(w.length ? [w] : []);
   });
-  check('   the handlers called directly change nothing (the picker does not open, nothing stored, no saveSetting)', JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]', JSON.stringify(await handlers()));
+  const h1 = JSON.stringify(await handlers());
+  check('   the handlers called directly change nothing (the picker does not open, nothing stored, no AndroidBridge method called at all)', h1 === '["E91E63","00897B",0,false]', h1);
   await reset(); await apply(); let k = await calls();
   check('   Apply writes the theme setting only: no overlay call', k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && k.fab.length === 0, JSON.stringify(k.fab));
   await phone({ sdk: 33, build: B14 }); a = await acc();
   check('   Android 13 without Super User: Needs Super User (the root lock comes first)', lockedAs(a, 'Needs Super User'), a.lock);
   await setRoot(true); a = await acc();
   check('A2. Super User on Android 13 (P12): a locked row saying Needs Android 14, as Intensity and More styles', lockedAs(a, 'Needs Android 14') && a.adj === 'Needs Android 14' && a.more === 'Needs Android 14', JSON.stringify([a.lock, a.adj, a.more]));
-  check('   the stored colours count for nothing there (no hint, no plan style); the handlers change nothing', a.hint === '' && a.said === '' && (await ev(() => typeof ovlRootAccOn === 'function' && ovlRootAccOn() === null)) && JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]', a.hint);
+  check('   the stored colours count for nothing there (no hint, no plan style); the handlers change nothing and call no AndroidBridge method', a.hint === '' && a.said === '' && (await ev(() => typeof ovlRootAccOn === 'function' && ovlRootAccOn() === null)) && JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]', a.hint);
   await ev(() => { kvSet('ovl_black', true); ovlRender(); }); await reset(); await apply(); k = await calls();
   const r33 = await kv('ovl_root_applied');
   check('   with Pure black on there: its own plan only (ovlBuildBlackPlan(33)), and the record carries no accents', k.fab.length === 1 && JSON.stringify(k.fab[0].entries) === JSON.stringify(await ev(() => ovlBuildBlackPlan(33))) && r33 && r33.style === '' && !('accents' in r33), JSON.stringify(Object.assign({}, r33, { t: 'T' })));
@@ -167,7 +177,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
     await phone(o); a = await acc();
     check('A3. Super User, ' + label + ': locked with "' + reason + '", as Intensity and More styles', lockedAs(a, reason) && a.adj === reason && a.more === reason && a.hint === '' && a.said === '', JSON.stringify([a.lock, a.adj, a.more, a.hint]));
     await reset(); await apply(); k = await calls();
-    check('   the handlers change nothing; Apply writes the theme setting only', JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]' && k.apply.length === 1 && k.fab.length === 0, JSON.stringify(k.fab));
+    check('   the handlers change nothing and call no AndroidBridge method; Apply writes the theme setting only', JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]' && k.apply.length === 1 && k.fab.length === 0, JSON.stringify(k.fab));
   }
   await ev(() => { window.__fabSaved = window.AndroidBridge.overlayFabricate; delete window.AndroidBridge.overlayFabricate; });
   await phone({ sdk: 34, build: B14 }); a = await acc();
@@ -181,7 +191,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   await ev(() => { window.__mp = window.MonetPlan; window.MonetPlan = Object.assign({}, window.__mp, { lib: Object.assign({}, window.__mp.lib, { accentsOf: undefined }) }); });
   await phone({ sdk: 34, build: B14 }); a = await acc();
   check('A5. Android 14 with Super User and a monet.js without the accents: Update the app; Intensity and More styles stay live', lockedAs(a, 'Update the app') && a.adj === '' && a.more === '' && (await ev(() => !!document.getElementById('ovlRootStyles') && !!document.getElementById('ovlAdjAccentSat'))), JSON.stringify([a.lock, a.adj, a.more]));
-  check('   the stored colours count for nothing (no hint, Tonal Spot at 2021 gives no plan style); the handlers change nothing', a.hint === '' && a.said === '' && (await ev(() => typeof ovlRootAccOn === 'function' && ovlRootAccOn() === null && ovlRootPlanOn('TONAL_SPOT').style === '')) && JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]', a.hint);
+  check('   the stored colours count for nothing (no hint, Tonal Spot at 2021 gives no plan style); the handlers change nothing and call no AndroidBridge method', a.hint === '' && a.said === '' && (await ev(() => typeof ovlRootAccOn === 'function' && ovlRootAccOn() === null && ovlRootPlanOn('TONAL_SPOT').style === '')) && JSON.stringify(await handlers()) === '["E91E63","00897B",0,false]', a.hint);
   await reset(); await apply(); k = await calls();
   check('   Apply writes the theme setting only', k.apply.length === 1 && k.fab.length === 0, JSON.stringify(k.fab));
   await phone({ sdk: 33, build: B14 }); a = await acc();
@@ -211,6 +221,21 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   check('   nothing stored, no bridge method called but the page\'s reads and its tap vibration (' + READS.join(', ') + ')', JSON.stringify(await kvs()) === '[null,null]' && bc.every(c => READS.includes(c[0])), JSON.stringify(bc.filter(c => !READS.includes(c[0]))));
   if ((await sheet()).open) await tap('#colorPickModal .mode-action-btn:not(.primary)'); await sleep(100); a = await acc();
   check('   Cancel: the sheet closes, nothing stored, the entry still "' + NONE + '", no hint', !(await sheet()).open && JSON.stringify(await kvs()) === '[null,null]' && (a.entries[0] || {}).value === NONE && a.hint === '' && !a.preview, JSON.stringify([await kvs(), (a.entries[0] || {}).value]));
+  // the start colour is the one of the style Apply would write without the accents and the sliders: a More style or the spec changes it, the
+  // sliders do not. [what is chosen, entry, More style, spec, Accent saturation, the style whose palettes() give it]
+  const STARTS = [
+    ['Fidelity in More styles (2021)', 0, 'FIDELITY', '2021', 100, 'FIDELITY'],
+    ['CMF in More styles at 2026', 1, 'CMF', '2026', 100, 'CMF'],
+    ['Tonal Spot in the list at 2025 with Accent saturation 150', 1, '', '2025', 150, 'TONAL_SPOT']
+  ];
+  for (const [what, i, more, spec, sat, style] of STARTS) {
+    await ev(([more, spec]) => { kvSet('ovl_spec', spec); kvSet('ovl_root_style', more); ovlRender(); }, [more, spec]); await setAdj(sat, 100, 100);
+    const want = await evm(([style, spec, row, sat]) => { const o = { spec, dark: systemPrefersDark(), profile: 'P16', contrast: 0 }; return [MonetPlan.palettes(style, '6750A4', o)[row].key, MonetPlan.palettes(style, '6750A4', Object.assign({ adjust: { accentSat: sat } }, o))[row].key]; }, [style, spec, i ? 'accent3' : 'accent2', sat], ['?', '?']);
+    const was = i ? plain.key3 : plain.key2;
+    if (await page.$('#' + IDS[i])) await tap('#' + IDS[i]); await sleep(100); sh = await sheet(); await closeSheet(); await sleep(50);
+    check('   ' + what + ': ' + (i ? 'Tertiary' : 'Secondary') + ' accent starts at the colour that style gives its row now (#' + want[0] + ', not Tonal Spot\'s 2021 #' + was + (sat !== 100 ? ' nor #' + want[1] + ' with the slider' : '') + ') and says so', sh.open && sh.hex === want[0] && want[0] !== was && (sat === 100 || want[1] !== want[0]) && sh.sub === 'The style gives #' + want[0] + ' now • Apply theme writes your color to the phone' && JSON.stringify(await kvs()) === '[null,null]', JSON.stringify(sh));
+  }
+  await ev(() => { kvSet('ovl_spec', '2021'); kvSet('ovl_root_style', ''); ovlRender(); }); await setAdj(null, null, null);
   // Secondary: the grid's #E91E63 swatch, then Apply
   const pick = async (id, how, hex) => {
     await ev(() => { window.__bc.length = 0; window.__ovlCalls.apply.length = 0; window.__ovlCalls.fab.length = 0; });
