@@ -1227,7 +1227,7 @@
     <li>The manager opens on its own screen. The app sends it nothing: no list, no request, no app name. Find the manager's list of apps with root and allow or deny apps there, as the manager's own help describes.</li>
     <li>Come back. The app checks its own root status again, in case you changed this app's grant at the same time; if you did, the chip and the rows follow.</li>
   </ol>
-  <p>With no manager installed the message is "No root manager was found. Install KernelSU, APatch or Magisk, then come back.", which you only see while the chip reads ACTIVE if your <code>su</code> comes from something other than those four managers.</p>
+  <p>The app finds the manager by the usual package names of those four only. When it cannot (a Magisk hidden with its own "Hide the Magisk app" option, a renamed build of a manager, or a <code>su</code> that comes from something else), the message is "Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list." Open it from the home screen yourself; coming back that way gets no automatic re-check, so tap <b>Check Status</b> in Working Modes if you changed this app's own grant there.</p>
 
   <h4>Why it is behind the gate</h4>
   <p>The row only opens another app, which needs no root at all. It is locked with the other features all the same, until Super User is active. On an unrooted phone the row is listed and locked, so you can see what you would get.</p>

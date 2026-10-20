@@ -4549,6 +4549,7 @@
 {"k":"Your phone was updated.","ctx":"built by the code of: check profile drift"},
 {"k":"Your root manager (Magisk, KernelSU, APatch) did not grant this app su. Allow it there, then choose Root again.","ctx":"built by the code of: render root features"},
 {"k":"Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.","ctx":"built by the code of: root open manager"},
+{"k":"Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.","ctx":"built by the code of: root manage superuser"},
 {"k":"Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".","ctx":"built by the code of: lists restore from"},
 {"k":"Zip (.zip) — opens everywhere","ctx":"in a sheet (cz)"},
 {"k":"ZipCrypto (weak, but opens in everything)","ctx":"in a sheet (cz)"},

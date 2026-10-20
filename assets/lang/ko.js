@@ -4536,6 +4536,7 @@ x: {
 "Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.": "휴대폰은 먼저 지금 쓰는 DNS로 각 서비스의 이름을 조회합니다(한 번). 그다음 각 서비스는 짧은 암호화 연결을 최대 세 번 받을 수 있으며, 연결마다 example.com을 묻습니다. 앱은 ICMP 핑을 쓸 수 없어서, 시간은 비공개 DNS가 실제로 쓰는 암호화 연결 기준입니다.",
 "Your phone was updated.": "휴대전화가 업데이트되었습니다.",
 "Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.": "루트 관리자를 원래 이름으로 찾지 못했습니다(예: 숨겨진 Magisk 앱). 직접 열어 이 앱을 허용한 다음 ‘슈퍼유저 요청’을 누르세요.",
+"Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.": "루트 관리자를 원래 이름으로 찾지 못했습니다(숨겨졌거나 이름이 바뀌었을 수 있습니다). 홈 화면에서 열고 Super User 목록에서 앱을 관리하세요.",
 "Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".": "내 목록은 그대로 유지됩니다. 이미 있는 목록은 건너뛰고, 이름은 같지만 앱이 다른 목록은 “이름(가져옴)”으로 들어옵니다.",
 "Zip (.zip) — opens everywhere": "Zip (.zip) — 어디서나 열림",
 "ZipCrypto (weak, but opens in everything)": "ZipCrypto (약하지만 어디서나 열림)",

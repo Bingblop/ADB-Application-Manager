@@ -4536,6 +4536,7 @@ x: {
 "Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.": "手机会先用当前使用的 DNS 查找每个服务的名称（一次）。然后每个服务最多会收到三次简短的加密连接，每次都查询 example.com。应用无法使用 ICMP ping，所以这些时间是私人 DNS 实际使用的加密连接的耗时。",
 "Your phone was updated.": "你的手机已更新。",
 "Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.": "未能按常用名称找到你的 Root 管理器（例如已隐藏的 Magisk 应用）。请自行打开它，允许此应用，然后点按“请求超级用户”。",
+"Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.": "未能按常用名称找到你的 Root 管理器（它可能已被隐藏或改名）。请从主屏幕打开它，并在其 Super User 列表中管理应用。",
 "Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".": "你自己的保持不变。已存在的列表会被跳过；名称相同但应用不同的列表会以“名称（已导入）”加入。",
 "Zip (.zip) — opens everywhere": "Zip（.zip）—— 到处都能打开",
 "ZipCrypto (weak, but opens in everything)": "ZipCrypto（弱，但几乎任何软件都能打开）",

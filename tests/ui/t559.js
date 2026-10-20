@@ -5,8 +5,8 @@
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
 // nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
-// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su. Deterministic output:
-// ok / FAIL lines and the summary.
+// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
+// on the unlocked Super User for apps row while root is ACTIVE (T-025). Deterministic output: ok / FAIL lines and the summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
@@ -72,7 +72,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no lock', (await ev(() => !!document.getElementById('rfSuAppsBtn'))) && !(await lockedRow()));
   await page.click('#rfSuAppsBtn'); await sleep(50);
   check('   Open manager (apps) launches the installed manager (openRootManager) and marks the status pending', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === true)));
-  await ev(() => { rootGrantPending = false; });
+  await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; });
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  check('   with root ACTIVE but no known manager (hidden or renamed), Open manager says it was not found by its usual name, not "install one", and marks nothing pending (T-025)', (await text('#toastMsg')) === 'Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.' && (await ev(() => rootGrantPending === false)), await text('#toastMsg'));
+  await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the second active-state feature: "App components" is a signpost to the Application Manager (no new backend; the component toggle already lives in the app inspector)
   check('   the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)', /App components/.test(await text('#rfFeatureList')) && (await ev(() => !!document.getElementById('rfComponentsBtn'))));
   await page.click('#rfComponentsBtn'); await sleep(50);

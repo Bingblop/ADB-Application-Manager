@@ -28621,6 +28621,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (res && res.ok) {
                 rootGrantPending = true;
                 showToast(txF('Opening {0} — manage which apps get Super User there.', res.name || txT('your root manager')));
+            } else if (isRootActive()) {
+                // su already answers as root, so the phone has a manager the app cannot find by one of the four known package names (a Magisk
+                // hidden with "Hide the Magisk app", a renamed build): asking the user to install one would be wrong.
+                showToast(txT('Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.'));
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }
