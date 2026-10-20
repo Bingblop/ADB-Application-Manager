@@ -32,9 +32,16 @@ check('every dictionary in assets/lang/ has every string of keys.json and none t
   const win = {};
   new Function('window', fs.readFileSync(path.join(TESTS, '..', 'assets', 'lang', 'de.js'), 'utf8'))(win);
   const de = win.__LANGS && win.__LANGS.de, px = new Map(((de && de.p) || []).map(e => [e[0], e[1]]));
-  const vals = ['Like Fidelity, with a third accent chosen to sit beside your color.', 'Accents keep your exact color; backgrounds take a faint tint of it.', 'From your wallpaper'].map(k => de && de.x[k]).concat([px.get('From your wallpaper (#{0})')]);
+  const vals = ['Like Fidelity, with a third accent chosen to sit beside your color.', 'Accents keep your exact color; backgrounds take a faint tint of it.', 'From your wallpaper',
+    // the other theme-card lines of the Overlays tab (PR 4, More styles, accents)
+    'Secondary accent: your color.', 'Secondary and tertiary accents: your colors.', 'Tertiary accent: your color.',
+    'One color family: accents and backgrounds are your color at different strengths.',
+    'Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.',
+    'Almost grey, with only a trace of your color.',
+    'One hue, five strengths: your color in full for the accent, at half and three quarters for the other accents, a fifth for the surfaces. From the 2026 Material color spec.',
+    'Playful: the accents are turned far from your color.', 'Stays as close to your source color as it can, in its own strength.'].map(k => de && de.x[k]).concat([px.get('The style gives #{0} now • Apply theme writes your color to the phone'), px.get('From your wallpaper (#{0})')]);
   const du = vals.filter(v => typeof v !== 'string' || /\b(du|dich|dir|dein|deine|deiner|deinem|deinen|deines)\b/i.test(v));
-  check('de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[3] || ''), JSON.stringify(du));
+  check('de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[vals.length - 1] || ''), JSON.stringify(du));
 }
 console.log(failed ? failed + ' FAILED' : 'all passed');
 process.exit(failed ? 1 : 0);
