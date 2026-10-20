@@ -1,6 +1,18 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Также записывает цвета CMF и чисто чёрный через Root, вместо стиля выше.",
+"Also writes the CMF colors with root, in place of the style above.": "Также записывает цвета CMF через Root, вместо стиля выше.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2025 и чисто чёрный через Root, вместо цветов Android.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2025 через Root, вместо цветов Android.",
+"Color spec": "Цветовая спецификация",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Точность, Содержимое, Монохром и CMF: цвета, для которых в Android нет настройки; их вычисляет это приложение.",
+"Google's newer tuning of the same styles.": "Новая настройка Google для тех же стилей.",
+"One color family: accents and backgrounds are your color at different strengths.": "Одно семейство цветов: акценты и фон — это ваш цвет разной силы.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Точность, Содержимое и Монохром сохраняют цвета 2021 года. Базовые оттенки следуют светлому или тёмному режиму, в котором телефон находится, когда вы нажимаете «Применить»; после переключения нажмите «Применить» ещё раз.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Перекрашивает Tonal Spot, Vibrant, Expressive и Spritz через Root. Для CMF нужна 2026.",
+"The 2025 tuning, plus the CMF style.": "Настройка 2025 года плюс стиль CMF.",
+"The colors Android computes itself.": "Цвета, которые Android вычисляет сам.",
 "Needs Android 14": "Нужен Android 14",
 "More styles": "Ещё стили",
 "Monochrome": "Монохром",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "На часах включите <1>Настройки, Параметры разработчика, Отладка ADB</1>, затем <2>Отладка по Bluetooth</2>.",
 "Overlays<1> </1>": "Оверлеи<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "Стиль палитры: десять стилей и способ превращения исходного цвета в целую тему (цветовое пространство HCT и его тональные палитры) следуют <1>Material Color Utilities</1> от Google (Apache-2.0), переписанным для этого приложения.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "Ещё стили: цвета стилей Точность, Содержимое и Монохром вычисляются портом собственного цветового движка Android 14 из <1>Android Open Source Project</1> и <2>Material Color Utilities</2> 0.4.0 от Google (оба Apache-2.0); в файле monet.js указано, что откуда взято.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "Ещё стили и цветовая спецификация: цвета стилей Точность, Содержимое и Монохром вычисляются портом собственного цветового движка Android 14 из <1>Android Open Source Project</1> и <2>Material Color Utilities</2> 0.4.0 от Google; спецификации 2025 и 2026 и CMF — портом Material Color Utilities с GitHub (main, коммит bd811e4, 2026). Всё под Apache-2.0; в файле monet.js указано, что откуда взято.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "Вставьте адрес <1>репозитория в стиле F-Droid</1> (например, <2/>) либо пользователя, организации или проекта <3>GitHub</3> или <4>Codeberg</4>. Приложение прочитает то, что они публикуют, и покажет приложения.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "Наборы патчей, которые другие люди публикуют для Morphe, с <1>morphe-patches.software</1>. Добавляйте только источники, которым доверяете: источник определяет, что окажется внутри ваших пропатченных приложений.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "Портировано из <1>SD Maid SE</1> от darken (d4rken-org), GPL-3.0: фильтры, правила, базы необязательных данных и шаги автоматизации взяты оттуда; значки инструментов, логотип и переводы не используются. Это не приложение SD Maid. Оригинал со всем остальным, что он умеет: <2>SD Maid SE на GitHub</2> · <3>SD Maid SE в Google Play</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Отключить {0} системного приложения {1}? Это может нарушить работу приложения или системного интерфейса. Вы можете снова включить его здесь."],
   ["From your wallpaper (#{0})", "Из ваших обоев (#{0})"],
   ["From the color above (#{0})", "Из цвета выше (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Из синего Google: #{0} слишком серый для этого стиля"],
 ]
 };

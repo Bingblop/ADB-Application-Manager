@@ -1,6 +1,18 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Também grava as cores de CMF e o preto puro com Root, no lugar do estilo acima.",
+"Also writes the CMF colors with root, in place of the style above.": "Também grava as cores de CMF com Root, no lugar do estilo acima.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Também grava as cores 2025 deste estilo e o preto puro com Root, no lugar das do Android.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Também grava as cores 2025 deste estilo com Root, no lugar das do Android.",
+"Color spec": "Especificação de cor",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Fidelidade, Conteúdo, Monocromático e CMF: cores para as quais o Android não tem ajuste, calculadas por este app.",
+"Google's newer tuning of the same styles.": "O ajuste mais novo do Google para os mesmos estilos.",
+"One color family: accents and backgrounds are your color at different strengths.": "Uma só família de cor: acentos e fundos são a sua cor em intensidades diferentes.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Fidelidade, Conteúdo e Monocromático mantêm suas cores de 2021. Os tons de base seguem o modo claro ou escuro em que o telefone está quando você toca em Aplicar; depois de trocar o modo, toque em Aplicar de novo.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Recolore Tonal Spot, Vibrant, Expressive e Spritz com Root. CMF precisa de 2026.",
+"The 2025 tuning, plus the CMF style.": "O ajuste de 2025, mais o estilo CMF.",
+"The colors Android computes itself.": "As cores que o próprio Android calcula.",
 "Needs Android 14": "Requer Android 14",
 "More styles": "Mais estilos",
 "Monochrome": "Monocromático",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "No relógio: <1>Configurações, Opções do desenvolvedor, Depuração ADB</1> ativada, depois <2>Depuração por Bluetooth</2> ativada.",
 "Overlays<1> </1>": "Overlays<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "Estilo da paleta: os dez estilos e o jeito como uma cor de origem vira um tema completo (o espaço de cor HCT e suas paletas tonais) seguem as <1>Material Color Utilities</1> do Google (Apache-2.0), reescritas para este app.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "Mais estilos: as cores de Fidelidade, Conteúdo e Monocromático são calculadas com uma adaptação do mecanismo de cores do próprio Android 14, a partir do <1>Android Open Source Project</1> e das <2>Material Color Utilities</2> 0.4.0 do Google (ambos Apache-2.0); o arquivo monet.js informa o que foi tirado de onde.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "Mais estilos e especificação de cor: as cores de Fidelidade, Conteúdo e Monocromático são calculadas com uma adaptação do mecanismo de cores do próprio Android 14, a partir do <1>Android Open Source Project</1> e das <2>Material Color Utilities</2> 0.4.0 do Google; as especificações 2025 e 2026 e o CMF, com uma adaptação das Material Color Utilities no GitHub (main, commit bd811e4, 2026). Tudo Apache-2.0; o arquivo monet.js informa o que foi tirado de onde.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "Cole o endereço de um <1>repositório estilo F-Droid</1> (por exemplo <2/>), ou de um usuário, organização ou projeto do <3>GitHub</3> ou <4>Codeberg</4>. O app lê o que ele publica e lista os apps.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "Pacotes de patches que outras pessoas publicam para o Morphe, de <1>morphe-patches.software</1>. Adicione apenas fontes em que confia, pois uma fonte decide o que vai parar dentro dos seus apps modificados.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "Portado do <1>SD Maid SE</1> de darken (d4rken-org), GPL-3.0: os filtros, as regras, os bancos de dados de itens descartáveis e os passos de automação vêm de lá; os ícones das ferramentas, o logotipo e as traduções não são usados. Este não é o app SD Maid. Para o original, com tudo o mais que ele faz: <2>SD Maid SE no GitHub</2> · <3>SD Maid SE no Google Play</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Desativar {0} do app do sistema {1}? Isso pode quebrar o app ou a interface do sistema. Você pode reativá-lo aqui."],
   ["From your wallpaper (#{0})", "Do seu papel de parede (#{0})"],
   ["From the color above (#{0})", "Da cor acima (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Do azul do Google: #{0} é cinza demais para este estilo"],
 ]
 };

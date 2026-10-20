@@ -1,6 +1,18 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Root से CMF के रंग और प्योर ब्लैक भी, ऊपर की स्टाइल की जगह लिखता है।",
+"Also writes the CMF colors with root, in place of the style above.": "Root से CMF के रंग भी, ऊपर की स्टाइल की जगह लिखता है।",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Root से इस स्टाइल के 2025 वाले रंग और प्योर ब्लैक भी, Android के रंगों की जगह लिखता है।",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Root से इस स्टाइल के 2025 वाले रंग भी, Android के रंगों की जगह लिखता है।",
+"Color spec": "कलर स्पेक",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "सटीकता, सामग्री, मोनोक्रोम और CMF: वे रंग जिनके लिए Android में कोई सेटिंग नहीं है, इस ऐप द्वारा गणना किए गए।",
+"Google's newer tuning of the same styles.": "उन्हीं स्टाइल के लिए Google की नई ट्यूनिंग।",
+"One color family: accents and backgrounds are your color at different strengths.": "एक ही रंग परिवार: एक्सेंट और बैकग्राउंड आपका ही रंग हैं, अलग-अलग गहराई में।",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, सटीकता, सामग्री और मोनोक्रोम अपने 2021 वाले रंग रखते हैं। बेस शेड उसी लाइट या डार्क मोड के अनुसार बनते हैं जिसमें फ़ोन लागू करें टैप करते समय होता है; मोड बदलने के बाद फिर से लागू करें टैप करें।",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Root से Tonal Spot, Vibrant, Expressive और Spritz के रंग बदलता है। CMF के लिए 2026 चाहिए।",
+"The 2025 tuning, plus the CMF style.": "2025 वाली ट्यूनिंग, साथ में CMF स्टाइल।",
+"The colors Android computes itself.": "वे रंग जिनकी गणना Android खुद करता है।",
 "Needs Android 14": "Android 14 चाहिए",
 "More styles": "और स्टाइल",
 "Monochrome": "मोनोक्रोम",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "वॉच पर: <1>सेटिंग, डेवलपर विकल्प, ADB डीबगिंग</1> चालू करें, फिर <2>Bluetooth पर डीबग</2> चालू करें।",
 "Overlays<1> </1>": "ओवरले<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "पैलेट स्टाइल: दस स्टाइल और स्रोत रंग के पूरी थीम बनने का तरीका (HCT रंग क्षेत्र और उसके टोनल पैलेट) Google की <1>Material Color Utilities</1> (Apache-2.0) के अनुसार हैं, जिन्हें इस ऐप के लिए दोबारा लिखा गया है।",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "और स्टाइल: सटीकता, सामग्री और मोनोक्रोम के रंग Android 14 के अपने रंग इंजन के एक पोर्ट से गणना किए जाते हैं, जो <1>Android Open Source Project</1> और Google की <2>Material Color Utilities</2> 0.4.0 (दोनों Apache-2.0) से लिया गया है; फ़ाइल monet.js बताती है कि क्या कहाँ से लिया गया।",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "और स्टाइल और कलर स्पेक: सटीकता, सामग्री और मोनोक्रोम के रंग Android 14 के अपने रंग इंजन के एक पोर्ट से गणना किए जाते हैं, जो <1>Android Open Source Project</1> और Google की <2>Material Color Utilities</2> 0.4.0 से लिया गया है; 2025 और 2026 स्पेक और CMF, GitHub पर Material Color Utilities (main, commit bd811e4, 2026) के एक पोर्ट से। सभी Apache-2.0; फ़ाइल monet.js बताती है कि क्या कहाँ से लिया गया।",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "किसी <1>F-Droid शैली रिपॉज़िटरी</1> (जैसे <2/>), या <3>GitHub</3> या <4>Codeberg</4> के उपयोगकर्ता, संगठन या प्रोजेक्ट का पता चिपकाएँ। ऐप वह पढ़ता है जो वह प्रकाशित करता है और ऐप सूचीबद्ध करता है।",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "दूसरों के Morphe के लिए प्रकाशित पैच बंडल, <1>morphe-patches.software</1> से। केवल भरोसेमंद स्रोत जोड़ें, क्योंकि स्रोत तय करता है कि आपके पैच किए ऐप के अंदर क्या पहुँचेगा।",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "darken (d4rken-org) के <1>SD Maid SE</1> से पोर्ट किया गया, GPL-3.0: फ़िल्टर, नियम, छोड़ने लायक डेटा के डेटाबेस और ऑटोमेशन के चरण वहीं से हैं; औज़ार के आइकन, लोगो और अनुवाद इस्तेमाल नहीं होते। यह SD Maid ऐप नहीं है। मूल के लिए, उन सबके साथ जो वह और कर सकता है: <2>GitHub पर SD Maid SE</2> · <3>Google Play पर SD Maid SE</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "सिस्टम ऐप {1} का {0} अक्षम करें? इससे ऐप या सिस्टम UI खराब हो सकता है। आप इसे यहाँ फिर से चालू कर सकते हैं।"],
   ["From your wallpaper (#{0})", "आपके वॉलपेपर से (#{0})"],
   ["From the color above (#{0})", "ऊपर के रंग से (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Google नीले से: #{0} इस स्टाइल के लिए बहुत ग्रे है"],
 ]
 };

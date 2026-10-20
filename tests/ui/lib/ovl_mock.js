@@ -34,6 +34,7 @@ module.exports.initScript = function () {
   window.__fabDeny = null;        // error text: the overlay is listed on but Android did not take the colours (the judge's refusal)
   window.__fabUnknown = false;    // no answer from the shell: unknown
   window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
+  window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
 
   // a believable palette for a seed colour: tones of one hue (the real Monet engine does far more, this is only to see colours move)
   function hexToHsl(hex) {
@@ -64,6 +65,8 @@ module.exports.initScript = function () {
   function wire() { return window.__ovl.map(o => [o.id, o.target, o.state]); }
 
   const b = window.AndroidBridge;
+  // PR 4: settable, so a script can switch the mode between the tap on Apply and the answer (spec 2025 and 2026 take the shades for the mode)
+  b.isSystemDarkMode = function () { return window.__dark !== false; };
   b.overlayList = function (req) {
     window.__ovlCalls.list++;
     if (window.__ovlNoAnswer) return 'started';

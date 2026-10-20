@@ -1,6 +1,18 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Juga menulis warna CMF dan hitam pekat dengan Root, menggantikan gaya di atas.",
+"Also writes the CMF colors with root, in place of the style above.": "Juga menulis warna CMF dengan Root, menggantikan gaya di atas.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Juga menulis warna 2025 gaya ini dan hitam pekat dengan Root, menggantikan warna Android.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Juga menulis warna 2025 gaya ini dengan Root, menggantikan warna Android.",
+"Color spec": "Spesifikasi warna",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Fidelitas, Konten, Monokrom, dan CMF: warna yang tidak punya pengaturan di Android, dihitung oleh aplikasi ini.",
+"Google's newer tuning of the same styles.": "Penyetelan terbaru dari Google untuk gaya yang sama.",
+"One color family: accents and backgrounds are your color at different strengths.": "Satu keluarga warna: aksen dan latar belakang adalah warna Anda dalam kekuatan berbeda.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Fidelitas, Konten, dan Monokrom tetap memakai warna 2021. Warna dasar mengikuti mode terang atau gelap ponsel saat Anda mengetuk Terapkan; setelah beralih mode, ketuk Terapkan lagi.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Mewarnai ulang Tonal Spot, Vibrant, Expressive, dan Spritz dengan Root. CMF memerlukan 2026.",
+"The 2025 tuning, plus the CMF style.": "Penyetelan 2025, ditambah gaya CMF.",
+"The colors Android computes itself.": "Warna yang dihitung Android sendiri.",
 "Needs Android 14": "Perlu Android 14",
 "More styles": "Gaya lainnya",
 "Monochrome": "Monokrom",
@@ -5106,7 +5118,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "Di jam: <1>Pengaturan, Opsi pengembang, Debugging ADB</1> aktif, lalu <2>Debug lewat Bluetooth</2> aktif.",
 "Overlays<1> </1>": "Overlay<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "Gaya Palet: sepuluh gaya dan cara warna sumber menjadi tema utuh (ruang warna HCT dan palet nadanya) mengikuti <1>Material Color Utilities</1> milik Google (Apache-2.0), ditulis ulang untuk aplikasi ini.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "Gaya lainnya: warna Fidelitas, Konten, dan Monokrom dihitung dengan port mesin warna Android 14 sendiri, dari <1>Android Open Source Project</1> dan <2>Material Color Utilities</2> 0.4.0 milik Google (keduanya Apache-2.0); file monet.js menyebutkan apa yang diambil dari mana.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "Gaya lainnya dan spesifikasi warna: warna Fidelitas, Konten, dan Monokrom dihitung dengan port mesin warna Android 14 sendiri, dari <1>Android Open Source Project</1> dan <2>Material Color Utilities</2> 0.4.0 milik Google; spesifikasi 2025 dan 2026 serta CMF dengan port Material Color Utilities di GitHub (main, commit bd811e4, 2026). Semuanya Apache-2.0; file monet.js menyebutkan apa yang diambil dari mana.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "Tempel alamat <1>repositori bergaya F-Droid</1> (misalnya <2/>), atau pengguna, organisasi, atau proyek <3>GitHub</3> atau <4>Codeberg</4>. Aplikasi membaca apa yang diterbitkannya dan menampilkan aplikasinya.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "Paket patch yang diterbitkan orang lain untuk Morphe, dari <1>morphe-patches.software</1>. Tambahkan hanya sumber yang Anda percaya, karena sumber menentukan apa yang masuk ke aplikasi hasil patch Anda.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "Dialihkan dari <1>SD Maid SE</1> oleh darken (d4rken-org), GPL-3.0: filter, aturan, basis data item yang bisa dibuang, dan langkah otomatisasi berasal dari sana; ikon alat, logo, dan terjemahannya tidak dipakai. Ini bukan aplikasi SD Maid. Untuk yang asli, dengan semua kemampuan lainnya: <2>SD Maid SE di GitHub</2> · <3>SD Maid SE di Google Play</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Nonaktifkan {0} dari aplikasi sistem {1}? Ini dapat merusak aplikasi atau antarmuka sistem. Anda dapat mengaktifkannya kembali di sini."],
   ["From your wallpaper (#{0})", "Dari wallpaper Anda (#{0})"],
   ["From the color above (#{0})", "Dari warna di atas (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Dari biru Google: #{0} terlalu abu-abu untuk gaya ini"],
 ]
 };

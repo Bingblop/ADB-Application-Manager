@@ -1,6 +1,18 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "RootでCMFの色とピュアブラックも、上のスタイルの代わりに書き込みます。",
+"Also writes the CMF colors with root, in place of the style above.": "RootでCMFの色も、上のスタイルの代わりに書き込みます。",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Rootでこのスタイルの2025年版の色とピュアブラックも、Androidの色の代わりに書き込みます。",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Rootでこのスタイルの2025年版の色も、Androidの色の代わりに書き込みます。",
+"Color spec": "カラー仕様",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "忠実度、コンテンツ、モノクロ、CMF：Androidに設定がない色で、このアプリが計算します。",
+"Google's newer tuning of the same styles.": "同じスタイルに対するGoogleの新しい調整。",
+"One color family: accents and backgrounds are your color at different strengths.": "1つの色のファミリー：アクセントも背景も、あなたの色を異なる強さで使います。",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow、Fruit Salad、忠実度、コンテンツ、モノクロは2021年版の色のままです。基本の色合いは「適用」をタップした時点のスマホのライト／ダークモードに合わせます。モードを切り替えたら、もう一度「適用」をタップしてください。",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "RootでTonal Spot、Vibrant、Expressive、Spritzの色を塗り替えます。CMFには2026が必要です。",
+"The 2025 tuning, plus the CMF style.": "2025年版の調整に、CMFスタイルを加えたもの。",
+"The colors Android computes itself.": "Android自身が計算する色。",
 "Needs Android 14": "Android 14が必要",
 "More styles": "その他のスタイル",
 "Monochrome": "モノクロ",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "ウォッチで：<1>設定、開発者向けオプション、ADBデバッグ</1>をオンにし、続けて<2>Bluetooth経由のデバッグ</2>をオンにします。",
 "Overlays<1> </1>": "オーバーレイ<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "パレットスタイル：10 のスタイルと、ソースカラーが完全なテーマになる仕組み（HCT 色空間とそのトーナルパレット）は、このアプリ用に書き直した Google の <1>Material Color Utilities</1>（Apache-2.0）に倣っています。",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "その他のスタイル：忠実度、コンテンツ、モノクロの色は、<1>Android Open Source Project</1> と Google の <2>Material Color Utilities</2> 0.4.0（いずれも Apache-2.0）から移植した Android 14 自身のカラーエンジンで計算しています。何をどこから取り入れたかはファイル monet.js に記載しています。",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "その他のスタイルとカラー仕様：忠実度、コンテンツ、モノクロの色は <1>Android Open Source Project</1> と Google の <2>Material Color Utilities</2> 0.4.0 から移植した Android 14 自身のカラーエンジンで、2025 年版と 2026 年版の仕様と CMF は GitHub 上の Material Color Utilities（main、コミット bd811e4、2026 年）から移植したコードで計算しています。いずれも Apache-2.0 です。何をどこから取り入れたかはファイル monet.js に記載しています。",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "<1>F-Droid 形式のリポジトリ</1>（例：<2/>）、または <3>GitHub</3> や <4>Codeberg</4> のユーザー、組織、プロジェクトのアドレスを貼り付けてください。アプリは公開されている内容を読み取り、アプリを一覧表示します。",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "他の人が Morphe 用に公開しているパッチバンドル（<1>morphe-patches.software</1> から）。信頼できるソースだけを追加してください。ソースによってパッチ適用後のアプリの中身が決まるためです。",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "darken（d4rken-org）の <1>SD Maid SE</1> から移植、GPL-3.0：フィルタ、ルール、削除可能データのデータベース、自動化の手順はそこからのものです。ツールのアイコン、ロゴ、翻訳は使っていません。これは SD Maid アプリではありません。ほかにできることも含めた本物は：<2>GitHub の SD Maid SE</2> · <3>Google Play の SD Maid SE</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "システムアプリ {1} の {0} を無効にしますか？アプリやシステム UI が壊れる可能性があります。ここで再び有効にできます。"],
   ["From your wallpaper (#{0})", "壁紙から（#{0}）"],
   ["From the color above (#{0})", "上の色から（#{0}）"],
+  ["From Google blue: #{0} is too grey for this style", "Googleブルーから：#{0}はこのスタイルにはグレーすぎます"],
 ]
 };

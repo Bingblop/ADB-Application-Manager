@@ -802,18 +802,35 @@ style the palette is worked out with:
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
   **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
   fabricated overlay). Not yet tried on a rooted phone.
-- **More styles** (the second control of that card; Android 14 or newer with Super User, a locked row reading *Needs Android 14* on 12 and 13):
+- **Color spec** (the second control of that card, between Pure black and More styles; Android 14 or newer with Super User, locked like
+  More styles: *Needs Super User*, *Needs Android 14* on 12 and 13, *Update the app* without the overlay bridge or the spec maths):
+  **2021** (the colors Android computes itself; the default, and what Android 12 to 16 build their own theme with), **2025** (Google's newer
+  tuning of the same styles) and **2026** (the 2025 tuning, plus the CMF style), kept in `ovl_spec`. Google's own
+  rule (Material Color Utilities' `maybeFallbackSpecVersion`) gives the newer colors to Tonal Spot, Vibrant, Expressive and Spritz only
+  (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021. At 2025 or 2026, with one
+  of those four in the style list and More styles on **Off**, **Apply theme** writes the theme setting as before and then that style's 2025
+  colors over Android's with root, the same 165 colors and overlay as More styles (a More style chosen wins); the hint reads *Also writes
+  this style's 2025 colors with root, in place of Android's.* From 2025 the base palettes of Tonal Spot and Expressive differ between light
+  and dark (Vibrant's, Spritz's and CMF's do not), so the 65 shades are those of the mode the phone is in when Apply is tapped (switch mode,
+  tap Apply again; the preview is drawn again on a mode switch); the roles are written for both modes.
+  The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
+  Apache-2.0). A grey custom color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
+  *From Google blue: #808080 is too grey for this style*. **2021** then Apply, **Undo** and **Default** switch the overlay off. Not yet
+  tried on a rooted phone.
+- **More styles** (the last control of that card; Android 14 or newer with Super User, a locked row reading *Needs Android 14* on 12 and 13):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
-  chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for. The app
-  computes their colors itself (`assets/monet.js`, a port of Android 14's color engine from AOSP and Google's Material Color Utilities 0.4.0,
-  both Apache-2.0) from the custom color, else the wallpaper's color (the one the theme setting carries for a wallpaper source, not a custom
-  color it carries; else the first wallpaper color Android reports that is not almost grey), else Google blue, taken when Apply is tapped;
-  a **Preview** under the options shows the five rows (13 shades each) and names the source.
+  chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for, and,
+  while Color spec is 2026, **CMF** (one color family: accents and backgrounds are your color at different strengths; leaving 2026 sets
+  More styles back to Off). The app computes their colors itself (`assets/monet.js`, a port of Android 14's color engine from AOSP and
+  Google's Material Color Utilities 0.4.0, both Apache-2.0; CMF from part 2, see Color spec) from the custom color, else the wallpaper's
+  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first wallpaper color Android
+  reports that is not almost grey), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
+  list style Color spec recolors) shows the five rows (13 shades each) and names the source.
   **Apply theme** still writes the theme setting from the style list first and then the overlay with 165 colors on top (65 palette shades,
   the 44 roles light and dark, 12 fixed), Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
-  what the overlay carries in `ovl_root_applied` (PR 2's `ovl_black_applied` is read as a fallback). Messages then speak of the *theme
-  overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the style other theming apps call
-  Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
+  what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021; PR 2's `ovl_black_applied` is read as a fallback).
+  Messages then speak of the *theme overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the
+  style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
