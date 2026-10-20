@@ -28527,7 +28527,7 @@ Type any command above (e.g. pm list packages -d)</div>
         lcRestorePrefs();
         cdLcRestorePrefs();
 
-        // ---- Root Features tab (v7.15.1, step B1a: the gate and the surface; the Super User features themselves come in later steps) ----
+        // ---- Root Features tab (v7.15.1): the gate, the Super User card and the feature rows (Super User for apps, App components) ----
         // The gate: Root Features unlock only when the resolved working mode is Root AND su really granted it to this app. That is RootGate.active on the
         // Java side, which getWorkingMode reports as rootWorkingModeActive; the page's own reading (a privileged mode that is root) is the same rule, and the
         // Java verdict can only veto it (an older app that does not send the field changes nothing).
@@ -28582,7 +28582,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // the Super User card asks su on a phone that has it; it is put away while Super User is active
             const su = document.getElementById('rfSuCard');
             if (su) su.style.display = active ? 'none' : '';
-            // the feature area: a locked placeholder until Super User is active (no feature yet in this step)
+            // the feature area: the Super User for apps and App components rows, unlocked while Super User is active and listed locked otherwise
             const list = document.getElementById('rfFeatureList');
             if (list) list.innerHTML = rootFeatureRows();
         }

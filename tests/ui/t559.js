@@ -1,5 +1,6 @@
-// v7.15.1 Root Features tab (step B1a, the gate and the surface): the tab in the registry (before About, on, its own icon and short label, not pinned by
-// default), the root gate (#rootGate shown and the feature area locked unless the working mode is Root AND su granted it; the Java verdict
+// v7.15.1 Root Features tab (the gate, the Super User card, the Super User for apps and App components rows): the tab in the registry (before About,
+// on, its own icon and short label, not pinned by default), the feature rows (#rfSuAppsBtn opens the root manager, #rfComponentsBtn the Application
+// Manager), the root-manager hand-off (Open root manager, its toasts, and the status read back on the way back), the root gate (#rootGate shown and the feature area locked unless the working mode is Root AND su granted it; the Java verdict
 // rootWorkingModeActive can veto), the status tag (ACTIVE / AVAILABLE / DENIED / NOT FOUND), the gate's Set Up opening Working Modes, Request Super User
 // going through selectWorkingMode('root'), the re-render on a mode change, and the attempt-to-prompt funnel promptRootThenOpen: Super User active -> true;
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
