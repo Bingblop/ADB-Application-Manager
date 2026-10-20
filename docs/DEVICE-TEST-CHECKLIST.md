@@ -581,6 +581,7 @@ Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap t
 - [ ] **Dim without a mode.** Set Working Modes to Read-Only, go back to the Apps tab so the app checks the mode, then pull down Quick Settings: the **Working mode** tile is dim (not lit) and says Read-Only under its name.
 - [ ] **Lit with a mode.** Connect ADB TCP, Wireless Debugging, Shizuku or Root (the Working Modes card shows it connected, authorized or granted), then pull down Quick Settings: the tile is lit. With the mode on Automatic and a connection found: lit as well.
 - [ ] **Follows a tap.** With one other mode ready, tap the tile: it says "Working mode: ..." and is lit. Tap again with nothing else reachable: it says "No other mode is ready. Using Automatic." and is lit only if Automatic still finds a connection, otherwise dim.
+- [ ] **Root from the tile asks nothing.** On a rooted phone whose root manager has not granted this app yet, with no other mode ready, tap the tile: it says "Working mode: Root" at once, no root prompt comes up and the tile is dim. Open the app: the root manager asks now; after Allow, the tile is lit.
 - [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
 - [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
 

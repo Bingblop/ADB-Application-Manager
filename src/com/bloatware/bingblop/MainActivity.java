@@ -749,8 +749,10 @@ public class MainActivity extends Activity {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) {
                         message = quickCycleMode();
                         // the mode just changed and the page may not be open to probe it: probe here (the cache was invalidated), so the
-                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh
+                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh. This window asks no su (see
+                        // probeWorkingMode), so its answer is not kept: the app's next look probes, and asks su, by itself.
                         try { new AndroidBridge().getWorkingMode(); } catch (Throwable ignored) {}
+                        invalidateModeCache();
                     }
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
                     else message = "Unknown quick action";
@@ -1961,6 +1963,13 @@ public class MainActivity extends Activity {
             rootGrant = ok;
         }
         return ok;
+    }
+
+    /** The su verdict as already known, without asking (no prompt): not asked yet counts as not granted. */
+    private boolean rootGrantedKnown() {
+        synchronized (modeCacheLock) {
+            return Boolean.TRUE.equals(rootGrant);
+        }
     }
 
     private boolean isRootAvailable() {
@@ -8570,8 +8579,11 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
-                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
-                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
+                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode, and
+                // never from the headless window of a tile tap (QuickActionActivity): the root manager's prompt would come up behind the
+                // collapsing panel, and one left unanswered would be remembered as a refusal. There only a verdict already known counts; not
+                // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
+                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
                 if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
                 // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
                 obj.put("rootWorkingModeActive", rootGrantedNow);

@@ -87,6 +87,16 @@ public class ModeTileLightTest {
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
 
+    // T-035: a tile tap never runs su. The headless window's probe takes only a root verdict already known (not asked yet: dim), so no root
+    // manager prompt comes up behind the collapsing panel and an unanswered one is never remembered as a refusal; its answer is not kept, so
+    // the app's first look asks su itself, in the foreground
+    check("source: the probe asks su only from the app's window; the headless tile window uses the remembered verdict", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());"));
+    String known = bodyOf(m, "private boolean rootGrantedKnown() {");
+    check("source: rootGrantedKnown reads the remembered verdict (null, not asked yet, is not granted) and runs nothing", known != null && known.contains("Boolean.TRUE.equals(rootGrant)") && !known.contains("ProcessBuilder") && !known.contains("isRootGranted"));
+    String ready = bodyOf(m, "private boolean modeReadyQuiet(String mode) {"), cycle = bodyOf(m, "private String quickCycleMode() {");
+    check("source: the cycle itself asks no su (modeReadyQuiet, quickCycleMode)", ready != null && cycle != null && !ready.contains("isRootGranted") && !cycle.contains("isRootGranted") && !cycle.contains("getWorkingModeFresh"));
+    check("source: the tap's probe answer is not kept, so the app's next look probes (and asks su) itself", before(quick, "new AndroidBridge().getWorkingMode();", "invalidateModeCache();") && before(quick, "invalidateModeCache();", "finishQuickAction(message);"));
+
     // T-034: coming back to the app (a warm resume, the same process) checks the mode again, whether or not a tile changed it meanwhile, so a
     // connection lost while the app was in the background (Wi-Fi off, Shizuku stopped) dims the tile and the header badge when the app is opened
     String resume = bodyOf(m, "protected void onResume() {");
