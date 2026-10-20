@@ -39,6 +39,9 @@ ok      promptRootThenOpen from another tab: no switch is tried, the prompt is a
 ok      a no: nothing opens, false
 ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab
 ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
-ok   7. no page errors
+ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
+ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
+ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
+ok   8. no page errors
 errors: []
 all passed

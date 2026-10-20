@@ -8,8 +8,15 @@
 // nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
 // it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
 // on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
-// manager's list (Magisk lists an app only after it has asked su, T-019). Deterministic output: ok / FAIL lines and the summary.
-const { chromium, PAGE } = require('./lib/pw');
+// manager's list (Magisk lists an app only after it has asked su, T-019).
+// Then the Help Guide (T-029): its Root Features topic names the Features card, the Super User for apps row
+// with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
+// plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
+// Deterministic output: ok / FAIL lines and the summary.
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { chromium, PAGE, REPO } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
 (async () => {
@@ -206,7 +213,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed', geo.wide <= 0 && geo.btns.length === 4 && geo.btns.every(x => x.h >= 36) && geo.tagOneLine && +geo.lockedOpacity < 1, JSON.stringify(geo));
   await page.screenshot({ path: 'rootfeatures_locked.png', fullPage: true });
 
-  check('7. no page errors', errors.length === 0, errors.join(' | '));
+  // ---- 7. the Help Guide matches the tab (T-029): read the built in-app guide (assets/guide.js) and FULL-GUIDE.md's tab table
+  const sb = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), sb);
+  const plain = {};
+  ((sb.window.HELP_GUIDE || {}).sections || []).forEach(s => { plain[s.id] = s.html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' '); });
+  const gTab = plain['tab-rootfeatures'] || '', gSuApps = plain['rootfeatures-su-apps'] || '';
+  check('7. the guide\'s Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card', /The "Features" card/.test(gTab) && /Super User for apps/.test(gTab) && /Open manager/.test(gTab) && /Open root manager/.test(gTab) && !/later version|until then the card says so/i.test(gTab), gTab.slice(0, 160));
+  check('   its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return', /opens the way its icon on the home screen opens it/.test(gSuApps) && /not on its list of apps with root/.test(gSuApps) && /Come back\. The app checks its own root status again/.test(gSuApps), gSuApps.slice(0, 160));
+  const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
+  check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
+
+  check('8. no page errors', errors.length === 0, errors.join(' | '));
   console.log('errors: ' + JSON.stringify(errors));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

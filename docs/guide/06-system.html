@@ -1226,7 +1226,7 @@
   <h4>What it does, exactly</h4>
   <ol class="hg-steps">
     <li>Tap <b>Open manager</b>. The app opens the installed root manager (KernelSU, KernelSU Next, APatch or Magisk, the first it finds in that order), and a message says "Opening KernelSU — manage which apps get Super User there." with the name of your manager.</li>
-    <li>The manager opens on its own screen. The app sends it nothing: no list, no request, no app name. Find the manager's list of apps with root and allow or deny apps there, as the manager's own help describes.</li>
+    <li>The manager opens the way its icon on the home screen opens it: on its start screen (or on the screen you left it on), not on its list of apps with root. The app sends it nothing: no list, no request, no app name. Go to the manager's list of apps with root yourself and allow or deny apps there, as the manager's own help describes.</li>
     <li>Come back. The app checks its own root status again, in case you changed this app's grant at the same time; if you did, the chip and the rows follow.</li>
   </ol>
   <p>The app finds the manager by the usual package names of those four only. When it cannot (a Magisk hidden with its own "Hide the Magisk app" option, a renamed build of a manager, or a <code>su</code> that comes from something else), the message is "Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list." Open it from the home screen yourself; coming back that way gets no automatic re-check, so tap <b>Check Status</b> in Working Modes if you changed this app's own grant there.</p>
