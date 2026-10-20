@@ -116,5 +116,10 @@ public class RootManagersTest {
     check("source: rootOpenManager calls the bridge", h.contains("AndroidBridge.openRootManager"));
     check("source: a grant that was approved in the manager is read back on resume", h.contains("rootGrantPending") && h.contains("checkAllWorkingModes(true)"));
     check("source: the Root Features su card offers the hand-off button", h.contains("onclick=\"rootOpenManager()\""));
+    // T-030: the Super User for apps row is the second caller of the same hand-off: its button is wired, it calls the bridge, and a manager that
+    // started arms the same read-back on return
+    check("source: the Super User for apps row calls the bridge", h.contains("function rootManageSuperuser(") && h.contains("'rootManageSuperuser()'"));
+    check("source: Open manager (apps) opens the manager through the bridge and marks the status pending",
+        jsApps.contains("AndroidBridge.openRootManager()") && jsApps.contains("rootGrantPending = true"), jsApps);
   }
 }

@@ -83,7 +83,19 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'KernelSU' }; });
   await page.click('#rfSuAppsBtn'); await sleep(50);
   check('   a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending', (await toastText()) === 'KernelSU could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
+  // no known manager installed (su from something else): the install message, nothing pending
+  await ev(() => { window.__rootMgr = { ok: false }; });
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  check('   Open manager (apps) with no known manager installed: the install message, nothing pending', (await toastText()) === 'No root manager was found. Install KernelSU, APatch or Magisk, then come back.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
+  // the way back from Open manager: this app's own su was revoked in the manager; the page shown again reads the status fresh once, spends the mark,
+  // and re-renders the tab from that read
+  const fresh1 = await ev(() => window.__calls.fresh || 0);
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  await ev(() => { window.__wm.state = 'rootDenied'; document.dispatchEvent(new Event('visibilitychange')); }); await sleep(50);
+  const back1 = await ev(() => ({ fresh: window.__calls.fresh || 0, pending: rootGrantPending }));
+  check('   back from Open manager (the page shown again): one fresh status read, the mark spent, the tab re-rendered (revoked there -> DENIED, rows locked)', back1.fresh === fresh1 + 1 && back1.pending === false && (await tag()) === 'warning DENIED' && (await lockedRow()), JSON.stringify([fresh1, back1, await tag()]));
+  await setMode('root');
   // the second active-state feature: "App components" is a signpost to the Application Manager (no new backend; the component toggle already lives in the app inspector)
   check('   the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)', /App components/.test(await text('#rfFeatureList')) && (await ev(() => !!document.getElementById('rfComponentsBtn'))));
   await page.click('#rfComponentsBtn'); await sleep(50);
