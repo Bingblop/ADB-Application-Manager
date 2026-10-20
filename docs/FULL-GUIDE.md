@@ -798,7 +798,7 @@ style the palette is worked out with:
 - **Root-only theme controls** (the last card of the Theme half): colors Android takes only from an overlay written as root
   (`cmd overlay fabricate`, which Android's overlay service accepts from root alone, so ADB and Shizuku get locked rows, as on
   the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
-  also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark grays for the panels; on
+  also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
   **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
   fabricated overlay). Not yet tried on a rooted phone.

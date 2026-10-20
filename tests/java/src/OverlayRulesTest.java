@@ -149,6 +149,7 @@ public class OverlayRulesTest {
             "   if [ -n \"$file\" ]; then\n" +
             "     [ -f \"$file\" ] && [ ! -f \"$OVL_FAKE/unreadable\" ] || { echo \"Error: failed to read $file\"; exit 1; }\n" +
             "     cp \"$file\" \"$OVL_FAKE/last.xml\"\n" +
+            "     ls -l \"$file\" | cut -c1-10 > \"$OVL_FAKE/last.mode\"\n" +      // the mode the file had when Android read it
             "     grep -o '<item target=\"[^\"]*\" value=\"[^\"]*\"/>' \"$file\" | sed -e 's/<item target=\"\\([^\"]*\\)\" value=\"\\([^\"]*\\)\"\\/>/android:\\1 \\2/' | while read -r res val; do echo \"$res $val $id\"; done >> \"$OVL_FAKE/colors\"\n" +
             "   else\n" +
             "     [ \"$2\" = 0x1c ] && [ -n \"$3\" ] || { echo \"Error: unsupported value: $2 $3\"; exit 1; }\n" +
@@ -849,6 +850,7 @@ public class OverlayRulesTest {
         String f34 = OverlayRules.fabricateScript(34, black, "/tmp/aam_test.xml");
         eq("sdk 34: the file form", f34,
             "cat > '/tmp/aam_test.xml' <<'AAM_OVL_EOF'\n" + xmlText + "AAM_OVL_EOF\n"
+            + "chmod 644 '/tmp/aam_test.xml'\n"
             + "cmd overlay fabricate --user current --target android --name 'aam_monet' --file '/tmp/aam_test.xml'\n"
             + "cmd overlay enable --user current 'com.android.shell:aam_monet'\n"
             + "rm -f '/tmp/aam_test.xml'\n" + tail + lookups2);
@@ -871,7 +873,10 @@ public class OverlayRulesTest {
         throwsIae("no file name", () -> OverlayRules.fabricateScript(34, black, ""));
         // the heredoc: a quoted delimiter (nothing in the body is expanded), the body exactly the xml, the delimiter alone on its line, then the commands
         is("heredoc delimiter quoted", f34.startsWith("cat > '/tmp/aam_test.xml' <<'AAM_OVL_EOF'\n<overlay>\n"));
-        is("heredoc closed on its own line before the fabricate", f34.contains("</overlay>\nAAM_OVL_EOF\ncmd overlay fabricate"));
+        is("heredoc closed on its own line, then the file made readable to system_server, then the fabricate", f34.contains("</overlay>\nAAM_OVL_EOF\nchmod 644 '/tmp/aam_test.xml'\ncmd overlay fabricate"));
+        is("the chmod comes after the write and before the fabricate reads the file", f34.indexOf("chmod 644 ") > f34.indexOf("AAM_OVL_EOF\n") && f34.indexOf("chmod 644 ") < f34.indexOf("--file '/tmp/aam_test.xml'"));
+        is("a file name with a quote is one word in the chmod too", OverlayRules.fabricateScript(34, black, "/tmp/it's.xml").contains("\nchmod 644 '/tmp/it'\\''s.xml'\n"));
+        is("sdk 33: no chmod (no file)", !OverlayRules.fabricateScript(33, black).contains("chmod"));
         is("the file is removed after the write", f34.indexOf("rm -f '/tmp/aam_test.xml'") > f34.indexOf("--file '/tmp/aam_test.xml'") && f34.indexOf("rm -f") < f34.indexOf("@@OVL-GET@@"));
         is("a file name with a quote is still one word", OverlayRules.fabricateScript(34, black, "/tmp/it's.xml").contains("cat > '/tmp/it'\\''s.xml' <<'AAM_OVL_EOF'"));
         // lookups: the first four entries, no more
@@ -1036,6 +1041,13 @@ public class OverlayRulesTest {
         OverlayRules.FabVerdict v34b = OverlayRules.judgeFabricate("fabricate", ids34, plan(N1, "0xFF101010", N2, "0xFF101010"), OverlayRules.parseFabricate(o34b));
         is("sh 34 again: ok", v34b.ok); eq("sh 34 again: still one overlay of ours", read(fakeDir.resolve("overlays")).split(FAB, -1).length - 1, 1);
         eq("sh 34 again: the new colour", OverlayRules.lookupColor(viaReader(runShell("cmd overlay lookup --user current android '" + N1 + "' 2>&1"))), "#ff101010");
+        // system_server (uid 1000) reads the file and is not its owner: it is mode 644 whatever umask the su shell has, even over a leftover 600 file
+        viaReader(runShell("umask 077; echo left over > '" + XML + "'"));
+        eq("sh 34: a leftover file of mode 600 to start from", viaReader(runShell("ls -l '" + XML + "' | cut -c1-10")), "-rw-------");
+        OverlayRules.FabVerdict v34u = OverlayRules.judgeFabricate("fabricate", ids34, black, OverlayRules.parseFabricate(viaReader(runShell("umask 077\n" + OverlayRules.fabricateScript(34, black, XML.toString())))));
+        is("sh 34 under umask 077: ok", v34u.ok);
+        eq("sh 34 under umask 077: the file Android read was mode 644", read(fakeDir.resolve("last.mode")), "-rw-r--r--\n");
+        eq("sh 34 under umask 077: the file Android read is the xml (the leftover replaced)", read(fakeDir.resolve("last.xml")), xmlText);
         // disable: the stock colour is back
         Files.deleteIfExists(fakeDir.resolve("cmd.log"));
         OverlayRules.FabVerdict dv34 = OverlayRules.judgeFabricate("disable", ids34, null, OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.disableScript(ids34)))));

@@ -38185,7 +38185,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // on) or switches it off again (the switch off after an earlier write: kv ovl_black_applied holds the overlay ids). Revert and the Undo
         // bar switch it off too. The bridge is overlayFabricate(req, planJson) -> window.onOverlayFab(json): the Java side checks the plan,
         // takes the overlay ids from its own SDK_INT and decides from the read-back (OverlayRules.judgeFabricate), never from the page.
-        const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark grays. Light mode is unchanged.';
+        const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.';
         // the panels' greys: tones 4, 6, 8, 11, 14 and 18 of a neutral grey (HCT chroma 0), each psHex(hue, 0, tone) as the page computes it
         // (the hue is immaterial at chroma 0); kept as constants so the plan is a fixed table (t564 checks them against psHex)
         const OVL_BLACK_TONES = { 4: '0E0E0E', 6: '131313', 8: '181818', 11: '1D1D1D', 14: '242424', 18: '2C2C2C' };
@@ -38196,12 +38196,13 @@ Type any command above (e.g. pm list packages -d)</div>
         // the controls are live when the app can write overlays, Super User is active and the phone has Material You at all
         function ovlRootLive() { return ovlRootBridgeOk() && isRootActive() && ovlThemeSupported(); }
         function ovlBlackOn() { return kvGet('ovl_black', false) === true; }
-        // { ids, t } while this app's pure black overlay may be on the phone (written and not switched off since), else null
+        // { ids, t, pending } while this app's pure black overlay may be on the phone (written and not switched off since), else null.
+        // pending: the write went out and no answer has said whether it took (the app restarted meanwhile, or the phone did not answer)
         function ovlBlackApplied() {
             const a = kvGet('ovl_black_applied', null);
             if (!a || typeof a !== 'object' || !Array.isArray(a.ids)) return null;
             const ids = a.ids.filter(id => typeof id === 'string' && id.startsWith(OVL_FAB_ID_PREFIX));
-            return ids.length ? { ids, t: a.t } : null;
+            return ids.length ? { ids, t: a.t, pending: a.pending === true } : null;
         }
         function ovlSdk() { const p = ovlPalette; return p && typeof p.sdk === 'number' && p.sdk > 0 ? p.sdk : 0; }
 
@@ -38254,27 +38255,40 @@ Type any command above (e.g. pm list packages -d)</div>
             const on = ovlBlackOn();
             box.innerHTML = '<div class="rf-row">' + rootFeatureName('Pure black backgrounds', OVL_BLACK_SUB)
                 + '<button type="button" class="sdb-sw' + (on ? ' on' : '') + '" id="ovlBlackSw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" aria-label="' + txT('Pure black backgrounds') + '" onclick="ovlToggleBlack()"><span></span></button></div>';
-            say(ovlBlackApplied() ? 'The pure black overlay is written on this phone.' : '');
+            const applied = ovlBlackApplied();
+            say(!applied ? '' : applied.pending ? 'The pure black overlay may be written on this phone.' : 'The pure black overlay is written on this phone.');
         }
 
         // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered
         function ovlRootRun(action, after) {
-            const sdk = ovlSdk(), applied = ovlBlackApplied();
+            const sdk = ovlSdk(), applied = ovlBlackApplied(), prior = kvGet('ovl_black_applied', null);
             const entries = action === 'fabricate' ? ovlBuildBlackPlan(sdk) : null;
+            const expected = entries ? ovlBlackIds(sdk, entries) : null;
             const plan = action === 'disable' ? { action: 'disable', ids: applied ? applied.ids : [] } : { action: 'fabricate', entries };
+            // Remembered before it goes out, as ovlApply remembers the theme: the overlay coming on repaints every app and may restart this
+            // one, so the answer may never reach this page. Until an answer says otherwise the overlay may be on, and the restart's Undo, Revert
+            // and Apply with the switch off switch it off; the answer then confirms the record, or puts back what was there before.
+            if (expected) kvSet('ovl_black_applied', { ids: Array.from(new Set((applied ? applied.ids : []).concat(expected))), t: Date.now(), pending: true });
             ovlBusy = true;
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.overlayFabricate(id, JSON.stringify(plan)), r => ovlRootDone(r, action, entries ? ovlBlackIds(sdk, entries) : null, after), 60000);
+            sdbRequest(id => window.AndroidBridge.overlayFabricate(id, JSON.stringify(plan)), r => ovlRootDone(r, action, expected, after, prior), 60000);
         }
 
-        function ovlRootDone(r, action, expectedIds, after) {
+        // prior: what kv ovl_black_applied held before a fabricate went out (put back when the answer shows nothing of it is on)
+        function ovlRootDone(r, action, expectedIds, after, prior) {
             ovlBusy = false;
-            if (Array.isArray(r.list) && r.list.length) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; }
+            const whole = Array.isArray(r.list) && r.list.length > 0;
+            if (whole) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; }
             const ids = Array.isArray(r.ids) && r.ids.length ? r.ids.filter(id => typeof id === 'string') : (expectedIds || []);
+            // what the list sent back says: true when one of these overlays is listed on, false when it came whole and none is, null without one
+            const onNow = whole && ids.length ? ids.some(id => ovlList.some(o => o.id === id && o.state === 1)) : null;
             if (action === 'fabricate') {
-                // the overlay may be on the phone whenever Android listed it on, or no answer came: remembered, so Revert and Undo switch it off
-                if ((r.ok || r.unknown || r.timedOut || r.state === 1) && ids.length) kvSet('ovl_black_applied', { ids, t: Date.now() });
-            } else if (r.ok) kvSet('ovl_black_applied', null);
+                const was = ovlBlackApplied();
+                // listed on: written (so Revert and Undo switch it off); no answer: it may be on; refused, or listed but not on: as it was before
+                if ((r.ok || r.state === 1 || onNow === true) && ids.length) kvSet('ovl_black_applied', { ids, t: Date.now() });
+                else if ((r.unknown || r.timedOut) && ids.length) kvSet('ovl_black_applied', { ids: Array.from(new Set((was ? was.ids : []).concat(ids))), t: Date.now(), pending: true });
+                else kvSet('ovl_black_applied', prior === undefined ? null : prior);
+            } else if (r.ok || onNow === false) kvSet('ovl_black_applied', null);       // off, or not listed on at all: nothing of this app's is on any more
             if (r.ok) showToast(action === 'fabricate' ? 'Pure black overlay written' : 'Pure black overlay removed');
             else {
                 showToast(action === 'fabricate' ? 'The pure black overlay was not written' : 'The pure black overlay was not removed');

@@ -861,7 +861,8 @@ final class OverlayRules {
     /**
      * Where the Android 14+ form writes the overlay's XML. {@code cmd overlay fabricate --file} opens the file inside system_server,
      * so it must be readable there: /data/system (label system_data_file) should be, the app's own folder and /data/local/tmp are
-     * not expected to be. A hypothesis until it has run on a rooted phone.
+     * not expected to be. The script makes the file mode 644 after writing it, so the file does not depend on the umask of the root
+     * manager's su shell (system_server runs as uid 1000 and is not the file's owner). A hypothesis until it has run on a rooted phone.
      */
     static final String FAB_FILE = "/data/system/aam_monet.xml";
     static final String FAB_HEREDOC = "AAM_OVL_EOF";
@@ -999,8 +1000,8 @@ final class OverlayRules {
      * <ul>
      * <li>Android 12 and 13: one fabricate per entry, each its own overlay named for the entry, then one enable per overlay (one
      *     name cannot hold two entries there, and registering a name again replaces it).</li>
-     * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), one fabricate
-     *     with {@code --file}, one enable, the file removed.</li>
+     * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), made readable
+     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed.</li>
      * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable and
      *     lookup keep it).</li>
      * </ul>
@@ -1017,6 +1018,8 @@ final class OverlayRules {
             sb.append("cat > ").append(BackupScripts.quote(file)).append(" <<'").append(FAB_HEREDOC).append("'\n");
             sb.append(fabricateXml(plan));
             sb.append(FAB_HEREDOC).append('\n');
+            // world-readable whatever umask the root manager's su shell has (or a leftover file had): system_server reads it as uid 1000
+            sb.append("chmod 644 ").append(BackupScripts.quote(file)).append('\n');
             sb.append(head).append(BackupScripts.quote(FAB_NAME)).append(" --file ").append(BackupScripts.quote(file)).append('\n');
             sb.append(changeCommand("enable", FAB_ID)).append('\n');
             sb.append("rm -f ").append(BackupScripts.quote(file)).append('\n');

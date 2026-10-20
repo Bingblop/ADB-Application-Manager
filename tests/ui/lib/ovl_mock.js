@@ -161,8 +161,9 @@ module.exports.initScript = function () {
     return JSON.stringify({ activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: false, running: false, authorized: false } });
   };
   // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
-  // is queued ("error: ..."), the ids come from the phone's Android (one overlay from 14, one per colour on 12 and 13), the overlay joins the
-  // list, and the answer is the list plus a lookup per colour (the first four), judged from those, as window.onOverlayFab(json).
+  // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
+  // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
+  // four), judged from those, as window.onOverlayFab(json).
   const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
   b.overlayFabricate = function (req, planJson) {
     let plan;
@@ -171,12 +172,12 @@ module.exports.initScript = function () {
     const op = plan.action || 'fabricate';
     if (op === 'fabricate') {
       const es = plan.entries;
-      if (!Array.isArray(es) || !es.length) return 'error: The plan has no colours';
-      if (es.length > 200) return 'error: Too many colours in the plan (200 at most)';
+      if (!Array.isArray(es) || !es.length) return 'error: The plan has no entries';
+      if (es.length > 200) return 'error: The plan has too many entries (200 at most)';
       const seen = new Set();
       for (let i = 0; i < es.length; i++) {
         const e = es[i] || {};
-        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource this app does not write';
+        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a system colour (android:color/system_...)';
         if (typeof e.argb !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(e.argb)) return 'error: Entry ' + (i + 1) + ' is not a colour (0xAARRGGBB)';
         if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
         seen.add(e.resource);
@@ -184,7 +185,13 @@ module.exports.initScript = function () {
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
-      for (const id of ids) if (typeof id !== 'string' || !new RegExp('^' + FAB_OWNER + FAB_NAME + '(_[a-z0-9_]+)?$').test(id)) return 'error: That overlay was not written by this app';
+      if (ids.length > 200) return 'error: Too many overlays named (200 at most)';
+      const seenIds = new Set();
+      for (const id of ids) {
+        if (typeof id !== 'string' || !new RegExp('^' + FAB_OWNER + FAB_NAME + '(_[a-z0-9_]+)?$').test(id)) return 'error: That overlay was not written by this app';
+        if (seenIds.has(id)) return 'error: An overlay is named twice';
+        seenIds.add(id);
+      }
     } else return 'error: unknown action';
     if (window.__fabNoAnswer) return 'started';
     setTimeout(() => {
