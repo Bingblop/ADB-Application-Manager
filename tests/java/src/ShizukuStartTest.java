@@ -16,6 +16,12 @@ public class ShizukuStartTest {
     return out;
   }
 
+  /** The first number group of the first match, or -1. */
+  static int num(String s, String regex) {
+    java.util.regex.Matcher m = java.util.regex.Pattern.compile(regex).matcher(s);
+    return m.find() ? Integer.parseInt(m.group(1)) : -1;
+  }
+
   public static void main(String[] x) throws Exception {
     is("the Shizuku package is valid", ShizukuStart.validPackage("moe.shizuku.privileged.api"));
     is("the Shizuku+ package is valid", ShizukuStart.validPackage("af.shizuku.plus.api"));
@@ -84,6 +90,18 @@ public class ShizukuStartTest {
       for (int i = run.indexOf("\"shell\", cmd), timeoutMs)"); i >= 0; i = run.indexOf("\"shell\", cmd), timeoutMs)", i + 1)) uses++;
       is("runAdbShell's timeout applies to the run and to the run after a reconnect", uses == 2 && !run.contains("cmd), 8000)"));
       is("the plain runAdbShell keeps 8 s for every other command", src.contains("return runAdbShell(target, cmd, 8000);"));
+
+      // T-012: the first-launch sheet waits for a start it offered for longer than startShizukuNow can take, or a slow start opens the sheet first and
+      // the Shizuku authorize dialog then comes over it. The bound is read from MainActivity: adb devices, a reconnect, the script, the binder poll.
+      int devices = num(src, "buildAdbProcess\\(\"devices\"\\), (\\d+)\\)");
+      int reconnect = num(run, "buildAdbProcess\\(\"connect\", target\\), (\\d+)\\)");
+      int polls = num(start, "i < (\\d+) && !activityDestroyed");
+      int pause = num(start, "Thread\\.sleep\\((\\d+)\\)");
+      is("the parts of startShizukuNow's bound were found (" + devices + ", " + reconnect + ", " + polls + " x " + pause + ")", devices > 0 && reconnect > 0 && polls > 0 && pause > 0);
+      int bound = devices + reconnect + ShizukuStart.SCRIPT_TIMEOUT_MS + polls * pause;
+      File page = new File(main.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile(), "assets/index.html");
+      int wait = page.isFile() ? num(new String(Files.readAllBytes(page.toPath()), "UTF-8"), "const SZ_START_WAIT_MS = (\\d+);") : -1;
+      is("the page's SZ_START_WAIT_MS (" + wait + " ms) is longer than startShizukuNow's bound (" + bound + " ms)", wait > bound);
     }
 
     System.out.println(n + " checks, " + fails + " failed");

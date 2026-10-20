@@ -12,4 +12,8 @@ ok      a TCP port that is open but not connected (nothing connected yet, or thi
 ok      Shizuku is not installed: not offered
 ok      mode pinned to root: not offered
 ok   5. a connected Wireless Debugging target: offered, and "yes" starts Shizuku through it
+ok   6. a start still running after 13 s: the first-launch sheet keeps waiting (at 2.3 s and at 13 s)
+ok      the late "started" asks to authorize Shizuku first, with no sheet open yet
+ok      the first-launch sheet opens once, after the authorize answer
+ok      no page errors
 all checks passed

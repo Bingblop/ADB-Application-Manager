@@ -31758,7 +31758,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // Starting needs a connected ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless
         // pairing stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
         const SZ_START_DENY_KEY = 'shizuku_autostart_denied', SZ_START_DENY_MAX = 2;
-        const SZ_START_WAIT_MS = 12000;   // how long the first-launch sheet waits for a start it offered (startShizukuNow polls the binder up to ~8 s)
+        // How long the first-launch sheet waits for a start it offered: past startShizukuNow's own bound, about 36 s (adb devices 2.5 s, a reconnect 5 s, the
+        // script up to 20 s, the binder poll 8 s), so a slow start still gets its authorize dialog before the sheet. The answer (onShizukuStartResult) ends the
+        // wait as soon as it comes; this is only the limit when none comes. ShizukuStartTest checks it against MainActivity.
+        const SZ_START_WAIT_MS = 40000;
         let szStartTried = false;         // offered once per start of the page
         let szAutoStarting = false, szAutoStartAt = 0;
         function szStartDenials() {
