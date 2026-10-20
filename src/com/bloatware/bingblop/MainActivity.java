@@ -820,6 +820,43 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The theme-colour profile, worked out once: the build, the colour names it has and One UI do not change while the app runs. */
+    private volatile MonetProfile.Result monetProfileCache;
+
+    /**
+     * Which Android build family builds this phone's theme colours (MonetProfile): the SDK level, which of MonetProfile.PROBES the
+     * framework has (getIdentifier(name, "color", "android") != 0) and the One UI version. A lookup that throws leaves the answer
+     * unknown (fail closed) and is not kept, so the next call looks again.
+     */
+    private MonetProfile.Result monetProfile() {
+        MonetProfile.Result r = monetProfileCache;
+        if (r != null) return r;
+        Set<String> present = new HashSet<String>();
+        try {
+            Resources res = getResources();
+            for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, "color", "android") != 0) present.add(name);
+        } catch (Throwable t) {
+            return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUiVersion());
+        }
+        r = MonetProfile.of(Build.VERSION.SDK_INT, present, oneUiVersion());
+        monetProfileCache = r;
+        return r;
+    }
+
+    /**
+     * The phone's contrast setting, the value SystemUI builds the theme colours at (UiModeManager.getContrast, Android 14 and newer),
+     * through MonetProfile.contrast; 0 before Android 14 or when it cannot be read. Read on every call: it changes in Settings.
+     */
+    private double systemContrast() {
+        if (Build.VERSION.SDK_INT < 34) return 0;
+        try {
+            android.app.UiModeManager um = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+            return um == null ? 0 : MonetProfile.contrast(um.getContrast());
+        } catch (Throwable t) {
+            return 0;
+        }
+    }
+
     /** Is this backend usable right now, without showing any prompt? */
     private boolean modeReadyQuiet(String mode) {
         if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
@@ -4969,6 +5006,14 @@ public class MainActivity extends Activity {
                 o.put("error", "Material You colors need Android 12 or newer (this phone runs Android " + Build.VERSION.RELEASE + ").");
                 return o.toString();
             }
+            // for the root-only colours: the Android build family they are computed for ("profile", MonetProfile's id or "unknown", and
+            // "profileReason": ok, notYet, oneUi or unknown), the build itself (the page keeps it with the colours it wrote, so it can
+            // tell when Android was updated after) and the contrast SystemUI computes at
+            MonetProfile.Result profile = monetProfile();
+            o.put("profile", profile.profile);
+            o.put("profileReason", profile.reason);
+            o.put("build", Build.FINGERPRINT == null ? "" : Build.FINGERPRINT);
+            o.put("contrast", systemContrast());
             int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
             String[] names = {"accent1", "accent2", "accent3", "neutral1", "neutral2"};
             JSONArray t = new JSONArray();
@@ -8894,7 +8939,10 @@ public class MainActivity extends Activity {
             return "started";
         }
 
-        /** The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2), read without any privileged mode. */
+        /**
+         * The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2, wallpaper) and what the root-only colours are
+         * computed for (profile, profileReason, build, contrast), read without any privileged mode.
+         */
         @JavascriptInterface
         public String getSystemPalette() {
             return systemPaletteJson();
