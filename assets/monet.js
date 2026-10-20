@@ -161,12 +161,16 @@
  * class), so a P14 palette entry computed here may differ from the phone's own by one RGB step in rare cases (Android 15 and 16 take
  * their shades from libmonet's palettes, doubles). Not checked on a device.
  *
- * Intensity (opts.adjust): the root card's three sliders. These formulas are this project's own (not Android's, not Google's library's,
- * not another app's). They act on the scheme's tonal palettes before anything is derived from them, so the 65 shades, the roles and the
- * fixed colours all come from the same adjusted palettes; the error palette is never touched. No phone computes these colours itself.
+ * Intensity (opts.adjust): the root card's three sliders. Android and Google's library have no such sliders; the definitions below were
+ * written for this project. On the 13 shades, Background lightness gives the same tone steps as another theming app's lightness slider
+ * (compared by behaviour; no other app's code, strings or tables are used); above 100 the saturation sliders here multiply the chroma,
+ * which that app does not. They act on the scheme's tonal palettes before anything is derived from them, so the 65 shades, the roles and
+ * the fixed colours all come from the same adjusted palettes; the error palette is never touched. No phone computes these colours itself.
  *   Accent saturation, a = accentSat / 100: the primary, secondary and tertiary palettes become the palettes of the same hue with chroma
  *     x a (the part's own TonalPalette.fromHueAndChroma, key colour included). The HCT solver clips each tone to the sRGB gamut, so above
- *     100 the display's maximum is the ceiling (Vibrant's primary, chroma 200, is there already at 100).
+ *     100 the display's maximum is the ceiling. At 2021 Vibrant's primary, chroma 200, is there already at 100, except P14's shades 10 and
+ *     50, whose chroma is capped at 40 before the factor: for yellow and yellow-green seeds those still get stronger (FFFF00's accent1_50
+ *     F7F692 at 100, F8F858 at 150, F9F900 at 200).
  *   Background saturation, b = bgSat / 100: the neutral and neutral variant palettes, chroma x b.
  *   Background lightness, v = bgLight: the neutral and neutral variant palettes, asked for tone t, give their colour at tone
  *     f(t) = clamp(t + K * (v - 100) * d(t), 0, 100), K = ADJUST_TONE_STEP = 0.1 (ten tones at the slider ends) and d(t) = min(1, t / 10,
@@ -180,8 +184,13 @@
  *     together; P14 and P16 gave the same numbers), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07
  *     for the nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for
  *     CMF at 2026; on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42 at 2021, 4.84 / 5.38 / 4.13 at 2025, 4.92 / 5.41 /
- *     4.42 for CMF. Most of the drop is in light mode at 200 (the text lightens ten tones, the surface at most two); the lowest
- *     on_surface ratio at 2021 is in dark mode at 0 (the text darkens ten tones, the surface six).
+ *     4.42 for CMF. Most of the drop is in light mode at 200: the text lightens about ten tones while a background cannot pass white
+ *     (the surface moves 2.1 tones at most at 2021 and for CMF, 3.1 at 2025; surface_container_highest, tone 90, the full ten). At 2021
+ *     the lowest on_surface ratio is in dark mode at 0 (the text darkens about ten tones, the surface at most 6.2; at 2025 and for CMF
+ *     the surface about four, the text 3.9 to 9.2). The background tiers merge at the ends: at 200 background, surface, surface_bright
+ *     and the five surface containers are white in light mode (at 2025 surface_container_highest in 38 of 48 cases, else next to it),
+ *     at 0 background, surface, surface_dim and the two lowest containers (at 2025 and for CMF also surface_container) are black in dark
+ *     mode (P14 and P16, the six seeds, every style and spec, contrast 0).
  *   The shades: P14 (Android 14's rule) shade s at tone f(shadeTone(s)), the palette's hue, and chroma min(40, c) x the factor for
  *     shades 10 and 50, c x the factor for the others (c: the chroma before the sliders); P15Q1, P15Q2 and P16 tone f(trunc((1000 - s) /
  *     10)) at chroma c x the factor. Shade 0 (white) and shade 1000 (black) never move; at 200 shades 10, 50 and 100 of a neutral row
@@ -234,8 +243,9 @@
  *                                          the 12 fixed colours from the light scheme. P15Q1, 165, and P15Q2 and P16, 177: 65 palette
  *                                          entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
  *                                          the light scheme; SystemUI's custom colours are not included
- *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with adjust its
- *                                          five palettes are AdjustedPalette objects, the error palette the scheme's own), for tests
+ *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with adjust the
+ *                                          palettes a slider changes are AdjustedPalette objects, the others and the error palette
+ *                                          the scheme's own), for tests
  *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2)
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
  */
@@ -2663,8 +2673,8 @@
         if (typeof c !== 'number' || !Number.isFinite(c)) throw new Error('Unknown contrast: ' + c);
         return Math.min(1.0, Math.max(-1.0, c)) || 0.0;
     }
-    // ---------- Intensity (opts.adjust): the root card's three sliders. This project's own formulas, applied to a scheme's tonal palettes
-    // before anything is derived from them (the 65 shades, the roles, the fixed colours); the error palette is never touched ----------
+    // ---------- Intensity (opts.adjust): the root card's three sliders. Formulas written for this project, applied to a scheme's tonal
+    // palettes before anything is derived from them (the 65 shades, the roles, the fixed colours); the error palette is never touched ----------
     const ADJUST_KEYS = ['accentSat', 'bgSat', 'bgLight'];
     // Background lightness: a neutral palette asked for tone t gives the colour at tone t + ADJUST_TONE_STEP * (v - 100) * adjustRamp(t),
     // clamped to 0..100. K = 0.1: ten tone steps at the slider ends (v = 0 or 200). d(t) = min(1, t / 10, (100 - t) / 10): tones 0 and

@@ -881,12 +881,15 @@ style the palette is worked out with:
   Android's colors as they are.* and a **Reset** text button that sets all three to 100 (greyed out at 100/100/100). The values are kept
   in `ovl_adj_accent_sat`, `ovl_adj_bg_sat` and `ovl_adj_bg_light` when a slider is let go (its change event); moving one (its input
   event) only redraws the value, the hint and the preview, writes nothing and runs nothing in the background. The maths is
-  `opts.adjust = { accentSat, bgSat, bgLight }` in `assets/monet.js`, both parts, with this project's own formulas applied to the
+  `opts.adjust = { accentSat, bgSat, bgLight }` in `assets/monet.js`, both parts, with formulas written for this project, applied to the
   scheme's tonal palettes before anything is derived from them: accent saturation scales the chroma of primary, secondary and
   tertiary, background saturation that of neutral and neutral variant, and background lightness has those two give, for tone t, the
   colour at clamp(t + 0.1 · (v − 100) · min(1, t / 10, (100 − t) / 10), 0, 100) (tones 0 and 100 never move: shade 0 stays #FFFFFF and
-  shade 1000 #000000; at 200 shades 10, 50 and 100 of a neutral row reach white, at 0 shade 900 reaches black). The error palette is
-  never touched; the engine still solves every role on the adjusted palettes, and the tone map comes after it. With any slider not at
+  shade 1000 #000000; at 200 shades 10, 50 and 100 of a neutral row reach white, at 0 shade 900 reaches black; so at 200 the light
+  background roles from about tone 90 up, `background`, `surface`, `surface_bright` and the five `surface_container` ones, all turn
+  white (at 2025 `surface_container_highest` at times only next to it), and at 0 `background`, `surface`, `surface_dim` and the lowest containers turn black in dark mode: the tiers stop
+  differing). The error palette is never touched; the engine still solves every role on the adjusted palettes, and the tone map
+  comes after it. With any slider not at
   100, **Apply theme** writes a style's colors with root: a More style as before, adjusted, else the list style at the spec Google's rule
   gives it (2021 included), adjusted; the hints are *Also writes this style's colors with root, adjusted by the Intensity sliders.*,
   the 2025 one, the More style and CMF ones (*…, in place of the style above, adjusted by the Intensity sliders.*) and each with pure

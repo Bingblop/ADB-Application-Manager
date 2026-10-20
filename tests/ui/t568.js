@@ -11,8 +11,11 @@
 // through the page's MonetPlan: identity at 100, the saturation sliders at 0, Background lightness at 0 and 200, Monochrome, and values
 // pinned from an oracle kept outside the repository: Google's Material Color Utilities (TypeScript, main) with the scheme's palettes
 // adjusted by the definition (accent palettes TonalPalette.fromHueAndChroma(hue, chroma * accentSat / 100), neutral palettes the same with
-// bgSat and, asked for tone t, the colour at f(t) = clamp(t + 0.1 * (bgLight - 100) * min(1, t / 10, (100 - t) / 10), 0, 100)) for P16, and
-// the monet.js from before the sliders run by hand the same way for P14 (Android 14's shade rule, its engine's role tones). (j) German.
+// bgSat and, asked for tone t, the colour at f(t) = clamp(t + 0.1 * (bgLight - 100) * min(1, t / 10, (100 - t) / 10), 0, 100)) for P16, at
+// 2021, 2025 and CMF's 2026 (the 2025 roles with a chroma multiplier at Hct.from(hue, chroma x m, f(tone)), cross-checked where only bgLight
+// moves by Hct.from on the unadjusted scheme's role tones), and the monet.js from before the sliders run by hand the same way for P14
+// (Android 14's shade rule with its cap of chroma 40 on shades 10 and 50 before the factor, its engine's role tones). (j) German, and the
+// row's words following a language switch.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -39,16 +42,25 @@ const HINT = {
   moreBlack: n => 'Also writes the ' + n + ' colors, adjusted by the Intensity sliders, and pure black with root, in place of the style above.'
 };
 const A150 = { accentSat: 150, bgSat: 100, bgLight: 100 };
-// Oracle pins (resource suffix: value), seed 6750A4, spec 2021, contrast 0; the same in light and dark mode
+// Oracle pins (resource suffix: value), contrast 0; the same in light and dark mode. D1 and D2: seed 6750A4, spec 2021
 const P16_TS150 = { accent1_500: '0xFF8166CB', accent2_500: '0xFF7C7296', accent3_500: '0xFFA8627A', primary_light: '0xFF684CB0', primary_dark: '0xFFCFBCFF', on_primary_container_dark: '0xFFE9DDFF', neutral1_500: '0xFF79767D', surface_dark: '0xFF141218' };
 const P14_TS150 = { accent1_10: '0xFFFFFBFF', accent1_500: '0xFF8065CA', accent2_500: '0xFF7B7195', accent3_500: '0xFFA76179', primary_light: '0xFF684CB0', primary_dark: '0xFFCFBCFF', neutral1_500: '0xFF78757C', surface_dark: '0xFF141218' };
+// I6: [profile, style, seed, spec, adjust, pins]. At 2025 and 2026 only role values are pinned (their _light and _dark entries are the same
+// in either mode; the palette shades there come from the scheme of the mode). The 2025 and CMF rows go through the 2025 chroma-multiplier
+// path (a neutral role asked for tone t gets Hct.from(hue, chroma x m, f(t))); the P14 accent1_50 rows through Android 14's cap on shades
+// 10 and 50 (chroma min(40, c) x the factor: Content 00FF00 has c above 40; Vibrant FFFF00's accent1_50 is 0xFFF7F692 at 100)
 const PINS = [
-  ['P16', 'TONAL_SPOT', { bgLight: 200 }, { neutral1_10: '0xFFFFFFFF', neutral1_100: '0xFFFFFFFF', neutral1_500: '0xFF938F96', neutral1_900: '0xFF322F35', neutral2_500: '0xFF948F99', surface_light: '0xFFFFFFFF', surface_dark: '0xFF211F24', on_surface_light: '0xFF322F35', surface_container_high_dark: '0xFF413F45', accent1_500: '0xFF7E6EA9', primary_dark: '0xFFCFBDFE' }],
-  ['P16', 'TONAL_SPOT', { bgLight: 0 }, { neutral1_10: '0xFFFDF7FF', neutral1_100: '0xFFCAC5CC', neutral1_500: '0xFF605D64', neutral1_900: '0xFF000000', surface_light: '0xFFF8F2FA', surface_dark: '0xFF000000', on_surface_light: '0xFF000000', surface_container_high_dark: '0xFF16151A' }],
-  ['P16', 'TONAL_SPOT', { accentSat: 50, bgSat: 150, bgLight: 130 }, { accent1_100: '0xFFE8DEFB', accent1_500: '0xFF7B738D', neutral1_500: '0xFF817D88', neutral1_900: '0xFF232029', primary_light: '0xFF625B73', primary_dark: '0xFFCCC2DF', surface_dark: '0xFF18161F', surface_container_high_dark: '0xFF322F39' }],
-  ['P16', 'FIDELITY', { accentSat: 50 }, { accent1_500: '0xFF7C7296', accent3_500: '0xFF86754F', primary_light: '0xFF4B4263', primary_dark: '0xFFCDC0E9', on_primary_container_dark: '0xFFE0D3FC', neutral1_500: '0xFF79767D' }],
-  ['P14', 'TONAL_SPOT', { bgLight: 200 }, { neutral1_100: '0xFFFFFFFF', neutral1_500: '0xFF928E95', neutral1_900: '0xFF322F35', neutral2_500: '0xFF938E98', surface_dark: '0xFF211F24', surface_container_high_dark: '0xFF413F45' }],
-  ['P14', 'TONAL_SPOT', { bgLight: 0 }, { neutral1_10: '0xFFFDF7FF', neutral1_100: '0xFFCAC5CC', neutral1_500: '0xFF5F5C63', neutral1_900: '0xFF000000', surface_light: '0xFFF8F2FA', surface_dark: '0xFF000000', on_surface_light: '0xFF000000' }]
+  ['P16', 'TONAL_SPOT', '6750A4', '2021', { bgLight: 200 }, { neutral1_10: '0xFFFFFFFF', neutral1_100: '0xFFFFFFFF', neutral1_500: '0xFF938F96', neutral1_900: '0xFF322F35', neutral2_500: '0xFF948F99', surface_light: '0xFFFFFFFF', surface_dark: '0xFF211F24', on_surface_light: '0xFF322F35', surface_container_high_dark: '0xFF413F45', accent1_500: '0xFF7E6EA9', primary_dark: '0xFFCFBDFE' }],
+  ['P16', 'TONAL_SPOT', '6750A4', '2021', { bgLight: 0 }, { neutral1_10: '0xFFFDF7FF', neutral1_100: '0xFFCAC5CC', neutral1_500: '0xFF605D64', neutral1_900: '0xFF000000', surface_light: '0xFFF8F2FA', surface_dark: '0xFF000000', on_surface_light: '0xFF000000', surface_container_high_dark: '0xFF16151A' }],
+  ['P16', 'TONAL_SPOT', '6750A4', '2021', { accentSat: 50, bgSat: 150, bgLight: 130 }, { accent1_100: '0xFFE8DEFB', accent1_500: '0xFF7B738D', neutral1_500: '0xFF817D88', neutral1_900: '0xFF232029', primary_light: '0xFF625B73', primary_dark: '0xFFCCC2DF', surface_dark: '0xFF18161F', surface_container_high_dark: '0xFF322F39' }],
+  ['P16', 'FIDELITY', '6750A4', '2021', { accentSat: 50 }, { accent1_500: '0xFF7C7296', accent3_500: '0xFF86754F', primary_light: '0xFF4B4263', primary_dark: '0xFFCDC0E9', on_primary_container_dark: '0xFFE0D3FC', neutral1_500: '0xFF79767D' }],
+  ['P14', 'TONAL_SPOT', '6750A4', '2021', { bgLight: 200 }, { neutral1_100: '0xFFFFFFFF', neutral1_500: '0xFF928E95', neutral1_900: '0xFF322F35', neutral2_500: '0xFF938E98', surface_dark: '0xFF211F24', surface_container_high_dark: '0xFF413F45' }],
+  ['P14', 'TONAL_SPOT', '6750A4', '2021', { bgLight: 0 }, { neutral1_10: '0xFFFDF7FF', neutral1_100: '0xFFCAC5CC', neutral1_500: '0xFF5F5C63', neutral1_900: '0xFF000000', surface_light: '0xFFF8F2FA', surface_dark: '0xFF000000', on_surface_light: '0xFF000000' }],
+  ['P16', 'TONAL_SPOT', '6750A4', '2025', { bgLight: 200 }, { on_surface_light: '0xFF4B4751', on_surface_dark: '0xFFFFFFFF', on_surface_variant_light: '0xFF7A7681', outline_light: '0xFF98929E', surface_container_highest_light: '0xFFFFFFFF', surface_container_dark: '0xFF2D2B32', surface_light: '0xFFFFFFFF' }],
+  ['P16', 'CMF', '6750A4', '2026', { accentSat: 150, bgSat: 50, bgLight: 150 }, { primary_light: '0xFF5F2CCA', primary_dark: '0xFFAA8AFF', on_surface_light: '0xFF3F3C45', on_surface_dark: '0xFFF7F0FC', on_surface_variant_dark: '0xFFBCB6C2', surface_container_highest_light: '0xFFF5EEFA', surface_container_dark: '0xFF242228' }],
+  ['P14', 'CONTENT', '00FF00', '2021', { accentSat: 50 }, { accent1_10: '0xFFF7FFEE', accent1_50: '0xFFE1F8D5', accent1_100: '0xFFA8F693', accent1_500: '0xFF3E8532' }],
+  ['P14', 'VIBRANT', 'FFFF00', '2021', { accentSat: 150 }, { accent1_50: '0xFFF8F858' }],
+  ['P14', 'VIBRANT', 'FFFF00', '2021', { accentSat: 200 }, { accent1_50: '0xFFF9F900' }]
 ];
 (async () => {
   const b = await chromium.launch();
@@ -199,7 +211,7 @@ const PINS = [
   check('   the record keeps the sliders: {"accentSat":150,"bgSat":100,"bgLight":100}, before the profile and the build; the toast and the note name the theme overlay', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","adjust":{"accentSat":150,"bgSat":100,"bgLight":100},"profile":"P16","build":"' + B16 + '"}' && (await toasts()).includes('Theme overlay written') && (await ev(() => document.getElementById('ovlRootNote').innerText)) === 'The theme overlay is written on this phone.', JSON.stringify([await rec(), await toasts()]));
   await phone({ sdk: 34, build: B14 }); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
   const ts14 = await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2021', dark: true, profile: 'P14', contrast: 0, adjust: A150 });
-  check('D2. P14, the same: 165 entries, MonetPlan.entries(TONAL_SPOT, 6750A4, { spec 2021, dark, profile P14, contrast 0, adjust 150 }); ' + Object.keys(P14_TS150).length + ' values pinned from the oracle (Android 14\'s shade rule: accent1_10 at the capped chroma)', k.fab.length === 1 && plan.entries && plan.entries.length === 165 && ts14 === 'same' && pinsOff(plan, P14_TS150).length === 0, JSON.stringify([ts14, pinsOff(plan, P14_TS150)]));
+  check('D2. P14, the same: 165 entries, MonetPlan.entries(TONAL_SPOT, 6750A4, { spec 2021, dark, profile P14, contrast 0, adjust 150 }); ' + Object.keys(P14_TS150).length + ' values pinned from the oracle (Android 14\'s shade rule; Tonal Spot\'s accent1 chroma, 36, is under the cap of 40, which I6 pins)', k.fab.length === 1 && plan.entries && plan.entries.length === 165 && ts14 === 'same' && pinsOff(plan, P14_TS150).length === 0, JSON.stringify([ts14, pinsOff(plan, P14_TS150)]));
   check('   the record: Tonal Spot, the sliders, the build, no profile (P14)', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","adjust":{"accentSat":150,"bgSat":100,"bgLight":100},"build":"' + B14 + '"}', await rec());
   // the values of the tap: a slider moved between the tap and the theme answer, both ways
   await phone({ sdk: 36, profile: 'P16', build: B16 }); await ev(() => { kvSet('ovl_root_applied', null); window.__delay = 400; }); await reset();
@@ -347,16 +359,16 @@ const PINS = [
   check('I4. Monochrome: both saturation sliders (0 and 200) leave all its entries as they are, on P14 and P16, light and dark (Background lightness does move them)', mono.every(Boolean), JSON.stringify(mono));
   const edge = await ev(() => { const j = o => JSON.stringify(MonetPlan.entries('TONAL_SPOT', '6750A4', { profile: 'P16', adjust: o })); let thrown = ''; try { MonetPlan.entries('TONAL_SPOT', '6750A4', { adjust: { accentSat: 'x' } }); } catch (e) { thrown = e.message; } return { thrown, high: j({ accentSat: 250 }) === j({ accentSat: 200 }), low: j({ bgLight: -20 }) === j({ bgLight: 0 }) }; });
   check('I5. a value that is not a number throws; one outside 0..200 is held to it (250 is 200, -20 is 0)', edge.thrown !== '' && edge.high && edge.low, JSON.stringify(edge));
-  for (const [profile, style, adjust, pins] of PINS) {
-    const off = await ev(([profile, style, adjust, pins]) => {
+  for (const [profile, style, seed, spec, adjust, pins] of PINS) {
+    const off = await ev(([profile, style, seed, spec, adjust, pins]) => {
       const out = [];
       for (const dark of [false, true]) {
-        const have = Object.fromEntries(MonetPlan.entries(style, '6750A4', { spec: '2021', dark, profile, contrast: 0, adjust }).map(e => [e.resource.replace('android:color/system_', ''), e.argb]));
+        const have = Object.fromEntries(MonetPlan.entries(style, seed, { spec, dark, profile, contrast: 0, adjust }).map(e => [e.resource.replace('android:color/system_', ''), e.argb]));
         Object.keys(pins).forEach(k => { if (have[k] !== pins[k]) out.push((dark ? 'dark ' : 'light ') + k + ' ' + have[k] + ' != ' + pins[k]); });
       }
       return out;
-    }, [profile, style, adjust, pins]);
-    check('I6. ' + profile + ' ' + style + ' 6750A4 ' + JSON.stringify(adjust) + ': ' + Object.keys(pins).length + ' values pinned from the oracle, light and dark mode', off.length === 0, off.join('; '));
+    }, [profile, style, seed, spec, adjust, pins]);
+    check('I6. ' + profile + ' ' + style + ' ' + seed + (spec === '2021' ? '' : ' at ' + spec) + ' ' + JSON.stringify(adjust) + ': ' + Object.keys(pins).length + (Object.keys(pins).length === 1 ? ' value' : ' values') + ' pinned from the oracle, light and dark mode', off.length === 0, off.join('; '));
   }
 
   // ---- (j) the new words in German (assets/lang/de.js) ----
@@ -367,6 +379,18 @@ const PINS = [
   check('J1. in German: the row, its line, the three labels, Reset and its title, and the hint read as assets/lang/de.js has them; the values are written the German way (' + pct + ')', de.every(t => t !== '') && de[0] !== 'Intensity' && a.name === de[0] + ' ' + de[1] && a.sliders.map(s => s.label).join('|') === de.slice(2, 5).join('|') && (a.reset || {}).text === de[5] && (a.reset || {}).title === de[6] && a.hint === de[7] && sl(a, 0).shown === pct && sl(a, 0).text === pct, JSON.stringify([de, a.name, a.sliders.map(s => s.label + ' ' + s.shown), a.reset, a.hint]));
   await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); a = await adj();
   check('   locked there: the row keeps its German name and line', a.locked && a.name === de[0] + ' ' + de[1], a.name);
+  // drawn while German is on (live again: the sliders are drawn anew), then the language switched: the next render puts the row's name, its
+  // line and the group's label in the new language (the sliders stay drawn; their labels, Reset and the hint follow as before)
+  await phone({ sdk: 36, profile: 'P16', build: B16b }); a = await adj();
+  const drawnDe = a.name === de[0] + ' ' + de[1] && (a.group || {}).label === de[0] && a.sliders.length === 3;
+  await ev(() => I18N.set('en')); await sleep(200); await ev(() => ovlRender()); await sleep(100);
+  const en = await adj();
+  await ev(() => I18N.set('fr')); await sleep(400); await ev(() => ovlRender()); await sleep(100);
+  const fra = await adj();
+  const fr = await ev(words => { const x = (window.__LANGS.fr && window.__LANGS.fr.x) || {}; return words.map(w => x[w] || ''); }, ['Intensity', SUB, 'Accent saturation', 'Background saturation', 'Background lightness', 'Reset', HINT.list]);
+  check('J2. drawn in German, then English and French with a render after each: the row\'s name and line and the group\'s label follow (as do the labels, Reset and the hint)', drawnDe && en.name === 'Intensity ' + SUB && (en.group || {}).label === 'Intensity' && en.sliders.map(s => s.label).join('|') === 'Accent saturation|Background saturation|Background lightness' && (en.reset || {}).text === 'Reset' && en.hint === HINT.list
+    && fr.every(t => t !== '') && fra.name === fr[0] + ' ' + fr[1] && (fra.group || {}).label === fr[0] && fra.sliders.map(s => s.label).join('|') === fr.slice(2, 5).join('|') && (fra.reset || {}).text === fr[5] && fra.hint === fr[6], JSON.stringify([a.name, (a.group || {}).label, en.name, (en.group || {}).label, fra.name, (fra.group || {}).label, fr[0]]));
+  await ev(() => I18N.set('en')); await sleep(100);
 
   check('no page errors', errors.length === 0, JSON.stringify(errors));
   await b.close();

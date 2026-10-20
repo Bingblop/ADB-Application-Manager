@@ -38799,10 +38799,17 @@ Type any command above (e.g. pm list packages -d)</div>
                 ovlRenderRootPreview();
             }
             // Intensity: locked where More styles is (and Update the app when the maths does not know the sliders), else the three sliders,
-            // drawn once and then only brought up to date (ovlAdjSync), so a redraw does not take a slider away from a finger moving it
+            // drawn once and then only brought up to date (ovlAdjSync), so a redraw does not take a slider away from a finger moving it. The
+            // row's name and line and the group's label are put in the page's language as they are drawn (txT, which a later language switch
+            // cannot take back), so those are drawn again on every render, as the other rows are
             if (!ovlRootAdjLive()) drawAdj(rootLockedRow('Intensity', OVL_ADJ_SUB, ovlAdjApiOk() ? 'Needs Android 14' : 'Update the app'));
             else if (adjBox) {
                 if (!document.getElementById(OVL_ADJ[0].id)) adjBox.innerHTML = ovlAdjHtml();
+                else {
+                    const name = adjBox.querySelector('.rf-row > .rf-name'), group = adjBox.querySelector('.ovl-adj');
+                    if (name) name.outerHTML = rootFeatureName('Intensity', OVL_ADJ_SUB);
+                    if (group) group.setAttribute('aria-label', txT('Intensity'));
+                }
                 ovlAdjSync();
             }
             const applied = ovlRootApplied(), words = ovlRootWords(applied ? applied.style : '');
