@@ -38,7 +38,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       saveSetting(k, v) { window.__kv[k] = v; },
       loadPackages() { return '[]'; },
       openRootManager() { window.__calls.openRootManager = (window.__calls.openRootManager || 0) + 1; return JSON.stringify(window.__rootMgr || { ok: false }); },
-      rootManagerName() { return (window.__rootMgr && window.__rootMgr.ok) ? window.__rootMgr.name : ''; },
       getWorkingMode() { return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, WM[window.__wm.state])); },
       selectWorkingMode(mode) {
         window.__calls.selectWorkingMode.push(mode);

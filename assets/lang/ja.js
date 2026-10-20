@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "お使いの端末が Super User アクセスを取得できるか確認するか、Root マネージャーを開いて許可してください。",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root マネージャーが見つかりませんでした。KernelSU、APatch、または Magisk をインストールしてから戻ってください。",
   "Open root manager": "Root マネージャーを開く",
-  "your root manager": "お使いの Root マネージャー",
   "Create new list": "新しいリストを作成",
   "List name in use": "リスト名は使用中です",
   "Overwrite": "上書き",

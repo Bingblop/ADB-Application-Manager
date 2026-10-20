@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "जांचें कि आपका डिवाइस Super User एक्सेस पा सकता है या नहीं, या इसे देने के लिए अपना रूट मैनेजर खोलें।",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "कोई रूट मैनेजर नहीं मिला। KernelSU, APatch या Magisk इंस्टॉल करें, फिर वापस आएं।",
   "Open root manager": "रूट मैनेजर खोलें",
-  "your root manager": "अपना रूट मैनेजर",
   "Create new list": "नई सूची बनाएँ",
   "List name in use": "सूची नाम पहले से उपयोग में है",
   "Overwrite": "ओवरराइट करें",

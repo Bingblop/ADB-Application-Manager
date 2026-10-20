@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Cihazınızın Super User erişimi alıp alamayacağını kontrol edin veya vermek için root yöneticinizi açın.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root yöneticisi bulunamadı. KernelSU, APatch veya Magisk kurun, sonra geri dönün.",
   "Open root manager": "Root yöneticisini aç",
-  "your root manager": "root yöneticiniz",
   "Create new list": "Yeni liste oluştur",
   "List name in use": "Liste adı kullanımda",
   "Overwrite": "Üzerine yaz",

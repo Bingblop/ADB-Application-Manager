@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "تحقّق مما إذا كان جهازك يمكنه الحصول على صلاحية Super User، أو افتح مدير الروت لمنحها.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "لم يُعثر على مدير روت. ثبّت KernelSU أو APatch أو Magisk، ثم عُد.",
   "Open root manager": "فتح مدير الروت",
-  "your root manager": "مدير الروت لديك",
   "Create new list": "إنشاء قائمة جديدة",
   "List name in use": "اسم القائمة مُستخدَم بالفعل",
   "Overwrite": "استبدال",

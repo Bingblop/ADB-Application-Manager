@@ -89,7 +89,10 @@ public class RootManagersTest {
     // MainActivity: the bridge opens the manager with a plain launch intent (no grant mechanics) and reports which one
     check("source: AndroidBridge exposes openRootManager", m.contains("public String openRootManager()"));
     check("source: openRootManager uses a launch intent (hands off, grants nothing)", m.contains("getLaunchIntentForPackage") && m.contains("RootManagers.pick("));
-    check("source: AndroidBridge reports the installed manager name", m.contains("public String rootManagerName()"));
+    // T-024: the page takes the manager's name from openRootManager's answer; no separate bridge method nobody calls, no stand-in string no answer leaves room for
+    check("source: no rootManagerName bridge method (the page never called it)", !m.contains("rootManagerName"));
+    check("source: the ok answer carries the manager's name", methodBody(m, "public String openRootManager()").contains("return \"{\\\"ok\\\":true,\\\"name\\\":\" + name + \"}\";"));
+    check("source: the page toasts use that name with no unreachable stand-in", !h.contains("txT('your root manager')"));
     // T-021: the answer follows the start. openRootManager starts the manager itself (not posted to the UI thread with ok sent at once), answers
     // ok:true only after startActivity returned, and answers ok:false when the launch intent is gone or Android refuses the start
     String open = methodBody(m, "public String openRootManager()");

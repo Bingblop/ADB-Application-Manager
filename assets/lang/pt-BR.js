@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Verifique se o seu dispositivo pode obter acesso Super User, ou abra o gerenciador de root para concedê-lo.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Nenhum gerenciador de root encontrado. Instale KernelSU, APatch ou Magisk e depois volte.",
   "Open root manager": "Abrir gerenciador de root",
-  "your root manager": "seu gerenciador de root",
   "Create new list": "Criar nova lista",
   "List name in use": "Nome de lista em uso",
   "Overwrite": "Substituir",

@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "检查你的设备能否获得 Super User 权限，或打开 Root 管理器来授予。",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "未找到 Root 管理器。请安装 KernelSU、APatch 或 Magisk，然后返回。",
   "Open root manager": "打开 Root 管理器",
-  "your root manager": "你的 Root 管理器",
   "Create new list": "新建列表",
   "List name in use": "列表名称已被使用",
   "Overwrite": "覆盖",

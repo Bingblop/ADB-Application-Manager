@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Periksa apakah perangkat Anda bisa mendapatkan akses Super User, atau buka pengelola root untuk memberikannya.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Tidak ada pengelola root yang ditemukan. Pasang KernelSU, APatch, atau Magisk, lalu kembali.",
   "Open root manager": "Buka pengelola root",
-  "your root manager": "pengelola root Anda",
   "Create new list": "Buat daftar baru",
   "List name in use": "Nama daftar sudah dipakai",
   "Overwrite": "Timpa",

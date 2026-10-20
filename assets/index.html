@@ -28595,7 +28595,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // Temporary root by hand-off: open the installed root manager (KernelSU, APatch or Magisk) so the grant is approved there, then read the
         // status back when the app returns (rootGrantPending -> a fresh working-mode check that updates the gate). No grant mechanics live here: the
         // app only launches the manager and reads su status afterwards. The bridge answers ok only once the manager was started; reason 'launch'
-        // means a manager is installed but Android did not start it, which is not the "install one" case (nothing is pending then either).
+        // means a manager is installed but Android did not start it, which is not the "install one" case (nothing is pending then either). Both of
+        // those answers carry the manager's name, so the toasts need no stand-in for it.
         let rootGrantPending = false;
         function rootOpenManager() {
             if (!window.AndroidBridge || !window.AndroidBridge.openRootManager) { showToast(txT('This works in the app on a phone, not in a browser.')); return; }
@@ -28603,7 +28604,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Allow this app in {0}, then come back.', res.name || txT('your root manager')));
+                showToast(txF('Allow this app in {0}, then come back.', res.name));
             } else if (res && res.reason === 'launch') {
                 showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
             } else if ((lastModesData || {}).rootAvailable) {
@@ -28623,7 +28624,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name || txT('your root manager')));
+                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name));
             } else if (res && res.reason === 'launch') {
                 showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
             } else if (isRootActive()) {

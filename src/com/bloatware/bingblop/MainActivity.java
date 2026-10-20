@@ -13730,22 +13730,12 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * The installed root manager this app would hand off to for su (KernelSU, APatch or Magisk), by the name people know it by, or "" when none
-         * is installed. The Root Features tab labels its "open manager" button with it. No root is used here: it only reads which manager app is present.
-         */
-        @JavascriptInterface
-        public String rootManagerName() {
-            RootManagers.Manager m = RootManagers.pick(installedRootManagers());
-            return m == null ? "" : m.label;
-        }
-
-        /**
          * Opens the installed root manager (KernelSU, APatch or Magisk) with a normal launch intent so the user can grant this app Super User there.
          * This holds no root or grant mechanics: the grant is approved inside the manager, and the app reads the result back afterwards through the
          * usual working-mode check (the Root Features tab re-checks on resume and unlocks when su was granted). Answer: {"ok":true,"name":"KernelSU"}
          * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed; and
          * {"ok":false,"reason":"launch","name":"KernelSU"} when one is installed but the start did not happen, so the page does not tell the user to
-         * install a manager they have.
+         * install a manager they have. This answer is the page's only source of the manager's name (its toasts name it; the buttons keep fixed labels).
          */
         @JavascriptInterface
         public String openRootManager() {

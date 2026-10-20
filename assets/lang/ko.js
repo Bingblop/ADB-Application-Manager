@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "기기가 Super User 액세스를 받을 수 있는지 확인하거나, 루트 관리자를 열어 권한을 부여하세요.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "루트 관리자를 찾을 수 없습니다. KernelSU, APatch 또는 Magisk를 설치한 다음 돌아오세요.",
   "Open root manager": "루트 관리자 열기",
-  "your root manager": "루트 관리자",
   "Create new list": "새 목록 만들기",
   "List name in use": "이미 사용 중인 목록 이름",
   "Overwrite": "덮어쓰기",

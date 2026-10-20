@@ -13,7 +13,6 @@ x: {
   "Check whether your device can get Super User access, or open your root manager to grant it.": "Проверьте, может ли устройство получить доступ Super User, или откройте root-менеджер, чтобы его предоставить.",
   "No root manager was found. Install KernelSU, APatch or Magisk, then come back.": "Root-менеджер не найден. Установите KernelSU, APatch или Magisk, затем вернитесь.",
   "Open root manager": "Открыть root-менеджер",
-  "your root manager": "ваш root-менеджер",
   "Create new list": "Создать новый список",
   "List name in use": "Имя списка уже занято",
   "Overwrite": "Перезаписать",
