@@ -20215,7 +20215,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const acts = (inspectorData && inspectorData.activityInfo) || [];
             const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
             if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
-            if (!isRootActive()) { if (!(await promptRootThenOpen(txT('Enabling or disabling a component')))) return; }
+            if (!isRootActive()) {
+                const granted = await promptRootThenOpen(txT('Enabling or disabling a component'));
+                renderComponentTabs();                // the funnel may have changed the mode: the rows' Root lock is drawn again (T-055), whatever comes next
+                if (!granted) return;
+            }
             nextDialogTitle('Change activities');
             if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
             if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
@@ -28580,8 +28584,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
         // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
-        // - "App components": a signpost to the Application Manager, where enabling/disabling an app's components already works (toggleComponent ->
-        //   setComponentEnabled -> ShellArgs.componentCommand); this row only surfaces that capability on the Root tab, it builds nothing new.
+        // - "App components": a signpost to the Application Manager, where an app's components are enabled/disabled (toggleComponent ->
+        //   setComponentEnabled -> ShellArgs.componentCommand). That toggle is Root-only (compToggleLocked on the page, setComponentEnabled
+        //   refuses any other mode); this row only surfaces it on the Root tab, it builds nothing new.
         function rootFeatureName(title, sub) { return '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>'; }
         // a feature that waits on root: the name, a disabled Locked button and the reason (Needs Super User, unless the caller names another one,
         // as the Overlays tab's root controls do when the app itself is too old to write them)
@@ -28662,7 +28667,7 @@ Type any command above (e.g. pm list packages -d)</div>
             } else if ((lastModesData || {}).rootAvailable) {
                 // su is on the phone, so it is rooted: the manager is most likely there under a package name the app does not know (Magisk's
                 // "Hide the Magisk app" gives it a random one). Telling the user to install a root manager would send them after one they have.
-                showToast(txT('Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.'));
+                showToast(txT('Your root manager was not found by its usual name (a hidden Magisk app, for example). With Magisk, tap Request Super User first and allow this app when Magisk asks. With another manager, open it yourself, allow this app, then tap Request Super User.'));
             } else {
                 showToast(txT('No root manager was found. Install KernelSU, APatch or Magisk, then come back.'));
             }
@@ -28688,8 +28693,9 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
         // App components: with root active, go to the Application Manager so the user picks an app and toggles its components in the inspector
-        // (toggleComponent -> setComponentEnabled -> ShellArgs.componentCommand, which already works under any privileged mode). This is only a
-        // signpost to that existing capability from the Root Features tab; it builds nothing new.
+        // (toggleComponent -> setComponentEnabled -> ShellArgs.componentCommand, which works only while Root is active: compToggleLocked locks the
+        // control in every other mode and setComponentEnabled refuses it there). This is only a signpost to that capability from the Root Features
+        // tab; it builds nothing new.
         function rootManageComponents() {
             switchView('apps');
             showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
@@ -28712,17 +28718,18 @@ Type any command above (e.g. pm list packages -d)</div>
         window.addEventListener('focus', rootGrantReadBack);
         // The fresh check above counts su as granted only while Root is the chosen working mode (MainActivity.probeWorkingMode; Auto never resolves
         // to Root), so a grant just approved in the manager unlocks nothing while the mode is Auto, Shizuku or ADB. Offer the switch to Root then,
-        // through the path of Request Super User. It asks first instead of switching by itself: selectWorkingMode('root') keeps Root as the chosen
-        // mode even when su denies, so a silent switch would replace a working mode with a Root that is not ready whenever the user came back
-        // without allowing the app. Only a device shows how often that happens; asking is the safer way.
+        // through rootAskSu, the path of Request Super User (T-052): selectWorkingMode('root') keeps Root as the chosen mode even when su denies, so
+        // a yes that su then refuses (the user came back without allowing the app, or Magisk's question was denied or timed out) puts the mode
+        // chosen before back and says so, instead of leaving a Root that is not ready. It asks first instead of switching by itself: the switch
+        // changes the working mode and can bring up the manager's own question, and coming back is not a request for either.
         function rootOfferSwitchAfterManager() {
             const d = lastModesData || {};
             if (!window.AndroidBridge || !d.rootAvailable || isRootActive() || d.configuredMode === 'root') return;
             if (!confirm(txT('Switch the working mode to Root now? Root Features unlock once su grants this app access.'))) return;
-            selectModeUI('root');
+            rootAskSu();
         }
-        // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
-        // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
+        // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (called by toggleComponent and alsBulkComp, the
+        // Root-only component toggle). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
         // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.
         function promptRootThenOpen(featureName) {
             if (isRootActive()) return Promise.resolve(true);
@@ -28737,6 +28744,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!tabNeed('rootfeatures')) return false;              // switched off in Settings > Feature List: say so, never offer a tab that cannot open (T-046)
             const why = featureName ? txF('{0} needs Super User.', featureName) + '\n\n' : '';
             if (!confirm(why + txT('Open Root Features to check if your device supports Super User?'))) return false;
+            // the funnel's callers run inside a sheet (the app sheet, the Activity Launcher), which would cover the tab: close it first, as
+            // every other way from a sheet to a tab does (T-054). A no above leaves the sheet as it was.
+            if (document.getElementById('inspectorModal').classList.contains('show')) closeInspector();
+            if (alsIsOpen()) closeAppListSheet();
             switchView('rootfeatures');
             return false;
         }
@@ -30038,8 +30049,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // Enable or disable a component (pm enable/disable) and reflect the new state locally. Super User (Root) only in v7.15.1
         // (both user and system apps): off root, run the attempt-to-prompt funnel (switch to Root when su is there, else offer
         // the Root Features tab) and retry once it is granted, instead of firing a pm command the shell uid cannot carry out.
+        // The rows are drawn again after the funnel (T-055): it may have changed the mode, and the retry below redraws them only when it
+        // completes (not after Cancel on the system-app confirm, nor after a failure).
         function toggleComponent(name, enable) {
-            if (!isRootActive()) { promptRootThenOpen(txT('Enabling or disabling a component')).then(ok => { if (ok) toggleComponent(name, enable); }); return; }
+            if (!isRootActive()) { promptRootThenOpen(txT('Enabling or disabling a component')).then(ok => { renderComponentTabs(); if (ok) toggleComponent(name, enable); }); return; }
             // A system app's component is part of the OS, so disabling one can break the app or the system UI: confirm first. The app is
             // known from the Applications list (the same place openStandbyModal reads it); a disabled component stays listed and its row flips to ENABLE.
             const app = (typeof allApps !== 'undefined' && allApps) ? allApps.find(a => a.pkg === inspectedPkg) : null;

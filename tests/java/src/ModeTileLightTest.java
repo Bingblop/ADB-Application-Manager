@@ -30,6 +30,7 @@ public class ModeTileLightTest {
     check("the keys are stable (a rename would orphan the saved values)", "mode_tile_mode".equals(ModeTileLight.PREF_MODE) && "mode_tile_available".equals(ModeTileLight.PREF_AVAILABLE));
 
     sourceScan();
+    docsScan();
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
   }
@@ -87,6 +88,12 @@ public class ModeTileLightTest {
     // T-036: TileService.requestListeningState "is only applicable to tiles that have META_DATA_ACTIVE_TILE defined as true ... and will do
     // nothing otherwise" (Android reference); this tile is passive (checked below), so the call would promise a refresh that never comes
     check("source: ... and does not call requestListeningState, which Android ignores for a passive tile", publish != null && !publish.contains("requestListeningState"));
+    // T-060: the end of a tile tap (finishQuickAction) asked the same passive tile for a refresh that never comes; the tile shows the new
+    // light when the panel is opened again (the tap's startActivityAndCollapse closed it). The widget refresh stays: a widget is redrawn
+    String finish = bodyOf(m, "private void finishQuickAction(final String message) {");
+    check("source: finishQuickAction still refreshes the home-screen widget", finish != null && finish.contains("QuickWidgetProvider.refreshAll(MainActivity.this);"));
+    check("source: ... and sends no requestListeningState to the passive Working mode tile", finish != null && !finish.contains("requestListeningState(") && !finish.contains("ModeTileService"));
+    check("source: MainActivity calls requestListeningState nowhere (both tiles are passive, so Android would ignore it)", !m.contains("requestListeningState("));
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
 
@@ -114,5 +121,32 @@ public class ModeTileLightTest {
     String block = at < 0 ? null : ax.substring(at, ax.indexOf("</service>", at));
     check("source: the Working mode tile is declared in the manifest", block != null);
     check("source: the tile stays passive (no ACTIVE_TILE meta-data), so it refreshes on every panel open", block != null && !block.contains("ACTIVE_TILE"));
+  }
+
+  // ------------------------------------------------------------------------------------------ the Help Guide row, read from the docs
+
+  /** The text of a guide row or Markdown line: tags and Markdown code marks gone, white space collapsed. */
+  static String plain(String s) { return s == null ? null : s.replaceAll("<[^>]+>", "").replace("`", "").replaceAll("\\s+", " "); }
+
+  /** The one line of {@code src} that holds {@code marker}, or null. */
+  static String lineWith(String src, String marker) {
+    int i = src.indexOf(marker);
+    if (i < 0 || src.indexOf(marker, i + 1) >= 0) return null;
+    int a = src.lastIndexOf('\n', i) + 1, b = src.indexOf('\n', i);
+    return src.substring(a, b < 0 ? src.length() : b);
+  }
+
+  // T-061: after T-035 a tap that cycles to Root asks no su, and the headless probe counts Root as granted only with a yes already known in this
+  // process (rootGrantedKnown; a new process knows none), so the tile stays dim until the app is opened and asks. The guide's tile row and
+  // FULL-GUIDE.md's say so, next to "lit when ... Root granted"
+  static void docsScan() throws Exception {
+    File guide = findUp("docs/guide/03-apps.html"), full = findUp("docs/FULL-GUIDE.md");
+    if (guide == null || full == null) { System.out.println("SKIP docs scan: the guide was not found above " + System.getProperty("user.dir")); return; }
+    String marker = "lit when the app last found a working mode usable";
+    String row = plain(lineWith(read(guide), marker)), fullRow = plain(lineWith(read(full), marker));
+    String said = "A tap that switches to Root asks no su (the root manager's question would come up behind the closing panel). So the tile stays dim after"
+        + " that tap, even where root works, until you open the app, which then asks; it is lit at once only when the app is still running and already has su's yes";
+    check("docs: the guide's Working mode tile row says a tap to Root asks no su and leaves the tile dim until the app is opened (T-061)", row != null && row.contains(said), row);
+    check("docs: ... and FULL-GUIDE.md's tile row says the same", fullRow != null && fullRow.contains(said), fullRow);
   }
 }

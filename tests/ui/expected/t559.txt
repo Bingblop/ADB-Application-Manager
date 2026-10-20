@@ -18,6 +18,7 @@ ok      after a grant is taken back in the manager, the quiet check still reads 
 ok      opening the tab unlocked asks su again (one fresh check): it now reads DENIED, the gate shows and the rows are locked
 ok      and the refusal it read shows no "Mode:" toast either (the tag and the gate say it)
 ok      a tab that opens locked asks nothing more (no second su prompt after a no)
+ok      T-058 the undo after the app read the refusal: choosing Shizuku leaves the chip at DENIED with the rows locked; Check Status (a fresh check) turns it to AVAILABLE, still locked
 ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAILABLE, the features are locked with the reason, the Super User card is there
 ok      the gate names the way: choose Root in Working Modes
 ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button
@@ -25,10 +26,11 @@ ok      the hand-off note reads as the card's text: upright, the size of the lin
 ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
 ok      back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending
 ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
+ok      T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root", then setWorkingMode "shizuku"): chosen and privileged again, the badge reads Shizuku, the tag DENIED, and the toast says the mode stays
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
 ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
-ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)
+ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)
 ok      a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending
 ok      back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent
 ok      onAppResume with nothing pending reads nothing fresh
@@ -54,6 +56,10 @@ ok      Request Super User asks su through selectWorkingMode("root") (the path o
 ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
 ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
+ok      its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk's list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)
+ok      T-053 no topic recommends Magisk's "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action
+ok      T-057 NOT FOUND is not final with KernelSU or APatch: the chip table, If it does not work, the recipe, Root mode and Troubleshooting say su is shown only to allowed apps and point to Open root manager; a renamed build that gets "No root manager was found" is covered
+ok      T-058 the undo (Getting Super User, the recipe step 5): AVAILABLE, or DENIED once the app has seen the refusal, Check Status clears it, the rows lock either way; the recipe's step 3 quotes the Switch-to-Root question, step 1 names DENIED
 ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
 ok   8. no page errors
 errors: []

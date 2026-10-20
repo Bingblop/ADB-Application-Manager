@@ -5,13 +5,20 @@
 // going through selectWorkingMode('root'), the re-render on a mode change, and the attempt-to-prompt funnel promptRootThenOpen: Super User active -> true;
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
-// nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
-// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
+// nothing, a yes goes the way of Request Super User (selectWorkingMode('root'); a refusal puts the mode chosen before back, T-052); with Root
+// already chosen nothing is asked. Open root manager that finds no known manager says
+// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018; with Magisk tap Request Super User first, with another
+// manager allow the app first, T-059), and asks to install one only without su; so does Open manager
 // on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
 // manager's list (Magisk lists an app only after it has asked su, T-019).
 // Then the Help Guide (T-029): its Root Features topic names the Features card, the Super User for apps row
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
-// plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
+// plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
+// Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
+// No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053). No topic calls
+// NOT FOUND final: KernelSU (Next) and APatch show su only to the apps they allow, and Open root manager is the way out (T-057). T-058: after
+// the undo (deny in the manager, choose another mode) the chip reads DENIED when the app already read the refusal, until Check Status; the guide's
+// undo and recipe say so, and the recipe's step 3 quotes the Switch-to-Root question its way back brings.
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
@@ -172,6 +179,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   and the refusal it read shows no "Mode:" toast either (the tag and the gate say it)', (await toastText()) === '', await toastText());
   await ev(() => { switchView('apps'); window.__calls.fresh = 0; switchView('rootfeatures'); }); await sleep(50);
   check('   a tab that opens locked asks nothing more (no second su prompt after a no)', (await fresh()) === 0 && (await tag()) === 'warning DENIED', JSON.stringify([await fresh(), await tag()]));
+  // T-058: the guide's undo (deny in the manager, then choose another mode). Here the app has read the refusal, and in the other mode the probe
+  // still reports su's last no, so the chip reads DENIED, not AVAILABLE; the rows lock either way, and Check Status (a fresh check) forgets the no
+  await ev(() => selectModeUI('shizuku')); await sleep(250);
+  const undoTag = await tag(), undoLocked = await lockedRow();
+  await ev(() => checkAllWorkingModes(true)); await sleep(50);
+  check('   T-058 the undo after the app read the refusal: choosing Shizuku leaves the chip at DENIED with the rows locked; Check Status (a fresh check) turns it to AVAILABLE, still locked', undoTag === 'warning DENIED' && undoLocked && (await tag()) === 'warning AVAILABLE' && (await lockedRow()), JSON.stringify([undoTag, undoLocked, await tag()]));
   await ev(() => { window.__wm.revoked = false; window.__wm.refused = false; }); await setMode('root');
 
   // ---- 3. (B) su on the phone, the mode is Shizuku
@@ -196,6 +209,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   await comeBack();
   check('   a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone', dialogs.length === 1 && (await ev(() => window.__calls.selectWorkingMode.join())) === 'root' && (await tag()) === 'active ACTIVE' && (await disp('#rootGate')) === 'none', JSON.stringify([dialogs, await tag()]));
+  // T-052: a yes that su then refuses (the app was not allowed in the manager, or Magisk's question was denied or not answered) goes the way of
+  // Request Super User: Root is asked, then the mode chosen before is put back and the toast says so; Root is not left chosen and not ready
+  await setMode('shizuku', false); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; window.__calls.setWorkingMode = []; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  await comeBack();
+  const offerNo = await ev(() => ({ calls: window.__calls.selectWorkingMode.join() + ' / ' + window.__calls.setWorkingMode.join(), state: window.__wm.state, cfg: lastModesData.configuredMode, priv: isPrivilegedActive, badge: document.getElementById('execModeText').innerText, toast: document.getElementById('toastMsg').textContent }));
+  check('   T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root", then setWorkingMode "shizuku"): chosen and privileged again, the badge reads Shizuku, the tag DENIED, and the toast says the mode stays', dialogs.length === 1 && offerNo.calls === 'root / shizuku' && offerNo.state === 'shizuku' && offerNo.cfg === 'shizuku' && offerNo.priv === true && offerNo.badge === 'Shizuku' && (await tag()) === 'warning DENIED' && offerNo.toast === 'Super User was not granted. The working mode stays Shizuku ADB (UID 2000).', JSON.stringify([dialogs, offerNo, await tag()]));
+  await ev(() => { window.__calls.setWorkingMode = []; });
   await setMode('rootDenied'); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   await comeBack();
@@ -206,7 +227,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
-  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. Open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
+  const hiddenMgrToast = await text('#toastMsg');
+  // T-059: in the order that works: Magisk lists an app only after it has asked su (the note above), so with Magisk Request Super User comes first;
+  // another manager lists every app, so it is allowed there first
+  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. With Magisk, tap Request Super User first and allow this app when Magisk asks\. With another manager, open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
   await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'Magisk' }; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
@@ -307,6 +331,36 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const gTab = plain['tab-rootfeatures'] || '', gSuApps = plain['rootfeatures-su-apps'] || '';
   check('7. the guide\'s Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card', /The "Features" card/.test(gTab) && /Super User for apps/.test(gTab) && /Open manager/.test(gTab) && /Open root manager/.test(gTab) && !/later version|until then the card says so/i.test(gTab), gTab.slice(0, 160));
   check('   its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return', /opens the way its icon on the home screen opens it/.test(gSuApps) && /not on its list of apps with root/.test(gSuApps) && /Come back\. The app checks its own root status again/.test(gSuApps), gSuApps.slice(0, 160));
+  // T-059: the hidden-manager paragraph quotes the toast as the page shows it, and "not in Magisk's list" holds only until the app has asked su
+  // once: the same paragraph names DENIED (su asked and refused), so it says what to do when Magisk then says no without asking
+  const gGrant = plain['rootfeatures-grant'] || '';
+  check('   its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk\'s list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)', hiddenMgrToast.length > 0 && gGrant.includes('"' + hiddenMgrToast + '"') && /until this app has asked once, it is not in Magisk's list/.test(gGrant) && /\(a chip that reads DENIED means it has\) and Magisk now says no without showing its question/.test(gGrant) && !/so the app is not in its list yet/.test(gGrant), (gGrant.match(/Because the phone has.{0,200}/) || [''])[0]);
+  // T-053: Magisk saves no policy for "Once" (it covers a single su request), and this app runs a new su for every command, so a "Once" grant
+  // would bring Magisk's question back at every root action. The Risky box, Way A step 3 and the recipe recommend a time limit (or Forever taken
+  // back later) instead, and What you are getting into says what Once covers
+  const gRecipe = plain['recipe-root-features'] || '';
+  const onceAdvice = /pick "Once"|"Once" is the careful answer|"Once" is asked for again next time/;
+  check('   T-053 no topic recommends Magisk\'s "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action',
+    [gTab, gGrant, gRecipe].every(s => !onceAdvice.test(s)) && [gTab, gGrant, gRecipe].every(s => /"60 mins"/.test(s)) && /"Once" covers one request only/.test(gGrant) && /Magisk would ask again for every action/.test(gGrant) && /"Once"[^.]*covers this one request only/.test(gRecipe),
+    JSON.stringify([gTab, gGrant, gRecipe].map(s => (s.match(/.{0,80}"Once".{0,120}/) || [''])[0])));
+  // T-057: KernelSU (Next) and APatch show su only to the apps they allow, so before this app is allowed the chip can read NOT FOUND on a rooted
+  // phone, and Open root manager (which finds those managers by package name, whatever su says) is the way out. No topic calls NOT FOUND final
+  const gMode = plain['mode-root'] || '', gTrouble = plain['troubleshooting'] || '';
+  const notAllowed = /show su only to the apps they allow/;
+  check('   T-057 NOT FOUND is not final with KernelSU or APatch: the chip table, If it does not work, the recipe, Root mode and Troubleshooting say su is shown only to allowed apps and point to Open root manager; a renamed build that gets "No root manager was found" is covered',
+    notAllowed.test(gTab) && /This is what an unrooted phone shows, always/.test(gTab) === false && /Open root manager/.test((gTab.match(/NOT FOUND \(grey\).{0,400}/) || [''])[0])
+      && notAllowed.test(gGrant) && !/stays there\. The phone has no su that the app can see: it is not rooted, or the manager is disabled\. Nothing on this tab can change that/.test(gGrant) && /A renamed build of KernelSU or APatch can get this message too/.test(gGrant)
+      && notAllowed.test(gRecipe) && !/NOT FOUND means stop here\./.test(gRecipe) && notAllowed.test(gMode) && notAllowed.test(gTrouble),
+    JSON.stringify([(gTab.match(/NOT FOUND \(grey\).{0,200}/) || [''])[0], (gGrant.match(/The chip reads NOT FOUND.{0,200}/) || [''])[0]]));
+  // T-058: after the undo the chip reads AVAILABLE, or DENIED when the app has already read the refusal (as in section 2); the recipe's step 3
+  // quotes the Switch-to-Root question its way back brings (as the page's source words it) and step 1 names DENIED
+  const switchQ = 'Switch the working mode to Root now? Root Features unlock once su grants this app access.';
+  const pageSrc = fs.readFileSync(path.join(REPO, 'assets', 'index.html'), 'utf8');
+  const undoRe = /AVAILABLE, or DENIED if the app has already seen the refusal/;
+  check('   T-058 the undo (Getting Super User, the recipe step 5): AVAILABLE, or DENIED once the app has seen the refusal, Check Status clears it, the rows lock either way; the recipe\'s step 3 quotes the Switch-to-Root question, step 1 names DENIED',
+    undoRe.test(gGrant) && /Check Status on the Shizuku card of Working Modes clears that/.test(gGrant) && !/The chip returns to AVAILABLE and the rows lock again/.test(gGrant)
+      && undoRe.test(gRecipe) && !/the chip reads AVAILABLE and the rows are Locked again/.test(gRecipe) && pageSrc.includes("txT('" + switchQ + "')") && gRecipe.includes('"' + switchQ + '"') && /DENIED means su is there but said no to this app before/.test(gRecipe),
+    JSON.stringify([(gGrant.match(/Undo\..{0,300}/) || [''])[0], (gRecipe.match(/If the manager did not ask.{0,300}/) || [''])[0]]));
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 
