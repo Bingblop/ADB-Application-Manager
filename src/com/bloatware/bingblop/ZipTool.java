@@ -742,7 +742,10 @@ public final class ZipTool {
     static long freeSpaceReserve = 64L << 20;
 
     /** Reads a folder's free space (the disk's own reading); package-private so a test can stand in for a disk that other processes share. */
-    static java.util.function.ToLongFunction<File> usableSpace = File::getUsableSpace;
+    static java.util.function.ToLongFunction<File> usableSpace = new java.util.function.ToLongFunction<File>() {
+        // An anonymous class, not File::getUsableSpace: build.sh compiles against android.jar, which has no LambdaMetafactory.
+        @Override public long applyAsLong(File f) { return f.getUsableSpace(); }
+    };
 
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
         return writeStream(e, in, dest, null);
