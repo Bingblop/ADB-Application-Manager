@@ -155,6 +155,20 @@ const { chromium, PAGE } = require('./lib/pw');
   check('choosing another style clears the tweaks (like choosing another palette)', (await css('--accent')) === (await ev(() => psScheme(psSeed(), 'MONOTONE', 'dark').accent)));
   await ev(() => applyPalettePreset('crimson')); await wait(100);
   check('a curated palette takes over again, and no style is marked', (await css('--accent')) === '#FF1744' && await ev(() => !document.querySelector('#psStyleGrid .active')));
+
+  // ---- the note under the tiles in another language ----
+  const psNote = () => ev(() => document.getElementById('psNote').innerText);
+  await ev(() => I18N.set('de')); await wait(600);
+  await ev(() => { setPaletteSeed('#E91E63'); setPaletteStyle('CMF'); }); await wait(150);
+  const deCmf = await psNote();
+  check('in German the note under the tiles is German, with the style and the source color filled in', deCmf === 'CMF aus #E91E63. Hell und Dunkel folgen der Einstellung „Darstellung“; die Farbanpassungen unten bleiben für jeden Modus erhalten.', JSON.stringify(deCmf));
+  await ev(() => setPaletteStyle('MONOTONE')); await wait(150);
+  const deMono = await psNote();
+  check('... and a style name that is a word is translated in it (Monotone: Monoton)', /^Monoton aus #E91E63\. Hell und Dunkel/.test(deMono), JSON.stringify(deMono));
+  await ev(() => I18N.set('en')); await wait(300);
+  const enMono = await psNote();
+  check('after a switch back to English the note is English again', enMono === 'Monotone from #E91E63. Light and dark follow the Appearance setting; color tweaks below are kept for each.', JSON.stringify(enMono));
+  await ev(() => setPaletteSeed(null));
   await ev(() => { applyPalettePreset('amoled'); window.scrollTo(0, 0); document.getElementById('paletteStyleCard').scrollIntoView(); });
   await page.screenshot({ path: 'palette_style.png' });
 

@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "{0}件見つかりました。アプリを選択してください。"],
 ["{0} free of {1}", "{1}中 {0} 空き"],
 ["{0} from saved results", "保存された結果から{0}件"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{1}から作った{0}。ライトとダークは「外観」の設定に従います。下の色の調整はそれぞれに保存されます。"],
 ["{0} h ago", "{0}時間前"],
 ["{0} h {1} min", "{0} 時間 {1} 分"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0}はその後変更されました：現在は{1}です（この変更で{2}になっていました）。"],

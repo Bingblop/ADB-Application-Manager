@@ -31325,8 +31325,17 @@ Type any command above (e.g. pm list packages -d)</div>
             if (auto) auto.style.display = custom ? '' : 'none';
             const dn = document.getElementById('psDescNote');                    // v7.15: the tiles show the name only; the chosen style's line is under them
             if (dn) { dn.innerText = on ? PS_STYLES.find(x => x.id === themeState.style).desc : ''; dn.style.display = on ? '' : 'none'; }
-            if (pn) pn.innerText = on ? PS_STYLES.find(x => x.id === themeState.style).name + ' from ' + seed + '. Light and dark follow the Appearance setting; color tweaks below are kept for each.' : 'Not in use: the theme above is a curated palette. Choose a style to build one from the source color.';
+            if (pn) pn.innerText = psNoteText();
         }
+        // The line under the grid. The sentence with the style and the source color goes through txT: its pattern has a ';', and i18n/extract.js
+        // keeps such a pattern only from a txT call. So it is written again after a language switch, as dialogThemeSync is; the curated-palette
+        // line is plain text, translated where it is shown.
+        function psNoteText() {
+            return themeState.preset === 'generated'
+                ? txT(PS_STYLES.find(x => x.id === themeState.style).name + ' from ' + psSeed() + '. Light and dark follow the Appearance setting; color tweaks below are kept for each.')
+                : 'Not in use: the theme above is a curated palette. Choose a style to build one from the source color.';
+        }
+        document.addEventListener('i18nchange', () => { const pn = document.getElementById('psNote'); if (pn) pn.innerText = psNoteText(); });
 
         function setPaletteStyle(id) {
             if (!PS_IDS.includes(id)) return;

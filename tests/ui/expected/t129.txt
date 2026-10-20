@@ -42,5 +42,8 @@ ok   a theme saved before this existed loads as it was (no style, automatic sour
 ok   a color tweak still applies on top of a style
 ok   choosing another style clears the tweaks (like choosing another palette)
 ok   a curated palette takes over again, and no style is marked
+ok   in German the note under the tiles is German, with the style and the source color filled in
+ok   ... and a style name that is a word is translated in it (Monotone: Monoton)
+ok   after a switch back to English the note is English again
 errors: []
 all ok
