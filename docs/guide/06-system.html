@@ -1152,7 +1152,7 @@
     <li><b>Super User for apps</b> ("Manage which apps get root in your manager."): see <a href="#rootfeatures-su-apps">Super User for apps</a>.</li>
     <li><b>App components</b> ("Enable or disable activities, services and receivers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
   </ul>
-  <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart. If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
+  <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart (when Root is not your chosen mode yet, it first asks whether to switch to Root, see <a href="#rootfeatures-grant">Getting Super User</a>). If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
 
   <h4>What you are getting into</h4>
   <ul>
@@ -1191,7 +1191,7 @@
     <li>Tap <b>Open root manager</b>. The app opens the first installed manager it finds, in the order KernelSU, KernelSU Next, APatch, Magisk, and a message says "Allow this app in KernelSU, then come back." (with the name of your manager). The app hands the manager nothing: it only opens it, the way the home screen would.</li>
     <li>In the manager, find ADB/Root Full System Toolbox in its list of apps and allow it. The screens differ between managers, and this guide does not describe them.</li>
     <li>Come back to this app (Back, or the recent apps screen). Because you left through this button, the app checks the working modes again by itself the moment it is back on screen; a manager opened from the home screen gets no such check.</li>
-    <li>If Root was already your chosen mode, the chip turns <b>ACTIVE</b> and the rows unlock. If it was not, the box now says "Your device has su. Choose Root in Working Modes and allow this app when su asks.": tap <b>Request Super User</b> (Way A) to finish.</li>
+    <li>If Root was already your chosen mode, the chip turns <b>ACTIVE</b> and the rows unlock. If it was not, <code>su</code> is not asked yet (the app asks it only while Root is the chosen mode), so the app asks you: "Switch the working mode to Root now? Root Features unlock once su grants this app access." <b>OK</b> goes the way of <b>Request Super User</b> (Way A): Root becomes your chosen mode, and since you allowed the app in the manager, <code>su</code> answers without a question and the chip turns <b>ACTIVE</b>. <b>Cancel</b> changes nothing: your working mode stays as it was, and <b>Request Super User</b> finishes it whenever you like. The app asks instead of switching by itself because choosing Root keeps Root as your mode even when <code>su</code> says no.</li>
   </ol>
   <p>With no manager installed, the button only says "No root manager was found. Install KernelSU, APatch or Magisk, then come back." The app does not install one for you.</p>
 
@@ -1211,7 +1211,7 @@
     <li><b>The chip reads NOT FOUND and stays there.</b> The phone has no <code>su</code> that the app can see: it is not rooted, or the manager is disabled. Nothing on this tab can change that.</li>
     <li><b>The manager never asked.</b> Use Way B and allow the app in the manager's list, then <b>Request Super User</b> again.</li>
     <li><b>You allowed it in the manager, but the chip still reads DENIED.</b> The app asked while the answer was still no, and keeps that answer until it asks again. Tap <b>Request Super User</b>; the new answer replaces the old one.</li>
-    <li><b>You allowed it, and the chip reads AVAILABLE.</b> Root is not your chosen mode yet. Tap <b>Request Super User</b>, or choose Root in Working Modes.</li>
+    <li><b>You allowed it, and the chip reads AVAILABLE.</b> Root is not your chosen mode yet (you answered Cancel when the app offered to switch, or you opened the manager another way). Tap <b>Request Super User</b>, or choose Root in Working Modes.</li>
     <li><b>"Root was denied or is not available" every time.</b> See "If it does not work" in <a href="#mode-root">Root</a>.</li>
   </ul>
 </section>

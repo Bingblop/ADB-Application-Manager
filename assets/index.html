@@ -7839,7 +7839,7 @@
                     <button class="mode-action-btn primary" id="rfRequestBtn" onclick="rootRequestSuperUser()">Request Super User</button>
                     <button class="mode-action-btn" id="rfOpenManagerBtn" onclick="rootOpenManager()">Open root manager</button>
                 </div>
-                <div class="rf-soon" id="rfManagerNote">Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back. Root Features unlock once su is granted.</div>
+                <div class="rf-soon" id="rfManagerNote">Temporary root is granted inside your root manager (KernelSU, APatch or Magisk). Open it, allow this app Super User there, then come back and let the app switch to Root. Root Features unlock once su is granted.</div>
             </div>
 
             <div class="color-card" id="rfFeaturesCard">
@@ -28634,7 +28634,19 @@ Type any command above (e.g. pm list packages -d)</div>
             rootGrantPending = false;
             try { if (typeof checkAllWorkingModes === 'function') checkAllWorkingModes(true); } catch (e) {}
             try { if (typeof renderRootFeatures === 'function') renderRootFeatures(); } catch (e) {}
+            try { rootOfferSwitchAfterManager(); } catch (e) {}
         });
+        // The fresh check above counts su as granted only while Root is the chosen working mode (MainActivity.probeWorkingMode; Auto never resolves
+        // to Root), so a grant just approved in the manager unlocks nothing while the mode is Auto, Shizuku or ADB. Offer the switch to Root then,
+        // through the path of Request Super User. It asks first instead of switching by itself: selectWorkingMode('root') keeps Root as the chosen
+        // mode even when su denies, so a silent switch would replace a working mode with a Root that is not ready whenever the user came back
+        // without allowing the app. Only a device shows how often that happens; asking is the safer way.
+        function rootOfferSwitchAfterManager() {
+            const d = lastModesData || {};
+            if (!window.AndroidBridge || !d.rootAvailable || isRootActive() || d.configuredMode === 'root') return;
+            if (!confirm(txT('Switch the working mode to Root now? Root Features unlock once su grants this app access.'))) return;
+            selectModeUI('root');
+        }
         // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
         // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
         // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.

@@ -13,6 +13,10 @@ ok   3. (B) Shizuku with su on the phone: the gate shows, the tag is amber AVAIL
 ok      the gate names the way: choose Root in Working Modes
 ok      the su card explains temporary root is granted in the root manager and offers the Open root manager button
 ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
+ok      back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending
+ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
+ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
+ok      the note says to come back and let the app switch to Root
 ok      with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now

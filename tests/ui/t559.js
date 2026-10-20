@@ -3,7 +3,8 @@
 // rootWorkingModeActive can veto), the status tag (ACTIVE / AVAILABLE / DENIED / NOT FOUND), the gate's Set Up opening Working Modes, Request Super User
 // going through selectWorkingMode('root'), the re-render on a mode change, and the attempt-to-prompt funnel promptRootThenOpen: Super User active -> true;
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
-// (false either way, a no changes nothing). Deterministic output: ok / FAIL lines and the summary.
+// (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
+// nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Deterministic output: ok / FAIL lines and the summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
@@ -89,6 +90,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__calls.openRootManager = 0; window.__rootMgr = { ok: true, name: 'KernelSU' }; rootGrantPending = false; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   Open root manager launches the installed manager (openRootManager) and marks the grant pending', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === true)));
+  // coming back from the manager (T-017): su counts only while Root is the chosen mode, so with Shizuku chosen the fresh check alone unlocks nothing;
+  // the page asks to switch to Root (a no changes nothing, a yes goes the way of Request Super User)
+  const comeBack = async () => { await ev(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); }); await sleep(250); };
+  await ev(() => { window.__calls.selectWorkingMode = []; }); dialogs = []; answer = false;
+  await comeBack();
+  check('   back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending', dialogs.length === 1 && /^confirm: Switch the working mode to Root now\? Root Features unlock once su grants this app access\.$/.test(dialogs[0]) && (await ev(() => window.__calls.selectWorkingMode.length)) === 0 && (await tag()) === 'warning AVAILABLE' && (await ev(() => rootGrantPending === false)), JSON.stringify(dialogs));
+  answer = true; dialogs = [];
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  await comeBack();
+  check('   a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone', dialogs.length === 1 && (await ev(() => window.__calls.selectWorkingMode.join())) === 'root' && (await tag()) === 'active ACTIVE' && (await disp('#rootGate')) === 'none', JSON.stringify([dialogs, await tag()]));
+  await setMode('rootDenied'); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  await comeBack();
+  check('   with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch', dialogs.length === 0 && (await ev(() => window.__calls.selectWorkingMode.length)) === 0, JSON.stringify(dialogs));
+  check('   the note says to come back and let the app switch to Root', /then come back and let the app switch to Root\./.test(await text('#rfManagerNote')));
+  await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)));
