@@ -4286,7 +4286,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "ऐप कैश छाँटे जा रहे हैं… Android के पूरा करने पर नतीजा अपनी अलग शीट में खुलता है।",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "AMOLED स्क्रीन के लिए असली #000000 बैकग्राउंड (बैटरी बचाता है)",
 "True AMOLED Pitch Black (#000000) or Slate": "असली AMOLED पिच ब्लैक (#000000) या स्लेट",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "डार्क बैकग्राउंड असली काला, पैनल कुछ गहरे ग्रे रंगों में। लाइट मोड वैसा ही रहता है।",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "डार्क बैकग्राउंड असली काला, पैनल कुछ गहरे ग्रे रंगों में। लाइट मोड अपने रंग रखता है, बस उसका सबसे गहरा टेक्स्ट शुद्ध काला हो जाता है।",
 "Try again": "फिर से कोशिश करें",
 "Try clearing your search query or changing active filter pills.": "अपनी खोज साफ़ करके या सक्रिय फ़िल्टर बदलकर देखें।",
 "Try the other sources automatically": "दूसरे स्रोत अपने आप आज़माएँ",

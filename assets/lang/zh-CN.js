@@ -4285,7 +4285,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "正在清理应用缓存… Android 完成后结果会在单独的面板中打开。",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "为 AMOLED 屏幕使用纯 #000000 背景（省电）",
 "True AMOLED Pitch Black (#000000) or Slate": "纯 AMOLED 黑（#000000）或石板灰",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "深色背景为纯黑，面板使用几种深灰色。浅色模式不受影响。",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "深色背景为纯黑，面板使用几种深灰色。浅色模式保留其颜色，只是其中最深的文字变为纯黑。",
 "Try again": "重试",
 "Try clearing your search query or changing active filter pills.": "请尝试清除搜索内容或更改已启用的筛选项。",
 "Try the other sources automatically": "自动尝试其他来源",

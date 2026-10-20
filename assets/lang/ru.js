@@ -4286,7 +4286,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "Урезание кэшей приложений… результат откроется на отдельной панели, когда Android закончит.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "Чисто чёрный фон #000000 для экранов AMOLED (экономит заряд)",
 "True AMOLED Pitch Black (#000000) or Slate": "Настоящий чёрный AMOLED (#000000) или сланцево-серый",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "Тёмный фон по-настоящему чёрный, панели в нескольких тёмно-серых тонах. Светлый режим не меняется.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "Тёмный фон по-настоящему чёрный, панели в нескольких тёмно-серых тонах. Светлый режим сохраняет свои цвета, только самый тёмный текст становится чисто чёрным.",
 "Try again": "Повторить попытку",
 "Try clearing your search query or changing active filter pills.": "Попробуйте очистить поисковый запрос или изменить активные фильтры.",
 "Try the other sources automatically": "Пробовать другие источники автоматически",

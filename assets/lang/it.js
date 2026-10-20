@@ -4285,7 +4285,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "Riduzione delle cache delle app… il risultato si apre in un foglio a parte quando Android ha finito.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "Veri sfondi #000000 per schermi AMOLED (risparmia batteria)",
 "True AMOLED Pitch Black (#000000) or Slate": "Nero assoluto AMOLED (#000000) oppure ardesia",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "Sfondi scuri in nero vero, pannelli in pochi grigi scuri. Il tema chiaro non cambia.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "Sfondi scuri in nero vero, pannelli in pochi grigi scuri. Il tema chiaro mantiene i suoi colori, tranne il testo più scuro, che diventa nero puro.",
 "Try again": "Riprova",
 "Try clearing your search query or changing active filter pills.": "Prova a cancellare la ricerca o a cambiare i filtri attivi.",
 "Try the other sources automatically": "Prova automaticamente le altre fonti",

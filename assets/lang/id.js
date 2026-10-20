@@ -4285,7 +4285,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "Memangkas cache aplikasi… hasilnya terbuka di lembarnya sendiri saat Android selesai.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "Latar belakang #000000 sejati untuk layar AMOLED (menghemat baterai)",
 "True AMOLED Pitch Black (#000000) or Slate": "Hitam pekat AMOLED sejati (#000000) atau Slate",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "Latar belakang gelap hitam sejati, panel dalam beberapa abu-abu gelap. Mode terang tidak berubah.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "Latar belakang gelap hitam sejati, panel dalam beberapa abu-abu gelap. Mode terang tetap memakai warnanya, kecuali teks tergelapnya menjadi hitam pekat.",
 "Try again": "Coba lagi",
 "Try clearing your search query or changing active filter pills.": "Coba hapus kata kunci pencarian atau ubah chip filter yang aktif.",
 "Try the other sources automatically": "Coba sumber lain secara otomatis",

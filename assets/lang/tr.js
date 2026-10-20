@@ -4286,7 +4286,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "Uygulama önbellekleri kırpılıyor… Android bitirdiğinde sonuç kendi sayfasında açılır.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "AMOLED ekranlar için gerçek #000000 arka planlar (pil tasarrufu sağlar)",
 "True AMOLED Pitch Black (#000000) or Slate": "Gerçek AMOLED simsiyah (#000000) veya arduvaz",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "Koyu arka planlar gerçek siyah, paneller birkaç koyu gri tonunda. Açık mod değişmez.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "Koyu arka planlar gerçek siyah, paneller birkaç koyu gri tonunda. Açık mod renklerini korur, yalnızca en koyu metni saf siyah olur.",
 "Try again": "Yeniden dene",
 "Try clearing your search query or changing active filter pills.": "Arama sorgunuzu temizlemeyi veya etkin filtre çiplerini değiştirmeyi deneyin.",
 "Try the other sources automatically": "Diğer kaynakları otomatik dene",

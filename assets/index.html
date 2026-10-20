@@ -38392,7 +38392,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // (its contrast), and every family this app cannot compute exactly locks every row (fail closed: ovlProfileState). The record
         // also keeps the profile and the build (Build.FINGERPRINT) the colours were written for, so the card can say when Android was updated
         // since (ovlRootStale); nothing is rewritten by itself.
-        const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.';
+        const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.';
         // the panels' greys: tones 4, 6, 8, 11, 14 and 18 of a neutral grey (HCT chroma 0), each psHex(hue, 0, tone) as the page computes it
         // (the hue is immaterial at chroma 0); kept as constants so the plan is a fixed table (t564 checks them against psHex)
         const OVL_BLACK_TONES = { 4: '0E0E0E', 6: '131313', 8: '181818', 11: '1D1D1D', 14: '242424', 18: '2C2C2C' };

@@ -4285,7 +4285,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "App-Caches werden getrimmt… das Ergebnis öffnet sich in einem eigenen Blatt, wenn Android fertig ist.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "Echtes #000000 als Hintergrund für AMOLED-Displays (spart Akku)",
 "True AMOLED Pitch Black (#000000) or Slate": "Echtes AMOLED-Tiefschwarz (#000000) oder Slate",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "Echt schwarze dunkle Hintergründe, Flächen in wenigen dunklen Grautönen. Der helle Modus bleibt unverändert.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "Echt schwarze dunkle Hintergründe, Flächen in wenigen dunklen Grautönen. Der helle Modus behält seine Farben, nur sein dunkelster Text wird reines Schwarz.",
 "Try again": "Erneut versuchen",
 "Try clearing your search query or changing active filter pills.": "Versuchen Sie, die Suchanfrage zu löschen oder die aktiven Filter-Chips zu ändern.",
 "Try the other sources automatically": "Die anderen Quellen automatisch versuchen",

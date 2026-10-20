@@ -4285,7 +4285,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "앱 캐시 정리 중… Android가 끝나면 결과가 별도 시트에서 열립니다.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "AMOLED 화면용 순수 #000000 배경 (배터리 절약)",
 "True AMOLED Pitch Black (#000000) or Slate": "순수 AMOLED 블랙(#000000) 또는 슬레이트",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "다크 모드 배경은 완전한 검은색, 패널은 몇 가지 어두운 회색으로 바뀝니다. 라이트 모드는 그대로입니다.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "다크 모드 배경은 완전한 검은색, 패널은 몇 가지 어두운 회색으로 바뀝니다. 라이트 모드는 색상을 유지하지만 가장 어두운 텍스트는 완전한 검은색이 됩니다.",
 "Try again": "다시 시도",
 "Try clearing your search query or changing active filter pills.": "검색어를 지우거나 선택한 필터를 변경해 보세요.",
 "Try the other sources automatically": "다른 소스를 자동으로 시도",

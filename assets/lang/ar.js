@@ -4286,7 +4286,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "جارٍ تقليم ذاكرات التطبيقات المؤقتة… تُفتح النتيجة في لوحتها الخاصة عندما ينتهي Android.",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "خلفيات سوداء حقيقية #000000 لشاشات AMOLED (توفّر البطارية)",
 "True AMOLED Pitch Black (#000000) or Slate": "أسود AMOLED الحقيقي (#000000) أو الأردوازي",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "خلفيات داكنة بالأسود الحقيقي، واللوحات ببضع درجات رمادية داكنة. الوضع الفاتح لا يتغيّر.",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "خلفيات داكنة بالأسود الحقيقي، واللوحات ببضع درجات رمادية داكنة. يحتفظ الوضع الفاتح بألوانه، إلا أن أغمق نص فيه يصبح أسود خالصًا.",
 "Try again": "حاول مرة أخرى",
 "Try clearing your search query or changing active filter pills.": "جرّب مسح نص البحث أو تغيير عوامل التصفية النشطة.",
 "Try the other sources automatically": "تجربة المصادر الأخرى تلقائيًا",

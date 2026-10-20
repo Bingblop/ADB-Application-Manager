@@ -4286,7 +4286,7 @@ x: {
 "Trimming the app caches… the result opens in its own sheet when Android is done.": "アプリのキャッシュを整理中… Android が完了すると結果が別のシートで開きます。",
 "True #000000 backgrounds for AMOLED screens (saves battery)": "AMOLED画面向けの純黒（#000000）の背景（バッテリーを節約）",
 "True AMOLED Pitch Black (#000000) or Slate": "AMOLED向けの真っ黒（#000000）またはスレート",
-"True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.": "ダークの背景を純黒に、パネルは数段階の暗いグレーにします。ライトモードは変わりません。",
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.": "ダークの背景を純黒に、パネルは数段階の暗いグレーにします。ライトモードは色を保ちますが、最も濃い文字は純黒になります。",
 "Try again": "再試行",
 "Try clearing your search query or changing active filter pills.": "検索ワードをクリアするか、有効なフィルタを変更してみてください。",
 "Try the other sources automatically": "ほかのソースを自動で試す",
