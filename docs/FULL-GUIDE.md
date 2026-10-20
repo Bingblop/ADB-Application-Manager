@@ -863,8 +863,8 @@ style the palette is worked out with:
   The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
   Apache-2.0); on 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast. A grey custom
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
-  *From Google blue: #808080 is too grey for this style*. **2021** then Apply, **Undo** and **Default** switch the overlay off. Not yet
-  tried on a rooted phone.
+  *From Google blue: #808080 is too grey for this style*. **2021** then Apply (with More styles on Off, Pure black off, the Intensity
+  sliders at 100 and no accent set), **Undo** and **Default** switch the overlay off. Not yet tried on a rooted phone.
 - **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
@@ -911,7 +911,11 @@ style the palette is worked out with:
   chroma). Measured WCAG contrast (`MonetPlan.roles()`, saturation at 100, contrast 0, seeds 6750A4 1B6EF3 B5651D 00FF00 808080
   FFDE3F, light and dark; P14 and P16 equal), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07 for the
   nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for CMF;
-  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42. **Reset** then Apply,
+  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42 (for these two pairs the
+  drop is mostly in light mode at 200). Accent text does not follow bgLight while the panels do, so its worst cases are at the other
+  ends: primary on surface_container_highest 4.96 / 3.76 / 5.05 at 2021, 4.84 / 3.72 / 5.00 at 2025, 4.95 / 3.74 / 4.14 for CMF (0 in
+  light mode, CMF's 200 in dark mode); inverse_primary on inverse_surface (P16) 4.96 / 3.76 / 5.44 at 2021 (0 in dark mode), 6.04 /
+  5.76 / 5.60 at 2025, 6.06 / 5.77 / 5.59 for CMF. **Reset** then Apply,
   **Undo** and **Default** switch the overlay off as for More styles. Not yet tried on a rooted phone.
 - **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14, 15 QPR1/QPR2 or
   16.0, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
