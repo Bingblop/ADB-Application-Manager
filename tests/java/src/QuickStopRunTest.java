@@ -220,6 +220,7 @@ public class QuickStopRunTest {
     check("source: handed over at create (once), at a new intent and when the page finishes loading", m.contains("QuickStopRun.openAtCreate(savedInstanceState != null, launch.getFlags())) takeQuickOpen(launch);") && bodyOf(m, "protected void onNewIntent(Intent intent) {").contains("takeQuickOpen(intent);") && m.contains("deliverPendingInstall();\n                deliverPendingQuickOpen();"));
 
     // the notification
+    check("source: the notification channel is named after the tile (Kill Apps) and keeps its id, so Android renames the old one in place (T-005)", nt.contains("static final String CHANNEL = \"quick_stop\";") && nt.contains("new NotificationChannel(CHANNEL, \"Kill Apps\", ") && !nt.contains("\"Stop apps\""));
     check("source: the notification is not cancelled by a tap (no autoCancel: the run goes on)", !nt.contains("setAutoCancel") && nt.contains("setOngoing(true)"));
     check("source: Cancel is a button, the body opens the app on the quick list, a swipe is heard", nt.contains("\"Cancel\"") && nt.contains("QuickActions.EXTRA_OPEN_QUICK_LIST, run.listId()") && nt.contains("b.setDeleteIntent(") && nt.contains("b.setContentIntent("));
     check("source: the intents are immutable and explicit (the receiver and MainActivity by class)", count(nt, "PendingIntent.FLAG_IMMUTABLE") == 1 && nt.contains("new Intent(c, QuickStopReceiver.class)") && nt.contains("new Intent(c, MainActivity.class)"));

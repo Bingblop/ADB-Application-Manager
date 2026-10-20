@@ -963,13 +963,13 @@ Two tiles and one widget run **without opening the app**:
 | | Does |
 |---|---|
 | **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode and is lit only while a working mode is really active (dim with Automatic finding nothing, or Read-Only) |
-| **Stop apps** tile / **🛑 Stop apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
+| **Kill Apps** tile / **Kill Apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
 
 Choose the quick list in **Saved Lists** with **🛑 Quick list** on a card. To add the tiles, swipe down twice,
-tap ✏️ and drag **Working mode** and **Stop apps** into your panel. For the widget, long-press the home
+tap ✏️ and drag **Working mode** and **Kill Apps** into your panel. For the widget, long-press the home
 screen → Widgets → ADB App Manager.
 
-**The Stop apps notification.** While the run goes on, a notification *Stopping apps* shows the place it has
+**The Kill Apps notification.** While the run goes on, a notification *Stopping apps* shows the place it has
 reached (*3 of 12 · Chrome*), the list's name and a progress bar. It goes away when the run ends, and the usual
 short message follows (*Force-stopped 5 apps*, with *, 1 failed* and *, 2 left alone* when they apply).
 

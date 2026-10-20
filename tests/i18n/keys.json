@@ -3527,7 +3527,7 @@
 {"k":"Showing the first 5000 matches. Type more of the name to narrow it down.","ctx":"built by the code of: arc load"},
 {"k":"Showing the value the phone holds now","ctx":"built by the code of: sdb edit refresh quiet"},
 {"k":"Shows each command with Run, Skip and Always allow in this chat.","ctx":"built by the code of: tx render settings"},
-{"k":"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","ctx":"built by the code of: top level"},
+{"k":"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","ctx":"built by the code of: top level"},
 {"k":"Shows what changes, line by line, with Apply, Skip and Always allow in this chat.","ctx":"built by the code of: tx render settings"},
 {"k":"Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.","ctx":"in the APK Installer tab"},
 {"k":"Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.","ctx":"built by the code of: render update extras"},

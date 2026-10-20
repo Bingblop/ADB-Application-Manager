@@ -5124,7 +5124,7 @@ x: {
 "No patch could be applied": "패치를 하나도 적용하지 못했습니다",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3분이 지나도 Android가 끝나지 않았습니다. 끝나면 결과가 별도 시트에서 열립니다.",
 "Live updates": "실시간 업데이트",
-"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "‘앱 중지’ 알림의 진행 상황을 상태 표시줄에 실시간 업데이트로 표시합니다(Android 16 이상). 알림 권한과 휴대전화 알림 설정의 이 앱 스위치도 필요합니다.",
+"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "‘Kill Apps’ 알림의 진행 상황을 상태 표시줄에 실시간 업데이트로 표시합니다(Android 16 이상). 알림 권한과 휴대전화 알림 설정의 이 앱 스위치도 필요합니다.",
 "Saved Applications was turned off. It is on again to show this list.": "저장된 앱이 꺼져 있었습니다. 이 목록을 표시할 수 있도록 다시 켰습니다.",
 "That saved list is not there any more.": "해당 저장 목록이 더 이상 없습니다.",
 "Needs Super User": "슈퍼유저 필요",

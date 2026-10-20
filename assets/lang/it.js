@@ -5124,7 +5124,7 @@ x: {
 "No patch could be applied": "Non è stato possibile applicare nessuna patch",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android non ha finito dopo 3 minuti. Il risultato si apre in un foglio a parte quando ha finito.",
 "Live updates": "Aggiornamenti live",
-"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra l’avanzamento della notifica di Arresta app nella barra di stato come aggiornamento live (Android 16 e successivi). Servono anche le Notifiche e l’interruttore per questa app nelle impostazioni delle notifiche del telefono.",
+"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Mostra l’avanzamento della notifica di Kill Apps nella barra di stato come aggiornamento live (Android 16 e successivi). Servono anche le Notifiche e l’interruttore per questa app nelle impostazioni delle notifiche del telefono.",
 "Saved Applications was turned off. It is on again to show this list.": "App salvate era disattivato. Ora è di nuovo attivo per mostrare questo elenco.",
 "That saved list is not there any more.": "Quell’elenco salvato non esiste più.",
 "Needs Super User": "Richiede Superuser",

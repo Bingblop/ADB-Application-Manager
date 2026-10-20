@@ -5124,7 +5124,7 @@ x: {
 "Turns Android's battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.": "Android のバッテリーセーバーをオンにします。設定 > バッテリー と同じスイッチです。画面が暗くなり、バックグラウンド処理、同期、位置情報が制限され、アニメーションが短くなります。スマートフォンにバッテリーセーバーのアイコンが表示されます。",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "3 分たっても Android の処理が終わっていません。完了すると結果が別のシートで開きます。",
 "Live updates": "ライブアップデート",
-"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "「アプリを停止」の通知の進行状況を、ステータスバーにライブアップデートとして表示します（Android 16 以降）。通知の許可と、スマートフォンの通知設定にあるこのアプリのスイッチも必要です。",
+"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "「Kill Apps」の通知の進行状況を、ステータスバーにライブアップデートとして表示します（Android 16 以降）。通知の許可と、スマートフォンの通知設定にあるこのアプリのスイッチも必要です。",
 "Saved Applications was turned off. It is on again to show this list.": "「保存したアプリ」はオフになっていました。このリストを表示するため、再びオンにしました。",
 "That saved list is not there any more.": "その保存リストはもうありません。",
 "Needs Super User": "スーパーユーザーが必要",

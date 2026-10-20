@@ -92,7 +92,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.evaluate(() => { isPrivilegedActive = false; openPermSheet('manual'); }); await wait(page, 250);
   check('2. the sheet lists Live updates right after Notifications (Android 16 reports it)', around(await rows()) === 'Notifications:allow|Live updates:allow|Read/Write External Storage:locked', around(await rows()));
   const row = await page.evaluate(() => { const r = document.querySelector('#permRows .pm-row[data-perm="live_updates"]'); return { perm: r.querySelector('.pm-perm').innerText, why: r.querySelector('.pm-why').innerText, btn: r.querySelector('button').innerText }; });
-  check('   it shows the permission and says what it is for', row.perm === 'POST_PROMOTED_NOTIFICATIONS' && /Stop apps notification/.test(row.why) && /Notifications too/.test(row.why) && row.btn === 'Allow', JSON.stringify(row));
+  check('   it shows the permission and says what it is for', row.perm === 'POST_PROMOTED_NOTIFICATIONS' && /Kill Apps notification/.test(row.why) && !/Stop apps/.test(row.why) && /Notifications too/.test(row.why) && row.btn === 'Allow', JSON.stringify(row));
 
   // read-only: Notifications' own Allow asks the person with Android's dialog
   await page.evaluate(() => { window.__calls.length = 0; window.__perm.length = 0; });

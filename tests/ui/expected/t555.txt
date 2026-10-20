@@ -10,7 +10,7 @@ ok      (set up) Saved Applications is turned off
 ok      a tab that was turned off comes back, with a toast that says so, and the sheet opens: Saved Applications was turned off. It is on again to show this list.
 ok      no page error:
 ok   2. the sheet lists Live updates right after Notifications (Android 16 reports it): Notifications:allow|Live updates:allow|Read/Write External Storage:locked
-ok      it shows the permission and says what it is for: {"perm":"POST_PROMOTED_NOTIFICATIONS","why":"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","btn":"Allow"}
+ok      it shows the permission and says what it is for: {"perm":"POST_PROMOTED_NOTIFICATIONS","why":"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","btn":"Allow"}
 ok      read-only (no working mode): Allow on Notifications asks the person, with Android's dialog: notifications > dialog:notifications
 ok      read-only: Allow on Live updates asks for Notifications first (the same dialog) and opens nothing else yet: live_updates > dialog:notifications
 ok      Notifications allowed in the dialog: the phone's Live updates screen for this app opens by itself: live_updates > dialog:notifications > live_updates > screen:live_updates

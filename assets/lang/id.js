@@ -5124,7 +5124,7 @@ x: {
 "No patch could be applied": "Tidak ada patch yang dapat diterapkan",
 "Android has not finished after 3 minutes. The result opens in its own sheet when it is done.": "Android belum selesai setelah 3 menit. Hasilnya terbuka di lembarnya sendiri saat selesai.",
 "Live updates": "Pembaruan langsung",
-"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Hentikan aplikasi di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
+"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.": "Menampilkan kemajuan notifikasi Kill Apps di bilah status sebagai Pembaruan Langsung (Android 16 ke atas). Ini juga memerlukan Notifikasi dan sakelar untuk aplikasi ini di pengaturan notifikasi ponsel.",
 "Saved Applications was turned off. It is on again to show this list.": "Aplikasi Tersimpan tadinya nonaktif. Kini aktif lagi untuk menampilkan daftar ini.",
 "That saved list is not there any more.": "Daftar tersimpan itu sudah tidak ada.",
 "Needs Super User": "Perlu Superuser",
