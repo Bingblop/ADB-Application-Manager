@@ -2,7 +2,9 @@
 // ENABLE/DISABLE control is locked (lock icon, "Needs Super User (Root)") while LAUNCH/STOP keep the ordinary working-mode lock,
 // and a tap funnels through promptRootThenOpen instead of firing a doomed pm command. On root the control works: a user app's
 // component toggles with no extra prompt; disabling a SYSTEM app's component asks for confirmation first (enabling does not).
-// The bulk activity toggle (Activity Launcher) is Root-gated the same way. Deterministic ok/FAIL lines and a summary.
+// The bulk activity toggle (Activity Launcher) is Root-gated the same way. T-054: without su the funnel offers the Root Features tab, and a yes
+// closes the sheet the tap came from (the app sheet, the Activity Launcher) so the tab is on screen; a no leaves the sheet open.
+// Deterministic ok/FAIL lines and a summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
@@ -95,7 +97,37 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => alsBulkComp(false)); await sleep(60);
   check('5. the bulk toggle off root runs no pm command and funnels through the root prompt', (await ev(() => window.__calls.toggle.length)) === 0 && dialogs.length === 1 && /needs Super User/.test(dialogs[0]), JSON.stringify([await ev(() => window.__calls.toggle), dialogs]));
 
-  check('6. no page errors', errors.length === 0, errors.join(' | '));
+  // ---- 6. T-054: off root without su, a yes to "Open Root Features ...?" closes the sheet the tap came from (the app sheet or the Activity Launcher)
+  // before it opens the tab, so Root Features is on screen and not behind the sheet; a no leaves the sheet open
+  const sheets = () => ev(() => ['inspectorModal', 'appListSheet'].filter(id => document.getElementById(id).classList.contains('show')));
+  const onTop = () => ev(() => { const el = document.elementFromPoint(innerWidth / 2, innerHeight / 2); const m = el && el.closest('.modal-overlay'); return m ? m.id : 'page'; });
+  const afterOffer = async () => ({ view: await ev(() => currentViewName()), sheets: await sheets(), top: await onTop(), pm: await ev(() => window.__calls.toggle.length), dialogs: dialogs.slice() });
+  await ev(() => { closeInspector(); switchView('apps'); }); await sleep(40);
+  await openComps('com.usr');
+  dialogs = []; answer = true; await ev(() => { window.__calls.toggle = []; });
+  await page.click('#compsContainer .perm-toggle-btn[data-comp="com.a.BootRcv"]'); await sleep(80);
+  let o = await afterOffer();
+  check('6. T-054 the app sheet: a tap on the locked DISABLE, OK on the offer: the app sheet is closed and Root Features is the view on screen, no pm command', o.view === 'rootfeatures' && o.sheets.length === 0 && o.top === 'page' && o.pm === 0 && o.dialogs.length === 1 && /Open Root Features/.test(o.dialogs[0]), JSON.stringify(o));
+  await ev(() => switchView('apps')); await sleep(40);
+  await openComps('com.usr');
+  dialogs = []; answer = false;
+  await page.click('#compsContainer .perm-toggle-btn[data-comp="com.a.BootRcv"]'); await sleep(80);
+  o = await afterOffer();
+  check('   Cancel on the offer leaves the app sheet open where it was and opens nothing', o.view === 'apps' && o.sheets.join() === 'inspectorModal' && o.dialogs.length === 1, JSON.stringify(o));
+  await ev(() => closeInspector()); await sleep(40);
+  await ev(() => { openAppListSheet('acts', 'com.usr'); alsSel.clear(); alsSel.add('com.a.Main'); alsRender(); }); await sleep(80);
+  dialogs = []; answer = true;
+  await ev(() => alsBulkComp(false)); await sleep(80);
+  o = await afterOffer();
+  check('   the Activity Launcher: Disable selected, OK on the offer: the Activity Launcher is closed and Root Features is the view on screen, no pm command', o.view === 'rootfeatures' && o.sheets.length === 0 && o.top === 'page' && o.pm === 0 && o.dialogs.length === 1, JSON.stringify(o));
+  await ev(() => switchView('apps')); await sleep(40);
+  await ev(() => openAppListSheet('acts', 'com.usr')); await sleep(80);
+  dialogs = []; answer = true;
+  await page.click('#alsList .perm-toggle-btn[data-comp="com.a.Main"]:not([data-exported])'); await sleep(80);
+  o = await afterOffer();
+  check('   a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen', o.view === 'rootfeatures' && o.sheets.length === 0 && o.top === 'page' && o.pm === 0 && o.dialogs.length === 1, JSON.stringify(o));
+
+  check('7. no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
   process.exit(bad ? 1 : 0);

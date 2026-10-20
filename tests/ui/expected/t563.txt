@@ -8,5 +8,9 @@ ok      a yes carries the toggle through
 ok      a no leaves it alone (nothing run)
 ok   4. enabling a system app component does not prompt (only disabling warns)
 ok   5. the bulk toggle off root runs no pm command and funnels through the root prompt
-ok   6. no page errors
+ok   6. T-054 the app sheet: a tap on the locked DISABLE, OK on the offer: the app sheet is closed and Root Features is the view on screen, no pm command
+ok      Cancel on the offer leaves the app sheet open where it was and opens nothing
+ok      the Activity Launcher: Disable selected, OK on the offer: the Activity Launcher is closed and Root Features is the view on screen, no pm command
+ok      a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen
+ok   7. no page errors
 all passed
