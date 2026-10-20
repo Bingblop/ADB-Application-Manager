@@ -13564,13 +13564,14 @@ Type any command above (e.g. pm list packages -d)</div>
             tag.innerText = text;
         }
 
-        function checkAllWorkingModes(verbose = false) {
+        function checkAllWorkingModes(verbose = false, fresh = verbose) {
             if (!window.AndroidBridge || !window.AndroidBridge.getWorkingMode) {
                 return;
             }
             try {
-                // an explicit check (the buttons, or right after a change) probes for real; the quiet ones may reuse a probe from the last moments
-                const dataStr = verbose && window.AndroidBridge.getWorkingModeFresh ? window.AndroidBridge.getWorkingModeFresh() : window.AndroidBridge.getWorkingMode();
+                // an explicit check (the buttons, or right after a change) probes for real; the quiet ones may reuse a probe from the last moments.
+                // fresh without verbose is the probe without the "Mode: ..." toast, for a check the user did not ask for (opening Root Features)
+                const dataStr = fresh && window.AndroidBridge.getWorkingModeFresh ? window.AndroidBridge.getWorkingModeFresh() : window.AndroidBridge.getWorkingMode();
                 const d = JSON.parse(dataStr);
                 lastModesData = d;
                 const configured = d.configuredMode || 'auto';
@@ -28541,10 +28542,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function compToggleLocked() { return !isRootActive(); }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
         // ACTIVE is su's last answer, kept in memory (isRootGranted): a grant taken back in the root manager since then would still read ACTIVE here and
-        // leave the rows unlocked (T-044). So a tab about to open unlocked asks su once more first (the fresh check of Check Status), and a no locks it.
+        // leave the rows unlocked (T-044). So a tab about to open unlocked asks su once more first (the fresh check of Check Status, without its
+        // "Mode: ..." toast: opening a tab is not a request to check), and a no locks it.
         // Only then: a locked tab asks nothing (no second su prompt right after a refusal), and coming back to the app does not ask either (a manager's
         // prompt takes the app off screen, so asking on every return could ask again and again).
-        function onRootFeaturesShown() { if (isRootActive()) checkAllWorkingModes(true); renderRootFeatures(); }
+        function onRootFeaturesShown() { if (isRootActive()) checkAllWorkingModes(false, true); renderRootFeatures(); }
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
         // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.

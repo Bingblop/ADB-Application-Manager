@@ -160,10 +160,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // T-044: ACTIVE is su's last answer. The grant is taken back in the root manager while the app is on another tab: the quiet checks still read the
   // remembered yes, so opening the tab unlocked asks su again (one fresh check) and the no locks it
   const fresh = () => ev(() => window.__calls.fresh || 0);
-  await ev(() => { switchView('apps'); window.__calls.fresh = 0; window.__wm.revoked = true; checkAllWorkingModes(false); }); await sleep(50);
-  check('   T-044: after a grant is taken back in the manager, the quiet check still reads the remembered yes (Root active, no fresh check asked)', (await ev(() => isRootActive())) && (await fresh()) === 0);
+  // that fresh check is not one the user asked for, so it shows no "Mode: ..." toast (a tab open is far more frequent than Check Status)
+  const clearToast = () => ev(() => { document.getElementById('toastMsg').textContent = ''; });
+  await ev(() => { switchView('apps'); window.__calls.fresh = 0; }); await clearToast();
   await ev(() => switchView('rootfeatures')); await sleep(50);
+  check('   T-044: opening the tab with the grant still there: one fresh check, the tab stays unlocked (ACTIVE) and no "Mode:" toast comes', (await fresh()) === 1 && (await tag()) === 'active ACTIVE' && (await disp('#rootGate')) === 'none' && !(await lockedRow()) && (await toastText()) === '', JSON.stringify([await fresh(), await tag(), await toastText()]));
+  await ev(() => { switchView('apps'); window.__calls.fresh = 0; window.__wm.revoked = true; checkAllWorkingModes(false); }); await sleep(50);
+  check('   after a grant is taken back in the manager, the quiet check still reads the remembered yes (Root active, no fresh check asked)', (await ev(() => isRootActive())) && (await fresh()) === 0);
+  await clearToast(); await ev(() => switchView('rootfeatures')); await sleep(50);
   check('   opening the tab unlocked asks su again (one fresh check): it now reads DENIED, the gate shows and the rows are locked', (await fresh()) === 1 && (await tag()) === 'warning DENIED' && (await disp('#rootGate')) === 'flex' && (await lockedRow()) && !(await ev(() => isRootActive())), JSON.stringify([await fresh(), await tag()]));
+  check('   and the refusal it read shows no "Mode:" toast either (the tag and the gate say it)', (await toastText()) === '', await toastText());
   await ev(() => { switchView('apps'); window.__calls.fresh = 0; switchView('rootfeatures'); }); await sleep(50);
   check('   a tab that opens locked asks nothing more (no second su prompt after a no)', (await fresh()) === 0 && (await tag()) === 'warning DENIED', JSON.stringify([await fresh(), await tag()]));
   await ev(() => { window.__wm.revoked = false; window.__wm.refused = false; }); await setMode('root');
