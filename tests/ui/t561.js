@@ -1,7 +1,8 @@
 // v7.16.0: at launch, when no working mode is ready and the mode is Auto or Shizuku, a Shizuku that is installed but not running, with an ADB path to start it
 // through, is offered once to start (the card's own start path runs it); "no" is counted and after two refusals it stops asking; it is not offered when a mode is
 // already privileged, when Shizuku is already running (szAutoAsk asks to authorize instead), when there is no ADB path, when Shizuku is not installed, or when the
-// mode is pinned to root; and the offer carries the "Start Shizuku" dialog title.
+// mode is pinned to root; and the offer carries the "Start Shizuku" dialog title. The ADB path is a connected ADB TCP or Wireless Debugging target, the same
+// `adb devices` check startShizukuNow makes: a TCP port that is open but not connected is not one (T-009, T-011: the start answered "Connect ADB first").
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -36,9 +37,9 @@ const { chromium, PAGE } = require('./lib/pw');
   const confirms = page => page.evaluate(() => window.__confirms.slice());
   const calls = page => page.evaluate(() => window.__calls.slice());
 
-  // installed but not running, an ADB path (TCP port open), mode pinned to Shizuku, nothing privileged
+  // installed but not running, an ADB path (TCP target connected), mode pinned to Shizuku, nothing privileged
   const offerable = { configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
-    adbTcp: { host: '127.0.0.1', port: 5555, portOpen: true, connected: false }, adbWireless: { host: '', port: 0, connected: false },
+    adbTcp: { host: '127.0.0.1', port: 5555, portOpen: true, connected: true }, adbWireless: { host: '', port: 0, connected: false },
     shizuku: { installed: true, running: false, authorized: false } };
 
   // 1. the offer fires once at launch; "yes" starts Shizuku through ADB; it is not asked again the same launch
@@ -87,16 +88,33 @@ const { chromium, PAGE } = require('./lib/pw');
       adbTcp: { connected: true, portOpen: true }, adbWireless: {}, shizuku: { installed: true, running: false } });
   await noOffer('   Shizuku is already running: not offered (szAutoAsk asks to authorize instead)',
     { configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
-      adbTcp: { portOpen: true }, adbWireless: {}, shizuku: { installed: true, running: true, authorized: false } }, true);
+      adbTcp: { portOpen: true, connected: true }, adbWireless: {}, shizuku: { installed: true, running: true, authorized: false } }, true);
   await noOffer('   no ADB path to start it through: not offered',
     { configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
       adbTcp: { portOpen: false, connected: false }, adbWireless: { connected: false }, shizuku: { installed: true, running: false } });
+  // T-009, T-011: after a restart with the mode on Shizuku nothing has run `adb connect`, so the port is open but no target is listed as ready; startShizukuNow
+  // only runs through a listed one and would answer no_adb ("Connect ADB TCP or Wireless Debugging first"), so the launch does not promise a start
+  await noOffer('   a TCP port that is open but not connected (nothing connected yet, or this app\'s key not allowed): not offered',
+    { configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
+      adbTcp: { host: '127.0.0.1', port: 5555, portOpen: true, connected: false }, adbWireless: { host: '', port: 0, connected: false },
+      shizuku: { installed: true, running: false, authorized: false } });
   await noOffer('   Shizuku is not installed: not offered',
     { configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
-      adbTcp: { portOpen: true }, adbWireless: {}, shizuku: { installed: false, running: false } });
+      adbTcp: { portOpen: true, connected: true }, adbWireless: {}, shizuku: { installed: false, running: false } });
   await noOffer('   mode pinned to root: not offered',
     { configuredMode: 'root', activeMode: 'root', modeAvailable: false, isPrivileged: false,
-      adbTcp: { portOpen: true }, adbWireless: {}, shizuku: { installed: true, running: false } });
+      adbTcp: { portOpen: true, connected: true }, adbWireless: {}, shizuku: { installed: true, running: false } });
+
+  // 5. a connected Wireless Debugging target is an ADB path too (the TCP port closed)
+  {
+    const { page, errors } = await open({ configuredMode: 'shizuku', activeMode: 'shizuku', modeAvailable: false, isPrivileged: false,
+      adbTcp: { host: '127.0.0.1', port: 5555, portOpen: false, connected: false }, adbWireless: { host: '127.0.0.1', port: 37001, connected: true },
+      shizuku: { installed: true, running: false, authorized: false } }, true);
+    const c = await confirms(page), k = await calls(page);
+    check('5. a connected Wireless Debugging target: offered, and "yes" starts Shizuku through it',
+      c.length === 1 && k.filter(x => x === 'startShizukuViaAdb').length === 1 && errors.length === 0, JSON.stringify({ confirms: c.length, calls: k, errors }));
+    await page.close();
+  }
 
   await b.close();
   if (failed) { console.log(failed + ' check(s) failed'); process.exit(1); }

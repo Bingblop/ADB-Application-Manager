@@ -8,6 +8,8 @@ ok   3. two earlier refusals: not offered, not started
 ok   4. a mode is already privileged (ADB TCP connected): not offered
 ok      Shizuku is already running: not offered (szAutoAsk asks to authorize instead)
 ok      no ADB path to start it through: not offered
+ok      a TCP port that is open but not connected (nothing connected yet, or this app's key not allowed): not offered
 ok      Shizuku is not installed: not offered
 ok      mode pinned to root: not offered
+ok   5. a connected Wireless Debugging target: offered, and "yes" starts Shizuku through it
 all checks passed

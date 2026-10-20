@@ -31755,8 +31755,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Start Shizuku at launch ----
         // While no working mode is ready (no ADB TCP, Wireless Debugging or root) and the mode is Auto or Shizuku, a Shizuku that is installed but not running,
         // with an ADB path to start it through, is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one).
-        // Starting needs an ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless pairing
-        // stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
+        // Starting needs a connected ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless
+        // pairing stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
         const SZ_START_DENY_KEY = 'shizuku_autostart_denied', SZ_START_DENY_MAX = 2;
         const SZ_START_WAIT_MS = 12000;   // how long the first-launch sheet waits for a start it offered (startShizukuNow polls the binder up to ~8 s)
         let szStartTried = false;         // offered once per start of the page
@@ -31773,11 +31773,13 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (n) b.saveSetting(SZ_START_DENY_KEY, '0');
             } catch (e) {}
         }
-        // An ADB target the start command can run through: a connected or reachable TCP target, or a connected Wireless Debugging one (what startShizukuNow uses).
+        // An ADB target the start command can run through: a connected TCP or Wireless Debugging target, the same `adb devices` check startShizukuNow makes.
+        // A TCP port that is open but not connected (after a restart with the mode on Shizuku nothing has connected to it; or this app's key is not allowed
+        // yet) is not one: the start would only answer "Connect ADB TCP or Wireless Debugging first", so it is not offered.
         function szAdbPathReady(d) {
             if (!d) return false;
             const t = d.adbTcp || {}, w = d.adbWireless || {};
-            return !!(t.connected || t.portOpen || w.connected);
+            return !!(t.connected || w.connected);
         }
         function szAutoStart() {
             if (!szAutoReady || szStartTried || isPrivilegedActive) return false;

@@ -567,11 +567,12 @@ Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and
 
 ## 31. Shizuku offered to start at launch
 
-Needs Shizuku installed but not running, ADB TCP or Wireless Debugging reachable (connected earlier, so a target is saved) and the working mode set to Shizuku (or Auto). None of this has been run on a phone yet.
+Needs Shizuku installed but not running, an ADB TCP or Wireless Debugging connection that this app holds (its card says CONNECTED; a port that is open but that nothing has connected to is not enough, because the start runs only through a connected target) and the working mode set to Shizuku (on Auto a connected ADB target is already the working mode, so nothing is offered). None of this has been run on a phone yet.
 
-- [ ] **Offered on launch.** Restart the phone (or stop Shizuku) so Shizuku is not running, with ADB TCP or Wireless Debugging reachable and the mode on Shizuku, then open the app. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
+- [ ] **Offered on launch.** With Shizuku running, connect ADB TCP in Working Modes (this picks ADB TCP), then pick Shizuku again (**Authorize & Use Shizuku**). Stop Shizuku in the Shizuku app, leave this app with Back (not a force stop, which also ends its ADB connection) and open it again. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
 - [ ] **Declined twice, then quiet.** Open the app and tap **Cancel** on the offer, then open it again: it offers once more. Decline again, then open a third time: it no longer offers (asked at most twice). The Shizuku card's **Start Shizuku (ADB)** button still starts it by hand.
-- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target reachable, or with Shizuku not installed: no launch dialog appears.
+- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target connected, or with Shizuku not installed: no launch dialog appears.
+- [ ] **Not offered over a port nothing has connected to.** Restart the phone with the mode on Shizuku, switch ADB TCP on again (`adb tcpip 5555` from a computer) and open the app: no **Start Shizuku** dialog (nothing has connected to the port yet, and the start would only answer "Connect ADB TCP or Wireless Debugging first, then start Shizuku."). Connect ADB TCP in Working Modes, then the Shizuku card's **Start Shizuku (ADB)** starts it.
 
 ## 32. Working mode tile light
 
