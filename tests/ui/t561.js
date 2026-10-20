@@ -1,11 +1,14 @@
 // v7.16.0: at launch, when the mode is pinned to Shizuku and no working mode is ready, a Shizuku that is installed but not running, with an ADB path to start it
 // through, is offered once to start (the card's own start path runs it); "no" is counted and after two refusals it stops asking; it is not offered when a mode is
 // already privileged, when Shizuku is already running (szAutoAsk asks to authorize instead), when there is no ADB path, when Shizuku is not installed, when the
-// mode is pinned to root, or in Auto (an ADB path there is itself the working mode); and the offer carries the "Start Shizuku" dialog title. The ADB path is
-// a connected ADB TCP or Wireless Debugging target, the same `adb devices` check startShizukuNow makes: a TCP port that is open but not connected is not one
-// (T-009, T-011: the start answered "Connect ADB first"). The first-launch sheet waits for an offered start as long as the start may take, so a slow one is
-// still asked to authorize before the sheet (T-012).
-const { chromium, PAGE } = require('./lib/pw');
+// mode is pinned to root, or in Auto (an ADB path there is itself the working mode); the offer carries the "Start Shizuku" dialog title; and, an OK / Cancel
+// dialog, its text is a question in every language. The ADB path is a connected ADB TCP or Wireless Debugging target, the same `adb devices` check
+// startShizukuNow makes: a TCP port that is open but not connected is not one (T-009, T-011: the start answered "Connect ADB first"). The first-launch
+// sheet waits for an offered start as long as the start may take, so a slow one is still asked to authorize before the sheet (T-012).
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { chromium, PAGE, REPO } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
   let failed = 0;
@@ -188,6 +191,26 @@ const { chromium, PAGE } = require('./lib/pw');
   await noOffer('   Auto with an ADB path, even were it reported not privileged: not offered (the gate is the mode pinned to Shizuku)',
     { configuredMode: 'auto', activeMode: 'unprivileged', modeAvailable: false, isPrivileged: false,
       adbTcp: { portOpen: true, connected: true }, adbWireless: {}, shizuku: { installed: true, running: false } });
+
+  // 8. the offer is an OK / Cancel dialog, so in every language its text asks a question (T-016: the Japanese one was a request, "please start it now")
+  const OFFER = 'Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?';
+  {
+    const connected = Object.assign({}, offerable, { adbTcp: { host: '127.0.0.1', port: 5555, portOpen: true, connected: true } });
+    const { page, errors } = await open(connected, false, { lang: '"ja"' });
+    const c = await confirms(page);
+    check('8. language Japanese: the offer asks whether to start Shizuku now (ends "起動しますか？"), not "please start it"',
+      c.length === 1 && /起動しますか？$/.test(c[0]) && !/ください。$/.test(c[0]) && errors.length === 0, JSON.stringify({ c, errors }));
+    await page.close();
+  }
+  const langDir = path.join(REPO, 'assets', 'lang');
+  const notQuestions = fs.readdirSync(langDir).filter(f => f.endsWith('.js')).map(f => {
+    const ctx = { window: {} };
+    vm.runInNewContext(fs.readFileSync(path.join(langDir, f), 'utf8'), ctx);
+    const v = (Object.values(ctx.window.__LANGS)[0].x || {})[OFFER];
+    return [f, v];
+  }).filter(([f, v]) => !(typeof v === 'string' && /[?？؟]$/.test(v.trim())));
+  check('   in all 13 languages the offer text ends in a question mark', fs.readdirSync(langDir).filter(f => f.endsWith('.js')).length === 13 && notQuestions.length === 0,
+    JSON.stringify(notQuestions));
 
   await b.close();
   if (failed) { console.log(failed + ' check(s) failed'); process.exit(1); }

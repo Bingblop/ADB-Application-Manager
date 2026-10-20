@@ -3488,7 +3488,7 @@ x: {
 "Shizuku has not written its start script yet. Open the Shizuku app once, then try again.": "Shizukuはまだ起動スクリプトを作成していません。Shizukuアプリを一度開いてから、もう一度お試しください。",
 "Shizuku is already being started...": "Shizukuはすでに起動中です...",
 "Shizuku is already running. Tap Authorize & Use Shizuku.": "Shizukuはすでに実行中です。「Shizukuを許可して使用」をタップしてください。",
-"Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?": "Shizukuはインストールされていますが、実行されていません。このアプリがShizukuを利用できるように、ADB接続を通じて今すぐ起動させてください。",
+"Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?": "Shizukuはインストールされていますが、実行されていません。このアプリがShizukuを利用できるように、ADB接続を通じて今すぐ起動しますか？",
 "Shizuku is not authorized yet. Approve it to use Rish.": "Shizukuはまだ許可されていません。Rishを使うには許可してください。",
 "Shizuku is not installed": "Shizukuがインストールされていません",
 "Shizuku is not running. Start it in the Shizuku app, then tap again.": "Shizukuが実行されていません。Shizukuアプリで起動してから、もう一度タップしてください。",

@@ -22,4 +22,6 @@ ok      no page errors
 ok   7. Auto + ADB TCP port open, not connected (probeWorkingMode: adb_tcp, privileged): not offered, the ADB path is the working mode
 ok      Auto + Wireless Debugging connected (probeWorkingMode: adb_wireless, privileged): not offered
 ok      Auto with an ADB path, even were it reported not privileged: not offered (the gate is the mode pinned to Shizuku)
+ok   8. language Japanese: the offer asks whether to start Shizuku now (ends "起動しますか？"), not "please start it"
+ok      in all 13 languages the offer text ends in a question mark
 all checks passed
