@@ -87,6 +87,15 @@ public class ModeTileLightTest {
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
 
+    // T-034: coming back to the app (a warm resume, the same process) checks the mode again, whether or not a tile changed it meanwhile, so a
+    // connection lost while the app was in the background (Wi-Fi off, Shizuku stopped) dims the tile and the header badge when the app is opened
+    String resume = bodyOf(m, "protected void onResume() {");
+    String changed = resume == null ? null : bodyOf(resume, "if (!saved.equals(activeWorkingMode)) {");
+    String outside = resume == null || changed == null ? null : resume.replace(changed, "");
+    String probeJs = "notifyJs(\"window.checkAllWorkingModes && window.checkAllWorkingModes(false)\");";
+    check("source: onResume asks the page to check the mode on every resume, not only after a tile changed it", outside != null && outside.contains(probeJs), resume == null ? "onResume not found" : changed == null ? "the saved-mode block not found" : "the probe is only inside the saved-mode block");
+    check("source: ... not from the headless tile window (which has no page), and after the mode was read again", before(outside, "if (isHeadless()) return;", probeJs) && before(resume, "activeWorkingMode = saved;", probeJs));
+
     // the manifest: a passive tile, so Android calls onStartListening whenever the panel opens (an active tile would wait to be asked)
     int at = ax.indexOf("android:name=\".ModeTileService\"");
     String block = at < 0 ? null : ax.substring(at, ax.indexOf("</service>", at));

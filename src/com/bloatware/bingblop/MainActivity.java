@@ -17012,8 +17012,11 @@ public class MainActivity extends Activity {
             // A tile or the widget switched the mode while the app was in the background
             activeWorkingMode = saved;
             cachedAutoMode = null;
-            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         }
+        // Check the mode again on every return, not only after a tile changed it: a connection lost meanwhile (Wi-Fi off, Shizuku stopped,
+        // adbd gone) must dim the header badge and the Working mode tile now, not when the Working Modes sheet is next opened. The quiet
+        // check reuses a probe from the last 2.5 s (MODE_CACHE_MS), so a quick back-and-forth costs nothing.
+        notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         notifyJs("window.onAppResume && window.onAppResume()");
     }
 
