@@ -1,6 +1,8 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"Needs Super User (Root)": "Richiede Superuser (Root)",
+"Enabling or disabling a component": "Attivare o disattivare un componente",
   "App components": "Componenti dell'app",
   "Enable or disable activities, services and receivers for any app.": "Abilita o disabilita activity, service e receiver di qualsiasi app.",
   "Open apps": "Apri app",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Non ha risposto sulla tua rete. Se lo applichi, questo telefono potrebbe perdere internet; Automatico o Disattivato è la via per tornare indietro.",
 "Direct download": "Download diretto",
 "Disable": "Disattiva",
-"Disable component": "Disattiva componente",
-"Disable components": "Disattiva componenti",
 "Disable packages": "Disattiva pacchetti",
 "Disable selected": "Disattiva selezionate",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Disattiva, sospendi o disinstalla le app come preferisci, poi salvale qui.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Attiva / Disattiva",
 "Enable / Disable (dynamic)": "Attiva / Disattiva (dinamico)",
 "Enable an app": "Attiva un’app",
-"Enable component": "Attiva componente",
-"Enable components": "Attiva componenti",
 "Enable selected": "Attiva selezionate",
 "Enable the service": "Attiva il servizio",
 "Enable with the working mode": "Attiva con la modalità operativa",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: fatto"],
 ["＋ Create “{0}” in {1}", "＋ Crea “{0}” in {1}"],
 ["Root Features tab: {0}", "Scheda Funzioni Root: {0}"],
-["{0} needs Super User.", "{0} richiede Superuser."]
+["{0} needs Super User.", "{0} richiede Superuser."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Disattivare {0} dell’app di sistema {1}? Può compromettere l’app o l’interfaccia di sistema. Puoi riattivarlo qui."]
 ]
 };

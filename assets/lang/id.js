@@ -1,6 +1,8 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Needs Super User (Root)": "Perlu Superuser (Root)",
+"Enabling or disabling a component": "Mengaktifkan atau menonaktifkan komponen",
   "App components": "Komponen aplikasi",
   "Enable or disable activities, services and receivers for any app.": "Aktifkan atau nonaktifkan activity, service, dan receiver aplikasi apa pun.",
   "Open apps": "Buka aplikasi",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Tidak menjawab di jaringan Anda. Jika diterapkan, ponsel ini bisa kehilangan internet; Otomatis atau Nonaktif adalah jalan kembali.",
 "Direct download": "Unduhan langsung",
 "Disable": "Nonaktifkan",
-"Disable component": "Nonaktifkan komponen",
-"Disable components": "Nonaktifkan komponen",
 "Disable packages": "Nonaktifkan paket",
 "Disable selected": "Nonaktifkan yang dipilih",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Nonaktifkan, tangguhkan, atau uninstal aplikasi sesuai keinginan, lalu simpan di sini.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Aktifkan / Nonaktifkan",
 "Enable / Disable (dynamic)": "Aktifkan / Nonaktifkan (dinamis)",
 "Enable an app": "Aktifkan aplikasi",
-"Enable component": "Aktifkan komponen",
-"Enable components": "Aktifkan komponen",
 "Enable selected": "Aktifkan yang dipilih",
 "Enable the service": "Aktifkan layanan",
 "Enable with the working mode": "Aktifkan dengan mode kerja",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: selesai"],
 ["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
 ["Root Features tab: {0}", "Tab Fitur Root: {0}"],
-["{0} needs Super User.", "{0} memerlukan Superuser."]
+["{0} needs Super User.", "{0} memerlukan Superuser."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Nonaktifkan {0} dari aplikasi sistem {1}? Ini dapat merusak aplikasi atau antarmuka sistem. Anda dapat mengaktifkannya kembali di sini."]
 ]
 };

@@ -1,6 +1,8 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"Needs Super User (Root)": "Requiere Superusuario (Root)",
+"Enabling or disabling a component": "Activar o desactivar un componente",
   "App components": "Componentes de la app",
   "Enable or disable activities, services and receivers for any app.": "Activa o desactiva actividades, servicios y receptores de cualquier app.",
   "Open apps": "Abrir apps",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "No respondió en tu red. Si lo aplicas, este teléfono puede quedarse sin internet; Automático o Desactivado es la forma de volver.",
 "Direct download": "Descarga directa",
 "Disable": "Desactivar",
-"Disable component": "Desactivar componente",
-"Disable components": "Desactivar componentes",
 "Disable packages": "Desactivar paquetes",
 "Disable selected": "Desactivar selección",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Desactiva, suspende o desinstala apps como prefieras y guárdalas aquí.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Activar / Desactivar",
 "Enable / Disable (dynamic)": "Activar / Desactivar (dinámico)",
 "Enable an app": "Activar una app",
-"Enable component": "Activar componente",
-"Enable components": "Activar componentes",
 "Enable selected": "Activar selección",
 "Enable the service": "Activar el servicio",
 "Enable with the working mode": "Activar con el modo de operación",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: listo"],
 ["＋ Create “{0}” in {1}", "＋ Crear “{0}” en {1}"],
 ["Root Features tab: {0}", "Pestaña Funciones Root: {0}"],
-["{0} needs Super User.", "{0} necesita Superusuario."]
+["{0} needs Super User.", "{0} necesita Superusuario."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "¿Desactivar {0} de la app del sistema {1}? Esto puede dañar la app o la interfaz del sistema. Puedes volver a activarlo aquí."]
 ]
 };

@@ -1,6 +1,8 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Needs Super User (Root)": "सुपरयूज़र (Root) चाहिए",
+"Enabling or disabling a component": "किसी कंपोनेंट को सक्षम या अक्षम करना",
   "App components": "ऐप घटक",
   "Enable or disable activities, services and receivers for any app.": "किसी भी ऐप की ऐक्टिविटी, सर्विस और रिसीवर चालू या बंद करें।",
   "Open apps": "ऐप्स खोलें",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "आपके नेटवर्क पर जवाब नहीं आया। इसे लागू करने पर इस फ़ोन का इंटरनेट जा सकता है; वापस आने के लिए ऑटोमैटिक या बंद चुनें।",
 "Direct download": "सीधा डाउनलोड",
 "Disable": "अक्षम करें",
-"Disable component": "कंपोनेंट अक्षम करें",
-"Disable components": "कंपोनेंट अक्षम करें",
 "Disable packages": "पैकेज अक्षम करें",
 "Disable selected": "चुने हुए अक्षम करें",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "अपनी पसंद से ऐप्स को अक्षम, सस्पेंड या अनइंस्टॉल करें, फिर उन्हें यहां सहेजें।",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "सक्षम / अक्षम करें",
 "Enable / Disable (dynamic)": "सक्षम / अक्षम करें (डायनामिक)",
 "Enable an app": "कोई ऐप सक्षम करें",
-"Enable component": "कंपोनेंट सक्षम करें",
-"Enable components": "कंपोनेंट सक्षम करें",
 "Enable selected": "चुने हुए सक्षम करें",
 "Enable the service": "सेवा चालू करें",
 "Enable with the working mode": "वर्किंग मोड से चालू करें",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: हो गया"],
 ["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
 ["Root Features tab: {0}", "Root सुविधाएँ टैब: {0}"],
-["{0} needs Super User.", "{0} के लिए सुपरयूज़र चाहिए।"]
+["{0} needs Super User.", "{0} के लिए सुपरयूज़र चाहिए।"],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "सिस्टम ऐप {1} का {0} अक्षम करें? इससे ऐप या सिस्टम UI खराब हो सकता है। आप इसे यहाँ फिर से चालू कर सकते हैं।"]
 ]
 };

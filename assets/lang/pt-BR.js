@@ -1,6 +1,8 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"Needs Super User (Root)": "Requer Superusuário (Root)",
+"Enabling or disabling a component": "Ativar ou desativar um componente",
   "App components": "Componentes do app",
   "Enable or disable activities, services and receivers for any app.": "Ative ou desative activities, services e receivers de qualquer app.",
   "Open apps": "Abrir apps",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Não respondeu na sua rede. Se você aplicar, este celular pode ficar sem internet; Automático ou Desativado é o caminho de volta.",
 "Direct download": "Download direto",
 "Disable": "Desativar",
-"Disable component": "Desativar componente",
-"Disable components": "Desativar componentes",
 "Disable packages": "Desativar pacotes",
 "Disable selected": "Desativar selecionados",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Desative, suspenda ou desinstale apps como preferir e depois salve-os aqui.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Ativar / Desativar",
 "Enable / Disable (dynamic)": "Ativar / Desativar (dinâmico)",
 "Enable an app": "Ativar um app",
-"Enable component": "Ativar componente",
-"Enable components": "Ativar componentes",
 "Enable selected": "Ativar selecionados",
 "Enable the service": "Ativar o serviço",
 "Enable with the working mode": "Ativar com o modo de operação",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: concluído"],
 ["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"],
 ["Root Features tab: {0}", "Aba Recursos Root: {0}"],
-["{0} needs Super User.", "{0} precisa de Superusuário."]
+["{0} needs Super User.", "{0} precisa de Superusuário."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Desativar {0} do app do sistema {1}? Isso pode quebrar o app ou a interface do sistema. Você pode reativá-lo aqui."]
 ]
 };

@@ -1,6 +1,8 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Needs Super User (Root)": "Erfordert Superuser (Root)",
+"Enabling or disabling a component": "Eine Komponente aktivieren oder deaktivieren",
   "App components": "App-Komponenten",
   "Enable or disable activities, services and receivers for any app.": "Aktiviere oder deaktiviere Activities, Services und Receiver jeder App.",
   "Open apps": "Apps öffnen",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Keine Antwort in deinem Netz. Wenn du ihn anwendest, kann dieses Telefon seine Internetverbindung verlieren; Automatisch oder Aus führt zurück.",
 "Direct download": "Direkter Download",
 "Disable": "Deaktivieren",
-"Disable component": "Komponente deaktivieren",
-"Disable components": "Komponenten deaktivieren",
 "Disable packages": "Pakete deaktivieren",
 "Disable selected": "Ausgewählte deaktivieren",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Deaktivieren, pausieren oder deinstallieren Sie Apps nach Wunsch und speichern Sie sie dann hier.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Aktivieren / Deaktivieren",
 "Enable / Disable (dynamic)": "Aktivieren / Deaktivieren (dynamisch)",
 "Enable an app": "Eine App aktivieren",
-"Enable component": "Komponente aktivieren",
-"Enable components": "Komponenten aktivieren",
 "Enable selected": "Ausgewählte aktivieren",
 "Enable the service": "Dienst aktivieren",
 "Enable with the working mode": "Mit dem Betriebsmodus aktivieren",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: fertig"],
 ["＋ Create “{0}” in {1}", "＋ „{0}“ in {1} erstellen"],
 ["Root Features tab: {0}", "Tab „Root-Funktionen“: {0}"],
-["{0} needs Super User.", "{0} braucht Superuser."]
+["{0} needs Super User.", "{0} braucht Superuser."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "{0} der System-App {1} deaktivieren? Das kann die App oder die System-Oberfläche beschädigen. Du kannst es hier wieder aktivieren."]
 ]
 };

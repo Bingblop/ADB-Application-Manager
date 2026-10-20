@@ -1,6 +1,8 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Needs Super User (Root)": "Superuser (Root) gerekir",
+"Enabling or disabling a component": "Bir bileşeni etkinleştirme veya devre dışı bırakma",
   "App components": "Uygulama bileşenleri",
   "Enable or disable activities, services and receivers for any app.": "Herhangi bir uygulamanın activity, service ve receiver bileşenlerini aç veya kapat.",
   "Open apps": "Uygulamaları aç",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Ağınızda yanıt vermedi. Uygularsanız bu telefon internetini kaybedebilir; geri dönmek için Otomatik veya Kapalı seçeneğini kullanın.",
 "Direct download": "Doğrudan indirme",
 "Disable": "Devre dışı bırak",
-"Disable component": "Bileşeni devre dışı bırak",
-"Disable components": "Bileşenleri devre dışı bırak",
 "Disable packages": "Paketleri devre dışı bırak",
 "Disable selected": "Seçilenleri devre dışı bırak",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Uygulamaları istediğiniz gibi devre dışı bırakın, askıya alın veya yüklemesini kaldırın, sonra buraya kaydedin.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Etkinleştir / Devre dışı bırak",
 "Enable / Disable (dynamic)": "Etkinleştir / Devre dışı bırak (dinamik)",
 "Enable an app": "Bir uygulamayı etkinleştir",
-"Enable component": "Bileşeni etkinleştir",
-"Enable components": "Bileşenleri etkinleştir",
 "Enable selected": "Seçilenleri etkinleştir",
 "Enable the service": "Hizmeti etkinleştir",
 "Enable with the working mode": "Çalışma moduyla etkinleştir",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
 ["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
 ["Root Features tab: {0}", "Root Özellikleri sekmesi: {0}"],
-["{0} needs Super User.", "{0} için Superuser gerekir."]
+["{0} needs Super User.", "{0} için Superuser gerekir."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Sistem uygulaması {1} içindeki {0} bileşenini devre dışı bırak? Bu, uygulamayı veya sistem arayüzünü bozabilir. Buradan tekrar açabilirsiniz."]
 ]
 };

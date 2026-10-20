@@ -1,6 +1,8 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Needs Super User (Root)": "Нужен Superuser (Root)",
+"Enabling or disabling a component": "Включение или отключение компонента",
   "App components": "Компоненты приложения",
   "Enable or disable activities, services and receivers for any app.": "Включайте или отключайте activity, службы и приёмники любого приложения.",
   "Open apps": "Открыть приложения",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "Не ответил в вашей сети. Если применить его, телефон может остаться без интернета; вернуться можно через «Автоматически» или «Выкл.».",
 "Direct download": "Прямая загрузка",
 "Disable": "Отключить",
-"Disable component": "Отключить компонент",
-"Disable components": "Отключить компоненты",
 "Disable packages": "Отключить пакеты",
 "Disable selected": "Отключить выбранные",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "Отключите, приостановите или удалите приложения как вам нужно, затем сохраните их здесь.",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "Включить / Отключить",
 "Enable / Disable (dynamic)": "Включить / Отключить (динамически)",
 "Enable an app": "Включить приложение",
-"Enable component": "Включить компонент",
-"Enable components": "Включить компоненты",
 "Enable selected": "Включить выбранные",
 "Enable the service": "Включить службу",
 "Enable with the working mode": "Включить через режим работы",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}: готово"],
 ["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
 ["Root Features tab: {0}", "Вкладка «Функции Root»: {0}"],
-["{0} needs Super User.", "{0} требует Superuser."]
+["{0} needs Super User.", "{0} требует Superuser."],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Отключить {0} системного приложения {1}? Это может нарушить работу приложения или системного интерфейса. Вы можете снова включить его здесь."]
 ]
 };

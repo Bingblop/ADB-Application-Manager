@@ -1,6 +1,8 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Needs Super User (Root)": "需要超级用户 (Root)",
+"Enabling or disabling a component": "启用或停用组件",
   "App components": "应用组件",
   "Enable or disable activities, services and receivers for any app.": "为任意应用启用或禁用 Activity、Service 和 Receiver。",
   "Open apps": "打开应用",
@@ -1225,8 +1227,6 @@ x: {
 "Did not answer on your network. If you apply it, this phone may lose its internet; Automatic or Off is the way back.": "在你的网络上没有响应。如果应用它，这部手机可能会断网；用“自动”或“关闭”可以恢复。",
 "Direct download": "直接下载",
 "Disable": "停用",
-"Disable component": "停用组件",
-"Disable components": "停用组件",
 "Disable packages": "停用软件包",
 "Disable selected": "停用所选项",
 "Disable, suspend or uninstall apps the way you like, then save them here.": "按自己的喜好停用、暂停或卸载应用，然后保存到这里。",
@@ -1339,8 +1339,6 @@ x: {
 "Enable / Disable": "启用 / 停用",
 "Enable / Disable (dynamic)": "启用 / 停用（动态）",
 "Enable an app": "启用应用",
-"Enable component": "启用组件",
-"Enable components": "启用组件",
 "Enable selected": "启用所选项",
 "Enable the service": "启用服务",
 "Enable with the working mode": "通过工作模式启用",
@@ -6263,6 +6261,7 @@ p: [
 ["✓ {0}: done", "✓ {0}：已完成"],
 ["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
 ["Root Features tab: {0}", "Root 功能标签页：{0}"],
-["{0} needs Super User.", "{0} 需要超级用户。"]
+["{0} needs Super User.", "{0} 需要超级用户。"],
+["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "停用系统应用 {1} 的 {0}？这可能会破坏该应用或系统界面。你可以在这里重新启用它。"]
 ]
 };
