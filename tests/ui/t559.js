@@ -39,6 +39,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       loadPackages() { return '[]'; },
       openRootManager() { window.__calls.openRootManager = (window.__calls.openRootManager || 0) + 1; return JSON.stringify(window.__rootMgr || { ok: false }); },
       getWorkingMode() { return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, WM[window.__wm.state])); },
+      // the explicit (fresh) read the page asks for on the way back from the manager; counted so a check can see it happen
+      getWorkingModeFresh() { window.__calls.fresh = (window.__calls.fresh || 0) + 1; return this.getWorkingMode(); },
       selectWorkingMode(mode) {
         window.__calls.selectWorkingMode.push(mode);
         if (mode === 'root') { const ok = !!window.__wm.suGrants; window.__wm.state = ok ? 'root' : 'rootDenied'; return JSON.stringify({ ok, mode, message: ok ? 'Using Root (Superuser)' : 'Root was denied or is not available' }); }
@@ -128,6 +130,23 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
+  // the way back when this app was never hidden (split screen or freeform: the manager opened beside it): the activity resuming (onAppResume) and
+  // the window getting focus back also read the status fresh, once, while a hand-off is pending - and not without one
+  const fresh = () => ev(() => window.__calls.fresh || 0);
+  let f0 = await fresh();
+  await ev(() => { rootGrantPending = true; onAppResume(); }); await sleep(50);
+  check('   back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent', (await fresh()) === f0 + 1 && (await ev(() => rootGrantPending === false)), JSON.stringify([f0, await fresh()]));
+  f0 = await fresh();
+  await ev(() => onAppResume()); await sleep(50);
+  check('   onAppResume with nothing pending reads nothing fresh', (await fresh()) === f0, JSON.stringify([f0, await fresh()]));
+  await ev(() => { rootGrantPending = true; window.dispatchEvent(new Event('focus')); }); await sleep(50);
+  check('   back by the window getting focus again (Android 10+ can keep both windows resumed and shown): a fresh status read, the mark spent', (await fresh()) === f0 + 1 && (await ev(() => rootGrantPending === false)), JSON.stringify([f0, await fresh()]));
+  // a hidden page reads nothing: onAppResume also runs after a wallpaper or theme change, which can come while the user is still in the manager
+  f0 = await fresh();
+  await ev(() => { rootGrantPending = true; Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); onAppResume(); window.dispatchEvent(new Event('focus')); }); await sleep(50);
+  const whileHidden = await ev(() => ({ fresh: window.__calls.fresh || 0, pending: rootGrantPending }));
+  await ev(() => { delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange')); }); await sleep(50);
+  check('   while the page is hidden (the user still in the manager) nothing is read and the mark waits; shown again, one fresh read', whileHidden.fresh === f0 && whileHidden.pending === true && (await fresh()) === f0 + 1 && (await ev(() => rootGrantPending === false)), JSON.stringify([f0, whileHidden, await fresh()]));
   await page.click('#rootGate .mode-alert-btn'); await sleep(50);
   check('   the gate\'s Set Up opens the Working Modes sheet', await ev(() => document.getElementById('modesModal').classList.contains('show')));
   await ev(() => closeWorkingModesModal()); await sleep(50);

@@ -28642,14 +28642,22 @@ Type any command above (e.g. pm list packages -d)</div>
             switchView('apps');
             showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
         }
-        // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features.
-        document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState !== 'visible' || !rootGrantPending) return;
+        // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features. The way back is
+        // taken from whichever of three signs comes first (the pending mark makes it one read): the page shown again (the manager covered this
+        // app); the activity resuming (onAppResume: Android 9 and older pause, but do not hide, the other window of a split screen); and the window
+        // getting focus back (Android 10 and newer can keep both windows of a split screen or freeform resumed and shown, so neither of the other
+        // two comes). Whether the WebView hands that window focus on to the page there, only a device can show; the listener costs nothing without
+        // a hand-off. A hidden page reads nothing: onAppResume also runs after a wallpaper or theme change, which can come while the user is still
+        // in the manager, and the mark has to wait for the way back.
+        function rootGrantReadBack() {
+            if (!rootGrantPending || document.visibilityState !== 'visible') return;
             rootGrantPending = false;
             try { if (typeof checkAllWorkingModes === 'function') checkAllWorkingModes(true); } catch (e) {}
             try { if (typeof renderRootFeatures === 'function') renderRootFeatures(); } catch (e) {}
             try { rootOfferSwitchAfterManager(); } catch (e) {}
-        });
+        }
+        document.addEventListener('visibilitychange', rootGrantReadBack);
+        window.addEventListener('focus', rootGrantReadBack);
         // The fresh check above counts su as granted only while Root is the chosen working mode (MainActivity.probeWorkingMode; Auto never resolves
         // to Root), so a grant just approved in the manager unlocks nothing while the mode is Auto, Shizuku or ADB. Offer the switch to Root then,
         // through the path of Request Super User. It asks first instead of switching by itself: selectWorkingMode('root') keeps Root as the chosen
@@ -31843,6 +31851,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function onAppResume() {
+            if (typeof rootGrantReadBack === 'function') { try { rootGrantReadBack(); } catch (e) {} }     // back from a root-manager hand-off without being hidden
             permOnChange();
             if (typeof mpHResumed === 'function') { try { mpHResumed(); } catch (e) {} }
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
