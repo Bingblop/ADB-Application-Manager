@@ -587,8 +587,8 @@
   <table class="hg-table">
     <thead><tr><th>Control</th><th>Name</th><th>What a tap does</th></tr></thead>
     <tbody>
-      <tr><td>Quick Settings tile</td><td><b>Working mode</b></td><td>Switches to the next working mode that is ready, in the order ADB TCP, Wireless Debugging, Shizuku, Root. If none of the others is ready it goes back to Automatic and says "No other mode is ready. Using Automatic." Otherwise it says "Working mode: (name)". On Android 10 and newer the tile shows the current mode under its name. The tile is lit only while a working mode is really active (ADB TCP, Wireless Debugging, Shizuku or Root, connected or granted); with Automatic finding nothing, or in Read-Only, it stays dim.</td></tr>
-      <tr><td>Quick Settings tile</td><td><b>Kill Apps</b></td><td>Force-stops every app in your quick list, one after the other, with a notification that shows how far it is. The tile shows the list's name and size under its name (Android 10 and newer) and is lit only while it is running.</td></tr>
+      <tr><td>Quick Settings tile</td><td><b>Working mode</b></td><td>Switches to the next working mode that is ready, in the order ADB TCP, Wireless Debugging, Shizuku, Root. If none of the others is ready it goes back to Automatic and says "No other mode is ready. Using Automatic." Otherwise it says "Working mode: (name)". On Android 10 and newer the tile shows the current mode under its name. The tile is lit when the app last found a working mode usable: ADB TCP reachable (connected, or its port open), Wireless Debugging connected, Shizuku authorized or Root granted. With Automatic finding nothing, or in Read-Only, it stays dim. The tile cannot check by itself: it shows what the app found the last time it looked (when you open the app or come back to it, or tap the tile). Until the app has looked once, after a new install or an update from version 7.15 or older, the tile is dim.</td></tr>
+      <tr><td>Quick Settings tile</td><td><b>Kill Apps</b></td><td>Force-stops every app in your quick list, one after the other, with a notification that shows how far it is. The tile shows the list's name and size under its name (Android 10 and newer). It is lit when you open the panel while a run is going: Android redraws the tile each time the panel opens, not while it stays open, so after a short run you may not see it lit at all.</td></tr>
       <tr><td>Widget</td><td><b>Mode</b> button</td><td>The same as the Working mode tile.</td></tr>
       <tr><td>Widget</td><td><b>Kill Apps</b> button</td><td>The same as the Kill Apps tile.</td></tr>
     </tbody>
@@ -596,7 +596,7 @@
   <p>The widget is called <b>ADB/Root Full System Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
   <p>The answers of Kill Apps are short: "Force-stopped 5 apps" (with ", 1 failed" when some did not stop and ", 2 left alone" when the list holds apps it does not stop), "Cancelled after 3 of 12 apps", "No quick list set. Open Saved Applications in the app and tap Quick list.", or "Needs ADB, Shizuku or Root. Set up a working mode first."</p>
 
-  <h4>The Stop apps notification</h4>
+  <h4>The Kill Apps notification</h4>
   <p>While <b>Kill Apps</b> runs, a notification called <b>Stopping apps</b> shows the place it has reached ("3 of 12 · Chrome"), the name of the list and a progress bar. When the last app is done the notification goes away by itself and the short message appears.</p>
   <ul>
     <li><b>Cancel</b> (the button in the notification) stops the run after the app it is on, leaves the apps it did not reach as they are, and clears the notification. The message then says how far it got.</li>

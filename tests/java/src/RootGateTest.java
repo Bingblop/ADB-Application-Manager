@@ -60,7 +60,7 @@ public class RootGateTest {
     // MainActivity: the probe reports the gate's verdict, computed as root chosen AND su granted (not from rootAvailable alone)
     String probe = bodyOf(m, "private String probeWorkingMode() {");
     check("source: probeWorkingMode puts rootWorkingModeActive", probe != null && probe.contains("obj.put(\"rootWorkingModeActive\", rootGrantedNow);"));
-    check("source: that verdict is root chosen AND su granted", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && isRootGranted();"));
+    check("source: that verdict is root chosen AND su granted (asked in the app's window; a tile tap's headless window only reads a grant already known)", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());"));
     check("source: the fallback answer of a failed probe has no rootWorkingModeActive (the page then stays locked)", probe != null && !bodyOf(m, "private String probeWorkingMode() {").substring(probe.indexOf("catch (Exception e)")).contains("rootWorkingModeActive"));
 
     // the page: the gate helper, and the verdict read from the working-mode data

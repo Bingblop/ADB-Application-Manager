@@ -16,6 +16,12 @@ public class ShizukuStartTest {
     return out;
   }
 
+  /** The first number group of the first match, or -1. */
+  static int num(String s, String regex) {
+    java.util.regex.Matcher m = java.util.regex.Pattern.compile(regex).matcher(s);
+    return m.find() ? Integer.parseInt(m.group(1)) : -1;
+  }
+
   public static void main(String[] x) throws Exception {
     is("the Shizuku package is valid", ShizukuStart.validPackage("moe.shizuku.privileged.api"));
     is("the Shizuku+ package is valid", ShizukuStart.validPackage("af.shizuku.plus.api"));
@@ -60,6 +66,43 @@ public class ShizukuStartTest {
     for (int i = 0; i < 2000; i++) big.append("line ").append(i).append('\n');
     ShizukuStart.Result rb = ShizukuStart.parse(big.toString());
     is("a long output is cut to its end", rb.text.length() <= 4000 && rb.text.endsWith("line 1999"));
+
+    // T-008: the script is not stopped after the 8 s of an ordinary adb shell command (stopping the adb client mid-run may take the start down with it)
+    is("the start script may run well over 8 s, and is still bounded", ShizukuStart.SCRIPT_TIMEOUT_MS >= 15000 && ShizukuStart.SCRIPT_TIMEOUT_MS <= 30000);
+    File main = null;
+    for (File d = new File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && main == null; d = d.getParentFile()) {
+      File f = new File(d, "src/com/bloatware/bingblop/MainActivity.java");
+      if (f.isFile()) main = f;
+    }
+    if (main == null) System.out.println("SKIP MainActivity.java not found");
+    else {
+      String src = new String(Files.readAllBytes(main.toPath()), "UTF-8");
+      int at = src.indexOf("private JSONObject startShizukuNow()");
+      int end = at < 0 ? -1 : src.indexOf("\n    private ", at + 10);
+      String start = at >= 0 && end > at ? src.substring(at, end) : "";
+      is("startShizukuNow was found", !start.isEmpty());
+      is("startShizukuNow runs the script with SCRIPT_TIMEOUT_MS, not runAdbShell's 8 s", start.contains("runAdbShell(target, cmd, ShizukuStart.SCRIPT_TIMEOUT_MS)")
+          && !start.contains("runAdbShell(target, cmd)"));
+      int rs = src.indexOf("private String runAdbShell(String target, String cmd, int timeoutMs)");
+      int re = rs < 0 ? -1 : src.indexOf("\n    }\n", rs);
+      String run = rs >= 0 && re > rs ? src.substring(rs, re) : "";
+      int uses = 0;
+      for (int i = run.indexOf("\"shell\", cmd), timeoutMs)"); i >= 0; i = run.indexOf("\"shell\", cmd), timeoutMs)", i + 1)) uses++;
+      is("runAdbShell's timeout applies to the run and to the run after a reconnect", uses == 2 && !run.contains("cmd), 8000)"));
+      is("the plain runAdbShell keeps 8 s for every other command", src.contains("return runAdbShell(target, cmd, 8000);"));
+
+      // T-012: the first-launch sheet waits for a start it offered for longer than startShizukuNow can take, or a slow start opens the sheet first and
+      // the Shizuku authorize dialog then comes over it. The bound is read from MainActivity: adb devices, a reconnect, the script, the binder poll.
+      int devices = num(src, "buildAdbProcess\\(\"devices\"\\), (\\d+)\\)");
+      int reconnect = num(run, "buildAdbProcess\\(\"connect\", target\\), (\\d+)\\)");
+      int polls = num(start, "i < (\\d+) && !activityDestroyed");
+      int pause = num(start, "Thread\\.sleep\\((\\d+)\\)");
+      is("the parts of startShizukuNow's bound were found (" + devices + ", " + reconnect + ", " + polls + " x " + pause + ")", devices > 0 && reconnect > 0 && polls > 0 && pause > 0);
+      int bound = devices + reconnect + ShizukuStart.SCRIPT_TIMEOUT_MS + polls * pause;
+      File page = new File(main.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile(), "assets/index.html");
+      int wait = page.isFile() ? num(new String(Files.readAllBytes(page.toPath()), "UTF-8"), "const SZ_START_WAIT_MS = (\\d+);") : -1;
+      is("the page's SZ_START_WAIT_MS (" + wait + " ms) is longer than startShizukuNow's bound (" + bound + " ms)", wait > bound);
+    }
 
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);

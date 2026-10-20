@@ -220,6 +220,7 @@ public class QuickStopRunTest {
     check("source: handed over at create (once), at a new intent and when the page finishes loading", m.contains("QuickStopRun.openAtCreate(savedInstanceState != null, launch.getFlags())) takeQuickOpen(launch);") && bodyOf(m, "protected void onNewIntent(Intent intent) {").contains("takeQuickOpen(intent);") && m.contains("deliverPendingInstall();\n                deliverPendingQuickOpen();"));
 
     // the notification
+    check("source: the notification channel is named after the tile (Kill Apps) and keeps its id, so Android renames the old one in place (T-005)", nt.contains("static final String CHANNEL = \"quick_stop\";") && nt.contains("new NotificationChannel(CHANNEL, \"Kill Apps\", ") && !nt.contains("\"Stop apps\""));
     check("source: the notification is not cancelled by a tap (no autoCancel: the run goes on)", !nt.contains("setAutoCancel") && nt.contains("setOngoing(true)"));
     check("source: Cancel is a button, the body opens the app on the quick list, a swipe is heard", nt.contains("\"Cancel\"") && nt.contains("QuickActions.EXTRA_OPEN_QUICK_LIST, run.listId()") && nt.contains("b.setDeleteIntent(") && nt.contains("b.setContentIntent("));
     check("source: the intents are immutable and explicit (the receiver and MainActivity by class)", count(nt, "PendingIntent.FLAG_IMMUTABLE") == 1 && nt.contains("new Intent(c, QuickStopReceiver.class)") && nt.contains("new Intent(c, MainActivity.class)"));
@@ -253,13 +254,19 @@ public class QuickStopRunTest {
     // the manifest
     check("source: the manifest declares the Live Updates permission once (approved by the owner) and the receiver, not exported", count(mf, "<uses-permission android:name=\"android.permission.POST_PROMOTED_NOTIFICATIONS\" />") == 1 && mf.contains("android:name=\".QuickStopReceiver\"\n            android:exported=\"false\" />"));
 
-    // the Kill Apps tile: label, lit state follows the run, long-press opens the app (QS_TILE_PREFERENCES)
+    // the Kill Apps tile: label, lit when the panel is opened during a run (a passive tile), long-press opens the app (QS_TILE_PREFERENCES)
     String tile = read(new File(dir, "StopListTileService.java"));
-    check("source: the tile is labelled Kill Apps and its lit state follows the run", tile.contains("setLabel(\"Kill Apps\")") && tile.contains("QuickStopRun.tileActive()") && !tile.contains("\"Stop apps\""));
+    check("source: the tile is labelled Kill Apps and reads its lit state from the run", tile.contains("setLabel(\"Kill Apps\")") && tile.contains("QuickStopRun.tileActive()") && !tile.contains("\"Stop apps\""));
     check("source: the manifest labels the tile Kill Apps and declares a QS_TILE_PREFERENCES activity (long-press opens the app)", mf.contains("android:name=\".StopListTileService\"") && mf.contains("android:label=\"Kill Apps\"") && mf.contains("android.service.quicksettings.action.QS_TILE_PREFERENCES"));
     int aliasStart = mf.indexOf(".TilePreferencesActivity"), aliasEnd = mf.indexOf("</activity-alias>", aliasStart);
     String alias = aliasStart >= 0 && aliasEnd > aliasStart ? mf.substring(aliasStart, aliasEnd) : "";
     check("source: the QS_TILE_PREFERENCES alias is well-formed (exported, DEFAULT category, targets MainActivity) so SystemUI can launch it on long-press", alias.contains("android:targetActivity=\".MainActivity\"") && alias.contains("android:exported=\"true\"") && alias.contains("android.service.quicksettings.action.QS_TILE_PREFERENCES") && alias.contains("android.intent.category.DEFAULT"));
-    check("source: the start-of-run refresh lights the tile (requestListeningState for StopListTileService)", stop != null && stop.contains("requestListeningState(this, new android.content.ComponentName(this, StopListTileService.class))"));
+    // T-003: TileService.requestListeningState does nothing for a passive tile, so the app does not pretend to push the light with it
+    int tileAt = mf.indexOf("android:name=\".StopListTileService\""), tileEnd = tileAt < 0 ? -1 : mf.indexOf("</service>", tileAt);
+    String tileBlock = tileEnd < 0 ? null : mf.substring(tileAt, tileEnd);
+    check("source: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), so Android calls onStartListening on every panel open", tileBlock != null && !tileBlock.contains("ACTIVE_TILE"));
+    check("source: the tile reads the run's state in onStartListening, the only place a passive tile is redrawn", tile.contains("public void onStartListening()") && tile.contains("QuickStopRun.tileActive() ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE"));
+    String finishQuick = bodyOf(m, "private void finishQuickAction(final String message) {");
+    check("source: neither the start nor the end of a run sends requestListeningState to StopListTileService (a no-op for a passive tile)", stop != null && finishQuick != null && !stop.contains("requestListeningState(") &&!finishQuick.contains("StopListTileService") && !m.contains("StopListTileService.class"));
   }
 }

@@ -83,9 +83,31 @@ public class ModeTileLightTest {
     check("source: the fallback answer of a failed probe leaves the light as it was", probe != null && probe.indexOf("catch (Exception e)") >= 0 && !probe.substring(probe.indexOf("catch (Exception e)")).contains("publishModeTileLight"));
     String publish = bodyOf(m, "private void publishModeTileLight(String resolved, boolean available) {");
     check("source: publishModeTileLight writes both keys to the preferences the tile reads", publish != null && publish.contains("QuickActions.prefs(this)") && publish.contains("putString(ModeTileLight.PREF_MODE, mode)") && publish.contains("putBoolean(ModeTileLight.PREF_AVAILABLE, available)"));
-    check("source: ... only when they changed, and asks the tile to refresh only when the light changes", publish != null && publish.contains("if (mode.equals(oldMode) && available == oldAvailable) return;") && publish.contains("ModeTileLight.lit(oldMode, oldAvailable) != ModeTileLight.lit(mode, available)") && publish.contains("requestListeningState(this, new android.content.ComponentName(this, ModeTileService.class))"));
+    check("source: ... only when they changed", publish != null && publish.contains("if (mode.equals(oldMode) && available == oldAvailable) return;"));
+    // T-036: TileService.requestListeningState "is only applicable to tiles that have META_DATA_ACTIVE_TILE defined as true ... and will do
+    // nothing otherwise" (Android reference); this tile is passive (checked below), so the call would promise a refresh that never comes
+    check("source: ... and does not call requestListeningState, which Android ignores for a passive tile", publish != null && !publish.contains("requestListeningState"));
     String quick = bodyOf(m, "private void runQuickAction(Intent intent) {");
     check("source: a tap on the tile (cycle mode) probes again, so the light follows the new mode", before(quick, "quickCycleMode();", "new AndroidBridge().getWorkingMode();"));
+
+    // T-035: a tile tap never runs su. The headless window's probe takes only a root verdict already known (not asked yet: dim), so no root
+    // manager prompt comes up behind the collapsing panel and an unanswered one is never remembered as a refusal; its answer is not kept, so
+    // the app's first look asks su itself, in the foreground
+    check("source: the probe asks su only from the app's window; the headless tile window uses the remembered verdict", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());"));
+    String known = bodyOf(m, "private boolean rootGrantedKnown() {");
+    check("source: rootGrantedKnown reads the remembered verdict (null, not asked yet, is not granted) and runs nothing", known != null && known.contains("Boolean.TRUE.equals(rootGrant)") && !known.contains("ProcessBuilder") && !known.contains("isRootGranted"));
+    String ready = bodyOf(m, "private boolean modeReadyQuiet(String mode) {"), cycle = bodyOf(m, "private String quickCycleMode() {");
+    check("source: the cycle itself asks no su (modeReadyQuiet, quickCycleMode)", ready != null && cycle != null && !ready.contains("isRootGranted") && !cycle.contains("isRootGranted") && !cycle.contains("getWorkingModeFresh"));
+    check("source: the tap's probe answer is not kept, so the app's next look probes (and asks su) itself", before(quick, "new AndroidBridge().getWorkingMode();", "invalidateModeCache();") && before(quick, "invalidateModeCache();", "finishQuickAction(message);"));
+
+    // T-034: coming back to the app (a warm resume, the same process) checks the mode again, whether or not a tile changed it meanwhile, so a
+    // connection lost while the app was in the background (Wi-Fi off, Shizuku stopped) dims the tile and the header badge when the app is opened
+    String resume = bodyOf(m, "protected void onResume() {");
+    String changed = resume == null ? null : bodyOf(resume, "if (!saved.equals(activeWorkingMode)) {");
+    String outside = resume == null || changed == null ? null : resume.replace(changed, "");
+    String probeJs = "notifyJs(\"window.checkAllWorkingModes && window.checkAllWorkingModes(false)\");";
+    check("source: onResume asks the page to check the mode on every resume, not only after a tile changed it", outside != null && outside.contains(probeJs), resume == null ? "onResume not found" : changed == null ? "the saved-mode block not found" : "the probe is only inside the saved-mode block");
+    check("source: ... not from the headless tile window (which has no page), and after the mode was read again", before(outside, "if (isHeadless()) return;", probeJs) && before(resume, "activeWorkingMode = saved;", probeJs));
 
     // the manifest: a passive tile, so Android calls onStartListening whenever the panel opens (an active tile would wait to be asked)
     int at = ax.indexOf("android:name=\".ModeTileService\"");

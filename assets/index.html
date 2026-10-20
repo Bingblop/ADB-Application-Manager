@@ -13227,9 +13227,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const selfId = id || ('list_' + Date.now());
             const clash = listWithSameName(name, selfId);     // another list with the same name but a different id
             if (clash) {
+                // "Create new list" makes a new list: when the editor holds an existing list that is being renamed onto the clash, the new
+                // list gets an id of its own, so the edited list keeps its name and apps instead of being renamed in place
+                const newId = customLists.some(l => l.id === selfId) ? 'list_' + Date.now() : selfId;
                 openListNameCollisionModal(name,
                     () => editorOverwrite(selfId, name, description, packages, clash),
-                    () => editorCommit(selfId, name, description, packages));
+                    () => editorCommit(newId, name, description, packages));
                 return;
             }
             editorCommit(selfId, name, description, packages);
@@ -19225,19 +19228,21 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('shizukuStartBtn');
             if (btn) btn.disabled = false;
             res = res || {};
+            if (szAutoStarting && res.status === 'started') szCountStartDenial(true);   // the start the launch offer ran got Shizuku running: earlier refusals are cleared
             szAutoStarting = false;
+            const t = String(res.text || '').trim();
             const msg = {
                 started: 'Shizuku is running. Tap Authorize & Use Shizuku next.',
                 already_running: 'Shizuku is already running. Tap Authorize & Use Shizuku.',
                 not_installed: 'Shizuku is not installed',
                 no_adb: 'Connect ADB TCP or Wireless Debugging first, then start Shizuku.',
                 no_script: 'Shizuku has not written its start script yet. Open the Shizuku app once, then try again.',
-                failed: 'Shizuku did not start. What the start script printed is shown below.'
+                // the box below is shown only with text in it: a start that failed before the script ran (or a script that printed nothing) does not point at it
+                failed: t ? 'Shizuku did not start. What the start script printed is shown below.' : 'Shizuku did not start.'
             }[res.status] || 'Could not start Shizuku';
             showToast(msg);
             const out = document.getElementById('shizukuStartOut');
             if (out) {
-                const t = String(res.text || '').trim();
                 out.textContent = t;
                 out.style.display = t && res.status !== 'started' ? '' : 'none';
             }
@@ -31405,7 +31410,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'bluetooth', name: 'Bluetooth Connect', perm: 'BLUETOOTH_CONNECT', why: 'Lists the Bluetooth devices this phone is paired with (Connected Devices) and sends files to one.', known: true },
             { key: 'notifications', name: 'Notifications', perm: 'POST_NOTIFICATIONS', why: 'Lets this app show its notifications, such as the Wireless debugging pairing prompt and the progress of a long job.', known: true },
             // Android 16 and later only (the app reports the row there). No command sets it: the permission is in the manifest, and what can be missing is Notifications and the switch for this app in the phone's own notification settings (`noCommand`)
-            { key: 'live_updates', name: 'Live updates', perm: 'POST_PROMOTED_NOTIFICATIONS', why: "Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.", known: true, noCommand: true },
+            { key: 'live_updates', name: 'Live updates', perm: 'POST_PROMOTED_NOTIFICATIONS', why: "Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.", known: true, noCommand: true },
             { key: 'storage_legacy', name: 'Read/Write External Storage', perm: 'READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE', why: 'The older storage permission some apps still check for.', adbOnly: true },
             { key: 'secure_settings', name: 'Write Secure Settings', perm: 'WRITE_SECURE_SETTINGS', why: 'Lets this app change a few protected system settings used by some advanced features.', adbOnly: true },
             { key: 'dump', name: 'Dump system services (DUMP)', perm: 'DUMP', why: "Lets this app read the phone's own status reports (dumpsys), such as battery, power and memory details, without asking the shell each time. Granted through the working mode.", adbOnly: true, known: true },
@@ -31749,12 +31754,17 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---- Start Shizuku at launch ----
-        // While no working mode is ready (no ADB TCP, Wireless Debugging or root) and the mode is Auto or Shizuku, a Shizuku that is installed but not running,
-        // with an ADB path to start it through, is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one).
-        // Starting needs an ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless pairing
-        // stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
+        // While the mode is pinned to Shizuku and no working mode is ready, a Shizuku that is installed but not running, with an ADB path to start it through,
+        // is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one; a yes clears it only when the start
+        // it runs gets Shizuku running, so a yes to a start that fails does not undo the refusals before it). Not in Auto: there an ADB path (a
+        // connected target, or a TCP port that is open) is itself the working mode (probeWorkingMode resolves adb_tcp / adb_wireless), so it is never needed.
+        // Starting needs a connected ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless
+        // pairing stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
         const SZ_START_DENY_KEY = 'shizuku_autostart_denied', SZ_START_DENY_MAX = 2;
-        const SZ_START_WAIT_MS = 12000;   // how long the first-launch sheet waits for a start it offered (startShizukuNow polls the binder up to ~8 s)
+        // How long the first-launch sheet waits for a start it offered: past startShizukuNow's own bound, about 36 s (adb devices 2.5 s, a reconnect 5 s, the
+        // script up to 20 s, the binder poll 8 s), so a slow start still gets its authorize dialog before the sheet. The answer (onShizukuStartResult) ends the
+        // wait as soon as it comes; this is only the limit when none comes. ShizukuStartTest checks it against MainActivity.
+        const SZ_START_WAIT_MS = 40000;
         let szStartTried = false;         // offered once per start of the page
         let szAutoStarting = false, szAutoStartAt = 0;
         function szStartDenials() {
@@ -31769,18 +31779,19 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (n) b.saveSetting(SZ_START_DENY_KEY, '0');
             } catch (e) {}
         }
-        // An ADB target the start command can run through: a connected or reachable TCP target, or a connected Wireless Debugging one (what startShizukuNow uses).
+        // An ADB target the start command can run through: a connected TCP or Wireless Debugging target, the same `adb devices` check startShizukuNow makes.
+        // A TCP port that is open but not connected (after a restart with the mode on Shizuku nothing has connected to it; or this app's key is not allowed
+        // yet) is not one: the start would only answer "Connect ADB TCP or Wireless Debugging first", so it is not offered.
         function szAdbPathReady(d) {
             if (!d) return false;
             const t = d.adbTcp || {}, w = d.adbWireless || {};
-            return !!(t.connected || t.portOpen || w.connected);
+            return !!(t.connected || w.connected);
         }
         function szAutoStart() {
             if (!szAutoReady || szStartTried || isPrivilegedActive) return false;
             const b = window.AndroidBridge, d = lastModesData;
             if (!b || !b.startShizukuViaAdb || !d) return false;
-            const configured = d.configuredMode || 'auto';
-            if (configured !== 'auto' && configured !== 'shizuku') return false;
+            if ((d.configuredMode || 'auto') !== 'shizuku') return false;   // Auto with an ADB path is already privileged (returned above); other modes do not use Shizuku
             const sz = d.shizuku || {};
             if (!sz.installed || sz.running) return false;        // not installed, or already running (szAutoAsk then asks to authorize)
             if (!szAdbPathReady(d)) return false;                 // no ADB path: it can only be started from the Shizuku app (wireless pairing), so no offer
@@ -31788,8 +31799,9 @@ Type any command above (e.g. pm list packages -d)</div>
             szStartTried = true;
             if (typeof nextDialogTitle === 'function') nextDialogTitle('Start Shizuku');
             const ok = confirm('Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?');
-            szCountStartDenial(ok);
-            if (!ok) return false;
+            // a "no" counts; a "yes" clears the count only once the start it runs has Shizuku running (onShizukuStartResult), so a yes to a start that then
+            // fails does not undo earlier refusals
+            if (!ok) { szCountStartDenial(false); return false; }
             szAutoStarting = true; szAutoStartAt = Date.now();
             startShizukuUI();                                     // the card's own start path; onShizukuStartResult shows the outcome, then szAutoAsk asks to authorize
             return true;

@@ -749,8 +749,10 @@ public class MainActivity extends Activity {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) {
                         message = quickCycleMode();
                         // the mode just changed and the page may not be open to probe it: probe here (the cache was invalidated), so the
-                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh
+                        // tile's light follows the new mode before finishQuickAction asks the tile to refresh. This window asks no su (see
+                        // probeWorkingMode), so its answer is not kept: the app's next look probes, and asks su, by itself.
                         try { new AndroidBridge().getWorkingMode(); } catch (Throwable ignored) {}
+                        invalidateModeCache();
                     }
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
                     else message = "Unknown quick action";
@@ -770,7 +772,6 @@ public class MainActivity extends Activity {
                 QuickWidgetProvider.refreshAll(MainActivity.this);
                 try {
                     android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, ModeTileService.class));
-                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, StopListTileService.class));
                 } catch (Throwable ignored) {}
                 finish();
             }
@@ -780,8 +781,9 @@ public class MainActivity extends Activity {
     /**
      * Keeps the Working mode tile's light in step with the probe. The tile runs without this activity, so the probe's resolved mode and
      * whether it was available go to the preferences the tile reads (ModeTileLight.PREF_MODE / PREF_AVAILABLE); they are written only
-     * when they changed, and the tile is asked to refresh only when its light would change (it reads them again in onStartListening
-     * anyway, every time the panel opens).
+     * when they changed. The tile is a passive one (no ACTIVE_TILE meta-data): Android calls its onStartListening, where it reads the keys
+     * again, every time the Quick Settings panel opens, and a panel already open keeps the light it showed until it is opened again.
+     * requestListeningState is not called here: Android ignores it for a passive tile.
      */
     private void publishModeTileLight(String resolved, boolean available) {
         try {
@@ -791,9 +793,6 @@ public class MainActivity extends Activity {
             boolean oldAvailable = p.getBoolean(ModeTileLight.PREF_AVAILABLE, false);
             if (mode.equals(oldMode) && available == oldAvailable) return;
             p.edit().putString(ModeTileLight.PREF_MODE, mode).putBoolean(ModeTileLight.PREF_AVAILABLE, available).apply();
-            if (ModeTileLight.lit(oldMode, oldAvailable) != ModeTileLight.lit(mode, available)) {
-                android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, ModeTileService.class));
-            }
         } catch (Throwable ignored) {}
     }
 
@@ -912,8 +911,10 @@ public class MainActivity extends Activity {
         final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
         QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
         if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
-        // light the Kill Apps tile for the length of the run (finishQuickAction turns it off again when the run ends)
-        try { android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, StopListTileService.class)); } catch (Throwable ignored) {}
+        // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
+        // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
+        // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
+        // active instead would change when Android redraws it (also its "list (N apps)" subtitle), which only a phone can show; not done.
         try {
             AndroidBridge bridge = new AndroidBridge();
             for (String pkg : run.targets()) {
@@ -1241,8 +1242,9 @@ public class MainActivity extends Activity {
 
     /**
      * Runs the start script the installed Shizuku app wrote (see {@link ShizukuStart}) through a ready ADB TCP or Wireless Debugging connection,
-     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Blocks for up to about 16 seconds,
-     * so it runs on the executor.
+     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Usually a few seconds; the bound is
+     * about 36 seconds (adb devices 2.5 s, a reconnect of 5 s when the link had dropped, the script up to ShizukuStart.SCRIPT_TIMEOUT_MS = 20 s,
+     * then the binder poll of 16 x 500 ms), so it runs on the executor.
      */
     private JSONObject startShizukuNow() {
         if (isShizukuBinderAlive()) return shizukuStartResult("already_running", installedShizukuPackage(), null);
@@ -1254,7 +1256,7 @@ public class MainActivity extends Activity {
         if (target == null) return shizukuStartResult("no_adb", pkg, null);
         String cmd = ShizukuStart.command(pkg);
         if (cmd == null) return shizukuStartResult("failed", pkg, null);
-        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd));
+        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd, ShizukuStart.SCRIPT_TIMEOUT_MS));     // not the 8 s of a plain command: a slow start is not cut off
         if (r.noScript) return shizukuStartResult("no_script", pkg, r);
         boolean alive = false;
         for (int i = 0; i < 16 && !activityDestroyed; i++) {
@@ -1284,11 +1286,15 @@ public class MainActivity extends Activity {
     }
 
     private String runAdbShell(String target, String cmd) {
-        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+        return runAdbShell(target, cmd, 8000);
+    }
+
+    private String runAdbShell(String target, String cmd, int timeoutMs) {
+        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         if (output != null && output.contains("device '") && output.contains("' not found")) {
             // The connection dropped (e.g. adbd restarted). Reconnect once without changing the mode.
             runProcessWithTimeout(buildAdbProcess("connect", target), 5000);
-            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         }
         return output != null ? output : "";
     }
@@ -1955,6 +1961,13 @@ public class MainActivity extends Activity {
             rootGrant = ok;
         }
         return ok;
+    }
+
+    /** The su verdict as already known, without asking (no prompt): not asked yet counts as not granted. */
+    private boolean rootGrantedKnown() {
+        synchronized (modeCacheLock) {
+            return Boolean.TRUE.equals(rootGrant);
+        }
     }
 
     private boolean isRootAvailable() {
@@ -8564,8 +8577,11 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
-                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
-                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
+                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode, and
+                // never from the headless window of a tile tap (QuickActionActivity): the root manager's prompt would come up behind the
+                // collapsing panel, and one left unanswered would be remembered as a refusal. There only a verdict already known counts; not
+                // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
+                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
                 if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
                 // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
                 obj.put("rootWorkingModeActive", rootGrantedNow);
@@ -17006,8 +17022,11 @@ public class MainActivity extends Activity {
             // A tile or the widget switched the mode while the app was in the background
             activeWorkingMode = saved;
             cachedAutoMode = null;
-            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         }
+        // Check the mode again on every return, not only after a tile changed it: a connection lost meanwhile (Wi-Fi off, Shizuku stopped,
+        // adbd gone) must dim the header badge and the Working mode tile now, not when the Working Modes sheet is next opened. The quiet
+        // check reuses a probe from the last 2.5 s (MODE_CACHE_MS), so a quick back-and-forth costs nothing.
+        notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         notifyJs("window.onAppResume && window.onAppResume()");
     }
 

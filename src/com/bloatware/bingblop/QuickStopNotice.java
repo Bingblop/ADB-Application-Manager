@@ -37,7 +37,8 @@ final class QuickStopNotice {
             if (nm == null) return;
             synchronized (run) {
                 if (!run.open()) return;
-                nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Stop apps", NotificationManager.IMPORTANCE_LOW));
+                // named after the tile; the same CHANNEL id, so a channel made under the old name (Stop apps) is renamed in place
+                nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Kill Apps", NotificationManager.IMPORTANCE_LOW));
                 nm.notify(ID, build(app, nm, run));
             }
         } catch (Throwable ignored) {}               // a notification that cannot be shown (no permission, a restriction) never stops the run

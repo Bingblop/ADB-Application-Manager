@@ -558,7 +558,7 @@ Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); t
 
 Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
 
-- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then within about ten seconds "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
+- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then, usually within ten seconds (a slow phone just after a restart can take up to about half a minute; the button stays disabled until the answer), "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
 - [ ] **No start script.** After clearing the Shizuku app's data (so it has not written start.sh), tap **Start Shizuku (ADB)**: the toast says Shizuku has not written its start script yet, and the Shizuku app opens. Nothing is started and no error text appears.
 - [ ] **No ADB connection.** With ADB TCP and Wireless Debugging both disconnected, tap it: the toast says to connect one of them first.
 - [ ] **Already running.** With Shizuku running, tap it: "Shizuku is already running", nothing is run.
@@ -567,11 +567,12 @@ Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and
 
 ## 31. Shizuku offered to start at launch
 
-Needs Shizuku installed but not running, ADB TCP or Wireless Debugging reachable (connected earlier, so a target is saved) and the working mode set to Shizuku (or Auto). None of this has been run on a phone yet.
+Needs Shizuku installed but not running, an ADB TCP or Wireless Debugging connection that this app holds (its card says CONNECTED; a port that is open but that nothing has connected to is not enough, because the start runs only through a connected target) and the working mode pinned to Shizuku (not Auto: in Auto a reachable ADB TCP or Wireless Debugging target is itself the working mode, so the offer never appears there). None of this has been run on a phone yet.
 
-- [ ] **Offered on launch.** Restart the phone (or stop Shizuku) so Shizuku is not running, with ADB TCP or Wireless Debugging reachable and the mode on Shizuku, then open the app. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
+- [ ] **Offered on launch.** With Shizuku running, connect ADB TCP in Working Modes (this picks ADB TCP), then pick Shizuku again (**Authorize & Use Shizuku**). Stop Shizuku in the Shizuku app, leave this app with Back (not a force stop, which also ends its ADB connection) and open it again. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
 - [ ] **Declined twice, then quiet.** Open the app and tap **Cancel** on the offer, then open it again: it offers once more. Decline again, then open a third time: it no longer offers (asked at most twice). The Shizuku card's **Start Shizuku (ADB)** button still starts it by hand.
-- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target reachable, or with Shizuku not installed: no launch dialog appears.
+- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target connected, or with Shizuku not installed, or with the mode on Auto: no launch dialog appears.
+- [ ] **Not offered over a port nothing has connected to.** Restart the phone with the mode on Shizuku, switch ADB TCP on again (`adb tcpip 5555` from a computer) and open the app: no **Start Shizuku** dialog (nothing has connected to the port yet, and the start would only answer "Connect ADB TCP or Wireless Debugging first, then start Shizuku."). Connect ADB TCP in Working Modes, then the Shizuku card's **Start Shizuku (ADB)** starts it.
 
 ## 32. Working mode tile light
 
@@ -580,8 +581,10 @@ Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap t
 - [ ] **Dim without a mode.** Set Working Modes to Read-Only, go back to the Apps tab so the app checks the mode, then pull down Quick Settings: the **Working mode** tile is dim (not lit) and says Read-Only under its name.
 - [ ] **Lit with a mode.** Connect ADB TCP, Wireless Debugging, Shizuku or Root (the Working Modes card shows it connected, authorized or granted), then pull down Quick Settings: the tile is lit. With the mode on Automatic and a connection found: lit as well.
 - [ ] **Follows a tap.** With one other mode ready, tap the tile: it says "Working mode: ..." and is lit. Tap again with nothing else reachable: it says "No other mode is ready. Using Automatic." and is lit only if Automatic still finds a connection, otherwise dim.
+- [ ] **Root from the tile asks nothing.** On a rooted phone whose root manager has not granted this app yet, with no other mode ready, tap the tile: it says "Working mode: Root" at once, no root prompt comes up and the tile is dim. Open the app: the root manager asks now; after Allow, the tile is lit.
 - [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
 - [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
+- [ ] **After an update.** With the tile in the panel, install this build over 7.15 (an update, not a fresh install) and do not open the app: pull down Quick Settings: the tile is dim, with the saved mode under its name. Open the app once, then pull down Quick Settings again: the tile follows the mode (lit when it is ready).
 
 ## 33. Allow all restarts the app
 

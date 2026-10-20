@@ -1,6 +1,7 @@
 // v7.15.1 A1: saving a saved-app list under a name an existing list already uses prompts Overwrite /
 // Create new list / Cancel instead of silently making a duplicate. Covers the Save-Selected path and the
-// list editor path; Overwrite replaces in place keeping the id (and nudges the quick-list widget).
+// list editor path; Overwrite replaces in place keeping the id (and nudges the quick-list widget). Create new list makes a new list
+// also when the editor renames an existing list onto the name (T-004): the edited list is left as it was.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
@@ -105,6 +106,21 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { openListEditorModal('list_keep'); document.getElementById('listEditorPackages').value = 'com.a\ncom.c'; saveListFromEditor(); });
   s = await state();
   check('C5. editing a list without renaming does not prompt and saves in place', !s.collisionShown && s.n === 1 && s.keep.pkgs === 2, JSON.stringify(s));
+
+  // T-004: Edit on ANOTHER existing list, renamed onto "My List", then Create new list -> a third list; the edited list keeps its name and apps
+  await reset();
+  await ev(() => { customLists.push({ id: 'list_other', name: 'Other', description: 'other desc', packages: ['com.b'], updatedAt: 1 }); });
+  await ev(() => { openListEditorModal('list_other'); document.getElementById('listEditorName').value = 'My List'; document.getElementById('listEditorPackages').value = 'com.c'; saveListFromEditor(); });
+  s = await state();
+  check('C6. editor rename onto an existing name: the collision prompt is shown and nothing is saved yet', s.collisionShown && s.n === 2 && s.names.join('|') === 'My List|Other', JSON.stringify(s.names));
+  await ev(() => resolveListNameCollision('new'));
+  s = await state();
+  const other = await ev(() => { const l = customLists.find(x => x.id === 'list_other'); return l ? { name: l.name, pkgs: l.packages.join(','), desc: l.description } : null; });
+  const made = await ev(() => { const l = customLists.find(x => x.id !== 'list_keep' && x.id !== 'list_other'); return l ? { name: l.name, pkgs: l.packages.join(',') } : null; });
+  check('C7. editor rename, Create new list: a third list is created', s.n === 3, JSON.stringify(s.names));
+  check('C8. ... the edited list keeps its own name, apps and description', other && other.name === 'Other' && other.pkgs === 'com.b' && other.desc === 'other desc', JSON.stringify(other));
+  check('C9. ... the new list has the typed name and apps, and an id of its own', made && made.name === 'My List' && made.pkgs === 'com.c' && s.ids.filter(id => id === 'list_other').length === 1, JSON.stringify([made, s.ids.length]));
+  check('C10. ... the list that had the name is untouched', s.keep && s.keep.pkgs === 2 && s.keep.desc === 'old desc', JSON.stringify(s.keep));
 
   // D. overwriting the current quick list nudges the widget (setQuickList called with its id)
   await reset();

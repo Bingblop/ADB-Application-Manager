@@ -10,7 +10,7 @@ ok      (set up) Saved Applications is turned off
 ok      a tab that was turned off comes back, with a toast that says so, and the sheet opens: Saved Applications was turned off. It is on again to show this list.
 ok      no page error:
 ok   2. the sheet lists Live updates right after Notifications (Android 16 reports it): Notifications:allow|Live updates:allow|Read/Write External Storage:locked
-ok      it shows the permission and says what it is for: {"perm":"POST_PROMOTED_NOTIFICATIONS","why":"Shows the progress of the Stop apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","btn":"Allow"}
+ok      it shows the permission and says what it is for: {"perm":"POST_PROMOTED_NOTIFICATIONS","why":"Shows the progress of the Kill Apps notification in the status bar as a Live Update (Android 16 and later). It needs Notifications too, and the switch for this app in the phone's notification settings.","btn":"Allow"}
 ok      read-only (no working mode): Allow on Notifications asks the person, with Android's dialog: notifications > dialog:notifications
 ok      read-only: Allow on Live updates asks for Notifications first (the same dialog) and opens nothing else yet: live_updates > dialog:notifications
 ok      Notifications allowed in the dialog: the phone's Live updates screen for this app opens by itself: live_updates > dialog:notifications > live_updates > screen:live_updates
@@ -28,5 +28,7 @@ ok      "Allow all" with a working mode: Notifications by command, then the Live
 ok      an Android before 16 (the key is not reported) shows no Live updates row: All files access:allowed|Allow Restricted Settings:allowed|Usage access:allowed|Display over other apps:allowed|Install unknown apps:allowed|Bluetooth Connect:allowed|Notifications:allowed|Read/Write External Storage:allow|Write Secure Settings:allow
 ok      the offer of a working mode's "grant everything" is not made when only Live updates is missing:
 ok      it is made when something with a command is missing too: A working mode (ADB, Shizuku or root) is ready. Grant all remaining permissions with it now? The app restarts afterwards.
+ok      no page error:
+ok   3. in all 13 languages the Quick actions card says to drag "Working mode" and "Kill Apps", and the quick-list toast names the "Kill Apps" tile: es,fr,de,pt-BR,it,ru,zh-CN,ja,ko,ar,hi,tr,id
 ok      no page error:
 all passed

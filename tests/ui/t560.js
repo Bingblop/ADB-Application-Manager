@@ -1,7 +1,7 @@
 // v7.16.0: "Start Shizuku (ADB)" in the Shizuku card of Working Modes: the button asks the phone side once and waits for its answer, a second tap while it
 // runs is refused, each answer (started, already running, not installed, no ADB connection, no start script, failed) gets its own sentence, the script's
-// own text is shown as data only when the start failed, "no start script" opens the Shizuku app, a bridge without the method says so, and at 320 px nothing
-// sticks out sideways.
+// own text is shown as data only when the start failed, "no start script" opens the Shizuku app, a bridge without the method says so, at 320 px nothing
+// sticks out sideways, and in German the answers say "Sie" as the card's other sentences do.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -42,7 +42,7 @@ const { chromium, PAGE } = require('./lib/pw');
       ['not_installed', 'Shizuku is not installed'],
       ['no_adb', 'Connect ADB TCP or Wireless Debugging first, then start Shizuku.'],
       ['no_script', 'Shizuku has not written its start script yet. Open the Shizuku app once, then try again.'],
-      ['failed', 'Shizuku did not start. What the start script printed is shown below.'],
+      ['failed', 'Shizuku did not start.'],     // no script text (a failure before the script ran, or a script that printed nothing): nothing "below" to point at
     ];
     for (const [status, msg] of cases) {
       await answer(page, { status, pkg: 'moe.shizuku.privileged.api', script: '/sdcard/Android/data/moe.shizuku.privileged.api/start.sh', exit: 0, text: '' });
@@ -53,6 +53,10 @@ const { chromium, PAGE } = require('./lib/pw');
     await answer(page, { status: 'failed', pkg: 'x.y', script: '/s', exit: 3, text: 'exec app_process failed\n<b>not html</b>' });
     const f = await state(page);
     check('   a failed start shows the script text as plain text', f.outShown && f.out === 'exec app_process failed\n<b>not html</b>' && (await page.evaluate(() => document.getElementById('shizukuStartOut').children.length)) === 0, JSON.stringify(f));
+    check('   and only then the sentence points at the text below', (await toast(page)) === 'Shizuku did not start. What the start script printed is shown below.', (await toast(page)));
+    await answer(page, { status: 'failed', pkg: '' });
+    const g = await state(page);
+    check('   a failure with no text at all (the phone side threw): the short sentence, the box hidden and empty', (await toast(page)) === 'Shizuku did not start.' && !g.outShown && g.out === '', (await toast(page)) + ' ' + JSON.stringify(g));
     await answer(page, { status: 'started', pkg: 'x.y', script: '/s', exit: 0, text: 'Shizuku is running' });
     check('   a start that worked hides the text again', !(await state(page)).outShown);
     check('   an answer with nothing in it is "Could not start Shizuku" and does not throw', await (async () => { await answer(page, null); return (await toast(page)) === 'Could not start Shizuku'; })());
@@ -84,6 +88,16 @@ const { chromium, PAGE } = require('./lib/pw');
     await answer(page, { status: 'failed', pkg: 'x.y', script: '/s', exit: 1, text: 'A'.repeat(300) + ' ' + '/very/long/path/'.repeat(20) });
     const over = await page.evaluate(() => { const sheet = document.getElementById('modeCardShizuku'); const r = sheet.getBoundingClientRect(); const o = document.getElementById('shizukuStartOut').getBoundingClientRect(); return { cardRight: Math.round(r.right), outRight: Math.round(o.right), vw: window.innerWidth, sw: document.documentElement.scrollWidth }; });
     check('4. at 320 px the text box stays inside its card and the page does not scroll sideways', over.outRight <= over.cardRight && over.sw <= over.vw, JSON.stringify(over));
+    await page.close();
+  }
+
+  // 5. German: the answers that tell the user what to do next say "Sie", as the card's other sentences do ("Starten Sie es in der Shizuku-App ..."), never "du"
+  {
+    const { page, errors } = await open(400, 860, true, 'started_async');
+    await page.evaluate(() => I18N.set('de')); await page.waitForTimeout(500);
+    const seen = [];
+    for (const status of ['started', 'already_running', 'no_adb', 'no_script']) { await answer(page, { status, pkg: 'x.y', text: '' }); seen.push(await toast(page)); }
+    check('5. in German every start answer that asks for a step says "Sie", none says "du"', seen.every(s => /\bSie\b/.test(s) && !/\b(Tippe|Öffne|Verbinde|starte|versuche)\b/.test(s)) && errors.length === 0, JSON.stringify(seen) + ' ' + errors.join(' | '));
     await page.close();
   }
 
