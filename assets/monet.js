@@ -207,6 +207,56 @@
  *   scheme() palette; P14's shades at 2021, 2025 and 2026 by the rule above: no difference. A changed K, a changed d, the cap, each
  *   tone-map step left out and an adjusted error palette each make at least one of these checks fail. None of it was run on a device.
  *
+ * Secondary and tertiary accents (opts.accents): the root card's two colours, one for the second accent row (accent2 and the secondary
+ * roles), one for the third (accent3 and the tertiary roles). Android and Google's library have no such option; the rules below were
+ * written for this project. No phone computes these colours itself. For a colour X set for a row:
+ *   1. The scheme of the same style, spec, mode, contrast and profile (so the same part) is built from X as the seed, and its primary
+ *      palette P is taken. X is taken as it is: seed()'s grey rule (Android's ColorScheme turns a source colour with chroma under 5
+ *      into Google blue) is not applied to a colour picked for a row. With step 2 that rule would change only Spritz at 2025 and 2026
+ *      (its chroma depends on whether the hue is blue) and CMF (a grey would take Google blue's chroma); measured with 808080, 404040,
+ *      000000 and FFFFFF, P14 and P16, light and dark. The mode is the one of the scheme X's palette goes into: entries() builds a
+ *      light and a dark scheme and each gets the palette of X's scheme of its own mode (at 2021 they are the same; at 2025 Tonal
+ *      Spot's and Expressive's chroma differ).
+ *   2. If P's hue is X's hue (within ACCENT_HUE_TOLERANCE, 0.5 degrees), P is used as it is; otherwise the palette at X's hue with P's
+ *      chroma (the part's own TonalPalette.fromHueAndChroma). So the hue picked is kept in every style, and the style sets how strong
+ *      the colour is. The styles that turn the primary's hue away from the seed's, read in the sources: at 2021, Android 14's engine
+ *      (SchemeExpressive.java, SchemeFruitSalad.java, android14-release) and Google's library at main (getPrimaryPalette of
+ *      DynamicSchemePalettesDelegateImpl2021) give Expressive the seed's hue + 240 and Fruit Salad the seed's hue - 50; Tonal Spot,
+ *      Vibrant, Rainbow, Spritz, Fidelity, Content and Monochrome keep the seed's hue. At 2025 (DynamicSchemePalettesDelegateImpl2025,
+ *      phone) Tonal Spot, Vibrant, Expressive and Spritz all keep it, Expressive included; at 2026 those four get 2025 and CMF keeps the
+ *      seed's hue (and chroma); every other style is 2021 at every spec (maybeFallbackSpecVersion). So the second branch serves
+ *      Expressive at 2021 and Fruit Salad at every spec, and no other case (the oracle below counts which styles took it).
+ *   3. That palette replaces the scheme's secondary (or tertiary) palette before anything is derived from it: the row's 13 shades (by
+ *      the profile's shade rule, as for every row: P14 Android 14's, with its chroma cap of 40 on shades 10 and 50, P15Q1, P15Q2 and
+ *      P16 tone trunc((1000 - s) / 10)), and the roles: secondary, on_secondary, secondary_container, on_secondary_container, the four
+ *      secondary fixed colours and palette_key_color_secondary (likewise tertiary). The engine still solves each role's tone against
+ *      its background (contrast curves, tone-delta pairs, Android 14's Albers step for Fidelity and Content), so Android's contrast
+ *      rules apply on top. The primary, neutral, neutral variant and error palettes are never touched: nothing outside the row and its
+ *      roles changes.
+ *   4. The accents come before the Intensity sliders: Accent saturation scales the replaced palettes too.
+ *   Monochrome: P has chroma 0, so the row stays the same grey; every colour written is unchanged (palettes() and scheme() report X's
+ *   hue for that row, which a chroma-0 colour does not show). Fidelity and Content keep X's hue and chroma; their key colour
+ *   (palettes().key, palette_key_color_secondary / _tertiary) is the palette's own key colour search at that hue and chroma, as for the
+ *   seed's primary row, so it is X only when X sits at the tone that search finds (00897B does; 6750A4 gives 8069BF, 00FF00 00FD00).
+ *   What was checked (scripts on this container): no accents, accents null, {}, both null, or other keys only give the file's results
+ *   from before the option byte for byte, alone and with two Intensity settings (the 26,328 results of the Intensity check above, nine
+ *   runs). Part 2 against Google's library at bd811e4, the scheme rebuilt from the replaced palettes by a separate script written from
+ *   the rules above (X's scheme from the library's own Scheme classes, the hue rule, then the sliders): entries(), palettes(), roles()
+ *   and scheme()'s six palettes (hue, chroma, key colour, tones 0 to 100); seeds 6750A4 1B6EF3 B5651D 00FF00 808080 FFDE3F; eight
+ *   accent settings (the seed itself, greys, black and white, colours far from the seed, both string forms, one row or both); three
+ *   slider settings; contrast 0 and 0.5; light and dark. The nine styles at 2021 for P16, P15Q2 and P15Q1 (15,552 cases); Tonal Spot,
+ *   Vibrant, Expressive and Spritz at 2025 and 2026 and CMF at 2026 for P16, P15Q2 and P14 (15,552 cases); the five other styles at
+ *   2025 and 2026 for P16, P15Q2 and P15Q1 (11,520 cases, two slider settings, scheme() tones left out): no difference, and the hue
+ *   rule's second branch was taken by Expressive at 2021 and Fruit Salad only. P14 at 2021 against the file from before the option run
+ *   by hand (its own palettes for X, the hue rule, its engine for the roles, Android 14's shade rule; four slider settings): every
+ *   entry, palette, role and scheme() tone, no difference. Over the whole grid of the identity check, with a secondary, a tertiary and
+ *   both set, with and without the sliders: only accent2 / secondary* (accent3 / tertiary*) values change; the accents change nothing
+ *   written under Monochrome, and nowhere else but where the gamut clips both palettes to the same colours (Fidelity and Content,
+ *   seed 00FF00 with 00FF00 as the secondary, at accentSat 150). The accents applied after the sliders, the hue rule left out, X's
+ *   scheme at the other mode or at spec 2021 (caught at 2025 and 2026, where those change the palettes), the primary palette replaced
+ *   instead, seed()'s grey rule applied to X, and X's scheme for P14 at 2021 built by part 2 each make at least one of these checks
+ *   fail. None of it was run on a device.
+ *
  * API (window.MonetPlan in the page, module.exports in node):
  *   MonetPlan.STYLES                       the ten style ids this file knows: TONAL_SPOT VIBRANT EXPRESSIVE RAINBOW FRUIT_SALAD SPRITZ
  *                                          FIDELITY CONTENT MONOCHROMATIC CMF (NEUTRAL and MONOCHROME are accepted as aliases)
@@ -220,8 +270,9 @@
  *   MonetPlan.seed(style, argb)            the seed the style really uses: a seed with chroma under 5 becomes Google blue, except for
  *                                          Fidelity and Content (they keep it) and Monochrome (no difference); CMF follows the rule
  *                                          like the stock styles; 0 / nothing is Google blue
- *   opts = { spec, dark, profile, contrast, adjust }  optional on the four calls below. spec: one of SPECS, '2021' when left out. profile:
- *                                          one of PROFILES, 'P14' when left out; any other value throws ('Profile not supported').
+ *   opts = { spec, dark, profile, contrast, adjust, accents }  optional on the four calls below. spec: one of SPECS, '2021' when
+ *                                          left out. profile: one of PROFILES, 'P14' when left out; any other value throws ('Profile not
+ *                                          supported').
  *                                          contrast: the phone's contrast level, a number from -1 to 1 (clamped), 0 when left out;
  *                                          anything but a number throws. dark: the mode the phone is in; for P15Q1, P15Q2 and P16,
  *                                          and for P14 at 2025 and 2026 (where light and dark palettes differ), the palettes and the
@@ -231,11 +282,17 @@
  *                                          '2026' throws, as upstream's SchemeCmf does. adjust: the Intensity sliders (above),
  *                                          { accentSat, bgSat, bgLight }, each a percentage, 100 when left out, clamped to 0..200; a
  *                                          value that is not a number throws, as an adjust that is not an object does. No adjust, null,
- *                                          {} or all three at 100 give the results without it, byte for byte.
+ *                                          {} or all three at 100 give the results without it, byte for byte. accents: the secondary
+ *                                          and tertiary accents (above), { secondary, tertiary }, each a colour as 'RRGGBB' or
+ *                                          '#RRGGBB' (any case), or null or left out for the style's own; any other value (a number,
+ *                                          three digits, '') throws, as accents that are not an object (or an array) do; other keys
+ *                                          are ignored. No accents, null, {} or both null give the results without them, byte for
+ *                                          byte. With adjust too, the accents come first.
  *   MonetPlan.palettes(style, argb, opts)  { seed, style, accent1..neutral2: { hue, chroma, key: 'RRGGBB', shades: ['RRGGBB' x 13] } },
  *                                          the shades in SHADE_KEYS order by the profile's rule. With adjust: the adjusted palette's
  *                                          chroma (the chroma asked for, which the display may not reach) and key colour (Background
- *                                          lightness moves the tones a palette gives, not its key colour)
+ *                                          lightness moves the tones a palette gives, not its key colour). With accents: the accent
+ *                                          palette's hue, chroma and key colour in accent2 / accent3
  *   MonetPlan.roles(style, argb, isDark, opts)  the profile's roles as [{ name, argb }] (argb a '0xAARRGGBB' string), in its order:
  *                                          44 for P14 and P15Q1, 50 for P15Q2 and P16
  *   MonetPlan.entries(style, argb, opts)   the overlay entries [{ resource, argb }] the profile's SystemUI writes, in its order. P14,
@@ -243,10 +300,13 @@
  *                                          the 12 fixed colours from the light scheme. P15Q1, 165, and P15Q2 and P16, 177: 65 palette
  *                                          entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
  *                                          the light scheme; SystemUI's custom colours are not included
- *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with adjust the
- *                                          palettes a slider changes are AdjustedPalette objects, the others and the error palette
+ *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with accents
+ *                                          the secondary / tertiary palette is the accent palette (the part's TonalPalette); with adjust
+ *                                          the palettes a slider changes are AdjustedPalette objects, the others and the error palette
  *                                          the scheme's own), for tests
- *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2)
+ *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2). lib.adjustOf and lib.accentsOf are what
+ *                                          the page tests to know that this file has opts.adjust and opts.accents (an older monet.js
+ *                                          would ignore them)
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
  */
 (function (root, factory) {
@@ -2724,6 +2784,47 @@
         s.neutralVariantPalette = wrap(s.neutralVariantPalette, b, v);
         return s;
     }
+    // ---------- Secondary and tertiary accents (opts.accents): the root card's two colours. Rules written for this project (Android and
+    // Google's library have no such option): a colour set for the secondary (accent2) or tertiary (accent3) row replaces that palette of
+    // the scheme before anything is derived from it (the 13 shades, the roles, the fixed colours) and before the Intensity sliders, so
+    // Accent saturation scales it too. The primary, neutral, neutral variant and error palettes are never touched ----------
+    const ACCENT_KEYS = ['secondary', 'tertiary'];
+    // opts.accents -> { secondary, tertiary } (each an opaque argb number, or null for "from the style"), or null when there are none or
+    // both are null (then every result is the one without accents). A value that is not 'RRGGBB' or '#RRGGBB' (any case), null or left
+    // out throws, as accents that are not an object do; other keys are ignored
+    function accentsOf(opts) {
+        const a = opts ? opts.accents : undefined;
+        if (a === undefined || a === null) return null;
+        if (typeof a !== 'object' || Array.isArray(a)) throw new Error('Unknown accents: ' + a);
+        const out = { secondary: null, tertiary: null };
+        for (const k of ACCENT_KEYS) {
+            const v = a[k];
+            if (v === undefined || v === null) continue;
+            const m = typeof v === 'string' ? /^#?([0-9a-fA-F]{6})$/.exec(v) : null;
+            if (!m) throw new Error('Unknown accents.' + k + ': ' + v);
+            out[k] = (parseInt(m[1], 16) | 0xFF000000) >>> 0;
+        }
+        return out.secondary === null && out.tertiary === null ? null : out;
+    }
+    // the angle between two hues in degrees, 0..180
+    function hueDistance(a, b) { const d = Math.abs(sanitizeDegreesDouble(a) - sanitizeDegreesDouble(b)); return Math.min(d, 360 - d); }
+    const ACCENT_HUE_TOLERANCE = 0.5;
+    // the palette a colour x gives its row: the primary palette P of the scheme built from x as the seed (x as it is: the grey rule of
+    // seed() is Android's for a wallpaper colour, and x is the user's own) by build, which has the base scheme's style, spec, mode,
+    // contrast and part. P as it is when its hue is x's (within ACCENT_HUE_TOLERANCE); else, for a style that turns the primary's hue
+    // (Expressive at 2021, Fruit Salad), the palette at x's hue with P's chroma (the part's own TonalPalette.fromHueAndChroma), so the
+    // hue picked is kept in every style and the style sets how strong it is. H, Palette: the part's Hct and TonalPalette
+    function accentPalette(x, build, H, Palette) {
+        const h = H.fromInt(x), p = build(h).primaryPalette;
+        return hueDistance(p.hue, h.hue) <= ACCENT_HUE_TOLERANCE ? p : Palette.fromHueAndChroma(h.hue, p.chroma);
+    }
+    // the scheme with its secondary and tertiary palettes replaced by the accents set (acc from accentsOf); nothing else changes
+    function accentScheme(s, acc, build, H, Palette) {
+        if (!acc) return s;
+        if (acc.secondary !== null) s.secondaryPalette = accentPalette(acc.secondary, build, H, Palette);
+        if (acc.tertiary !== null) s.tertiaryPalette = accentPalette(acc.tertiary, build, H, Palette);
+        return s;
+    }
     // P14's 13 shades of a row: part 1's shadesOf (Android 14's rule). On an adjusted palette, the same rule: shade s at tone
     // mapTone(shadeTone(s)), the palette's hue, and the shade's own chroma (capped at 40 for shades 10 and 50) x the factor
     function shadesP14(p) {
@@ -2756,11 +2857,17 @@
         return MCU.Hct.from(palette.hue, palette.chroma, palette.mapTone ? palette.mapTone(tone) : tone).toInt();
     }
     // P14: part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026).
-    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for, its palettes adjusted by opts.adjust.
+    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for, its secondary and tertiary palettes
+    // replaced by opts.accents, then its palettes adjusted by opts.adjust.
     function scheme(style, color, isDark, opts) {
-        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), adj = adjustOf(opts), argb = seed(style, color);
-        if (profile === 'P14' && !inPart2(variant, spec)) return adjustScheme(makeScheme(variant, Hct.fromInt(argb), !!isDark, contrast), adj, TonalPalette);
-        return adjustScheme(MCU.schemeOf(variant, MCU.Hct.fromInt(argb), !!isDark, contrast, spec), adj, MCU.TonalPalette);
+        const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), adj = adjustOf(opts), acc = accentsOf(opts), argb = seed(style, color);
+        const dark = !!isDark;
+        if (profile === 'P14' && !inPart2(variant, spec)) {
+            const build1 = h => makeScheme(variant, h, dark, contrast);
+            return adjustScheme(accentScheme(build1(Hct.fromInt(argb)), acc, build1, Hct, TonalPalette), adj, TonalPalette);
+        }
+        const build2 = h => MCU.schemeOf(variant, h, dark, contrast, spec);
+        return adjustScheme(accentScheme(build2(MCU.Hct.fromInt(argb)), acc, build2, MCU.Hct, MCU.TonalPalette), adj, MCU.TonalPalette);
     }
     // a role's colour on a scheme of either part. Part 2: upstream's role of that name, or, for the Android-only roles, part 1's
     // definition on a scheme that carries part 2's palettes (those roles read the palettes' hue and chroma, isDark and the contrast level)
@@ -2827,6 +2934,7 @@
         lib: { Hct, Cam16, HctSolver, ViewingConditions, Contrast, TonalPalette, TemperatureCache, DislikeAnalyzer, DynamicScheme, DynamicColor, Variant, MDC,
             ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
             schemePalettes, shadesOf, shadeTone, shadeA15, shadesP14, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf,
-            adjustOf, adjustTone, adjustRamp, adjustScheme, AdjustedPalette, ADJUST_TONE_STEP, ADJUST_RAMP_TONES, mcu: MCU }
+            adjustOf, adjustTone, adjustRamp, adjustScheme, AdjustedPalette, ADJUST_TONE_STEP, ADJUST_RAMP_TONES,
+            accentsOf, accentPalette, accentScheme, hueDistance, ACCENT_HUE_TOLERANCE, mcu: MCU }
     };
 });
