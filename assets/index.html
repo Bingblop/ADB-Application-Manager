@@ -28712,14 +28712,15 @@ Type any command above (e.g. pm list packages -d)</div>
         window.addEventListener('focus', rootGrantReadBack);
         // The fresh check above counts su as granted only while Root is the chosen working mode (MainActivity.probeWorkingMode; Auto never resolves
         // to Root), so a grant just approved in the manager unlocks nothing while the mode is Auto, Shizuku or ADB. Offer the switch to Root then,
-        // through the path of Request Super User. It asks first instead of switching by itself: selectWorkingMode('root') keeps Root as the chosen
-        // mode even when su denies, so a silent switch would replace a working mode with a Root that is not ready whenever the user came back
-        // without allowing the app. Only a device shows how often that happens; asking is the safer way.
+        // through rootAskSu, the path of Request Super User (T-052): selectWorkingMode('root') keeps Root as the chosen mode even when su denies, so
+        // a yes that su then refuses (the user came back without allowing the app, or Magisk's question was denied or timed out) puts the mode
+        // chosen before back and says so, instead of leaving a Root that is not ready. It asks first instead of switching by itself: the switch
+        // changes the working mode and can bring up the manager's own question, and coming back is not a request for either.
         function rootOfferSwitchAfterManager() {
             const d = lastModesData || {};
             if (!window.AndroidBridge || !d.rootAvailable || isRootActive() || d.configuredMode === 'root') return;
             if (!confirm(txT('Switch the working mode to Root now? Root Features unlock once su grants this app access.'))) return;
-            selectModeUI('root');
+            rootAskSu();
         }
         // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
         // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.

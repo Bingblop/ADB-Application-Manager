@@ -88,5 +88,9 @@ public class RootGateTest {
     String req = bodyOf(h, "function rootRequestSuperUser() {"), funnel = bodyOf(h, "function promptRootThenOpen(featureName) {");
     check("source: Request Super User and promptRootThenOpen go through rootAskSu, not a bare switch to Root", req != null && funnel != null
         && req.contains("rootAskSu()") && funnel.contains("rootAskSu(") && !req.contains("selectModeUI('root'") && !funnel.contains("selectModeUI('root'"));
+    // T-052: so does the offer to switch to Root after Open root manager (a yes that su refuses puts the mode chosen before back)
+    String offer = bodyOf(h, "function rootOfferSwitchAfterManager() {");
+    check("source: the switch-to-Root offer after Open root manager goes through rootAskSu, not a bare switch to Root", offer != null
+        && offer.contains("rootAskSu()") && !offer.contains("selectModeUI('root'"));
   }
 }

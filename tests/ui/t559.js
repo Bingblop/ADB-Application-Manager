@@ -5,7 +5,8 @@
 // going through selectWorkingMode('root'), the re-render on a mode change, and the attempt-to-prompt funnel promptRootThenOpen: Super User active -> true;
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
-// nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
+// nothing, a yes goes the way of Request Super User (selectWorkingMode('root'); a refusal puts the mode chosen before back, T-052); with Root
+// already chosen nothing is asked. Open root manager that finds no known manager says
 // it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su; so does Open manager
 // on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
 // manager's list (Magisk lists an app only after it has asked su, T-019).
@@ -196,6 +197,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   await comeBack();
   check('   a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone', dialogs.length === 1 && (await ev(() => window.__calls.selectWorkingMode.join())) === 'root' && (await tag()) === 'active ACTIVE' && (await disp('#rootGate')) === 'none', JSON.stringify([dialogs, await tag()]));
+  // T-052: a yes that su then refuses (the app was not allowed in the manager, or Magisk's question was denied or not answered) goes the way of
+  // Request Super User: Root is asked, then the mode chosen before is put back and the toast says so; Root is not left chosen and not ready
+  await setMode('shizuku', false); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; window.__calls.setWorkingMode = []; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  await comeBack();
+  const offerNo = await ev(() => ({ calls: window.__calls.selectWorkingMode.join() + ' / ' + window.__calls.setWorkingMode.join(), state: window.__wm.state, cfg: lastModesData.configuredMode, priv: isPrivilegedActive, badge: document.getElementById('execModeText').innerText, toast: document.getElementById('toastMsg').textContent }));
+  check('   T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root", then setWorkingMode "shizuku"): chosen and privileged again, the badge reads Shizuku, the tag DENIED, and the toast says the mode stays', dialogs.length === 1 && offerNo.calls === 'root / shizuku' && offerNo.state === 'shizuku' && offerNo.cfg === 'shizuku' && offerNo.priv === true && offerNo.badge === 'Shizuku' && (await tag()) === 'warning DENIED' && offerNo.toast === 'Super User was not granted. The working mode stays Shizuku ADB (UID 2000).', JSON.stringify([dialogs, offerNo, await tag()]));
+  await ev(() => { window.__calls.setWorkingMode = []; });
   await setMode('rootDenied'); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   await comeBack();

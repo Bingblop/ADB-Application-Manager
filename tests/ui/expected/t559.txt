@@ -25,6 +25,7 @@ ok      the hand-off note reads as the card's text: upright, the size of the lin
 ok      Open root manager launches the installed manager (openRootManager) and marks the grant pending
 ok      back from the manager with Shizuku chosen: the page asks to switch to Root; a no switches nothing, the tag stays AVAILABLE and nothing is pending
 ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
+ok      T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root", then setWorkingMode "shizuku"): chosen and privileged again, the badge reads Shizuku, the tag DENIED, and the toast says the mode stays
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
 ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
