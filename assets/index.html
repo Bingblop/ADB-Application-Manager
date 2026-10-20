@@ -28584,8 +28584,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
         // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
         // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
-        // - "App components": a signpost to the Application Manager, where enabling/disabling an app's components already works (toggleComponent ->
-        //   setComponentEnabled -> ShellArgs.componentCommand); this row only surfaces that capability on the Root tab, it builds nothing new.
+        // - "App components": a signpost to the Application Manager, where an app's components are enabled/disabled (toggleComponent ->
+        //   setComponentEnabled -> ShellArgs.componentCommand). That toggle is Root-only (compToggleLocked on the page, setComponentEnabled
+        //   refuses any other mode); this row only surfaces it on the Root tab, it builds nothing new.
         function rootFeatureName(title, sub) { return '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>'; }
         // a feature that waits on root: the name, a disabled Locked button and the reason (Needs Super User, unless the caller names another one,
         // as the Overlays tab's root controls do when the app itself is too old to write them)
@@ -28692,8 +28693,9 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
         // App components: with root active, go to the Application Manager so the user picks an app and toggles its components in the inspector
-        // (toggleComponent -> setComponentEnabled -> ShellArgs.componentCommand, which already works under any privileged mode). This is only a
-        // signpost to that existing capability from the Root Features tab; it builds nothing new.
+        // (toggleComponent -> setComponentEnabled -> ShellArgs.componentCommand, which works only while Root is active: compToggleLocked locks the
+        // control in every other mode and setComponentEnabled refuses it there). This is only a signpost to that capability from the Root Features
+        // tab; it builds nothing new.
         function rootManageComponents() {
             switchView('apps');
             showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
@@ -28726,8 +28728,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!confirm(txT('Switch the working mode to Root now? Root Features unlock once su grants this app access.'))) return;
             rootAskSu();
         }
-        // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (no feature calls it yet: it is the entry point of
-        // the later steps). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
+        // The attempt-to-prompt funnel for a root feature tapped while Super User is not active (called by toggleComponent and alsBulkComp, the
+        // Root-only component toggle). Resolves true when the caller may go on: Super User is active, or su is on the phone and switching to Root granted it.
         // Otherwise it offers the Root Features tab (where the Super User check lives), opens it on a yes, and resolves false either way.
         function promptRootThenOpen(featureName) {
             if (isRootActive()) return Promise.resolve(true);
