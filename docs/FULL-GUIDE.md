@@ -802,6 +802,18 @@ style the palette is worked out with:
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
   **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
   fabricated overlay). Not yet tried on a rooted phone.
+- **More styles** (the second control of that card; Android 14 or newer with Super User, a locked row reading *Needs Android 14* on 12 and 13):
+  **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
+  chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for. The app
+  computes their colors itself (`assets/monet.js`, a port of Android 14's color engine from AOSP and Google's Material Color Utilities 0.4.0,
+  both Apache-2.0) from the custom color, else the wallpaper's color (the one the theme setting carries for a wallpaper source, not a custom
+  color it carries; else the first wallpaper color Android reports that is not almost grey), else Google blue, taken when Apply is tapped;
+  a **Preview** under the options shows the five rows (13 shades each) and names the source.
+  **Apply theme** still writes the theme setting from the style list first and then the overlay with 165 colors on top (65 palette shades,
+  the 44 roles light and dark, 12 fixed), Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
+  what the overlay carries in `ovl_root_applied` (PR 2's `ovl_black_applied` is read as a fallback). Messages then speak of the *theme
+  overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the style other theming apps call
+  Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:

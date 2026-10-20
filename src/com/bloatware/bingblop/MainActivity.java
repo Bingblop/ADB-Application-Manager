@@ -4979,6 +4979,20 @@ public class MainActivity extends Activity {
                 for (int tone : tones) a.put(colorHex(systemColor("system_" + n + "_" + tone)));
                 o.put(n, a);
             }
+            // "wallpaper": up to three RRGGBB, the system wallpaper's primary, secondary and tertiary colours (API 27+, no permission;
+            // the seed the page's root-only styles fall back to when the theme setting names no colour). Anything going wrong leaves it out.
+            if (Build.VERSION.SDK_INT >= 27) {
+                try {
+                    android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(this);
+                    android.app.WallpaperColors wc = wm == null ? null : wm.getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+                    if (wc != null) {
+                        JSONArray w = new JSONArray();
+                        Color[] picks = {wc.getPrimaryColor(), wc.getSecondaryColor(), wc.getTertiaryColor()};
+                        for (Color c : picks) if (c != null) w.put(String.format("%06X", 0xFFFFFF & c.toArgb()));
+                        o.put("wallpaper", w);
+                    }
+                } catch (Throwable ignored) {}
+            }
             o.put("ok", true);
         } catch (Throwable t) {
             try {

@@ -26,6 +26,7 @@ module.exports.initScript = function () {
   window.__themeWarning = null;   // text: the theme is written, but the Samsung switch would not change
   window.__sdk = 34;
   window.__paletteDelay = 600;    // how long Android takes to repaint after a theme change
+  window.__wallpaper = null;      // PR 3: the wallpaper colours getSystemPalette reports (an array of RRGGBB), none when null
   // the root-only theme controls (overlayFabricate): __root makes the working mode Root with su granted (isRootActive() true) once
   // checkAllWorkingModes() has read it again; the __fab* knobs shape the answer
   window.__root = false;
@@ -152,7 +153,9 @@ module.exports.initScript = function () {
   b.getSystemPalette = function () {
     window.__ovlCalls.palette++;
     if (window.__sdk < 31) return JSON.stringify({ ok: false, sdk: window.__sdk, error: 'Material You colors need Android 12 or newer (this phone runs Android ' + (window.__sdk === 28 ? 9 : 11) + ').' });
-    return JSON.stringify(Object.assign({}, window.__palette, { sdk: window.__sdk }));      // the Android level follows the knob, whenever the palette was made
+    const o = Object.assign({}, window.__palette, { sdk: window.__sdk });      // the Android level follows the knob, whenever the palette was made
+    if (Array.isArray(window.__wallpaper)) o.wallpaper = window.__wallpaper.slice();        // PR 3: WallpaperColors, when the phone reports them
+    return JSON.stringify(o);
   };
   // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise
   const baseWorkingMode = b.getWorkingMode;
