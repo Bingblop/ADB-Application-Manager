@@ -122,10 +122,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'KernelSU' }; });
   await page.click('#rfSuAppsBtn'); await sleep(50);
   check('   a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending', (await toastText()) === 'KernelSU could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
-  // no known manager installed (su from something else): the install message, nothing pending
-  await ev(() => { window.__rootMgr = { ok: false }; });
-  await page.click('#rfSuAppsBtn'); await sleep(50);
-  check('   Open manager (apps) with no known manager installed: the install message, nothing pending', (await toastText()) === 'No root manager was found. Install KernelSU, APatch or Magisk, then come back.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the way back from Open manager: this app's own su was revoked in the manager; the page shown again reads the status fresh once, spends the mark,
   // and re-renders the tab from that read
@@ -210,8 +206,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the way back when this app was never hidden (split screen or freeform: the manager opened beside it): the activity resuming (onAppResume) and
-  // the window getting focus back also read the status fresh, once, while a hand-off is pending - and not without one
-  const fresh = () => ev(() => window.__calls.fresh || 0);
+  // the window getting focus back also read the status fresh, once, while a hand-off is pending - and not without one. Shizuku is the chosen mode
+  // here, so each read also brings the offer to switch to Root (T-017); it is declined, so the mode stays and the gate with it
+  answer = false;
   let f0 = await fresh();
   await ev(() => { rootGrantPending = true; onAppResume(); }); await sleep(50);
   check('   back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent', (await fresh()) === f0 + 1 && (await ev(() => rootGrantPending === false)), JSON.stringify([f0, await fresh()]));
@@ -226,6 +223,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const whileHidden = await ev(() => ({ fresh: window.__calls.fresh || 0, pending: rootGrantPending }));
   await ev(() => { delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange')); }); await sleep(50);
   check('   while the page is hidden (the user still in the manager) nothing is read and the mark waits; shown again, one fresh read', whileHidden.fresh === f0 && whileHidden.pending === true && (await fresh()) === f0 + 1 && (await ev(() => rootGrantPending === false)), JSON.stringify([f0, whileHidden, await fresh()]));
+  check('   each of those ways back offered the switch to Root once (T-017), and the declined offers switched nothing', dialogs.length === 3 && dialogs.every(d => /^confirm: Switch the working mode to Root now\?/.test(d)) && (await ev(() => window.__calls.selectWorkingMode.length)) === 0 && (await tag()) === 'warning AVAILABLE', JSON.stringify(dialogs));
+  answer = true; dialogs = [];
   await page.click('#rootGate .mode-alert-btn'); await sleep(50);
   check('   the gate\'s Set Up opens the Working Modes sheet', await ev(() => document.getElementById('modesModal').classList.contains('show')));
   await ev(() => closeWorkingModesModal()); await sleep(50);
@@ -265,7 +264,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // ---- 5. Request Super User
   await ev(() => switchView('rootfeatures')); await sleep(50);
   const calls = () => ev(() => window.__calls.selectWorkingMode.join() + ' / ' + window.__calls.setWorkingMode.join());
-  const toastText = () => text('#toastMsg');
   const resetCalls = () => ev(() => { window.__calls.selectWorkingMode = []; window.__calls.setWorkingMode = []; });
   // T-043: from Shizuku with su that says no, the switch to Root is undone: Shizuku is chosen and privileged again, the tag reads DENIED
   await setMode('shizuku', false); await resetCalls();

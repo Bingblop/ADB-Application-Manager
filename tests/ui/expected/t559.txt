@@ -7,7 +7,6 @@ ok      the unlocked feature row offers Open manager (rfSuAppsBtn) and shows no 
 ok      Open manager (apps) launches the installed manager (openRootManager) and marks the status pending
 ok      with root ACTIVE but no known manager (hidden or renamed), Open manager says it was not found by its usual name, not "install one", and marks nothing pending (T-025)
 ok      a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending
-ok      Open manager (apps) with no known manager installed: the install message, nothing pending
 ok      back from Open manager (the page shown again): one fresh status read, the mark spent, the tab re-rendered (revoked there -> DENIED, rows locked)
 ok      the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)
 ok      Open apps goes to the Application Manager (switchView apps)
@@ -33,6 +32,7 @@ ok      back without being hidden, by the activity resuming (onAppResume): a fre
 ok      onAppResume with nothing pending reads nothing fresh
 ok      back by the window getting focus again (Android 10+ can keep both windows resumed and shown): a fresh status read, the mark spent
 ok      while the page is hidden (the user still in the manager) nothing is read and the mark waits; shown again, one fresh read
+ok      each of those ways back offered the switch to Root once (T-017), and the declined offers switched nothing
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now
 ok      su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false
