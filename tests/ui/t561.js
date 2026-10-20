@@ -1,9 +1,10 @@
-// v7.16.0: at launch, when no working mode is ready and the mode is Auto or Shizuku, a Shizuku that is installed but not running, with an ADB path to start it
+// v7.16.0: at launch, when the mode is pinned to Shizuku and no working mode is ready, a Shizuku that is installed but not running, with an ADB path to start it
 // through, is offered once to start (the card's own start path runs it); "no" is counted and after two refusals it stops asking; it is not offered when a mode is
-// already privileged, when Shizuku is already running (szAutoAsk asks to authorize instead), when there is no ADB path, when Shizuku is not installed, or when the
-// mode is pinned to root; and the offer carries the "Start Shizuku" dialog title. The ADB path is a connected ADB TCP or Wireless Debugging target, the same
-// `adb devices` check startShizukuNow makes: a TCP port that is open but not connected is not one (T-009, T-011: the start answered "Connect ADB first").
-// The first-launch sheet waits for an offered start as long as the start may take, so a slow one is still asked to authorize before the sheet (T-012).
+// already privileged, when Shizuku is already running (szAutoAsk asks to authorize instead), when there is no ADB path, when Shizuku is not installed, when the
+// mode is pinned to root, or in Auto (an ADB path there is itself the working mode); and the offer carries the "Start Shizuku" dialog title. The ADB path is
+// a connected ADB TCP or Wireless Debugging target, the same `adb devices` check startShizukuNow makes: a TCP port that is open but not connected is not one
+// (T-009, T-011: the start answered "Connect ADB first"). The first-launch sheet waits for an offered start as long as the start may take, so a slow one is
+// still asked to authorize before the sheet (T-012).
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -153,6 +154,19 @@ const { chromium, PAGE } = require('./lib/pw');
     check('   no page errors', errors.length === 0, errors.join(' | '));
     await page.close();
   }
+
+  // 7. Auto never gets the offer (T-013): there an ADB path is itself the working mode. probeWorkingMode (MainActivity) resolves Auto to adb_tcp on a connected TCP
+  //    target or on an open TCP port alone, and to adb_wireless on a connected Wireless Debugging target, each with isPrivileged true; with no ADB path there is
+  //    nothing to start Shizuku through. So the offer is for the mode pinned to Shizuku only, and its gate says so.
+  await noOffer('7. Auto + ADB TCP port open, not connected (probeWorkingMode: adb_tcp, privileged): not offered, the ADB path is the working mode',
+    { configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true,
+      adbTcp: { portOpen: true, connected: false }, adbWireless: { connected: false }, shizuku: { installed: true, running: false } });
+  await noOffer('   Auto + Wireless Debugging connected (probeWorkingMode: adb_wireless, privileged): not offered',
+    { configuredMode: 'auto', activeMode: 'adb_wireless', modeAvailable: true, isPrivileged: true,
+      adbTcp: { portOpen: false, connected: false }, adbWireless: { connected: true }, shizuku: { installed: true, running: false } });
+  await noOffer('   Auto with an ADB path, even were it reported not privileged: not offered (the gate is the mode pinned to Shizuku)',
+    { configuredMode: 'auto', activeMode: 'unprivileged', modeAvailable: false, isPrivileged: false,
+      adbTcp: { portOpen: true, connected: true }, adbWireless: {}, shizuku: { installed: true, running: false } });
 
   await b.close();
   if (failed) { console.log(failed + ' check(s) failed'); process.exit(1); }
