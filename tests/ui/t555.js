@@ -5,6 +5,7 @@
 //     Live updates screen, so "Allow all" ends there. Without a working mode (read-only) its Allow asks for Notifications first, with Android's own dialog, and once that is allowed the
 //     phone's Live updates screen opens by itself; a refusal opens nothing more. Closing the sheet after only Live updates changed does not start the app again, and the one-time offer
 //     of a working mode's "grant everything" is not made for a row no command can grant.
+//  3) In every language the Quick actions card and the quick-list toast name the tiles as the phone shows them: "Working mode" and "Kill Apps" (T-006).
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined ? '' : ': ' + extra)); }
@@ -152,6 +153,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the offer of a working mode\'s "grant everything" is not made when only Live updates is missing', page.__dialogs.length === 0 && !(await page.evaluate(() => window.__saved.includes('perm_adb_offer_v714'))), page.__dialogs.join('|'));
   await page.evaluate(() => { window.__status.notifications = false; permOfferDone = false; permMaybeOfferAdb(); }); await wait(page, 900);
   check('   it is made when something with a command is missing too', page.__dialogs.length === 1 && /Grant all remaining permissions/.test(page.__dialogs[0]) && (await page.evaluate(() => window.__saved.includes('perm_adb_offer_v714'))), page.__dialogs.join('|'));
+  check('   no page error', page.__errors.length === 0, page.__errors.join(' | '));
+  await page.close();
+
+  // ======================================================================== 3) the tile names in every language (T-006)
+  // The tiles are labelled "Working mode" and "Kill Apps" in English on every phone (Java and the manifest; the app has no res/values-xx), so the
+  // Quick actions help card and the quick-list toast name them that way in every translation, not with a translated name the phone never shows.
+  page = await open();
+  const langs = await page.evaluate(() => I18N.langs.map(l => l.code).filter(c => c !== 'en'));
+  const wrong = [];
+  for (const lang of langs) {
+    await page.evaluate(l => I18N.set(l), lang); await wait(page, 300);
+    await page.evaluate(() => { window.__quick = ''; quickListId = ''; toggleQuickList('l1'); }); await wait(page, 200);
+    const seen = await page.evaluate(() => ({ names: Array.from(document.querySelectorAll('#quickActionsHelp .color-card-subtitle b')).slice(1, 3).map(x => x.innerText), toast: document.getElementById('toast').innerText }));
+    if (seen.names.join('|') !== 'Working mode|Kill Apps' || seen.toast.indexOf('Kill Apps') < 0 || seen.toast.indexOf('Gaming') < 0) wrong.push(lang + ': ' + JSON.stringify(seen));
+  }
+  check('3. in all ' + langs.length + ' languages the Quick actions card says to drag "Working mode" and "Kill Apps", and the quick-list toast names the "Kill Apps" tile', langs.length === 13 && wrong.length === 0, wrong.join(' | ') || langs.join(','));
   check('   no page error', page.__errors.length === 0, page.__errors.join(' | '));
   await page.close();
 

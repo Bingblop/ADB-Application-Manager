@@ -29,4 +29,6 @@ ok      an Android before 16 (the key is not reported) shows no Live updates row
 ok      the offer of a working mode's "grant everything" is not made when only Live updates is missing:
 ok      it is made when something with a command is missing too: A working mode (ADB, Shizuku or root) is ready. Grant all remaining permissions with it now? The app restarts afterwards.
 ok      no page error:
+ok   3. in all 13 languages the Quick actions card says to drag "Working mode" and "Kill Apps", and the quick-list toast names the "Kill Apps" tile: es,fr,de,pt-BR,it,ru,zh-CN,ja,ko,ar,hi,tr,id
+ok      no page error:
 all passed
