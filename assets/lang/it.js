@@ -4535,6 +4535,7 @@ x: {
 "Your own number": "Un numero a tua scelta",
 "Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.": "Il telefono cerca prima il nome di ogni servizio con il DNS che usa ora (una volta). Poi ogni servizio può ricevere fino a tre brevi connessioni cifrate, ognuna con una richiesta per example.com. Il ping ICMP non è disponibile per le app, quindi i tempi sono quelli della connessione cifrata che il DNS privato usa davvero.",
 "Your phone was updated.": "Il tuo telefono è stato aggiornato.",
+"Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.": "Il tuo gestore root non è stato trovato con il suo nome abituale (per esempio un'app Magisk nascosta). Aprilo tu, consenti questa app, poi tocca «Richiedi Superuser».",
 "Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".": "Le tue restano. Una lista già presente viene saltata; una con lo stesso nome ma altre app entra come «Nome (importata)».",
 "Zip (.zip) — opens everywhere": "Zip (.zip) — si apre ovunque",
 "ZipCrypto (weak, but opens in everything)": "ZipCrypto (debole, ma si apre ovunque)",

@@ -4536,6 +4536,7 @@ x: {
 "Your own number": "任意の数値",
 "Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.": "端末はまず、現在使っているDNSで各サービスの名前を調べます（1回）。その後、各サービスは最大3回の短い暗号化接続を受け取り、そのたびに example.com を問い合わせます。アプリは ICMP ping を使えないため、時間はプライベートDNSが実際に使う暗号化接続のものです。",
 "Your phone was updated.": "端末がアップデートされました。",
+"Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.": "Root マネージャーが通常の名前で見つかりませんでした（例: 非表示にした Magisk アプリ）。自分で開いてこのアプリを許可してから、「スーパーユーザーを要求」をタップしてください。",
 "Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".": "自分のリストはそのまま残ります。すでにあるリストはスキップされ、同じ名前で別のアプリを含むリストは「名前（インポート）」として追加されます。",
 "Zip (.zip) — opens everywhere": "Zip(.zip) — どこでも開けます",
 "ZipCrypto (weak, but opens in everything)": "ZipCrypto(弱いですが、ほぼ全てのソフトで開けます)",

@@ -4536,6 +4536,7 @@ x: {
 "Your own number": "आपकी अपनी संख्या",
 "Your phone first looks up each service’s name with the DNS it uses now (once). Then each service may receive up to three short encrypted connections, each asking for example.com. ICMP ping is not available to apps, so the times are for the encrypted connection Private DNS actually uses.": "आपका फ़ोन पहले हर सेवा का नाम उस DNS से खोजता है जो वह अभी इस्तेमाल कर रहा है (एक बार)। फिर हर सेवा को तीन तक छोटे एन्क्रिप्टेड कनेक्शन मिल सकते हैं, हर एक में example.com पूछा जाता है। ऐप्स ICMP पिंग नहीं चला सकते, इसलिए समय उस एन्क्रिप्टेड कनेक्शन का है जो निजी DNS असल में इस्तेमाल करता है।",
 "Your phone was updated.": "आपका फ़ोन अपडेट हुआ है।",
+"Your root manager was not found by its usual name (a hidden Magisk app, for example). Open it yourself, allow this app, then tap Request Super User.": "आपका रूट मैनेजर अपने सामान्य नाम से नहीं मिला (उदाहरण के लिए, छिपाया गया Magisk ऐप)। उसे खुद खोलें, इस ऐप को अनुमति दें, फिर “सुपरयूज़र का अनुरोध करें” पर टैप करें।",
 "Yours stay. A list that is already here is skipped; one with the same name but other apps comes in as \"Name (imported)\".": "आपकी सूचियाँ बनी रहती हैं। जो सूची पहले से यहाँ है उसे छोड़ दिया जाता है; वही नाम पर दूसरे ऐप वाली सूची “नाम (आयात)” के रूप में आती है।",
 "Zip (.zip) — opens everywhere": "Zip (.zip) — हर जगह खुलता है",
 "ZipCrypto (weak, but opens in everything)": "ZipCrypto (कमज़ोर, लेकिन हर जगह खुलता है)",

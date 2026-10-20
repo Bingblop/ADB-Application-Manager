@@ -17,12 +17,13 @@ ok      back from the manager with Shizuku chosen: the page asks to switch to Ro
 ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in the manager, so the tag reads ACTIVE and the gate is gone
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
-ok      with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)
+ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)
 ok      the gate's Set Up opens the Working Modes sheet
 ok      promptRootThenOpen switches to Root by itself (selectWorkingMode("root")); su grants: true, no prompt, and the tab is unlocked now
 ok      su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false
 ok      after the denial the tag says DENIED and the gate says why
 ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked
+ok      Open root manager with no su and no manager: the install message, nothing pending
 ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
 ok      a no: nothing opens, false
 ok   5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab

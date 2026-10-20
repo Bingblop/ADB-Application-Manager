@@ -4,7 +4,9 @@
 // going through selectWorkingMode('root'), the re-render on a mode change, and the attempt-to-prompt funnel promptRootThenOpen: Super User active -> true;
 // su on the phone but another mode -> a switch to Root by itself (true when su grants, the prompt when it denies); no su -> the prompt, a yes opens the tab
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
-// nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Deterministic output: ok / FAIL lines and the summary.
+// nothing, a yes goes through selectWorkingMode('root'); with Root already chosen nothing is asked. Open root manager that finds no known manager says
+// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018), and asks to install one only without su. Deterministic output:
+// ok / FAIL lines and the summary.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
@@ -108,7 +110,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
-  check('   with no manager installed it still calls the bridge but marks nothing pending (it shows the install message instead)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)));
+  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. Open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   await page.click('#rootGate .mode-alert-btn'); await sleep(50);
   check('   the gate\'s Set Up opens the Working Modes sheet', await ev(() => document.getElementById('modesModal').classList.contains('show')));
@@ -126,6 +128,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await setMode('none');
   await ev(() => switchView('rootfeatures')); await sleep(50);
   check('4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked', (await disp('#rootGate')) === 'flex' && (await tag()) === 'inactive NOT FOUND' && /No su was found/.test(await text('#rootGateDesc')) && (await lockedRow()), await tag());
+  await ev(() => { window.__rootMgr = { ok: false }; rootGrantPending = false; });
+  await page.click('#rfOpenManagerBtn'); await sleep(50);
+  check('   Open root manager with no su and no manager: the install message, nothing pending', (await text('#toastMsg')) === 'No root manager was found. Install KernelSU, APatch or Magisk, then come back.' && (await ev(() => rootGrantPending === false)), await text('#toastMsg'));
+  await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   await ev(() => switchView('about')); await sleep(50);
   dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   const r4 = await ev(() => promptRootThenOpen());
