@@ -1096,7 +1096,7 @@ Two tiles and one widget run **without opening the app**:
 
 | | Does |
 |---|---|
-| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode and is lit when the app last found a working mode usable: ADB TCP reachable (connected, or its port open), Wireless Debugging connected, Shizuku authorized or Root granted. It is dim with Automatic finding nothing, or Read-Only, and, after a new install or an update from 7.15 or older, until the app has been opened once |
+| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode and is lit when the app last found a working mode usable: ADB TCP reachable (connected, or its port open), Wireless Debugging connected, Shizuku authorized or Root granted. It is dim with Automatic finding nothing, or Read-Only, and, after a new install or an update from 7.15 or older, until the app has been opened once. A tap that switches to Root asks no `su` (the root manager's question would come up behind the closing panel). So the tile stays dim after that tap, even where root works, until you open the app, which then asks; it is lit at once only when the app is still running and already has `su`'s yes |
 | **Kill Apps** tile / **Kill Apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
 
 Choose the quick list in **Saved Lists** with **🛑 Quick list** on a card. To add the tiles, swipe down twice,
