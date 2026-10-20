@@ -1,6 +1,18 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Schreibt mit Root auch die CMF-Farben und reines Schwarz, anstelle des Stils oben.",
+"Also writes the CMF colors with root, in place of the style above.": "Schreibt mit Root auch die CMF-Farben, anstelle des Stils oben.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Schreibt mit Root auch die 2025er-Farben dieses Stils und reines Schwarz, anstelle der Farben von Android.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Schreibt mit Root auch die 2025er-Farben dieses Stils, anstelle der Farben von Android.",
+"Color spec": "Farbspezifikation",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Fidelity, Inhalt, Monochrom und CMF: Farben, für die Android keine Einstellung hat, berechnet von dieser App.",
+"Google's newer tuning: calmer accents, light and dark tuned apart.": "Googles neuere Abstimmung: ruhigere Akzente, Hell und Dunkel getrennt abgestimmt.",
+"One color family: accents and backgrounds are your color at different strengths.": "Eine Farbfamilie: Akzente und Hintergründe sind deine Farbe in verschiedenen Stärken.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Fidelity, Inhalt und Monochrom behalten ihre 2021er-Farben. Die Grundtöne folgen dem hellen oder dunklen Modus, in dem das Telefon ist, wenn du auf Anwenden tippst; tippe nach dem Umschalten erneut auf Anwenden.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Färbt Tonal Spot, Vibrant, Expressive und Spritz mit Root neu. CMF braucht 2026.",
+"The 2025 tuning, plus the CMF style.": "Die 2025er-Abstimmung, plus der Stil CMF.",
+"The colors Android computes itself.": "Die Farben, die Android selbst berechnet.",
 "Needs Android 14": "Erfordert Android 14",
 "More styles": "Weitere Stile",
 "Monochrome": "Monochrom",
@@ -5106,7 +5118,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "Auf der Uhr: <1>Einstellungen, Entwickleroptionen, ADB-Debugging</1> einschalten, dann <2>Debugging über Bluetooth</2> einschalten.",
 "Overlays<1> </1>": "Overlays<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "Paletten-Stil: Die zehn Stile und die Art, wie aus einer Quellfarbe ein ganzes Design wird (der HCT-Farbraum und seine Tonpaletten), folgen Googles <1>Material Color Utilities</1> (Apache-2.0), für diese App neu geschrieben.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "Weitere Stile: Die Farben von Fidelity, Inhalt und Monochrom werden mit einer Portierung der Farb-Engine von Android 14 berechnet, aus dem <1>Android Open Source Project</1> und Googles <2>Material Color Utilities</2> 0.4.0 (beide Apache-2.0); die Datei monet.js nennt, was woher stammt.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "Weitere Stile und Farbspezifikation: Die Farben von Fidelity, Inhalt und Monochrom werden mit einer Portierung der Farb-Engine von Android 14 berechnet, aus dem <1>Android Open Source Project</1> und Googles <2>Material Color Utilities</2> 0.4.0; die Spezifikationen 2025 und 2026 und CMF mit einer Portierung von Material Color Utilities auf GitHub (main, Commit bd811e4, 2026). Alles Apache-2.0; die Datei monet.js nennt, was woher stammt.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "Füge die Adresse eines <1>Repositorys im F-Droid-Stil</1> ein (zum Beispiel <2/>) oder eines <3>GitHub</3>- oder <4>Codeberg</4>-Benutzers, einer Organisation oder eines Projekts. Die App liest, was dort veröffentlicht wird, und listet die Apps auf.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "Patch-Bundles, die andere für Morphe veröffentlichen, von <1>morphe-patches.software</1>. Füge nur Quellen hinzu, denen du vertraust, denn eine Quelle bestimmt, was in deinen gepatchten Apps landet.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "Portiert von <1>SD Maid SE</1> von darken (d4rken-org), GPL-3.0: Die Filter, die Regeln, die Expendables-Datenbanken und die Automatisierungsschritte stammen von dort; die Werkzeug-Symbole, das Logo und die Übersetzungen werden nicht verwendet. Dies ist nicht die SD-Maid-App. Das Original mit allem, was es sonst noch kann: <2>SD Maid SE auf GitHub</2> · <3>SD Maid SE bei Google Play</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "{0} der System-App {1} deaktivieren? Das kann die App oder die System-Oberfläche beschädigen. Du kannst es hier wieder aktivieren."],
   ["From your wallpaper (#{0})", "Aus deinem Hintergrundbild (#{0})"],
   ["From the color above (#{0})", "Aus der Farbe oben (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Aus Google-Blau: #{0} ist für diesen Stil zu grau"],
 ]
 };

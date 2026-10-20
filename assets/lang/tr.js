@@ -1,6 +1,18 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "Root ile CMF renklerini ve saf siyahı da, yukarıdaki stilin yerine yazar.",
+"Also writes the CMF colors with root, in place of the style above.": "Root ile CMF renklerini de, yukarıdaki stilin yerine yazar.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "Root ile bu stilin 2025 renklerini ve saf siyahı da, Android'in renklerinin yerine yazar.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "Root ile bu stilin 2025 renklerini de, Android'in renklerinin yerine yazar.",
+"Color spec": "Renk belirtimi",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "Doğruluk, İçerik, Tek Renk ve CMF: Android'de ayarı olmayan, bu uygulamanın hesapladığı renkler.",
+"Google's newer tuning: calmer accents, light and dark tuned apart.": "Google'ın daha yeni ayarı: daha sakin vurgular, açık ve koyu ayrı ayarlanmış.",
+"One color family: accents and backgrounds are your color at different strengths.": "Tek renk ailesi: vurgular ve arka planlar, renginizin farklı güçlerdeki hâlleridir.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow, Fruit Salad, Doğruluk, İçerik ve Tek Renk 2021 renklerini korur. Temel tonlar, Uygula'ya dokunduğunuz anda telefonun açık veya koyu modunu izler; modu değiştirdikten sonra Uygula'ya yeniden dokunun.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "Root ile Tonal Spot, Vibrant, Expressive ve Spritz'i yeniden renklendirir. CMF için 2026 gerekir.",
+"The 2025 tuning, plus the CMF style.": "2025 ayarı, artı CMF stili.",
+"The colors Android computes itself.": "Android'in kendi hesapladığı renkler.",
 "Needs Android 14": "Android 14 gerekir",
 "More styles": "Daha fazla stil",
 "Monochrome": "Tek Renk",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "Saatte: <1>Ayarlar, Geliştirici seçenekleri, ADB hata ayıklama</1> seçeneğini açın, ardından <2>Bluetooth üzerinden hata ayıkla</2> seçeneğini açın.",
 "Overlays<1> </1>": "Katmanlar<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "Palet Stili: on stil ve bir kaynak rengin bütün bir temaya dönüşme biçimi (HCT renk uzayı ve ton paletleri), bu uygulama için yeniden yazılmış olan Google’ın <1>Material Color Utilities</1> kitaplığını (Apache-2.0) izler.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "Daha fazla stil: Doğruluk, İçerik ve Tek Renk renkleri, Android 14’ün kendi renk motorunun <1>Android Open Source Project</1> ve Google’ın <2>Material Color Utilities</2> 0.4.0 kitaplığından (ikisi de Apache-2.0) aktarılmış bir sürümüyle hesaplanır; neyin nereden alındığını monet.js dosyası belirtir.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "Daha fazla stil ve renk belirtimi: Doğruluk, İçerik ve Tek Renk renkleri, Android 14’ün kendi renk motorunun <1>Android Open Source Project</1> ve Google’ın <2>Material Color Utilities</2> 0.4.0 kitaplığından aktarılmış bir sürümüyle; 2025 ve 2026 belirtimleri ile CMF ise GitHub’daki Material Color Utilities’ten (main, commit bd811e4, 2026) aktarılmış bir sürümle hesaplanır. Hepsi Apache-2.0; neyin nereden alındığını monet.js dosyası belirtir.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "Bir <1>F-Droid tarzı deponun</1> (örneğin <2/>) veya bir <3>GitHub</3> ya da <4>Codeberg</4> kullanıcısının, kuruluşunun ya da projesinin adresini yapıştırın. Uygulama yayımladıklarını okur ve uygulamaları listeler.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "Başkalarının Morphe için yayımladığı yama paketleri, <1>morphe-patches.software</1> adresinden. Yalnızca güvendiğiniz kaynakları ekleyin, çünkü bir kaynak yamalı uygulamalarınızın içine neyin gireceğine karar verir.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "darken (d4rken-org) tarafından <1>SD Maid SE</1>’den taşındı, GPL-3.0: filtreler, kurallar, atılabilir veri veritabanları ve otomasyon adımları oradandır; araç simgeleri, logo ve çeviriler kullanılmaz. Bu, SD Maid uygulaması değildir. Yapabildiği diğer her şeyle birlikte orijinali için: <2>GitHub’da SD Maid SE</2> · <3>Google Play’de SD Maid SE</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Sistem uygulaması {1} içindeki {0} bileşenini devre dışı bırak? Bu, uygulamayı veya sistem arayüzünü bozabilir. Buradan tekrar açabilirsiniz."],
   ["From your wallpaper (#{0})", "Duvar kâğıdınızdan (#{0})"],
   ["From the color above (#{0})", "Yukarıdaki renkten (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "Google mavisinden: #{0} bu stil için fazla gri"],
 ]
 };

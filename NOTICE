@@ -71,6 +71,10 @@ Other components
   android14-release, packages/SystemUI/monet and theme/DynamicColors.kt), read beside the npm package @material/material-color-utilities 0.4.0
   (https://github.com/material-foundation/material-color-utilities). The file's header carries both copyright lines and names what was taken
   from where and what was changed.
+* Material Color Utilities on GitHub (Google LLC; branch main, commit bd811e4, 2026) - Apache-2.0 - assets/monet.js, part 2: the 2025 and 2026
+  color specs and the CMF style of the Color spec and More styles cards on the RRO/Monet Customization tab, ported from its typescript/ tree
+  (https://github.com/material-foundation/material-color-utilities, commit bd811e4ca2ab94c4ce3cadc89c19b1820b9704b3). The file's header names
+  the files taken, what part 2 shares with part 1 and what it leaves out.
 * RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
 * Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
 

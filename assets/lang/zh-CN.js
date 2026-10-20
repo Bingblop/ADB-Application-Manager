@@ -1,6 +1,18 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "同时通过 Root 写入 CMF 样式的颜色和纯黑，取代上方的样式。",
+"Also writes the CMF colors with root, in place of the style above.": "同时通过 Root 写入 CMF 样式的颜色，取代上方的样式。",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "同时通过 Root 写入此样式的 2025 版颜色和纯黑，取代 Android 自己的颜色。",
+"Also writes this style's 2025 colors with root, in place of Android's.": "同时通过 Root 写入此样式的 2025 版颜色，取代 Android 自己的颜色。",
+"Color spec": "颜色规范",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "保真度、内容、单色和 CMF：Android 没有对应设置的颜色，由本应用计算。",
+"Google's newer tuning: calmer accents, light and dark tuned apart.": "Google 较新的调校：强调色更沉稳，浅色和深色分别调校。",
+"One color family: accents and backgrounds are your color at different strengths.": "单一色系：强调色和背景都是你的颜色，只是浓淡不同。",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "Rainbow、Fruit Salad、保真度、内容和单色保留 2021 版颜色。基础色阶跟随你点按“应用”时手机所处的浅色或深色模式；切换模式后，请再点按一次“应用”。",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "通过 Root 为 Tonal Spot、Vibrant、Expressive 和 Spritz 重新着色。CMF 需要 2026。",
+"The 2025 tuning, plus the CMF style.": "2025 版调校，外加 CMF 样式。",
+"The colors Android computes itself.": "Android 自己计算的颜色。",
 "Needs Android 14": "需要 Android 14",
 "More styles": "更多样式",
 "Monochrome": "单色",
@@ -5106,7 +5118,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "在手表上：开启<1>设置、开发者选项、ADB 调试</1>，然后开启<2>通过 Bluetooth 调试</2>。",
 "Overlays<1> </1>": "叠加层<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "调色板样式：十种样式以及源颜色变成完整主题的方式（HCT 色彩空间及其色调调色板）参照 Google 的 <1>Material Color Utilities</1>（Apache-2.0），并为本应用重新编写。",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "更多样式：保真度、内容和单色的颜色由移植自 <1>Android Open Source Project</1> 和 Google 的 <2>Material Color Utilities</2> 0.4.0（均为 Apache-2.0）的 Android 14 自身颜色引擎计算；monet.js 文件写明了各部分的来源。",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "更多样式和颜色规范：保真度、内容和单色的颜色由移植自 <1>Android Open Source Project</1> 和 Google 的 <2>Material Color Utilities</2> 0.4.0 的 Android 14 自身颜色引擎计算；2025 和 2026 规范以及 CMF 由移植自 GitHub 上 Material Color Utilities（main，提交 bd811e4，2026）的代码计算。均为 Apache-2.0；monet.js 文件写明了各部分的来源。",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "粘贴 <1>F-Droid 风格仓库</1>的地址（例如 <2/>），或 <3>GitHub</3>、<4>Codeberg</4> 的用户、组织或项目的地址。应用会读取其发布的内容并列出应用。",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "其他人为 Morphe 发布的补丁包，来自 <1>morphe-patches.software</1>。只添加你信任的来源，因为来源决定打过补丁的应用中会包含什么。",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "移植自 darken（d4rken-org）的 <1>SD Maid SE</1>，GPL-3.0：过滤器、规则、可清除数据库和自动化步骤均来自那里；工具图标、徽标和翻译未使用。这不是 SD Maid 应用。要获取原版及其所有其他功能：<2>GitHub 上的 SD Maid SE</2> · <3>Google Play 上的 SD Maid SE</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "停用系统应用 {1} 的 {0}？这可能会破坏该应用或系统界面。你可以在这里重新启用它。"],
   ["From your wallpaper (#{0})", "来自你的壁纸 (#{0})"],
   ["From the color above (#{0})", "来自上方的颜色 (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "来自 Google 蓝：#{0} 对此样式来说太灰"],
 ]
 };

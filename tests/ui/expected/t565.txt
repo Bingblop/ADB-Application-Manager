@@ -19,7 +19,7 @@ A. MONOCHROMATIC B5651D: 165 entries, no resource twice, every one android:color
    Monochrome: the five rows have chroma 0 and all 65 shades are greys (R = G = B), white at 0 and black at 1000, for both seeds: true [{"chroma":[0,0,0,0,0],"grey":true,"ends":["FFFFFF","000000"]},{"chroma":[0,0,0,0,0],"grey":true,"ends":["FFFFFF","000000"]}]
    the seed rule: a grey seed (808080) stays the seed for Fidelity and Content, becomes Google blue for a stock style; Fidelity keeps 6750A4: true
 B1. without Super User: More styles is a locked row of the Root Features kind under the Pure black row (Locked, Needs Super User), no radios, no preview: true {"rows":1,"locked":true,"name":"More styles Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.","lockBtn":{"text":"Locked","disabled":true},"lock":"Needs Super User","group":null,"radios":null,"preview":null,"note":"Shizuku and ADB cannot write these colors; Root can.","rootHint":""}
-   it has its own container right after the Pure black row, inside the Root-only theme controls card; PR 2's row is still the only one in its box: true
+   it has its own container after the Pure black row and PR 4's Color spec row, inside the Root-only theme controls card; PR 2's row is still the only one in its box: true
    nothing went to the bridge for it; the hint under Apply says nothing: true
    a style remembered from a rooted session: still locked, counts for nothing (no hint, ovlRootStyleOn() empty): true ["Needs Super User",""]
 B2. with Super User on Android 13: the Pure black switch is live, More styles stays a locked row whose caption says Needs Android 14: true [{"rows":1,"locked":false,"sw":{"on":false},"note":""},"Needs Android 14",{"text":"Locked","disabled":true}]

@@ -1,6 +1,18 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Also writes the CMF colors and pure black with root, in place of the style above.": "يكتب أيضًا ألوان CMF والأسود الخالص عبر Root، بدلًا من النمط أعلاه.",
+"Also writes the CMF colors with root, in place of the style above.": "يكتب أيضًا ألوان CMF عبر Root، بدلًا من النمط أعلاه.",
+"Also writes this style's 2025 colors and pure black with root, in place of Android's.": "يكتب أيضًا ألوان 2025 لهذا النمط والأسود الخالص عبر Root، بدلًا من ألوان Android.",
+"Also writes this style's 2025 colors with root, in place of Android's.": "يكتب أيضًا ألوان 2025 لهذا النمط عبر Root، بدلًا من ألوان Android.",
+"Color spec": "مواصفة الألوان",
+"Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.": "الدقة والمحتوى وأحادي اللون وCMF: ألوان لا إعداد لها في Android، يحسبها هذا التطبيق.",
+"Google's newer tuning: calmer accents, light and dark tuned apart.": "ضبط Google الأحدث: ألوان تمييز أهدأ، والوضعان الفاتح والداكن مضبوطان كلٌّ على حدة.",
+"One color family: accents and backgrounds are your color at different strengths.": "عائلة لون واحدة: ألوان التمييز والخلفيات هي لونك بدرجات قوة مختلفة.",
+"Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.": "تحتفظ Rainbow وFruit Salad والدقة والمحتوى وأحادي اللون بألوان 2021. تتبع الدرجات الأساسية الوضع الفاتح أو الداكن الذي يكون عليه الهاتف عند النقر على «تطبيق»؛ بعد التبديل، انقر على «تطبيق» مرة أخرى.",
+"Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.": "يعيد تلوين Tonal Spot وVibrant وExpressive وSpritz عبر Root. يحتاج CMF إلى 2026.",
+"The 2025 tuning, plus the CMF style.": "ضبط 2025، مع نمط CMF.",
+"The colors Android computes itself.": "الألوان التي يحسبها Android بنفسه.",
 "Needs Android 14": "يتطلب Android 14",
 "More styles": "أنماط إضافية",
 "Monochrome": "أحادي اللون",
@@ -5107,7 +5119,7 @@ x: {
 "On the watch: <1>Settings, Developer options, ADB debugging</1> on, then <2>Debug over Bluetooth</2> on.": "على الساعة: <1>الإعدادات، خيارات المطوّرين، تصحيح أخطاء ADB</1> قيد التشغيل، ثم <2>التصحيح عبر Bluetooth</2> قيد التشغيل.",
 "Overlays<1> </1>": "الطبقات<1> </1>",
 "Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <1>Material Color Utilities</1> (Apache-2.0), written again for this app.": "نمط لوحة الألوان: الأنماط العشرة وطريقة تحويل اللون المصدر إلى سمة كاملة (فضاء الألوان HCT ولوحاته اللونية) تتبع <1>Material Color Utilities</1> من Google (Apache-2.0)، أُعيدت كتابتها لهذا التطبيق.",
-"More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.": "أنماط إضافية: تُحسب ألوان الدقة والمحتوى وأحادي اللون بنسخة منقولة من محرك الألوان الخاص بـ Android 14، من <1>Android Open Source Project</1> و<2>Material Color Utilities</2> 0.4.0 من Google (كلاهما Apache-2.0)؛ ويذكر الملف monet.js ما أُخذ من كل مصدر.",
+"More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <1>Android Open Source Project</1> and Google's <2>Material Color Utilities</2> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.": "أنماط إضافية ومواصفة الألوان: تُحسب ألوان الدقة والمحتوى وأحادي اللون بنسخة منقولة من محرك الألوان الخاص بـ Android 14، من <1>Android Open Source Project</1> و<2>Material Color Utilities</2> 0.4.0 من Google؛ ومواصفتا 2025 و2026 وCMF بنسخة منقولة من Material Color Utilities على GitHub (main، الإيداع bd811e4، 2026). كلها Apache-2.0؛ ويذكر الملف monet.js ما أُخذ من كل مصدر.",
 "Paste the address of an <1>F-Droid style repository</1> (for example <2/>), or of a <3>GitHub</3> or <4>Codeberg</4> user, organization or project. The app reads what it publishes and lists the apps.": "الصق عنوان <1>مستودع بنمط F-Droid</1> (مثل <2/>)، أو مستخدم أو مؤسسة أو مشروع على <3>GitHub</3> أو <4>Codeberg</4>. يقرأ التطبيق ما ينشره ويعرض التطبيقات.",
 "Patch bundles that other people publish for Morphe, from <1>morphe-patches.software</1>. Add the ones you trust; only add sources you trust, because a source decides what ends up inside your patched apps.": "حزم تصحيحات ينشرها آخرون لـMorphe، من <1>morphe-patches.software</1>. أضف المصادر التي تثق بها فقط، لأن المصدر يحدد ما ينتهي داخل تطبيقاتك المصحَّحة.",
 "Ported from <1>SD Maid SE</1> by darken (d4rken-org), GPL-3.0: the filters, the rules, the expendables databases and the automation steps are from there; the tool icons, the logo and the translations are not used. This is not the SD Maid app. For the original, with everything else it can do: <2>SD Maid SE on GitHub</2> · <3>SD Maid SE on Google Play</3>": "منقول من <1>SD Maid SE</1> بقلم darken (d4rken-org)، GPL-3.0: المرشّحات والقواعد وقواعد بيانات العناصر التي يمكن الاستغناء عنها وخطوات الأتمتة مأخوذة منه؛ ولا تُستخدم أيقونات الأدوات والشعار والترجمات. هذا ليس تطبيق SD Maid. للأصل مع كل ما يستطيعه أيضًا: <2>SD Maid SE على GitHub</2> · <3>SD Maid SE على Google Play</3>",
@@ -6318,5 +6330,6 @@ p: [
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "تعطيل {0} من تطبيق النظام {1}؟ قد يؤدي ذلك إلى تعطّل التطبيق أو واجهة النظام. يمكنك إعادة تفعيله من هنا."],
   ["From your wallpaper (#{0})", "من خلفيتك (#{0})"],
   ["From the color above (#{0})", "من اللون أعلاه (#{0})"],
+  ["From Google blue: #{0} is too grey for this style", "من أزرق Google: #{0} رمادي جدًا لهذا النمط"],
 ]
 };

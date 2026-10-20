@@ -5977,11 +5977,13 @@
 
                 <!-- Root-only theme controls: colours written into Android as an overlay (cmd overlay fabricate), which only Root can do.
                      Locked rows without Super User (rootLockedRow, as on the Root Features tab); the live controls are drawn by ovlRenderRoot:
-                     the Pure black switch in ovlRootCards, the More styles radio group with its preview (Android 14 and newer) in ovlRootMore. -->
+                     the Pure black switch in ovlRootCards, the Color spec radio group (2021, 2025, 2026; Android 14 and newer) in ovlRootSpec,
+                     the More styles radio group with its preview (Android 14 and newer; CMF only at spec 2026) in ovlRootMore. -->
                 <div class="color-card" id="ovlRootCard">
                     <div class="color-card-title">Root-only theme controls</div>
                     <div class="color-card-subtitle" style="margin-bottom:0;">Written into Android as a color overlay, which only Root can do. Apply writes it along with the theme.</div>
                     <div id="ovlRootCards"></div>
+                    <div id="ovlRootSpec"></div>
                     <div id="ovlRootMore"></div>
                     <div class="sdb-note" id="ovlRootNote"></div>
                 </div>
@@ -7973,7 +7975,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
-                <div class="about-tip">More styles: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0 (both Apache-2.0); the file monet.js names what was taken from where.</div>
+                <div class="about-tip">More styles and Color spec: the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; the 2025 and 2026 specs and CMF with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -38200,12 +38202,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const before = ovlRaw;
             const style = ovlStyle, source = ovlSource;
             // a root style's source colour, taken now: the theme write below replaces the setting it may come from, and the overlay must carry
-            // what the preview shows
+            // what the preview shows; so is the light or dark mode the phone is in (at spec 2025 and 2026 the 65 base shades follow it), and the
+            // list style (style) is the one this tap writes
             const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
+            const dark = systemPrefersDark();
             ovlBusy = true;
             ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed }), 60000);
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark }), 60000);
         }
 
         function ovlReset() {
@@ -38250,9 +38254,10 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (r.warning) showToast(r.warning);
                     ovlWatchPalette();
                 };
-                // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both
-                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind);
-                if (follow) ovlRootRun(follow, finish, chosen.seed); else finish();
+                // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both.
+                // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode), so the overlay is the one the preview showed
+                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style);
+                if (follow) ovlRootRun(follow, finish, chosen); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
                 const unsure = !!(r.timedOut || r.unknown);
@@ -38273,13 +38278,15 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Root-only theme controls: colours Android takes only from an overlay written as root (cmd overlay fabricate) ----
         // The card group under "How this works". Without Super User every control is a locked row (rootLockedRow, as on the Root Features tab;
         // the gate is isRootActive, not re-derived here). With it: the Pure black switch (kv ovl_black, off by default) and, on Android 14 and
-        // newer, the More styles radio group (kv ovl_root_style: '' | FIDELITY | CONTENT | MONOCHROMATIC; the colours Android has no setting
-        // for, computed by monet.js as Android 14's own engine would). Apply keeps writing the secure setting as before and, with Super User,
-        // additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the root style's 165 entries, Pure black's
-        // entries replacing where both name a resource), or switches it off again (nothing on any more after an earlier write: kv
-        // ovl_root_applied holds the overlay ids and what they carry; PR 2's ovl_black_applied is read as a fallback). Revert and the Undo bar
-        // switch it off too. The bridge is overlayFabricate(req, planJson) -> window.onOverlayFab(json): the Java side checks the plan, takes
-        // the overlay ids from its own SDK_INT and decides from the read-back (OverlayRules.judgeFabricate), never from the page.
+        // newer, the Color spec radio group (kv ovl_spec: '2021' | '2025' | '2026'; Google's newer colour specs, computed by monet.js part 2)
+        // and the More styles radio group (kv ovl_root_style: '' | FIDELITY | CONTENT | MONOCHROMATIC | CMF, CMF only at spec 2026; the colours
+        // Android has no setting for, computed by monet.js as Android 14's own engine would). Apply keeps writing the secure setting as before
+        // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the 165 entries of the
+        // style ovlRootPlanStyle picks, a More style or the list style at 2025, Pure black's entries replacing where both name a resource), or
+        // switches it off again (nothing on any more after an earlier write: kv ovl_root_applied holds the overlay ids and what they carry;
+        // PR 2's ovl_black_applied is read as a fallback). Revert and the Undo bar switch it off too. The bridge is overlayFabricate(req,
+        // planJson) -> window.onOverlayFab(json): the Java side checks the plan, takes the overlay ids from its own SDK_INT and decides from the
+        // read-back (OverlayRules.judgeFabricate), never from the page.
         const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.';
         // the panels' greys: tones 4, 6, 8, 11, 14 and 18 of a neutral grey (HCT chroma 0), each psHex(hue, 0, tone) as the page computes it
         // (the hue is immaterial at chroma 0); kept as constants so the plan is a fixed table (t564 checks them against psHex)
@@ -38292,10 +38299,26 @@ Type any command above (e.g. pm list packages -d)</div>
             { id: '', name: 'Off', desc: 'Apply writes only what the style list above says.' },
             { id: 'FIDELITY', name: 'Fidelity', desc: 'Accents keep your exact color; backgrounds take a faint tint of it.' },
             { id: 'CONTENT', name: 'Content', desc: 'Like Fidelity, with a third accent chosen to sit beside your color.' },
-            { id: 'MONOCHROMATIC', name: 'Monochrome', desc: 'No color at all: black, white and greys.' }
+            { id: 'MONOCHROMATIC', name: 'Monochrome', desc: 'No color at all: black, white and greys.' },
+            // listed only while the spec is 2026: Google's CMF exists only in its 2026 spec (scheme_cmf.ts throws at any other)
+            { id: 'CMF', name: 'CMF', desc: 'One color family: accents and backgrounds are your color at different strengths.' }
         ];
         const OVL_ROOT_STYLE_IDS = OVL_ROOT_STYLES.map(s => s.id);
         const OVL_MORE_SUB = 'Fidelity, Content and Monochrome: colors Android has no setting for, computed by this app.';
+        const OVL_MORE_SUB_2026 = 'Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.';
+        // every style an overlay this app wrote may carry: a More style, CMF, or a style of the list above written at spec 2025
+        const OVL_RECORD_STYLE_IDS = OVL_STYLE_IDS.concat(OVL_ROOT_STYLE_IDS.filter(id => id !== ''));
+        // Google's colour specs (Material Color Utilities): 2021 is what Android 12 to 16 compute themselves (their ColorScheme passes no spec),
+        // 2025 and 2026 exist only as colours this app writes. Google's own rule (MonetPlan.specFor, upstream's maybeFallbackSpecVersion) gives
+        // 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and 2021 to every other style.
+        const OVL_SPECS = [
+            { id: '2021', desc: 'The colors Android computes itself.' },
+            { id: '2025', desc: 'Google\'s newer tuning: calmer accents, light and dark tuned apart.' },
+            { id: '2026', desc: 'The 2025 tuning, plus the CMF style.' }
+        ];
+        const OVL_SPEC_IDS = OVL_SPECS.map(s => s.id);
+        const OVL_SPEC_SUB = 'Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.';
+        const OVL_SPEC_NOTE = 'Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.';
         const OVL_ROOT_MIN_SDK = 34;              // the role resources exist from Android 14; below it only Pure black applies (the owner's decision)
         // the entries the Java side looks up after a write (the first four of the plan) when a root style is in it: an accent and a neutral
         // palette entry, a light and a dark role (with Pure black on, system_surface_dark is black, and that is what the lookup must see)
@@ -38309,22 +38332,62 @@ Type any command above (e.g. pm list packages -d)</div>
         // More styles is live when the root controls are, the phone runs Android 14 or newer (a palette read that gave no Android level counts
         // as older) and the colour maths is loaded
         function ovlRootStyleLive() { return ovlRootLive() && ovlSdk() >= OVL_ROOT_MIN_SDK && ovlMonetOk(); }
-        function ovlRootStyle() { const s = kvGet('ovl_root_style', ''); return typeof s === 'string' && s !== '' && OVL_ROOT_STYLE_IDS.includes(s) ? s : ''; }
+        // the colour maths knows the specs (monet.js part 2); an older monet.js computes 2021 only, and the Color spec row then says Update the app
+        function ovlSpecApiOk() { return ovlMonetOk() && Array.isArray(MonetPlan.SPECS) && typeof MonetPlan.specFor === 'function' && MonetPlan.SPECS.includes('2026'); }
+        // Color spec is live where More styles is and the maths knows the specs
+        function ovlRootSpecLive() { return ovlRootStyleLive() && ovlSpecApiOk(); }
+        // the stored spec ('2021' for anything else), and the spec the maths can use ('2021' without the spec API)
+        function ovlSpec() { const s = kvGet('ovl_spec', '2021'); return typeof s === 'string' && OVL_SPEC_IDS.includes(s) ? s : '2021'; }
+        function ovlSpecNow() { return ovlSpecApiOk() ? ovlSpec() : '2021'; }
+        // the More style chosen; CMF counts only while the spec is 2026 (at any other spec Google's CMF does not exist)
+        function ovlRootStyle() {
+            const s = kvGet('ovl_root_style', '');
+            if (typeof s !== 'string' || s === '' || !OVL_ROOT_STYLE_IDS.includes(s)) return '';
+            return s === 'CMF' && ovlSpecNow() !== '2026' ? '' : s;
+        }
         // the root style Apply would write: the chosen one while the row is live, else '' (a style remembered on a phone that cannot write it counts for nothing)
         function ovlRootStyleOn() { return ovlRootStyleLive() ? ovlRootStyle() : ''; }
-        // { ids, t, pending, black, style } while this app's overlay may be on the phone (written and not switched off since), else null.
+        // The one decision of which style's colours the overlay carries, { style, spec } (style '' for none): 1. a More style (Fidelity, Content,
+        // Monochrome, or CMF at 2026), at the spec Google's rule gives it (2021 for the first three, 2026 for CMF); 2. else, at spec 2025 or 2026,
+        // the list style (the one Apply writes into the theme setting) when the rule gives it a spec other than 2021 (Tonal Spot, Vibrant,
+        // Expressive and Spritz: the set comes from MonetPlan.specFor, not from a list here), at that spec (2025): Android builds its own 2021
+        // colours from the setting and the overlay writes the 2025 ones over them; 3. else none (Pure black alone, or nothing). sdk: the phone's
+        // Android level (the role resources exist from 14). The plan builder, the hint, the preview and the follow-up all ask this function.
+        function ovlRootPlanStyle(listStyle, sdk) {
+            const none = { style: '', spec: '2021' };
+            if (!(sdk >= OVL_ROOT_MIN_SDK) || !ovlMonetOk()) return none;
+            const more = ovlRootStyle(), spec = ovlSpecNow();
+            try {
+                if (more) return { style: more, spec: ovlSpecApiOk() ? MonetPlan.specFor(more, spec) : '2021' };
+                if (spec !== '2021' && typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
+                    const at = MonetPlan.specFor(listStyle, spec);
+                    if (at !== '2021') return { style: listStyle, spec: at };
+                }
+            } catch (e) {}
+            return none;
+        }
+        // the same while the controls are live (the hint, the preview and the follow-up), else none
+        function ovlRootPlanOn(listStyle) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk()) : { style: '', spec: '2021' }; }
+        // the opts monet.js takes for a spec: none at 2021 (PR 3's results, byte for byte), else the spec and the mode whose 65 shades are written
+        function ovlRootSpecOpts(spec, dark) { return spec && spec !== '2021' ? { spec, dark: !!dark } : undefined; }
+        // { ids, t, pending, black, style, spec } while this app's overlay may be on the phone (written and not switched off since), else null.
         // pending: the write went out and no answer has said whether it took (the app restarted meanwhile, or the phone did not answer).
-        // black and style: what the overlay carries (Pure black; the root style, '' for none), so the words name what was written. PR 2's record
-        // (kv ovl_black_applied: pure black alone) is read when the new key holds nothing, so a phone that ran that build keeps its Undo.
+        // black and style: what the overlay carries (Pure black; the style whose colours it carries, '' for none), so the words name what was
+        // written; spec: the spec those colours were computed with (written as 2025 or 2026 only: a record without it, PR 3's and every 2021
+        // one, reads as 2021). PR 2's record (kv ovl_black_applied: pure black alone) is read when the new key holds nothing, so a phone that
+        // ran that build keeps its Undo.
         function ovlRootApplied() {
             let a = kvGet('ovl_root_applied', null), old = false;
             if (!a || typeof a !== 'object') { a = kvGet('ovl_black_applied', null); old = true; }
             if (!a || typeof a !== 'object' || !Array.isArray(a.ids)) return null;
             const ids = a.ids.filter(id => typeof id === 'string' && id.startsWith(OVL_FAB_ID_PREFIX));
             if (!ids.length) return null;
-            const style = !old && typeof a.style === 'string' && a.style !== '' && OVL_ROOT_STYLE_IDS.includes(a.style) ? a.style : '';
-            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style };
+            const style = !old && typeof a.style === 'string' && a.style !== '' && OVL_RECORD_STYLE_IDS.includes(a.style) ? a.style : '';
+            const spec = style && typeof a.spec === 'string' && OVL_SPEC_IDS.includes(a.spec) ? a.spec : '2021';
+            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style, spec };
         }
+        // a record to store: spec only when it is not 2021 (see above), so a 2021 record is the same as PR 3's
+        function ovlRootRecord(rec, spec) { return spec && spec !== '2021' ? Object.assign(rec, { spec }) : rec; }
         function ovlRootAppliedStyle() { const a = ovlRootApplied(); return a ? a.style : ''; }
         // the record as the store holds it (whichever key), put back as it was when a refused write changed nothing
         function ovlRootAppliedRaw() { const a = kvGet('ovl_root_applied', null); return a != null ? a : kvGet('ovl_black_applied', null); }
@@ -38367,17 +38430,22 @@ Type any command above (e.g. pm list packages -d)</div>
         // dark, the 12 fixed colours, computed from the seed); Pure black's entries then replace the style's values where both name a resource (it
         // is the user's explicit override) and are added otherwise, so no resource is named twice (OverlayRules.fabricatePlanOk refuses that).
         // With a style in it the OVL_ROOT_LEAD entries come first (the Java side looks the first four up); Pure black alone keeps its own plan and order.
-        // seed: the source colour Apply took when it was tapped ({ hex }, from ovlRootSeed); without one it is taken now.
-        function ovlBuildRootPlan(sdk, seed) {
-            const black = ovlBlackOn(), style = sdk >= OVL_ROOT_MIN_SDK && ovlMonetOk() ? ovlRootStyle() : '';
-            if (!style) return { style: '', black, entries: black ? ovlBuildBlackPlan(sdk) : [] };
+        // at: what Apply took when it was tapped: { seed: { hex } from ovlRootSeed, style: the list style it wrote, dark: the phone's mode then };
+        // each part it lacks is taken now. The style and its spec are ovlRootPlanStyle's; at 2025 and 2026 the 65 shades are the dark or light
+        // scheme's as at.dark says (Android 16 takes them from the mode the phone is in), the roles are written for both modes either way.
+        function ovlBuildRootPlan(sdk, at) {
+            at = at || {};
+            const black = ovlBlackOn(), pick = ovlRootPlanStyle(typeof at.style === 'string' ? at.style : ovlStyle, sdk), style = pick.style;
+            if (!style) return { style: '', spec: '2021', black, entries: black ? ovlBuildBlackPlan(sdk) : [] };
+            const seed = at.seed && at.seed.hex ? at.seed.hex : ovlRootSeed().hex;
+            const opts = ovlRootSpecOpts(pick.spec, typeof at.dark === 'boolean' ? at.dark : systemPrefersDark());
             const rows = new Map();
-            for (const e of MonetPlan.entries(style, seed && seed.hex ? seed.hex : ovlRootSeed().hex)) rows.set(e.resource, e.argb);
+            for (const e of MonetPlan.entries(style, seed, opts)) rows.set(e.resource, e.argb);
             if (black) for (const e of ovlBuildBlackPlan(sdk)) rows.set(e.resource, e.argb);
             const entries = [];
             for (const name of OVL_ROOT_LEAD) { const r = OVL_FAB_RES + name; if (rows.has(r)) { entries.push({ resource: r, argb: rows.get(r) }); rows.delete(r); } }
             rows.forEach((argb, resource) => entries.push({ resource, argb }));
-            return { style, black, entries };
+            return { style, spec: pick.spec, black, entries };
         }
         // the ids the Java side writes a plan under (its own rule, from its own SDK_INT; this copy only names what to switch off after no answer came)
         function ovlRootIds(sdk, entries) {
@@ -38385,10 +38453,11 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // what Apply (kind 'apply') or Revert (kind 'reset') does for this app's overlay besides the theme setting:
-        // 'fabricate' (write it: Pure black or a root style is on), 'disable' (switch it off: nothing is on any more, but it is on the phone), or null
-        function ovlRootFollowUp(kind) {
+        // 'fabricate' (write it: Pure black is on, or ovlRootPlanStyle gives a style), 'disable' (switch it off: nothing is on any more, but it is
+        // on the phone), or null. listStyle: the list style Apply writes (the one it took when tapped; the page's own for the hint)
+        function ovlRootFollowUp(kind, listStyle) {
             if (!ovlRootLive()) return null;
-            if (kind !== 'reset' && (ovlBlackOn() || ovlRootStyleOn())) return 'fabricate';
+            if (kind !== 'reset' && (ovlBlackOn() || ovlRootPlanOn(listStyle).style)) return 'fabricate';
             return ovlRootApplied() ? 'disable' : null;
         }
 
@@ -38405,11 +38474,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 on: 'The pure black overlay is written on this phone.', maybe: 'The pure black overlay may be written on this phone.'
             };
         }
-        // the sentence under Apply for what the overlay write adds to the theme setting: one whole sentence per combination, each translated as one
+        // the sentence under Apply for what the overlay write adds to the theme setting: one whole sentence per combination, each translated as one.
+        // style: ovlRootPlanStyle's (a More style, CMF, or a list style, which it gives only at spec 2025)
         function ovlRootHint(style, black) {
             if (style === 'FIDELITY') return black ? 'Also writes the Fidelity colors and pure black with root, in place of the style above.' : 'Also writes the Fidelity colors with root, in place of the style above.';
             if (style === 'CONTENT') return black ? 'Also writes the Content colors and pure black with root, in place of the style above.' : 'Also writes the Content colors with root, in place of the style above.';
             if (style === 'MONOCHROMATIC') return black ? 'Also writes the Monochrome colors and pure black with root, in place of the style above.' : 'Also writes the Monochrome colors with root, in place of the style above.';
+            if (style === 'CMF') return black ? 'Also writes the CMF colors and pure black with root, in place of the style above.' : 'Also writes the CMF colors with root, in place of the style above.';
+            if (style && OVL_STYLE_IDS.includes(style)) return black ? 'Also writes this style\'s 2025 colors and pure black with root, in place of Android\'s.' : 'Also writes this style\'s 2025 colors with root, in place of Android\'s.';
             return 'Also writes the pure black overlay with root.';
         }
         // the sentence when nothing root is chosen any more but the overlay is on the phone: Apply switches it off
@@ -38426,7 +38498,19 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlPickRootStyle(id) {
             const style = id === 'OFF' ? '' : String(id || '');
             if (!ovlRootStyleLive() || !OVL_ROOT_STYLE_IDS.includes(style)) return;
+            if (style === 'CMF' && ovlSpecNow() !== '2026') return;                 // not listed at any other spec
             kvSet('ovl_root_style', style);
+            haptic();
+            ovlRenderRoot();
+            ovlRenderActions();
+        }
+        // a radio of Color spec: stored (kv ovl_spec); leaving 2026 while CMF is chosen sets More styles back to Off in the same tap (CMF is not
+        // listed any more), then the card, the hint and the preview are drawn again
+        function ovlPickSpec(id) {
+            const spec = String(id || '');
+            if (!ovlRootSpecLive() || !OVL_SPEC_IDS.includes(spec)) return;
+            kvSet('ovl_spec', spec);
+            if (spec !== '2026' && kvGet('ovl_root_style', '') === 'CMF') kvSet('ovl_root_style', '');
             haptic();
             ovlRenderRoot();
             ovlRenderActions();
@@ -38434,15 +38518,18 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function ovlRenderRoot() {
             const card = document.getElementById('ovlRootCard'), box = document.getElementById('ovlRootCards'), more = document.getElementById('ovlRootMore'), note = document.getElementById('ovlRootNote');
+            const specBox = document.getElementById('ovlRootSpec');
             if (!card || !box || !note) return;
             const say = text => { note.innerText = text; note.style.display = text ? '' : 'none'; };
             const draw = html => { if (more) more.innerHTML = html; };
-            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; draw(''); say(''); return; }      // hidden with the rest of Material You
+            const drawSpec = html => { if (specBox) specBox.innerHTML = html; };
+            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); say(''); return; }      // hidden with the rest of Material You
             card.style.display = '';
             const bridge = ovlRootBridgeOk();
             if (!bridge || !isRootActive()) {
                 // locked: the same rows as a Root Feature that waits on root; an app too old to write overlays says so instead
                 box.innerHTML = rootLockedRow('Pure black backgrounds', OVL_BLACK_SUB, bridge ? null : 'Update the app');
+                drawSpec(rootLockedRow('Color spec', OVL_SPEC_SUB, bridge ? null : 'Update the app'));
                 draw(rootLockedRow('More styles', OVL_MORE_SUB, bridge ? null : 'Update the app'));
                 say(bridge ? 'Shizuku and ADB cannot write these colors; Root can.' : 'This version of the app cannot write color overlays. Update it, then come back.');
                 return;
@@ -38450,15 +38537,31 @@ Type any command above (e.g. pm list packages -d)</div>
             const on = ovlBlackOn();
             box.innerHTML = '<div class="rf-row">' + rootFeatureName('Pure black backgrounds', OVL_BLACK_SUB)
                 + '<button type="button" class="sdb-sw' + (on ? ' on' : '') + '" id="ovlBlackSw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" aria-label="' + txT('Pure black backgrounds') + '" onclick="ovlToggleBlack()"><span></span></button></div>';
+            // Color spec: locked as More styles is (below Android 14, or without the maths), and Update the app when the maths knows no specs;
+            // else a radio group of the same look, and under it, at 2025 and 2026, the note on the styles it leaves alone and on light and dark
+            if (!ovlRootSpecLive()) drawSpec(rootLockedRow('Color spec', OVL_SPEC_SUB, ovlSpecApiOk() ? 'Needs Android 14' : 'Update the app'));
+            else if (specBox) {
+                const cur = ovlSpec();
+                ovlKeepFocus(specBox, () => {
+                    specBox.innerHTML = '<div class="rf-row">' + rootFeatureName('Color spec', OVL_SPEC_SUB) + '</div>'
+                        + '<div class="ovl-styles" id="ovlRootSpecs" role="radiogroup" aria-label="' + txT('Color spec') + '">'
+                        + OVL_SPECS.map(s => {
+                            const sel = s.id === cur;
+                            return '<button type="button" class="ovl-style' + (sel ? ' active' : '') + '" role="radio" aria-checked="' + (sel ? 'true' : 'false') + '" data-spec="' + s.id + '" onclick="ovlPickSpec(this.dataset.spec)">'
+                                + '<span class="ovl-radio"></span><span class="ovl-styletxt"><b>' + escapeHtml(s.id) + '</b><span>' + escapeHtml(s.desc) + '</span></span></button>';
+                        }).join('')
+                        + '</div>' + (cur !== '2021' ? '<div class="sdb-note" id="ovlRootSpecNote">' + escapeHtml(OVL_SPEC_NOTE) + '</div>' : '');
+                });
+            }
             // More styles: a locked row below Android 14 (only Pure black applies there), else the radio group (the look of the style list above
-            // Apply, so it reads as more of the same list) and the preview of what it writes
+            // Apply, so it reads as more of the same list; CMF only at spec 2026) and the preview of what Apply writes
             if (!ovlRootStyleLive()) draw(rootLockedRow('More styles', OVL_MORE_SUB, ovlMonetOk() ? 'Needs Android 14' : 'Update the app'));
             else if (more) {
-                const cur = ovlRootStyle();
+                const cur = ovlRootStyle(), cmf = ovlSpecNow() === '2026';
                 ovlKeepFocus(more, () => {
-                    more.innerHTML = '<div class="rf-row">' + rootFeatureName('More styles', OVL_MORE_SUB) + '</div>'
+                    more.innerHTML = '<div class="rf-row">' + rootFeatureName('More styles', cmf ? OVL_MORE_SUB_2026 : OVL_MORE_SUB) + '</div>'
                         + '<div class="ovl-styles" id="ovlRootStyles" role="radiogroup" aria-label="' + txT('More styles') + '">'
-                        + OVL_ROOT_STYLES.map(s => {
+                        + OVL_ROOT_STYLES.filter(s => s.id !== 'CMF' || cmf).map(s => {
                             const sel = s.id === cur;
                             return '<button type="button" class="ovl-style' + (sel ? ' active' : '') + '" role="radio" aria-checked="' + (sel ? 'true' : 'false') + '" data-style="' + (s.id || 'OFF') + '" onclick="ovlPickRootStyle(this.dataset.style)">'
                                 + '<span class="ovl-radio"></span><span class="ovl-styletxt"><b>' + escapeHtml(s.name) + '</b><span>' + escapeHtml(s.desc) + '</span></span></button>';
@@ -38471,16 +38574,21 @@ Type any command above (e.g. pm list packages -d)</div>
             say(!applied ? '' : applied.pending ? words.maybe : words.on);
         }
 
-        // the preview under More styles, while a root style is chosen: the five rows (13 shades each) Apply would write, drawn as the "Colors in
-        // use" card draws the phone's own (ovlRenderNow's swatches, a tap copies one), and the line naming the source colour
+        // the preview under More styles, whenever Apply would write a style's colours (ovlRootPlanStyle: a More style, or the list style at spec
+        // 2025): the five rows (13 shades each) Apply would write, from the same MonetPlan.palettes call (at 2025 and 2026 for the mode the phone
+        // is in now, as Apply takes it), drawn as the "Colors in use" card draws the phone's own (ovlRenderNow's swatches, a tap copies one), and
+        // the line naming the source colour (or saying that the style turns it into Google blue: a chroma under 5, as Android decides)
         function ovlRenderRootPreview() {
             const box = document.getElementById('ovlRootPreview');
             if (!box) return;
-            const style = ovlRootStyleOn();
+            const pick = ovlRootPlanOn(ovlStyle), style = pick.style;
             if (!style) { box.innerHTML = ''; return; }
             const seed = ovlRootSeed();
-            let pals = null;
-            try { pals = MonetPlan.palettes(style, seed.hex); } catch (e) { pals = null; }
+            let pals = null, grey = false;
+            try {
+                pals = MonetPlan.palettes(style, seed.hex, ovlRootSpecOpts(pick.spec, systemPrefersDark()));
+                grey = seed.from !== 'blue' && String(MonetPlan.seed(style, seed.hex)).toUpperCase() !== String(seed.hex).toUpperCase();
+            } catch (e) { pals = null; }
             if (!pals) { box.innerHTML = ''; return; }
             const rows = OVL_PAL.map(k => {
                 const shades = pals[k[0]].shades;
@@ -38491,33 +38599,34 @@ Type any command above (e.g. pm list packages -d)</div>
                 }
                 return '<div class="ovl-pal"><div class="ovl-pal-name">' + k[1] + '</div><div class="ovl-pal-row">' + chips + '</div></div>';
             }).join('');
-            const source = seed.from === 'color' ? 'From the color above (#' + seed.hex + ')' : seed.from === 'wallpaper' ? 'From your wallpaper (#' + seed.hex + ')' : 'From Google blue: no wallpaper color could be read';
+            const source = grey ? 'From Google blue: #' + seed.hex + ' is too grey for this style'
+                : seed.from === 'color' ? 'From the color above (#' + seed.hex + ')' : seed.from === 'wallpaper' ? 'From your wallpaper (#' + seed.hex + ')' : 'From Google blue: no wallpaper color could be read';
             box.innerHTML = '<div class="ovl-preview-title">Preview</div>' + rows + '<div class="sdb-note" id="ovlRootSource">' + escapeHtml(source) + '</div>';
         }
 
         // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered.
-        // seed: the source colour Apply took when it was tapped (a fabricate after the theme write), else none
-        function ovlRootRun(action, after, seed) {
+        // at: what Apply took when it was tapped ({ seed, style, dark }: a fabricate after the theme write), else none
+        function ovlRootRun(action, after, at) {
             const sdk = ovlSdk(), applied = ovlRootApplied(), prior = ovlRootAppliedRaw();
             // what the call carries: the plan going out, or (for a disable) what the overlay on the phone holds, so the answer's words name it
-            const plan = action === 'fabricate' ? ovlBuildRootPlan(sdk, seed) : { style: applied ? applied.style : '', black: !!(applied && applied.black), entries: null };
+            const plan = action === 'fabricate' ? ovlBuildRootPlan(sdk, at) : { style: applied ? applied.style : '', spec: applied ? applied.spec : '2021', black: !!(applied && applied.black), entries: null };
             const expected = plan.entries ? ovlRootIds(sdk, plan.entries) : null;
             const req = action === 'disable' ? { action: 'disable', ids: applied ? applied.ids : [] } : { action: 'fabricate', entries: plan.entries };
             // Remembered before it goes out, as ovlApply remembers the theme: the overlay coming on repaints every app and may restart this
             // one, so the answer may never reach this page. Until an answer says otherwise the overlay may be on, and the restart's Undo, Revert
             // and Apply with nothing on switch it off; the answer then confirms the record, or puts back what was there before.
-            if (expected) ovlRootRemember({ ids: Array.from(new Set((applied ? applied.ids : []).concat(expected))), t: Date.now(), pending: true, black: plan.black, style: plan.style });
+            if (expected) ovlRootRemember(ovlRootRecord({ ids: Array.from(new Set((applied ? applied.ids : []).concat(expected))), t: Date.now(), pending: true, black: plan.black, style: plan.style }, plan.spec));
             ovlBusy = true;
             ovlRender();
             sdbRequest(id => window.AndroidBridge.overlayFabricate(id, JSON.stringify(req)), r => ovlRootDone(r, action, expected, after, prior, plan), 60000);
         }
 
         // prior: what the store held before a fabricate went out (put back when the answer shows nothing of it is on); plan: what the call carried
-        // ({ style, black }; without one, what the record says the overlay holds)
+        // ({ style, spec, black }; without one, what the record says the overlay holds)
         function ovlRootDone(r, action, expectedIds, after, prior, plan) {
             ovlBusy = false;
             const was = ovlRootApplied();
-            const carried = plan && typeof plan === 'object' ? plan : { style: was ? was.style : '', black: !!(was && was.black) };
+            const carried = plan && typeof plan === 'object' ? plan : { style: was ? was.style : '', spec: was ? was.spec : '2021', black: !!(was && was.black) };
             const words = ovlRootWords(carried.style);
             const whole = Array.isArray(r.list) && r.list.length > 0;
             if (whole) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; }
@@ -38526,8 +38635,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const onNow = whole && ids.length ? ids.some(id => ovlList.some(o => o.id === id && o.state === 1)) : null;
             if (action === 'fabricate') {
                 // listed on: written (so Revert and Undo switch it off); no answer: it may be on; refused, or listed but not on: as it was before
-                if ((r.ok || r.state === 1 || onNow === true) && ids.length) ovlRootRemember({ ids, t: Date.now(), black: carried.black === true, style: carried.style || '' });
-                else if ((r.unknown || r.timedOut) && ids.length) ovlRootRemember({ ids: Array.from(new Set((was ? was.ids : []).concat(ids))), t: Date.now(), pending: true, black: carried.black === true, style: carried.style || '' });
+                if ((r.ok || r.state === 1 || onNow === true) && ids.length) ovlRootRemember(ovlRootRecord({ ids, t: Date.now(), black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : ''));
+                else if ((r.unknown || r.timedOut) && ids.length) ovlRootRemember(ovlRootRecord({ ids: Array.from(new Set((was ? was.ids : []).concat(ids))), t: Date.now(), pending: true, black: carried.black === true, style: carried.style || '' }, carried.style ? carried.spec : ''));
                 else ovlRootRemember(prior === undefined ? null : prior);
             } else if (r.ok || onNow === false) ovlRootRemember(null);       // off, or not listed on at all: nothing of this app's is on any more
             if (r.ok) showToast(action === 'fabricate' ? words.written : words.removed);
@@ -38705,11 +38814,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (hint) {
                 const main = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
                 // what Apply does for this app's overlay besides (Super User only); its own sentence, one per combination, so each is translated whole
-                const follow = ovlUsable() && supported ? ovlRootFollowUp('apply') : null;
-                const root = follow === 'fabricate' ? ovlRootHint(ovlRootStyleOn(), ovlBlackOn()) : follow === 'disable' ? ovlRootRemoveHint() : '';
+                const follow = ovlUsable() && supported ? ovlRootFollowUp('apply', ovlStyle) : null;
+                const root = follow === 'fabricate' ? ovlRootHint(ovlRootPlanOn(ovlStyle).style, ovlBlackOn()) : follow === 'disable' ? ovlRootRemoveHint() : '';
                 hint.innerHTML = (main ? '<span>' + escapeHtml(main) + '</span>' : '') + (root ? ' <span id="ovlApplyHintRoot">' + escapeHtml(root) + '</span>' : '');
             }
-            ovlRenderRootPreview();                 // the root style's preview follows the colour and the source as they are changed
+            ovlRenderRootPreview();                 // the root style's preview follows the colour, the source and the list style as they are changed
         }
 
         function ovlRenderRecent() {
