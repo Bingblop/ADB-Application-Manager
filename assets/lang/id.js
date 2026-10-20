@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "Perlu Superuser (Root)",
 "Enabling or disabling a component": "Mengaktifkan atau menonaktifkan komponen",
   "App components": "Komponen aplikasi",
-  "Enable or disable activities, services and receivers for any app.": "Aktifkan atau nonaktifkan activity, service, dan receiver aplikasi apa pun.",
+  "Enable or disable activities, services, receivers and providers for any app.": "Aktifkan atau nonaktifkan activity, service, receiver, dan provider aplikasi apa pun.",
   "Open apps": "Buka aplikasi",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Buka aplikasi, lalu gunakan tab Activities dan Components-nya untuk mengaktifkan atau menonaktifkan setiap item.",
   "Super User for apps": "Super User untuk aplikasi",

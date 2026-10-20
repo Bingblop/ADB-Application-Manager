@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "スーパーユーザー (Root) が必要",
 "Enabling or disabling a component": "コンポーネントの有効化または無効化",
   "App components": "アプリのコンポーネント",
-  "Enable or disable activities, services and receivers for any app.": "任意のアプリのアクティビティ、サービス、レシーバーを有効または無効にします。",
+  "Enable or disable activities, services, receivers and providers for any app.": "任意のアプリのアクティビティ、サービス、レシーバー、プロバイダーを有効または無効にします。",
   "Open apps": "アプリを開く",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "アプリを開き、アクティビティタブとコンポーネントタブで各項目を有効または無効にします。",
   "Super User for apps": "アプリへの Super User",

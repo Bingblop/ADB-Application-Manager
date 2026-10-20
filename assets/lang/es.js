@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "Requiere Superusuario (Root)",
 "Enabling or disabling a component": "Activar o desactivar un componente",
   "App components": "Componentes de la app",
-  "Enable or disable activities, services and receivers for any app.": "Activa o desactiva actividades, servicios y receptores de cualquier app.",
+  "Enable or disable activities, services, receivers and providers for any app.": "Activa o desactiva actividades, servicios, receptores y proveedores de cualquier app.",
   "Open apps": "Abrir apps",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Abre una app y luego usa sus pestañas Actividades y Componentes para activar o desactivar cada uno.",
   "Super User for apps": "Super User para apps",

@@ -1323,7 +1323,7 @@
 {"k":"Enable / Disable","ctx":"in the Settings (the gear in the header)"},
 {"k":"Enable / Disable (dynamic)","ctx":"in the Settings (the gear in the header)"},
 {"k":"Enable an app","ctx":"built by the code of: top level"},
-{"k":"Enable or disable activities, services and receivers for any app.","ctx":"built by the code of: root feature rows"},
+{"k":"Enable or disable activities, services, receivers and providers for any app.","ctx":"built by the code of: root feature rows"},
 {"k":"Enable selected","ctx":"in a sheet (app list sheet)"},
 {"k":"Enable the service","ctx":"built by the code of: sd paint acs"},
 {"k":"Enable with the working mode","ctx":"built by the code of: sd paint acs"},

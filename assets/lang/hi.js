@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "सुपरयूज़र (Root) चाहिए",
 "Enabling or disabling a component": "किसी कंपोनेंट को सक्षम या अक्षम करना",
   "App components": "ऐप घटक",
-  "Enable or disable activities, services and receivers for any app.": "किसी भी ऐप की ऐक्टिविटी, सर्विस और रिसीवर चालू या बंद करें।",
+  "Enable or disable activities, services, receivers and providers for any app.": "किसी भी ऐप की ऐक्टिविटी, सर्विस, रिसीवर और प्रोवाइडर चालू या बंद करें।",
   "Open apps": "ऐप्स खोलें",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "कोई ऐप खोलें, फिर हर एक को चालू या बंद करने के लिए उसके Activities और Components टैब का उपयोग करें।",
   "Super User for apps": "ऐप्स के लिए Super User",

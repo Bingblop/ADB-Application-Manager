@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "需要超级用户 (Root)",
 "Enabling or disabling a component": "启用或停用组件",
   "App components": "应用组件",
-  "Enable or disable activities, services and receivers for any app.": "为任意应用启用或禁用 Activity、Service 和 Receiver。",
+  "Enable or disable activities, services, receivers and providers for any app.": "为任意应用启用或禁用 Activity、Service、Receiver 和 Provider。",
   "Open apps": "打开应用",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "打开一个应用，然后在它的活动和组件标签页中启用或禁用每一项。",
   "Super User for apps": "应用的 Super User",

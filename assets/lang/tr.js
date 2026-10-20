@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "Superuser (Root) gerekir",
 "Enabling or disabling a component": "Bir bileşeni etkinleştirme veya devre dışı bırakma",
   "App components": "Uygulama bileşenleri",
-  "Enable or disable activities, services and receivers for any app.": "Herhangi bir uygulamanın activity, service ve receiver bileşenlerini aç veya kapat.",
+  "Enable or disable activities, services, receivers and providers for any app.": "Herhangi bir uygulamanın activity, service, receiver ve provider bileşenlerini aç veya kapat.",
   "Open apps": "Uygulamaları aç",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Bir uygulama aç, ardından her birini açmak veya kapatmak için Etkinlikler ve Bileşenler sekmelerini kullan.",
   "Super User for apps": "Uygulamalar için Super User",

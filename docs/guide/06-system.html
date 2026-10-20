@@ -1150,7 +1150,7 @@
   <p><b>The "Features" card.</b> One row per root feature, each with a name, a line that says what it does, and a button. While Super User is active the button is live (<b>Open manager</b>, <b>Open apps</b>). While it is not, the button reads <b>Locked</b> and is greyed out, with a small lock and the words <i>Needs Super User</i> beside it at the right end of the row. Locked rows are never hidden: you can always see what the tab would offer, and tapping a locked button does nothing. The rows are:</p>
   <ul>
     <li><b>Super User for apps</b> ("Manage which apps get root in your manager."): see <a href="#rootfeatures-su-apps">Super User for apps</a>.</li>
-    <li><b>App components</b> ("Enable or disable activities, services and receivers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
+    <li><b>App components</b> ("Enable or disable activities, services, receivers and providers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
   </ul>
   <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart (when Root is not your chosen mode yet, it first asks whether to switch to Root, see <a href="#rootfeatures-grant">Getting Super User</a>). If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
 
@@ -1246,7 +1246,7 @@
 
 <section id="rootfeatures-components" data-title="App components under Super User" data-group="The tabs">
   <p class="hg-lead">Switch one part of an app on or off, a screen (activity), a receiver, a service or a provider, without freezing the whole app. The switches live in the app menu's <b>Activities</b> and <b>Components</b> tabs; this row sends you there and explains why they need root.</p>
-  <p><b>Where it is:</b> the <b>Root Features</b> tab, the second row of the <b>Features</b> card: "App components", "Enable or disable activities, services and receivers for any app.", with the button <b>Open apps</b>. Locked (<b>Locked</b>, <i>Needs Super User</i>) until the chip reads <b>ACTIVE</b>.</p>
+  <p><b>Where it is:</b> the <b>Root Features</b> tab, the second row of the <b>Features</b> card: "App components", "Enable or disable activities, services, receivers and providers for any app.", with the button <b>Open apps</b>. Locked (<b>Locked</b>, <i>Needs Super User</i>) until the chip reads <b>ACTIVE</b>.</p>
 
   <h4>Why this is a root feature</h4>
   <p>Android lets the shell user (ADB over TCP, Wireless Debugging, and Shizuku when it was started by ADB) switch <i>whole apps</i> on and off, which is what Freeze does. A single part of an app it refuses: Android's answer begins "Shell cannot change component state" unless the app is marked test-only in its manifest (<code>android:testOnly</code>). So in those modes the <b>ENABLE</b> and <b>DISABLE</b> buttons on a part run, fail with "Failed", and show you Android's refusal in a results box titled <b>Toggle component</b>; nothing changes. With Super User the same <code>pm enable</code> and <code>pm disable</code> commands run as root, and Android accepts them. Shizuku started with root counts as root for this.</p>

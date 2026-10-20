@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "يتطلب Superuser (Root)",
 "Enabling or disabling a component": "تفعيل مكوّن أو تعطيله",
   "App components": "مكوّنات التطبيق",
-  "Enable or disable activities, services and receivers for any app.": "فعِّل أو عطِّل الأنشطة والخدمات والمستقبِلات لأي تطبيق.",
+  "Enable or disable activities, services, receivers and providers for any app.": "فعِّل أو عطِّل الأنشطة والخدمات والمستقبِلات وموفّري المحتوى لأي تطبيق.",
   "Open apps": "فتح التطبيقات",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "افتح تطبيقًا، ثم استخدم علامتي تبويب الأنشطة والمكوّنات لتفعيل أو تعطيل كل عنصر.",
   "Super User for apps": "صلاحية Super User للتطبيقات",

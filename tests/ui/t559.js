@@ -12,7 +12,8 @@
 // Then the Help Guide (T-029): its Root Features topic names the Features card, the Super User for apps row
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
-// Deterministic output: ok / FAIL lines and the summary.
+// The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
+// providers; T-033). Deterministic output: ok / FAIL lines and the summary.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -45,6 +46,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       loadSetting(k) { return window.__kv[k] !== undefined ? window.__kv[k] : ''; },
       saveSetting(k, v) { window.__kv[k] = v; },
       loadPackages() { return '[]'; },
+      // one component of each kind, for the inspector the App components row sends the user to
+      getAppDetails() {
+        return JSON.stringify({ permissions: [], appopsRaw: '',
+          activityInfo: [{ name: 'com.t.Main', exported: true, enabled: true, permission: '' }],
+          receiverInfo: [{ name: 'com.t.BootRcv', exported: false, enabled: true, permission: '' }],
+          serviceInfo: [{ name: 'com.t.Svc', exported: false, enabled: true, permission: '' }],
+          providerInfo: [{ name: 'androidx.core.content.FileProvider', exported: false, enabled: true, permission: '' }] });
+      },
       openRootManager() { window.__calls.openRootManager = (window.__calls.openRootManager || 0) + 1; return JSON.stringify(window.__rootMgr || { ok: false }); },
       getWorkingMode() { return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, WM[window.__wm.state])); },
       // the explicit (fresh) read the page asks for on the way back from the manager; counted so a check can see it happen
@@ -107,6 +116,23 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the feature area also shows the unlocked App components row with Open apps (rfComponentsBtn)', /App components/.test(await text('#rfFeatureList')) && (await ev(() => !!document.getElementById('rfComponentsBtn'))));
   await page.click('#rfComponentsBtn'); await sleep(50);
   check('   Open apps goes to the Application Manager (switchView apps)', (await view()) === 'apps');
+  // T-033: the row's line must name what the user finds there: every kind of component that gets an ENABLE/DISABLE button, read from the
+  // inspector itself (the Activities tab, and each group of the Components tab: receivers, services, providers)
+  const rowSub = await ev(() => { const n = [...document.querySelectorAll('#rfFeatureList .rf-name')].find(x => /App components/.test(x.textContent)); const s = n && n.querySelector('span'); return s ? s.textContent : ''; });
+  await ev(() => openInspector('com.t')); await sleep(120);
+  const toggled = await ev(() => {
+    const hasToggle = el => [...el.querySelectorAll('.perm-toggle-btn')].some(x => /ENABLE|DISABLE/.test(x.textContent));
+    const out = hasToggle(document.getElementById('actsContainer')) ? ['activities'] : [];
+    let group = null;
+    [...document.getElementById('compsContainer').children].forEach(el => {
+      const m = /^([A-Z]+) \(\d+\)$/.exec(el.textContent.trim());
+      if (m) { group = m[1].toLowerCase(); return; }
+      if (group && !out.includes(group) && hasToggle(el)) out.push(group);
+    });
+    return out;
+  });
+  check('   its line names every kind the inspector can enable or disable: activities, receivers, services and providers (T-033)', toggled.join() === 'activities,receivers,services,providers' && toggled.every(k => rowSub.toLowerCase().includes(k)), JSON.stringify({ toggled, rowSub }));
+  await ev(() => closeInspector()); await sleep(50);
   await ev(() => switchView('rootfeatures')); await sleep(50);
   await setMode('rootVetoed');
   check('   the Java verdict can veto: Root reported as the privileged mode but rootWorkingModeActive false -> locked (gate shown, feature area locked)', !(await ev(() => isRootActive())) && (await disp('#rootGate')) === 'flex' && (await lockedRow()));

@@ -4,7 +4,7 @@ x: {
 "Needs Super User (Root)": "Нужен Superuser (Root)",
 "Enabling or disabling a component": "Включение или отключение компонента",
   "App components": "Компоненты приложения",
-  "Enable or disable activities, services and receivers for any app.": "Включайте или отключайте activity, службы и приёмники любого приложения.",
+  "Enable or disable activities, services, receivers and providers for any app.": "Включайте или отключайте activity, службы, приёмники и провайдеры любого приложения.",
   "Open apps": "Открыть приложения",
   "Open an app, then use its Activities and Components tabs to enable or disable each one.": "Откройте приложение, затем на вкладках Активности и Компоненты включайте или отключайте каждый элемент.",
   "Super User for apps": "Super User для приложений",
