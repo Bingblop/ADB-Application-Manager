@@ -170,20 +170,24 @@ public class PtyShellTest {
         String h = helper.getAbsolutePath();
 
         // ---- a shell on a terminal ----
+        // Every answer is waited for, never looked for once (T-002): `tty` answers after `stty`, from a second program, so looking for "/dev/pts/" the
+        // moment "30 100" arrived failed on a busy CI runner. waitFor returns as soon as the text is there: the longer limit costs a passing run nothing.
+        // Keep it below 30 s: the Ctrl-C check must fail when the key does not cut its `sleep 30` short.
+        long answerMs = 10000;
         Rec r = start(h, 30, 100, "/bin/bash", "--norc", "-i");
         is("the shell starts and shows its prompt", r.waitFor("bash-", 3000), r.text());
         type(r, "stty size; tty\n");
-        is("it is a terminal of 30 rows and 100 columns", r.waitFor("30 100", 3000) && r.text().contains("/dev/pts/"), r.text());
+        is("it is a terminal of 30 rows and 100 columns", r.waitFor("30 100", answerMs) && r.waitFor("/dev/pts/", answerMs), r.text());
         r.sh.resize(41, 123);
         type(r, "stty size\n");
-        is("a resize reaches the program", r.waitFor("41 123", 3000), r.text());
+        is("a resize reaches the program", r.waitFor("41 123", answerMs), r.text());
         type(r, "sleep 30\n");
         Thread.sleep(300);
         type(r, "\u0003");
         type(r, "echo still-here-$((6*7))\n");
-        is("Ctrl-C (a key) stops the running command, the shell lives on", r.waitFor("still-here-42", 3000), r.text());
+        is("Ctrl-C (a key) stops the running command, the shell lives on", r.waitFor("still-here-42", answerMs), r.text());
         type(r, "printf 'caf\\xc3\\xa9 \\xe2\\x82\\xac\\n'\n");
-        is("UTF-8 comes out whole", r.waitFor("café €", 3000), r.text());
+        is("UTF-8 comes out whole", r.waitFor("café €", answerMs), r.text());
         byte[] big = ("echo " + "y".repeat(9000) + "\n").getBytes(StandardCharsets.UTF_8);
         r.sh.write(big, 0, big.length);
         is("a long line (many frames) arrives whole", r.waitFor("y".repeat(9000), 4000));

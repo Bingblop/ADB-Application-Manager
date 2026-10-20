@@ -37,7 +37,7 @@ const DONE = { perm_intro_v62: '1', perm_adb_offer_v714: '1' };          // the 
   const calls = page => ev(page, () => ({ grantAll: window.__calls.grantAll || 0, restart: window.__calls.restart || 0, reload: window.__calls.reload || 0, perms: window.__calls.perms.join(','),
     saved: window.__calls.kv.filter(k => /^perm_intro_v62=/.test(k)).length, offer: window.__calls.kv.filter(k => /^perm_adb_offer_v714=/.test(k)).length }));
   const toasts = page => ev(page, () => window.__toasts.slice());
-  const rows = page => ev(page, () => Array.from(document.querySelectorAll('#permRows .pm-row')).map(r => r.dataset.perm + (r.querySelector('.pm-ok') ? '=ok' : '=open')).join(','));
+  const rows = page => ev(page, () => Array.from(document.querySelectorAll('#permRows .pm-row')).map(r => r.dataset.perm + (r.querySelector('.pm-ok') ? '=ok' : r.classList.contains('is-locked') ? '=locked' : '=open')).join(','));
   const settle = page => page.waitForTimeout(1000);          // longer than the 600 ms before restartApp and the 350 ms before reloadApp
   const intro = page => page.waitForFunction(() => window.__introRan >= 1);
 
@@ -114,6 +114,36 @@ const DONE = { perm_intro_v62: '1', perm_adb_offer_v714: '1' };          // the 
     await settle(page);
     const c = await calls(page);
     check('6. nothing granted by command: no restart and no reload; the walk opens the Android screen for the first row left', c.grantAll === 1 && c.restart === 0 && c.reload === 0 && c.perms === 'usage' && (await shown(page)), JSON.stringify(c));
+  });
+
+  // 7) (T-041) the phone refused a row that only a working mode can grant (READ_LOGS): after the restart the working mode is not back yet when the
+  // first-launch check runs (the adb server starts anew, Wireless debugging connects again), so the row shows a lock. That lock must not count as
+  // "nothing left": the sheet comes back, and the row unlocks once the mode is seen
+  let kvAfter = {};
+  await scenario({ kv: {}, perm: { files: false, usage: false, read_logs: false }, grantAll: ['files', 'usage'] }, async page => {
+    await intro(page);
+    await page.click('#permAllBtn');
+    await settle(page);
+    const c = await calls(page);
+    kvAfter = await ev(page, () => Object.assign({}, window.__kv));
+    check('7. Allow all, the phone refuses Read Logs: a restart, the first-launch sheet is not marked done, and the app notes that rows were left', c.restart === 1 && c.saved === 0 && kvAfter.perm_intro_left === '1', JSON.stringify(c));
+  });
+  // the fresh page after that restart, with what the last one saved, and the working mode not back yet
+  await scenario({ kv: kvAfter, mode: { priv: false }, perm: { read_logs: false } }, async page => {
+    await intro(page);
+    const r = await rows(page);
+    check('   back after the restart before the working mode is: the sheet is up, Read Logs locked for now, the sheet not marked done', (await shown(page)) && /read_logs=locked/.test(r) && (await calls(page)).saved === 0, r);
+    await ev(page, () => { window.__mode.priv = true; checkAllWorkingModes(false); });
+    const r2 = await rows(page);
+    check('   the working mode is back: Read Logs has its Allow button', /read_logs=open/.test(r2), r2);
+    const up = await shown(page);
+    if (up) await page.click('#permCloseBtn');
+    check('   Not now: now the sheet is marked done, and the note is cleared', up && !(await shown(page)) && (await calls(page)).saved === 1 && !(await ev(page, () => window.__kv.perm_intro_left)), JSON.stringify(await calls(page)));
+  });
+  // a first launch (no restart before it) without a working mode, where only rows that need one are open: no sheet, and it is marked done, as before
+  await scenario({ kv: { perm_adb_offer_v714: '1' }, mode: { priv: false }, perm: { read_logs: false } }, async page => {
+    await intro(page);
+    check('   a first launch without a working mode and only locked rows open: no sheet (nothing to allow), marked done, as before', !(await shown(page)) && (await calls(page)).saved === 1 && !(await ev(page, () => window.__calls.kv.some(k => /^perm_intro_left=/.test(k)))), JSON.stringify(await calls(page)));
   });
 
   await b.close();

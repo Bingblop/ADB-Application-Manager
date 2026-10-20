@@ -8,7 +8,7 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * The restart after "Allow all" (AppRestart): the watcher script is run for real with sh and a fake `am`. It must start the app again once the
+ * The restart after "Allow all" (AppRestart): the watcher script is run for real with sh and a fake `am`. It must start the app again (for the user it ran as) once the
  * process it watches is gone and not while it lives, end when the app kills it, outlive a hang-up to the shell that started it (what adbd sends when the
  * app's connection drops) with and without setsid, and say so (and start nothing) when it cannot see the process. Then the names and pids it accepts,
  * and (source scans) that MainActivity sets the watcher up before the grant commands, ends it when nothing changed, ends the process only when a watcher
@@ -21,6 +21,7 @@ public class AppRestartTest {
   static void throwsIae(String what, Runnable r) { n++; try { r.run(); fails++; System.out.println("FAIL " + what + ": no exception"); } catch (IllegalArgumentException e) { /* ok */ } }
 
   static final String COMP = "com.example.app/com.example.app.MainActivity";
+  static final int USER = 10;          // a work profile's user: the watcher starts the copy of the user the app ran as
   static Path fake, bin, minimal;
 
   /** Runs a script with sh: the fake `am` first on PATH, then either the real PATH (setsid available) or a folder with sh and sleep alone. Fails rather than hangs. */
@@ -83,12 +84,19 @@ public class AppRestartTest {
       throwsIae("bad package " + b, () -> AppRestart.component(b, "A"));
       throwsIae("bad activity " + b, () -> AppRestart.component("a.b", b));
     }
-    throwsIae("pid 0", () -> AppRestart.watchScript(0, COMP));
-    throwsIae("negative pid", () -> AppRestart.watchScript(-5, COMP));
-    for (String bad : new String[] {null, "", "a", "a/", "/b", "a/b/c", "a b/c", "a/b;c", "a/b'c", "$(x)/y"}) { final String c = bad; throwsIae("bad component " + c, () -> AppRestart.watchScript(1234, c)); }
-    String s = AppRestart.watchScript(1234, COMP);
+    throwsIae("pid 0", () -> AppRestart.watchScript(0, USER, COMP));
+    throwsIae("negative pid", () -> AppRestart.watchScript(-5, USER, COMP));
+    for (String bad : new String[] {null, "", "a", "a/", "/b", "a/b/c", "a b/c", "a/b;c", "a/b'c", "$(x)/y"}) { final String c = bad; throwsIae("bad component " + c, () -> AppRestart.watchScript(1234, USER, c)); }
+    throwsIae("negative user", () -> AppRestart.watchScript(1234, -1, COMP));
+    // the user of a uid (UserHandle.getUserId): the owner's apps are 0, a work profile's or the private space's 10 and up
+    check("userOf: the owner's app uid is user 0", AppRestart.userOf(10123) == 0 && AppRestart.userOf(0) == 0 && AppRestart.userOf(2000) == 0 && AppRestart.userOf(99999) == 0);
+    check("userOf: a work profile's (or the private space's) app uid is its user", AppRestart.userOf(1010123) == 10 && AppRestart.userOf(100000) == 1 && AppRestart.userOf(1510250) == 15);
+    throwsIae("userOf refuses a negative uid", () -> AppRestart.userOf(-1));
+    check("watchScript for user 0 starts the owner's copy", AppRestart.watchScript(1234, 0, COMP).contains("P=1234; U=0; A='"));
+    String s = AppRestart.watchScript(1234, USER, COMP);
     check("one line (passes unchanged through adb shell, Shizuku's sh -c and su -c)", !s.contains("\n") && !s.contains("\r"));
-    check("the pid and the component go in as arguments, not spliced into the body", s.contains("P=1234; A='" + COMP + "'; ") && s.contains("sh -c \"$W\" sh \"$P\" \"$A\"") && s.contains("am start -n \"$2\"") && s.contains("/proc/$1"));
+    check("the pid, the component and the user go in as arguments, not spliced into the body", s.contains("P=1234; U=" + USER + "; A='" + COMP + "'; ") && s.contains("sh -c \"$W\" sh \"$P\" \"$A\" \"$U\"") && s.contains("/proc/$1"));
+    check("am start names the user the app ran as (without --user it starts the foreground user's copy, not a work profile's)", s.contains("am start --user \"$3\" -n \"$2\"") && !s.contains("am start -n"));
     check("no process to see: the mark, and nothing started", s.contains("[ -d /proc/$P ] || { echo " + AppRestart.MARK_NO_PROC + "; exit 0; }"));
     check("the watcher ignores a hang-up and a broken pipe, and nothing else (TERM is how the app ends it)", s.contains("trap \"\" HUP PIPE;") && !s.contains("TERM") && !s.contains("INT") && !s.contains("KILL"));
     check("a session of its own where the phone has setsid, plain sh otherwise", s.contains("if command -v setsid >/dev/null 2>&1; then setsid sh -c") && s.contains("else sh -c \"$W\""));
@@ -120,7 +128,7 @@ public class AppRestartTest {
       // A. the process ends: the app is started again, once, and only after it is gone
       Process a = app();
       long t0 = System.currentTimeMillis();
-      String out = run(AppRestart.watchScript((int) a.pid(), COMP), true);
+      String out = run(AppRestart.watchScript((int) a.pid(), USER, COMP), true);
       long took = System.currentTimeMillis() - t0;
       String w = AppRestart.watcherPid(out);
       check("A: the script prints the mark and the watcher's pid, nothing else", out.trim().matches(java.util.regex.Pattern.quote(AppRestart.MARK_WATCH) + " [1-9][0-9]*") && w != null, out);
@@ -129,12 +137,12 @@ public class AppRestartTest {
       Thread.sleep(1500);
       check("A: nothing is started while the app lives", amLog().isEmpty(), String.valueOf(amLog()));
       end(a);
-      check("A: the app is started again once its process is gone", amCalls(1, 6000) && amLog().get(0).equals("start -n " + COMP), String.valueOf(amLog()));
+      check("A: the app is started again once its process is gone", amCalls(1, 6000) && amLog().get(0).equals("start --user " + USER + " -n " + COMP), String.valueOf(amLog()));
       check("A: once only, and the watcher ends", w != null && gone(w, 3000) && amLog().size() == 1);
 
       // B. killed by the app (nothing was granted): no start, even when the app later ends
       Process bProc = app();
-      String w2 = AppRestart.watcherPid(run(AppRestart.watchScript((int) bProc.pid(), COMP), true));
+      String w2 = AppRestart.watcherPid(run(AppRestart.watchScript((int) bProc.pid(), USER, COMP), true));
       check("B: a watcher again", w2 != null && alive(w2));
       run(AppRestart.killScript(w2), true);
       check("B: the kill script ends it", w2 != null && gone(w2, 3000));
@@ -145,16 +153,21 @@ public class AppRestartTest {
       // C. a process the shell cannot see (already gone): the no-process mark, no watcher, no start
       Process c = new ProcessBuilder("sh", "-c", "true").start();
       c.waitFor();
-      String outC = run(AppRestart.watchScript((int) c.pid(), COMP), true);
+      String outC = run(AppRestart.watchScript((int) c.pid(), USER, COMP), true);
       check("C: a pid that is gone gives the no-process mark alone", outC.trim().equals(AppRestart.MARK_NO_PROC) && AppRestart.watcherPid(outC) == null, outC);
       Thread.sleep(2500);
       check("C: and starts nothing", amLog().size() == 1, String.valueOf(amLog()));
 
       // D. without setsid on PATH (the plain sh branch), with a hang-up to the whole group of the shell that started the watcher, as adbd sends when the
       // app's connection drops: the watcher ignores it and still starts the app again
-      check("D: the minimal PATH has no setsid", readWithin(new ProcessBuilder("sh", "-c", "command -v setsid || echo none").redirectErrorStream(true).start(), 5000).trim().equals("none") || true);   // informative only: the branch is chosen inside the script with the PATH below
+      // the script picks its branch with the PATH it runs with: probe that same PATH (the fake am's folder and the minimal one), so the runs below really
+      // take the plain sh branch
+      ProcessBuilder probe = new ProcessBuilder("sh", "-c", "command -v setsid || echo none").redirectErrorStream(true);
+      probe.environment().put("PATH", bin + ":" + minimal);
+      String noSetsid = readWithin(probe.start(), 5000).trim();
+      check("D: the minimal PATH has no setsid (so the script takes its plain sh branch)", noSetsid.equals("none"), noSetsid);
       Process d = app();
-      String script = AppRestart.watchScript((int) d.pid(), COMP);
+      String script = AppRestart.watchScript((int) d.pid(), USER, COMP);
       String outD;
       if (haveSetsid) {
         // the outer shell in a session and group of its own (util-linux setsid), so the hang-up can go to that whole group without touching this JVM
@@ -171,7 +184,7 @@ public class AppRestartTest {
         Thread.sleep(500);
         check("D: the watcher outlives the hang-up", w4 != null && alive(w4));
         end(d);
-        check("D: and starts the app again", amCalls(2, 6000) && amLog().get(1).equals("start -n " + COMP), String.valueOf(amLog()));
+        check("D: and starts the app again", amCalls(2, 6000) && amLog().get(1).equals("start --user " + USER + " -n " + COMP), String.valueOf(amLog()));
         check("D: then ends", w4 != null && gone(w4, 3000));
       } else {
         outD = run(script, false);
@@ -181,12 +194,12 @@ public class AppRestartTest {
         Thread.sleep(500);
         check("D: the watcher outlives a hang-up", w4 != null && alive(w4));
         end(d);
-        check("D: and starts the app again", amCalls(2, 6000) && amLog().get(1).equals("start -n " + COMP), String.valueOf(amLog()));
+        check("D: and starts the app again", amCalls(2, 6000) && amLog().get(1).equals("start --user " + USER + " -n " + COMP), String.valueOf(amLog()));
       }
 
       // E. alive past the limit: no start (the limit is long; this only checks the loop's exit with a limit of its own)
       Process e = app();
-      String limited = AppRestart.watchScript((int) e.pid(), COMP).replace("[ $n -lt " + AppRestart.WATCH_SECONDS + " ]", "[ $n -lt 2 ]");
+      String limited = AppRestart.watchScript((int) e.pid(), USER, COMP).replace("[ $n -lt " + AppRestart.WATCH_SECONDS + " ]", "[ $n -lt 2 ]");
       String w5 = AppRestart.watcherPid(run(limited, true));
       check("E: a watcher with a two-second limit", w5 != null && alive(w5));
       check("E: it gives up while the app lives", w5 != null && gone(w5, 5000));
@@ -223,9 +236,14 @@ public class AppRestartTest {
     String main = read("src/com/bloatware/bingblop/MainActivity.java");
     String grant = between(main, "public String grantAllPermissions()", "public String getGrantCommands()");
     check("MainActivity.grantAllPermissions exists", !grant.isEmpty());
-    int watch = grant.indexOf("AppRestart.watchScript(android.os.Process.myPid(), AppRestart.component(pkg, MainActivity.class.getName()))");
+    int watch = grant.indexOf("AppRestart.watchScript(android.os.Process.myPid(), AppRestart.userOf(android.os.Process.myUid()), AppRestart.component(pkg, MainActivity.class.getName()))");
     int cmds = grant.indexOf("executeShell(sb.toString() + \"true\")");
     check("the watcher is left behind through the working mode before the grant commands run (a phone that ends the process for a grant still gets the app back)", watch > 0 && cmds > watch);
+    // Android 11 ends the app's uid when REQUEST_INSTALL_PACKAGES becomes allowed (StorageManagerService), which cuts the commands after it under ADB: it goes last
+    String list = between(grant, "StringBuilder sb = new StringBuilder();", "if (sb.length() > 0) {");
+    int inst = list.indexOf("if (!hasInstallUnknownAccess()) sb.append(\"appops set \").append(pkg).append(\" REQUEST_INSTALL_PACKAGES allow; \");");
+    check("Install unknown apps is the last grant command (on Android 11 granting it ends the app's uid, so nothing after it would run)",
+        inst > 0 && list.indexOf("sb.append(", list.indexOf("\n", inst)) < 0 && list.indexOf("MANAGE_EXTERNAL_STORAGE allow") > 0 && list.indexOf("android.permission.POST_NOTIFICATIONS") < inst, list);
     check("the status is read before and after, and the watcher is ended when nothing changed", grant.contains("String before = getPermissionStatus();") && grant.contains("String after = getPermissionStatus();") && grant.contains("if (after.equals(before)) { try { executeShell(AppRestart.killScript(watcher)); }"));
     check("without a watcher the page reloads itself as before", grant.contains("if (watcher == null) return after;"));
     check("something granted with a watcher waiting: restarting is flagged and told to the page", grant.contains("restartPending = true;") && grant.contains("o.put(\"restarting\", true)"));

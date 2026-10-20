@@ -6014,7 +6014,7 @@ p: [
 ["{0} copied", "{0} kopiert"],
 ["{0} core", "{0} Kern"],
 ["{0} cores", "{0} Kerne"],
-["{0} could not be opened from here. Open it from your home screen.", "{0} ließ sich von hier aus nicht öffnen. Öffnen Sie es über den Startbildschirm."],
+["{0} could not be opened from here. Open it from your home screen.", "{0} ließ sich von hier aus nicht öffnen. Öffne ihn über den Startbildschirm."],
 ["{0} d ago", "vor {0} Tg."],
 ["{0} days ago", "vor {0} Tagen"],
 ["{0} declared · {1} granted · {2} you can change", "{0} deklariert · {1} gewährt · {2} von Ihnen änderbar"],
