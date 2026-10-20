@@ -277,9 +277,9 @@ const PINS = [
   check('F1. records: one from before the sliders reads as 100 / 100 / 100 (and so do PR 2\'s pure black one and one without a style); the sliders are read back; a value outside 0..200 or not a number counts as 100', JSON.stringify(reads) === JSON.stringify(['100/100/100', '150/50/130', '100/100/100', '100/100/100', '100/100/100', '100/100/100']), JSON.stringify(reads));
   // the note for colours written on another build, with an adjusted record
   await setAdj(150, 100, 100);
-  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'TONAL_SPOT', adjust: { accentSat: 150, bgSat: 100, bgLight: 100 }, profile: 'P16', build: b }); }, [AAM, B16]);
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'TONAL_SPOT', adjust: { accentSat: 150, bgSat: 100, bgLight: 100 }, profile: 'P15Q2', build: b }); }, [AAM, B16]);
   await reset(); await phone({ sdk: 36, profile: 'P16', build: B16b }); a = await adj(); let stale = await ev(() => document.getElementById('ovlRootStale').innerText);
-  check('F2. Tonal Spot at 2021 written adjusted on the old build, the sliders still off 100, the phone on another build: the note says Android was updated; nothing is written by itself', stale === STALE && a.hint === HINT.list && (await calls()).fab.length === 0, JSON.stringify([stale, a.hint]));
+  check('F2. Tonal Spot at 2021 written adjusted on the old build (15 QPR2), the sliders still off 100, the phone on another build and profile (16.0): the note says Android was updated; nothing is written by itself', stale === STALE && a.hint === HINT.list && (await calls()).fab.length === 0, JSON.stringify([stale, a.hint]));
   await setAdj(100, 100, 100); a = await adj(); stale = await ev(() => document.getElementById('ovlRootStale').innerText);
   check('   the sliders back at 100 (Apply would leave Tonal Spot to Android and switch the overlay off): no such note; the hint says Apply removes it', stale === '' && a.hint === 'Also removes the theme overlay.', JSON.stringify([stale, a.hint]));
   await setAdj(150, 100, 100); await reset(); await apply(); stale = await ev(() => document.getElementById('ovlRootStale').innerText);

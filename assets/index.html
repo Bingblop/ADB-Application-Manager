@@ -38771,13 +38771,15 @@ Type any command above (e.g. pm list packages -d)</div>
             if (kind !== 'reset' && ((black && ovlBlackLive()) || ovlRootPlanOn(listStyle, adjust, accents, tap).style)) return 'fabricate';
             return ovlRootApplied() ? 'disable' : null;
         }
-        // Colours written on another build of Android (the record's build is not the phone's, as after a system update): the note under the card,
-        // while Apply would write them again (for the build the phone runs now). It runs nothing by itself. A record without a build (one from
-        // before the profiles) and an answer without one (an older APK) say nothing. Only a style's colours count, on both sides: Pure black's
+        // Colours written for another version of Android (the record's build is not the phone's, as after a system update, and the profile the
+        // colours were computed for is not the phone's): the note under the card, while Apply would write them again (for the version the phone
+        // runs now). It runs nothing by itself. Within one profile the colours do not depend on the build (ovlRootOpts takes none), so a monthly
+        // update that keeps the profile gives no note: Apply would write the same entries (T-077). A record without a build (one from before
+        // the profiles) and an answer without one (an older APK) say nothing. Only a style's colours count, on both sides: Pure black's
         // entries are the same on every build, so a record of Pure black alone, or an Apply that would write Pure black alone, gives no note.
         function ovlRootStaleNote() {
             const a = ovlRootApplied(), now = ovlBuild();
-            if (!a || !a.style || !a.build || !now || a.build === now) return '';
+            if (!a || !a.style || !a.build || !now || a.build === now || a.profile === ovlProfileState().id) return '';
             return ovlRootFollowUp('apply', ovlStyle) === 'fabricate' && ovlRootPlanOn(ovlStyle).style ? OVL_STALE_NOTE : '';
         }
         function ovlRenderRootStale() {

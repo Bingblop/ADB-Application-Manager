@@ -841,8 +841,9 @@ style the palette is worked out with:
 - **Contrast and Android updates:** a style's roles and fixed colors are computed at the phone's contrast read when **Apply theme**
   is tapped (the palettes, the preview and Pure black do not depend on it); after changing the contrast in Settings, tap Apply
   again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
-  phone's are both known and differ, the record carries a style's colors and Apply would write a style's colors (Pure black alone is the
-  same on every build and gives none), a note under the card reads *Android was updated after
+  phone's are both known and differ, the record's profile is not the phone's (a monthly update within one profile gives no note: the
+  colors depend on the profile, not the build, so Apply would write the same entries), the record carries a style's colors and Apply
+  would write a style's colors (Pure black alone is the same on every build and gives none), a note under the card reads *Android was updated after
   these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. After an update to a
   locked release the rows lock instead and the overlay stays on (an overlay's entries whose names the new release lacks are
   skipped, read in idmap2) until it is switched off.
