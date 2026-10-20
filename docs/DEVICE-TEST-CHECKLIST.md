@@ -584,6 +584,7 @@ Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap t
 - [ ] **Root from the tile asks nothing.** On a rooted phone whose root manager has not granted this app yet, with no other mode ready, tap the tile: it says "Working mode: Root" at once, no root prompt comes up and the tile is dim. Open the app: the root manager asks now; after Allow, the tile is lit.
 - [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
 - [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
+- [ ] **After an update.** With the tile in the panel, install this build over 7.15 (an update, not a fresh install) and do not open the app: pull down Quick Settings: the tile is dim, with the saved mode under its name. Open the app once, then pull down Quick Settings again: the tile follows the mode (lit when it is ready).
 
 ## 33. Allow all restarts the app
 
