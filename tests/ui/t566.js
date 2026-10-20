@@ -8,13 +8,15 @@
 // any spec but 2026 throws; with no opts, with spec 2021 and for a style that falls back, PR 3's values (t565's Fidelity pins), byte for
 // byte. (b) the card: a locked row without Super User (no bridge call, a stored 2025 counts for nothing), "Needs Android 14" with Super User
 // on Android 13, "Update the app" without the spec maths or without overlayFabricate, the radio group on Android 14 (kv ovl_spec, persists,
-// a redraw and a tab change), the note under it only at 2025 and 2026, CMF in More styles only at 2026 (and the 2026 line of More styles),
-// leaving 2026 with CMF chosen sets More styles to Off, the preview for a list style at 2025 (and its light or dark shades), the source line
+// a redraw and a tab change; a spec picked from the keyboard keeps the focus), the note under it only at 2025 and 2026, CMF in More styles
+// only at 2026 (and the 2026 line of More styles), leaving 2026 with CMF chosen sets More styles to Off, the preview for a list style at 2025
+// (and its light or dark shades, drawn again when the phone switches mode with the tab open: onSystemAppearanceChanged), the source line
 // for a grey seed; each new hint sentence. (c) Apply: Tonal Spot at 2025 sends themeApply (TONAL_SPOT) and then the 165-entry 2025 plan (its
 // system_primary_light the 2025 value), with Pure black still 165 with the black entries; the record carries spec; Rainbow at 2025 with
 // nothing else on sends a disable after a write and then nothing; Fidelity at 2026 sends the 2021 plan; CMF at 2026 the CMF plan; the 65
-// shades follow the dark mode of the moment Apply is tapped (switched between the tap and the answer, both ways); a grey seed gives Google
-// blue's plan; Undo; no overlay without Super User or below Android 14; old records without spec read as 2021.
+// shades follow the dark mode of the moment Apply is tapped (switched between the tap and the answer, both ways), and so does the list style
+// (another one picked before the answer changes nothing, both ways); a grey seed gives Google blue's plan; Undo; no overlay without Super
+// User or below Android 14; old records without spec read as 2021.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -167,6 +169,12 @@ const AAM = 'com.android.shell:aam_monet';
   await ev(() => ovlPickRootStyle('OFF'));
   await page.locator('#ovlRootSpecs .ovl-style[data-spec="2021"]').click(); await sleep(80); s = await spec();
   check('B8. back to 2021: stored, checked, the note goes away', (await kv('ovl_spec')) === '2021' && s.radios[0].checked === 'true' && s.specNote === null, JSON.stringify([await kv('ovl_spec'), s.specNote]));
+  // keyboard focus must survive the redraw a pick makes (t66 checks the same for the style list, the switches and the preset families)
+  await page.evaluate(() => document.querySelector('#ovlRootSpecs .ovl-style[data-spec="2025"]').focus());
+  await page.keyboard.press('Enter'); await sleep(100);
+  const foc = await ev(() => { const a = document.activeElement; return { spec: a && a.dataset ? a.dataset.spec || null : null, tag: a ? a.tagName : null, inGroup: !!(a && a.closest && a.closest('#ovlRootSpecs')), checked: a && a.getAttribute ? a.getAttribute('aria-checked') : null }; });
+  check('   a spec chosen from the keyboard (2025, Enter) is stored and keeps the focus on its radio, drawn anew and checked', (await kv('ovl_spec')) === '2025' && foc.spec === '2025' && foc.inGroup && foc.checked === 'true', JSON.stringify(foc));
+  await ev(() => ovlPickSpec('2021'));
   await ev(() => { kvSet('ovl_spec', '2024'); ovlRender(); }); s = await spec();
   const odd = await ev(() => { ovlPickSpec('1999'); const a = kvGet('ovl_spec', null); kvSet('ovl_spec', '2025'); kvSet('ovl_root_style', 'CMF'); ovlPickRootStyle('CMF'); return { a, style: ovlRootStyle(), stored: kvGet('ovl_root_style', null) }; });
   check('B9. a stored spec that is not one reads as 2021; a spec that is not one is ignored; at 2025 a stored CMF counts for nothing and CMF cannot be picked', s.radios[0].checked === 'true' && s.specNote === null && odd.a === '2024' && odd.style === '' && odd.stored === 'CMF', JSON.stringify([s.radios.map(r => r.checked), odd]));
@@ -178,6 +186,11 @@ const AAM = 'com.android.shell:aam_monet';
   check('B10. at 2025 with Tonal Spot in the list and More styles Off: the preview shows five rows of 13, the 2025 dark shades (accent1 500 is 7B7098), from the colour above', p.rows === 5 && p.chips.join(',') === '13,13,13,13,13' && p.accent1[7] === '#7B7098' && p.source === 'From the color above (#6750A4)', JSON.stringify(p));
   await ev(() => { window.__dark = false; ovlRender(); }); p = await preview();
   check('   the phone in light mode: the 2025 light shades (7C6EA2)', p.accent1[7] === '#7C6EA2', p.accent1[7]);
+  // a light or dark switch with the app open reaches the page only as onSystemAppearanceChanged (uiMode is in the activity's configChanges)
+  await ev(() => { window.__dark = true; onSystemAppearanceChanged(); }); await sleep(50); p = await preview();
+  check('   the phone switched to dark mode while the tab is open (MainActivity calls onSystemAppearanceChanged and nothing else): the preview is drawn again with the dark shades (7B7098)', p.rows === 5 && p.accent1[7] === '#7B7098', p.accent1[7]);
+  await ev(() => { window.__dark = false; onSystemAppearanceChanged(); }); await sleep(50); p = await preview();
+  check('   and back to light mode: the light shades again (7C6EA2)', p.rows === 5 && p.accent1[7] === '#7C6EA2', p.accent1[7]);
   await ev(() => { window.__dark = true; ovlPickStyle('RAINBOW'); }); await sleep(50); p = await preview(); m = await more();
   check('   Rainbow in the list (Google\'s rule keeps it at 2021): no preview, no hint', p.empty && m.rootHint === '', JSON.stringify([p.empty, m.rootHint]));
   await ev(() => { ovlPickStyle('SPRITZ'); }); await sleep(50); p = await preview();
@@ -262,6 +275,18 @@ const AAM = 'com.android.shell:aam_monet';
   plan = (await calls()).fab[0] || {}; r = byRes(plan);
   check('   and the other way round: dark at the tap gives the dark shades (7B7098); the roles are the same in both plans', r['android:color/system_accent1_500'] === '0xFF7B7098' && (await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true })) === 'same', r['android:color/system_accent1_500']);
   await ev(() => { window.__dark = true; window.__delay = 20; });
+  // C7b: the list style counted is the one Apply wrote, taken at the tap: another style picked in the list before the answer changes nothing
+  await ev(() => { ovlPickStyle('TONAL_SPOT'); window.__delay = 400; }); await reset();
+  await page.locator('#ovlApplyBtn').click(); await ev(() => { ovlPickStyle('RAINBOW'); });
+  await page.waitForFunction(() => window.__ovlCalls.fab.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {}); await settle(); await sleep(100);
+  k = await calls(); plan = k.fab[0] || {};
+  check('C7b. Tonal Spot in the list when Apply is tapped, Rainbow picked before the answer: the setting gets TONAL_SPOT and the overlay Tonal Spot\'s 2025 plan (entries(TONAL_SPOT, 6750A4, { spec 2025, dark true })); the record says TONAL_SPOT and 2025', k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && k.fab.length === 1 && plan.action === 'fabricate' && (await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true })) === 'same' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","spec":"2025"}', JSON.stringify([k.apply, k.fab.map(f => f.action), await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true }), await rec()]));
+  await reset();
+  await page.locator('#ovlApplyBtn').click(); await ev(() => { ovlPickStyle('TONAL_SPOT'); });
+  await page.waitForFunction(() => window.__ovlCalls.fab.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {}); await settle(); await sleep(100);
+  k = await calls();
+  check('   the other way round: Rainbow at the tap, Tonal Spot picked before the answer: the setting gets RAINBOW and the overlay written before is switched off (a disable, no fabricate); the record is cleared', k.apply.length === 1 && k.apply[0].style === 'RAINBOW' && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null, JSON.stringify([k.apply, k.fab.map(f => f.action), await rec()]));
+  await ev(() => { window.__delay = 20; });
   // C8: a grey seed at 2025 is Google blue's plan
   await ev(() => { ovlPickColor('808080'); }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('C8. the colour above 808080 with Tonal Spot at 2025: the setting gets 808080, the overlay Google blue\'s 2025 colours (entries of 1B6EF3)', (await calls()).apply[0].hex === '808080' && (await sameAs(plan, 'TONAL_SPOT', '1B6EF3', { spec: '2025', dark: true })) === 'same', await sameAs(plan, 'TONAL_SPOT', '1B6EF3', { spec: '2025', dark: true }));

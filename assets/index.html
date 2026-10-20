@@ -31452,6 +31452,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function onSystemAppearanceChanged() {
             getMaterialYouSchemes(true);
             applyTheme(false);
+            // the preview of the root theme controls shows the 65 shades of the mode the phone is in (at Color spec 2025 and 2026 they differ
+            // for some styles), and uiMode is in the activity's configChanges, so a light or dark switch arrives here only: draw it again
+            if (ovlReady && ovlSub === 'theme' && currentViewName() === 'overlays') ovlRenderRootPreview();
         }
 
         // ---------- Permissions ----------
@@ -38017,8 +38020,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const ae = document.activeElement;
             let key = null, sw = false;
             if (box && ae && ae !== document.body && box.contains(ae)) {
-                const d = ae.closest('[data-style],[data-src],[data-f],[data-hex],[data-id]');
-                if (d) { key = d.dataset.style ? ['style', d.dataset.style] : d.dataset.src ? ['src', d.dataset.src] : d.dataset.f ? ['f', d.dataset.f] : d.dataset.hex ? ['hex', d.dataset.hex] : ['id', d.dataset.id]; sw = ae.classList.contains('sdb-sw'); }
+                const d = ae.closest('[data-style],[data-src],[data-f],[data-hex],[data-spec],[data-id]');
+                if (d) { key = d.dataset.style ? ['style', d.dataset.style] : d.dataset.src ? ['src', d.dataset.src] : d.dataset.f ? ['f', d.dataset.f] : d.dataset.hex ? ['hex', d.dataset.hex] : d.dataset.spec ? ['spec', d.dataset.spec] : ['id', d.dataset.id]; sw = ae.classList.contains('sdb-sw'); }
             }
             draw();
             if (key) {

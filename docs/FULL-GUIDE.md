@@ -810,8 +810,9 @@ style the palette is worked out with:
   (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021. At 2025 or 2026, with one
   of those four in the style list and More styles on **Off**, **Apply theme** writes the theme setting as before and then that style's 2025
   colors over Android's with root, the same 165 colors and overlay as More styles (a More style chosen wins); the hint reads *Also writes
-  this style's 2025 colors with root, in place of Android's.* In 2025 and 2026 the base palettes differ between light and dark, so the 65
-  shades are those of the mode the phone is in when Apply is tapped (switch mode, tap Apply again); the roles are written for both modes.
+  this style's 2025 colors with root, in place of Android's.* From 2025 the base palettes of Tonal Spot and Expressive differ between light
+  and dark (Vibrant's, Spritz's and CMF's do not), so the 65 shades are those of the mode the phone is in when Apply is tapped (switch mode,
+  tap Apply again; the preview is drawn again on a mode switch); the roles are written for both modes.
   The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
   Apache-2.0). A grey custom color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
   *From Google blue: #808080 is too grey for this style*. **2021** then Apply, **Undo** and **Default** switch the overlay off. Not yet
