@@ -13880,7 +13880,7 @@ public class MainActivity extends Activity {
                 if (sb.length() > 0) {
                     String before = getPermissionStatus();
                     String watcher = null;
-                    try { watcher = AppRestart.watcherPid(executeShell(AppRestart.watchScript(android.os.Process.myPid(), AppRestart.component(pkg, MainActivity.class.getName())))); } catch (Throwable ignored) {}
+                    try { watcher = AppRestart.watcherPid(executeShell(AppRestart.watchScript(android.os.Process.myPid(), AppRestart.userOf(android.os.Process.myUid()), AppRestart.component(pkg, MainActivity.class.getName())))); } catch (Throwable ignored) {}
                     executeShell(sb.toString() + "true");
                     String after = getPermissionStatus();
                     if (watcher == null) return after;                                                                      // no watcher: the page reloads itself, as before
