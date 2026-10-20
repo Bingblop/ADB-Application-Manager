@@ -770,7 +770,6 @@ public class MainActivity extends Activity {
                 QuickWidgetProvider.refreshAll(MainActivity.this);
                 try {
                     android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, ModeTileService.class));
-                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, StopListTileService.class));
                 } catch (Throwable ignored) {}
                 finish();
             }
@@ -912,8 +911,10 @@ public class MainActivity extends Activity {
         final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
         QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
         if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
-        // light the Kill Apps tile for the length of the run (finishQuickAction turns it off again when the run ends)
-        try { android.service.quicksettings.TileService.requestListeningState(this, new android.content.ComponentName(this, StopListTileService.class)); } catch (Throwable ignored) {}
+        // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
+        // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
+        // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
+        // active instead would change when Android redraws it (also its "list (N apps)" subtitle), which only a phone can show; not done.
         try {
             AndroidBridge bridge = new AndroidBridge();
             for (String pkg : run.targets()) {
