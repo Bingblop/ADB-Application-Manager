@@ -5586,6 +5586,7 @@
 {"k":"Stopped: {0} succeeded, {1} failed, {2} not run","ctx":"built by the code of: on app batch done"},
 {"k":"Stuck on the App info page of {0}: the Storage entry was found, but nothing that was tried (a tap, a gesture, the keys) opened it.","ctx":"built by the code of: sd acs fail text"},
 {"k":"Subject: {0}","ctx":"built by the code of: copy sigs text"},
+{"k":"Super User was not granted. The working mode stays {0}.","ctx":"built by the code of: root ask su"},
 {"k":"Supported (API {0})","ctx":"built by the code of: render device specs"},
 {"k":"Supported: {0}","ctx":"built by the code of: mp start"},
 {"k":"Switched off: {0}","ctx":"built by the code of: ovl set"},

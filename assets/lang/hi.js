@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
 ["Root Features tab: {0}", "Root सुविधाएँ टैब: {0}"],
 ["{0} needs Super User.", "{0} के लिए सुपरयूज़र चाहिए।"],
+["Super User was not granted. The working mode stays {0}.", "सुपरयूज़र नहीं दिया गया। वर्किंग मोड {0} ही रहेगा।"],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "सिस्टम ऐप {1} का {0} अक्षम करें? इससे ऐप या सिस्टम UI खराब हो सकता है। आप इसे यहाँ फिर से चालू कर सकते हैं।"]
 ]
 };

@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
 ["Root Features tab: {0}", "Root 功能标签页：{0}"],
 ["{0} needs Super User.", "{0} 需要超级用户。"],
+["Super User was not granted. The working mode stays {0}.", "未授予超级用户。工作模式仍为 {0}。"],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "停用系统应用 {1} 的 {0}？这可能会破坏该应用或系统界面。你可以在这里重新启用它。"]
 ]
 };

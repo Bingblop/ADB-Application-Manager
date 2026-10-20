@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
 ["Root Features tab: {0}", "Вкладка «Функции Root»: {0}"],
 ["{0} needs Super User.", "{0} требует Superuser."],
+["Super User was not granted. The working mode stays {0}.", "Superuser не предоставлен. Режим работы остаётся {0}."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Отключить {0} системного приложения {1}? Это может нарушить работу приложения или системного интерфейса. Вы можете снова включить его здесь."]
 ]
 };

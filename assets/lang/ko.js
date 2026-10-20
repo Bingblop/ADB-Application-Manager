@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ {1}에 “{0}” 만들기"],
 ["Root Features tab: {0}", "Root 기능 탭: {0}"],
 ["{0} needs Super User.", "{0}에는 슈퍼유저가 필요합니다."],
+["Super User was not granted. The working mode stays {0}.", "슈퍼유저가 허용되지 않았습니다. 작동 모드는 {0}(으)로 유지됩니다."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "시스템 앱 {1}의 {0}을(를) 사용 중지할까요? 앱이나 시스템 UI가 손상될 수 있습니다. 여기에서 다시 사용 설정할 수 있습니다."]
 ]
 };

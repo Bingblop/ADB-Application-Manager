@@ -13,7 +13,8 @@
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike.
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
-// providers; T-033). Deterministic output: ok / FAIL lines and the summary.
+// providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
+// (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. Deterministic output: ok / FAIL lines and the summary.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -28,15 +29,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   page.on('dialog', d => { dialogs.push(d.type() + ': ' + d.message()); if (answer) d.accept(); else d.dismiss(); });
   await page.addInitScript(() => {
     window.__kv = {};
-    window.__calls = { selectWorkingMode: [] };
-    // what the phone reports as its working mode; a test sets the state (and whether su would grant a switch to Root)
-    window.__wm = { state: 'root', suGrants: true };
+    window.__calls = { selectWorkingMode: [], setWorkingMode: [] };
+    // what the phone reports as its working mode; a test sets the state (and whether su would grant a switch to Root). refused: su's last answer was a
+    // no, which the Java probe keeps reporting as rootGranted false in the other modes (until a fresh check forgets it)
+    window.__wm = { state: 'root', suGrants: true, refused: false };
     // which root manager (if any) openRootManager would hand off to
     window.__rootMgr = { ok: true, name: 'KernelSU' };
     const WM = {
       root: { activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true },
       rootVetoed: { activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: false },
       rootDenied: { activeMode: 'root', configuredMode: 'root', modeAvailable: false, isPrivileged: false, rootAvailable: true, rootGranted: false, rootWorkingModeActive: false },
+      rootNoSu: { activeMode: 'root', configuredMode: 'root', modeAvailable: false, isPrivileged: false, rootAvailable: false, rootWorkingModeActive: false },
       shizuku: { activeMode: 'shizuku', configuredMode: 'shizuku', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootWorkingModeActive: false },
       none: { activeMode: 'unprivileged', configuredMode: 'auto', modeAvailable: false, isPrivileged: false, rootAvailable: false, rootWorkingModeActive: false },
     };
@@ -55,15 +58,25 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
           providerInfo: [{ name: 'androidx.core.content.FileProvider', exported: false, enabled: true, permission: '' }] });
       },
       openRootManager() { window.__calls.openRootManager = (window.__calls.openRootManager || 0) + 1; return JSON.stringify(window.__rootMgr || { ok: false }); },
-      getWorkingMode() { return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, WM[window.__wm.state])); },
+      getWorkingMode() {
+        const s = WM[window.__wm.state], refusal = window.__wm.refused && s.rootAvailable && s.configuredMode !== 'root' ? { rootGranted: false } : {};
+        return JSON.stringify(Object.assign({ adbTcp: {}, adbWireless: {}, shizuku: { installed: true, running: true, authorized: true } }, s, refusal));
+      },
       // the explicit (fresh) read the page asks for on the way back from the manager; counted so a check can see it happen
       getWorkingModeFresh() { window.__calls.fresh = (window.__calls.fresh || 0) + 1; return this.getWorkingMode(); },
+      // like the Java side: the mode is chosen whatever su answers (ok false: chosen but not ready); with no su the test command cannot even start
       selectWorkingMode(mode) {
         window.__calls.selectWorkingMode.push(mode);
-        if (mode === 'root') { const ok = !!window.__wm.suGrants; window.__wm.state = ok ? 'root' : 'rootDenied'; return JSON.stringify({ ok, mode, message: ok ? 'Using Root (Superuser)' : 'Root was denied or is not available' }); }
+        if (mode === 'root') {
+          const noSu = !WM[window.__wm.state].rootAvailable, ok = !noSu && !!window.__wm.suGrants;
+          window.__wm.state = ok ? 'root' : noSu ? 'rootNoSu' : 'rootDenied'; window.__wm.refused = !ok;
+          return JSON.stringify({ ok, mode, message: ok ? 'Using Root (Superuser)' : 'Root was denied or is not available' });
+        }
         window.__wm.state = mode === 'shizuku' ? 'shizuku' : 'none';
         return JSON.stringify({ ok: true, mode, message: 'Mode: ' + mode });
       },
+      // only writes the chosen mode back (no prompt, no connection)
+      setWorkingMode(mode) { window.__calls.setWorkingMode.push(mode); window.__wm.state = mode === 'shizuku' ? 'shizuku' : mode === 'root' ? 'rootDenied' : 'none'; },
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
@@ -203,6 +216,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const r3b = await ev(() => promptRootThenOpen('Test feature'));
   check('   su denies the switch: the prompt follows, naming the feature; a yes keeps the Root Features tab open; the result is false', r3b === false && (await ev(() => window.__calls.selectWorkingMode.join())) === 'root' && dialogs.length === 1 && /^confirm: Test feature needs Super User\.\n\nOpen Root Features to check if your device supports Super User\?$/.test(dialogs[0]) && (await view()) === 'rootfeatures', JSON.stringify([r3b, dialogs]));
   check('   after the denial the tag says DENIED and the gate says why', (await tag()) === 'warning DENIED' && /did not grant/.test(await text('#rootGateDesc')), await tag());
+  check('   T-043: the denied switch puts Shizuku back (setWorkingMode("shizuku") after selectWorkingMode("root")): chosen and privileged again, the badge reads Shizuku', (await ev(() => window.__calls.setWorkingMode.join())) === 'shizuku' && (await ev(() => window.__wm.state)) === 'shizuku' && (await ev(() => lastModesData.configuredMode === 'shizuku' && isPrivilegedActive === true)) && (await text('#execModeText')) === 'Shizuku', JSON.stringify(await ev(() => [window.__calls.setWorkingMode, window.__wm.state, isPrivilegedActive, document.getElementById('execModeText').innerText])));
 
   // ---- 4. (C) no su at all
   await ev(() => switchView('about')); await sleep(50);
@@ -225,9 +239,26 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // ---- 5. Request Super User
   await ev(() => switchView('rootfeatures')); await sleep(50);
-  await ev(() => { window.__wm.suGrants = true; window.__calls.selectWorkingMode = []; });
+  const calls = () => ev(() => window.__calls.selectWorkingMode.join() + ' / ' + window.__calls.setWorkingMode.join());
+  const toastText = () => text('#toastMsg');
+  const resetCalls = () => ev(() => { window.__calls.selectWorkingMode = []; window.__calls.setWorkingMode = []; });
+  // T-043: from Shizuku with su that says no, the switch to Root is undone: Shizuku is chosen and privileged again, the tag reads DENIED
+  await setMode('shizuku', false); await resetCalls();
   await page.click('#rfRequestBtn'); await sleep(250);
-  check('5. Request Super User asks su through selectWorkingMode("root") (the path of Working Modes\' Request Root Access); a grant unlocks the tab', (await ev(() => window.__calls.selectWorkingMode.join())) === 'root' && (await ev(() => isRootActive())) && (await disp('#rootGate')) === 'none');
+  check('5. T-043 Request Super User from Shizuku, su says no: Root is asked (selectWorkingMode "root"), then Shizuku is put back (setWorkingMode "shizuku")', (await calls()) === 'root / shizuku' && (await ev(() => window.__wm.state)) === 'shizuku', await calls());
+  check('   Shizuku is chosen and privileged again (badge Shizuku), the tag reads DENIED with the reason, the rows stay locked', (await ev(() => lastModesData.configuredMode === 'shizuku' && isPrivilegedActive === true)) && (await text('#execModeText')) === 'Shizuku' && (await tag()) === 'warning DENIED' && /did not grant/.test(await text('#rootGateDesc')) && (await lockedRow()), JSON.stringify([await tag(), await text('#execModeText')]));
+  check('   the toast says so: "Super User was not granted. The working mode stays Shizuku ADB (UID 2000)."', (await toastText()) === 'Super User was not granted. The working mode stays Shizuku ADB (UID 2000).', await toastText());
+  // a phone without su, on Automatic: the switch cannot even ask, and Automatic comes back
+  await setMode('none'); await resetCalls();
+  await page.click('#rfRequestBtn'); await sleep(250);
+  check('   no su, Automatic chosen: the switch fails and Automatic is put back (configuredMode auto), the tag reads NOT FOUND', (await calls()) === 'root / auto' && (await ev(() => lastModesData.configuredMode)) === 'auto' && (await tag()) === 'inactive NOT FOUND' && /stays Automatic\.$/.test(await toastText()), JSON.stringify([await calls(), await tag(), await toastText()]));
+  // Root already chosen (DENIED before): a new no keeps Root chosen, nothing is put back
+  await setMode('rootDenied', false); await resetCalls();
+  await page.click('#rfRequestBtn'); await sleep(250);
+  check('   Root already chosen and su says no again: Root stays chosen (no setWorkingMode), DENIED', (await calls()) === 'root / ' && (await ev(() => lastModesData.configuredMode)) === 'root' && (await tag()) === 'warning DENIED', JSON.stringify([await calls(), await tag()]));
+  await setMode('shizuku', true); await resetCalls();
+  await page.click('#rfRequestBtn'); await sleep(250);
+  check('   Request Super User asks su through selectWorkingMode("root") (the path of Working Modes\' Request Root Access); a grant unlocks the tab and puts nothing back', (await calls()) === 'root / ' && (await ev(() => isRootActive())) && (await disp('#rootGate')) === 'none', await calls());
 
   // ---- 6. the look at 360 px, locked
   await page.setViewportSize({ width: 360, height: 740 }); await setMode('shizuku', true); await sleep(100);

@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"],
 ["Root Features tab: {0}", "Onglet Fonctions Root : {0}"],
 ["{0} needs Super User.", "{0} nécessite Superutilisateur."],
+["Super User was not granted. The working mode stays {0}.", "Superutilisateur n’a pas été accordé. Le mode de fonctionnement reste {0}."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Désactiver {0} de l’app système {1} ? Cela peut casser l’app ou l’interface système. Vous pouvez le réactiver ici."]
 ]
 };

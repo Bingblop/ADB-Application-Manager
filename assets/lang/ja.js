@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
 ["Root Features tab: {0}", "Root 機能タブ：{0}"],
 ["{0} needs Super User.", "{0} にはスーパーユーザーが必要です。"],
+["Super User was not granted. The working mode stays {0}.", "スーパーユーザーは許可されませんでした。動作モードは {0} のままです。"],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "システムアプリ {1} の {0} を無効にしますか？アプリやシステム UI が壊れる可能性があります。ここで再び有効にできます。"]
 ]
 };

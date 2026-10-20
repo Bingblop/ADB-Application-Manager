@@ -8583,6 +8583,13 @@ public class MainActivity extends Activity {
                 // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
                 boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
                 if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
+                else if (rootAvailable) {
+                    // in another mode su is not asked, but its last answer is still known: a refusal (Request Super User puts the mode the user had back
+                    // after one) reads as DENIED on Root Features until a fresh check forgets it (probeAndCacheMode(true) clears rootGrant)
+                    Boolean lastAnswer;
+                    synchronized (modeCacheLock) { lastAnswer = rootGrant; }
+                    if (Boolean.FALSE.equals(lastAnswer)) obj.put("rootGranted", false);
+                }
                 // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
                 obj.put("rootWorkingModeActive", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());

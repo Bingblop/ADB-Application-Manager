@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ Crear “{0}” en {1}"],
 ["Root Features tab: {0}", "Pestaña Funciones Root: {0}"],
 ["{0} needs Super User.", "{0} necesita Superusuario."],
+["Super User was not granted. The working mode stays {0}.", "No se concedió Superusuario. El modo de operación sigue siendo {0}."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "¿Desactivar {0} de la app del sistema {1}? Esto puede dañar la app o la interfaz del sistema. Puedes volver a activarlo aquí."]
 ]
 };

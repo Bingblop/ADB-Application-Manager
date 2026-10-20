@@ -28586,11 +28586,27 @@ Type any command above (e.g. pm list packages -d)</div>
             const list = document.getElementById('rfFeatureList');
             if (list) list.innerHTML = rootFeatureRows();
         }
-        // Request Super User: the same path as Request Root Access in Working Modes (su asks; a yes makes Root the working mode and the mode change
-        // re-renders this tab). Whether a phone without su can get a temporary root is a later step.
+        // Asking su from here goes through the switch to Root (selectWorkingMode runs `su -c id`; a yes makes Root the working mode and the mode change
+        // re-renders this tab). Working Modes keeps Root chosen when su says no (Root was picked there on purpose), but here the switch is only the way to
+        // ask (T-043): after a refusal, a timeout or on a phone without su the mode chosen before comes back as it was (setWorkingMode only writes the
+        // choice back: no prompt, no reconnect), read back by a new check; the toast says so only when that check shows it. Root chosen before stays chosen.
+        function rootAskSu(afterSelect) {
+            const prev = (lastModesData || {}).configuredMode;
+            selectModeUI('root', res => {
+                if (res && !res.ok && prev && prev !== 'root' && MODE_LABELS[prev] && window.AndroidBridge.setWorkingMode) {
+                    try { window.AndroidBridge.setWorkingMode(prev); } catch (e) {}
+                    checkAllWorkingModes(false);
+                    if ((lastModesData || {}).configuredMode === prev) showToast(txF('Super User was not granted. The working mode stays {0}.', txT(MODE_LABELS[prev])));
+                    loadPackageData();
+                }
+                if (afterSelect) afterSelect(res);
+            });
+        }
+        // Request Super User: asks su the way Request Root Access in Working Modes does, but a refusal keeps the mode the user had (rootAskSu).
+        // Whether a phone without su can get a temporary root is a later step.
         function rootRequestSuperUser() {
             if (!window.AndroidBridge) { showToast('This works in the app on a phone, not in a browser.'); return; }
-            selectModeUI('root');
+            rootAskSu();
         }
         // Temporary root by hand-off: open the installed root manager (KernelSU, APatch or Magisk) so the grant is approved there, then read the
         // status back when the app returns (rootGrantPending -> a fresh working-mode check that updates the gate). No grant mechanics live here: the
@@ -28676,8 +28692,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (isRootActive()) return Promise.resolve(true);
             const d = lastModesData || {};
             if (d.rootAvailable && window.AndroidBridge) {
-                // su is there, the mode just is not Root: switch to it (su asks on its own) and go on when it grants
-                return new Promise(resolve => selectModeUI('root', () => resolve(isRootActive() ? true : rootOfferTab(featureName))));
+                // su is there, the mode just is not Root: switch to it (su asks on its own) and go on when it grants; a refusal keeps the mode the user had
+                return new Promise(resolve => rootAskSu(() => resolve(isRootActive() ? true : rootOfferTab(featureName))));
             }
             return Promise.resolve(rootOfferTab(featureName));
         }

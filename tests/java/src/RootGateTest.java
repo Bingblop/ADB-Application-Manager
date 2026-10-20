@@ -62,6 +62,13 @@ public class RootGateTest {
     check("source: probeWorkingMode puts rootWorkingModeActive", probe != null && probe.contains("obj.put(\"rootWorkingModeActive\", rootGrantedNow);"));
     check("source: that verdict is root chosen AND su granted (asked in the app's window; a tile tap's headless window only reads a grant already known)", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());"));
     check("source: the fallback answer of a failed probe has no rootWorkingModeActive (the page then stays locked)", probe != null && !bodyOf(m, "private String probeWorkingMode() {").substring(probe.indexOf("catch (Exception e)")).contains("rootWorkingModeActive"));
+    // T-043: outside Root su is not asked, but a known refusal (the last answer, kept in rootGrant) is still reported, so Root Features reads DENIED after
+    // Request Super User put the previous mode back; a fresh probe forgets it
+    check("source: outside Root, a remembered refusal is reported as rootGranted false (read under the lock, never a fresh su call)", probe != null
+        && probe.contains("synchronized (modeCacheLock) { lastAnswer = rootGrant; }") && probe.contains("if (Boolean.FALSE.equals(lastAnswer)) obj.put(\"rootGranted\", false);")
+        && probe.indexOf("else if (rootAvailable) {") > probe.indexOf("if (rootAvailable && \"root\".equals(activeWorkingMode)) obj.put(\"rootGranted\", rootGrantedNow);"));
+    String fresh = bodyOf(m, "private String probeAndCacheMode(boolean recheckRoot) {");
+    check("source: a fresh probe forgets su's last answer", fresh != null && fresh.contains("if (recheckRoot) { rootChecked = false; rootGrant = null; }"));
 
     // the page: the gate helper, and the verdict read from the working-mode data
     String gate = bodyOf(h, "function isRootActive() {");
@@ -70,5 +77,16 @@ public class RootGateTest {
     check("source: the page reads rootWorkingModeActive (the Java verdict can veto)", gate != null && gate.contains("rootWorkingModeActive"));
     check("source: the Root Features tab is in the registry, before About", h.contains("{ key: 'rootfeatures', label: 'Root\\nFeatures', name: 'Root Features' }") && h.indexOf("{ key: 'rootfeatures'") < h.indexOf("{ key: 'about'"));
     check("source: the tab re-renders on a mode change and when shown", h.contains("rootOnModeChange()") && h.contains("if (viewName === 'rootfeatures' && typeof onRootFeaturesShown === 'function') onRootFeaturesShown();"));
+    // T-043: Request Super User and the attempt-to-prompt funnel ask su through rootAskSu, which puts the mode chosen before back after a refusal
+    String ask = bodyOf(h, "function rootAskSu(afterSelect) {");
+    check("source: rootAskSu remembers the chosen mode, then switches to Root", ask != null && ask.indexOf("const prev = (lastModesData || {}).configuredMode;") >= 0
+        && ask.indexOf("const prev = (lastModesData || {}).configuredMode;") < ask.indexOf("selectModeUI('root',"));
+    check("source: only a refusal of a switch from another mode puts it back, with setWorkingMode (no prompt, no reconnect), then reads the modes again", ask != null
+        && ask.contains("if (res && !res.ok && prev && prev !== 'root' && MODE_LABELS[prev]") && ask.contains("window.AndroidBridge.setWorkingMode(prev);")
+        && ask.indexOf("checkAllWorkingModes(false);") > ask.indexOf("window.AndroidBridge.setWorkingMode(prev);"));
+    check("source: the toast says the mode stays only when the check read it back", ask != null && ask.contains("if ((lastModesData || {}).configuredMode === prev) showToast("));
+    String req = bodyOf(h, "function rootRequestSuperUser() {"), funnel = bodyOf(h, "function promptRootThenOpen(featureName) {");
+    check("source: Request Super User and promptRootThenOpen go through rootAskSu, not a bare switch to Root", req != null && funnel != null
+        && req.contains("rootAskSu()") && funnel.contains("rootAskSu(") && !req.contains("selectModeUI('root'") && !funnel.contains("selectModeUI('root'"));
   }
 }

@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
 ["Root Features tab: {0}", "Tab Fitur Root: {0}"],
 ["{0} needs Super User.", "{0} memerlukan Superuser."],
+["Super User was not granted. The working mode stays {0}.", "Superuser tidak diberikan. Mode kerja tetap {0}."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Nonaktifkan {0} dari aplikasi sistem {1}? Ini dapat merusak aplikasi atau antarmuka sistem. Anda dapat mengaktifkannya kembali di sini."]
 ]
 };

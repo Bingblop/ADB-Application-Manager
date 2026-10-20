@@ -6287,6 +6287,7 @@ p: [
 ["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
 ["Root Features tab: {0}", "Root Özellikleri sekmesi: {0}"],
 ["{0} needs Super User.", "{0} için Superuser gerekir."],
+["Super User was not granted. The working mode stays {0}.", "Superuser verilmedi. Çalışma modu {0} olarak kalıyor."],
 ["Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.", "Sistem uygulaması {1} içindeki {0} bileşenini devre dışı bırak? Bu, uygulamayı veya sistem arayüzünü bozabilir. Buradan tekrar açabilirsiniz."]
 ]
 };
