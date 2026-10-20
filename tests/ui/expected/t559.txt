@@ -56,6 +56,7 @@ ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager an
 ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
 ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
 ok      its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk's list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)
+ok      T-053 no topic recommends Magisk's "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action
 ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
 ok   8. no page errors
 errors: []

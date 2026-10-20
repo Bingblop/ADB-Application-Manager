@@ -15,6 +15,7 @@
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
 // Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
+// No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053).
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
@@ -325,6 +326,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // once: the same paragraph names DENIED (su asked and refused), so it says what to do when Magisk then says no without asking
   const gGrant = plain['rootfeatures-grant'] || '';
   check('   its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk\'s list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)', hiddenMgrToast.length > 0 && gGrant.includes('"' + hiddenMgrToast + '"') && /until this app has asked once, it is not in Magisk's list/.test(gGrant) && /\(a chip that reads DENIED means it has\) and Magisk now says no without showing its question/.test(gGrant) && !/so the app is not in its list yet/.test(gGrant), (gGrant.match(/Because the phone has.{0,200}/) || [''])[0]);
+  // T-053: Magisk saves no policy for "Once" (it covers a single su request), and this app runs a new su for every command, so a "Once" grant
+  // would bring Magisk's question back at every root action. The Risky box, Way A step 3 and the recipe recommend a time limit (or Forever taken
+  // back later) instead, and What you are getting into says what Once covers
+  const gRecipe = plain['recipe-root-features'] || '';
+  const onceAdvice = /pick "Once"|"Once" is the careful answer|"Once" is asked for again next time/;
+  check('   T-053 no topic recommends Magisk\'s "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action',
+    [gTab, gGrant, gRecipe].every(s => !onceAdvice.test(s)) && [gTab, gGrant, gRecipe].every(s => /"60 mins"/.test(s)) && /"Once" covers one request only/.test(gGrant) && /Magisk would ask again for every action/.test(gGrant) && /"Once"[^.]*covers this one request only/.test(gRecipe),
+    JSON.stringify([gTab, gGrant, gRecipe].map(s => (s.match(/.{0,80}"Once".{0,120}/) || [''])[0])));
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 
