@@ -78,6 +78,7 @@ x: {
   "Theme overlay written": "Overlay do tema gravado",
   "Theme overlay removed": "Overlay do tema removido",
   "The theme overlay was not written": "O overlay do tema não foi gravado",
+  "The colors were not written. Tap Apply theme again.": "As cores não foram gravadas. Toque em Aplicar tema novamente.",
   "The theme overlay was not removed": "O overlay do tema não foi removido",
   "The theme overlay may be written on this phone.": "O overlay do tema pode estar gravado neste telefone.",
   "The theme overlay is written on this phone.": "O overlay do tema está gravado neste telefone.",

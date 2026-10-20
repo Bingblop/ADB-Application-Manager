@@ -78,6 +78,7 @@ x: {
   "Theme overlay written": "Оверлей темы записан",
   "Theme overlay removed": "Оверлей темы убран",
   "The theme overlay was not written": "Оверлей темы не был записан",
+  "The colors were not written. Tap Apply theme again.": "Цвета не были записаны. Нажмите «Применить тему» ещё раз.",
   "The theme overlay was not removed": "Оверлей темы не был убран",
   "The theme overlay may be written on this phone.": "Оверлей темы, возможно, записан на этом телефоне.",
   "The theme overlay is written on this phone.": "Оверлей темы записан на этом телефоне.",

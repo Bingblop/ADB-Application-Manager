@@ -38270,10 +38270,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
             const dark = systemPrefersDark(), contrast = ovlRootStyleLive() ? ovlContrast(true) : undefined, adjust = ovlRootAdjOn(), accents = ovlRootAccOn();
             const black = ovlBlackOn(), more = ovlRootStyle(), spec = ovlSpecNow();
+            const chosen = { source, style, seed, dark, contrast, adjust, accents, black, more, spec };
+            // the overlay half this tap plans ('fabricate', 'disable' or null), kept with the tap's choices in the resume record (T-068): when
+            // the theme's answer is lost (a restart first, or no answer) and the theme then reads back as written, this same Apply is completed
+            const root = ovlRootFollowUp('apply', style, adjust, accents, chosen);
             ovlBusy = true;
-            ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
+            ovlRemember(before, { kind: 'apply', source, hex, style, from: before, root, at: root ? chosen : null });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark, contrast, adjust, accents, black, more, spec }), 60000);
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, Object.assign({ root }, chosen)), 60000);
         }
 
         function ovlReset() {
@@ -38326,8 +38330,10 @@ Type any command above (e.g. pm list packages -d)</div>
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
                 const unsure = !!(r.timedOut || r.unknown);
-                if (unsure) ovlRemember(kind !== 'undo' ? was : null, { kind, source: chosen.source, hex, style: chosen.style, from: was });       // the restart (or the answer) may still come
+                if (unsure) ovlRemember(kind !== 'undo' ? was : null, { kind, source: chosen.source, hex, style: chosen.style, from: was, root: chosen.root || null, at: chosen.root ? chosen : null });       // the restart (or the answer) may still come
                 else ovlForget();
+                // the overlay half waits for the look again below: written as this Apply planned once the theme reads back as written (T-068)
+                if (unsure && kind === 'apply' && chosen.root) ovlPendingFinish = kvGet('ovl_resume', null);
                 showToast(unsure ? 'No answer: the theme may still change' : 'The theme was not changed');
                 ovlFailure(kind === 'reset' ? 'Could not reset the theme' : 'Theme change refused', 'Monet · secure setting', r);
                 if (unsure) { ovlRefreshLater('theme'); ovlWatchPalette(); }
@@ -38405,6 +38411,8 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_LOCK_ONE_UI = 'Not supported on One UI';
         const OVL_LOCK_NOT_YET = 'Not supported on this Android version yet';
         const OVL_STALE_NOTE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
+        // the toast when an Apply's overlay half could not be completed after its theme answer was lost (ovlFinishApply, T-068)
+        const OVL_ROOT_NOT_WRITTEN = 'The colors were not written. Tap Apply theme again.';
         // Intensity: the three sliders, each a percentage from 0 to 200 in steps of 5, 100 (Android's colours as they are) when never moved; key:
         // monet.js's opts.adjust field, kv: where it is remembered, id: the input's (its value label is id + 'V')
         const OVL_ADJ = [
@@ -39653,19 +39661,30 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec.kind === 'apply' && !rec.done) ovlPendingFinish = rec;
         }
 
-        // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Hidden Settings
+        // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Hidden Settings.
+        // T-068: an Apply whose answer was lost (the app restarted first, or the phone did not answer) also has its overlay half: rec.root is
+        // what the tap planned and rec.at the choices it took; with the theme read back as written, that half runs now with those choices
+        // (it completes the Apply the user tapped; nothing else starts it), with the usual messages. Read back as not written (or too late, or
+        // the controls not live any more), nothing is written and a toast says so. A newer change (another resume record) counts instead.
         function ovlFinishApply(rec) {
-            if (!rec || rec.done || Date.now() - rec.t > 300000) return;
+            if (!rec || rec.done) return;
+            const cur = kvGet('ovl_resume', null), mine = !!cur && cur.t === rec.t;
+            const root = rec.root === 'fabricate' || rec.root === 'disable' ? rec.root : null, at = rec.at && typeof rec.at === 'object' ? rec.at : null;
+            const notWritten = () => { if (root && mine) showToast(OVL_ROOT_NOT_WRITTEN); };
+            if (Date.now() - rec.t > 300000) { notWritten(); return; }
             const t = ovlTheme;
             if (!t || ovlRaw == null) return;
             const same = rec.source === 'preset' ? (t.source === 'preset' && t.color === rec.hex) : (t.source === 'home_wallpaper');
-            if (!same || (rec.style && (t.style || 'TONAL_SPOT') !== rec.style)) return;
+            if (!same || (rec.style && (t.style || 'TONAL_SPOT') !== rec.style)) { notWritten(); return; }
             if (rec.hex) ovlAddRecent(rec.hex);
             if (typeof sdbRecord === 'function') {
                 try { sdbRecord('secure', 'theme_customization_overlay_packages', rec.from == null || rec.from === 'null' ? null : rec.from, ovlRaw === 'null' ? null : ovlRaw); } catch (e) {}
             }
-            const cur = kvGet('ovl_resume', null);
-            if (cur && cur.t === rec.t) kvSet('ovl_resume', Object.assign({}, cur, { done: true }));
+            if (mine) kvSet('ovl_resume', Object.assign({}, cur, { done: true }));          // marked first: a second restart does not write it again
+            if (!root || !mine) return;
+            const follow = at ? ovlRootFollowUp('apply', at.style, at.adjust, at.accents, at) : null;
+            if (!follow || ovlBusy) { if (root === 'fabricate' || ovlBusy) notWritten(); return; }
+            ovlRootRun(follow, null, at);
         }
         function ovlRemoteOp(op) { return op === 'enable' || op === 'disable'; }
         function ovlReadListThen(fn) {

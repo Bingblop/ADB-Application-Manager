@@ -78,6 +78,7 @@ x: {
   "Theme overlay written": "Tema katmanı yazıldı",
   "Theme overlay removed": "Tema katmanı kaldırıldı",
   "The theme overlay was not written": "Tema katmanı yazılmadı",
+  "The colors were not written. Tap Apply theme again.": "Renkler yazılmadı. Temayı uygula'ya tekrar dokunun.",
   "The theme overlay was not removed": "Tema katmanı kaldırılmadı",
   "The theme overlay may be written on this phone.": "Tema katmanı bu telefona yazılmış olabilir.",
   "The theme overlay is written on this phone.": "Tema katmanı bu telefona yazılmış durumda.",

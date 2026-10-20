@@ -3953,6 +3953,7 @@
 {"k":"The check could not be started.","ctx":"built by the code of: check updates ui"},
 {"k":"The clipboard is empty","ctx":"built by the code of: rt paste"},
 {"k":"The colors Android computes itself.","ctx":"built by the code of: top level"},
+{"k":"The colors were not written. Tap Apply theme again.","ctx":"built by the code of: top level"},
 {"k":"The command could not be started.","ctx":"built by the code of: xq run"},
 {"k":"The command gave no answer.","ctx":"built by the code of: xq fail text"},
 {"k":"The command ran, but the process id could not be read, so the restart is not confirmed.","ctx":"built by the code of: xpw sys ui"},

@@ -802,7 +802,10 @@ style the palette is worked out with:
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
   **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
   fabricated overlay). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
-  while it reads Applying… counts for the next Apply only. Not yet tried on a rooted phone.
+  while it reads Applying… counts for the next Apply only. When the theme's own answer is lost (the app restarted first, or no
+  answer), the resume record keeps that Apply's overlay half and its choices: once the theme reads back as written, the overlay is
+  written as that tap would have; read back as not written, nothing is written and a toast says *The colors were not written. Tap
+  Apply theme again.* Not yet tried on a rooted phone.
 - **Which Android versions:** each Android release builds its theme colors its own way (the shade rule, the list of
   roles and their names, the write order, the color spec), so the app computes the root colors for the build family the phone is
   and writes them with that release's names in its order; everything else is locked (fail closed). `MonetProfile` (Java, no

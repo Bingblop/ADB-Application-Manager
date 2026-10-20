@@ -296,6 +296,68 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('    its Undo switches the overlay off first (the disable plan with the remembered id), then puts the old theme back; nothing is remembered any more', r4b.fab.length === 1 && r4b.fab[0].action === 'disable' && JSON.stringify(r4b.fab[0].ids) === '["' + AAM + '"]' && r4b.restore === 1 && r4b.applied === null && r4b.note === '', JSON.stringify(r4b));
   await p4.close();
 
+  // 13b) T-068: a restart before the theme's own answer. The overlay half of that Apply (what its tap planned, with its choices) is kept in
+  //      the resume record; once the theme reads back as written, the restarted page completes that Apply: the overlay is written, with the
+  //      usual toast. Read back as not written: nothing is written, and a toast says so
+  const KEY = 'theme_customization_overlay_packages';
+  const openWith = async (kvs, init) => {
+    const p = await b.newPage({ viewport: { width: 360, height: 800 } });
+    p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(k => { window.__kvInit = JSON.parse(k); }, kvs);
+    await p.addInitScript(sdb.initScript); await p.addInitScript(ovl.initScript);
+    await p.addInitScript(init.fn, init.arg);
+    return p;
+  };
+  // tap Apply with Pure black on and a theme bridge that never answers; the phone's setting as written (the value the mock would write) or not
+  const tapLost = async () => {
+    const p = await openWith(JSON.stringify({ ovl_black: 'true' }), { fn: () => { window.__root = true; }, arg: null });
+    await p.goto(URL); await p.waitForTimeout(500);
+    await p.evaluate(() => switchView('overlays')); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.__ovlNoAnswer = true; });
+    await p.locator('#ovlApplyBtn').click(); await p.waitForTimeout(150);
+    const out = await p.evaluate(() => {
+      const a = window.__ovlCalls.apply[0] || {}, st = a.style || 'TONAL_SPOT';
+      const value = a.source === 'preset' ? JSON.stringify({ 'android.theme.customization.system_palette': a.hex, 'android.theme.customization.color_source': 'preset', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() })
+        : JSON.stringify({ 'android.theme.customization.color_source': 'home_wallpaper', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() });
+      return { kv: JSON.stringify(window.AndroidBridge.__kv), value, resume: kvGet('ovl_resume', null), fab: window.__ovlCalls.fab.length };
+    });
+    await p.close();                                             // the restart, before the theme's answer
+    return out;
+  };
+  const restarted = async (lost, written) => {
+    const p = await openWith(lost.kv, { fn: ([key, v]) => { window.__root = true; window.__toasts = []; if (v) window.__db.secure[key] = v; }, arg: [KEY, written ? lost.value : null] });
+    await p.addInitScript(() => { const hook = () => { if (typeof showToast !== 'function') { setTimeout(hook, 5); return; } const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; }; hook(); });
+    await p.goto(URL); await p.waitForTimeout(1900);
+    await settle(p); await p.waitForTimeout(100);
+    const r = await p.evaluate(() => ({ view: currentViewName(), snack: document.getElementById('sdbSnack').classList.contains('show') ? document.getElementById('sdbSnackMsg').innerText : '', fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null), done: (kvGet('ovl_resume', null) || {}).done === true, note: document.getElementById('ovlRootNote').innerText }));
+    return { p, r };
+  };
+  let lost = await tapLost();
+  check('13b. Apply with Pure black on, the theme\'s answer lost to a restart: the resume record keeps what the tap planned for the overlay (fabricate) and its choices (Pure black on); nothing was written yet', lost.fab === 0 && !!lost.resume && lost.resume.kind === 'apply' && lost.resume.root === 'fabricate' && !!lost.resume.at && lost.resume.at.black === true && lost.resume.done === false, JSON.stringify(lost.resume));
+  let rs = await restarted(lost, true);
+  check('    after the restart, the theme read back as written: that Apply\'s overlay is written (the 11-entry plan) with the usual toast, the Undo bar is back, the record says written and the resume record is done', rs.r.view === 'overlays' && rs.r.snack === 'Theme changed' && JSON.stringify(rs.r.fab) === '["fabricate:11"]' && rs.r.toasts.includes('Pure black overlay written') && !!rs.r.applied && rs.r.applied.black === true && rs.r.applied.pending !== true && rs.r.done && rs.r.note === 'The pure black overlay is written on this phone.', JSON.stringify(rs.r));
+  await rs.p.close();
+  lost = await tapLost();
+  rs = await restarted(lost, false);
+  check('    the theme read back as not written: no overlay is written, and a toast says the colors were not written and to tap Apply theme again', JSON.stringify(rs.r.fab) === '[]' && rs.r.toasts.includes('The colors were not written. Tap Apply theme again.') && rs.r.applied === null && rs.r.note === '', JSON.stringify(rs.r));
+  await rs.p.close();
+  // the theme's answer is unknown (no answer from the shell): after the usual "No answer" the theme is looked at again in 2.5 s; written,
+  // the overlay of this Apply follows; not written, the toast
+  for (const applied of [true, false]) {
+    const p = await openWith(JSON.stringify({ ovl_black: 'true' }), { fn: () => { window.__root = true; window.__toasts = []; }, arg: null });
+    await p.addInitScript(() => { const hook = () => { if (typeof showToast !== 'function') { setTimeout(hook, 5); return; } const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; }; hook(); });
+    await p.goto(URL); await p.waitForTimeout(500);
+    await p.evaluate(() => switchView('overlays')); await p.waitForTimeout(400);
+    await p.evaluate(a => { window.__themeUnknown = { apply: a }; }, applied);
+    await p.locator('#ovlApplyBtn').click(); await p.waitForTimeout(300);
+    const mid = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.length, toasts: window.__toasts.slice() }));
+    await p.waitForTimeout(2900); await settle(p); await p.waitForTimeout(100);
+    const u = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null) }));
+    if (applied) check('    no answer to the theme write, the setting written all the same: "No answer" first and no overlay yet; once the theme reads back as written, the overlay of this Apply is written with the usual toast', mid.fab === 0 && mid.toasts.includes('No answer: the theme may still change') && JSON.stringify(u.fab) === '["fabricate:11"]' && u.toasts.includes('Pure black overlay written') && !!u.applied && u.applied.black === true, JSON.stringify([mid, u]));
+    else check('    no answer and the setting not written: no overlay, and the toast says the colors were not written', mid.fab === 0 && JSON.stringify(u.fab) === '[]' && u.toasts.includes('The colors were not written. Tap Apply theme again.') && u.applied === null, JSON.stringify([mid, u]));
+    await p.close();
+  }
+
   // 14) layout at 320 px, unlocked and locked, dark and light
   for (const theme of ['dark', 'light']) {
     const p = await b.newPage({ viewport: { width: 320, height: 700 } });

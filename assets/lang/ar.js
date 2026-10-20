@@ -78,6 +78,7 @@ x: {
   "Theme overlay written": "تمت كتابة طبقة السمة",
   "Theme overlay removed": "تمت إزالة طبقة السمة",
   "The theme overlay was not written": "لم تتم كتابة طبقة السمة",
+  "The colors were not written. Tap Apply theme again.": "لم تُكتب الألوان. انقر على «تطبيق السمة» مرة أخرى.",
   "The theme overlay was not removed": "لم تتم إزالة طبقة السمة",
   "The theme overlay may be written on this phone.": "قد تكون طبقة السمة مكتوبة على هذا الهاتف.",
   "The theme overlay is written on this phone.": "طبقة السمة مكتوبة على هذا الهاتف.",

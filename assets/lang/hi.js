@@ -78,6 +78,7 @@ x: {
   "Theme overlay written": "थीम ओवरले लिखा गया",
   "Theme overlay removed": "थीम ओवरले हटाया गया",
   "The theme overlay was not written": "थीम ओवरले नहीं लिखा गया",
+  "The colors were not written. Tap Apply theme again.": "रंग नहीं लिखे गए। थीम लागू करें पर फिर से टैप करें।",
   "The theme overlay was not removed": "थीम ओवरले नहीं हटाया गया",
   "The theme overlay may be written on this phone.": "थीम ओवरले शायद इस फ़ोन पर लिखा हुआ है।",
   "The theme overlay is written on this phone.": "थीम ओवरले इस फ़ोन पर लिखा हुआ है।",
