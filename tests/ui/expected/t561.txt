@@ -4,6 +4,9 @@ ok      "yes" starts Shizuku through ADB, exactly once
 ok      not offered again in the same launch
 ok      no page errors
 ok   2. "no" is counted (denial saved) and the start is not run
+ok   2b. one earlier refusal, "yes", the start answers failed: the refusal is kept (1), not cleared at the yes
+ok      one earlier refusal, "yes", the start answers no_adb: the refusal is kept (1), not cleared at the yes
+ok      one earlier refusal, "yes", the start answers started: the count is cleared (0)
 ok   3. two earlier refusals: not offered, not started
 ok   4. a mode is already privileged (ADB TCP connected): not offered
 ok      Shizuku is already running: not offered (szAutoAsk asks to authorize instead)

@@ -68,6 +68,27 @@ const { chromium, PAGE } = require('./lib/pw');
     await page.close();
   }
 
+  // 2b. a "yes" does not clear earlier refusals by itself (T-015): the count is cleared only when the start the offer ran gets Shizuku running, so a yes to a
+  //     start that then fails (no_adb, no_script, failed) keeps the refusal before it, and the offer still stops after the second "no"
+  {
+    const connected = Object.assign({}, offerable, { adbTcp: { host: '127.0.0.1', port: 5555, portOpen: true, connected: true } });
+    for (const status of ['failed', 'no_adb', 'started']) {
+      const { page, errors } = await open(connected, true, { shizuku_autostart_denied: '1' });
+      const before = await calls(page);
+      const after = await page.evaluate(st => { window.onShizukuStartResult({ status: st, pkg: 'moe.shizuku.privileged.api', text: '' }); return szStartDenials(); }, status);
+      const k = await calls(page);
+      if (status !== 'started') {
+        check((status === 'failed' ? '2b. ' : '   ') + 'one earlier refusal, "yes", the start answers ' + status + ': the refusal is kept (1), not cleared at the yes',
+          before.includes('startShizukuViaAdb') && !before.some(x => x.startsWith('save:shizuku_autostart_denied')) && after === 1 &&
+          !k.includes('save:shizuku_autostart_denied=0') && errors.length === 0, JSON.stringify({ before, after, k, errors }));
+      } else {
+        check('   one earlier refusal, "yes", the start answers started: the count is cleared (0)',
+          after === 0 && k.includes('save:shizuku_autostart_denied=0') && errors.length === 0, JSON.stringify({ after, k, errors }));
+      }
+      await page.close();
+    }
+  }
+
   // 3. after two earlier refusals, it stops asking
   {
     const { page } = await open(offerable, true, { shizuku_autostart_denied: '2' });

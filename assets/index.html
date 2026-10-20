@@ -19228,6 +19228,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('shizukuStartBtn');
             if (btn) btn.disabled = false;
             res = res || {};
+            if (szAutoStarting && res.status === 'started') szCountStartDenial(true);   // the start the launch offer ran got Shizuku running: earlier refusals are cleared
             szAutoStarting = false;
             const t = String(res.text || '').trim();
             const msg = {
@@ -31754,7 +31755,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Start Shizuku at launch ----
         // While the mode is pinned to Shizuku and no working mode is ready, a Shizuku that is installed but not running, with an ADB path to start it through,
-        // is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one). Not in Auto: there an ADB path (a
+        // is offered once per launch, until the person has said no twice (its own counter, separate from the authorize one; a yes clears it only when the start
+        // it runs gets Shizuku running, so a yes to a start that fails does not undo the refusals before it). Not in Auto: there an ADB path (a
         // connected target, or a TCP port that is open) is itself the working mode (probeWorkingMode resolves adb_tcp / adb_wireless), so it is never needed.
         // Starting needs a connected ADB target, the same as the Shizuku card's Start button: with none the offer is not shown (the card and Shizuku's own wireless
         // pairing stay the way in). A start that is accepted starts Shizuku through that connection; once it is running, szAutoAsk asks to authorize this app, then the sheet.
@@ -31797,8 +31799,9 @@ Type any command above (e.g. pm list packages -d)</div>
             szStartTried = true;
             if (typeof nextDialogTitle === 'function') nextDialogTitle('Start Shizuku');
             const ok = confirm('Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?');
-            szCountStartDenial(ok);
-            if (!ok) return false;
+            // a "no" counts; a "yes" clears the count only once the start it runs has Shizuku running (onShizukuStartResult), so a yes to a start that then
+            // fails does not undo earlier refusals
+            if (!ok) { szCountStartDenial(false); return false; }
             szAutoStarting = true; szAutoStartAt = Date.now();
             startShizukuUI();                                     // the card's own start path; onShizukuStartResult shows the outcome, then szAutoAsk asks to authorize
             return true;
