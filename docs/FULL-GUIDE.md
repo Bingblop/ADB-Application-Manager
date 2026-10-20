@@ -867,7 +867,7 @@ style the palette is worked out with:
   Apache-2.0); on 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast. A grey custom
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
   *From Google blue: #808080 is too grey for this style*. **2021** then Apply (with More styles on Off, Pure black off, the Intensity
-  sliders at 100 and no accent set), **Undo** and **Default** switch the overlay off. Not yet tried on a rooted phone.
+  sliders at 100 and no accent set) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
 - **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
@@ -887,7 +887,7 @@ style the palette is worked out with:
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
   what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
   `accents` when a Secondary or tertiary accent is set, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
-  Messages then speak of the *theme overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the
+  Messages then speak of the *theme overlay*; **Off** then Apply and **Default** switch it off; **Undo** puts back the overlay from before (off when there was none). Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
 - **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
   styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
@@ -919,7 +919,7 @@ style the palette is worked out with:
   ends: primary on surface_container_highest 4.96 / 3.76 / 5.05 at 2021, 4.84 / 3.72 / 5.00 at 2025, 4.95 / 3.74 / 4.14 for CMF (0 in
   light mode, CMF's 200 in dark mode); inverse_primary on inverse_surface (P16) 4.96 / 3.76 / 5.44 at 2021 (0 in dark mode), 6.04 /
   5.76 / 5.60 at 2025, 6.06 / 5.77 / 5.59 for CMF. **Reset** then Apply,
-  **Undo** and **Default** switch the overlay off as for More styles. Not yet tried on a rooted phone.
+  **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
 - **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14, 15 QPR1/QPR2 or
   16.0, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
   overlay bridge or when `monet.js` has no `MonetPlan.lib.accentsOf`; the locked row keeps its line): the row's line *Your own colors for
@@ -949,7 +949,7 @@ style the palette is worked out with:
   names the accents (*Secondary accent: your color.*, *Tertiary accent: your color.*, *Secondary and tertiary accents: your colors.*).
   Apply takes the colors at the tap; the preview follows them as they are stored. With none set, the plans, hints and records are the
   ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
-  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Undo** and **Default** switch the overlay off as for More
+  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Default** and **Undo** act as for More
   styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
