@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "主题叠加层已移除",
   "The theme overlay was not written": "主题叠加层未被写入",
   "The colors were not written. Tap Apply theme again.": "颜色未写入。请再次点按“应用主题”。",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "已恢复原主题。之前的叠加层无法再次写入，因此已关闭。",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "已恢复原主题，但之前的叠加层未再次写入。请点按“应用主题”写入您想要的颜色。",
   "The theme overlay was not removed": "主题叠加层未被移除",
   "The theme overlay may be written on this phone.": "主题叠加层可能已写入此手机。",
   "The theme overlay is written on this phone.": "主题叠加层已写入此手机。",

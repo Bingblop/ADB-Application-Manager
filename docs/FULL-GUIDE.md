@@ -800,8 +800,12 @@ style the palette is worked out with:
   the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
   also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
   Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
-  **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
-  fabricated overlay). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
+  **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
+  fabricated overlay). **Undo** (the bar after Apply or Default, also after a restart) puts back what was there before the
+  change: the old theme and this app's overlay as it was, switched off when there was none, written again when there was one
+  (a record with a style's colours keeps the source color, the mode and the contrast for this; one from an earlier version
+  without them, or one still waiting for its own write's answer, is switched off, and the message says so; when the Undo's
+  theme answer is lost to a restart, the overlay follows once the theme reads back as put back). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
   while it reads Applying… counts for the next Apply only. When the theme's own answer is lost (the app restarted first, or no
   answer), the resume record keeps that Apply's overlay half and its choices: once the theme reads back as written, the overlay is
   written as that tap would have; read back as not written, nothing is written and a toast says *The colors were not written. Tap

@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "Overlay del tema quitado",
   "The theme overlay was not written": "El overlay del tema no se escribió",
   "The colors were not written. Tap Apply theme again.": "Los colores no se escribieron. Toca Aplicar tema de nuevo.",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "Tema restaurado. El overlay anterior no se pudo volver a escribir, así que está desactivado.",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "Tema restaurado, pero el overlay anterior no se volvió a escribir. Toca Aplicar tema para escribir los colores que quieras.",
   "The theme overlay was not removed": "El overlay del tema no se quitó",
   "The theme overlay may be written on this phone.": "Puede que el overlay del tema esté escrito en este teléfono.",
   "The theme overlay is written on this phone.": "El overlay del tema está escrito en este teléfono.",

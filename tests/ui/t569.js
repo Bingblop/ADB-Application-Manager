@@ -126,7 +126,9 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   const byRes = plan => Object.fromEntries(((plan && plan.entries) || []).map(e => [e.resource.replace(RES, ''), e.argb]));
   const pinsOff = (plan, pins) => { const r = byRes(plan); return Object.keys(pins).filter(k => r[k] !== pins[k]).map(k => k + ' ' + r[k] + ' != ' + pins[k]); };
   const sameAs = (plan, style, seed, opts) => ev(([entries, style, seed, opts]) => { let want; try { want = MonetPlan.entries(style, seed, opts || undefined); } catch (e) { return 'throws: ' + e.message; } if (!entries || want.length !== entries.length) return 'count ' + (entries || []).length + ' vs ' + want.length; const have = Object.fromEntries(entries.map(e => [e.resource, e.argb])); const off = want.filter(e => have[e.resource] !== e.argb).map(e => e.resource + ' ' + have[e.resource] + ' != ' + e.argb); return off.length ? off.slice(0, 5).join('; ') : 'same'; }, [plan && plan.entries, style, seed, opts || null]);
-  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T') : 'null'; };
+  // T-069: a record with a style also keeps the source colour, the mode and the contrast (seed, dark, contrast) for the Undo; t564 checks them,
+  // and the record strings compared here leave them out
+  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T').replace(/,"seed":"[0-9A-F]{6}","dark":(?:true|false),"contrast":-?[0-9.e+-]+/, '') : 'null'; };
   const o16 = (spec, more) => Object.assign({ spec: spec || '2021', dark: true, profile: 'P16', contrast: 0 }, more || {});
   const o14 = (spec, more) => Object.assign({ spec: spec || '2021', dark: true, profile: 'P14', contrast: 0 }, more || {});
   // every AndroidBridge method, counted (name and arguments)

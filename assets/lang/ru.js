@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "Оверлей темы убран",
   "The theme overlay was not written": "Оверлей темы не был записан",
   "The colors were not written. Tap Apply theme again.": "Цвета не были записаны. Нажмите «Применить тему» ещё раз.",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "Тема возвращена. Прежний оверлей не удалось записать снова, поэтому он выключен.",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "Тема возвращена, но прежний оверлей не был записан снова. Нажмите «Применить тему», чтобы записать нужные цвета.",
   "The theme overlay was not removed": "Оверлей темы не был убран",
   "The theme overlay may be written on this phone.": "Оверлей темы, возможно, записан на этом телефоне.",
   "The theme overlay is written on this phone.": "Оверлей темы записан на этом телефоне.",

@@ -38275,7 +38275,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // the theme's answer is lost (a restart first, or no answer) and the theme then reads back as written, this same Apply is completed
             const root = ovlRootFollowUp('apply', style, adjust, accents, chosen);
             ovlBusy = true;
-            ovlRemember(before, { kind: 'apply', source, hex, style, from: before, root, at: root ? chosen : null });
+            ovlRemember(before, { kind: 'apply', source, hex, style, from: before, root, at: root ? chosen : null, prev: ovlRootApplied() });
             ovlRender();
             sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, Object.assign({ root }, chosen)), 60000);
         }
@@ -38286,17 +38286,35 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.' + (ovlRootFollowUp('reset') !== 'disable' ? '' : ovlRootAppliedStyle() ? '\n\nThe theme overlay is switched off too.' : '\n\nThe pure black overlay is switched off too.'))) return;
             const before = ovlRaw;
             ovlBusy = true;
-            ovlRemember(before, { kind: 'reset' });
+            ovlRemember(before, { kind: 'reset', prev: ovlRootApplied() });
             ovlRender();
             sdbRequest(id => window.AndroidBridge.themeRestore(id, '', false), r => ovlThemeDone(r, before, 'reset', ''), 60000);
         }
 
-        function ovlUndoTheme(raw) {
+        // after: { restore } (what ovlRootRebuildAt gives: the overlay from before, written again once the theme is back) or { note } (the
+        // message in place of Theme put back), or none (T-069)
+        function ovlUndoTheme(raw, after) {
             if (!ovlGuardWrite()) return;
             ovlBusy = true;
-            ovlRemember(null, { kind: 'undo' });                     // the Undo repaints and restarts apps too: come back to this tab (without another Undo)
+            const target = raw === 'null' || raw == null ? '' : String(raw);
+            const restore = after && after.restore && typeof after.restore === 'object' ? after.restore : null;
+            // the Undo repaints and restarts apps too: come back to this tab (without another Undo). An overlay to put back once the theme is
+            // back is kept with the theme value it waits for, so a restart (or no answer) before the theme's answer does not lose it (ovlFinishUndo)
+            ovlRemember(null, restore ? { kind: 'undo', target, restore } : { kind: 'undo' });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeRestore(id, raw === 'null' || raw == null ? '' : raw, true), r => ovlThemeDone(r, null, 'undo', ''), 60000);
+            sdbRequest(id => window.AndroidBridge.themeRestore(id, target, true), r => ovlThemeDone(r, null, 'undo', '', Object.assign({ target }, after || {})), 60000);
+        }
+        // The Undo of Apply and of Default (the bar, and the one a restart brings back): the theme from before back, and this app's overlay as
+        // it was before that change (T-069). prev: the record from before (null: there was none). None: the overlay is switched off first, as
+        // before. One ovlRootRebuildAt can rebuild (Pure black alone, or a style's colours with the source colour, mode and contrast it keeps) is
+        // written again from its own choices once the theme is back. One it cannot (an older record without those choices, or a row not live
+        // any more) is switched off, and the message says so. A record still waiting for its write's answer (pending: maybe written, never
+        // confirmed) is not written again as if it had been on: it is switched off too, with the same message.
+        function ovlUndoChange(raw, prev) {
+            const at = prev && typeof prev === 'object' && prev.pending !== true && ovlRootLive() ? ovlRootRebuildAt(prev) : null;
+            if (at) { ovlUndoTheme(raw, { restore: at }); return; }
+            const note = prev && typeof prev === 'object' && ovlRootLive() ? { note: OVL_UNDO_NOT_REBUILT } : null;
+            ovlRootDisableThen(() => ovlUndoTheme(raw, note));
         }
 
         function ovlThemeDone(r, before, kind, hex, chosen) {
@@ -38304,6 +38322,8 @@ Type any command above (e.g. pm list packages -d)</div>
             chosen = chosen || {};
             // what the phone itself read just before it wrote is the truer "before" (this page's copy may be old, or never have been read)
             const was = kind === 'apply' && r.before != null ? String(r.before) : before;
+            // this app's overlay before this change (T-069): what its Undo puts back
+            const prev = kind === 'undo' ? null : ovlRootApplied();
             if (r.ok) {
                 const now = r.value == null ? '' : String(r.value);
                 ovlRaw = now === '' ? 'null' : now;
@@ -38313,11 +38333,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (typeof sdbRecord === 'function' && kind !== 'undo' && was != null) {
                     try { sdbRecord('secure', 'theme_customization_overlay_packages', was === 'null' ? null : was, now === '' ? null : now); } catch (e) {}
                 }
-                ovlSettle(kind !== 'undo' ? was : null, { kind });
-                const msg = (kind === 'reset' ? 'Theme reset to the default' : kind === 'undo' ? 'Theme put back' : 'Theme applied') + (r.warning ? ', but a switch would not change' : '');
+                ovlSettle(kind !== 'undo' ? was : null, { kind, prev });
+                const msg = kind === 'undo' && chosen.note && !r.warning ? chosen.note : (kind === 'reset' ? 'Theme reset to the default' : kind === 'undo' ? 'Theme put back' : 'Theme applied') + (r.warning ? ', but a switch would not change' : '');
                 const finish = () => {
-                    // the Undo puts the theme back and, when this app wrote the pure black overlay, switches that off first
-                    if (kind !== 'undo' && was != null) sdbSnack(msg, () => ovlRootDisableThen(() => ovlUndoTheme(was)));
+                    // the Undo puts the theme back and this app's overlay as it was before (ovlUndoChange)
+                    if (kind !== 'undo' && was != null) sdbSnack(msg, () => ovlUndoChange(was, prev));
                     else showToast(msg);
                     if (r.warning) showToast(r.warning);
                     ovlWatchPalette();
@@ -38325,15 +38345,19 @@ Type any command above (e.g. pm list packages -d)</div>
                 // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both.
                 // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode, the contrast, the sliders, the accents,
                 // Pure black, the More style and the spec), so the overlay is the one the preview showed
-                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style, chosen.adjust, chosen.accents, chosen);
-                if (follow) ovlRootRun(follow, finish, chosen); else finish();
+                // an Undo with an overlay to put back writes it once the theme is back, from the choices its record kept (ovlUndoChange)
+                const follow = kind === 'undo' ? (chosen.restore && ovlRootLive() ? 'fabricate' : null) : ovlRootFollowUp(kind, chosen.style, chosen.adjust, chosen.accents, chosen);
+                if (follow) ovlRootRun(follow, finish, kind === 'undo' ? chosen.restore : chosen); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
                 const unsure = !!(r.timedOut || r.unknown);
-                if (unsure) ovlRemember(kind !== 'undo' ? was : null, { kind, source: chosen.source, hex, style: chosen.style, from: was, root: chosen.root || null, at: chosen.root ? chosen : null });       // the restart (or the answer) may still come
+                const restore = kind === 'undo' && chosen.restore && typeof chosen.restore === 'object' ? chosen.restore : null;
+                if (unsure && kind === 'undo') ovlRemember(null, restore ? { kind, target: chosen.target || '', restore } : { kind });     // the restart (or the answer) may still come
+                else if (unsure) ovlRemember(was, { kind, source: chosen.source, hex, style: chosen.style, from: was, root: chosen.root || null, at: chosen.root ? chosen : null, prev });
                 else ovlForget();
-                // the overlay half waits for the look again below: written as this Apply planned once the theme reads back as written (T-068)
-                if (unsure && kind === 'apply' && chosen.root) ovlPendingFinish = kvGet('ovl_resume', null);
+                // the overlay half waits for the look again below: written as this Apply planned once the theme reads back as written (T-068);
+                // an Undo's overlay from before likewise, once the theme reads back as put back (ovlFinishUndo)
+                if (unsure && ((kind === 'apply' && chosen.root) || restore)) ovlPendingFinish = kvGet('ovl_resume', null);
                 showToast(unsure ? 'No answer: the theme may still change' : 'The theme was not changed');
                 ovlFailure(kind === 'reset' ? 'Could not reset the theme' : 'Theme change refused', 'Monet · secure setting', r);
                 if (unsure) { ovlRefreshLater('theme'); ovlWatchPalette(); }
@@ -38413,6 +38437,10 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_STALE_NOTE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
         // the toast when an Apply's overlay half could not be completed after its theme answer was lost (ovlFinishApply, T-068)
         const OVL_ROOT_NOT_WRITTEN = 'The colors were not written. Tap Apply theme again.';
+        // the message of an Undo whose overlay from before could not be written again (an older record without its choices: ovlUndoChange, T-069)
+        const OVL_UNDO_NOT_REBUILT = 'Theme put back. The overlay from before could not be written again, so it is off.';
+        // the toast when an Undo's overlay from before could not be written after its theme answer was lost (ovlFinishUndo, T-069)
+        const OVL_UNDO_NOT_FINISHED = 'Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.';
         // Intensity: the three sliders, each a percentage from 0 to 200 in steps of 5, 100 (Android's colours as they are) when never moved; key:
         // monet.js's opts.adjust field, kv: where it is remembered, id: the input's (its value label is id + 'V')
         const OVL_ADJ = [
@@ -38604,8 +38632,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // bgLight }, written only when one is not 100 and there is a style: a record without it, every record from before the sliders, reads as
         // 100 / 100 / 100); accents: the Secondary and tertiary accents the colours were computed with ({ secondary, tertiary }, each 'RRGGBB' or
         // null; written with only the set ones, only when one is set and there is a style: a record without it, every record from before the
-        // accents, reads as none set). PR 2's record (kv ovl_black_applied: pure black alone) is read when the new key holds nothing, so a phone
-        // that ran that build keeps its Undo.
+        // accents, reads as none set); seed, dark and contrast: the source colour ('RRGGBB'), the mode (whose 65 shades were written) and the
+        // contrast the style's colours were computed with (written with a style from T-069 on, so an Undo can write them again: ovlRootRebuildAt;
+        // a record without them reads as seed '', dark null, contrast null and cannot be rebuilt). PR 2's record (kv ovl_black_applied: pure
+        // black alone) is read when the new key holds nothing, so a phone that ran that build keeps its Undo.
         function ovlRootApplied() {
             let a = kvGet('ovl_root_applied', null), old = false;
             if (!a || typeof a !== 'object') { a = kvGet('ovl_black_applied', null); old = true; }
@@ -38620,7 +38650,10 @@ Type any command above (e.g. pm list packages -d)</div>
             for (const o of OVL_ADJ) { const v = adj[o.key]; adjust[o.key] = typeof v === 'number' && isFinite(v) && v >= 0 && v <= 200 ? v : 100; }
             const ac = style && a.accents && typeof a.accents === 'object' ? a.accents : {}, accents = {};
             for (const o of OVL_ACC) { const v = ac[o.key]; accents[o.key] = typeof v === 'string' && /^[0-9A-F]{6}$/.test(v) ? v : null; }
-            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style, spec, profile, build, adjust, accents };
+            const seed = style && typeof a.seed === 'string' && /^[0-9A-F]{6}$/.test(a.seed) ? a.seed : '';
+            const dark = style && typeof a.dark === 'boolean' ? a.dark : null;
+            const contrast = style && typeof a.contrast === 'number' && isFinite(a.contrast) && a.contrast >= -1 && a.contrast <= 1 ? a.contrast : null;
+            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style, spec, profile, build, adjust, accents, seed, dark, contrast };
         }
         // a record to store: spec only when it is not 2021 (see above), so a 2021 record is the same as PR 3's; then what at (the plan the write
         // carries) names: the sliders when the record has a style and one of them is not 100 (so a record without them is the same as before
@@ -38632,7 +38665,24 @@ Type any command above (e.g. pm list packages -d)</div>
             if (acc) rec.accents = acc;
             if (at && typeof at.profile === 'string' && at.profile && at.profile !== 'P14') rec.profile = at.profile;
             if (at && typeof at.build === 'string' && at.build) rec.build = at.build;
+            // what a rebuild needs (T-069): the source colour, the mode and the contrast the style's colours were computed with
+            if (rec.style && at && typeof at.seed === 'string' && /^[0-9A-Fa-f]{6}$/.test(at.seed) && typeof at.dark === 'boolean') {
+                rec.seed = at.seed.toUpperCase(); rec.dark = at.dark; rec.contrast = typeof at.contrast === 'number' && isFinite(at.contrast) ? at.contrast : 0;
+            }
             return rec;
+        }
+        // What Apply would take (its tap's choices: ovlApply's chosen) to write the overlay a record describes again, for the Undo (T-069): Pure
+        // black alone needs nothing more (its entries are fixed); a style's colours need the source colour, the mode and the contrast the record
+        // keeps, and the style's row live (a More style, CMF, or a list style at the record's spec, with its sliders and accents). null when
+        // the record lacks them (an older one) or its rows are not live any more (a locked profile).
+        function ovlRootRebuildAt(a) {
+            if (!a || typeof a !== 'object' || !ovlBlackLive()) return null;
+            const black = a.black === true || !a.style;          // a record without a style is Pure black alone (its words say so)
+            if (!a.style) return { style: '', more: '', spec: '2021', black: true, adjust: null, accents: null };
+            if (!ovlRootStyleLive() || typeof a.seed !== 'string' || !/^[0-9A-F]{6}$/.test(a.seed) || typeof a.dark !== 'boolean') return null;
+            const more = OVL_ROOT_STYLE_IDS.includes(a.style) ? a.style : '';
+            const adjust = a.adjust && typeof a.adjust === 'object' && !ovlAdjIsDefault(a.adjust) ? a.adjust : null;
+            return { style: more ? '' : a.style, more, spec: typeof a.spec === 'string' && OVL_SPEC_IDS.includes(a.spec) ? a.spec : '2021', black, seed: { hex: a.seed, from: 'color' }, dark: a.dark, contrast: typeof a.contrast === 'number' ? a.contrast : 0, adjust, accents: ovlAccSetOnly(a.accents) };
         }
         function ovlRootAppliedStyle() { const a = ovlRootApplied(); return a ? a.style : ''; }
         // the record as the store holds it (whichever key), put back as it was when a refused write changed nothing
@@ -38698,7 +38748,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const entries = [];
             for (const name of OVL_ROOT_LEAD) { const r = OVL_FAB_RES + name; if (rows.has(r)) { entries.push({ resource: r, argb: rows.get(r) }); rows.delete(r); } }
             rows.forEach((argb, resource) => entries.push({ resource, argb }));
-            return { style, spec: pick.spec, black, entries, profile, build, adjust: pick.adjust, accents: pick.accents };
+            return { style, spec: pick.spec, black, entries, profile, build, adjust: pick.adjust, accents: pick.accents, seed, dark: opts.dark, contrast: opts.contrast };
         }
         // the ids the Java side writes a plan under (its own rule, from its own SDK_INT; this copy only names what to switch off after no answer came)
         function ovlRootIds(sdk, entries) {
@@ -39655,10 +39705,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec.sub === 'theme' || rec.sub === 'list') ovlSub = rec.sub;
             switchView('overlays');
             const u = rec.undo;
-            if (typeof u === 'string') setTimeout(() => { sdbSnack('Theme changed', () => ovlRootDisableThen(() => ovlUndoTheme(u))); }, 700);
+            if (typeof u === 'string') setTimeout(() => { sdbSnack('Theme changed', () => ovlUndoChange(u, rec.prev && typeof rec.prev === 'object' ? rec.prev : null)); }, 700);
             else if (u && typeof u === 'object' && u.overlay && ovlRemoteOp(u.op)) setTimeout(() => { sdbSnack('Overlay changed', () => { ovlReadListThen(() => ovlSet(u.overlay, u.op, { quiet: true })); }); }, 700);
             // the answer may have gone to a page that was already gone: once the phone has been asked again, do what that answer would have done
-            if (rec.kind === 'apply' && !rec.done) ovlPendingFinish = rec;
+            if ((rec.kind === 'apply' || (rec.kind === 'undo' && rec.restore)) && !rec.done) ovlPendingFinish = rec;
         }
 
         // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Hidden Settings.
@@ -39668,6 +39718,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // the controls not live any more), nothing is written and a toast says so. A newer change (another resume record) counts instead.
         function ovlFinishApply(rec) {
             if (!rec || rec.done) return;
+            if (rec.kind === 'undo') { ovlFinishUndo(rec); return; }
             const cur = kvGet('ovl_resume', null), mine = !!cur && cur.t === rec.t;
             const root = rec.root === 'fabricate' || rec.root === 'disable' ? rec.root : null, at = rec.at && typeof rec.at === 'object' ? rec.at : null;
             const notWritten = () => { if (root && mine) showToast(OVL_ROOT_NOT_WRITTEN); };
@@ -39685,6 +39736,26 @@ Type any command above (e.g. pm list packages -d)</div>
             const follow = at ? ovlRootFollowUp('apply', at.style, at.adjust, at.accents, at) : null;
             if (!follow || ovlBusy) { if (root === 'fabricate' || ovlBusy) notWritten(); return; }
             ovlRootRun(follow, null, at);
+        }
+        // An Undo that puts back an overlay from before (ovlUndoChange) writes it once the theme is back; when that answer was lost (a restart
+        // first, or no answer), the same check as ovlFinishApply: the theme read back as the value the Undo wrote (rec.target) completes that
+        // Undo (the overlay from before written from rec.restore, the choices its record kept), with the usual toasts. Read back as something
+        // else, the Undo did not take: nothing is written (the overlay of the change it would have undone stays with that change's theme).
+        // Too late, or Super User gone: nothing is written and the toast says the overlay from before was not put back. A newer change counts instead.
+        function ovlFinishUndo(rec) {
+            const cur = kvGet('ovl_resume', null), mine = !!cur && cur.t === rec.t;
+            const at = rec.restore && typeof rec.restore === 'object' ? rec.restore : null;
+            if (!mine || !at) return;
+            const t = ovlTheme;
+            if (!t || ovlRaw == null) return;
+            const want = ovlParseTheme(typeof rec.target === 'string' ? rec.target : '');
+            const src = s => s === 'default' ? 'home_wallpaper' : s;          // an empty value is Android's own: the wallpaper's colours
+            const same = src(t.source) === src(want.source) && (want.source !== 'preset' || t.color === want.color) && (t.style || 'TONAL_SPOT') === (want.style || 'TONAL_SPOT');
+            if (same && ovlBusy) { ovlPendingFinish = rec; return; }           // something else is being written: the next look at the theme does it
+            kvSet('ovl_resume', Object.assign({}, cur, { done: true }));          // marked first: a second restart does not write it again
+            if (!same) { showToast('The theme was not changed'); return; }
+            if (Date.now() - rec.t > 300000 || !ovlRootLive()) { showToast(OVL_UNDO_NOT_FINISHED); return; }
+            ovlRootRun('fabricate', () => showToast('Theme put back'), at);
         }
         function ovlRemoteOp(op) { return op === 'enable' || op === 'disable'; }
         function ovlReadListThen(fn) {

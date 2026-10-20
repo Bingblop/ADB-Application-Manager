@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "Overlay tema dihapus",
   "The theme overlay was not written": "Overlay tema tidak ditulis",
   "The colors were not written. Tap Apply theme again.": "Warna tidak ditulis. Ketuk Terapkan tema lagi.",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "Tema dikembalikan. Overlay sebelumnya tidak dapat ditulis lagi, jadi dimatikan.",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "Tema dikembalikan, tetapi overlay sebelumnya tidak ditulis lagi. Ketuk Terapkan tema untuk menulis warna yang Anda inginkan.",
   "The theme overlay was not removed": "Overlay tema tidak dihapus",
   "The theme overlay may be written on this phone.": "Overlay tema mungkin sudah ditulis di ponsel ini.",
   "The theme overlay is written on this phone.": "Overlay tema sudah ditulis di ponsel ini.",

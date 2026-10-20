@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "テーマのオーバーレイを削除しました",
   "The theme overlay was not written": "テーマのオーバーレイは書き込まれませんでした",
   "The colors were not written. Tap Apply theme again.": "色は書き込まれませんでした。もう一度「テーマを適用」をタップしてください。",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "テーマを元に戻しました。以前のオーバーレイは再び書き込めなかったため、オフになっています。",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "テーマを元に戻しましたが、以前のオーバーレイは再び書き込まれていません。必要な色を書き込むには「テーマを適用」をタップしてください。",
   "The theme overlay was not removed": "テーマのオーバーレイは削除されませんでした",
   "The theme overlay may be written on this phone.": "テーマのオーバーレイはこの端末に書き込まれている可能性があります。",
   "The theme overlay is written on this phone.": "テーマのオーバーレイはこの端末に書き込まれています。",

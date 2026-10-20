@@ -79,6 +79,8 @@ x: {
   "Theme overlay removed": "테마 오버레이 제거됨",
   "The theme overlay was not written": "테마 오버레이가 기록되지 않았습니다",
   "The colors were not written. Tap Apply theme again.": "색상이 기록되지 않았습니다. 테마 적용을 다시 탭하세요.",
+  "Theme put back. The overlay from before could not be written again, so it is off.": "테마 복원됨. 이전 오버레이를 다시 기록할 수 없어 꺼져 있습니다.",
+  "Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.": "테마 복원됨. 하지만 이전 오버레이는 다시 기록되지 않았습니다. 원하는 색상을 기록하려면 테마 적용을 탭하세요.",
   "The theme overlay was not removed": "테마 오버레이가 제거되지 않았습니다",
   "The theme overlay may be written on this phone.": "테마 오버레이가 이 휴대전화에 기록되어 있을 수 있습니다.",
   "The theme overlay is written on this phone.": "테마 오버레이가 이 휴대전화에 기록되어 있습니다.",

@@ -4149,6 +4149,8 @@
 {"k":"Theme overlay written","ctx":"built by the code of: ovl root words"},
 {"k":"Theme put back","ctx":"built by the code of: ovl theme done"},
 {"k":"Theme put back, but a switch would not change","ctx":"built by the code of: ovl theme done"},
+{"k":"Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.","ctx":"built by the code of: top level"},
+{"k":"Theme put back. The overlay from before could not be written again, so it is off.","ctx":"built by the code of: top level"},
 {"k":"Theme reset to the default","ctx":"built by the code of: ovl theme done"},
 {"k":"Theme reset to the default, but a switch would not change","ctx":"built by the code of: ovl theme done"},
 {"k":"Theme style","ctx":"in the RRO/Monet Customization tab"},
