@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "Encontrados: {0}. Escolha o app."],
 ["{0} free of {1}", "{0} livres de {1}"],
 ["{0} from saved results", "{0} de resultados salvos"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{0} a partir de {1}. Claro e escuro seguem a opção Aparência; os ajustes de cor abaixo são mantidos para cada um."],
 ["{0} h ago", "há {0} h"],
 ["{0} h {1} min", "{0} h {1} min"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0} mudou desde então: agora é {1} (esta alteração o deixou como {2})."],

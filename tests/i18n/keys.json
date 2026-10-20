@@ -5998,6 +5998,7 @@
 {"k":"{0} found. Pick the app.","ctx":"built by the code of: us search"},
 {"k":"{0} free of {1}","ctx":"built by the code of: render device specs"},
 {"k":"{0} from saved results","ctx":"built by the code of: upd summary line"},
+{"k":"{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.","ctx":"built by the code of: ps note text"},
 {"k":"{0} h ago","ctx":"built by the code of: format age"},
 {"k":"{0} h {1} min","ctx":"built by the code of: mp hdeta"},
 {"k":"{0} has changed since: it is now {1} (this change left it {2}).","ctx":"built by the code of: sdb revert"},

@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "找到 {0}。请选择应用。"],
 ["{0} free of {1}", "可用 {0}，共 {1}"],
 ["{0} from saved results", "{0} 个来自已保存的结果"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "由 {1} 生成的 {0}。浅色和深色跟随“外观”设置；下方的颜色调整会分别保留。"],
 ["{0} h ago", "{0} 小时前"],
 ["{0} h {1} min", "{0} 小时 {1} 分钟"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0} 此后已更改：现在是 {1}（此次更改后为 {2}）。"],

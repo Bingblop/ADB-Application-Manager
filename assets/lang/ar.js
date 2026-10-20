@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "النتائج: {0}. اختر التطبيق."],
 ["{0} free of {1}", "{0} متاحة من {1}"],
 ["{0} from saved results", "من النتائج المحفوظة: {0}"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{0} من {1}. يتبع الفاتح والداكن إعداد المظهر؛ وتُحفظ تعديلات الألوان أدناه لكل منهما."],
 ["{0} h ago", "قبل {0} س"],
 ["{0} h {1} min", "{0} س {1} د"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "تغيّر {0} منذ ذلك الحين: أصبح الآن {1} (تركه هذا التغيير على {2})."],

@@ -741,6 +741,12 @@ public final class ZipTool {
     /** Free space an extraction leaves untouched; package-private so a test can raise it. */
     static long freeSpaceReserve = 64L << 20;
 
+    /** Reads a folder's free space (the disk's own reading); package-private so a test can stand in for a disk that other processes share. */
+    static java.util.function.ToLongFunction<File> usableSpace = new java.util.function.ToLongFunction<File>() {
+        // An anonymous class, not File::getUsableSpace: build.sh compiles against android.jar, which has no LambdaMetafactory.
+        @Override public long applyAsLong(File f) { return f.getUsableSpace(); }
+    };
+
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
         return writeStream(e, in, dest, null);
     }
@@ -755,7 +761,7 @@ public final class ZipTool {
             // What an entry may write is capped by the free space (less a reserve), whatever size it declares: a tiny archive can declare, and really
             // contain, gigabytes (a sparse tar, a 7z of zeros, a deflate bomb), and would otherwise fill the phone's storage for every other app. The
             // space is read again for each entry, so a whole extraction stops with the reserve still free.
-            final long room = Math.max(0L, parent.getUsableSpace() - freeSpaceReserve);
+            final long room = Math.max(0L, usableSpace.applyAsLong(parent) - freeSpaceReserve);
             if (e.size > room) throw new IOException("Not enough free space for \"" + e.name + "\" (" + e.size + " bytes; the app keeps " + (freeSpaceReserve >> 20) + " MB free)");
             CRC32 crc = new CRC32();
             OutputStream out = new FileOutputStream(part);

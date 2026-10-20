@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "{0} मिले। ऐप चुनें।"],
 ["{0} free of {1}", "{1} में से {0} खाली"],
 ["{0} from saved results", "सहेजे गए नतीजों से {0}"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{1} से {0}। लाइट और डार्क दिखावट सेटिंग के अनुसार चलते हैं; नीचे के रंग बदलाव हर एक के लिए अलग रखे जाते हैं।"],
 ["{0} h ago", "{0} घंटे पहले"],
 ["{0} h {1} min", "{0} घं {1} मि"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0} तब से बदल गया है: अब यह {1} है (इस बदलाव के बाद यह {2} था)।"],

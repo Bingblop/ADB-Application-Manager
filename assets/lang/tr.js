@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "{0} bulundu. Uygulamayı seçin."],
 ["{0} free of {1}", "{0} boş, toplam {1}"],
 ["{0} from saved results", "{0} kayıtlı sonuçlardan"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{1} renginden {0}. Açık ve koyu, Görünüm ayarını izler; aşağıdaki renk ayarları her biri için ayrı korunur."],
 ["{0} h ago", "{0} saat önce"],
 ["{0} h {1} min", "{0} sa {1} dk"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0} o zamandan beri değişti: şu an {1} (bu değişiklik onu {2} olarak bırakmıştı)."],

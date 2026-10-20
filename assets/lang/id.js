@@ -6130,6 +6130,7 @@ p: [
 ["{0} found. Pick the app.", "{0} ditemukan. Pilih aplikasinya."],
 ["{0} free of {1}", "{0} kosong dari {1}"],
 ["{0} from saved results", "{0} dari hasil tersimpan"],
+["{0} from {1}. Light and dark follow the Appearance setting; color tweaks below are kept for each.", "{0} dari {1}. Terang dan gelap mengikuti pengaturan Tampilan; penyesuaian warna di bawah disimpan untuk masing-masing."],
 ["{0} h ago", "{0} j lalu"],
 ["{0} h {1} min", "{0} j {1} mnt"],
 ["{0} has changed since: it is now {1} (this change left it {2}).", "{0} telah berubah sejak itu: kini {1} (perubahan ini membuatnya {2})."],
