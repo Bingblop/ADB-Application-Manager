@@ -28702,6 +28702,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return Promise.resolve(rootOfferTab(featureName));
         }
         function rootOfferTab(featureName) {
+            if (!tabNeed('rootfeatures')) return false;              // switched off in Settings > Feature List: say so, never offer a tab that cannot open (T-046)
             const why = featureName ? txF('{0} needs Super User.', featureName) + '\n\n' : '';
             if (!confirm(why + txT('Open Root Features to check if your device supports Super User?'))) return false;
             switchView('rootfeatures');

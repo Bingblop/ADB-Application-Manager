@@ -15,7 +15,8 @@
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
-// (getWorkingModeFresh), so a grant taken back in the root manager locks it; a locked tab asks nothing. Deterministic output: ok / FAIL lines and the summary.
+// (getWorkingModeFresh), so a grant taken back in the root manager locks it; a locked tab asks nothing. T-046: with the tab switched off the funnel
+// asks no question, it shows the "turned off" toast. Deterministic output: ok / FAIL lines and the summary.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -255,6 +256,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const r4b = await ev(() => promptRootThenOpen('Other'));
   check('   a no: nothing opens, false', r4b === false && dialogs.length === 1 && (await view()) === 'about', JSON.stringify([r4b, await view()]));
   answer = true;
+  // T-046: with the tab switched off in Settings > Feature List the question is not asked at all: the page's "turned off" toast says where to turn it on
+  await ev(() => { tabConfig.off.push('rootfeatures'); }); dialogs = [];
+  const r4c = await ev(() => promptRootThenOpen('Other'));
+  check('   T-046: the tab switched off: no question, the toast says it is turned off and where to turn it on, nothing opens, false', r4c === false && dialogs.length === 0 && (await text('#toastMsg')) === 'Root Features is turned off. Turn it on in Settings, Feature List.' && (await view()) === 'about', JSON.stringify([r4c, dialogs, await text('#toastMsg'), await view()]));
+  await ev(() => { tabConfig.off = tabConfig.off.filter(k => k !== 'rootfeatures'); });
 
   // ---- 5. Request Super User
   await ev(() => switchView('rootfeatures')); await sleep(50);
