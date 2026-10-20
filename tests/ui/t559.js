@@ -16,7 +16,9 @@
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
 // Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
 // No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053). No topic calls
-// NOT FOUND final: KernelSU (Next) and APatch show su only to the apps they allow, and Open root manager is the way out (T-057).
+// NOT FOUND final: KernelSU (Next) and APatch show su only to the apps they allow, and Open root manager is the way out (T-057). T-058: after
+// the undo (deny in the manager, choose another mode) the chip reads DENIED when the app already read the refusal, until Check Status; the guide's
+// undo and recipe say so, and the recipe's step 3 quotes the Switch-to-Root question its way back brings.
 // The App components row's line names every kind of component the inspector can enable or disable (activities, receivers, services and
 // providers; T-033). T-043: a refused or impossible switch (Request Super User or the funnel) puts the mode chosen before back
 // (setWorkingMode) and the tag still reads DENIED; Root chosen before stays chosen. T-044: a tab about to open unlocked asks su again
@@ -177,6 +179,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   and the refusal it read shows no "Mode:" toast either (the tag and the gate say it)', (await toastText()) === '', await toastText());
   await ev(() => { switchView('apps'); window.__calls.fresh = 0; switchView('rootfeatures'); }); await sleep(50);
   check('   a tab that opens locked asks nothing more (no second su prompt after a no)', (await fresh()) === 0 && (await tag()) === 'warning DENIED', JSON.stringify([await fresh(), await tag()]));
+  // T-058: the guide's undo (deny in the manager, then choose another mode). Here the app has read the refusal, and in the other mode the probe
+  // still reports su's last no, so the chip reads DENIED, not AVAILABLE; the rows lock either way, and Check Status (a fresh check) forgets the no
+  await ev(() => selectModeUI('shizuku')); await sleep(250);
+  const undoTag = await tag(), undoLocked = await lockedRow();
+  await ev(() => checkAllWorkingModes(true)); await sleep(50);
+  check('   T-058 the undo after the app read the refusal: choosing Shizuku leaves the chip at DENIED with the rows locked; Check Status (a fresh check) turns it to AVAILABLE, still locked', undoTag === 'warning DENIED' && undoLocked && (await tag()) === 'warning AVAILABLE' && (await lockedRow()), JSON.stringify([undoTag, undoLocked, await tag()]));
   await ev(() => { window.__wm.revoked = false; window.__wm.refused = false; }); await setMode('root');
 
   // ---- 3. (B) su on the phone, the mode is Shizuku
@@ -344,6 +352,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       && notAllowed.test(gGrant) && !/stays there\. The phone has no su that the app can see: it is not rooted, or the manager is disabled\. Nothing on this tab can change that/.test(gGrant) && /A renamed build of KernelSU or APatch can get this message too/.test(gGrant)
       && notAllowed.test(gRecipe) && !/NOT FOUND means stop here\./.test(gRecipe) && notAllowed.test(gMode) && notAllowed.test(gTrouble),
     JSON.stringify([(gTab.match(/NOT FOUND \(grey\).{0,200}/) || [''])[0], (gGrant.match(/The chip reads NOT FOUND.{0,200}/) || [''])[0]]));
+  // T-058: after the undo the chip reads AVAILABLE, or DENIED when the app has already read the refusal (as in section 2); the recipe's step 3
+  // quotes the Switch-to-Root question its way back brings (as the page's source words it) and step 1 names DENIED
+  const switchQ = 'Switch the working mode to Root now? Root Features unlock once su grants this app access.';
+  const pageSrc = fs.readFileSync(path.join(REPO, 'assets', 'index.html'), 'utf8');
+  const undoRe = /AVAILABLE, or DENIED if the app has already seen the refusal/;
+  check('   T-058 the undo (Getting Super User, the recipe step 5): AVAILABLE, or DENIED once the app has seen the refusal, Check Status clears it, the rows lock either way; the recipe\'s step 3 quotes the Switch-to-Root question, step 1 names DENIED',
+    undoRe.test(gGrant) && /Check Status on the Shizuku card of Working Modes clears that/.test(gGrant) && !/The chip returns to AVAILABLE and the rows lock again/.test(gGrant)
+      && undoRe.test(gRecipe) && !/the chip reads AVAILABLE and the rows are Locked again/.test(gRecipe) && pageSrc.includes("txT('" + switchQ + "')") && gRecipe.includes('"' + switchQ + '"') && /DENIED means su is there but said no to this app before/.test(gRecipe),
+    JSON.stringify([(gGrant.match(/Undo\..{0,300}/) || [''])[0], (gRecipe.match(/If the manager did not ask.{0,300}/) || [''])[0]]));
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 

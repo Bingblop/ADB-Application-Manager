@@ -1565,7 +1565,7 @@
     <li>In Magisk, a grant made "Forever" stays until you cancel it in the manager, across restarts of the app and of the phone. A grant for a number of minutes ends by itself when the time is up, and Magisk asks again at the next root action. A grant made "Once" covers that one request only (see Way A). In the list managers, the switch holds until you change it.</li>
     <li>The only things the app changes on its own here are its chosen working mode (Root, or the one you had after a refusal) and the test command <code>id</code>. It writes nothing to the system and changes nothing in the manager.</li>
   </ul>
-  <div class="hg-warn"><b>Undo.</b> In your root manager, deny or remove ADB/Root Full System Toolbox from its list; then open Working Modes and choose another mode (Auto, Shizuku, Wireless Debugging or ADB over TCP). The chip returns to <b>AVAILABLE</b> and the rows lock again. Your phone stays rooted: that is the manager's business, not this app's.</div>
+  <div class="hg-warn"><b>Undo.</b> In your root manager, deny or remove ADB/Root Full System Toolbox from its list; then open Working Modes and choose another mode (Auto, Shizuku, Wireless Debugging or ADB over TCP). The chip reads <b>AVAILABLE</b>, or <b>DENIED</b> if the app has already seen the refusal (it asks <code>su</code> again when you come back through <b>Open manager</b>, or when you open this tab while it reads <b>ACTIVE</b>); <b>Check Status</b> on the Shizuku card of Working Modes clears that. The rows lock again either way. Your phone stays rooted: that is the manager's business, not this app's.</div>
 
   <h4>If it does not work</h4>
   <ul>
