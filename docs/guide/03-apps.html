@@ -320,7 +320,7 @@
       <tr><td>Logs</td><td>Opens Live Logcat, but it needs a working mode to read the log</td><td>Works</td></tr>
       <tr><td>Permissions</td><td>You can read the list. Toggles show a padlock.</td><td>Runtime ones can be changed</td></tr>
       <tr><td>App Ops</td><td>Not available</td><td>Works</td></tr>
-      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>LAUNCH and STOP work. ENABLE / DISABLE on a single part works in Root mode only; in ADB, Wireless Debugging and Shizuku (started by ADB) mode Android refuses it (<a href="#rootfeatures-components">why</a>)</td></tr>
+      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>LAUNCH and STOP work on exported parts, and LAUNCH (SHELL) on unexported screens; STOP on an unexported service is refused to the shell user too, so it needs Root. ENABLE / DISABLE on a single part works in Root mode only; in ADB, Wireless Debugging and Shizuku (started by ADB) mode Android refuses it (<a href="#rootfeatures-components">why</a>)</td></tr>
     </tbody>
   </table>
 
