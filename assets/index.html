@@ -5872,6 +5872,13 @@
                 .ovl-styletxt i { font-style:normal; font-size:var(--fs-pkg); font-weight:var(--fw-heavy); margin-left:var(--space-3); padding:1px var(--space-2); border-radius:var(--radius-pill); background:var(--fill-3); color:var(--accent); }
                 .ovl-styletxt > span { display:block; margin-top:1px; }
                 .ovl-preview-title { font-size:var(--fs-pill); font-weight:var(--fw-heavy); color:var(--text-muted); margin-top:var(--space-3h); }
+                /* Intensity (the root card): three native range inputs in the accent colour, each under its label and value; Reset is a text button */
+                .ovl-adj { display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3); }
+                .ovl-adj-head { display:flex; justify-content:space-between; align-items:baseline; gap:var(--space-3); font-size:var(--fs-pill); font-weight:var(--fw-bold); color:var(--text-muted); }
+                .ovl-adj-head b { flex:0 0 auto; font-weight:var(--fw-heavy); color:var(--text-main); font-variant-numeric:tabular-nums; }
+                .ovl-adj input[type=range] { display:block; width:100%; height:28px; margin:0; accent-color:var(--accent); cursor:pointer; }
+                .ovl-adj input[type=range]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+                .ovl-adj-reset:disabled { opacity:.45; cursor:default; }
                 .ovl-actions { display:flex; gap:var(--space-3h); margin:0 0 var(--space-2); }
                 .ovl-actions .mode-action-btn { min-height:44px; justify-content:center; }
                 .ovl-actions .mode-action-btn:disabled, #ovlDetailModal .mode-action-btn:disabled { opacity:.4; cursor:not-allowed; }
@@ -5978,15 +5985,17 @@
                 <!-- Root-only theme controls: colours written into Android as an overlay (cmd overlay fabricate), which only Root can do.
                      Locked rows without Super User (rootLockedRow, as on the Root Features tab); the live controls are drawn by ovlRenderRoot:
                      the Pure black switch in ovlRootCards, the Color spec radio group (2021, 2025, 2026; Android 14 and newer) in ovlRootSpec,
-                     the More styles radio group with its preview (Android 14 and newer; CMF only at spec 2026) in ovlRootMore. All three are locked on
-                     an Android build this app cannot compute the colours for (ovlProfileState). Under them, the note on what is written (ovlRootNote) and
-                     the one for colours written on another build of Android (ovlRootStale). -->
+                     the More styles radio group with its preview (Android 14 and newer; CMF only at spec 2026) in ovlRootMore, the Intensity sliders
+                     (Android 14 and newer) in ovlRootAdjust. All four are locked on an Android build this app cannot compute the colours for
+                     (ovlProfileState). Under them, the note on what is written (ovlRootNote) and the one for colours written on another build of
+                     Android (ovlRootStale). -->
                 <div class="color-card" id="ovlRootCard">
                     <div class="color-card-title">Root-only theme controls</div>
                     <div class="color-card-subtitle" style="margin-bottom:0;">Written into Android as a color overlay, which only Root can do. Apply writes it along with the theme.</div>
                     <div id="ovlRootCards"></div>
                     <div id="ovlRootSpec"></div>
                     <div id="ovlRootMore"></div>
+                    <div id="ovlRootAdjust"></div>
                     <div class="sdb-note" id="ovlRootNote"></div>
                     <div class="sdb-note" id="ovlRootStale" style="display:none;"></div>
                 </div>
@@ -38210,13 +38219,14 @@ Type any command above (e.g. pm list packages -d)</div>
             // a root style's source colour, taken now: the theme write below replaces the setting it may come from, and the overlay must carry
             // what the preview shows; so is the light or dark mode the phone is in (where the 65 base shades follow it), and the list style (style)
             // is the one this tap writes; where a style's colours can be written (More styles live: not on a locked profile, where Apply asks the
-            // bridge for nothing more), so is the phone's contrast, read from the phone now (the roles are computed at it)
+            // bridge for nothing more), so is the phone's contrast, read from the phone now (the roles are computed at it), and so are the Intensity
+            // sliders (null with all three at 100, or where their row is not live): moving one after the tap changes nothing of this Apply
             const seed = source === 'preset' ? { hex, from: 'color' } : ovlRootSeed();
-            const dark = systemPrefersDark(), contrast = ovlRootStyleLive() ? ovlContrast(true) : undefined;
+            const dark = systemPrefersDark(), contrast = ovlRootStyleLive() ? ovlContrast(true) : undefined, adjust = ovlRootAdjOn();
             ovlBusy = true;
             ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
             ovlRender();
-            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark, contrast }), 60000);
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style, seed, dark, contrast, adjust }), 60000);
         }
 
         function ovlReset() {
@@ -38262,8 +38272,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     ovlWatchPalette();
                 };
                 // with Super User, Apply also writes the pure black overlay (or switches it off again) once the theme setting is in: the Undo bar waits for both.
-                // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode, the contrast), so the overlay is the one the preview showed
-                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style);
+                // chosen carries what Apply took when it was tapped (the list style, the seed, the dark mode, the contrast, the sliders), so the overlay is the one the preview showed
+                const follow = kind === 'undo' ? null : ovlRootFollowUp(kind, chosen.style, chosen.adjust);
                 if (follow) ovlRootRun(follow, finish, chosen); else finish();
             } else {
                 if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
@@ -38287,16 +38297,19 @@ Type any command above (e.g. pm list packages -d)</div>
         // the gate is isRootActive, not re-derived here). With it: the Pure black switch (kv ovl_black, off by default) and, on Android 14 and
         // newer, the Color spec radio group (kv ovl_spec: '2021' | '2025' | '2026'; Google's newer colour specs, computed by monet.js part 2)
         // and the More styles radio group (kv ovl_root_style: '' | FIDELITY | CONTENT | MONOCHROMATIC | CMF, CMF only at spec 2026; the colours
-        // Android has no setting for, computed by monet.js as the phone's Android release would: see ovlProfileState). Apply keeps writing the secure setting as before
+        // Android has no setting for, computed by monet.js as the phone's Android release would: see ovlProfileState) and the Intensity sliders
+        // (kv ovl_adj_accent_sat, ovl_adj_bg_sat, ovl_adj_bg_light: 0 to 200 %, 100 when never moved; monet.js's opts.adjust, this project's own
+        // formulas). Nothing is written while a control changes: Apply keeps writing the secure setting as before
         // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the 165 entries of the
-        // style ovlRootPlanStyle picks, a More style or the list style at 2025, Pure black's entries replacing where both name a resource), or
+        // style ovlRootPlanStyle picks, a More style, or the list style at 2025 or adjusted by the sliders, Pure black's entries replacing where
+        // both name a resource), or
         // switches it off again (nothing on any more after an earlier write: kv ovl_root_applied holds the overlay ids and what they carry;
         // PR 2's ovl_black_applied is read as a fallback). Revert and the Undo bar switch it off too. The bridge is overlayFabricate(req,
         // planJson) -> window.onOverlayFab(json): the Java side checks the plan, takes the overlay ids from its own SDK_INT and decides from the
         // read-back (OverlayRules.judgeFabricate), never from the page.
         // Profiles (T-049): each Android build family builds its theme colours its own way (shade rule, role list and names, write order), so
         // the colours are computed for the family the phone is (getSystemPalette's profile, MonetProfile.java) at the phone's contrast setting
-        // (its contrast), and every family this app cannot compute exactly locks all three rows (fail closed: ovlProfileState). The record
+        // (its contrast), and every family this app cannot compute exactly locks every row (fail closed: ovlProfileState). The record
         // also keeps the profile and the build (Build.FINGERPRINT) the colours were written for, so the card can say when Android was updated
         // since (ovlRootStale); nothing is rewritten by itself.
         const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.';
@@ -38342,6 +38355,17 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_LOCK_ONE_UI = 'Not supported on One UI';
         const OVL_LOCK_NOT_YET = 'Not supported on this Android version yet';
         const OVL_STALE_NOTE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
+        // Intensity: the three sliders, each a percentage from 0 to 200 in steps of 5, 100 (Android's colours as they are) when never moved; key:
+        // monet.js's opts.adjust field, kv: where it is remembered, id: the input's (its value label is id + 'V')
+        const OVL_ADJ = [
+            { key: 'accentSat', kv: 'ovl_adj_accent_sat', id: 'ovlAdjAccentSat', name: 'Accent saturation' },
+            { key: 'bgSat', kv: 'ovl_adj_bg_sat', id: 'ovlAdjBgSat', name: 'Background saturation' },
+            { key: 'bgLight', kv: 'ovl_adj_bg_light', id: 'ovlAdjBgLight', name: 'Background lightness' }
+        ];
+        const OVL_ADJ_SUB = '100% leaves Android\'s colors as they are.';
+        // the value a slider shows while it is being moved (kept here, not stored: the store is written when the slider is let go, its change
+        // event), { key, value } or null
+        let ovlAdjMoving = null;
 
         function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }
         // the controls are live when the app can write overlays, Super User is active and the phone has Material You at all (also all that Undo,
@@ -38398,34 +38422,61 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // the root style Apply would write: the chosen one while the row is live, else '' (a style remembered on a phone that cannot write it counts for nothing)
         function ovlRootStyleOn() { return ovlRootStyleLive() ? ovlRootStyle() : ''; }
-        // The one decision of which style's colours the overlay carries, { style, spec } (style '' for none): 1. a More style (Fidelity, Content,
-        // Monochrome, or CMF at 2026), at the spec Google's rule gives it (2021 for the first three, 2026 for CMF); 2. else, at spec 2025 or 2026,
-        // the list style (the one Apply writes into the theme setting) when the rule gives it a spec other than 2021 (Tonal Spot, Vibrant,
+        // Intensity: the colour maths knows the sliders (monet.js's opts.adjust: MonetPlan.lib.adjustOf); an older monet.js would ignore the option
+        // and write the colours unadjusted, so the row then says Update the app, as Color spec does without the specs
+        function ovlAdjApiOk() { return ovlMonetOk() && !!MonetPlan.lib && typeof MonetPlan.lib.adjustOf === 'function'; }
+        // live where More styles is and the maths knows the sliders
+        function ovlRootAdjLive() { return ovlRootStyleLive() && ovlAdjApiOk(); }
+        // a stored value as the slider shows it: a number held to 0..200 and to the slider's steps of 5, else 100
+        function ovlAdjClamp(v) { return typeof v === 'number' && isFinite(v) ? Math.min(200, Math.max(0, Math.round(v / 5) * 5)) : 100; }
+        // the three values as the sliders show them now ({ accentSat, bgSat, bgLight }; the one being moved at its moving value)
+        function ovlAdjValues() {
+            const a = {};
+            for (const o of OVL_ADJ) a[o.key] = ovlAdjMoving && ovlAdjMoving.key === o.key ? ovlAdjMoving.value : ovlAdjClamp(kvGet(o.kv, 100));
+            return a;
+        }
+        function ovlAdjIsDefault(a) { return !a || OVL_ADJ.every(o => a[o.key] === 100); }
+        // the adjust Apply would pass to monet.js: the three values while the row is live and one of them is not 100, else null (Android's colours)
+        function ovlRootAdjOn() {
+            if (!ovlRootAdjLive()) return null;
+            const a = ovlAdjValues();
+            return ovlAdjIsDefault(a) ? null : a;
+        }
+        // a value as the page writes it, in the language's own way (120%, 120 %, %120)
+        function ovlAdjText(v) { try { return new Intl.NumberFormat(langLocale(), { style: 'percent', maximumFractionDigits: 0 }).format(v / 100); } catch (e) { return v + '%'; } }
+        // The one decision of which style's colours the overlay carries, { style, spec, adjust } (style '' for none): 1. a More style (Fidelity,
+        // Content, Monochrome, or CMF at 2026), at the spec Google's rule gives it (2021 for the first three, 2026 for CMF); 2. else, at spec 2025 or
+        // 2026, the list style (the one Apply writes into the theme setting) when the rule gives it a spec other than 2021 (Tonal Spot, Vibrant,
         // Expressive and Spritz: the set comes from MonetPlan.specFor, not from a list here), at that spec (2025): Android builds its own 2021
-        // colours from the setting and the overlay writes the 2025 ones over them; 3. else none (Pure black alone, or nothing). sdk: the phone's
-        // Android level (the role resources exist from 14). None as well without a profile to compute for (ovlMonetProfile: a locked phone).
-        // The plan builder, the hint, the preview and the follow-up all ask this function.
-        function ovlRootPlanStyle(listStyle, sdk) {
-            const none = { style: '', spec: '2021' };
+        // colours from the setting and the overlay writes the 2025 ones over them; and, at any spec (2021 included), the list style whenever an
+        // Intensity slider is not at 100, at the spec the rule gives it: Android has no setting for the sliders, so the app writes that style's
+        // colours itself, adjusted; 3. else none (Pure black alone, or nothing). adjust: what the sliders give the style's colours (null with
+        // all three at 100, or with no style); the one Apply took when it was tapped, or (left out) the sliders as they are now (ovlRootAdjOn).
+        // sdk: the phone's Android level (the role resources exist from 14). None as well without a profile to compute for (ovlMonetProfile: a
+        // locked phone). The plan builder, the hint, the preview and the follow-up all ask this function.
+        function ovlRootPlanStyle(listStyle, sdk, adjust) {
+            const none = { style: '', spec: '2021', adjust: null };
             if (!(sdk >= OVL_ROOT_MIN_SDK) || !ovlMonetOk() || !ovlMonetProfile()) return none;
-            const more = ovlRootStyle(), spec = ovlSpecNow();
+            const more = ovlRootStyle(), spec = ovlSpecNow(), adj = adjust === undefined ? ovlRootAdjOn() : (adjust && !ovlAdjIsDefault(adjust) ? adjust : null);
             try {
-                if (more) return { style: more, spec: ovlSpecApiOk() ? MonetPlan.specFor(more, spec) : '2021' };
-                if (spec !== '2021' && typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
-                    const at = MonetPlan.specFor(listStyle, spec);
-                    if (at !== '2021') return { style: listStyle, spec: at };
+                if (more) return { style: more, spec: ovlSpecApiOk() ? MonetPlan.specFor(more, spec) : '2021', adjust: adj };
+                if (typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
+                    const at = spec !== '2021' ? MonetPlan.specFor(listStyle, spec) : '2021';
+                    if (at !== '2021' || adj) return { style: listStyle, spec: at, adjust: adj };
                 }
             } catch (e) {}
             return none;
         }
         // the same while the controls are live (the hint, the preview and the follow-up), else none
-        function ovlRootPlanOn(listStyle) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk()) : { style: '', spec: '2021' }; }
+        function ovlRootPlanOn(listStyle, adjust) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk(), adjust) : { style: '', spec: '2021', adjust: null }; }
         // the opts monet.js takes: the spec, the mode whose 65 shades are written (at 2025 and 2026 on Android 14, and on every profile after
-        // it), the profile (its shade rule, role list, names and write order) and the phone's contrast. For Android 14 at contrast 0 these give
-        // PR 3's and PR 4's results byte for byte (monet.js: P14 at contrast 0 is the output from before the profiles).
-        function ovlRootOpts(spec, dark, contrast) {
+        // it), the profile (its shade rule, role list, names and write order), the phone's contrast and the Intensity sliders (adjust, only when
+        // one is not at 100). For Android 14 at contrast 0 without adjust these give PR 3's and PR 4's results byte for byte (monet.js: P14 at
+        // contrast 0 is the output from before the profiles, and no adjust is the output from before the sliders).
+        function ovlRootOpts(spec, dark, contrast, adjust) {
             const o = { spec: spec || '2021', dark: !!dark, contrast: typeof contrast === 'number' && isFinite(contrast) ? contrast : 0 }, profile = ovlMonetProfile();
             if (profile) o.profile = profile;
+            if (adjust && !ovlAdjIsDefault(adjust)) o.adjust = { accentSat: adjust.accentSat, bgSat: adjust.bgSat, bgLight: adjust.bgLight };
             return o;
         }
         // { ids, t, pending, black, style, spec, profile, build } while this app's overlay may be on the phone (written and not switched off since),
@@ -38434,8 +38485,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // written; spec: the spec those colours were computed with (written as 2025 or 2026 only: a record without it, PR 3's and every 2021
         // one, reads as 2021); profile: the Android build family they were computed for (written when it is not P14: a record without it reads
         // as P14, as every record from before the profiles holds Android 14's colours or Pure black alone); build: the phone's build they were
-        // written on ('' in a record from before the profiles). PR 2's record (kv ovl_black_applied: pure black alone) is read when the new key
-        // holds nothing, so a phone that ran that build keeps its Undo.
+        // written on ('' in a record from before the profiles); adjust: the Intensity sliders the colours were computed with ({ accentSat, bgSat,
+        // bgLight }, written only when one is not 100 and there is a style: a record without it, every record from before the sliders, reads as
+        // 100 / 100 / 100). PR 2's record (kv ovl_black_applied: pure black alone) is read when the new key holds nothing, so a phone that ran that
+        // build keeps its Undo.
         function ovlRootApplied() {
             let a = kvGet('ovl_root_applied', null), old = false;
             if (!a || typeof a !== 'object') { a = kvGet('ovl_black_applied', null); old = true; }
@@ -38446,12 +38499,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const spec = style && typeof a.spec === 'string' && OVL_SPEC_IDS.includes(a.spec) ? a.spec : '2021';
             const profile = !old && typeof a.profile === 'string' && /^[A-Za-z0-9]{1,16}$/.test(a.profile) ? a.profile : 'P14';
             const build = !old && typeof a.build === 'string' && a.build.length <= 1024 ? a.build : '';
-            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style, spec, profile, build };
+            const adj = style && a.adjust && typeof a.adjust === 'object' ? a.adjust : {}, adjust = {};
+            for (const o of OVL_ADJ) { const v = adj[o.key]; adjust[o.key] = typeof v === 'number' && isFinite(v) && v >= 0 && v <= 200 ? v : 100; }
+            return { ids, t: a.t, pending: a.pending === true, black: old || a.black === true, style, spec, profile, build, adjust };
         }
         // a record to store: spec only when it is not 2021 (see above), so a 2021 record is the same as PR 3's; then what at (the plan the write
-        // carries) names: the profile when it is not P14, the build whenever it is known
+        // carries) names: the sliders when the record has a style and one of them is not 100 (so a record without them is the same as before
+        // the sliders), the profile when it is not P14, the build whenever it is known
         function ovlRootRecord(rec, spec, at) {
             if (spec && spec !== '2021') rec.spec = spec;
+            if (rec.style && at && at.adjust && typeof at.adjust === 'object' && !ovlAdjIsDefault(at.adjust)) rec.adjust = { accentSat: at.adjust.accentSat, bgSat: at.adjust.bgSat, bgLight: at.adjust.bgLight };
             if (at && typeof at.profile === 'string' && at.profile && at.profile !== 'P14') rec.profile = at.profile;
             if (at && typeof at.build === 'string' && at.build) rec.build = at.build;
             return rec;
@@ -38502,22 +38559,23 @@ Type any command above (e.g. pm list packages -d)</div>
         // contrast: the phone's contrast then }; each part it lacks is taken now. The style and its spec are ovlRootPlanStyle's; the 65 shades are
         // the dark or light scheme's as at.dark says where the profile and the spec take them from the mode the phone is in (Android 14 at 2025
         // and 2026, every profile after it), the roles are written for both modes either way. The colours are those of the phone's profile
-        // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0) at its contrast.
-        // profile and build: what the record keeps (ovlRootRecord).
+        // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0) at its contrast,
+        // adjusted by the Intensity sliders as at.adjust says (taken at the tap; the sliders as they are now when at has none).
+        // profile, build and adjust: what the record keeps (ovlRootRecord).
         function ovlBuildRootPlan(sdk, at) {
             at = at || {};
-            const black = ovlBlackOn() && !ovlRootLock(), pick = ovlRootPlanStyle(typeof at.style === 'string' ? at.style : ovlStyle, sdk), style = pick.style;
+            const black = ovlBlackOn() && !ovlRootLock(), pick = ovlRootPlanStyle(typeof at.style === 'string' ? at.style : ovlStyle, sdk, at.adjust), style = pick.style;
             const profile = ovlProfileState().id, build = ovlBuild();
-            if (!style) return { style: '', spec: '2021', black, entries: black ? ovlBuildBlackPlan(sdk) : [], profile, build };
+            if (!style) return { style: '', spec: '2021', black, entries: black ? ovlBuildBlackPlan(sdk) : [], profile, build, adjust: null };
             const seed = at.seed && at.seed.hex ? at.seed.hex : ovlRootSeed().hex;
-            const opts = ovlRootOpts(pick.spec, typeof at.dark === 'boolean' ? at.dark : systemPrefersDark(), typeof at.contrast === 'number' ? at.contrast : ovlContrast(true));
+            const opts = ovlRootOpts(pick.spec, typeof at.dark === 'boolean' ? at.dark : systemPrefersDark(), typeof at.contrast === 'number' ? at.contrast : ovlContrast(true), pick.adjust);
             const rows = new Map();
             for (const e of MonetPlan.entries(style, seed, opts)) rows.set(e.resource, e.argb);
             if (black) for (const e of ovlBuildBlackPlan(sdk)) rows.set(e.resource, e.argb);
             const entries = [];
             for (const name of OVL_ROOT_LEAD) { const r = OVL_FAB_RES + name; if (rows.has(r)) { entries.push({ resource: r, argb: rows.get(r) }); rows.delete(r); } }
             rows.forEach((argb, resource) => entries.push({ resource, argb }));
-            return { style, spec: pick.spec, black, entries, profile, build };
+            return { style, spec: pick.spec, black, entries, profile, build, adjust: pick.adjust };
         }
         // the ids the Java side writes a plan under (its own rule, from its own SDK_INT; this copy only names what to switch off after no answer came)
         function ovlRootIds(sdk, entries) {
@@ -38526,11 +38584,12 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // what Apply (kind 'apply') or Revert (kind 'reset') does for this app's overlay besides the theme setting:
         // 'fabricate' (write it: Pure black is on, or ovlRootPlanStyle gives a style), 'disable' (switch it off: nothing is on any more, but it is
-        // on the phone), or null. listStyle: the list style Apply writes (the one it took when tapped; the page's own for the hint). On a locked
-        // profile nothing is on (Pure black and the styles count only while their rows are live), so Apply switches an overlay written before off.
-        function ovlRootFollowUp(kind, listStyle) {
+        // on the phone), or null. listStyle: the list style Apply writes (the one it took when tapped; the page's own for the hint); adjust: the
+        // Intensity sliders Apply took when tapped (left out: as they are now). On a locked profile nothing is on (Pure black, the styles and the
+        // sliders count only while their rows are live), so Apply switches an overlay written before off.
+        function ovlRootFollowUp(kind, listStyle, adjust) {
             if (!ovlRootLive()) return null;
-            if (kind !== 'reset' && ((ovlBlackOn() && ovlBlackLive()) || ovlRootPlanOn(listStyle).style)) return 'fabricate';
+            if (kind !== 'reset' && ((ovlBlackOn() && ovlBlackLive()) || ovlRootPlanOn(listStyle, adjust).style)) return 'fabricate';
             return ovlRootApplied() ? 'disable' : null;
         }
         // Colours written on another build of Android (the record's build is not the phone's, as after a system update): the note under the card,
@@ -38564,8 +38623,20 @@ Type any command above (e.g. pm list packages -d)</div>
             };
         }
         // the sentence under Apply for what the overlay write adds to the theme setting: one whole sentence per combination, each translated as one.
-        // style: ovlRootPlanStyle's (a More style, CMF, or a list style, which it gives only at spec 2025)
-        function ovlRootHint(style, black) {
+        // style: ovlRootPlanStyle's (a More style, CMF, or a list style, which it gives at spec 2025 or with the sliders); spec: the spec it gives
+        // (a list style's colours are its 2025 ones or, with the sliders, its 2021 ones); adjusted: an Intensity slider is not at 100. With all
+        // three at 100 the sentences are the ones from before the sliders.
+        function ovlRootHint(style, black, spec, adjusted) {
+            if (adjusted && style) {
+                if (style === 'FIDELITY') return black ? 'Also writes the Fidelity colors, adjusted by the Intensity sliders, and pure black with root, in place of the style above.' : 'Also writes the Fidelity colors with root, in place of the style above, adjusted by the Intensity sliders.';
+                if (style === 'CONTENT') return black ? 'Also writes the Content colors, adjusted by the Intensity sliders, and pure black with root, in place of the style above.' : 'Also writes the Content colors with root, in place of the style above, adjusted by the Intensity sliders.';
+                if (style === 'MONOCHROMATIC') return black ? 'Also writes the Monochrome colors, adjusted by the Intensity sliders, and pure black with root, in place of the style above.' : 'Also writes the Monochrome colors with root, in place of the style above, adjusted by the Intensity sliders.';
+                if (style === 'CMF') return black ? 'Also writes the CMF colors, adjusted by the Intensity sliders, and pure black with root, in place of the style above.' : 'Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.';
+                if (OVL_STYLE_IDS.includes(style)) {
+                    if (spec === '2021') return black ? 'Also writes this style\'s colors, adjusted by the Intensity sliders, and pure black with root.' : 'Also writes this style\'s colors with root, adjusted by the Intensity sliders.';
+                    return black ? 'Also writes this style\'s 2025 colors, adjusted by the Intensity sliders, and pure black with root.' : 'Also writes this style\'s 2025 colors with root, adjusted by the Intensity sliders.';
+                }
+            }
             if (style === 'FIDELITY') return black ? 'Also writes the Fidelity colors and pure black with root, in place of the style above.' : 'Also writes the Fidelity colors with root, in place of the style above.';
             if (style === 'CONTENT') return black ? 'Also writes the Content colors and pure black with root, in place of the style above.' : 'Also writes the Content colors with root, in place of the style above.';
             if (style === 'MONOCHROMATIC') return black ? 'Also writes the Monochrome colors and pure black with root, in place of the style above.' : 'Also writes the Monochrome colors with root, in place of the style above.';
@@ -38604,15 +38675,76 @@ Type any command above (e.g. pm list packages -d)</div>
             ovlRenderRoot();
             ovlRenderActions();
         }
+        // An Intensity slider moves (its input event: a drag, or a key): the value it shows, the hint under Apply and the preview follow; nothing
+        // is stored or written, no bridge is asked (Apply writes the colours, with the values of the moment it is tapped)
+        function ovlAdjInput(el) {
+            const o = OVL_ADJ.find(x => el && x.key === el.dataset.adj);
+            if (!o || !ovlRootAdjLive()) return;
+            ovlAdjMoving = { key: o.key, value: ovlAdjClamp(Number(el.value)) };
+            ovlAdjRedraw(el);
+        }
+        // and is let go (its change event; a key fires both): the value is remembered (kv), as the other controls of the card are
+        function ovlAdjChange(el) {
+            const o = OVL_ADJ.find(x => el && x.key === el.dataset.adj);
+            ovlAdjMoving = null;
+            if (!o || !ovlRootAdjLive()) { ovlAdjSync(); return; }
+            kvSet(o.kv, ovlAdjClamp(Number(el.value)));
+            ovlAdjRedraw(el);
+        }
+        // the sliders, the hint and the preview drawn again; the preview sits above the sliders and comes or goes as a value leaves or reaches
+        // 100 (a style's colours are written or not), so the page is scrolled by as much as the slider moved: it stays under the finger
+        function ovlAdjRedraw(el) {
+            const top = el.getBoundingClientRect().top;
+            ovlAdjSync();
+            ovlRenderActions();
+            const moved = el.getBoundingClientRect().top - top;
+            if (moved) { const doc = document.scrollingElement || document.documentElement; doc.scrollTop += moved; }
+        }
+        // Reset: the three back to 100 (Android's colours as they are); the focus, if it was on Reset (now disabled), goes to the first slider
+        function ovlAdjReset() {
+            if (!ovlRootAdjLive()) return;
+            const btn = document.getElementById('ovlAdjReset'), focused = !!btn && document.activeElement === btn;
+            ovlAdjMoving = null;
+            for (const o of OVL_ADJ) kvSet(o.kv, 100);
+            haptic();
+            ovlAdjSync();
+            ovlRenderActions();
+            if (focused) { const first = document.getElementById(OVL_ADJ[0].id); if (first) first.focus({ preventScroll: true }); }
+        }
+        // the live sliders as the values are: each input's value, its label and aria-valuetext, and whether Reset has anything to do. The markup is
+        // drawn once (ovlRenderRoot) and only brought up to date here, so a redraw while a finger is on a slider does not take it away
+        function ovlAdjSync() {
+            const a = ovlAdjValues();
+            for (const o of OVL_ADJ) {
+                const el = document.getElementById(o.id), label = document.getElementById(o.id + 'V'), text = ovlAdjText(a[o.key]);
+                if (el) { if (Number(el.value) !== a[o.key]) el.value = String(a[o.key]); el.setAttribute('aria-valuetext', text); }
+                if (label) label.textContent = text;
+            }
+            const reset = document.getElementById('ovlAdjReset');
+            if (reset) reset.disabled = ovlAdjIsDefault(a);
+        }
+        function ovlAdjHtml() {
+            const a = ovlAdjValues();
+            return '<div class="rf-row">' + rootFeatureName('Intensity', OVL_ADJ_SUB)
+                + '<button type="button" class="batch-tool-link ovl-adj-reset" id="ovlAdjReset" onclick="ovlAdjReset()" title="Set all three to 100%"' + (ovlAdjIsDefault(a) ? ' disabled' : '') + '>Reset</button></div>'
+                + '<div class="ovl-adj" role="group" aria-label="' + txT('Intensity') + '">'
+                + OVL_ADJ.map(o => {
+                    const v = a[o.key], text = ovlAdjText(v);
+                    return '<div><label class="ovl-adj-head" for="' + o.id + '"><span>' + escapeHtml(o.name) + '</span><b id="' + o.id + 'V" translate="no" aria-hidden="true">' + escapeHtml(text) + '</b></label>'
+                        + '<input type="range" id="' + o.id + '" data-adj="' + o.key + '" min="0" max="200" step="5" value="' + v + '" aria-valuetext="' + escapeHtml(text) + '" oninput="ovlAdjInput(this)" onchange="ovlAdjChange(this)"></div>';
+                }).join('')
+                + '</div>';
+        }
 
         function ovlRenderRoot() {
             const card = document.getElementById('ovlRootCard'), box = document.getElementById('ovlRootCards'), more = document.getElementById('ovlRootMore'), note = document.getElementById('ovlRootNote');
-            const specBox = document.getElementById('ovlRootSpec');
+            const specBox = document.getElementById('ovlRootSpec'), adjBox = document.getElementById('ovlRootAdjust');
             if (!card || !box || !note) return;
             const say = text => { note.innerText = text; note.style.display = text ? '' : 'none'; };
             const draw = html => { if (more) more.innerHTML = html; };
             const drawSpec = html => { if (specBox) specBox.innerHTML = html; };
-            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); say(''); ovlRenderRootStale(); return; }      // hidden with the rest of Material You
+            const drawAdj = html => { ovlAdjMoving = null; if (adjBox) adjBox.innerHTML = html; };
+            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); drawAdj(''); say(''); ovlRenderRootStale(); return; }      // hidden with the rest of Material You
             card.style.display = '';
             const bridge = ovlRootBridgeOk(), lock = bridge ? ovlRootLock() : '';
             if (!bridge || lock || !isRootActive()) {
@@ -38624,6 +38756,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 box.innerHTML = rootLockedRow('Pure black backgrounds', OVL_BLACK_SUB, reason);
                 drawSpec(rootLockedRow('Color spec', OVL_SPEC_SUB, reason));
                 draw(rootLockedRow('More styles', OVL_MORE_SUB, reason));
+                drawAdj(rootLockedRow('Intensity', OVL_ADJ_SUB, reason));
                 const was = lock ? ovlRootApplied() : null, w = was ? ovlRootWords(was.style) : null;
                 say(!bridge ? 'This version of the app cannot write color overlays. Update it, then come back.' : lock ? (was ? (was.pending ? w.maybe : w.on) : '') : 'Shizuku and ADB cannot write these colors; Root can.');
                 ovlRenderRootStale();
@@ -38665,14 +38798,29 @@ Type any command above (e.g. pm list packages -d)</div>
                 });
                 ovlRenderRootPreview();
             }
+            // Intensity: locked where More styles is (and Update the app when the maths does not know the sliders), else the three sliders,
+            // drawn once and then only brought up to date (ovlAdjSync), so a redraw does not take a slider away from a finger moving it. The
+            // row's name and line and the group's label are put in the page's language as they are drawn (txT, which a later language switch
+            // cannot take back), so those are drawn again on every render, as the other rows are
+            if (!ovlRootAdjLive()) drawAdj(rootLockedRow('Intensity', OVL_ADJ_SUB, ovlAdjApiOk() ? 'Needs Android 14' : 'Update the app'));
+            else if (adjBox) {
+                if (!document.getElementById(OVL_ADJ[0].id)) adjBox.innerHTML = ovlAdjHtml();
+                else {
+                    const name = adjBox.querySelector('.rf-row > .rf-name'), group = adjBox.querySelector('.ovl-adj');
+                    if (name) name.outerHTML = rootFeatureName('Intensity', OVL_ADJ_SUB);
+                    if (group) group.setAttribute('aria-label', txT('Intensity'));
+                }
+                ovlAdjSync();
+            }
             const applied = ovlRootApplied(), words = ovlRootWords(applied ? applied.style : '');
             say(!applied ? '' : applied.pending ? words.maybe : words.on);
             ovlRenderRootStale();
         }
 
         // the preview under More styles, whenever Apply would write a style's colours (ovlRootPlanStyle: a More style, or the list style at spec
-        // 2025): the five rows (13 shades each) Apply would write, from the same MonetPlan.palettes call (the same options: the profile, its
-        // shade rule and the phone's contrast, and for the mode the phone is in now where the shades follow it, as Apply takes it), drawn as the
+        // 2025 or with an Intensity slider not at 100): the five rows (13 shades each) Apply would write, from the same MonetPlan.palettes call
+        // (the same options: the profile, its shade rule, the phone's contrast and the sliders as they are now, and for the mode the phone is in
+        // now where the shades follow it, as Apply takes it), drawn as the
         // "Colors in use" card draws the phone's own (ovlRenderNow's swatches, a tap copies one), and the line naming the source colour (or saying
         // that the style turns it into Google blue: a chroma under 5, as Android decides)
         function ovlRenderRootPreview() {
@@ -38683,7 +38831,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const seed = ovlRootSeed();
             let pals = null, grey = false;
             try {
-                pals = MonetPlan.palettes(style, seed.hex, ovlRootOpts(pick.spec, systemPrefersDark(), ovlContrast()));
+                pals = MonetPlan.palettes(style, seed.hex, ovlRootOpts(pick.spec, systemPrefersDark(), ovlContrast(), pick.adjust));
                 grey = seed.from !== 'blue' && String(MonetPlan.seed(style, seed.hex)).toUpperCase() !== String(seed.hex).toUpperCase();
             } catch (e) { pals = null; }
             if (!pals) { box.innerHTML = ''; return; }
@@ -38702,7 +38850,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // the bridge call: 'fabricate' writes the plan for this phone's Android, 'disable' switches off the ids this app wrote; after(r) runs once it has answered.
-        // at: what Apply took when it was tapped ({ seed, style, dark, contrast }: a fabricate after the theme write), else none
+        // at: what Apply took when it was tapped ({ seed, style, dark, contrast, adjust }: a fabricate after the theme write), else none
         function ovlRootRun(action, after, at) {
             const sdk = ovlSdk(), applied = ovlRootApplied(), prior = ovlRootAppliedRaw();
             // what the call carries: the plan going out, or (for a disable) what the overlay on the phone holds, so the answer's words name it
@@ -38719,7 +38867,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // prior: what the store held before a fabricate went out (put back when the answer shows nothing of it is on); plan: what the call carried
-        // ({ style, spec, black, profile, build }; without one, what the record says the overlay holds)
+        // ({ style, spec, black, profile, build, adjust }; without one, what the record says the overlay holds)
         function ovlRootDone(r, action, expectedIds, after, prior, plan) {
             ovlBusy = false;
             const was = ovlRootApplied();
@@ -38912,7 +39060,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const main = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
                 // what Apply does for this app's overlay besides (Super User only); its own sentence, one per combination, so each is translated whole
                 const follow = ovlUsable() && supported ? ovlRootFollowUp('apply', ovlStyle) : null;
-                const root = follow === 'fabricate' ? ovlRootHint(ovlRootPlanOn(ovlStyle).style, ovlBlackOn() && ovlBlackLive()) : follow === 'disable' ? ovlRootRemoveHint() : '';
+                const pick = follow === 'fabricate' ? ovlRootPlanOn(ovlStyle) : null;
+                const root = pick ? ovlRootHint(pick.style, ovlBlackOn() && ovlBlackLive(), pick.spec, !!pick.adjust) : follow === 'disable' ? ovlRootRemoveHint() : '';
                 hint.innerHTML = (main ? '<span>' + escapeHtml(main) + '</span>' : '') + (root ? ' <span id="ovlApplyHintRoot">' + escapeHtml(root) + '</span>' : '');
             }
             ovlRenderRootPreview();                 // the root style's preview follows the colour, the source and the list style as they are changed

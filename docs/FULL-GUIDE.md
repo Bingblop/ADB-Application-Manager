@@ -814,7 +814,7 @@ style the palette is worked out with:
   measured against libmonet android14-qpr3, Fidelity and Content differ in about 1 in 10 role values at contrast 0 (on-colors and the
   light outline), Monochrome in the light outline only, about 4 in 10 at a higher contrast; shades and Pure black are the same), 15 QPR1 (`P15Q1`, 165
   entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
-  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all three rows, with Super User or without:
+  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all four rows, with Super User or without:
   15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
   libmonet, 16 QPR1/QPR2 compute at spec 2025 with changes of their own and write `_light`/`_dark` palette names, 17 at 2026
   with the fixed colors in both modes), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
@@ -854,7 +854,7 @@ style the palette is worked out with:
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
   *From Google blue: #808080 is too grey for this style*. **2021** then Apply, **Undo** and **Default** switch the overlay off. Not yet
   tried on a rooted phone.
-- **More styles** (the last control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
+- **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
   chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for, and,
@@ -870,10 +870,37 @@ style the palette is worked out with:
   **Apply theme** still writes the theme setting from the style list first and then the overlay on top: 165 colors on Android 14 and
   15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
-  what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `profile` when it is not P14 and `build`; PR 2's
-  `ovl_black_applied` is read as a fallback).
+  what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
+  `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
   Messages then speak of the *theme overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
+- **Intensity** (the fourth control of that card, under More styles; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
+  styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
+  when `monet.js` has no `MonetPlan.lib.adjustOf`; the locked row keeps its line): three native range sliders, **Accent saturation**,
+  **Background saturation** and **Background lightness**, 0 to 200 % in steps of 5, 100 % when never moved, the row's line *100% leaves
+  Android's colors as they are.* and a **Reset** text button that sets all three to 100 (greyed out at 100/100/100). The values are kept
+  in `ovl_adj_accent_sat`, `ovl_adj_bg_sat` and `ovl_adj_bg_light` when a slider is let go (its change event); moving one (its input
+  event) only redraws the value, the hint and the preview, writes nothing and runs nothing in the background. The maths is
+  `opts.adjust = { accentSat, bgSat, bgLight }` in `assets/monet.js`, both parts, with formulas written for this project, applied to the
+  scheme's tonal palettes before anything is derived from them: accent saturation scales the chroma of primary, secondary and
+  tertiary, background saturation that of neutral and neutral variant, and background lightness has those two give, for tone t, the
+  colour at clamp(t + 0.1 · (v − 100) · min(1, t / 10, (100 − t) / 10), 0, 100) (tones 0 and 100 never move: shade 0 stays #FFFFFF and
+  shade 1000 #000000; at 200 shades 10, 50 and 100 of a neutral row reach white, at 0 shade 900 reaches black; so at 200 the light
+  background roles from about tone 90 up, `background`, `surface`, `surface_bright` and the five `surface_container` ones, all turn
+  white (at 2025 `surface_container_highest` at times only next to it), and at 0 `background`, `surface`, `surface_dim` and the lowest containers turn black in dark mode: the tiers stop
+  differing). The error palette is never touched; the engine still solves every role on the adjusted palettes, and the tone map
+  comes after it. With any slider not at
+  100, **Apply theme** writes a style's colors with root: a More style as before, adjusted, else the list style at the spec Google's rule
+  gives it (2021 included), adjusted; the hints are *Also writes this style's colors with root, adjusted by the Intensity sliders.*,
+  the 2025 one, the More style and CMF ones (*…, in place of the style above, adjusted by the Intensity sliders.*) and each with pure
+  black. Apply takes the values at the tap; the preview follows them live and appears or goes away as a value leaves or reaches 100
+  (the page scrolls by as much, so the slider stays under the finger). All three at 100 change nothing: the plans, hints and records
+  are the ones from before. Monochrome is unchanged by both saturation sliders and Rainbow's neutrals by background saturation (no
+  chroma). Measured WCAG contrast (`MonetPlan.roles()`, saturation at 100, contrast 0, seeds 6750A4 1B6EF3 B5651D 00FF00 808080
+  FFDE3F, light and dark; P14 and P16 equal), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07 for the
+  nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for CMF;
+  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42. **Reset** then Apply,
+  **Undo** and **Default** switch the overlay off as for More styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
