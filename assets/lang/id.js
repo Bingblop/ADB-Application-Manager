@@ -1,6 +1,15 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Latar belakang gelap hitam sejati, panel dalam beberapa abu-abu gelap. Mode terang tetap memakai warnanya.",
+"The colors earlier Android versions compute.": "Warna yang dihitung versi Android sebelumnya.",
+"The 2025 colors, plus the CMF style.": "Warna 2025, ditambah gaya CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Dengan Root, 2021 mewarnai ulang setiap gaya. CMF memerlukan 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android menghitung warna ini sendiri: gaya dari daftar di atas hanya ditulis dengan Root pada 2021, atau dengan Intensitas, aksen, atau Gradasi akurat dimatikan.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Juga menulis warna 2021 gaya ini, disesuaikan oleh penggeser Intensitas, dan hitam pekat dengan Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Juga menulis warna 2021 gaya ini dengan Root, disesuaikan oleh penggeser Intensitas.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Juga menulis warna 2021 gaya ini dan hitam pekat dengan Root, menggantikan warna Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Juga menulis warna 2021 gaya ini dengan Root, menggantikan warna Android.",
 "Accurate shades": "Gradasi akurat",
 "Accurate shades: off.": "Gradasi akurat: nonaktif.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Aktif: setiap gradasi aksen mempertahankan nadanya sendiri. Nonaktif: warna aksen yang pucat (gradasi 100 dan, terutama dengan Spesifikasi warna 2021, warna kontainer terang serta warna tetap) memakai nada yang lebih gelap.",

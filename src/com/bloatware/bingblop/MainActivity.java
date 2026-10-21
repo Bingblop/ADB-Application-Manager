@@ -4878,9 +4878,10 @@ public class MainActivity extends Activity {
      * lookups (resource -> what Android printed for it), error, advice, needsPrivilege, unknown, mode.
      * Root only (RootGate.active): cmd overlay fabricate turns away anyone but root, and Shizuku and ADB run as the shell user, so the
      * gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
-     * (OverlayRules.judgeFabricate), never by the commands' own text.
+     * (OverlayRules.judgeFabricate), never by the commands' own text. {@code profile}: the build family the bridge checked the plan for
+     * (MonetProfile's id), which also decides the entries looked up after the write.
      */
-    private void overlayFabricateJob(int req, String op, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {
+    private void overlayFabricateJob(int req, String op, String profile, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {
         JSONObject res = new JSONObject();
         try {
             res.put("req", req);
@@ -4907,13 +4908,13 @@ public class MainActivity extends Activity {
                 JSONArray idArr = new JSONArray();
                 for (String id : wrote) idArr.put(id);
                 res.put("ids", idArr);
-                String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, entries);
+                String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, profile, entries);
                 String out = runPrivilegedShell("root", script, 30000);
                 // the script is long, not secret, but a release build logs sizes only (the rule is general); a debuggable build the whole exchange
                 if (isDebuggableBuild()) Log.d(TAG, "overlayFabricate [" + op + "]: " + script + " -> " + (out != null ? out.trim() : ""));
                 else Log.d(TAG, "overlayFabricate [" + op + "]: " + script.length() + " chars -> " + (out != null ? out.length() : 0) + " chars");
                 OverlayRules.FabResult fr = OverlayRules.parseFabricate(out);
-                OverlayRules.FabVerdict v = OverlayRules.judgeFabricate(op, wrote, disable ? null : entries, fr);
+                OverlayRules.FabVerdict v = OverlayRules.judgeFabricate(op, wrote, profile, disable ? null : entries, fr);
                 res.put("ok", v.ok);
                 res.put("state", v.state);
                 if (v.unknown) res.put("unknown", true);
@@ -8886,9 +8887,11 @@ public class MainActivity extends Activity {
          * Writes this app's fabricated colour overlay with root, or switches it off. The plan is JSON: {"action":"fabricate",
          * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
          * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
-         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than 200 entries, or an id
-         * that is not one of this app's overlays is refused with "error: ...". Returns "started". The answer arrives as
-         * window.onOverlayFab(json); without Super User it says needsPrivilege.
+         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than OverlayRules.MAX_FAB_ENTRIES
+         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1 and QPR2 (the phone's profile, MonetProfile, as
+         * getSystemPalette reports it; the script is built and its lookups chosen for the same profile), or an id that is not one of this
+         * app's overlays is refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super
+         * User it says needsPrivilege.
          */
         @JavascriptInterface
         public String overlayFabricate(final int req, final String planJson) {
@@ -8901,6 +8904,7 @@ public class MainActivity extends Activity {
             final String op = plan.optString("action", "fabricate");
             final List<OverlayRules.FabEntry> entries = new ArrayList<OverlayRules.FabEntry>();
             final List<String> ids = new ArrayList<String>();
+            final String profile = monetProfile().profile;
             try {
                 if ("disable".equals(op)) {
                     JSONArray a = plan.optJSONArray("ids");
@@ -8914,7 +8918,7 @@ public class MainActivity extends Activity {
                         JSONObject e = a.optJSONObject(i);
                         entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null)));
                     }
-                    OverlayRules.fabricatePlanOk(entries);
+                    OverlayRules.fabricatePlanOk(profile, entries);
                 } else {
                     return "error: unknown action";
                 }
@@ -8925,7 +8929,7 @@ public class MainActivity extends Activity {
             if (!submitSettingsJob(new Runnable() {
                 @Override
                 public void run() {
-                    overlayFabricateJob(req, op, entries, ids, queuedAt);
+                    overlayFabricateJob(req, op, profile, entries, ids, queuedAt);
                 }
             })) return "error: the app is closing";
             return "started";

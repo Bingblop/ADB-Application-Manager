@@ -1,6 +1,15 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Fondos oscuros en negro verdadero, paneles en unos pocos grises oscuros. El modo claro conserva sus colores.",
+"The colors earlier Android versions compute.": "Los colores que calculan las versiones anteriores de Android.",
+"The 2025 colors, plus the CMF style.": "Los colores de 2025, más el estilo CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Con Root, 2021 cambia los colores de todos los estilos. CMF necesita 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android calcula estos colores por sí mismo: un estilo de la lista de arriba solo se escribe con Root en 2021, o con Intensidad, un acento o Tonos precisos desactivado.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "También escribe los colores 2021 de este estilo, ajustados por los controles de Intensidad, y el negro puro con Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "También escribe los colores 2021 de este estilo con Root, ajustados por los controles de Intensidad.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "También escribe los colores 2021 de este estilo y el negro puro con Root, en lugar de los de Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "También escribe los colores 2021 de este estilo con Root, en lugar de los de Android.",
 "Accurate shades": "Tonos precisos",
 "Accurate shades: off.": "Tonos precisos: desactivado.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Activado: cada tono de acento conserva su propia luminosidad. Desactivado: los colores de acento pálidos (el tono 100 y, sobre todo con la Especificación de color 2021, los colores claros de contenedor y los colores fijos) toman un tono más oscuro.",

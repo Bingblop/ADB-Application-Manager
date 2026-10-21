@@ -37,8 +37,9 @@ module.exports.initScript = function () {
   window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
   // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
   // MonetProfile.of does without One UI and without the colour names (31-33 P12, 34 P14, anything else unknown), a string is reported as it
-  // is, null leaves profile and profileReason out (an older APK); __profileReason: undefined is 'ok' for P12 P14 P15Q1 P15Q2 P16, 'notYet' for
-  // P15 P16Q1 P16Q2 P17 and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
+  // is, null leaves profile and profileReason out (an older APK); __profileReason: undefined is 'ok' for P12 P14 P15Q1 P15Q2 P16 P16Q1 P16Q2
+  // (16 QPR1 and QPR2 from T-049 PR 9 on; an APK from before reported them 'notYet', which a script sets explicitly), 'notYet' for P15 P17
+  // and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
   // are, and left out when null.
   window.__profile = undefined;
   window.__profileReason = undefined;
@@ -171,7 +172,7 @@ module.exports.initScript = function () {
       const sdk = window.__sdk, p = typeof window.__profile === 'string' ? window.__profile : sdk >= 31 && sdk <= 33 ? 'P12' : sdk === 34 ? 'P14' : 'unknown';
       o.profile = p;
       o.profileReason = typeof window.__profileReason === 'string' ? window.__profileReason
-        : ['P12', 'P14', 'P15Q1', 'P15Q2', 'P16'].includes(p) ? 'ok' : ['P15', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'notYet' : 'unknown';
+        : ['P12', 'P14', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2'].includes(p) ? 'ok' : ['P15', 'P17'].includes(p) ? 'notYet' : 'unknown';
     }
     if (window.__build !== null) o.build = window.__build;
     if (window.__contrast !== null) o.contrast = window.__contrast;
@@ -186,8 +187,20 @@ module.exports.initScript = function () {
   // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
   // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
   // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
-  // four), judged from those, as window.onOverlayFab(json).
+  // four), judged from those, as window.onOverlayFab(json). T-049 PR 9: at most 320 entries (OverlayRules.MAX_FAB_ENTRIES); on the profile the
+  // mock reports, when it is P16Q1 or P16Q2 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
+  // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four.
   const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
+  const FAB_MAX = 320;
+  const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
+  const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2';
+  function lookupEntries(es) {
+    if (!suffixed()) return es.slice(0, 4);
+    const out = [];
+    for (const want of QPR_LOOKUPS) { const e = es.find(x => x.resource === want); if (e) out.push(e); }
+    for (const e of es) { if (out.length >= 4) break; if (!out.includes(e)) out.push(e); }
+    return out;
+  }
   b.overlayFabricate = function (req, planJson) {
     let plan;
     try { plan = JSON.parse(planJson); } catch (e) { return 'error: the plan is not JSON'; }
@@ -196,7 +209,7 @@ module.exports.initScript = function () {
     if (op === 'fabricate') {
       const es = plan.entries;
       if (!Array.isArray(es) || !es.length) return 'error: The plan has no entries';
-      if (es.length > 200) return 'error: The plan has too many entries (200 at most)';
+      if (es.length > FAB_MAX) return 'error: The plan has too many entries (' + FAB_MAX + ' at most)';
       const seen = new Set();
       for (let i = 0; i < es.length; i++) {
         const e = es[i] || {};
@@ -205,10 +218,11 @@ module.exports.initScript = function () {
         if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
         seen.add(e.resource);
       }
+      if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
-      if (ids.length > 200) return 'error: Too many overlays named (200 at most)';
+      if (ids.length > FAB_MAX) return 'error: Too many overlays named (' + FAB_MAX + ' at most)';
       const seenIds = new Set();
       for (const id of ids) {
         if (typeof id !== 'string' || !new RegExp('^' + FAB_OWNER + FAB_NAME + '(_[a-z0-9_]+)?$').test(id)) return 'error: That overlay was not written by this app';
@@ -228,7 +242,7 @@ module.exports.initScript = function () {
       r.list = wire();
       if (op === 'fabricate') {
         r.lookups = {};
-        plan.entries.slice(0, 4).forEach(e => { r.lookups[e.resource] = window.__fabDeny ? '#ff1b1b1b' : '#' + e.argb.slice(2).toLowerCase(); });
+        lookupEntries(plan.entries).forEach(e => { r.lookups[e.resource] = window.__fabDeny ? '#ff1b1b1b' : '#' + e.argb.slice(2).toLowerCase(); });
         if (window.__fabDeny) { r.ok = false; r.error = window.__fabDeny; r.advice = 'Android kept its own colours. The overlay is listed on; tap Apply again after the next repaint.'; }
         else r.ok = true;
       } else r.ok = true;

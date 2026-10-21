@@ -171,7 +171,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   check('   with Pure black on there: its own plan only (ovlBuildBlackPlan(33)), and the record carries no accents', k.fab.length === 1 && JSON.stringify(k.fab[0].entries) === JSON.stringify(await ev(() => ovlBuildBlackPlan(33))) && r33 && r33.style === '' && !('accents' in r33), JSON.stringify(Object.assign({}, r33, { t: 'T' })));
   await ev(() => { kvSet('ovl_black', false); kvSet('ovl_root_applied', null); ovlRender(); });
   const LOCKS = [
-    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', build: B16 }, NOT_YET],
+    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['a One UI phone on Android 14', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
     ['an older APK on Android 16 (no profile)', { sdk: 36, profile: null, build: null }, 'Update the app']
   ];
@@ -184,7 +184,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   await ev(() => { window.__fabSaved = window.AndroidBridge.overlayFabricate; delete window.AndroidBridge.overlayFabricate; });
   await phone({ sdk: 34, build: B14 }); a = await acc();
   check('A4. an APK without overlayFabricate, Super User on Android 14: Update the app, as the other rows', lockedAs(a, 'Update the app') && a.adj === 'Update the app' && a.more === 'Update the app', JSON.stringify([a.lock, a.adj, a.more]));
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16 }); a = await acc();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }); a = await acc();
   check('   and on Android 16 QPR1 (a locked build family): Update the app comes first', lockedAs(a, 'Update the app'), a.lock);
   await setRoot(false); a = await acc();
   check('   and without Super User: Update the app', lockedAs(a, 'Update the app'), a.lock);

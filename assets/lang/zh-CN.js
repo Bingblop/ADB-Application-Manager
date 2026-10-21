@@ -1,6 +1,15 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "深色背景为纯黑，面板使用几种深灰色。浅色模式保留其颜色。",
+"The colors earlier Android versions compute.": "早期 Android 版本计算的颜色。",
+"The 2025 colors, plus the CMF style.": "2025 版颜色，外加 CMF 样式。",
+"With root, 2021 recolors every style. CMF needs 2026.": "使用 Root 时，2021 会为每种样式重新着色。CMF 需要 2026。",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "这些颜色由 Android 自己计算：上方列表中的样式只有在 2021 时，或使用“强度”、强调色或关闭“精确色阶”时，才会通过 Root 写入。",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "同时通过 Root 写入此样式的 2021 版颜色（经“强度”滑块调整）和纯黑。",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "同时通过 Root 写入此样式的 2021 版颜色（经“强度”滑块调整）。",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "同时通过 Root 写入此样式的 2021 版颜色和纯黑，取代 Android 自己的颜色。",
+"Also writes this style's 2021 colors with root, in place of Android's.": "同时通过 Root 写入此样式的 2021 版颜色，取代 Android 自己的颜色。",
 "Accurate shades": "精确色阶",
 "Accurate shades: off.": "精确色阶：关闭。",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "开启：每个强调色阶保持自己的色调。关闭：浅淡的强调色（色阶 100，以及主要在颜色规范 2021 下的浅色容器颜色和固定颜色）改用更深的色调。",

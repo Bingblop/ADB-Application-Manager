@@ -1,6 +1,6 @@
 // Root colours per Android build family (T-049): the Overlays tab's root-only theme controls compute the colours for the family the phone
 // is (getSystemPalette's profile, MonetProfile.java) at its contrast setting, and lock on every family this app cannot compute exactly.
-// (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2), 17 (P17), an Android this app does not know (unknown), a profile it is
+// (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before T-049 PR 9 reports them (notYet; t571 has them live), 17 (P17), an Android this app does not know (unknown), a profile it is
 // told is fine but cannot compute, a phone with a One UI version, and an older APK that reports no profile on Android 15 and 16: the three
 // rows (Pure black, Color spec, More styles) are locked with their reason, with Super User and without; nothing in the card can be used,
 // the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only, without
@@ -130,8 +130,8 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   check('A0. Android 16.0 (P16) with Super User: the six rows are live (the two switches, the two radio groups, the three Intensity sliders and the two accent entries can be used, and the preview\'s 65 swatches; Intensity\'s Reset is disabled at 100 %), the hint names Fidelity and pure black', c.shown && !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && c.preview, JSON.stringify(c));
   const LOCKS = [
     ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', build: B15 }, NOT_YET],
-    ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', build: B16 }, NOT_YET],
-    ['Android 16 QPR2 (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', build: B16 }, NOT_YET],
+    ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
+    ['Android 16 QPR2 (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 17 (P17, notYet)', { sdk: 37, profile: 'P17', build: B16 }, NOT_YET],
     ['an Android this app does not know (SDK 38: unknown)', { sdk: 38, build: B16 }, NOT_YET],
     ['a profile reported ok that this app cannot compute (P16Q3, ok)', { sdk: 36, profile: 'P16Q3', reason: 'ok', build: B16 }, NOT_YET],
@@ -149,7 +149,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
     await apply(); const k = await calls(), reads = await tapReads();
     check('   the switch, More styles and Color spec change nothing (handlers called directly); Apply writes the theme setting only, no overlay call, and asks the bridge for no palette (the contrast) when tapped', JSON.stringify(h) === '[true,"FIDELITY","2025"]' && k.apply.length === 1 && k.fab.length === 0 && (await kv('ovl_root_applied')) === null && reads === 0, JSON.stringify([h, k.apply.length, k.fab, reads]));
   }
-  await setRoot(false); await phone({ sdk: 36, profile: 'P16Q1', build: B16 }); c = await card();
+  await setRoot(false); await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }); c = await card();
   check('A2. without Super User the profile\'s reason shows, not Needs Super User (root would not unlock it), and no note about Root', lockedAll(c, NOT_YET) && c.note === '', JSON.stringify(c));
   await phone({ sdk: 36, profile: 'P16', build: B16 }); c = await card();
   check('   P16 without Super User: Needs Super User, as before, with its note', lockedAll(c, 'Needs Super User') && c.note === 'Shizuku and ADB cannot write these colors; Root can.', JSON.stringify(c));
@@ -166,7 +166,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   // ---- (b) a locked phone with an overlay written before ----
   await phone({ sdk: 36, profile: 'P16', build: B16 }); await reset(); await apply(); k = await calls();
   check('B1. written on Android 16.0 (P16): Fidelity\'s plan goes out and the record is kept', k.fab.length === 1 && k.fab[0].action === 'fabricate' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P16","build":"' + B16 + '"}', await rec());
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); c = await card();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); c = await card();
   check('   after an update to Android 16 QPR1 (P16Q1, another build): the rows are locked, the note says the theme overlay is on, the hint says Apply removes it; no note about another build (Apply would not write them)', lockedAll(c, NOT_YET) && c.note === 'The theme overlay is written on this phone.' && c.hint === 'Also removes the theme overlay.' && c.stale === '', JSON.stringify(c));
   await reset(); await apply(); k = await calls();
   check('B2. Apply there: the theme setting, then a disable of the overlay (no fabricate); the record is cleared and the toast says it is removed', k.apply.length === 1 && k.fab.length === 1 && k.fab[0].action === 'disable' && JSON.stringify(k.fab[0].ids) === '["' + AAM + '"]' && (await kv('ovl_root_applied')) === null && (await toasts()).includes('Theme overlay removed'), JSON.stringify([k.fab, await toasts()]));
@@ -178,7 +178,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   await reset(); dialogs.length = 0; await page.locator('#ovlResetBtn').click(); await settle(); await sleep(100); k = await calls();
   check('B3. Default with the overlay on, on the locked phone: the question says it is switched off too, then the setting is reset and the overlay disabled; the record is cleared', dialogs.length === 1 && dialogs[0].includes('The theme overlay is switched off too.') && k.restore.length === 1 && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null, JSON.stringify([dialogs, k.fab]));
   await phone({ sdk: 36, profile: 'P16', build: B16 }); await reset(); await apply();
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); await reset();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); await reset();
   await page.locator('#sdbSnackUndo').click(); await settle(); await sleep(100); k = await calls();
   check('B4. Undo of a write, the phone reading as P16Q1 by then: the overlay is switched off first, then the theme put back; the record is cleared', k.fab.length === 1 && k.fab[0].action === 'disable' && k.restore.length === 1 && k.restoreUndo[0] === true && (await kv('ovl_root_applied')) === null, JSON.stringify([k.fab, k.restore]));
 
@@ -279,7 +279,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   check('   without Super User: no such note', c.stale === '' && lockedAll(c, 'Needs Super User'), c.stale);
   await setRoot(true); await phone({ sdk: 36, profile: 'P16', build: null }); c = await card();
   check('   an answer without a build (an older APK): no such note', c.stale === '', c.stale);
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); c = await card();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); c = await card();
   check('   on a locked profile (P16Q1): no such note (Apply would not write them), the note says the overlay is on', c.stale === '' && c.note === 'The theme overlay is written on this phone.', JSON.stringify([c.stale, c.note]));
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY' }); }, AAM); await phone({ sdk: 36, profile: 'P16', build: B16b }); c = await card();
   check('   a record from before the profiles (no build): no such note', c.stale === '', c.stale);
@@ -298,7 +298,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   const de = await ev(([a, b, c]) => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return [x[a] || '', x[b] || '', x[c] || '']; }, [NOT_YET, ONE_UI, STALE]);
   await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P15Q2', build: b }); }, [AAM, B16]);
   await phone({ sdk: 36, profile: 'P16', build: B16b }); await sleep(200); const deStale = (await card()).stale;
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); await sleep(200); const deNotYet = await card();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); await sleep(200); const deNotYet = await card();
   await phone({ sdk: 36, profile: 'unknown', reason: 'oneUi', build: B16b }); await sleep(200); const deOneUi = await card();
   check('G1. in German: the note on another build and both lock reasons read as assets/lang/de.js has them', de.every(t => t !== '') && de[0] !== NOT_YET && deStale === de[2] && lockedAll(deNotYet, de[0]) && lockedAll(deOneUi, de[1]), JSON.stringify([de, deStale, deNotYet.black.lock, deOneUi.black.lock]));
 

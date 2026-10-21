@@ -47,14 +47,14 @@ public class MonetProfileTest {
     eq("Android 15 QPR1: theme_notif without inverse_surface", of(35, A15Q1, ""), "P15Q1/ok");
     eq("Android 15 QPR2: inverse_surface", of(35, A15Q2, ""), "P15Q2/ok");
     eq("Android 16.0: inverse_surface without primary_dim", of(36, A16, ""), "P16/ok");
+    eq("Android 16 QPR1: primary_dim without semantic_red", of(36, A16Q1, ""), "P16Q1/ok");
+    eq("Android 16 QPR2: semantic_red", of(36, A16Q2, ""), "P16Q2/ok");
     eq("Android 12 (31): Pure black only, as before", of(31, A14, ""), "P12/ok");
     eq("Android 12L (32)", of(32, A14, null), "P12/ok");
     eq("Android 13 (33)", of(33, null, ""), "P12/ok");
 
     // ---- recognised, not computed yet (reason notYet)
     eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/notYet");
-    eq("Android 16 QPR1: primary_dim without semantic_red", of(36, A16Q1, ""), "P16Q1/notYet");
-    eq("Android 16 QPR2: semantic_red", of(36, A16Q2, ""), "P16Q2/notYet");
     eq("Android 17 (37): by the SDK level, with any names", of(37, A16Q2, ""), "P17/notYet");
     eq("Android 17 with no names", of(37, A14, ""), "P17/notYet");
     eq("Android 17 when the names could not be read", of(37, null, ""), "P17/notYet");
@@ -102,16 +102,16 @@ public class MonetProfileTest {
     eq("35: inverse_surface alone is enough for 15 QPR2", of(35, names(INV), ""), "P15Q2/ok");
     eq("35: theme_notif wins over on_theme_app_ring", of(35, names(NOTIF, RING), ""), "P15Q1/ok");
     eq("35: inverse_surface with on_theme_app_ring", of(35, names(INV, RING), ""), "P15Q2/ok");
-    eq("36: semantic_red wins over primary_dim and inverse_surface", of(36, names(RED, DIM, INV), ""), "P16Q2/notYet");
-    eq("36: semantic_red alone", of(36, names(RED), ""), "P16Q2/notYet");
-    eq("36: primary_dim wins over inverse_surface", of(36, names(DIM, INV), ""), "P16Q1/notYet");
-    eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/notYet");
+    eq("36: semantic_red wins over primary_dim and inverse_surface", of(36, names(RED, DIM, INV), ""), "P16Q2/ok");
+    eq("36: semantic_red alone", of(36, names(RED), ""), "P16Q2/ok");
+    eq("36: primary_dim wins over inverse_surface", of(36, names(DIM, INV), ""), "P16Q1/ok");
+    eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/ok");
     eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING), ""), "P16/ok");
 
-    // ---- every combination of the five names at SDK 29..40: a known id, a known reason, ok exactly for the five computed profiles,
+    // ---- every combination of the five names at SDK 29..40: a known id, a known reason, ok exactly for the seven computed profiles,
     // never an exception, and names that are not probes never change the answer
     List<String> ids = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
-    List<String> okIds = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16");
+    List<String> okIds = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2");
     List<String> reasons = Arrays.asList("ok", "notYet", "oneUi", "unknown");
     int bad = 0, combos = 0;
     List<String> firstBad = new ArrayList<String>();
@@ -136,7 +136,14 @@ public class MonetProfileTest {
     }
     eq("every combination of the names at SDK 29..40 (" + combos + "): consistent " + firstBad, bad, 0);
     check("the result names its profile and reason", MonetProfile.of(36, A16, "").profile.equals("P16") && MonetProfile.of(36, A16, "").reason.equals("ok"));
-    check("ok() is false for a profile that is not computed", !MonetProfile.of(36, A16Q1, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
+    check("ok() is false for a profile that is not computed", !MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
+    check("ok() is true on 16 QPR1 and QPR2", MonetProfile.of(36, A16Q1, "").ok() && MonetProfile.of(36, A16Q2, "").ok());
+    check("16 QPR1 and QPR2 stay locked on One UI", "unknown/oneUi".equals(of(36, A16Q1, "8.0")) && "unknown/oneUi".equals(of(36, A16Q2, MonetProfile.ONE_UI_UNREAD)));
+
+    // ---- which profiles write the palette shades as _light and _dark (16 QPR1 and QPR2 only)
+    check("suffixed palettes on P16Q1 and P16Q2", MonetProfile.suffixedPalettes(MonetProfile.P16Q1) && MonetProfile.suffixedPalettes("P16Q2"));
+    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P17", "unknown", "", "p16q1", "P16Q", "P16Q3"}) check("no suffixed palettes on " + p, !MonetProfile.suffixedPalettes(p));
+    check("no suffixed palettes without a profile", !MonetProfile.suffixedPalettes(null));
 
     // ---- the contrast getSystemPalette reports
     eq("contrast 0 (standard)", MonetProfile.contrast(0f), 0.0);

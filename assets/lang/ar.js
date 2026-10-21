@@ -1,6 +1,15 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "خلفيات داكنة بالأسود الحقيقي، واللوحات ببضع درجات رمادية داكنة. يحتفظ الوضع الفاتح بألوانه.",
+"The colors earlier Android versions compute.": "الألوان التي تحسبها إصدارات Android السابقة.",
+"The 2025 colors, plus the CMF style.": "ألوان 2025، مع نمط CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "عبر Root، يعيد 2021 تلوين كل الأنماط. يحتاج CMF إلى 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "يحسب Android هذه الألوان بنفسه: لا يُكتب نمط من القائمة أعلاه عبر Root إلا عند 2021، أو مع «الشدة» أو لون تمييز أو إيقاف «درجات دقيقة».",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "يكتب أيضًا ألوان 2021 لهذا النمط، معدّلةً بمنزلقات «الشدة»، والأسود الخالص عبر Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "يكتب أيضًا ألوان 2021 لهذا النمط عبر Root، معدّلةً بمنزلقات «الشدة».",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "يكتب أيضًا ألوان 2021 لهذا النمط والأسود الخالص عبر Root، بدلًا من ألوان Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "يكتب أيضًا ألوان 2021 لهذا النمط عبر Root، بدلًا من ألوان Android.",
 "Accurate shades": "درجات دقيقة",
 "Accurate shades: off.": "درجات دقيقة: متوقفة.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "تشغيل: تحتفظ كل درجة من درجات التمييز بدرجتها الخاصة. إيقاف: تأخذ ألوان التمييز الباهتة (الدرجة 100، ومع مواصفة الألوان 2021 غالبًا ألوان الحاويات الفاتحة والألوان الثابتة) درجة أغمق.",

@@ -1,6 +1,15 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Koyu arka planlar gerçek siyah, paneller birkaç koyu gri tonunda. Açık mod renklerini korur.",
+"The colors earlier Android versions compute.": "Önceki Android sürümlerinin hesapladığı renkler.",
+"The 2025 colors, plus the CMF style.": "2025 renkleri, artı CMF stili.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Root ile 2021 her stili yeniden renklendirir. CMF için 2026 gerekir.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android bu renkleri kendisi hesaplar: yukarıdaki listeden bir stil Root ile yalnızca 2021'de ya da Yoğunluk, bir vurgu veya kapalı Doğru tonlar ile yazılır.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Root ile bu stilin Yoğunluk kaydırıcılarıyla ayarlanmış 2021 renklerini ve saf siyahı da yazar.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Root ile bu stilin Yoğunluk kaydırıcılarıyla ayarlanmış 2021 renklerini de yazar.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Root ile bu stilin 2021 renklerini ve saf siyahı da, Android'in renklerinin yerine yazar.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Root ile bu stilin 2021 renklerini de, Android'in renklerinin yerine yazar.",
 "Accurate shades": "Doğru tonlar",
 "Accurate shades: off.": "Doğru tonlar: kapalı.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Açık: her vurgu tonu kendi tonunu korur. Kapalı: soluk vurgu renkleri (100 tonu ve, çoğunlukla Renk belirtimi 2021 ile, açık kapsayıcı renkleri ve sabit renkler) daha koyu bir ton alır.",

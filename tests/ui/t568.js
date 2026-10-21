@@ -132,7 +132,7 @@ const PINS = [
   check('   with Pure black on there: its own plan only (ovlBuildBlackPlan(33)), and the record carries no adjust', k.fab.length === 1 && JSON.stringify(k.fab[0].entries) === JSON.stringify(await ev(() => ovlBuildBlackPlan(33))) && r33 && r33.style === '' && !('adjust' in r33), JSON.stringify(Object.assign({}, r33, { t: 'T' })));
   await ev(() => { kvSet('ovl_black', false); kvSet('ovl_root_applied', null); ovlRender(); });
   const LOCKS = [
-    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', build: B16 }, NOT_YET],
+    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['a One UI phone on Android 14', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
     ['an older APK on Android 16 (no profile)', { sdk: 36, profile: null, build: null }, 'Update the app']
   ];
@@ -145,7 +145,7 @@ const PINS = [
   await ev(() => { window.__fabSaved = window.AndroidBridge.overlayFabricate; delete window.AndroidBridge.overlayFabricate; });
   await phone({ sdk: 34, build: B14 }); a = await adj();
   check('A4. an APK without overlayFabricate, Super User on Android 14: Update the app, as the other rows', lockedAs(a, 'Update the app') && a.more === 'Update the app', JSON.stringify([a.lock, a.more]));
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16 }); a = await adj();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }); a = await adj();
   check('   and on Android 16 QPR1 (a locked build family): Update the app comes first', lockedAs(a, 'Update the app'), a.lock);
   await setRoot(false); a = await adj();
   check('   and without Super User: Update the app', lockedAs(a, 'Update the app'), a.lock);
@@ -379,7 +379,7 @@ const PINS = [
   const de = await ev(words => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return words.map(w => x[w] || ''); }, ['Intensity', SUB, 'Accent saturation', 'Background saturation', 'Background lightness', 'Reset', 'Set all three to 100%', HINT.list]);
   const pct = await ev(() => new Intl.NumberFormat('de', { style: 'percent', maximumFractionDigits: 0 }).format(1.5));
   check('J1. in German: the row, its line, the three labels, Reset and its title, and the hint read as assets/lang/de.js has them; the values are written the German way (' + pct + ')', de.every(t => t !== '') && de[0] !== 'Intensity' && a.name === de[0] + ' ' + de[1] && a.sliders.map(s => s.label).join('|') === de.slice(2, 5).join('|') && (a.reset || {}).text === de[5] && (a.reset || {}).title === de[6] && a.hint === de[7] && sl(a, 0).shown === pct && sl(a, 0).text === pct, JSON.stringify([de, a.name, a.sliders.map(s => s.label + ' ' + s.shown), a.reset, a.hint]));
-  await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); a = await adj();
+  await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); a = await adj();
   check('   locked there: the row keeps its German name and line', a.locked && a.name === de[0] + ' ' + de[1], a.name);
   // drawn while German is on (live again: the sliders are drawn anew), then the language switched: the next render puts the row's name, its
   // line and the group's label in the new language (the sliders stay drawn; their labels, Reset and the hint follow as before)
