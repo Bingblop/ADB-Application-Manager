@@ -6,7 +6,7 @@
 // ok on SDK 34 with config_repairModeSupported): every row can be used; the lines are those of Android 14 (Pure black's with light mode's
 // darkest text, Color spec's four styles, 2021 the phone's own and chosen with nothing stored, no note under it). Live as P14 is: an APK
 // from before PR 12 on a QPR build (it reports P14 and writes 14.0's colours, as before), an older APK without a profile on 14, and P14Q
-// without the colour maths (Pure black only, the style rows say Update the app). Locked: One UI on 14, P14Q reported notYet, P14Q with a
+// without the colour maths (Pure black only, the style rows say Update the app). A One UI phone on 14 QPR is live, with the One UI note (PR 13). Locked: P14Q reported notYet, P14Q with a
 // monet.js that does not name it (it would refuse the profile); without Super User: Needs Super User. (b) Native routing at 2021: every
 // list style with nothing else set is the theme setting only; at 2025 Rainbow and Fruit Salad stay native and Tonal Spot is written.
 // (c) Fidelity (More styles) at 2021: 165 entries, names and order equal to the list below made by hand (Android 14's plan, as on
@@ -34,7 +34,8 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
+// PR 13: the note the root theme card shows on One UI only (One UI no longer locks the card)
+const ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -176,12 +177,20 @@ const Q_FID_GREEN_KEY2 = '038E00', Q_TS_KEY3 = '996A79';
   const strip = x => JSON.stringify([x.black, x.spec, x.more, x.live, x.chips, x.hint, x.preview]);
   check('A3. P14Q without the colour maths (monet.js not loaded): as on P14, Pure black is live and More styles and Color spec say Update the app; the card equals P14\'s', !nmQ.black.locked && nmQ.more.locked && nmQ.more.lock === 'Update the app' && nmQ.spec.locked && nmQ.spec.lock === 'Update the app' && JSON.stringify(nmQ.live) === '["ovlBlackSw"]' && strip(nmQ) === strip(nm14), JSON.stringify([strip(nmQ), strip(nm14)]));
   const LOCKS = [
-    ['P14Q reported notYet (a family the APK says it cannot compute)', { sdk: 34, profile: 'P14Q', reason: 'notYet', build: BQ2 }, NOT_YET],
-    ['a One UI phone on Android 14 (unknown, oneUi)', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: BQ2 }, ONE_UI]
+    ['P14Q reported notYet (a family the APK says it cannot compute)', { sdk: 34, profile: 'P14Q', reason: 'notYet', build: BQ2 }, NOT_YET]
   ];
   for (const [label, o, why] of LOCKS) {
     await phone(o); c = await card(); await reset(); await apply(); const k = await calls();
     check('A4. ' + label + ': locked with "' + why + '", nothing in the card can be used, no hint, no preview; Apply writes the theme setting only', lockedAll(c, why) && !c.preview && c.hint === '' && k.apply.length === 1 && k.fab.length === 0, JSON.stringify([c.black, c.live, k.fab.length]));
+  }
+  // PR 13: a One UI phone on this build is served by its Android version (the One UI lock is gone): live as any phone of the build, with the
+  // One UI note; the same build without One UI has no note
+  {
+    const oneUiNote = () => ev(() => { const e = document.getElementById('ovlRootOneUi'); return e && e.style.display !== 'none' ? e.innerText : ''; });
+    await ev(() => { window.__oneUi = '8.5'; kvSet('ovl_root_applied', null); }); await phone({ sdk: 34, profile: 'P14Q', build: BQ2 }); const o = await card(); const on = await oneUiNote(); await reset(); await apply(); const k = await calls();
+    check('A4b. a One UI phone on Android 14 QPR (P14Q) with Super User: every row is live, as on any phone of that build; the One UI note shows; Apply writes the overlay', !o.black.locked && !o.spec.locked && !o.more.locked && JSON.stringify(o.live) === LIVE && o.chips === 65 && on === ONE_UI_NOTE && k.fab.length === 1 && k.fab[0].action === 'fabricate', JSON.stringify([o.live, o.chips, on, k.fab.length]));
+    await ev(() => { window.__oneUi = ''; kvSet('ovl_root_applied', null); }); await phone({ sdk: 34, profile: 'P14Q', build: BQ2 }); const off = await oneUiNote();
+    check('   the same build without One UI: no One UI note', off === '', off);
   }
   await ev(() => { window.__mp = window.MonetPlan; window.MonetPlan = Object.assign({}, window.__mp, { PROFILES: window.__mp.PROFILES.filter(p => p !== 'P14Q') }); });
   await phone({ sdk: 34, profile: 'P14Q', build: BQ2 }); c = await card(); await reset(); await apply(); let k = await calls();

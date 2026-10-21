@@ -812,7 +812,7 @@ public class MainActivity extends Activity {
     /**
      * oneUiVersion(), and in propertyUnset[0] (when given) whether getprop ro.build.version.oneui ran and printed nothing, that is the
      * property is not set (false when getprop failed, timed out or printed anything else): MonetProfile.oneUi tells "not One UI" from "could
-     * not be read" with it.
+     * not be read" with it (monetOneUi, the root theme card's note).
      */
     private String oneUiVersion(boolean[] propertyUnset) {
         try {
@@ -835,33 +835,47 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** The theme-colour profile, worked out once: the build, the colour names it has and One UI do not change while the app runs. */
+    /** The theme-colour profile, worked out once: the build and the colour names it has do not change while the app runs. */
     private volatile MonetProfile.Result monetProfileCache;
 
     /**
      * Which Android build family builds this phone's theme colours (MonetProfile): the SDK level, which of MonetProfile.PROBES the
      * framework has (getIdentifier(name, "color", "android") != 0) and which of MonetProfile.BOOL_PROBES (getIdentifier(name, "bool",
-     * "android") != 0; no root, no shell) and the One UI version (MonetProfile.oneUi: a Samsung phone whose
-     * version could not be read counts as One UI). A lookup that throws, or a One UI version that could not be read, leaves the answer
-     * locked (fail closed) and is not kept, so the next call looks again.
+     * "android") != 0; no root, no shell). One UI is decided the same way (PR 13). A lookup that throws leaves the answer locked (fail
+     * closed) and is not kept, so the next call looks again.
      */
     private MonetProfile.Result monetProfile() {
         MonetProfile.Result r = monetProfileCache;
         if (r != null) return r;
-        boolean[] unset = {false};
-        String version = oneUiVersion(unset);
-        String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);
         Set<String> present = new HashSet<String>();
         try {
             Resources res = getResources();
             for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, "color", "android") != 0) present.add(name);
             for (String name : MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, "bool", "android") != 0) present.add(name);
         } catch (Throwable t) {
-            return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUi);
+            return MonetProfile.of(Build.VERSION.SDK_INT, null);
         }
-        r = MonetProfile.of(Build.VERSION.SDK_INT, present, oneUi);
-        if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetProfileCache = r;
+        r = MonetProfile.of(Build.VERSION.SDK_INT, present);
+        monetProfileCache = r;
         return r;
+    }
+
+    /** The One UI value for the root theme card's note, worked out once it could be read (One UI does not change while the app runs). */
+    private volatile String monetOneUiCache;
+
+    /**
+     * The One UI value getSystemPalette reports as "oneUi" (MonetProfile.oneUi: "" on a phone that is not One UI, the version on one,
+     * MonetProfile.ONE_UI_UNREAD on a Samsung phone whose version could not be read, which is not kept so the next call reads again). It only
+     * shows the page's note on the root theme card; it does not lock anything.
+     */
+    private String monetOneUi() {
+        String v = monetOneUiCache;
+        if (v != null) return v;
+        boolean[] unset = {false};
+        String version = oneUiVersion(unset);
+        String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);
+        if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetOneUiCache = oneUi;
+        return oneUi;
     }
 
     /**
@@ -5029,11 +5043,14 @@ public class MainActivity extends Activity {
                 return o.toString();
             }
             // for the root-only colours: the Android build family they are computed for ("profile", MonetProfile's id or "unknown", and
-            // "profileReason": ok, notYet, oneUi or unknown), the build itself (the page keeps it with the colours it wrote, so it can
-            // tell when Android was updated after) and the contrast SystemUI computes at
+            // "profileReason": ok, notYet or unknown), the build itself (the page keeps it with the colours it wrote, so it can
+            // tell when Android was updated after), the contrast SystemUI computes at and, on One UI only, "oneUi" (MonetProfile.oneUi: the
+            // page shows its One UI note on the card; PR 13)
             MonetProfile.Result profile = monetProfile();
             o.put("profile", profile.profile);
             o.put("profileReason", profile.reason);
+            String oneUi = monetOneUi();
+            if (!oneUi.isEmpty()) o.put("oneUi", oneUi);
             o.put("build", Build.FINGERPRINT == null ? "" : Build.FINGERPRINT);
             o.put("contrast", systemContrast());
             int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
@@ -13841,12 +13858,13 @@ public class MainActivity extends Activity {
          * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed; and
          * {"ok":false,"reason":"launch","name":"KernelSU"} when one is installed but the start did not happen, so the page does not tell the user to
          * install a manager they have. This answer is the page's only source of the manager's name (its toasts name it; the buttons keep fixed labels).
+         * A manager with an empty label (RootManagers: one whose name is never shown) answers "name":null, and the page then says "your root manager".
          */
         @JavascriptInterface
         public String openRootManager() {
             RootManagers.Manager m = RootManagers.pick(installedRootManagers());
             if (m == null) return "{\"ok\":false}";
-            String name = org.json.JSONObject.quote(m.label);
+            String name = m.label.isEmpty() ? "null" : org.json.JSONObject.quote(m.label);
             // The start runs here, on the bridge thread, and decides the answer (as composeEmail does): Activity.startActivity may be called from any
             // thread and throws when Android refuses the start (ActivityNotFoundException, SecurityException). Posting it to the UI thread and
             // answering ok at once would let the page say "Allow this app in X" although nothing opened. A start that Android drops without telling

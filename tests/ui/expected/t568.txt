@@ -9,8 +9,6 @@ A2. Super User on Android 13 (P12): Intensity is a locked row saying Needs Andro
    with Pure black on there: its own plan only (ovlBuildBlackPlan(33)), and the record carries no adjust: true {"ids":["com.android.shell:aam_monet_neutral1_900","com.android.shell:aam_monet_neutral2_900"],"t":"T","black":true,"style":"","profile":"P12","build":"google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys"}
 A3. Super User, Android 16 QPR1 (P16Q1): Intensity is locked with "Not supported on this Android version yet", as More styles: true ["Not supported on this Android version yet","Not supported on this Android version yet",""]
    the handlers change nothing; Apply writes the theme setting only: true []
-A3. Super User, a One UI phone on Android 14: Intensity is locked with "Not supported on One UI", as More styles: true ["Not supported on One UI","Not supported on One UI",""]
-   the handlers change nothing; Apply writes the theme setting only: true []
 A3. Super User, an older APK on Android 16 (no profile): Intensity is locked with "Update the app", as More styles: true ["Update the app","Update the app",""]
    the handlers change nothing; Apply writes the theme setting only: true []
 A4. an APK without overlayFabricate, Super User on Android 14: Update the app, as the other rows: true ["Update the app","Update the app"]

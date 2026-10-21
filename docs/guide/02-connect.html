@@ -8,7 +8,7 @@
 <ul>
 <li><b>ADB over TCP</b> and <b>Wireless Debugging</b> let the app's own built-in copy of ADB talk to the phone's ADB service, from the inside, as the shell user.</li>
 <li><b>Shizuku</b> is a separate app that has already started a helper running as the shell user (or as root) and lets this app use it.</li>
-<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (Magisk, KernelSU or APatch) controls. The app counts Root as ready only when the root manager has really allowed it.</li>
+<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (such as KernelSU or APatch) controls. The app counts Root as ready only when the root manager has really allowed it.</li>
 <li><b>Read-Only</b> is what you get when none of these is ready: the app can look, and cannot change.</li>
 <li><b>Auto</b> is not a route of its own. It tries some of the above in a fixed order, and uses the first that is ready.</li>
 </ul>
@@ -286,8 +286,9 @@
 <p class="hg-lead">Root means the phone has been modified so that apps can ask for full administrator rights. If your phone is already rooted, this mode is the simplest and the most lasting.</p>
 
 <h4>What root is</h4>
-<p>Android normally stops anyone from changing the system. <b>Rooting</b> adds a program called <code>su</code> (for "superuser") and a manager app that decides which apps may use it. The three managers this app names are Magisk, KernelSU and APatch. With root, a command runs as the all-powerful root user, one step above the shell user that ADB uses.</p>
-<div class="hg-danger"><b>Risky.</b> This app cannot root your phone, and it will not help you do it. Rooting is done with other tools, usually needs an unlocked bootloader (the program that starts Android, which is normally locked), normally erases the phone, usually voids the warranty and, on Samsung phones, permanently trips the Knox counter (a Samsung record that the phone was modified), which can disable Samsung Pay and Secure Folder. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer. If you root, back up everything first.</div>
+<p>Android normally stops anyone from changing the system. <b>Rooting</b> adds a program called <code>su</code> (for "superuser") and a manager app (the root manager) that decides which apps may use it. With root, a command runs as the all-powerful root user, one step above the shell user that ADB uses.</p>
+<div class="hg-danger"><b>Risky.</b> This app cannot root your phone, and it will not help you do it. Rooting is done with other tools, normally erases the phone, usually voids the warranty and, on Samsung phones, permanently trips the Knox counter (a Samsung record that the phone was modified), which can disable Samsung Pay and Secure Folder. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer. If you root, back up everything first.</div>
+<div class="hg-danger"><b>Locked bootloader.</b> Never flash a patched boot image onto a phone whose bootloader is locked; it can leave the phone unable to start. This app only uses root that is already on the phone. It never installs a root manager and never roots a phone.</div>
 
 <h4>Before you start</h4>
 <ul>
@@ -335,7 +336,7 @@
 <ul>
 <li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled, or, with KernelSU, KernelSU Next or APatch, it has not allowed this app yet (they show <code>su</code> only to the apps they allow: allow the app in the manager's list, or use <b>Open root manager</b> on Root Features, see <a href="#rootfeatures-grant">Getting Super User</a>). Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
 <li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
-<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager (Magisk, KernelSU or APatch), find ADB/Root Full System Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
+<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager, find ADB/Root Full System Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
 </ul>
 </section>
 

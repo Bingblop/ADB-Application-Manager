@@ -164,7 +164,7 @@
 <tr><td>Nothing appears when you tap Authorize</td><td>The question can hide in the notification shade, or a battery saver stopped Shizuku.</td><td>Check the shade, then tap <b>Check Status</b>.</td></tr>
 <tr><td>Root tag <b>NOT FOUND</b></td><td>No <code>su</code> program found: the root manager may be missing or off, or it is KernelSU, KernelSU Next or APatch and has not allowed this app yet (they show <code>su</code> only to the apps they allow).</td><td>Fix that (allow the app in the manager's list, or use <b>Open root manager</b> on Root Features), then tap <b>Check Status</b> on the Shizuku card.</td></tr>
 <tr><td>"Root was denied or is not available"</td><td>You tapped Deny, or the root manager did not answer in about fifteen seconds. Root stays your chosen mode, and the Root tag turns to <b>DENIED</b>.</td><td>Tap <b>Request Root Access</b> again and approve, or allow the app in the root manager's list.</td></tr>
-<tr><td><b>Root shows DENIED</b>: the Root tag is orange and says DENIED, and the badge reads "Root (Superuser) (not ready)"</td><td>A <code>su</code> program exists, but it did not answer as root for this app: your root manager refused it, or you did not tap Allow in time (the app waits about eight seconds). Nothing privileged runs, and the app keeps that answer until you check again.</td><td>Open your root manager (Magisk, KernelSU or APatch), find ADB/Root Full System Toolbox in its list of apps and set it to allow. Then choose Root again with <b>Request Root Access</b> in Working Modes (<a href="#mode-root">Root</a>).</td></tr>
+<tr><td><b>Root shows DENIED</b>: the Root tag is orange and says DENIED, and the badge reads "Root (Superuser) (not ready)"</td><td>A <code>su</code> program exists, but it did not answer as root for this app: your root manager refused it, or you did not tap Allow in time (the app waits about eight seconds). Nothing privileged runs, and the app keeps that answer until you check again.</td><td>Open your root manager, find ADB/Root Full System Toolbox in its list of apps and set it to allow. Then choose Root again with <b>Request Root Access</b> in Working Modes (<a href="#mode-root">Root</a>).</td></tr>
 <tr><td>Badge says Root (violet), but actions fail</td><td>Root was working when the app last asked. If you have since taken the app off the allowed list in your root manager, the app does not know until it asks again. Otherwise Android refused that one action.</td><td>Tap <b>Request Root Access</b> (or <b>Check Status</b> on the Shizuku card) so the app asks again. If the tag turns to DENIED, allow the app in your root manager. If not, read the words in the Command Result box (next table).</td></tr>
 </tbody>
 </table>
@@ -716,7 +716,6 @@
 <table class="hg-table">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><b>Magisk</b></td><td>A root manager, an app that decides which apps may use root. KernelSU and APatch are the others the app names. See <a href="#mode-root">Root</a>.</td></tr>
 <tr><td><b>manifest</b></td><td>An app's own description of itself, in XML: its screens, permissions and parts. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>Material 3</b></td><td>Google's current design system for Android apps. The app's own look follows it, and its baseline purple palette is called Material 3. See <a href="#themes">Themes and colours</a>.</td></tr>
 <tr><td><b>Material You</b></td><td>Android 12's way of building all system colours from one source colour, normally your wallpaper. See <a href="#themes">Themes and colours</a>.</td></tr>
@@ -788,7 +787,7 @@
 <tr><td><b>removal level</b></td><td>The UAD-NG rating of how risky it is to remove an app: Recommended, Advanced, Expert or Unsafe. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
 <tr><td><b>Rish</b></td><td>Shizuku's remote shell. The Console's Rish mode keeps it open between commands. See <a href="#tab-console">Console</a>.</td></tr>
 <tr><td><b>root</b></td><td>Full administrator access to the phone, beyond what ADB can do. The phone must already be rooted. See <a href="#mode-root">Root</a>.</td></tr>
-<tr><td><b>root manager</b></td><td>The app on a rooted phone that decides which apps may use root, such as Magisk, KernelSU or APatch. See <b>Magisk</b> above and <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>root manager</b></td><td>The app on a rooted phone that decides which apps may use root, such as KernelSU or APatch. This app never installs one and never roots a phone: it only uses root that is already there. See <a href="#mode-root">Root</a>.</td></tr>
 <tr><td><b>Root Features</b></td><td>The tab that holds the features needing Super User: the state of root for this app, the two ways to get it on a rooted phone, and the features themselves, locked but never hidden without it. See <a href="#tab-rootfeatures">Root Features</a>.</td></tr>
 <tr><td><b>runtime permission</b></td><td>A permission Android asks you about, which can be switched on and off. See <a href="#apps-menu">The app menu</a>.</td></tr>
 </tbody>
