@@ -38,6 +38,11 @@ public final class MonetProfile {
     public static final String P12 = "P12";
     /** Android 14 (SDK 34). */
     public static final String P14 = "P14";
+    /**
+     * Android 15.0 (SDK 35 with system_on_theme_app_ring_light, without system_theme_notif_light): 44 roles, the same names and layout as
+     * {@link #P15Q1} (palettes and fixed colours unsuffixed), with libmonet android15-release's own role maths, which the page computes.
+     */
+    public static final String P15 = "P15";
     /** Android 15 QPR1 (SDK 35 with system_theme_notif_light, without system_inverse_surface_light): 44 roles. */
     public static final String P15Q1 = "P15Q1";
     /** Android 15 QPR2 (SDK 35 with system_inverse_surface_light): 50 roles. */
@@ -56,10 +61,6 @@ public final class MonetProfile {
      * as {@code _light} and {@code _dark} (libmonet android17-release).
      */
     public static final String P17 = "P17";
-
-    // ---- profiles recognised but not computed yet (reason REASON_NOT_YET)
-    /** Android 15.0 (SDK 35 with system_on_theme_app_ring_light): older role maths. */
-    public static final String P15 = "P15";
 
     /**
      * Whether SystemUI on this profile writes the palette shades as {@code system_<row>_<shade>_light} and {@code _dark} (each from its own
@@ -89,7 +90,7 @@ public final class MonetProfile {
     // ---- the reason keys ("profileReason" in getSystemPalette)
     /** The page can compute this profile. */
     public static final String REASON_OK = "ok";
-    /** A known Android release whose colours the app cannot compute yet. */
+    /** A known Android release whose colours the app cannot compute yet (no profile gives it now; the page still handles the key). */
     public static final String REASON_NOT_YET = "notYet";
     /** A phone with a One UI version: Samsung builds its theme with its own service. */
     public static final String REASON_ONE_UI = "oneUi";
@@ -126,7 +127,6 @@ public final class MonetProfile {
     }
 
     private static Result ok(String p) { return new Result(p, REASON_OK); }
-    private static Result notYet(String p) { return new Result(p, REASON_NOT_YET); }
     private static Result unknown() { return new Result(UNKNOWN, REASON_UNKNOWN); }
 
     /**
@@ -144,7 +144,7 @@ public final class MonetProfile {
         if (sdk == 35) {
             if (present.contains(PROBE_INVERSE_SURFACE)) return ok(P15Q2);
             if (present.contains(PROBE_THEME_NOTIF)) return ok(P15Q1);
-            if (present.contains(PROBE_ON_THEME_APP_RING)) return notYet(P15);
+            if (present.contains(PROBE_ON_THEME_APP_RING)) return ok(P15);
             return unknown();
         }
         if (sdk == 36) {
