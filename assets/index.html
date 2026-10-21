@@ -38385,8 +38385,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // (kv ovl_adj_accent_sat, ovl_adj_bg_sat, ovl_adj_bg_light: 0 to 200 %, 100 when never moved; monet.js's opts.adjust, this project's own
         // formulas) and the Secondary and tertiary accents (kv ovl_accent_secondary, ovl_accent_tertiary: 'RRGGBB' from the page's colour picker,
         // '' or nothing for the style's own; monet.js's opts.accents, this project's own rule) and the Accurate shades switch (kv
-        // ovl_accurate_shades: '0' is off, absent or anything else on; monet.js's opts.accurate, this project's own rule: off, each accent row's
-        // shade 100 takes its shade 300's colour, nothing else changes). Nothing is written while a control changes: Apply
+        // ovl_accurate_shades: '0' is off, absent or anything else on; monet.js's opts.accurate, this project's own rule: off, tone 90 of the
+        // three accent palettes is read as tone 70, so shade 100 takes its shade 300's colour and every role and fixed colour taken from
+        // them at tone 90 their tone-70 colour; the neutral rows never change). Nothing is written while a control changes: Apply
         // keeps writing the secure setting as before
         // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the 165 entries of the
         // style ovlRootPlanStyle picks, a More style, or the list style at 2025, adjusted by the sliders or with an accent, Pure black's entries
@@ -38474,7 +38475,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_ACC_NONE = 'From the style';
         // Accurate shades: the switch (on by default) and the sentence the hint under Apply adds while it is off and a style's colours are written
         const OVL_ACCURATE_TITLE = 'Accurate shades';
-        const OVL_ACCURATE_SUB = 'On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.';
+        const OVL_ACCURATE_SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.';
         const OVL_ACCURATE_OFF = 'Accurate shades: off.';
 
         function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }

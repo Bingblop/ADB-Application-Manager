@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "精确色阶",
 "Accurate shades: off.": "精确色阶：关闭。",
-"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "开启：每个强调色阶保持自己的色调。关闭：每个强调色的色阶 100 改用色阶 300 较深的颜色。",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "开启：每个强调色阶保持自己的色调。关闭：浅淡的强调色（色阶 100、浅色容器颜色和固定颜色）改用更深的色调，让着色的按钮和标签更醒目。",
 "Also writes this style's colors and pure black with root.": "同时通过 Root 写入此样式的颜色和纯黑。",
 "Also writes this style's colors with root.": "同时通过 Root 写入此样式的颜色。",
 "From the style": "来自样式",

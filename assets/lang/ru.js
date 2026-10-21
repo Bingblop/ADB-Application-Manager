@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Точные оттенки",
 "Accurate shades: off.": "Точные оттенки: выкл.",
-"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "Вкл.: каждый оттенок акцента сохраняет свой тон. Выкл.: оттенок 100 каждого акцента получает более тёмный цвет оттенка 300.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Вкл.: каждый оттенок акцента сохраняет свой тон. Выкл.: бледные акцентные цвета (оттенок 100, светлые цвета контейнеров и фиксированные цвета) становятся темнее, и тонированные кнопки и чипы заметнее.",
 "Also writes this style's colors and pure black with root.": "Также записывает цвета этого стиля и чисто чёрный через Root.",
 "Also writes this style's colors with root.": "Также записывает цвета этого стиля через Root.",
 "From the style": "Из стиля",

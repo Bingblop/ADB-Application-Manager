@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Tonalità precise",
 "Accurate shades: off.": "Tonalità precise: disattivate.",
-"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "Attivo: ogni tonalità d'accento mantiene la propria luminosità. Disattivo: la tonalità 100 di ogni accento prende il colore più scuro della tonalità 300.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Attivo: ogni tonalità d'accento mantiene la propria luminosità. Disattivo: i colori d'accento pallidi (la tonalità 100, i colori chiari dei contenitori e i colori fissi) prendono un tono più scuro, così pulsanti e chip colorati risaltano di più.",
 "Also writes this style's colors and pure black with root.": "Scrive anche i colori di questo stile e il nero puro con Root.",
 "Also writes this style's colors with root.": "Scrive anche i colori di questo stile con Root.",
 "From the style": "Dallo stile",

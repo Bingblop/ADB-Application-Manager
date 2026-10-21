@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Genaue Farbtöne",
 "Accurate shades: off.": "Genaue Farbtöne: aus.",
-"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "Ein: Jeder Akzentton behält seine eigene Helligkeit. Aus: Ton 100 jedes Akzents übernimmt die dunklere Farbe von Ton 300.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Ein: Jeder Akzentton behält seine eigene Helligkeit. Aus: Die blassen Akzentfarben (Ton 100, helle Containerfarben und die festen Farben) werden dunkler, sodass getönte Schaltflächen und Chips stärker hervortreten.",
 "Also writes this style's colors and pure black with root.": "Schreibt mit Root auch die Farben dieses Stils und reines Schwarz.",
 "Also writes this style's colors with root.": "Schreibt mit Root auch die Farben dieses Stils.",
 "From the style": "Vom Stil",
@@ -13,7 +13,7 @@ x: {
 "Secondary and tertiary accents: your colors.": "Zweiter und dritter Akzent: Ihre Farben.",
 "Tertiary accent": "Dritter Akzent",
 "Tertiary accent: your color.": "Dritter Akzent: Ihre Farbe.",
-"Your own colors for the second and third accent. The main color stays as it is.": "Deine eigenen Farben für den zweiten und dritten Akzent. Die Hauptfarbe bleibt, wie sie ist.",
+"Your own colors for the second and third accent. The main color stays as it is.": "Ihre eigenen Farben für den zweiten und dritten Akzent. Die Hauptfarbe bleibt, wie sie ist.",
 "100% leaves Android's colors as they are.": "Bei 100 % bleiben die Farben von Android, wie sie sind.",
 "Accent saturation": "Akzentsättigung",
 "Also writes the CMF colors with root, in place of the style above, adjusted by the Intensity sliders.": "Schreibt mit Root auch die CMF-Farben, anstelle des Stils oben, angepasst durch die Intensitätsregler.",

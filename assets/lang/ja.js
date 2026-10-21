@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "正確な色合い",
 "Accurate shades: off.": "正確な色合い：オフ。",
-"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "オン：各アクセントの色合いは本来のトーンを保ちます。オフ：各アクセントの色合い100が、色合い300の濃い色になります。",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "オン：各アクセントの色合いは本来のトーンを保ちます。オフ：淡いアクセントカラー（色合い100、明るいコンテナの色、固定色）が濃いトーンになり、色付きのボタンやチップが目立ちやすくなります。",
 "Also writes this style's colors and pure black with root.": "このスタイルの色とピュアブラックも、Rootで書き込みます。",
 "Also writes this style's colors with root.": "このスタイルの色も、Rootで書き込みます。",
 "From the style": "スタイルから",
