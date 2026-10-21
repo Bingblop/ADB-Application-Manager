@@ -866,9 +866,26 @@ final class OverlayRules {
      */
     static final String FAB_FILE = "/data/system/aam_monet.xml";
     static final String FAB_HEREDOC = "AAM_OVL_EOF";
-    static final int MAX_FAB_ENTRIES = 200;
-    /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first). */
+    /**
+     * The most entries a plan may have. Android 16 QPR1 and QPR2 take the most: 65 palette shades as {@code _light} and as {@code _dark}
+     * (130), the 55 roles as {@code _light} and {@code _dark} (110) and the 12 fixed colours, 252 in all, and 296 with the 22 custom colours
+     * pairs SystemUI also writes there (not written yet); 320 leaves a margin. The Android 14+ form puts the whole plan in one file written
+     * by a heredoc inside the {@code su -c} argument: 320 entries make about 24,000 characters, far under the 131,072 bytes Linux allows one
+     * argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
+     */
+    static final int MAX_FAB_ENTRIES = 320;
+    /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first); see {@link #lookupEntries(String, List)} for Android 16 QPR1 and QPR2. */
     static final int FAB_LOOKUPS = 4;
+    /**
+     * What is looked up after a write on a profile whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1 and QPR2),
+     * where the plan follows SystemUI's own order and so does not start with the entries that matter most: a palette shade from the light
+     * and from the dark scheme (by their suffixed names, so the answer does not depend on the mode system_server resolves the unsuffixed
+     * alias in), a light and a dark role (with Pure black on, system_surface_dark is black, and that is what the lookup must see), and a role
+     * only these builds have. Each is looked up when the plan has it.
+     */
+    static final List<String> QPR_LOOKUPS = java.util.Collections.unmodifiableList(java.util.Arrays.asList(
+            "android:color/system_accent1_600_light", "android:color/system_accent1_600_dark", "android:color/system_primary_light",
+            "android:color/system_surface_dark", "android:color/system_primary_dim_dark"));
     static final String LOOKUP_MARK = "@@OVL-LOOKUP ";            // + the resource + "@@", on a line of its own
     static final String LOOKUP_END = "@@OVL-LOOKUP-END@@";
     /** The first Android with Material You (the plan's resources exist from here). */
@@ -884,6 +901,8 @@ final class OverlayRules {
     /** What a lookup prints for a colour: Integer.toHexString pads nothing, so an alpha below 0x10 prints fewer than eight digits. */
     private static final Pattern LOOKUP_COLOR = Pattern.compile("#[0-9a-f]{1,8}");
     private static final String FAB_RESOURCE_PREFIX = "android:color/system_";
+    /** A palette shade by its unsuffixed name (system_accent1_500, system_error_0): on Android 16 QPR1 and QPR2 an alias of the _light or _dark name. */
+    private static final Pattern FAB_PALETTE_ALIAS = Pattern.compile("android:color/system_(accent[1-3]|neutral[12]|error)_[0-9]+");
 
     /** One entry of a plan: a framework colour resource and the colour it is to show. */
     static final class FabEntry {
@@ -902,6 +921,17 @@ final class OverlayRules {
      * {@link #MAX_FAB_ENTRIES}. Nothing of the entry itself is echoed back: the words name the entry by its number.
      */
     static String fabricatePlanProblem(List<FabEntry> plan) {
+        return fabricatePlanProblem(null, plan);
+    }
+
+    /**
+     * {@link #fabricatePlanProblem(List)} for the phone's build family ({@code profile}: MonetProfile's id, null when not known). On a profile
+     * whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1 and QPR2) an unsuffixed palette shade
+     * ({@code system_accent1_500}, {@code system_error_0}) is refused too: there it is an alias of the {@code _light} and {@code _dark}
+     * names, and an overlay on the alias would show one colour in both modes over SystemUI's two (the plan writes the suffixed names, as
+     * SystemUI does). That is the only name this checks per profile: a name the build does not have is skipped by Android, not refused.
+     */
+    static String fabricatePlanProblem(String profile, List<FabEntry> plan) {
         if (plan == null || plan.isEmpty()) return "The plan has no entries";
         if (plan.size() > MAX_FAB_ENTRIES) return "The plan has too many entries (" + MAX_FAB_ENTRIES + " at most)";
         java.util.HashSet<String> seen = new java.util.HashSet<String>();
@@ -911,12 +941,22 @@ final class OverlayRules {
             if (e.argb == null || !FAB_VALUE.matcher(e.argb).matches()) return "Entry " + (i + 1) + " is not a colour (0xAARRGGBB)";
             if (!seen.add(e.resource)) return "Entry " + (i + 1) + " names a resource twice";
         }
+        if (MonetProfile.suffixedPalettes(profile)) {
+            for (int i = 0; i < plan.size(); i++) {
+                if (FAB_PALETTE_ALIAS.matcher(plan.get(i).resource).matches()) return "Entry " + (i + 1) + " names a palette color without _light or _dark, which this Android version does not take";
+            }
+        }
         return null;
     }
 
     /** The plan's checks as a gate: anything outside the allowed shapes throws IllegalArgumentException (with the reason) before a shell is built. */
     static void fabricatePlanOk(List<FabEntry> plan) {
-        String p = fabricatePlanProblem(plan);
+        fabricatePlanOk(null, plan);
+    }
+
+    /** {@link #fabricatePlanOk(List)} for the phone's build family (see {@link #fabricatePlanProblem(String, List)}). */
+    static void fabricatePlanOk(String profile, List<FabEntry> plan) {
+        String p = fabricatePlanProblem(profile, plan);
         if (p != null) throw new IllegalArgumentException(p);
     }
 
@@ -974,7 +1014,31 @@ final class OverlayRules {
 
     /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan. */
     static List<FabEntry> lookupEntries(List<FabEntry> plan) {
-        return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
+        return lookupEntries(null, plan);
+    }
+
+    /**
+     * The entries looked up after the write on the phone's build family. On a profile whose palettes are suffixed
+     * (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has, in that order, then the plan's first other entries
+     * until there are {@link #FAB_LOOKUPS} (a plan with Pure black only has one of them): at most five. Elsewhere (and with no profile)
+     * the first {@link #FAB_LOOKUPS} of the plan, as before.
+     */
+    static List<FabEntry> lookupEntries(String profile, List<FabEntry> plan) {
+        if (!MonetProfile.suffixedPalettes(profile)) return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
+        List<FabEntry> out = new ArrayList<FabEntry>();
+        for (String want : QPR_LOOKUPS) {
+            for (FabEntry e : plan) {
+                if (want.equals(e.resource)) {
+                    out.add(e);
+                    break;
+                }
+            }
+        }
+        for (FabEntry e : plan) {
+            if (out.size() >= FAB_LOOKUPS) break;
+            if (!out.contains(e)) out.add(e);
+        }
+        return out;
     }
 
     /**
@@ -982,8 +1046,13 @@ final class OverlayRules {
      * with its resource. The lookup's error goes to stderr, which is folded in so it lands between the marks too.
      */
     static String lookupBlock(List<FabEntry> plan) {
+        return lookupBlock(null, plan);
+    }
+
+    /** {@link #lookupBlock(List)} for the phone's build family: the entries of {@link #lookupEntries(String, List)}. */
+    static String lookupBlock(String profile, List<FabEntry> plan) {
         StringBuilder sb = new StringBuilder();
-        for (FabEntry e : lookupEntries(plan)) {
+        for (FabEntry e : lookupEntries(profile, plan)) {
             sb.append("echo ").append(BackupScripts.quote(LOOKUP_MARK + e.resource + "@@")).append("; cmd overlay lookup --user current android ")
                     .append(BackupScripts.quote(e.resource)).append(" 2>&1; echo ").append(LOOKUP_END).append('\n');
         }
@@ -991,7 +1060,16 @@ final class OverlayRules {
     }
 
     static String fabricateScript(int sdk, List<FabEntry> plan) {
-        return fabricateScript(sdk, plan, FAB_FILE);
+        return fabricateScript(sdk, null, plan, FAB_FILE);
+    }
+
+    /** The script the app runs: {@link #fabricateScript(int, String, List, String)} with {@link #FAB_FILE}. */
+    static String fabricateScript(int sdk, String profile, List<FabEntry> plan) {
+        return fabricateScript(sdk, profile, plan, FAB_FILE);
+    }
+
+    static String fabricateScript(int sdk, List<FabEntry> plan, String file) {
+        return fabricateScript(sdk, null, plan, file);
     }
 
     /**
@@ -1012,9 +1090,11 @@ final class OverlayRules {
      * theme overlays (com.android.systemui:accent, :neutral, :dynamic) depends only on the order Android registered them in, which
      * only a device shows; the lookups catch it when SystemUI's colour wins. Every argument is single-quoted, and the plan is checked first, so nothing a page
      * could send becomes shell code; a plan that fails the check throws IllegalArgumentException before any text is built.
+     * {@code profile} (MonetProfile's id, or null) decides the per-profile check ({@link #fabricatePlanProblem(String, List)}) and which
+     * entries are looked up ({@link #lookupEntries(String, List)}); the commands are the same on every profile.
      */
-    static String fabricateScript(int sdk, List<FabEntry> plan, String file) {
-        fabricatePlanOk(plan);
+    static String fabricateScript(int sdk, String profile, List<FabEntry> plan, String file) {
+        fabricatePlanOk(profile, plan);
         if (sdk < FAB_MIN_SDK) throw new IllegalArgumentException("Material You colours need Android 12 or newer");
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("No file to write the overlay to");
         String head = "cmd overlay fabricate " + (sdk >= FAB_NO_USER_SDK ? "" : "--user current ") + "--target android --name ";
@@ -1037,7 +1117,7 @@ final class OverlayRules {
             for (FabEntry e : plan) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
         }
         sb.append(readBackTail());
-        sb.append(lookupBlock(plan));
+        sb.append(lookupBlock(profile, plan));
         return sb.toString();
     }
 
@@ -1134,6 +1214,11 @@ final class OverlayRules {
      * commands' own text.
      */
     static FabVerdict judgeFabricate(String op, List<String> ids, List<FabEntry> plan, FabResult r) {
+        return judgeFabricate(op, ids, null, plan, r);
+    }
+
+    /** {@link #judgeFabricate(String, List, List, FabResult)} for the phone's build family: the entries checked are those the script looked up ({@link #lookupEntries(String, List)}). */
+    static FabVerdict judgeFabricate(String op, List<String> ids, String profile, List<FabEntry> plan, FabResult r) {
         FabVerdict v = new FabVerdict();
         ChangeResult c = r.change;
         if (c.all == null) {
@@ -1176,7 +1261,7 @@ final class OverlayRules {
             return v;
         }
         if (want == 1 && plan != null) {
-            for (FabEntry e : lookupEntries(plan)) {
+            for (FabEntry e : lookupEntries(profile, plan)) {
                 String got = lookupColor(r.lookups.get(e.resource));
                 if (got == null) v.unanswered.add(e.resource);
                 else if (!got.equals(expectedLookup(e.argb))) v.mismatched.add(e.resource);

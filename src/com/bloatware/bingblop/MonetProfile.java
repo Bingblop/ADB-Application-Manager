@@ -41,16 +41,29 @@ public final class MonetProfile {
     public static final String P15Q2 = "P15Q2";
     /** Android 16.0 (SDK 36 with system_inverse_surface_light, without system_primary_dim_light): 50 roles. */
     public static final String P16 = "P16";
+    /**
+     * Android 16 QPR1 (SDK 36 with system_primary_dim_light, without system_semantic_red_container_high_light): spec 2025, 55 roles, and
+     * SystemUI writes every palette shade and role as {@code _light} and {@code _dark} (libmonet android16-qpr1-release).
+     */
+    public static final String P16Q1 = "P16Q1";
+    /** Android 16 QPR2 (SDK 36 with system_semantic_red_container_high_light): as {@link #P16Q1}, with QPR2's own role changes (libmonet android16-qpr2-release). */
+    public static final String P16Q2 = "P16Q2";
 
     // ---- profiles recognised but not computed yet (reason REASON_NOT_YET)
     /** Android 15.0 (SDK 35 with system_on_theme_app_ring_light): older role maths. */
     public static final String P15 = "P15";
-    /** Android 16 QPR1 (SDK 36 with system_primary_dim_light, without system_semantic_red_container_high_light): spec 2025. */
-    public static final String P16Q1 = "P16Q1";
-    /** Android 16 QPR2 (SDK 36 with system_semantic_red_container_high_light): spec 2025, its own changes. */
-    public static final String P16Q2 = "P16Q2";
     /** Android 17 (SDK 37): spec 2026, fixed colours in both modes. */
     public static final String P17 = "P17";
+
+    /**
+     * Whether SystemUI on this profile writes the palette shades as {@code system_<row>_<shade>_light} and {@code _dark} (each from its own
+     * mode's scheme) and leaves the unsuffixed {@code system_<row>_<shade>} names as aliases of them (Android 16 QPR1 and QPR2: core/res
+     * values/colors_dynamic.xml and values-night/colors_dynamic.xml). The overlay this app writes there takes the suffixed names
+     * (OverlayRules.fabricatePlanProblem refuses an unsuffixed palette name) and is looked up by them (OverlayRules.lookupEntries).
+     */
+    public static boolean suffixedPalettes(String profile) {
+        return P16Q1.equals(profile) || P16Q2.equals(profile);
+    }
 
     /** Anything else: One UI, an SDK level this app does not know, or an SDK level whose names match no release. */
     public static final String UNKNOWN = "unknown";
@@ -116,8 +129,8 @@ public final class MonetProfile {
             return unknown();
         }
         if (sdk == 36) {
-            if (present.contains(PROBE_SEMANTIC_RED)) return notYet(P16Q2);
-            if (present.contains(PROBE_PRIMARY_DIM)) return notYet(P16Q1);
+            if (present.contains(PROBE_SEMANTIC_RED)) return ok(P16Q2);
+            if (present.contains(PROBE_PRIMARY_DIM)) return ok(P16Q1);
             if (present.contains(PROBE_INVERSE_SURFACE)) return ok(P16);
             return unknown();
         }
