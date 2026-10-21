@@ -1,7 +1,8 @@
 // Root colours on Android 16 QPR1 and QPR2 (T-049 PR 9: profiles P16Q1 and P16Q2): the Overlays tab's root-only theme controls are live
 // there and write what SystemUI writes on those builds. (a) Live on P16Q1 and P16Q2 (MonetProfile.java reports them ok): every row can be
 // used; the Pure black and Color spec lines are their QPR ones (light mode untouched; 2025 is the phone's own spec, 2021 recolors every
-// style); with no spec stored, 2025 is the one chosen (2021 on Android 16.0, as before). Still locked: 15.0, 17 as an APK from before PR 10
+// style); with no spec stored, 2025 is the one chosen (2021 on Android 16.0, as before). Still locked: 15.0 as an APK from before PR 11
+// reports it (notYet; t573 has it live), 17 as an APK from before PR 10
 // reports it (notYet; t572 has it live), an Android this app does not know, QPR1 and QPR2 as an APK from before PR 9 reports them
 // (notYet), One UI on a QPR build. (b) Native routing: the list style at
 // the phone's spec (2025, and 2026, which gives every list style 2025 there) with nothing else set is the theme setting only (no overlay,
@@ -163,7 +164,7 @@ const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 
   check('   P16 at 2025: the note is the one from before (with the light / dark sentence)', c.specNote === SPEC_NOTE, c.specNote);
   await ev(() => { kvSet('ovl_spec', null); });
   const LOCKS = [
-    ['Android 15.0 (P15)', { sdk: 35, profile: 'P15', build: B16 }, NOT_YET],
+    ['15.0 as an APK from before PR 11 reports it (P15, notYet)', { sdk: 35, profile: 'P15', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 17 (P17)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B16 }, NOT_YET],
     ['an Android this app does not know (SDK 38: unknown)', { sdk: 38, build: B16 }, NOT_YET],
     ['16 QPR1 as an APK from before PR 9 reports it (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: BQ1 }, NOT_YET],

@@ -7999,7 +7999,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
-                <div class="about-tip">More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). All Apache-2.0; the file monet.js names what was taken from where.</div>
+                <div class="about-tip">More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). On Android 15.0, 16 QPR1, 16 QPR2 and 17 they also follow the changes in Android's own copy of that library (libmonet, Android Open Source Project). All Apache-2.0; the file monet.js names what was taken from where.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -38390,7 +38390,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // them at tone 90 their tone-70 colour; the neutral rows never change). Nothing is written while a control changes: Apply
         // keeps writing the secure setting as before
         // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the entries of the
-        // style ovlRootPlanStyle picks (165 on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1 and QPR2, 264 on 17), a More style, or the list style at 2025, adjusted by the sliders or with an accent, Pure black's entries
+        // style ovlRootPlanStyle picks (165 on Android 14, 15.0 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1 and QPR2, 264 on 17), a More style, or the list style at 2025, adjusted by the sliders or with an accent, Pure black's entries
         // replacing where both name a resource), or
         // switches it off again (nothing on any more after an earlier write: kv ovl_root_applied holds the overlay ids and what they carry;
         // PR 2's ovl_black_applied is read as a fallback). Revert and the Undo bar switch it off too. The bridge is overlayFabricate(req,
@@ -38425,8 +38425,8 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_MORE_SUB_2026 = 'Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.';
         // every style an overlay this app wrote may carry: a More style, CMF, or a style of the list above written at spec 2025
         const OVL_RECORD_STYLE_IDS = OVL_STYLE_IDS.concat(OVL_ROOT_STYLE_IDS.filter(id => id !== ''));
-        // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (15.0 with an older libmonet,
-        // locked); 16 QPR1 and QPR2 compute 2025 (with libmonet's own rules: monet.js's P16Q1 and P16Q2) and 17 computes 2026
+        // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (15.0 with libmonet
+        // android15-release's own 2021 rules: monet.js's P15, from T-049 PR 11); 16 QPR1 and QPR2 compute 2025 (with libmonet's own rules: monet.js's P16Q1 and P16Q2) and 17 computes 2026
         // (libmonet android17-release: monet.js's P17, below). On Android 14 to 16.0, 2025 and 2026 exist only as colours this app writes; Google's own rule (MonetPlan.specFor,
         // upstream's maybeFallbackSpecVersion) gives 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and
         // 2021 to every other style. On 16 QPR1 and QPR2 (ovlQpr) libmonet's rule applies (MonetPlan.specFor with the profile): every style but
@@ -38524,9 +38524,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // The Android build family the root colours are computed for, from getSystemPalette (MonetProfile.java: profile, and profileReason ok,
         // notYet, oneUi or unknown): { id, lock }, lock '' where this page may write root colours. Unlocked, each only with the reason ok: P12
         // (Android 12 and 13: Pure black only, as before), P14 and the families monet.js computes (MonetPlan.PROFILES: Android 15 QPR1, 15 QPR2,
-        // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, and 17 from PR 10, which MonetProfile.java reports ok from those PRs on). Locked, all three
+        // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, 17 from PR 10 and 15.0 from PR 11, which MonetProfile.java reports ok from those PRs on;
+        // 15.0 takes 15 QPR1's paths here: not ovlQpr, native spec 2021, the OVL_ROOT_LEAD entries first). Locked, all three
         // rows with Super User or without: a phone with a One UI version (Samsung builds its theme with its own service); a family the app knows
-        // but cannot compute yet (Android 15.0; 16 QPR1, QPR2 and 17 as an APK from before PR 9 or PR 10 reports them, notYet), or none it
+        // but an older APK reports as not computed yet (15.0, 16 QPR1, QPR2 and 17 as an APK from before PR 11, PR 9 or PR 10 reports them,
+        // notYet; no family is notYet from PR 11 on), or none it
         // knows (fail closed: an Android above 17, or 17 without its colour names, MonetProfile.java's unknown); an older APK,
         // which reports no profile: on Android 15 and newer it would write Android 14's colours (Update the app), on 14 it is P14 and below P12,
         // what it was made for.
@@ -38849,7 +38851,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // contrast: the phone's contrast then }; each part it lacks is taken now. The style and its spec are ovlRootPlanStyle's; the 65 shades are
         // the dark or light scheme's as at.dark says where the profile and the spec take them from the mode the phone is in (Android 14 at 2025
         // and 2026, every profile after it), the roles are written for both modes either way. The colours are those of the phone's profile
-        // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1
+        // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14, 15.0 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1
         // and QPR2 and 264 on 17, where the shades of both modes are written and at.dark changes nothing in the plan) at its contrast,
         // adjusted by the Intensity sliders as at.adjust says (taken at the tap; the sliders as they are now when at has none), with the
         // Secondary and tertiary accents at.accents names (likewise); Pure black, the More style, the spec and Accurate shades as at.black,

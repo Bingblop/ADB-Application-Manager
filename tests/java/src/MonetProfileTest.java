@@ -46,6 +46,7 @@ public class MonetProfileTest {
     eq("Android 14: P14 by the SDK level alone", of(34, A14, ""), "P14/ok");
     eq("Android 14: names of later releases change nothing (no probe on 34)", of(34, names(INV, NOTIF, RING, DIM, RED), ""), "P14/ok");
     eq("Android 14: a probe read that failed changes nothing", of(34, null, ""), "P14/ok");
+    eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/ok");
     eq("Android 15 QPR1: theme_notif without inverse_surface", of(35, A15Q1, ""), "P15Q1/ok");
     eq("Android 15 QPR2: inverse_surface", of(35, A15Q2, ""), "P15Q2/ok");
     eq("Android 16.0: inverse_surface without primary_dim", of(36, A16, ""), "P16/ok");
@@ -58,8 +59,10 @@ public class MonetProfileTest {
     eq("Android 12L (32)", of(32, A14, null), "P12/ok");
     eq("Android 13 (33)", of(33, null, ""), "P12/ok");
 
-    // ---- recognised, not computed yet (reason notYet)
-    eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/notYet");
+    // ---- recognised, not computed yet (reason notYet): no profile gives it any more (Android 15.0 was the last)
+    eq("the notYet key stays as the page reads it", MonetProfile.REASON_NOT_YET, "notYet");
+    eq("Android 15.0 is not on 34 or 36", of(34, A15, "") + " " + of(36, A15, ""), "P14/ok unknown/unknown");
+    eq("Android 15.0 with names of no other release beside it", of(35, names(RING, DIM, RED, FIX), ""), "P15/ok");
 
     // ---- unknown SDK levels and missing names (fail closed)
     eq("37 without primary_fixed_light: unknown (Android 16 QPR2's names)", of(37, A16Q2, ""), "unknown/unknown");
@@ -87,6 +90,7 @@ public class MonetProfileTest {
     // ---- One UI: Samsung builds its theme with its own service, at every SDK level and with any names
     eq("One UI 6.1.1 on Android 14", of(34, A14, "6.1.1"), "unknown/oneUi");
     eq("One UI 7.0 with Android 15 QPR2's names", of(35, A15Q2, "7.0"), "unknown/oneUi");
+    eq("One UI 7.0 with Android 15.0's names", of(35, A15, "7.0"), "unknown/oneUi");
     eq("One UI 8.0 with Android 16.0's names", of(36, A16, "8.0"), "unknown/oneUi");
     eq("One UI 9.0 on 37", of(37, A16Q2, "9.0"), "unknown/oneUi");
     eq("One UI 9.0 on 37 with Android 17's names", of(37, A17, "9.0"), "unknown/oneUi");
@@ -113,16 +117,17 @@ public class MonetProfileTest {
     eq("35: inverse_surface alone is enough for 15 QPR2", of(35, names(INV), ""), "P15Q2/ok");
     eq("35: theme_notif wins over on_theme_app_ring", of(35, names(NOTIF, RING), ""), "P15Q1/ok");
     eq("35: inverse_surface with on_theme_app_ring", of(35, names(INV, RING), ""), "P15Q2/ok");
+    eq("35: on_theme_app_ring alone is enough for 15.0", of(35, names(RING), ""), "P15/ok");
     eq("36: semantic_red wins over primary_dim and inverse_surface", of(36, names(RED, DIM, INV), ""), "P16Q2/ok");
     eq("36: semantic_red alone", of(36, names(RED), ""), "P16Q2/ok");
     eq("36: primary_dim wins over inverse_surface", of(36, names(DIM, INV), ""), "P16Q1/ok");
     eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/ok");
     eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING), ""), "P16/ok");
 
-    // ---- every combination of the six names at SDK 29..40: a known id, a known reason, ok exactly for the eight computed profiles,
+    // ---- every combination of the six names at SDK 29..40: a known id, a known reason, ok exactly for the nine computed profiles (no notYet),
     // never an exception, and names that are not probes never change the answer
     List<String> ids = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
-    List<String> okIds = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
+    List<String> okIds = Arrays.asList("P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
     List<String> reasons = Arrays.asList("ok", "notYet", "oneUi", "unknown");
     int bad = 0, combos = 0;
     List<String> firstBad = new ArrayList<String>();
@@ -142,13 +147,16 @@ public class MonetProfileTest {
             && ("unknown".equals(r.profile) == "unknown".equals(r.reason))
             && r.toString().equals(r2.toString())
             && MonetProfile.of(sdk, set, "6.0").toString().equals("unknown/oneUi")
-            && ("P17".equals(r.profile) == (sdk == 37 && set.contains(FIX)));
+            && ("P17".equals(r.profile) == (sdk == 37 && set.contains(FIX)))
+            && ("P15".equals(r.profile) == (sdk == 35 && set.contains(RING) && !set.contains(NOTIF) && !set.contains(INV)))
+            && !"notYet".equals(r.reason);
         if (!good) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + " -> " + r); }
       }
     }
     eq("every combination of the names at SDK 29..40 (" + combos + "): consistent " + firstBad, bad, 0);
     check("the result names its profile and reason", MonetProfile.of(36, A16, "").profile.equals("P16") && MonetProfile.of(36, A16, "").reason.equals("ok"));
-    check("ok() is false for a profile that is not computed", !MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
+    check("ok() is true on 15.0, false with One UI", MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(35, A15, "7.0").ok() && !MonetProfile.of(35, A15, MonetProfile.ONE_UI_UNREAD).ok());
+    check("ok() is false for a profile that is not computed", !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
     check("ok() is true on 16 QPR1 and QPR2", MonetProfile.of(36, A16Q1, "").ok() && MonetProfile.of(36, A16Q2, "").ok());
     check("ok() is true on 17 with its name, false without it", MonetProfile.of(37, A17, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(37, null, "").ok());
     check("16 QPR1 and QPR2 stay locked on One UI", "unknown/oneUi".equals(of(36, A16Q1, "8.0")) && "unknown/oneUi".equals(of(36, A16Q2, MonetProfile.ONE_UI_UNREAD)));
