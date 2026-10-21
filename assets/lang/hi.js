@@ -1,6 +1,15 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "डार्क बैकग्राउंड असली काला, पैनल कुछ गहरे ग्रे रंगों में। लाइट मोड अपने रंग रखता है।",
+"The colors earlier Android versions compute.": "वे रंग जिनकी गणना Android के पुराने वर्शन करते हैं।",
+"The 2025 colors, plus the CMF style.": "2025 वाले रंग, साथ में CMF स्टाइल।",
+"With root, 2021 recolors every style. CMF needs 2026.": "Root से 2021 हर स्टाइल के रंग बदलता है। CMF के लिए 2026 चाहिए।",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android ये रंग खुद गणना करता है: ऊपर की सूची का कोई स्टाइल Root से सिर्फ़ 2021 पर, या तीव्रता, किसी एक्सेंट या बंद सटीक शेड के साथ लिखा जाता है।",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Root से तीव्रता स्लाइडरों से एडजस्ट किए गए इस स्टाइल के 2021 वाले रंग और प्योर ब्लैक भी लिखता है।",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Root से इस स्टाइल के 2021 वाले रंग भी, तीव्रता स्लाइडरों से एडजस्ट करके लिखता है।",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Root से इस स्टाइल के 2021 वाले रंग और प्योर ब्लैक भी, Android के रंगों की जगह लिखता है।",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Root से इस स्टाइल के 2021 वाले रंग भी, Android के रंगों की जगह लिखता है।",
 "Accurate shades": "सटीक शेड",
 "Accurate shades: off.": "सटीक शेड: बंद।",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "चालू: हर एक्सेंट शेड अपना टोन रखता है। बंद: हल्के एक्सेंट रंग (शेड 100 और, ज़्यादातर कलर स्पेक 2021 में, हल्के कंटेनर रंग और फ़िक्स्ड रंग) गहरा टोन लेते हैं।",

@@ -1,6 +1,15 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Echt schwarze dunkle Hintergründe, Flächen in wenigen dunklen Grautönen. Der helle Modus behält seine Farben.",
+"The colors earlier Android versions compute.": "Die Farben, die frühere Android-Versionen berechnen.",
+"The 2025 colors, plus the CMF style.": "Die 2025er-Farben, plus der Stil CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Mit Root färbt 2021 jeden Stil neu. CMF braucht 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android berechnet diese Farben selbst: Ein Stil der Liste oben wird mit Root nur bei 2021 geschrieben, oder mit Intensität, einem Akzent oder ausgeschalteten genauen Farbtönen.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Schreibt mit Root auch die 2021er-Farben dieses Stils, angepasst durch die Intensitätsregler, und reines Schwarz.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Schreibt mit Root auch die 2021er-Farben dieses Stils, angepasst durch die Intensitätsregler.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Schreibt mit Root auch die 2021er-Farben dieses Stils und reines Schwarz, anstelle der Farben von Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Schreibt mit Root auch die 2021er-Farben dieses Stils, anstelle der Farben von Android.",
 "Accurate shades": "Genaue Farbtöne",
 "Accurate shades: off.": "Genaue Farbtöne: aus.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Ein: Jeder Akzentton behält seine eigene Helligkeit. Aus: Die blassen Akzentfarben (Ton 100 und, vor allem mit Farbspezifikation 2021, die hellen Containerfarben und die festen Farben) werden dunkler.",

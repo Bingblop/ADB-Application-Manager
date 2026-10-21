@@ -1,6 +1,15 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "ダークの背景を純黒に、パネルは数段階の暗いグレーにします。ライトモードは色を保ちます。",
+"The colors earlier Android versions compute.": "以前のAndroidバージョンが計算する色。",
+"The 2025 colors, plus the CMF style.": "2025年版の色に、CMFスタイルを加えたもの。",
+"With root, 2021 recolors every style. CMF needs 2026.": "Rootを使うと、2021ですべてのスタイルの色を塗り替えます。CMFには2026が必要です。",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "これらの色はAndroid自身が計算します。上のリストのスタイルがRootで書き込まれるのは、2021のとき、または強度、アクセント、「正確な色合い」オフを使うときだけです。",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "強度スライダーで調整したこのスタイルの2021年版の色とピュアブラックも、Rootで書き込みます。",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "強度スライダーで調整したこのスタイルの2021年版の色も、Rootで書き込みます。",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Rootでこのスタイルの2021年版の色とピュアブラックも、Androidの色の代わりに書き込みます。",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Rootでこのスタイルの2021年版の色も、Androidの色の代わりに書き込みます。",
 "Accurate shades": "正確な色合い",
 "Accurate shades: off.": "正確な色合い：オフ。",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "オン：各アクセントの色合いは本来のトーンを保ちます。オフ：淡いアクセントカラー（色合い100と、主にカラー仕様 2021 では明るいコンテナの色と固定色）が濃いトーンになります。",

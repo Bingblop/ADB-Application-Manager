@@ -1,6 +1,15 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Sfondi scuri in nero vero, pannelli in pochi grigi scuri. Il tema chiaro mantiene i suoi colori.",
+"The colors earlier Android versions compute.": "I colori che calcolano le versioni precedenti di Android.",
+"The 2025 colors, plus the CMF style.": "I colori del 2025, più lo stile CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Con Root, il 2021 ricolora ogni stile. CMF richiede il 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android calcola questi colori da sé: uno stile dell’elenco sopra viene scritto con Root solo con il 2021, oppure con Intensità, un accento o Tonalità precise disattivate.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Scrive anche i colori 2021 di questo stile, regolati dai cursori Intensità, e il nero puro con Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Scrive anche i colori 2021 di questo stile con Root, regolati dai cursori Intensità.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Scrive anche i colori 2021 di questo stile e il nero puro con Root, al posto di quelli di Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Scrive anche i colori 2021 di questo stile con Root, al posto di quelli di Android.",
 "Accurate shades": "Tonalità precise",
 "Accurate shades: off.": "Tonalità precise: disattivate.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Attivo: ogni tonalità d'accento mantiene la propria luminosità. Disattivo: i colori d'accento pallidi (la tonalità 100 e, soprattutto con la Specifica dei colori 2021, i colori chiari dei contenitori e i colori fissi) prendono un tono più scuro.",

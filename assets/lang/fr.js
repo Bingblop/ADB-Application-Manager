@@ -1,6 +1,15 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Arrière-plans sombres en vrai noir, panneaux dans quelques gris foncés. Le mode clair garde ses couleurs.",
+"The colors earlier Android versions compute.": "Les couleurs que calculent les versions antérieures d’Android.",
+"The 2025 colors, plus the CMF style.": "Les couleurs 2025, plus le style CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Avec Root, 2021 recolore tous les styles. CMF nécessite 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android calcule ces couleurs lui-même : un style de la liste ci-dessus n’est écrit avec Root qu’en 2021, ou avec Intensité, un accent ou Teintes exactes désactivé.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Écrit aussi les couleurs 2021 de ce style, ajustées par les curseurs Intensité, et le noir pur avec Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Écrit aussi les couleurs 2021 de ce style avec Root, ajustées par les curseurs Intensité.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Écrit aussi les couleurs 2021 de ce style et le noir pur avec Root, à la place de celles d’Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Écrit aussi les couleurs 2021 de ce style avec Root, à la place de celles d’Android.",
 "Accurate shades": "Teintes exactes",
 "Accurate shades: off.": "Teintes exactes : désactivé.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Activé : chaque teinte d'accent garde sa propre luminosité. Désactivé : les couleurs d'accent pâles (la teinte 100 et, surtout avec la Spécification des couleurs 2021, les couleurs de conteneur claires et les couleurs fixes) prennent un ton plus foncé.",

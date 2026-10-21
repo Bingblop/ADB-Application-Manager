@@ -144,7 +144,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   h = JSON.stringify(await handler());
   check('   the stored off counts for nothing there (no hint); the handler changes nothing and calls no AndroidBridge method', a.hint === '' && a.off === '' && h === '["0",0]', h);
   const LOCKS = [
-    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', build: B16 }, NOT_YET],
+    ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['a One UI phone on Android 14', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
     ['an older APK on Android 16 (no profile)', { sdk: 36, profile: null, build: null }, 'Update the app']
   ];

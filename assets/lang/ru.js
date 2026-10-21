@@ -1,6 +1,15 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Тёмный фон по-настоящему чёрный, панели в нескольких тёмно-серых тонах. Светлый режим сохраняет свои цвета.",
+"The colors earlier Android versions compute.": "Цвета, которые вычисляют прежние версии Android.",
+"The 2025 colors, plus the CMF style.": "Цвета 2025 года плюс стиль CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "С Root спецификация 2021 перекрашивает каждый стиль. Для CMF нужна 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "Android вычисляет эти цвета сам: стиль из списка выше записывается через Root только при 2021 или с «Интенсивностью», акцентом либо выключенными «Точными оттенками».",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Также записывает цвета этого стиля по спецификации 2021 с поправкой ползунками «Интенсивность» и чисто чёрный через Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Также записывает цвета этого стиля по спецификации 2021 через Root, с поправкой ползунками «Интенсивность».",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2021 и чисто чёрный через Root, вместо цветов Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Также записывает цвета этого стиля по спецификации 2021 через Root, вместо цветов Android.",
 "Accurate shades": "Точные оттенки",
 "Accurate shades: off.": "Точные оттенки: выкл.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Вкл.: каждый оттенок акцента сохраняет свой тон. Выкл.: бледные акцентные цвета (оттенок 100 и, в основном при цветовой спецификации 2021, светлые цвета контейнеров и фиксированные цвета) становятся темнее.",

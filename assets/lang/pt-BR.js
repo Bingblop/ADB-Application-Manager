@@ -1,6 +1,15 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Fundos escuros em preto verdadeiro, painéis em alguns cinzas escuros. O modo claro mantém suas cores.",
+"The colors earlier Android versions compute.": "As cores que as versões anteriores do Android calculam.",
+"The 2025 colors, plus the CMF style.": "As cores de 2025, mais o estilo CMF.",
+"With root, 2021 recolors every style. CMF needs 2026.": "Com Root, 2021 recolore todos os estilos. CMF precisa de 2026.",
+"Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.": "O Android calcula essas cores sozinho: um estilo da lista acima só é gravado com Root em 2021, ou com Intensidade, um destaque ou Tons precisos desligado.",
+"Also writes this style's 2021 colors, adjusted by the Intensity sliders, and pure black with root.": "Também grava as cores 2021 deste estilo, ajustadas pelos controles de Intensidade, e o preto puro com Root.",
+"Also writes this style's 2021 colors with root, adjusted by the Intensity sliders.": "Também grava as cores 2021 deste estilo com Root, ajustadas pelos controles de Intensidade.",
+"Also writes this style's 2021 colors and pure black with root, in place of Android's.": "Também grava as cores 2021 deste estilo e o preto puro com Root, no lugar das do Android.",
+"Also writes this style's 2021 colors with root, in place of Android's.": "Também grava as cores 2021 deste estilo com Root, no lugar das do Android.",
 "Accurate shades": "Tons precisos",
 "Accurate shades: off.": "Tons precisos: desativado.",
 "On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Ativado: cada tom de destaque mantém sua própria luminosidade. Desativado: as cores de destaque claras (o tom 100 e, principalmente com a Especificação de cor 2021, as cores claras de contêiner e as cores fixas) ficam mais escuras.",
