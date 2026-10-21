@@ -825,7 +825,7 @@ style the palette is worked out with:
   measured against libmonet android14-qpr3, Fidelity and Content differ in about 1 in 10 role values at contrast 0 (on-colors and the
   light outline), Monochrome in the light outline only, about 4 in 10 at a higher contrast; shades and Pure black are the same), 15 QPR1 (`P15Q1`, 165
   entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
-  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all five rows, with Super User or without:
+  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all six rows, with Super User or without:
   15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
   libmonet, 16 QPR1/QPR2 compute at spec 2025 with changes of their own and write `_light`/`_dark` palette names, 17 at 2026
   with the fixed colors in both modes), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
@@ -867,7 +867,7 @@ style the palette is worked out with:
   Apache-2.0); on 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast. A grey custom
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
   *From Google blue: #808080 is too grey for this style*. **2021** then Apply (with More styles on Off, Pure black off, the Intensity
-  sliders at 100 and no accent set) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
+  sliders at 100, no accent set and Accurate shades on) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
 - **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
@@ -886,7 +886,7 @@ style the palette is worked out with:
   15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
   what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
-  `accents` when a Secondary or tertiary accent is set, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
+  `accents` when a Secondary or tertiary accent is set, `accurate: false` when Accurate shades was off, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
   Messages then speak of the *theme overlay*; **Off** then Apply and **Default** switch it off; **Undo** puts back the overlay from before (off when there was none). Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
 - **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
@@ -951,6 +951,32 @@ style the palette is worked out with:
   ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
   custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Default** and **Undo** act as for More
   styles. Not yet tried on a rooted phone.
+- **Accurate shades** (the sixth control of that card, under the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like
+  the accents: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge
+  or when `monet.js` has no `MonetPlan.lib.accurateOf`; the locked row keeps its line, and a stored off counts as on while locked): a
+  switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: shade 100 of each
+  accent takes the darker color of shade 300.* Kept in `ovl_accurate_shades` (`'0'` is off, `'1'` on; nothing or any other value is on).
+  Flipping it redraws the preview and the hint, writes nothing and runs nothing in the background. The maths is `opts.accurate` in
+  `assets/monet.js`, both parts, a rule written for this project (Android and Material Color Utilities have no such option): `false`
+  gives, in each of accent1, accent2 and accent3, `system_accentN_100` (tone 90) the value of `system_accentN_300` (tone 70) of the
+  same row, after everything else has made the shades (the accents, the Intensity sliders, the profile's shade rule with P14's chroma
+  cap); `true`, `null` or left out change nothing (byte for byte the results from before the option); any other value throws. Nothing
+  else changes: the other shades, the neutral rows, every role and fixed color (`primary_container` is still tone 90 of the primary
+  palette), `palette_key_color_*`, and palettes()' hue, chroma and key; scheme() only checks the value. Example: 6750A4, Tonal Spot,
+  light, every profile: accent1_100 E9DDFF becomes B3A2E1, primary_container_light stays E9DDFF. So on Android 14+, where most apps take
+  role colors, the switch shows only where an app or the system reads `system_accentN_100` itself; which screens do is not known.
+  The page's own Colors in use reads those shades (`getSystemPalette`); the app's own Material You look (`materialYouScheme`) does not
+  read accent shade 100. ColorBlendr's switch of the same name, read in its source and not run, also changes what its roles read from
+  the swapped index (the containers in light mode, the on-containers in dark mode, primary_fixed and secondary_fixed, its
+  m3_ref_palette 90 references); this app does not. With the switch off, **Apply theme** writes a style's colors with root: a More
+  style as before, with the swap (Monochrome too: E2E2E2 becomes ABABAB), else the list style at the spec Google's rule gives it (2021
+  included); the first sentence of the hint is the one the accents brought (*Also writes this style's colors with root.* and its pure
+  black form at 2021, else the 2025, adjusted or More style one), and a last sentence, after the accents' one, says *Accurate shades:
+  off.* Apply takes the value at the tap (a tap, a resume record or a record without it counts as on); the record gains
+  `accurate: false` only when it has a style and the switch was off, and Undo writes an overlay from before with the record's value,
+  not the switch's. With the switch on, the plans, hints and records are the ones from before. Pure black names none of the three
+  shades. The overlay check after a write reads accent1_600, not a shade 100. Turning it on then Apply, **Default** and **Undo** act as
+  for More styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
