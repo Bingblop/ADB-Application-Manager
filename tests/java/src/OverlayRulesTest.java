@@ -830,13 +830,15 @@ public class OverlayRulesTest {
         List<OverlayRules.FabEntry> withNull = plan(N1, "0xFF000000"); withNull.add(null);
         is("a null entry", OverlayRules.fabricatePlanProblem(withNull) != null);
         is("a resource named twice", OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")) != null && OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")).contains("twice"));
-        eq("the cap: 320 entries (252 on Android 16 QPR, 296 with its custom colours, and a margin)", OverlayRules.MAX_FAB_ENTRIES, 320);
+        eq("the cap: 320 entries (264 on Android 17, 318 with its custom colours, and a margin)", OverlayRules.MAX_FAB_ENTRIES, 320);
         List<OverlayRules.FabEntry> big200 = new ArrayList<OverlayRules.FabEntry>(), big320 = new ArrayList<OverlayRules.FabEntry>(), big321 = new ArrayList<OverlayRules.FabEntry>();
         for (int i = 0; i < 321; i++) { OverlayRules.FabEntry e = fe("android:color/system_x" + i, "0xFF000000"); if (i < 200) big200.add(e); if (i < 320) big320.add(e); big321.add(e); }
         eq("200 entries pass", OverlayRules.fabricatePlanProblem(big200), null);
         eq("201 entries pass now (the old cap)", OverlayRules.fabricatePlanProblem(big320.subList(0, 201)), null);
         eq("320 entries pass", OverlayRules.fabricatePlanProblem(big320), null);
         eq("320 entries pass on P16Q2 too", OverlayRules.fabricatePlanProblem("P16Q2", big320), null);
+        eq("320 entries pass on P17 too", OverlayRules.fabricatePlanProblem("P17", big320), null);
+        is("321 entries are too many on P17", OverlayRules.fabricatePlanProblem("P17", big321) != null && OverlayRules.fabricatePlanProblem("P17", big321).contains("320"));
         is("321 entries are too many", OverlayRules.fabricatePlanProblem(big321) != null && OverlayRules.fabricatePlanProblem(big321).contains("320"));
         is("321 entries are too many on P16Q1", OverlayRules.fabricatePlanProblem("P16Q1", big321) != null && OverlayRules.fabricatePlanProblem("P16Q1", big321).contains("320"));
         throwsIae("321 entries throw", () -> OverlayRules.fabricateScript(34, big321));
@@ -846,6 +848,8 @@ public class OverlayRulesTest {
         for (int i = 0; i < 320; i++) long320.add(fe("android:color/system_text_secondary_and_tertiary_inverse_disabled_" + i + "_light", "0x1F000000"));
         int len320 = OverlayRules.fabricateScript(36, "P16Q2", long320).getBytes(StandardCharsets.UTF_8).length;
         is("320 long entries: the script stays under 64 KiB (" + len320 + " bytes), half of one argument's limit", len320 < 65536);
+        int len320a17 = OverlayRules.fabricateScript(37, "P17", long320).getBytes(StandardCharsets.UTF_8).length;
+        is("... and on Android 17 (" + len320a17 + " bytes)", len320a17 < 65536);
 
         // ---- the identifiers written ----
         eq("ids on 34: one overlay", OverlayRules.fabricateIds(34, black).toString(), "[" + FAB + "]");
@@ -959,12 +963,12 @@ public class OverlayRulesTest {
         // an unsuffixed palette shade (an alias of _light/_dark there) is refused on QPR only, named by its number
         for (String alias : new String[] {"accent1_500", "accent2_0", "accent3_1000", "neutral1_900", "neutral2_10", "error_50", "error_0"}) {
             List<OverlayRules.FabEntry> withAlias = new ArrayList<OverlayRules.FabEntry>(qpr); withAlias.add(fe("android:color/system_" + alias, "0xFF000000"));
-            for (String prof : new String[] {"P16Q1", "P16Q2"}) {
+            for (String prof : new String[] {"P16Q1", "P16Q2", "P17"}) {
                 String pr = OverlayRules.fabricatePlanProblem(prof, withAlias);
                 is("QPR alias " + alias + " refused on " + prof, pr != null && pr.startsWith("Entry 253 ") && pr.contains("_light or _dark"));
                 throwsIae("QPR alias " + alias + " builds no script on " + prof, () -> OverlayRules.fabricateScript(36, prof, withAlias, "/tmp/x.xml"));
             }
-            for (String prof : new String[] {null, "P12", "P14", "P15Q1", "P15Q2", "P16", "P17", "unknown"}) eq("alias " + alias + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withAlias), null);
+            for (String prof : new String[] {null, "P12", "P14", "P15Q1", "P15Q2", "P16", "unknown"}) eq("alias " + alias + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withAlias), null);
         }
         is("QPR: Android 14's pure black (unsuffixed neutral1_900) refused on P16Q1", OverlayRules.fabricatePlanProblem("P16Q1", black) != null && OverlayRules.fabricatePlanProblem("P16Q1", black).startsWith("Entry 1 "));
         for (String ok : new String[] {"accent1_600_light", "neutral2_900_dark", "error_dim_dark", "primary_fixed", "neutral1_900_light", "accent1_500x", "accent4_500", "neutral3_10", "surface_dark", "palette_key_color_error_light"}) eq("QPR: not an alias, allowed: " + ok, OverlayRules.fabricatePlanProblem("P16Q2", plan("android:color/system_" + ok, "0xFF000000")), null);
@@ -1000,6 +1004,58 @@ public class OverlayRulesTest {
         rq.lookups.put("android:color/system_primary_dim_dark", "#ff000001");
         OverlayRules.FabVerdict vq = OverlayRules.judgeFabricate("fabricate", Arrays.asList(FAB), "P16Q2", qpr, rq);
         is("QPR verdict: the dim marker showing another colour is a refusal naming it", !vq.ok && !vq.unknown && vq.mismatched.equals(Arrays.asList("android:color/system_primary_dim_dark")));
+
+        // ---- Android 17 (P17): every palette shade, role and fixed colour as _light and _dark: 264 ----
+        List<OverlayRules.FabEntry> a17 = new ArrayList<OverlayRules.FabEntry>();
+        for (OverlayRules.FabEntry e : qpr) if (!e.resource.contains("_fixed")) a17.add(e);
+        for (String mode : new String[] {"light", "dark"}) for (String r : fixed) a17.add(fe("android:color/system_" + r + "_" + mode, mode.equals("light") ? "0xFF202020" : "0xFF303030"));
+        eq("17: a plan of 264 entries (130 + 110 + 24)", a17.size(), 264);
+        for (String prof : new String[] {"P17", "P16Q1", "P16Q2", null, "P16", "P14"}) eq("17 plan passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, a17), null);
+        OverlayRules.fabricatePlanOk("P17", a17);
+        eq("17 plan on 37: one overlay", OverlayRules.fabricateIds(37, a17).toString(), "[" + FAB + "]");
+        // the QPR plan (unsuffixed fixed colours) is refused on 17, at its first fixed entry
+        String prQ17 = OverlayRules.fabricatePlanProblem("P17", qpr);
+        is("17: the QPR plan's unsuffixed fixed colour is refused, named by its number (" + prQ17 + ")", prQ17 != null && prQ17.startsWith("Entry 241 ") && prQ17.contains("fixed color without _light or _dark"));
+        // each of the 12 unsuffixed fixed names (an alias of _light there) is refused on 17 only
+        eq("the 12 fixed names", fixed.length, 12);
+        for (String f : fixed) {
+            List<OverlayRules.FabEntry> withFixed = new ArrayList<OverlayRules.FabEntry>(a17); withFixed.add(fe("android:color/system_" + f, "0xFF000000"));
+            String pr = OverlayRules.fabricatePlanProblem("P17", withFixed);
+            is("17: unsuffixed " + f + " refused", pr != null && pr.startsWith("Entry 265 ") && pr.contains("fixed color without _light or _dark"));
+            throwsIae("17: unsuffixed " + f + " builds no script", () -> OverlayRules.fabricateScript(37, "P17", withFixed, "/tmp/x.xml"));
+            for (String prof : new String[] {null, "P12", "P14", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown"}) eq("unsuffixed " + f + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withFixed), null);
+        }
+        for (String ok : new String[] {"primary_fixed_light", "on_tertiary_fixed_variant_dark", "primary_fixed_dim_dark", "primary_fixed_variant", "on_primary_fixed_dim", "quaternary_fixed", "primary_fixedx", "fixed", "primary_dim_dark", "accent1_600_light"})
+            eq("17: not an unsuffixed fixed or palette name, allowed: " + ok, OverlayRules.fabricatePlanProblem("P17", plan("android:color/system_" + ok, "0xFF000000")), null);
+        // the lookups: on 17 the QPR five and primary_fixed_dark, in their order, whatever order the plan has
+        String f17 = OverlayRules.fabricateScript(37, "P17", a17, "/tmp/x.xml");
+        List<OverlayRules.FabEntry> l17 = OverlayRules.lookupEntries("P17", a17);
+        StringBuilder l17s = new StringBuilder(); for (OverlayRules.FabEntry e : l17) l17s.append(e.resource.substring("android:color/system_".length())).append(' ');
+        eq("17 lookups: the six named, in order", l17s.toString().trim(), "accent1_600_light accent1_600_dark primary_light surface_dark primary_dim_dark primary_fixed_dark");
+        eq("the 17 list is the QPR list and primary_fixed_dark", OverlayRules.P17_LOOKUPS.subList(0, 5).equals(OverlayRules.QPR_LOOKUPS) && OverlayRules.P17_LOOKUPS.size() == 6, true);
+        List<OverlayRules.FabEntry> a17Rev = new ArrayList<OverlayRules.FabEntry>(a17); Collections.reverse(a17Rev);
+        eq("17 lookups do not follow the plan's order", OverlayRules.lookupEntries("P17", a17Rev), l17);
+        eq("the 17 plan on P16Q2: the QPR five (no fixed lookup)", OverlayRules.lookupEntries("P16Q2", a17).size() + " " + OverlayRules.lookupEntries("P16Q2", a17).get(4).resource, "5 android:color/system_primary_dim_dark");
+        eq("the QPR plan's lookups on 17: the five it has (it has no primary_fixed_dark)", OverlayRules.lookupEntries("P17", qpr), lq);
+        eq("17 script: six lookups, one fabricate, one enable", (f17.split("cmd overlay lookup ", -1).length - 1) + ":" + (f17.split("cmd overlay fabricate ", -1).length - 1) + ":" + (f17.split("cmd overlay enable ", -1).length - 1), "6:1:1");
+        is("17 script: the fixed lookup names the _dark colour, never the alias", f17.contains("lookup --user current android 'android:color/system_primary_fixed_dark' 2>&1") && !f17.contains("'android:color/system_primary_fixed' "));
+        is("17 script: the 36+ form (no --user on the fabricate), 264 items", f17.contains("cmd overlay fabricate --target android --name 'aam_monet' --file '/tmp/x.xml'\n") && OverlayRules.fabricateXml(a17).split("<item ", -1).length - 1 == 264 && f17.contains(OverlayRules.fabricateXml(a17)));
+        eq("17 script: the commands are those of 37 without a profile, only the lookups differ", f17.substring(0, f17.indexOf("@@OVL-LOOKUP")), OverlayRules.fabricateScript(37, a17, "/tmp/x.xml").substring(0, f17.indexOf("@@OVL-LOOKUP")));
+        // Pure black alone on 17 (the _dark names only, as on QPR): surface_dark first, then the plan's first others up to four
+        eq("17 Pure black passes", OverlayRules.fabricatePlanProblem("P17", blackQ), null);
+        eq("17 Pure black: the same four lookups as on QPR", OverlayRules.lookupEntries("P17", blackQ), lb);
+        // the verdict checks exactly what was looked up: the fixed marker showing another colour is a refusal naming it
+        OverlayRules.FabResult r17 = new OverlayRules.FabResult();
+        r17.change = OverlayRules.parseChange("@@OVL-GET@@\n[x] " + FAB + "\n@@OVL-END@@");
+        for (OverlayRules.FabEntry e : l17) r17.lookups.put(e.resource, "#" + e.argb.substring(2).toLowerCase(Locale.US));
+        is("17 verdict: the six answered, ok", OverlayRules.judgeFabricate("fabricate", Arrays.asList(FAB), "P17", a17, r17).ok);
+        r17.lookups.remove("android:color/system_primary_fixed_dark");
+        OverlayRules.FabVerdict v17u = OverlayRules.judgeFabricate("fabricate", Arrays.asList(FAB), "P17", a17, r17);
+        is("17 verdict: the fixed marker unanswered is not ok", !v17u.ok && v17u.unanswered.contains("android:color/system_primary_fixed_dark"));
+        is("... the same answers on P16Q2 are ok (the fixed marker is 17's only)", OverlayRules.judgeFabricate("fabricate", Arrays.asList(FAB), "P16Q2", a17, r17).ok);
+        r17.lookups.put("android:color/system_primary_fixed_dark", "#ff000001");
+        OverlayRules.FabVerdict v17 = OverlayRules.judgeFabricate("fabricate", Arrays.asList(FAB), "P17", a17, r17);
+        is("17 verdict: the fixed marker showing another colour is a refusal naming it", !v17.ok && !v17.unknown && v17.mismatched.equals(Arrays.asList("android:color/system_primary_fixed_dark")));
 
         // ---- the disable script ----
         eq("disable script", OverlayRules.disableScript(ids34), "cmd overlay disable --user current 'com.android.shell:aam_monet'\n" + tail);
@@ -1263,6 +1319,14 @@ public class OverlayRulesTest {
         OverlayRules.FabVerdict vQ = OverlayRules.judgeFabricate("fabricate", ids34, "P16Q2", qpr, rQ);
         is("sh QPR: ok " + vQ.error, vQ.ok); eq("sh QPR: five lookups came", rQ.lookups.keySet().toString(), "[android:color/system_accent1_600_light, android:color/system_accent1_600_dark, android:color/system_primary_light, android:color/system_surface_dark, android:color/system_primary_dim_dark]");
         eq("sh QPR: 252 colours held", read(fakeDir.resolve("colors")).split("\n").length, 252);
+        // the 264-entry plan of Android 17, end to end: six lookups, all six answered with the plan's colours
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        OverlayRules.FabResult rA17 = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(37, "P17", a17, XML.toString()))));
+        OverlayRules.FabVerdict vA17 = OverlayRules.judgeFabricate("fabricate", ids34, "P17", a17, rA17);
+        is("sh 17: ok " + vA17.error, vA17.ok); eq("sh 17: six lookups came", rA17.lookups.keySet().toString(), "[android:color/system_accent1_600_light, android:color/system_accent1_600_dark, android:color/system_primary_light, android:color/system_surface_dark, android:color/system_primary_dim_dark, android:color/system_primary_fixed_dark]");
+        eq("sh 17: 264 colours held", read(fakeDir.resolve("colors")).split("\n").length, 264);
         // canaries: none of the hostile entries above ran anything
         for (int i = 1; i <= 5; i++) is("no canaryF" + i, !Files.exists(fakeDir.resolve("canaryF" + i)));
 

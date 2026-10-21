@@ -21,13 +21,15 @@ public class MonetProfileTest {
   static void eq(String what, Object got, Object want) { n++; if (want == null ? got != null : !want.equals(got)) { fails++; System.out.println("FAIL " + what + ": got <" + got + "> want <" + want + ">"); } }
 
   static final String INV = MonetProfile.PROBE_INVERSE_SURFACE, NOTIF = MonetProfile.PROBE_THEME_NOTIF, RING = MonetProfile.PROBE_ON_THEME_APP_RING,
-      DIM = MonetProfile.PROBE_PRIMARY_DIM, RED = MonetProfile.PROBE_SEMANTIC_RED;
+      DIM = MonetProfile.PROBE_PRIMARY_DIM, RED = MonetProfile.PROBE_SEMANTIC_RED, FIX = MonetProfile.PROBE_PRIMARY_FIXED;
 
   static Set<String> names(String... a) { return new HashSet<String>(Arrays.asList(a)); }
 
   // the probe names each AOSP branch's core/res/res/values/colors.xml has (read in the branches, see MonetProfile's header)
   static final Set<String> A14 = names(), A15 = names(RING), A15Q1 = names(NOTIF), A15Q2 = names(NOTIF, INV), A16 = names(NOTIF, INV),
-      A16Q1 = names(NOTIF, INV, DIM), A16Q2 = names(NOTIF, INV, DIM, RED);
+      A16Q1 = names(NOTIF, INV, DIM), A16Q2 = names(NOTIF, INV, DIM, RED),
+      // android17-release has primary_fixed_light and no longer semantic_red (core/res values/colors.xml of each branch, read 2026-10-21)
+      A17 = names(NOTIF, INV, DIM, FIX);
 
   static String of(int sdk, Set<String> present, String oneUi) { return MonetProfile.of(sdk, present, oneUi).toString(); }
 
@@ -35,7 +37,7 @@ public class MonetProfileTest {
     // ---- the names themselves
     eq("the probe names, in the order MainActivity looks them up", MonetProfile.PROBES,
         Arrays.asList("system_inverse_surface_light", "system_theme_notif_light", "system_on_theme_app_ring_light", "system_primary_dim_light",
-            "system_semantic_red_container_high_light"));
+            "system_semantic_red_container_high_light", "system_primary_fixed_light"));
     boolean frozen = false;
     try { MonetProfile.PROBES.add("x"); } catch (UnsupportedOperationException e) { frozen = true; }
     check("the probe list cannot be changed", frozen);
@@ -49,17 +51,24 @@ public class MonetProfileTest {
     eq("Android 16.0: inverse_surface without primary_dim", of(36, A16, ""), "P16/ok");
     eq("Android 16 QPR1: primary_dim without semantic_red", of(36, A16Q1, ""), "P16Q1/ok");
     eq("Android 16 QPR2: semantic_red", of(36, A16Q2, ""), "P16Q2/ok");
+    eq("Android 17 (37): primary_fixed_light", of(37, A17, ""), "P17/ok");
+    eq("Android 17: primary_fixed_light alone is enough", of(37, names(FIX), ""), "P17/ok");
+    eq("Android 17: with semantic_red too (a build that kept it)", of(37, names(NOTIF, INV, DIM, RED, FIX), ""), "P17/ok");
     eq("Android 12 (31): Pure black only, as before", of(31, A14, ""), "P12/ok");
     eq("Android 12L (32)", of(32, A14, null), "P12/ok");
     eq("Android 13 (33)", of(33, null, ""), "P12/ok");
 
     // ---- recognised, not computed yet (reason notYet)
     eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/notYet");
-    eq("Android 17 (37): by the SDK level, with any names", of(37, A16Q2, ""), "P17/notYet");
-    eq("Android 17 with no names", of(37, A14, ""), "P17/notYet");
-    eq("Android 17 when the names could not be read", of(37, null, ""), "P17/notYet");
 
     // ---- unknown SDK levels and missing names (fail closed)
+    eq("37 without primary_fixed_light: unknown (Android 16 QPR2's names)", of(37, A16Q2, ""), "unknown/unknown");
+    eq("37 with no names: unknown", of(37, A14, ""), "unknown/unknown");
+    eq("37 with every name but primary_fixed_light: unknown", of(37, names(INV, NOTIF, RING, DIM, RED), ""), "unknown/unknown");
+    eq("37 when the names could not be read: unknown", of(37, null, ""), "unknown/unknown");
+    eq("SDK 38 with Android 17's names: unknown", of(38, A17, ""), "unknown/unknown");
+    eq("SDK 36 with Android 17's names is still read as 16 QPR1 (no 36 row looks at primary_fixed_light)", of(36, A17, ""), "P16Q1/ok");
+    eq("SDK 35 with primary_fixed_light only: unknown", of(35, names(FIX), ""), "unknown/unknown");
     eq("SDK 38: unknown", of(38, A16Q2, ""), "unknown/unknown");
     eq("SDK 38 with no names", of(38, A14, ""), "unknown/unknown");
     eq("SDK 40", of(40, A16, ""), "unknown/unknown");
@@ -80,6 +89,8 @@ public class MonetProfileTest {
     eq("One UI 7.0 with Android 15 QPR2's names", of(35, A15Q2, "7.0"), "unknown/oneUi");
     eq("One UI 8.0 with Android 16.0's names", of(36, A16, "8.0"), "unknown/oneUi");
     eq("One UI 9.0 on 37", of(37, A16Q2, "9.0"), "unknown/oneUi");
+    eq("One UI 9.0 on 37 with Android 17's names", of(37, A17, "9.0"), "unknown/oneUi");
+    eq("a Samsung phone whose One UI could not be read, on 37 with Android 17's names", of(37, A17, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi");
     eq("One UI on Android 13 (Pure black too)", of(33, A14, "5.1"), "unknown/oneUi");
     eq("One UI when the names could not be read", of(36, null, "8.0"), "unknown/oneUi");
     eq("a version with spaces around it is still One UI", of(36, A16, " 8.5 "), "unknown/oneUi");
@@ -108,17 +119,17 @@ public class MonetProfileTest {
     eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/ok");
     eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING), ""), "P16/ok");
 
-    // ---- every combination of the five names at SDK 29..40: a known id, a known reason, ok exactly for the seven computed profiles,
+    // ---- every combination of the six names at SDK 29..40: a known id, a known reason, ok exactly for the eight computed profiles,
     // never an exception, and names that are not probes never change the answer
     List<String> ids = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
-    List<String> okIds = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2");
+    List<String> okIds = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
     List<String> reasons = Arrays.asList("ok", "notYet", "oneUi", "unknown");
     int bad = 0, combos = 0;
     List<String> firstBad = new ArrayList<String>();
     for (int sdk = 29; sdk <= 40; sdk++) {
-      for (int mask = 0; mask < 32; mask++) {
+      for (int mask = 0; mask < 64; mask++) {
         Set<String> set = new HashSet<String>();
-        for (int i = 0; i < 5; i++) if ((mask & (1 << i)) != 0) set.add(MonetProfile.PROBES.get(i));
+        for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) set.add(MonetProfile.PROBES.get(i));
         combos++;
         MonetProfile.Result r;
         try { r = MonetProfile.of(sdk, set, ""); } catch (RuntimeException e) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + ": " + e); continue; }
@@ -130,7 +141,8 @@ public class MonetProfileTest {
             && r.ok() == okIds.contains(r.profile) && r.ok() == "ok".equals(r.reason)
             && ("unknown".equals(r.profile) == "unknown".equals(r.reason))
             && r.toString().equals(r2.toString())
-            && MonetProfile.of(sdk, set, "6.0").toString().equals("unknown/oneUi");
+            && MonetProfile.of(sdk, set, "6.0").toString().equals("unknown/oneUi")
+            && ("P17".equals(r.profile) == (sdk == 37 && set.contains(FIX)));
         if (!good) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + " -> " + r); }
       }
     }
@@ -138,12 +150,16 @@ public class MonetProfileTest {
     check("the result names its profile and reason", MonetProfile.of(36, A16, "").profile.equals("P16") && MonetProfile.of(36, A16, "").reason.equals("ok"));
     check("ok() is false for a profile that is not computed", !MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
     check("ok() is true on 16 QPR1 and QPR2", MonetProfile.of(36, A16Q1, "").ok() && MonetProfile.of(36, A16Q2, "").ok());
+    check("ok() is true on 17 with its name, false without it", MonetProfile.of(37, A17, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(37, null, "").ok());
     check("16 QPR1 and QPR2 stay locked on One UI", "unknown/oneUi".equals(of(36, A16Q1, "8.0")) && "unknown/oneUi".equals(of(36, A16Q2, MonetProfile.ONE_UI_UNREAD)));
 
-    // ---- which profiles write the palette shades as _light and _dark (16 QPR1 and QPR2 only)
-    check("suffixed palettes on P16Q1 and P16Q2", MonetProfile.suffixedPalettes(MonetProfile.P16Q1) && MonetProfile.suffixedPalettes("P16Q2"));
-    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P17", "unknown", "", "p16q1", "P16Q", "P16Q3"}) check("no suffixed palettes on " + p, !MonetProfile.suffixedPalettes(p));
+    // ---- which profiles write the palette shades as _light and _dark (16 QPR1, QPR2 and 17), and the fixed colours too (17 only)
+    check("suffixed palettes on P16Q1, P16Q2 and P17", MonetProfile.suffixedPalettes(MonetProfile.P16Q1) && MonetProfile.suffixedPalettes("P16Q2") && MonetProfile.suffixedPalettes(MonetProfile.P17));
+    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "unknown", "", "p16q1", "P16Q", "P16Q3", "p17", "P18", "P17 "}) check("no suffixed palettes on " + p, !MonetProfile.suffixedPalettes(p));
     check("no suffixed palettes without a profile", !MonetProfile.suffixedPalettes(null));
+    check("suffixed fixed colours on P17", MonetProfile.suffixedFixed("P17"));
+    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown", "", "p17", "P18", "P17 "}) check("no suffixed fixed colours on " + p, !MonetProfile.suffixedFixed(p));
+    check("no suffixed fixed colours without a profile", !MonetProfile.suffixedFixed(null));
 
     // ---- the contrast getSystemPalette reports
     eq("contrast 0 (standard)", MonetProfile.contrast(0f), 0.0);

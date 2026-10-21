@@ -8888,8 +8888,9 @@ public class MainActivity extends Activity {
          * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
          * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
          * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than OverlayRules.MAX_FAB_ENTRIES
-         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1 and QPR2 (the phone's profile, MonetProfile, as
-         * getSystemPalette reports it; the script is built and its lookups chosen for the same profile), or an id that is not one of this
+         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17
+         * (the phone's profile, MonetProfile, as getSystemPalette reports it; the script is built and its lookups chosen for the same
+         * profile), or an id that is not one of this
          * app's overlays is refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super
          * User it says needsPrivilege.
          */
