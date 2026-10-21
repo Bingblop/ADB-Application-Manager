@@ -38390,7 +38390,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // them at tone 90 their tone-70 colour; the neutral rows never change). Nothing is written while a control changes: Apply
         // keeps writing the secure setting as before
         // and, with Super User, additionally writes this app's overlay with the union of what is on (ovlBuildRootPlan: the entries of the
-        // style ovlRootPlanStyle picks (165 on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1 and QPR2), a More style, or the list style at 2025, adjusted by the sliders or with an accent, Pure black's entries
+        // style ovlRootPlanStyle picks (165 on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1 and QPR2, 264 on 17), a More style, or the list style at 2025, adjusted by the sliders or with an accent, Pure black's entries
         // replacing where both name a resource), or
         // switches it off again (nothing on any more after an earlier write: kv ovl_root_applied holds the overlay ids and what they carry;
         // PR 2's ovl_black_applied is read as a fallback). Revert and the Undo bar switch it off too. The bridge is overlayFabricate(req,
@@ -38402,8 +38402,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // also keeps the profile and the build (Build.FINGERPRINT) the colours were written for, so the card can say when Android was updated
         // since (ovlRootStale); nothing is rewritten by itself.
         const OVL_BLACK_SUB = 'True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.';
-        // the same on Android 16 QPR1 and QPR2 (ovlQpr), where the two darkest neutral shades are written as their _dark names only, so light
-        // mode keeps every colour (T-049 PR 9, decision 5)
+        // the same on Android 16 QPR1, QPR2 and 17 (ovlQpr), where the two darkest neutral shades are written as their _dark names only, so
+        // light mode keeps every colour (T-049 PR 9, decision 5; PR 10, decision 3)
         const OVL_BLACK_SUB_QPR = 'True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.';
         // the panels' greys: tones 4, 6, 8, 11, 14 and 18 of a neutral grey (HCT chroma 0), each psHex(hue, 0, tone) as the page computes it
         // (the hue is immaterial at chroma 0); kept as constants so the plan is a fixed table (t564 checks them against psHex)
@@ -38426,14 +38426,21 @@ Type any command above (e.g. pm list packages -d)</div>
         // every style an overlay this app wrote may carry: a More style, CMF, or a style of the list above written at spec 2025
         const OVL_RECORD_STYLE_IDS = OVL_STYLE_IDS.concat(OVL_ROOT_STYLE_IDS.filter(id => id !== ''));
         // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (15.0 with an older libmonet,
-        // locked); 16 QPR1 and QPR2 compute 2025 (with libmonet's own rules: monet.js's P16Q1 and P16Q2) and 17 computes 2026 (locked:
-        // ovlProfileState). On Android 14 to 16.0, 2025 and 2026 exist only as colours this app writes; Google's own rule (MonetPlan.specFor,
+        // locked); 16 QPR1 and QPR2 compute 2025 (with libmonet's own rules: monet.js's P16Q1 and P16Q2) and 17 computes 2026
+        // (libmonet android17-release: monet.js's P17, below). On Android 14 to 16.0, 2025 and 2026 exist only as colours this app writes; Google's own rule (MonetPlan.specFor,
         // upstream's maybeFallbackSpecVersion) gives 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and
         // 2021 to every other style. On 16 QPR1 and QPR2 (ovlQpr) libmonet's rule applies (MonetPlan.specFor with the profile): every style but
         // CMF gets 2021 at 2021 and 2025 at 2025 and 2026 (Rainbow, Fruit Salad, Fidelity, Content and Monochrome: 2025 roles on 2021
         // palettes, as SystemUI builds them), so 2025 is the phone's own (ovlNativeSpec) and 2021 exists only as colours this app writes; at
         // 2021 the roles spec 2021 does not define (libmonet's ColorSpec2021 gives null: primary_dim, secondary_dim, tertiary_dim, error_dim)
         // are not written (MonetPlan.entries: 244 entries for 252), so Android keeps its own 2025 values for those four.
+        // On 17 (ovlA17, T-049 PR 10) SystemUI asks every style for 2026, and libmonet android17-release falls back as Google's rule does
+        // (MonetPlan.specFor with the profile: Tonal Spot, Vibrant, Expressive and Spritz 2025, CMF 2026, the rest 2021), so 2026 is the phone's
+        // own (ovlNativeSpec) and 2025 gives every style but CMF the same colours; at 2021 Tonal Spot, Vibrant, Expressive and Spritz take their
+        // 2021 colours (written), and Rainbow and Fruit Salad keep the colours Android computes (native). Whether the four dim roles are written
+        // follows the spec asked for, not the one a style falls back to: at 2021 they are left out (256 entries for 264), at 2025 and 2026 they
+        // are written for every style (SystemUI writes them with the 2025 definition on a 2021 scheme too), so on 17 the plan carries the spec
+        // asked for (ovlRootPlanStyle) and monet.js falls back itself.
         const OVL_SPECS = [
             { id: '2021', desc: 'The colors Android computes itself.' },
             { id: '2025', desc: 'Google\'s newer tuning of the same styles.' },
@@ -38445,19 +38452,29 @@ Type any command above (e.g. pm list packages -d)</div>
             { id: '2025', desc: 'The colors Android computes itself.' },
             { id: '2026', desc: 'The 2025 colors, plus the CMF style.' }
         ];
+        // the same on 17 (ovlA17), where 2026 is the phone's own and 2025 gives the same colours without CMF
+        const OVL_SPECS_A17 = [
+            { id: '2021', desc: 'The colors earlier Android versions compute.' },
+            { id: '2025', desc: 'The same colors as 2026, without the CMF style.' },
+            { id: '2026', desc: 'The colors Android computes itself, plus the CMF style.' }
+        ];
         const OVL_SPEC_IDS = OVL_SPECS.map(s => s.id);
         const OVL_SPEC_SUB = 'Recolors Tonal Spot, Vibrant, Expressive and Spritz with root. CMF needs 2026.';
         const OVL_SPEC_SUB_QPR = 'With root, 2021 recolors every style. CMF needs 2026.';
+        const OVL_SPEC_SUB_A17 = 'With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.';
         // the note under the specs at 2025 and 2026: the styles they leave alone, and the mode sentence (the 65 shades follow the mode the phone
         // is in at Apply). On 16 QPR1 and QPR2 the 130 shades of both modes are written in one Apply (T-049 PR 9, decision 9), so the mode
-        // sentence does not apply there and the note is OVL_SPEC_NOTE_QPR instead (what Apply writes at the phone's own spec)
+        // sentence does not apply there and the note is OVL_SPEC_NOTE_QPR instead (what Apply writes at the phone's own spec); on 17 likewise
+        // (both modes in one Apply), OVL_SPEC_NOTE_A17, which names the four styles 2021 writes there
         const OVL_SPEC_NOTE = 'Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.';
         const OVL_SPEC_NOTE_QPR = 'Android computes these colors itself: a style of the list above is written with root only at 2021, or with Intensity, an accent or Accurate shades off.';
+        const OVL_SPEC_NOTE_A17 = 'Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.';
         const OVL_ROOT_MIN_SDK = 34;              // the role resources exist from Android 14; below it only Pure black applies (the owner's decision)
         // the entries the Java side looks up after a write (the first four of the plan) when a root style is in it: an accent and a neutral
         // palette entry, a light and a dark role (with Pure black on, system_surface_dark is black, and that is what the lookup must see).
-        // Not on 16 QPR1 and QPR2: there the Java side picks its lookups by name (OverlayRules: system_accent1_600_light and _dark,
-        // system_primary_light, system_surface_dark, system_primary_dim_dark), and the plan keeps SystemUI's write order
+        // Not on 16 QPR1, QPR2 and 17: there the Java side picks its lookups by name (OverlayRules: system_accent1_600_light and _dark,
+        // system_primary_light, system_surface_dark, system_primary_dim_dark, and on 17 system_primary_fixed_dark), and the plan keeps
+        // SystemUI's write order
         const OVL_ROOT_LEAD = ['accent1_600', 'neutral1_500', 'primary_light', 'surface_dark'];
         // the reasons the three rows give on a phone whose colours this app cannot compute (ovlProfileState), and the note for colours written
         // on another build of Android (ovlRootStaleNote)
@@ -38507,9 +38524,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // The Android build family the root colours are computed for, from getSystemPalette (MonetProfile.java: profile, and profileReason ok,
         // notYet, oneUi or unknown): { id, lock }, lock '' where this page may write root colours. Unlocked, each only with the reason ok: P12
         // (Android 12 and 13: Pure black only, as before), P14 and the families monet.js computes (MonetPlan.PROFILES: Android 15 QPR1, 15 QPR2,
-        // 16.0, and 16 QPR1 and QPR2 from T-049 PR 9, which MonetProfile.java reports ok from that PR on). Locked, all three rows with Super User
-        // or without: a phone with a One UI version (Samsung builds its theme with its own service); a family the app knows but cannot compute
-        // yet (Android 15.0, 17; 16 QPR1 and QPR2 as an APK from before PR 9 reports them, notYet), or none it knows (fail closed); an older APK,
+        // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, and 17 from PR 10, which MonetProfile.java reports ok from those PRs on). Locked, all three
+        // rows with Super User or without: a phone with a One UI version (Samsung builds its theme with its own service); a family the app knows
+        // but cannot compute yet (Android 15.0; 16 QPR1, QPR2 and 17 as an APK from before PR 9 or PR 10 reports them, notYet), or none it
+        // knows (fail closed: an Android above 17, or 17 without its colour names, MonetProfile.java's unknown); an older APK,
         // which reports no profile: on Android 15 and newer it would write Android 14's colours (Update the app), on 14 it is P14 and below P12,
         // what it was made for.
         function ovlProfileState() {
@@ -38523,15 +38541,19 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlRootLock() { return ovlProfileState().lock; }
         // the profile monet.js computes the colours for (its opts.profile): the phone's; '' where there are none to compute (locked, or Android 12/13)
         function ovlMonetProfile() { const s = ovlProfileState(); return !s.lock && s.id !== 'P12' ? s.id : ''; }
-        // Android 16 QPR1 and QPR2 (T-049 PR 9): the profile monet.js computes with libmonet's rules (MonetPlan.lib.LIBMONET names them). There
-        // SystemUI writes every palette shade and role as _light (from the light scheme) and _dark (from the dark one), 252 entries in its own
-        // order (MonetPlan.entries), so the overlay holds both modes and Pure black writes only _dark names; its own spec is 2025
+        // Android 16 QPR1 and QPR2 (T-049 PR 9), and 17 (PR 10): the profiles monet.js computes with libmonet's rules (MonetPlan.lib.LIBMONET
+        // names them). There SystemUI writes every palette shade and role as _light (from the light scheme) and _dark (from the dark one), 252
+        // entries in its own order (264 on 17, where the fixed colours are written _light and _dark too: MonetPlan.entries), so the overlay
+        // holds both modes and Pure black writes only _dark names; its own spec is 2025 (2026 on 17)
         function ovlQpr() {
             const p = ovlMonetProfile();
             return !!p && ovlMonetOk() && !!MonetPlan.lib && !!MonetPlan.lib.LIBMONET && Object.prototype.hasOwnProperty.call(MonetPlan.lib.LIBMONET, p);
         }
-        // the spec the phone computes its own colours at: 2025 on 16 QPR1 and QPR2, 2021 on every other family this page writes for
-        function ovlNativeSpec() { return ovlQpr() ? '2025' : '2021'; }
+        // Android 17 (T-049 PR 10): of the libmonet profiles, the one whose SystemUI asks every style for spec 2026 (a17 ColorScheme), with
+        // libmonet android17-release's fallback (Google's rule, MonetPlan.specFor with the profile)
+        function ovlA17() { return ovlQpr() && ovlMonetProfile() === 'P17'; }
+        // the spec the phone computes its own colours at: 2026 on 17, 2025 on 16 QPR1 and QPR2, 2021 on every other family this page writes for
+        function ovlNativeSpec() { return ovlA17() ? '2026' : ovlQpr() ? '2025' : '2021'; }
         // the spec a style's colours are computed at on this phone (MonetPlan.specFor, with the profile: on 16 QPR1 and QPR2 libmonet's rule)
         function ovlSpecFor(style, spec) { const p = ovlMonetProfile(); return p ? MonetPlan.specFor(style, spec, p) : MonetPlan.specFor(style, spec); }
         // the phone's build (Build.FINGERPRINT), kept with the colours written for it; '' when the answer has none (an older APK)
@@ -38555,7 +38577,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // Color spec is live where More styles is and the maths knows the specs
         function ovlRootSpecLive() { return ovlRootStyleLive() && ovlSpecApiOk(); }
         // the stored spec (the phone's own, ovlNativeSpec, when none is stored or for anything else: 2021, as before, except on 16 QPR1 and
-        // QPR2, where it is 2025, so the card does not write the colours of another spec until one is picked), and the spec the maths can use
+        // QPR2, where it is 2025, and 17, where it is 2026, so the card does not write the colours of another spec until one is picked), and
+        // the spec the maths can use
         // ('2021' without the spec API)
         function ovlSpec() { const s = kvGet('ovl_spec', null); return typeof s === 'string' && OVL_SPEC_IDS.includes(s) ? s : ovlNativeSpec(); }
         function ovlSpecNow() { return ovlSpecApiOk() ? ovlSpec() : '2021'; }
@@ -38613,7 +38636,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // where the colour picker starts for an entry that is not set: the colour the style gives that row now (its palette's key colour; the
         // style Apply would write without the accents and the sliders, or the list style Android computes itself, at the phone's own spec:
-        // 2025 on 16 QPR1 and QPR2, 2021 elsewhere), from the source colour the preview uses; the source colour itself when the maths cannot say
+        // 2025 on 16 QPR1 and QPR2, 2026 on 17, 2021 elsewhere), from the source colour the preview uses; the source colour itself when the maths cannot say
         function ovlAccStart(o) {
             const seed = ovlRootSeed().hex;
             try {
@@ -38659,6 +38682,11 @@ Type any command above (e.g. pm list packages -d)</div>
         // style is native (the theme setting only) at 2025 and 2026, which give it 2025, the colours Android computes itself; at 2021 it is
         // written (its 2021 colours over Android's 2025 ones); the sliders, an accent and Accurate shades off write it at either. A More style
         // follows the chosen spec (2021 at 2021, else 2025; CMF 2026).
+        // On 17 (ovlA17, T-049 PR 10) the phone's own spec is 2026 and the rule is Google's: the list style is native when the spec chosen gives
+        // it the colours of 2026 (2025 and 2026 for every list style; 2021 too for Rainbow and Fruit Salad, which 2026 gives 2021: their 2021
+        // colours are Android's own), else it is written (Tonal Spot, Vibrant, Expressive and Spritz at 2021); the sliders, an accent and
+        // Accurate shades off write it at any spec. The spec given back (the plan's, the record's) is the one chosen, not the one the style
+        // falls back to: monet.js falls back itself, and the four dim roles follow the spec chosen (left out only at 2021).
         function ovlRootPlanStyle(listStyle, sdk, adjust, accents, tap) {
             const none = { style: '', spec: '2021', adjust: null, accents: null, accurate: true };
             if (!(sdk >= OVL_ROOT_MIN_SDK) || !ovlMonetOk() || !ovlMonetProfile()) return none;
@@ -38666,8 +38694,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const acc = ovlAccSetOnly(accents === undefined ? ovlRootAccOn() : accents);
             const accurate = !ovlAccurateApiOk() || (tap && typeof tap === 'object' ? tap.accurate !== false : ovlRootAccurateOn());
             try {
-                if (more) return { style: more, spec: ovlSpecApiOk() ? ovlSpecFor(more, spec) : '2021', adjust: adj, accents: more === 'MONOCHROMATIC' ? null : acc, accurate };
-                if (typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
+                const a17 = ovlA17() && ovlSpecApiOk();
+                if (more) return { style: more, spec: ovlSpecApiOk() ? (a17 ? spec : ovlSpecFor(more, spec)) : '2021', adjust: adj, accents: more === 'MONOCHROMATIC' ? null : acc, accurate };
+                if (a17 && typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
+                    if (ovlSpecFor(listStyle, spec) !== ovlSpecFor(listStyle, ovlNativeSpec()) || adj || acc || !accurate) return { style: listStyle, spec, adjust: adj, accents: acc, accurate };
+                } else if (typeof listStyle === 'string' && OVL_STYLE_IDS.includes(listStyle)) {
                     const at = spec !== '2021' ? ovlSpecFor(listStyle, spec) : '2021';
                     if (at !== ovlNativeSpec() || adj || acc || !accurate) return { style: listStyle, spec: at, adjust: adj, accents: acc, accurate };
                 }
@@ -38677,7 +38708,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // the same while the controls are live (the hint, the preview and the follow-up), else none
         function ovlRootPlanOn(listStyle, adjust, accents, tap) { return ovlRootStyleLive() ? ovlRootPlanStyle(listStyle, ovlSdk(), adjust, accents, tap) : { style: '', spec: '2021', adjust: null, accents: null, accurate: true }; }
         // the opts monet.js takes: the spec, the mode whose 65 shades are written (at 2025 and 2026 on Android 14, and on every profile after
-        // it; on 16 QPR1 and QPR2 the shades of both modes are written whatever dark says, and dark only picks the mode of palettes(), the
+        // it; on 16 QPR1, QPR2 and 17 the shades of both modes are written whatever dark says, and dark only picks the mode of palettes(), the
         // preview's), the profile (its shade rule, role list, names and write order), the phone's contrast, the Intensity sliders (adjust, only when
         // one is not at 100) and the Secondary and tertiary accents (accents, only the set ones, only when one is), and accurate: false only
         // while Accurate shades is off (so with it on the opts are the ones from before the switch). For Android 14 at contrast 0
@@ -38794,7 +38825,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // background and surface roles as well (black, and the containers in the greys above). Android 12 and 13 have no role resources, so they
         // get the two entries only (which is also why they do not get a repaint per resource). The sdk picks the entry set and nothing else; an
         // unknown sdk (0) gets the two entries every phone has. The resources are the first four that the Java side looks up afterwards.
-        // qpr (16 QPR1 and QPR2, ovlQpr; T-049 PR 9, decision 5): the two shades by their _dark names (system_neutral1_900_dark and
+        // qpr (16 QPR1, QPR2 and 17, ovlQpr; T-049 PR 9, decision 5; PR 10, decision 3): the two shades by their _dark names (system_neutral1_900_dark and
         // system_neutral2_900_dark: there the unsuffixed names are not written, and the _light ones stay the light scheme's), so only dark mode
         // changes; the nine roles are _dark names everywhere. 11 entries either way.
         function ovlBuildBlackPlan(sdk, qpr) {
@@ -38808,17 +38839,18 @@ Type any command above (e.g. pm list packages -d)</div>
         // The plan Apply writes, { style, black, entries, profile, build }: the union of what is on. The overlay is one on Android 14+ and every
         // Apply rewrites all of it. A root style (Android 14 and newer only) brings its entries from monet.js (the 65 palette entries, the 44 roles
         // light and dark, or 50 on Android 15 QPR2 and 16.0, the 12 fixed colours, computed from the seed; on 16 QPR1 and QPR2 the 130 palette
-        // entries _light and _dark, the 55 roles light and dark and the 12 fixed colours, 252, or 244 at spec 2021, which has no dim roles);
+        // entries _light and _dark, the 55 roles light and dark and the 12 fixed colours, 252, or 244 at spec 2021, which has no dim roles;
+        // on 17 the same with the 12 fixed colours _light and _dark too, 264, or 256 at spec 2021);
         // Pure black's entries then replace the style's values where both name a resource (it
         // is the user's explicit override) and are added otherwise, so no resource is named twice (OverlayRules.fabricatePlanOk refuses that).
-        // With a style in it the OVL_ROOT_LEAD entries come first (the Java side looks the first four up), except on 16 QPR1 and QPR2, where the
+        // With a style in it the OVL_ROOT_LEAD entries come first (the Java side looks the first four up), except on 16 QPR1, QPR2 and 17, where the
         // plan keeps SystemUI's order (the Java side picks its lookups there by name); Pure black alone keeps its own plan and order.
         // at: what Apply took when it was tapped: { seed: { hex } from ovlRootSeed, style: the list style it wrote, dark: the phone's mode then,
         // contrast: the phone's contrast then }; each part it lacks is taken now. The style and its spec are ovlRootPlanStyle's; the 65 shades are
         // the dark or light scheme's as at.dark says where the profile and the spec take them from the mode the phone is in (Android 14 at 2025
         // and 2026, every profile after it), the roles are written for both modes either way. The colours are those of the phone's profile
         // (ovlRootOpts: its shade rule, roles, names and order: 165 entries on Android 14 and 15 QPR1, 177 on 15 QPR2 and 16.0, 252 on 16 QPR1
-        // and QPR2, where the shades of both modes are written and at.dark changes nothing in the plan) at its contrast,
+        // and QPR2 and 264 on 17, where the shades of both modes are written and at.dark changes nothing in the plan) at its contrast,
         // adjusted by the Intensity sliders as at.adjust says (taken at the tap; the sliders as they are now when at has none), with the
         // Secondary and tertiary accents at.accents names (likewise); Pure black, the More style, the spec and Accurate shades as at.black,
         // at.more, at.spec and at.accurate say (likewise).
@@ -38867,7 +38899,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // The note has no part for the light or dark mode the colours were written in (T-049 PR 9, decision 9: checked, nothing to skip):
         // on Android 14 to 16.0 the Color spec note says to tap Apply again after switching (OVL_SPEC_NOTE); on 16 QPR1 and QPR2 both modes'
         // colours are in the overlay, so that sentence is left out there (OVL_SPEC_NOTE_QPR) and a mode change makes nothing stale. A record
-        // made on another profile (a QPR1 one on QPR2, or one from 16.0) gives the note as on every profile.
+        // made on another profile (a QPR1 one on QPR2, or one from 16.0) gives the note as on every profile. On 17 (PR 10) the same as on QPR:
+        // both modes are in the overlay (OVL_SPEC_NOTE_A17 has no mode sentence), and a QPR2 record there gives the note.
         function ovlRootStaleNote() {
             const a = ovlRootApplied(), now = ovlBuild();
             if (!a || !a.style || !a.build || !now || a.build === now || a.profile === ovlProfileState().id) return '';
@@ -38902,8 +38935,15 @@ Type any command above (e.g. pm list packages -d)</div>
         // is not at 100. With all three at 100 the sentences are the ones from before the sliders; a list style at 2021 that neither is adjusted
         // nor at 2025 is written for the accents alone (the last two sentences of the list's); ovlRootAccHint adds the accents' own sentence.
         // On 16 QPR1 and QPR2 (ovlQpr) Android's own colours are the 2025 ones, so a list style at 2021 gets sentences that name its 2021
-        // colours (in place of Android's); its 2025 sentences are the ones above.
+        // colours (in place of Android's); its 2025 sentences are the ones above. On 17 (ovlA17, PR 10) spec is the one chosen (ovlRootPlanStyle):
+        // a list style whose colours at it are Android's own (the spec gives the style what 2026 gives it), written for the sliders, an accent
+        // or Accurate shades off, gets the sentences without a spec ("this style's colors"); Tonal Spot, Vibrant, Expressive and Spritz at
+        // 2021 get the 2021 sentences of 16 QPR1 and QPR2.
         function ovlRootHint(style, black, spec, adjusted) {
+            if (style && OVL_STYLE_IDS.includes(style) && ovlA17() && ovlSpecFor(style, spec) === ovlSpecFor(style, ovlNativeSpec())) {
+                if (adjusted) return black ? 'Also writes this style\'s colors, adjusted by the Intensity sliders, and pure black with root.' : 'Also writes this style\'s colors with root, adjusted by the Intensity sliders.';
+                return black ? 'Also writes this style\'s colors and pure black with root.' : 'Also writes this style\'s colors with root.';
+            }
             if (style && OVL_STYLE_IDS.includes(style) && spec === '2021' && ovlQpr()) {
                 if (adjusted) return black ? 'Also writes this style\'s 2021 colors, adjusted by the Intensity sliders, and pure black with root.' : 'Also writes this style\'s 2021 colors with root, adjusted by the Intensity sliders.';
                 return black ? 'Also writes this style\'s 2021 colors and pure black with root, in place of Android\'s.' : 'Also writes this style\'s 2021 colors with root, in place of Android\'s.';
@@ -39103,7 +39143,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 // on the phone (Revert and the Undo switch it off, and so does Apply: nothing can be on there)
                 const reason = !bridge ? 'Update the app' : lock || null;
                 box.innerHTML = rootLockedRow('Pure black backgrounds', ovlQpr() ? OVL_BLACK_SUB_QPR : OVL_BLACK_SUB, reason);
-                drawSpec(rootLockedRow('Color spec', ovlQpr() ? OVL_SPEC_SUB_QPR : OVL_SPEC_SUB, reason));
+                drawSpec(rootLockedRow('Color spec', ovlA17() ? OVL_SPEC_SUB_A17 : ovlQpr() ? OVL_SPEC_SUB_QPR : OVL_SPEC_SUB, reason));
                 draw(rootLockedRow('More styles', OVL_MORE_SUB, reason));
                 drawAdj(rootLockedRow('Intensity', OVL_ADJ_SUB, reason));
                 drawAcc(rootLockedRow(OVL_ACC_TITLE, OVL_ACC_SUB, reason));
@@ -39116,24 +39156,26 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             // on 16 QPR1 and QPR2 (ovlQpr) the Pure black, Color spec and spec note lines are their QPR ones: Pure black leaves light mode
-            // alone there, 2025 is the phone's own spec, and both modes are written in one Apply (no mode sentence)
-            const on = ovlBlackOn(), qpr = ovlQpr();
+            // alone there, 2025 is the phone's own spec, and both modes are written in one Apply (no mode sentence); on 17 (a17) Pure black's is the
+            // QPR one, and Color spec, its three specs and the note are their 17 ones (2026 is the phone's own spec)
+            const on = ovlBlackOn(), qpr = ovlQpr(), a17 = ovlA17();
+            const specSub = a17 ? OVL_SPEC_SUB_A17 : qpr ? OVL_SPEC_SUB_QPR : OVL_SPEC_SUB;
             box.innerHTML = '<div class="rf-row">' + rootFeatureName('Pure black backgrounds', qpr ? OVL_BLACK_SUB_QPR : OVL_BLACK_SUB)
                 + '<button type="button" class="sdb-sw' + (on ? ' on' : '') + '" id="ovlBlackSw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" aria-label="' + txT('Pure black backgrounds') + '" onclick="ovlToggleBlack()"><span></span></button></div>';
             // Color spec: locked as More styles is (below Android 14, or without the maths), and Update the app when the maths knows no specs;
             // else a radio group of the same look, and under it, at 2025 and 2026, the note on the styles it leaves alone and on light and dark
-            if (!ovlRootSpecLive()) drawSpec(rootLockedRow('Color spec', qpr ? OVL_SPEC_SUB_QPR : OVL_SPEC_SUB, ovlSpecApiOk() ? 'Needs Android 14' : 'Update the app'));
+            if (!ovlRootSpecLive()) drawSpec(rootLockedRow('Color spec', specSub, ovlSpecApiOk() ? 'Needs Android 14' : 'Update the app'));
             else if (specBox) {
                 const cur = ovlSpec();
                 ovlKeepFocus(specBox, () => {
-                    specBox.innerHTML = '<div class="rf-row">' + rootFeatureName('Color spec', qpr ? OVL_SPEC_SUB_QPR : OVL_SPEC_SUB) + '</div>'
+                    specBox.innerHTML = '<div class="rf-row">' + rootFeatureName('Color spec', specSub) + '</div>'
                         + '<div class="ovl-styles" id="ovlRootSpecs" role="radiogroup" aria-label="' + txT('Color spec') + '">'
-                        + (qpr ? OVL_SPECS_QPR : OVL_SPECS).map(s => {
+                        + (a17 ? OVL_SPECS_A17 : qpr ? OVL_SPECS_QPR : OVL_SPECS).map(s => {
                             const sel = s.id === cur;
                             return '<button type="button" class="ovl-style' + (sel ? ' active' : '') + '" role="radio" aria-checked="' + (sel ? 'true' : 'false') + '" data-spec="' + s.id + '" onclick="ovlPickSpec(this.dataset.spec)">'
                                 + '<span class="ovl-radio"></span><span class="ovl-styletxt"><b>' + escapeHtml(s.id) + '</b><span>' + escapeHtml(s.desc) + '</span></span></button>';
                         }).join('')
-                        + '</div>' + (cur !== '2021' ? '<div class="sdb-note" id="ovlRootSpecNote">' + escapeHtml(qpr ? OVL_SPEC_NOTE_QPR : OVL_SPEC_NOTE) + '</div>' : '');
+                        + '</div>' + (cur !== '2021' ? '<div class="sdb-note" id="ovlRootSpecNote">' + escapeHtml(a17 ? OVL_SPEC_NOTE_A17 : qpr ? OVL_SPEC_NOTE_QPR : OVL_SPEC_NOTE) + '</div>' : '');
                 });
             }
             // More styles: a locked row below Android 14 (only Pure black applies there), else the radio group (the look of the style list above

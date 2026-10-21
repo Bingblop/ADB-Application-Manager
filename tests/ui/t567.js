@@ -1,6 +1,6 @@
 // Root colours per Android build family (T-049): the Overlays tab's root-only theme controls compute the colours for the family the phone
 // is (getSystemPalette's profile, MonetProfile.java) at its contrast setting, and lock on every family this app cannot compute exactly.
-// (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before T-049 PR 9 reports them (notYet; t571 has them live), 17 (P17), an Android this app does not know (unknown), a profile it is
+// (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before T-049 PR 9 reports them (notYet; t571 has them live), 17 (P17) as an APK from before PR 10 reports it (notYet; t572 has it live), an Android this app does not know (unknown), a profile it is
 // told is fine but cannot compute, a phone with a One UI version, and an older APK that reports no profile on Android 15 and 16: the three
 // rows (Pure black, Color spec, More styles) are locked with their reason, with Super User and without; nothing in the card can be used,
 // the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only, without
@@ -132,7 +132,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
     ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', build: B15 }, NOT_YET],
     ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 16 QPR2 (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: B16 }, NOT_YET],
-    ['Android 17 (P17, notYet)', { sdk: 37, profile: 'P17', build: B16 }, NOT_YET],
+    ['Android 17 (P17, notYet)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B16 }, NOT_YET],
     ['an Android this app does not know (SDK 38: unknown)', { sdk: 38, build: B16 }, NOT_YET],
     ['a profile reported ok that this app cannot compute (P16Q3, ok)', { sdk: 36, profile: 'P16Q3', reason: 'ok', build: B16 }, NOT_YET],
     ['P16 with a reason other than ok (notYet)', { sdk: 36, profile: 'P16', reason: 'notYet', build: B16 }, NOT_YET],

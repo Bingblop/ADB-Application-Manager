@@ -1,6 +1,10 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"The same colors as 2026, without the CMF style.": "2026 ile aynı renkler, CMF stili olmadan.",
+"The colors Android computes itself, plus the CMF style.": "Android'in kendi hesapladığı renkler, artı CMF stili.",
+"With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.": "Root ile 2021, Tonal Spot, Vibrant, Expressive ve Spritz'i yeniden renklendirir. CMF için 2026 gerekir.",
+"Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.": "Android bu renkleri kendisi hesaplar: yukarıdaki listeden bir stil Root ile yalnızca Yoğunluk, bir vurgu veya kapalı Doğru tonlar ile ya da Tonal Spot, Vibrant, Expressive ve Spritz için 2021'de yazılır.",
 "True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Koyu arka planlar gerçek siyah, paneller birkaç koyu gri tonunda. Açık mod renklerini korur.",
 "The colors earlier Android versions compute.": "Önceki Android sürümlerinin hesapladığı renkler.",
 "The 2025 colors, plus the CMF style.": "2025 renkleri, artı CMF stili.",
