@@ -1,6 +1,6 @@
 // Root colours per Android build family (T-049): the Overlays tab's root-only theme controls compute the colours for the family the phone
 // is (getSystemPalette's profile, MonetProfile.java) at its contrast setting, and lock on every family this app cannot compute exactly.
-// (a) Locks: Android 15.0 (P15), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before T-049 PR 9 reports them (notYet; t571 has them live), 17 (P17) as an APK from before PR 10 reports it (notYet; t572 has it live), an Android this app does not know (unknown), a profile it is
+// (a) Locks: Android 15.0 (P15) as an APK from before T-049 PR 11 reports it (notYet; t573 has it live), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before PR 9 reports them (notYet; t571 has them live), 17 (P17) as an APK from before PR 10 reports it (notYet; t572 has it live), an Android this app does not know (unknown), a profile it is
 // told is fine but cannot compute, a phone with a One UI version, and an older APK that reports no profile on Android 15 and 16: the three
 // rows (Pure black, Color spec, More styles) are locked with their reason, with Super User and without; nothing in the card can be used,
 // the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only, without
@@ -129,7 +129,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   let c = await card();
   check('A0. Android 16.0 (P16) with Super User: the six rows are live (the two switches, the two radio groups, the three Intensity sliders and the two accent entries can be used, and the preview\'s 65 swatches; Intensity\'s Reset is disabled at 100 %), the hint names Fidelity and pure black', c.shown && !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && c.preview, JSON.stringify(c));
   const LOCKS = [
-    ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', build: B15 }, NOT_YET],
+    ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', reason: 'notYet', build: B15 }, NOT_YET],
     ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 16 QPR2 (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 17 (P17, notYet)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B16 }, NOT_YET],
