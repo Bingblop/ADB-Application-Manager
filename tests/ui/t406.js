@@ -26,8 +26,8 @@ if (fs.existsSync(tmp)) {
 }
 const ck = node([path.join(TESTS, 'i18n', 'check.js'), '--strict']);
 check('every dictionary in assets/lang/ has every string of keys.json and none the page does not have (i18n/check.js --strict)', ck.status === 0, (ck.stdout || '').split('\n').filter(l => /ERROR|warn/.test(l)).slice(0, 6).join(' | '));
-// German addresses the reader as Sie (T-010, T-075): the More styles strings of PR 3 and the theme preview line must not say du next to the
-// Sie-form "Aus Ihrem Hintergrundbild" of Colors in use
+// German addresses the reader as Sie (T-010, T-075): the More styles strings of PR 3, the theme card's other lines (the accents row and
+// Accurate shades included) and the theme preview line must not say du next to the Sie-form "Aus Ihrem Hintergrundbild" of Colors in use
 {
   const win = {};
   new Function('window', fs.readFileSync(path.join(TESTS, '..', 'assets', 'lang', 'de.js'), 'utf8'))(win);
@@ -39,7 +39,10 @@ check('every dictionary in assets/lang/ has every string of keys.json and none t
     'Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.',
     'Almost grey, with only a trace of your color.',
     'One hue, five strengths: your color in full for the accent, at half and three quarters for the other accents, a fifth for the surfaces. From the 2026 Material color spec.',
-    'Playful: the accents are turned far from your color.', 'Stays as close to your source color as it can, in its own strength.'].map(k => de && de.x[k]).concat([px.get('The style gives #{0} now • Apply theme writes your color to the phone'), px.get('From your wallpaper (#{0})')]);
+    'Playful: the accents are turned far from your color.', 'Stays as close to your source color as it can, in its own strength.',
+    // the accents row's line and the Accurate shades row (PR 8)
+    'Your own colors for the second and third accent. The main color stays as it is.', 'Accurate shades', 'Accurate shades: off.',
+    'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.'].map(k => de && de.x[k]).concat([px.get('The style gives #{0} now • Apply theme writes your color to the phone'), px.get('From your wallpaper (#{0})')]);
   const du = vals.filter(v => typeof v !== 'string' || /\b(du|dich|dir|dein|deine|deiner|deinem|deinen|deines)\b/i.test(v));
   check('de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[vals.length - 1] || ''), JSON.stringify(du));
 }

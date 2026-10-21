@@ -1,6 +1,9 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Accurate shades": "सटीक शेड",
+"Accurate shades: off.": "सटीक शेड: बंद।",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "चालू: हर एक्सेंट शेड अपना टोन रखता है। बंद: हल्के एक्सेंट रंग (शेड 100 और, ज़्यादातर कलर स्पेक 2021 में, हल्के कंटेनर रंग और फ़िक्स्ड रंग) गहरा टोन लेते हैं।",
 "Also writes this style's colors and pure black with root.": "Root से इस स्टाइल के रंग और प्योर ब्लैक भी लिखता है।",
 "Also writes this style's colors with root.": "Root से इस स्टाइल के रंग भी लिखता है।",
 "From the style": "स्टाइल से",

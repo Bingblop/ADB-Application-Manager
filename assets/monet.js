@@ -269,6 +269,40 @@
  *   instead, seed()'s grey rule applied to X, and X's scheme for P14 at 2021 built by part 2 each make at least one of these checks
  *   fail. None of it was run on a device.
  *
+ * Accurate shades (opts.accurate): the root card's switch, on by default. Android and Google's library have no such option; the rule
+ * below was written for this project. On (true, null or left out): nothing changes. Off (false): the scheme's three accent palettes
+ * (primary, secondary, tertiary; the rows accent1, accent2, accent3), as the accents and the Intensity sliders leave them, answer
+ * tone 90 with their tone-70 colour. So everything taken from those palettes at tone 90 becomes darker (tone 70 in place of 90; not
+ * always more saturated: measured on the shades, shade 300's chroma is the same as or lower than shade 100's in about a quarter of
+ * the accent rows, e.g. P14 2021 Tonal Spot 4285F4 accent2 16.05 -> 15.90):
+ *   - shade 100 of each accent row (system_accentN_100) is shade 300 of the same row, on every profile; the shades are made by the
+ *     profile's rule from the palette (P14's chroma cap on shades 10 and 50 included) and shade 100 is then given shade 300's value;
+ *   - each role colour, fixed colour and palette_key_color taken from an accent palette whose tone, computed by the spec's own rules
+ *     with the phone's contrast, is exactly 90 gets that palette's tone-70 colour. The tones are not changed: a role whose tone is
+ *     moved off 90 by contrast, or that 2025 / 2026 compute to another tone, keeps its colour, and a rule that reads a palette to
+ *     compute a tone (Fidelity and Content at 2021) reads it as it was. Which roles that is depends on the spec, the style and the
+ *     mode: at 2021 the light containers (primary, secondary, tertiary), the dark on-containers and the three _fixed colours
+ *     (tertiary_fixed as the other two); control_activated in light mode on every spec; at 2025 and 2026 only some of them, for some
+ *     seeds (those that land on 90). The neutral, neutral variant and error palettes, and so the neutral rows, the surfaces and the
+ *     text colours from them, never change; nor do palettes()' hue, chroma and key (the palette's own key colour).
+ * On Android 14 and later most apps take their colours from the role colours, so with the switch off they see the changed
+ * containers, on-containers and fixed colours where those are at tone 90; which screens use which roles is not known here.
+ *   What was checked (scripts on this container, against this file from before the option, 5b44669b): accurate left out, null or true
+ *   gives its results byte for byte (the 26,328 results of the checks above: every profile, style, spec, the six seeds, light and
+ *   dark, contrast 0 and 0.5) with no other option, with two Intensity settings, with both accents, and with a tertiary accent and
+ *   the sliders together (15 runs). With accurate false, over the same grid and five settings, every result against the rule
+ *   applied by hand to the old file's engine (its own role objects on its own schemes, for P14 at 2021 too: palette and computed
+ *   tone of each role, tone 90 of an accent palette replaced by Hct(hue, chroma, 70); shade 100 := shade 300): no difference. Part 2
+ *   against Google's library at bd811e4 with its three accent palettes wrapped so that tone(90) is tone(70), built as the accents
+ *   check above builds it: P16 and P15Q2 at 2021, 2025 and 2026 (CMF at 2026), P14 for Tonal Spot, Vibrant, Expressive and Spritz
+ *   at 2025 and 2026 and CMF at 2026; the six seeds, contrast 0 and 0.5, light and dark, three slider settings, no accents and two
+ *   accent settings (14,040 cases): entries(), palettes(), roles() and scheme()'s six palettes (tones 0 to 100), no difference, and
+ *   shade 100 equals shade 300 in every accent row. scheme() with accurate false: the three accent palettes give tone 70 for 90
+ *   (tone and getHct), everything else as before; a value other than a boolean, null or left out throws in all four calls.
+ *   Wrapping the neutral palettes too, wrapping nothing (only the shade swap), reading tone 80 as 70, wrapping before the sliders,
+ *   letting Fidelity's tone rules read the wrapped palette, leaving out P14's shade swap, and this file's earlier rule (shade 100
+ *   only) each make at least one of these checks fail. None of it was run on a device.
+ *
  * API (window.MonetPlan in the page, module.exports in node):
  *   MonetPlan.STYLES                       the ten style ids this file knows: TONAL_SPOT VIBRANT EXPRESSIVE RAINBOW FRUIT_SALAD SPRITZ
  *                                          FIDELITY CONTENT MONOCHROMATIC CMF (NEUTRAL and MONOCHROME are accepted as aliases)
@@ -282,7 +316,7 @@
  *   MonetPlan.seed(style, argb)            the seed the style really uses: a seed with chroma under 5 becomes Google blue, except for
  *                                          Fidelity and Content (they keep it) and Monochrome (no difference); CMF follows the rule
  *                                          like the stock styles; 0 / nothing is Google blue
- *   opts = { spec, dark, profile, contrast, adjust, accents }  optional on the four calls below. spec: one of SPECS, '2021' when
+ *   opts = { spec, dark, profile, contrast, adjust, accents, accurate }  optional on the four calls below. spec: one of SPECS, '2021' when
  *                                          left out. profile: one of PROFILES, 'P14' when left out; any other value throws ('Profile not
  *                                          supported').
  *                                          contrast: the phone's contrast level, a number from -1 to 1 (clamped), 0 when left out;
@@ -299,7 +333,12 @@
  *                                          '#RRGGBB' (any case), or null or left out for the style's own; any other value (a number,
  *                                          three digits, '') throws, as accents that are not an object (or an array) do; other keys
  *                                          are ignored. No accents, null, {} or both null give the results without them, byte for
- *                                          byte. With adjust too, the accents come first.
+ *                                          byte. With adjust too, the accents come first. accurate: Accurate shades (above), a
+ *                                          boolean; true, null or left out give the results without it, byte for byte; false makes
+ *                                          the three accent palettes (after the accents and adjust) give tone 70 where tone 90 is
+ *                                          asked: system_accentN_100 (palettes(): accentN.shades[3]) is the row's shade 300, and
+ *                                          the roles and fixed colours at tone 90 of those palettes take tone 70; any other value
+ *                                          throws, as adjust does.
  *   MonetPlan.palettes(style, argb, opts)  { seed, style, accent1..neutral2: { hue, chroma, key: 'RRGGBB', shades: ['RRGGBB' x 13] } },
  *                                          the shades in SHADE_KEYS order by the profile's rule. With adjust: the adjusted palette's
  *                                          chroma (the chroma asked for, which the display may not reach) and key colour (Background
@@ -315,10 +354,11 @@
  *   MonetPlan.scheme(style, argb, isDark, opts)  the scheme behind them (part 1's for P14 at 2021, part 2's otherwise; with accents
  *                                          the secondary / tertiary palette is the accent palette (the part's TonalPalette); with adjust
  *                                          the palettes a slider changes are AdjustedPalette objects, the others and the error palette
- *                                          the scheme's own), for tests
- *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2). lib.adjustOf and lib.accentsOf are what
- *                                          the page tests to know that this file has opts.adjust and opts.accents (an older monet.js
- *                                          would ignore them)
+ *                                          the scheme's own; with accurate false the three accent palettes are AccuratePalette objects
+ *                                          over those, .base the palette before the switch), for tests
+ *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2). lib.adjustOf, lib.accentsOf and
+ *                                          lib.accurateOf are what the page tests to know that this file has opts.adjust, opts.accents
+ *                                          and opts.accurate (an older monet.js would ignore them)
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
  */
 (function (root, factory) {
@@ -1150,7 +1190,8 @@
         const initialTone = s.isDark ? 30.0 : 90.0;
         if (!isFidelity(s)) return initialTone;
         let answer = findDesiredChromaByTone(s.secondaryPalette.hue, s.secondaryPalette.chroma, initialTone, !s.isDark);
-        answer = performAlbers(s.secondaryPalette.getHct(answer), s);
+        // accurateBase (Accurate shades, in the API part; Android has no such step): a tone rule reads the palette as it was before the switch
+        answer = performAlbers(accurateBase(s.secondaryPalette).getHct(answer), s);
         return answer;
     }, highestSurface));
     def('onSecondaryContainer', () => FP(s => s.secondaryPalette, s => {
@@ -1166,8 +1207,9 @@
     def('tertiaryContainer', () => FP(s => s.tertiaryPalette, s => {
         if (isMonochrome(s)) return s.isDark ? 60.0 : 49.0;
         if (!isFidelity(s)) return s.isDark ? 30.0 : 90.0;
-        const albersTone = performAlbers(s.tertiaryPalette.getHct(s.sourceColorHct.tone), s);
-        const proposedHct = s.tertiaryPalette.getHct(albersTone);
+        // accurateBase: as in secondaryContainer above
+        const albersTone = performAlbers(accurateBase(s.tertiaryPalette).getHct(s.sourceColorHct.tone), s);
+        const proposedHct = accurateBase(s.tertiaryPalette).getHct(albersTone);
         return DislikeAnalyzer.fixIfDisliked(proposedHct).tone;
     }, highestSurface));
     def('onTertiaryContainer', () => FP(s => s.tertiaryPalette, s => {
@@ -1848,7 +1890,8 @@
                     tone: s => {
                         if (isMonochrome(s)) return s.isDark ? 60 : 49;
                         if (!isFidelity(s)) return s.isDark ? 30 : 90;
-                        const proposedHct = s.tertiaryPalette.getHct(s.sourceColorHct.tone);
+                        // accurateBase (Accurate shades, in the API part; upstream has no such step): the palette as it was before the switch
+                        const proposedHct = accurateBase(s.tertiaryPalette).getHct(s.sourceColorHct.tone);
                         return DislikeAnalyzer.fixIfDisliked(proposedHct).tone;
                     }, isBackground: true,
                     background: s => this.highestSurface(s), contrastCurve: s => CC(1, 1, 3, 4.5), toneDeltaPair: s => TDP(this.tertiaryContainer(), this.tertiary(), 10, 'nearer', false) });
@@ -2837,6 +2880,51 @@
         if (acc.tertiary !== null) s.tertiaryPalette = accentPalette(acc.tertiary, build, H, Palette);
         return s;
     }
+    // ---------- Accurate shades (opts.accurate): the root card's switch. A rule written for this project (Android and Google's library
+    // have no such option). Off: the scheme's three accent palettes (primary, secondary, tertiary: accent1, accent2, accent3), as the
+    // accents and the Intensity sliders leave them, answer tone 90 with their tone-70 colour. Everything that takes a colour from those
+    // palettes at tone 90 gets the tone-70 colour: shade 100 of each accent row, and each role, fixed colour and palette_key_color whose
+    // tone, computed by the spec's own rules and contrast, is exactly 90. The tones themselves are not changed (a rule that reads a
+    // palette to compute a tone reads it as it was), and the neutral, neutral variant and error palettes are never touched ----------
+    const ACCURATE_ROWS = ['accent1', 'accent2', 'accent3'];
+    const ACCURATE_FROM_TONE = 90, ACCURATE_TO_TONE = 70;
+    // opts.accurate -> true (on: every result is the one without the option) when it is true, null or left out; false (off) when it is
+    // false. Any other value throws, as an adjust that is not an object does
+    function accurateOf(opts) {
+        const a = opts ? opts.accurate : undefined;
+        if (a === undefined || a === null || a === true) return true;
+        if (a === false) return false;
+        throw new Error('Unknown accurate: ' + a);
+    }
+    function accurateTone(t) { return t === ACCURATE_FROM_TONE ? ACCURATE_TO_TONE : t; }
+    // an accent palette with the switch off: base's hue, chroma and key colour; tone, getHct and mapTone (the colour lookups of both parts:
+    // part 1's DynamicColor.getHct and part 2's chroma-multiplier path read mapTone, the rest tone or getHct) give tone 70 where tone
+    // 90 is asked for, then whatever base does with that tone (an AdjustedPalette's own map)
+    class AccuratePalette {
+        constructor(base) { this.base = base; this.hue = base.hue; this.chroma = base.chroma; this.keyColor = base.keyColor; }
+        mapTone(t) { const r = accurateTone(t); return this.base.mapTone ? this.base.mapTone(r) : r; }
+        tone(t) { return this.base.tone(accurateTone(t)); }
+        getHct(t) { return this.base.getHct(accurateTone(t)); }
+    }
+    // the palette as it was before the switch: what the tone rules that read a palette (Fidelity and Content) and the shade rules use
+    function accurateBase(p) { return p instanceof AccuratePalette ? p.base : p; }
+    // the scheme with its three accent palettes wrapped when accurate is off (after the accents and the sliders); nothing else changes
+    function accurateScheme(s, accurate) {
+        if (accurate) return s;
+        s.primaryPalette = new AccuratePalette(s.primaryPalette);
+        s.secondaryPalette = new AccuratePalette(s.secondaryPalette);
+        s.tertiaryPalette = new AccuratePalette(s.tertiaryPalette);
+        return s;
+    }
+    // a row's 13 shades (SHADE_KEYS order) as written: the shades themselves when accurate is on or the row is not an accent row; else a
+    // copy whose shade 100 (tone 90) is its shade 300 (tone 70). The shade rules read the palette before the switch (accurateBase), so
+    // this is where shade 100 is redirected, on every profile (P14's rule also caps the chroma of shades 10 and 50, not of 100 or 300)
+    function accurateShades(row, shades, accurate) {
+        if (accurate || ACCURATE_ROWS.indexOf(row) < 0) return shades;
+        const out = shades.slice();
+        out[SHADE_KEYS.indexOf(100)] = out[SHADE_KEYS.indexOf(300)];
+        return out;
+    }
     // P14's 13 shades of a row: part 1's shadesOf (Android 14's rule). On an adjusted palette, the same rule: shade s at tone
     // mapTone(shadeTone(s)), the palette's hue, and the shade's own chroma (capped at 40 for shades 10 and 50) x the factor
     function shadesP14(p) {
@@ -2870,16 +2958,16 @@
     }
     // P14: part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026).
     // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for, its secondary and tertiary palettes
-    // replaced by opts.accents, then its palettes adjusted by opts.adjust.
+    // replaced by opts.accents, then its palettes adjusted by opts.adjust, then (opts.accurate false) its accent palettes wrapped.
     function scheme(style, color, isDark, opts) {
         const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), adj = adjustOf(opts), acc = accentsOf(opts), argb = seed(style, color);
-        const dark = !!isDark;
+        const accurate = accurateOf(opts), dark = !!isDark;
         if (profile === 'P14' && !inPart2(variant, spec)) {
             const build1 = h => makeScheme(variant, h, dark, contrast);
-            return adjustScheme(accentScheme(build1(Hct.fromInt(argb)), acc, build1, Hct, TonalPalette), adj, TonalPalette);
+            return accurateScheme(adjustScheme(accentScheme(build1(Hct.fromInt(argb)), acc, build1, Hct, TonalPalette), adj, TonalPalette), accurate);
         }
         const build2 = h => MCU.schemeOf(variant, h, dark, contrast, spec);
-        return adjustScheme(accentScheme(build2(MCU.Hct.fromInt(argb)), acc, build2, MCU.Hct, MCU.TonalPalette), adj, MCU.TonalPalette);
+        return accurateScheme(adjustScheme(accentScheme(build2(MCU.Hct.fromInt(argb)), acc, build2, MCU.Hct, MCU.TonalPalette), adj, MCU.TonalPalette), accurate);
     }
     // a role's colour on a scheme of either part. Part 2: upstream's role of that name, or, for the Android-only roles, part 1's
     // definition on a scheme that carries part 2's palettes (those roles read the palettes' hue and chroma, isDark and the contrast level)
@@ -2892,14 +2980,16 @@
         return MCU.colorSpec[role]().getArgb(s);
     }
     // P14: the palettes of the light scheme (PR 3), at 2025 and 2026 of the scheme of the mode opts.dark names, with part 1's shades.
-    // P15Q1, P15Q2, P16: of the scheme of the mode opts.dark names, with Android 15/16's shades. Shades in SHADE_KEYS order.
+    // P15Q1, P15Q2, P16: of the scheme of the mode opts.dark names, with Android 15/16's shades. Shades in SHADE_KEYS order; with
+    // opts.accurate false, accentN's shade 100 is its shade 300 (hue, chroma and key stay the palette's: the switch changes colours read
+    // from it, not the palette's key colour).
     function palettes(style, color, opts) {
         const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts);
         const s = scheme(style, color, (profile !== 'P14' || inPart2(variant, spec)) && !!(opts && opts.dark), opts);
-        const out = { seed: hex6(s.sourceColorArgb), style: String(style).toUpperCase() };
+        const accurate = accurateOf(opts), out = { seed: hex6(s.sourceColorArgb), style: String(style).toUpperCase() };
         for (const [row, field] of PALETTE_ROWS) {
-            const p = s[field];
-            const shades = profile === 'P14' ? shadesP14(p) : SHADE_KEYS.map(shade => shadeA15(p, shade));
+            const p = s[field], q = accurateBase(p);
+            const shades = accurateShades(row, profile === 'P14' ? shadesP14(q) : SHADE_KEYS.map(shade => shadeA15(q, shade)), accurate);
             out[row] = { hue: p.hue, chroma: p.chroma, key: hex6(p.keyColor.toInt()), shades: shades.map(hex6) };
         }
         return out;
@@ -2915,16 +3005,18 @@
     // 44 roles of the dark scheme, then of the light one; the 12 fixed colours of the light scheme.
     // P15Q1 (165) and P15Q2 and P16 (177): the 65 shades (Android 15/16's rule) of the scheme for opts.dark, neutral1-2 then accent1-3,
     // each row in SHADE_WRITE_ORDER; each role _light then _dark (44 roles in Android 14's order, or 50 sorted by name); the 12 fixed
-    // colours of the light scheme (in Android 14's order, or sorted by name)
+    // colours of the light scheme (in Android 14's order, or sorted by name). With opts.accurate false, the entries
+    // system_accentN_100 (N = 1..3) carry the value of system_accentN_300, and each role and fixed colour taken from an accent palette
+    // at tone 90 carries that palette's tone-70 colour (see Accurate shades).
     function entries(style, color, opts) {
         const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts);
-        const light = scheme(style, color, false, opts), dark = scheme(style, color, true, opts), out = [];
+        const light = scheme(style, color, false, opts), dark = scheme(style, color, true, opts), accurate = accurateOf(opts), out = [];
         const [roleList, fixedList] = PROFILE_COLORS[profile];
         const add = (name, argb) => out.push({ resource: 'android:color/system_' + name, argb: hex8(argb) });
         if (profile === 'P14') {
             const base = inPart2(variant, spec) && opts && opts.dark ? dark : light;
             for (const [row, field] of PALETTE_ROWS) {
-                const shades = shadesP14(base[field]);
+                const shades = accurateShades(row, shadesP14(accurateBase(base[field])), accurate);
                 SHADE_KEYS.forEach((shade, i) => add(row + '_' + shade, shades[i]));
             }
             for (const s of [dark, light]) {
@@ -2933,7 +3025,10 @@
             }
         } else {
             const current = opts && opts.dark ? dark : light;
-            for (const [row, field] of PALETTE_WRITE_ROWS) for (const shade of SHADE_WRITE_ORDER) add(row + '_' + shade, shadeA15(current[field], shade));
+            for (const [row, field] of PALETTE_WRITE_ROWS) {
+                const shades = accurateShades(row, SHADE_KEYS.map(shade => shadeA15(accurateBase(current[field]), shade)), accurate);
+                for (const shade of SHADE_WRITE_ORDER) add(row + '_' + shade, shades[SHADE_KEYS.indexOf(shade)]);
+            }
             for (const [name, role] of roleList) { add(name + '_light', roleArgb(light, role)); add(name + '_dark', roleArgb(dark, role)); }
         }
         for (const [name, role] of fixedList) add(name, roleArgb(light, role));
@@ -2947,6 +3042,7 @@
             ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
             schemePalettes, shadesOf, shadeTone, shadeA15, shadesP14, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf,
             adjustOf, adjustTone, adjustRamp, adjustScheme, AdjustedPalette, ADJUST_TONE_STEP, ADJUST_RAMP_TONES,
-            accentsOf, accentPalette, accentScheme, hueDistance, ACCENT_HUE_TOLERANCE, mcu: MCU }
+            accentsOf, accentPalette, accentScheme, hueDistance, ACCENT_HUE_TOLERANCE, accurateOf, accurateTone, accurateBase, accurateScheme,
+            accurateShades, AccuratePalette, ACCURATE_ROWS, ACCURATE_FROM_TONE, ACCURATE_TO_TONE, mcu: MCU }
     };
 });

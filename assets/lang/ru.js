@@ -1,6 +1,9 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Accurate shades": "Точные оттенки",
+"Accurate shades: off.": "Точные оттенки: выкл.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Вкл.: каждый оттенок акцента сохраняет свой тон. Выкл.: бледные акцентные цвета (оттенок 100 и, в основном при цветовой спецификации 2021, светлые цвета контейнеров и фиксированные цвета) становятся темнее.",
 "Also writes this style's colors and pure black with root.": "Также записывает цвета этого стиля и чисто чёрный через Root.",
 "Also writes this style's colors with root.": "Также записывает цвета этого стиля через Root.",
 "From the style": "Из стиля",

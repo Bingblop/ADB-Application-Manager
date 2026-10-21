@@ -1,6 +1,9 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Accurate shades": "正確な色合い",
+"Accurate shades: off.": "正確な色合い：オフ。",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "オン：各アクセントの色合いは本来のトーンを保ちます。オフ：淡いアクセントカラー（色合い100と、主にカラー仕様 2021 では明るいコンテナの色と固定色）が濃いトーンになります。",
 "Also writes this style's colors and pure black with root.": "このスタイルの色とピュアブラックも、Rootで書き込みます。",
 "Also writes this style's colors with root.": "このスタイルの色も、Rootで書き込みます。",
 "From the style": "スタイルから",

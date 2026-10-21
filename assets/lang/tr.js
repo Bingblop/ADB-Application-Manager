@@ -1,6 +1,9 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Accurate shades": "Doğru tonlar",
+"Accurate shades: off.": "Doğru tonlar: kapalı.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Açık: her vurgu tonu kendi tonunu korur. Kapalı: soluk vurgu renkleri (100 tonu ve, çoğunlukla Renk belirtimi 2021 ile, açık kapsayıcı renkleri ve sabit renkler) daha koyu bir ton alır.",
 "Also writes this style's colors and pure black with root.": "Root ile bu stilin renklerini ve saf siyahı da yazar.",
 "Also writes this style's colors with root.": "Root ile bu stilin renklerini de yazar.",
 "From the style": "Stilden",

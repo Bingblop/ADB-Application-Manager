@@ -104,7 +104,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
       note: document.getElementById('ovlRootNote').innerText, stale: stale && stale.style.display !== 'none' ? stale.innerText : '', hint: (document.getElementById('ovlApplyHintRoot') || { innerText: '' }).innerText, preview: !!pv && pv.innerHTML !== '' };
   });
   const lockedAll = (c, reason) => c.shown && ['black', 'spec', 'more'].every(k => c[k].locked && c[k].lock === reason) && c.live.length === 0 && c.chips === 0;
-  const LIVE = '["ovlBlackSw","2021","2025","2026","OFF","FIDELITY","CONTENT","MONOCHROMATIC","ovlAdjAccentSat","ovlAdjBgSat","ovlAdjBgLight","ovlAccSecondary","ovlAccTertiary"]';
+  const LIVE = '["ovlBlackSw","2021","2025","2026","OFF","FIDELITY","CONTENT","MONOCHROMATIC","ovlAdjAccentSat","ovlAdjBgSat","ovlAdjBgLight","ovlAccSecondary","ovlAccTertiary","ovlAccurateSw"]';
   const preview = () => ev(() => { const pv = document.getElementById('ovlRootPreview'); const rows = pv ? Array.from(pv.querySelectorAll('.ovl-pal')) : []; return { rows: rows.length, accent1: rows[0] ? Array.from(rows[0].querySelectorAll('.ovl-chip')).map(c => c.dataset.hex) : [] }; });
   const settle = () => page.waitForFunction(() => !ovlBusy && sdbReqs.size === 0, null, { timeout: 8000, polling: 25 }).then(() => true, () => false);
   const apply = async () => { await ev(() => { window.__palBefore = window.__ovlCalls.palette; window.__palAtTap = -1; }); await page.locator('#ovlApplyBtn').click(); await settle(); await sleep(100); };
@@ -127,7 +127,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   await ev(() => { ovlPickColor('6750A4'); ovlPickStyle('TONAL_SPOT'); kvSet('ovl_black', true); kvSet('ovl_root_style', 'FIDELITY'); kvSet('ovl_spec', '2025'); kvSet('ovl_root_applied', null); });
   await phone({ sdk: 36, profile: 'P16', build: B16 });
   let c = await card();
-  check('A0. Android 16.0 (P16) with Super User: the five rows are live (the switch, the two radio groups, the three Intensity sliders and the two accent entries can be used, and the preview\'s 65 swatches; Intensity\'s Reset is disabled at 100 %), the hint names Fidelity and pure black', c.shown && !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && c.preview, JSON.stringify(c));
+  check('A0. Android 16.0 (P16) with Super User: the six rows are live (the two switches, the two radio groups, the three Intensity sliders and the two accent entries can be used, and the preview\'s 65 swatches; Intensity\'s Reset is disabled at 100 %), the hint names Fidelity and pure black', c.shown && !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && c.preview, JSON.stringify(c));
   const LOCKS = [
     ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', build: B15 }, NOT_YET],
     ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', build: B16 }, NOT_YET],
