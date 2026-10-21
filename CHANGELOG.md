@@ -1,5 +1,52 @@
 # Changelog
 
+## v7.16.0-Pro (versionCode 862)
+
+A feature release on top of v7.15.0, cut from `main` (#253 to #286): a **Root Features** tab for what only Super User can do, a **root theme card** on the RRO/Monet Customization tab that writes Android's own theme colours as root (pure black backgrounds, more styles, Google's newer colour rules, saturation and lightness sliders, your own second and third accents) on Android 14, 15, 16 and 17 and their quarterly updates, a tenth palette style (**CMF**) for the app itself, **Start Shizuku** from the app over an ADB connection, **Allow all** that brings the app back by itself, and the fixes of two test passes over the new code. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. This app roots nothing: every root feature needs a phone that is already rooted, and is shown locked (never hidden) without it. **Nothing in it has been run on a phone** by the people and tools that wrote it; the root theme colours were checked on a computer against each Android release's own colour code, not on a phone. `docs/PHONE-SCRIPT-v7.16.0.md` is the phone script.
+
+**Root Features**
+
+- **A Root Features tab** (right before About) shows the state of root for this app (ACTIVE, AVAILABLE, DENIED, NOT FOUND) and unlocks once Root is the working mode and su is granted to this app (#254). **Request Super User** asks su on a phone that has it; when su says no, the working mode you had stays chosen and a toast says so.
+- **Open root manager** opens your root manager (KernelSU, KernelSU Next, APatch and the other common ones are recognised) so you allow this app there, where the grant lives; when you come back the app reads su again and offers to switch the working mode to Root (#257). A manager installed under a different name gets a message that says so. No text in the app or the guide tells anyone to install or flash a root manager, and the guide warns never to flash a patched boot image onto a phone whose bootloader is locked (#286).
+- **Super User for apps:** once root is active, **Open manager** opens the root manager so you choose which other apps get Super User in its own list (#258).
+- **App components:** **Open apps** leads to the app inspector, where single activities, services, receivers and providers of any app are switched on or off (#259). This toggle is now **Super User (Root) only, for user and system apps alike**: Android refuses it to the ADB and Shizuku shell for parts it does not own, so a system app's parts can now be switched with root, and disabling a part of a system app asks first (#265). Off root, a tap offers to switch to Root or opens Root Features.
+- **The Help Guide** has a full Root Features chapter: what root managers ask (some offer Once or a time limit, others a switch per app), what the app can and cannot do, and the steps to get Super User (#263, #276).
+
+**Root theme card (RRO/Monet Customization tab)**
+
+- **Root-only theme controls**, the last card of the Theme half, write colours that Android takes only from a colour overlay written as root (ADB and Shizuku cannot write them; the rows show locked with *Needs Super User*). **Apply theme** writes them with the theme, **Default** switches them off, and **Undo** puts back what was there before. Six controls:
+  - **Pure black backgrounds:** true black dark backgrounds with the panels a few dark greys lighter (#266). Android 12 and 13 get this one only.
+  - **Color spec:** 2021, 2025 or 2026, the version of Google's colour rules a style's colours are written with (#272).
+  - **More styles:** **Fidelity**, **Content** and **Monochrome**, which Android has no setting for, and **CMF** with the 2026 spec (#271, #272). A preview under the choices shows the colours Apply will write.
+  - **Intensity:** **Accent saturation**, **Background saturation** and **Background lightness**, 0 to 200 % each, with Reset (#274).
+  - **Secondary and tertiary accents:** your own colours for the second and third accent (#275).
+  - **Accurate shades:** a switch, on by default; off, the palest accent colours take a darker colour (#279).
+- **Android versions:** the colours are worked out the way each release builds its own theme and written with that release's names and order: Android 14 (its first release and its quarterly updates QPR1 to QPR3), Android 15 (15.0, QPR1 and QPR2), Android 16 (16.0, QPR1 and QPR2) and Android 17 (#273, #280, #281, #282, #283). A Samsung phone with One UI is served by its Android version like any other phone, with a note that the colours reach Google apps and other apps that use Android's Monet colours while Samsung's own apps may keep Samsung's palette (#286; inferred from how overlays work, not measured). Any other version is **locked** (*Not supported on this Android version yet*), with or without Super User. The phone's contrast setting is read when Apply is tapped, and after an update to another Android release a note asks you to tap Apply theme again.
+- **Fixes from the second test pass (#278):** Apply takes Pure black, the style and the spec at the moment of the tap; an Apply whose answer is lost to the restart Android causes is completed when the app comes back; Undo puts back the overlay that was on before; the note says when an overlay is still on without Super User or when Android shows its own colours over it.
+
+**Settings and the app's own theme**
+
+- **CMF**, a tenth palette style in Settings > Palette Style (#264): one hue at five strengths, from the 2026 Material colour spec. In dark mode its three accents stay apart for strong colours (#277), and the note under the tiles is translated (#277).
+
+**Working modes and permissions**
+
+- **Start Shizuku (ADB)** on the Shizuku card of Working Modes starts an installed Shizuku through an ADB TCP or Wireless Debugging connection this app holds, with no computer (#255). Each outcome has its own message; a failed start shows what Shizuku's start script printed.
+- **At launch**, with the working mode set to Shizuku, Shizuku installed but not running and a connected ADB target, the app offers to start it, at most twice (#256, #267).
+- **Allow all restarts the app:** after granting by command the app closes and opens again by itself about two seconds later, so the permissions hold everywhere; on first run it used to close and stay closed (#262). Install unknown apps is granted last (Android 11 ends the app when it changes), the copy of the app in a work profile is the one restarted, and the first-launch sheet comes back for what is left (#269).
+
+**Quick Settings, saved lists and the terminal**
+
+- **Kill Apps:** the Stop apps tile, its widget button and its notification channel are now called Kill Apps; a long press on either Quick Settings tile opens the app (#253, #267).
+- **The Working mode tile** is lit only while ADB TCP, Wireless Debugging, Shizuku or Root is really ready, and dim on Read-Only or when nothing is found (#260); the app checks the mode again on every return, and a tap on the tile no longer raises a root prompt behind the panel (#267).
+- **Saved lists:** saving under a name another list already uses asks **Overwrite**, **Create new list** or **Cancel** instead of making a second list of the same name (#253); Create new list now makes a new list after a rename too (#267).
+- **The full-screen real terminal** is monospaced again: its letters no longer run into each other (#253).
+
+**Fixes found in two test passes**
+
+- **Root Features (#268, #270, #276):** Open root manager reports a manager that did not start instead of "install one"; the read-back after the manager also runs when it was beside the app (split screen); the tab asks su again when it opens unlocked, so a grant taken back in the manager shows, without a "Mode:" toast; a link to the tab first checks that the tab is on; the App components row names providers too.
+- **Translations:** the Quick Settings tiles are named as the phone shows them (in English) in every language; German Sie-form on the Shizuku card and the theme card; Japanese asks the Shizuku question as a question (#267, #278).
+- **Tests:** a restart check that could not fail now can, and the terminal and free-space Java checks no longer depend on how busy the test machine is (#269, #277).
+
 ## v7.15.0-Pro (versionCode 861)
 
 A look-and-reach release on top of v7.14.1: the app is renamed **ADB/Root Full System Toolbox** and every tab got a top-to-bottom UI pass, so the screens are calmer and the things used most are one tap or one hold away (#251, #252). What the app does is unchanged: no feature was taken out, no setting changes meaning, and the package, the signing certificate, the APK file names and the permissions are the same, so it installs over every earlier version. The owner's earlier choices stay: the check marks beside the app icons, the row tints and gradient buttons, the Settings order of v7.14, an app menu that asks before nothing, the Private DNS pointer in Hidden Settings, Live Logcat's green Play and red Stop, and the Console's long-press menu. **Nothing in it has been run on a phone** by the people and tools that wrote it; `docs/PHONE-SCRIPT-v7.15.0.md` is the phone script.

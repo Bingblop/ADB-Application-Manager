@@ -194,6 +194,32 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.16.0 (cut from `main`; written 2026-10-21)
+
+The root features, the root theme card (the ColorBlendr items) and the first-launch privilege flow the owner asked for after v7.15.0, with the fixes of two test passes over them (T-002 to T-079). The release pull request is the version bump on top of #283 (Android 14 QPR1-QPR3), which was in CI when the bump was written. The owner tests the `arm64-v8a` APK before anything is published (`docs/RELEASE-CHECKLIST-v7.16.0.md` step 5b).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #253 | Saved lists: Overwrite / Create new list for a name in use; the Stop apps tile renamed Kill Apps, long-press on a tile opens the app; the full-screen terminal monospaced again | t557, t558, `quickstop`; t69, t321 counts | PHONE-SCRIPT-v7.16.0 steps 6, 8, 9 |
+| #254, #257, #258, #259 | Root Features tab and gate (`RootGate`), Request Super User, Open root manager (`RootManagers`), Super User for apps, App components | t559, `rootgate`, `rootmanagers`; tab-count goldens for the added tab | steps 10, 11 |
+| #265 | Component enable/disable is Root only, for user and system apps; read back by `getComponentEnabledSetting` | t563, `componentgate`; t29, t102, t107 | step 11 |
+| #255, #256 | Start Shizuku (ADB) (`ShizukuStart`) and the launch offer | t560, t561, `shizukustart` | steps 3, 4; device checklist 30, 31 |
+| #260 | Working mode tile lit only while a privileged mode is ready (`ModeTileLight`) | `modetilelight` | step 5; device checklist 32 |
+| #262 | Allow all restarts the app from a shell watcher (`AppRestart`) | t562, `apprestart` | step 7; device checklist 33 |
+| #263 | Help Guide: the Root Features chapter, checked against the managers' sources and AOSP | t111, t553 | step 17 |
+| #264 | CMF, the tenth Settings palette style | t129 | step 2 |
+| #266, #271, #272, #274, #275, #279 | Root theme card: Pure black (`OverlayRules` fabricate plan), More styles and `assets/monet.js`, Color spec and CMF, Intensity, accents, Accurate shades | t564 to t566, t568 to t570, `overlayrules` | steps 12 to 16 |
+| #273, #280, #281, #282, #283 | Per-release profiles (`MonetProfile`): 14.0, 15 QPR1/QPR2, 16.0, then 16 QPR1/QPR2, 17, 15.0, 14 QPR1-QPR3; other versions locked; One UI served by its Android version since #286 | t567, t571 to t574, `monetprofile` | step 12 |
+| #267 to #270, #276 to #278 | Test-pass fixes (T-002 to T-079): tiles, Shizuku offer, Root Features hand-off and su checks, Allow all order and user, CMF in dark mode, the root theme card's Apply, Undo and notes, translations | the scripts and suites above, each case failing before its fix | the device checklist items each PR names |
+| bump | Version 7.16.0 (862), changelog, README, guides, `docs/LAUNCH.md`, `docs/RELEASE-CHECKLIST-v7.16.0.md`, `docs/PHONE-SCRIPT-v7.16.0.md` | Java suites, the UI scripts that read the version and the root and theme scripts, i18n --strict, guide build --strict --check, docs shell blocks | none |
+
+Things the next person should know:
+
+- **Not run on a device.** Nothing in #253 to #283 has run on a phone. The root theme colours were compared on a computer with each Android release's own colour code (libmonet and SystemUI compiled and run, or ported and read beside the sources; the commit messages and the `assets/monet.js` header give the numbers), not on a phone; a maker can change Android's colour engine, which no oracle covers.
+- **Fail closed:** `MonetProfile` names the build family from the SDK level, framework colour names and (on SDK 34) the boolean `config_repairModeSupported`; anything it cannot place, and an Android newer than 17 are locked. A One UI phone is placed by the same checks as any other (#286) and the card shows a note on which apps follow the colours there. A new Android release needs a new profile before the card unlocks on it.
+- **Passive tiles:** neither tile declares `ACTIVE_TILE`, so `requestListeningState` does nothing for them (T-003, T-036, T-060); a tile shows a new state only when the panel is opened again.
+- **No manifest permission changed** in this range; #253 added the `QS_TILE_PREFERENCES` activity-alias to MainActivity.
+
 ## v7.15.0 (cut from `main`; written 2026-10-18)
 
 The top-to-bottom UI pass the owner asked for on 2026-10-18 ("make it look better to the human eye ... features easier to reach"), with the rename to ADB/Root Full System Toolbox and the one-colour header he asked for after v7.14.1. A design pass decided each screen and reviewed the build; the decisions, and where the build differs from them and why, are `/mnt/project-files/plans/ui-pass-v7.15-decisions.md` in the project. The owner tests the `arm64-v8a` APK of #252 before anything is published (`docs/RELEASE-CHECKLIST-v7.15.0.md` step 5b).
