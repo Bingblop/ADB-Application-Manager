@@ -31,7 +31,9 @@ public class RootManagersTest {
     check("empty set: null", RootManagers.pick(Collections.<String>emptySet()) == null);
     check("KernelSU installed: KernelSU", named(RootManagers.pick(set("me.weishu.kernelsu"))).equals("KernelSU"));
     check("APatch installed: APatch", named(RootManagers.pick(set("me.bmax.apatch"))).equals("APatch"));
-    check("Magisk installed: Magisk", named(RootManagers.pick(set("com.topjohnwu.magisk"))).equals("Magisk"));
+    // Magisk is still recognised (phones that have it keep working) but its name never reaches the UI: an empty label, so the page says "your root manager"
+    RootManagers.Manager mg = RootManagers.pick(set("com.topjohnwu.magisk"));
+    check("Magisk installed: picked by its package, with an empty label (no name shown)", mg != null && mg.pkg.equals("com.topjohnwu.magisk") && mg.label.isEmpty());
     check("KernelSU Next installed: KernelSU Next", named(RootManagers.pick(set("com.rifsxd.ksunext"))).equals("KernelSU Next"));
     // preference order: KernelSU wins over Magisk when both are present (the kernel-level manager Kyle named comes first)
     check("KernelSU preferred over Magisk", named(RootManagers.pick(set("com.topjohnwu.magisk", "me.weishu.kernelsu"))).equals("KernelSU"));
@@ -39,12 +41,15 @@ public class RootManagersTest {
 
     // ---- installedManagers(): every known one that is present, best first; unknowns ignored
     List<RootManagers.Manager> inst = RootManagers.installedManagers(set("com.topjohnwu.magisk", "me.weishu.kernelsu", "com.whatsapp"));
-    check("installedManagers lists the two known, best first", inst.size() == 2 && inst.get(0).label.equals("KernelSU") && inst.get(1).label.equals("Magisk"),
+    check("installedManagers lists the two known, best first", inst.size() == 2 && inst.get(0).label.equals("KernelSU") && inst.get(1).pkg.equals("com.topjohnwu.magisk"),
         inst.size() + " entries");
     check("installedManagers of none is empty", RootManagers.installedManagers(set("com.whatsapp")).isEmpty());
 
-    // every known manager has a non-blank package and label
-    for (RootManagers.Manager m : RootManagers.known()) check("known manager well-formed", m.pkg != null && m.pkg.contains(".") && m.label != null && !m.label.isEmpty());
+    // every known manager has a non-blank package and a label (empty only for a name that is never shown); no label the page could show says Magisk
+    for (RootManagers.Manager m : RootManagers.known()) {
+      check("known manager well-formed", m.pkg != null && m.pkg.contains(".") && m.label != null);
+      check("no label names Magisk: " + m.label, !m.label.toLowerCase(java.util.Locale.ROOT).contains("magisk"));
+    }
 
     sourceScan();
     System.out.println(n + " checks, " + fails + " failed");
@@ -93,6 +98,11 @@ public class RootManagersTest {
     check("source: no rootManagerName bridge method (the page never called it)", !m.contains("rootManagerName"));
     check("source: the ok answer carries the manager's name", methodBody(m, "public String openRootManager()").contains("return \"{\\\"ok\\\":true,\\\"name\\\":\" + name + \"}\";"));
     check("source: the page toasts use that name with no unreachable stand-in", !h.contains("txT('your root manager')"));
+    // a manager whose name is never shown (empty label) answers name null, and every toast that names the manager has a "your root manager" sentence for it
+    check("source: an empty label answers name null", methodBody(m, "public String openRootManager()").contains("String name = m.label.isEmpty() ? \"null\" : org.json.JSONObject.quote(m.label);"));
+    check("source: the page has a your-root-manager toast for each named one",
+        h.contains("txT('Allow this app in your root manager, then come back.')") && h.contains("txT('Opening your root manager — manage which apps get Super User there.')")
+        && h.split(java.util.regex.Pattern.quote("txT('Your root manager could not be opened from here. Open it from your home screen.')"), -1).length - 1 == 2);
     // T-021: the answer follows the start. openRootManager starts the manager itself (not posted to the UI thread with ok sent at once), answers
     // ok:true only after startActivity returned, and answers ok:false when the launch intent is gone or Android refuses the start
     String open = methodBody(m, "public String openRootManager()");

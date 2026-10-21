@@ -13858,12 +13858,13 @@ public class MainActivity extends Activity {
          * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed; and
          * {"ok":false,"reason":"launch","name":"KernelSU"} when one is installed but the start did not happen, so the page does not tell the user to
          * install a manager they have. This answer is the page's only source of the manager's name (its toasts name it; the buttons keep fixed labels).
+         * A manager with an empty label (RootManagers: one whose name is never shown) answers "name":null, and the page then says "your root manager".
          */
         @JavascriptInterface
         public String openRootManager() {
             RootManagers.Manager m = RootManagers.pick(installedRootManagers());
             if (m == null) return "{\"ok\":false}";
-            String name = org.json.JSONObject.quote(m.label);
+            String name = m.label.isEmpty() ? "null" : org.json.JSONObject.quote(m.label);
             // The start runs here, on the bridge thread, and decides the answer (as composeEmail does): Activity.startActivity may be called from any
             // thread and throws when Android refuses the start (ActivityNotFoundException, SecurityException). Posting it to the UI thread and
             // answering ok at once would let the page say "Allow this app in X" although nothing opened. A start that Android drops without telling

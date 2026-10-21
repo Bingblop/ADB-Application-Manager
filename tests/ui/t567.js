@@ -324,6 +324,14 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   const lockLeft = texts.filter(f => fs.readFileSync(f, 'utf8').includes(['Not supported on', 'One UI'].join(' '))).map(f => path.basename(f));
   const reasonLeft = fs.readFileSync(texts[0], 'utf8').includes("profileReason === 'oneUi'");
   check('H5. no One UI lock reason in the page or any of its 13 translation files, and the page no longer reads a oneUi reason', texts.length === 14 && lockLeft.length === 0 && !reasonLeft, JSON.stringify([texts.length, lockLeft, reasonLeft]));
+  // the Help Guide topic that holds the One UI row and FULL-GUIDE.md quote the card's note word for word (and keep no One UI lock)
+  const gsb = { window: {} }; require('vm').runInNewContext(fs.readFileSync(path.join(assets, 'guide.js'), 'utf8'), gsb);
+  const flat = t => t.replace(/<[^>]+>/g, '').replace(/&#39;|&rsquo;|’/g, "'").replace(/[*_]/g, '').replace(/\s+/g, ' ');
+  const gNote = ((gsb.window.HELP_GUIDE || {}).sections || []).filter(x => flat(x.html).includes(ONE_UI_NOTE)).map(x => x.id);
+  const fgFlat = flat(fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'FULL-GUIDE.md'), 'utf8'));
+  const gAll = ((gsb.window.HELP_GUIDE || {}).sections || []).map(x => flat(x.html)).join(' ');
+  check('H6. the Help Guide and FULL-GUIDE.md quote the One UI note exactly, and neither keeps the old One UI lock text',
+    gNote.length > 0 && fgFlat.includes(ONE_UI_NOTE) && !gAll.includes(['Not supported on', 'One UI'].join(' ')) && !fgFlat.includes(['Not supported on', 'One UI'].join(' ')), JSON.stringify([gNote, fgFlat.includes(ONE_UI_NOTE)]));
 
   check('no page errors', errors.length === 0, JSON.stringify(errors));
   await b.close();

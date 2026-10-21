@@ -653,14 +653,14 @@ that expect it there, never into the file itself. Already-added servers are list
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
 | **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS |
 | **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt. Shizuku not running while ADB TCP or Wireless Debugging is connected: **Start Shizuku (ADB)** runs the start script the Shizuku app wrote into its own data folder (`/sdcard/Android/data/<Shizuku package>/start.sh`, the same command Shizuku shows for a computer) through that connection, then checks that Shizuku answers; if it does not, the script's own output is shown. Open the Shizuku app once first, or the script does not exist yet |
-| **Root** | su on a phone that is already rooted (a root manager such as KernelSU or APatch) | Requested on demand. This app never roots a phone or installs a root manager |
+| **Root** | su on a phone that is already rooted | Requested on demand. This app never roots a phone or installs a root manager |
 | **Read-Only** | — | Inspect only |
 
 Every mode card has a **Use This Mode** button, so you can switch at any time, including while ADB TCP 5555
 is enabled. Status checks never change the selected mode.
 
-**Root needs a phone that is already rooted.** Never try to root a phone whose bootloader is locked (most US carrier Samsung
-phones cannot be unlocked): flashing a root tool onto a locked phone can leave it unable to start.
+**Root needs a phone that is already rooted.** Never flash a patched boot image onto a phone whose bootloader is locked;
+it can leave the phone unable to start. This app only uses root that is already on the phone.
 
 **ADB key:** each install generates its own private ADB key (nothing is bundled in the APK). Working Modes
 shows its fingerprint, which matches the phone's "Allow USB debugging?" prompt, with Copy and Regenerate.

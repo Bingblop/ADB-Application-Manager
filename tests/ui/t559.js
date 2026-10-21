@@ -130,6 +130,19 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'KernelSU' }; });
   await page.click('#rfSuAppsBtn'); await sleep(50);
   check('   a manager that did not start (reason launch): the toast says it could not be opened from here and nothing is pending', (await toastText()) === 'KernelSU could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
+  // PR 13: a manager whose name is never shown (the bridge answers name null, as for Magisk) gets "your root manager" in every toast that names one
+  await ev(() => { window.__rootMgr = { ok: true, name: null }; rootGrantPending = false; });
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  const noName1 = await toastText(), noNamePending = await ev(() => rootGrantPending === true);
+  await ev(() => { rootGrantPending = false; rootOpenManager(); }); await sleep(50);
+  const noName2 = await toastText();
+  await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false, reason: 'launch', name: null }; });
+  await page.click('#rfSuAppsBtn'); await sleep(50);
+  const noName3 = await toastText();
+  await ev(() => { rootGrantPending = false; });
+  check('   a manager the bridge names null (its name is never shown): Open manager and Open root manager say "your root manager", a failed start too; the hand-off still marks pending',
+    noName1 === 'Opening your root manager — manage which apps get Super User there.' && noNamePending && noName2 === 'Allow this app in your root manager, then come back.'
+      && noName3 === 'Your root manager could not be opened from here. Open it from your home screen.', JSON.stringify([noName1, noName2, noName3]));
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the way back from Open manager: this app's own su was revoked in the manager; the page shown again reads the status fresh once, spends the mark,
   // and re-renders the tab from that read
@@ -366,7 +379,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
 
   // PR 13 (Kyle 2026-10-21): no word a user reads names Magisk, nothing tells the user to install a root manager, and the guide warns once, where it
-  // first explains root, never to try rooting a phone whose bootloader is locked. Code comments may name it, so they are stripped first; detection
+  // first explains root, never to flash a patched boot image onto a phone whose bootloader is locked (Kyle 16:07Z: the warning is about that method
+  // only; KernelSU works with a locked bootloader, so nothing says rooting or a root manager needs an unlocked one, and no manager is named next to
+  // the warning). Code comments may name it, so they are stripped first; detection
   // (RootManagers.java, the SD Maid markers) is Java and JSON data, not page text
   const stripComments = s => s.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
   const pageText = stripComments(pageSrc);
@@ -382,10 +397,37 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   nothing tells the user to install a root manager (page, guide, FULL-GUIDE.md); the no-manager toast says root needs a phone that is already rooted and this app does not root phones',
     advising.length === 0 && pageText.split("txT('No root manager was found. Root features need a phone that is already rooted; this app does not root phones.')").length === 3, advising.join(' | '));
   const gModeRoot = plain['mode-root'] || '', gGlossary = guideAll;
-  check('   the guide warns where it first explains root (Root mode): never try to root a phone whose bootloader is locked, it can leave the phone unable to start, the app only uses root that is already there; the glossary has a root manager entry that says so and no Magisk entry',
-    /Never try to root a phone whose bootloader is locked/.test(gModeRoot) && /leave it unable to start/.test(gModeRoot) && /only uses root that is already on the phone/.test(gModeRoot)
-      && /root manager\s*The app on a rooted phone that decides which apps may use root, such as KernelSU or APatch\. This app never installs one and never roots a phone/.test(gGlossary) && /bootloader is locked can leave the phone unable to start/.test(gGlossary),
-    (gModeRoot.match(/Locked bootloader.{0,200}/) || [''])[0]);
+  const warnRe = /Never flash a patched boot image onto a phone whose bootloader is locked; it can leave the phone unable to start\./;
+  const rootEntry = (gGlossary.match(/root manager\s*The app on a rooted phone[^]*?See Root\./) || [''])[0];
+  check('   the guide warns where it first explains root (Root mode): never flash a patched boot image onto a phone whose bootloader is locked, it can leave the phone unable to start, the app only uses root that is already there; What you are getting into and FULL-GUIDE.md say the same; the glossary has a root manager entry (never installs one) with no bootloader sentence and no Magisk entry',
+    warnRe.test(gModeRoot) && /only uses root that is already on the phone/.test(gModeRoot) && warnRe.test(gTab) && warnRe.test(fullGuide.replace(/\s+/g, ' '))
+      && /such as KernelSU or APatch\. This app never installs one and never roots a phone/.test(rootEntry) && !/bootloader/i.test(rootEntry) && !/\bMagisk\b/.test(gGlossary),
+    JSON.stringify([(gModeRoot.match(/Locked bootloader.{0,200}/) || [''])[0], rootEntry]));
+  // no sentence says rooting, KernelSU or root managers in general need an unlocked bootloader (page, guide, FULL-GUIDE.md, the 13 translations),
+  // and the block that carries the warning (its box, list item or paragraph) names no manager
+  const needsUnlocked = /(?:root(?:ing|ed)?|KernelSU|APatch|root managers?)[^.]{0,60}(?:needs?|requires?) an unlocked bootloader|(?:needs?|requires?) an unlocked bootloader/i;
+  const saysNeeds = [['page', pageText], ['guide', guideAll], ['FULL-GUIDE.md', fullGuide]].concat(langSrc.map((s, i) => ['lang ' + i, s])).filter(x => needsUnlocked.test(x[1])).map(x => x[0] + ': ' + x[1].match(needsUnlocked)[0]);
+  const guideHtml = ((sb.window.HELP_GUIDE || {}).sections || []).map(x => x.html).join('\n');
+  const warnBlocks = [];
+  for (let i = guideHtml.indexOf('patched boot image'); i >= 0; i = guideHtml.indexOf('patched boot image', i + 1)) {
+    const open = Math.max(...['<div', '<li', '<p', '<td'].map(t => guideHtml.lastIndexOf(t, i)));
+    const close = Math.min(...['</div>', '</li>', '</p>', '</td>'].map(t => { const j = guideHtml.indexOf(t, i); return j < 0 ? guideHtml.length : j; }));
+    warnBlocks.push(guideHtml.slice(open, close));
+  }
+  warnBlocks.push(...fullGuide.split(/\n\s*\n/).filter(x => x.includes('patched boot image')));
+  check('   no page string, guide topic, FULL-GUIDE.md or translation says rooting, KernelSU or a root manager needs an unlocked bootloader; every block with the patched-boot-image warning (the Root mode box, What you are getting into, FULL-GUIDE.md) names no root manager',
+    saysNeeds.length === 0 && warnBlocks.length === 3 && warnBlocks.every(x => !/KernelSU|APatch|Magisk/i.test(x)), saysNeeds.join(' | ') + ' ' + JSON.stringify(warnBlocks.filter(x => /KernelSU|APatch|Magisk/i.test(x))));
+  // the toasts said when no manager can be found or named, in every language: real translations, and none names a manager (so none can read as
+  // "install KernelSU or APatch")
+  const toastKeys = ['No root manager was found. Root features need a phone that is already rooted; this app does not root phones.', 'Allow this app in your root manager, then come back.',
+    'Your root manager could not be opened from here. Open it from your home screen.', 'Opening your root manager — manage which apps get Super User there.'];
+  const langBad = [];
+  fs.readdirSync(langDir).filter(f => f.endsWith('.js')).forEach(f => {
+    const w = {}; vm.runInNewContext(fs.readFileSync(path.join(langDir, f), 'utf8'), { window: w });
+    const L = Object.values(w.__LANGS || {})[0] || {}, x = L.x || {};
+    toastKeys.forEach(k => { const v = x[k]; if (typeof v !== 'string' || !v || v === k || /KernelSU|APatch|Magisk/i.test(v)) langBad.push(f + ': ' + k.slice(0, 30) + ' -> ' + v); });
+  });
+  check('   every translation has the no-manager and your-root-manager toasts, translated, naming no manager (13 languages)', langBad.length === 0 && fs.readdirSync(langDir).filter(f => f.endsWith('.js')).length === 13, langBad.join(' | '));
 
   check('8. no page errors', errors.length === 0, errors.join(' | '));
   console.log('errors: ' + JSON.stringify(errors));

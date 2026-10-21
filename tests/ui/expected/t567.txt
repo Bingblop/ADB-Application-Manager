@@ -78,4 +78,5 @@ H2. One UI on an Android this app does not know (SDK 38): still locked with "Not
 H3. not One UI (no oneUi in the answer, or an older APK): no One UI note: true ["",""]
 H4. below Android 12 (the card is hidden with the rest of Material You): no One UI note: true
 H5. no One UI lock reason in the page or any of its 13 translation files, and the page no longer reads a oneUi reason: true [14,[],false]
+H6. the Help Guide and FULL-GUIDE.md quote the One UI note exactly, and neither keeps the old One UI lock text: true [["overlays-root"],true]
 no page errors: true []

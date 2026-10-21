@@ -15,7 +15,11 @@ import java.util.Set;
  */
 public final class RootManagers {
 
-    /** One root manager: its package name and the name people know it by. */
+    /**
+     * One root manager: its package name and the name the page may show for it. An empty label means the page names no manager and says "your root
+     * manager" instead: Magisk is still recognised so phones that have it keep working, but its name never reaches the UI (Kyle, 2026-10-21: people
+     * with locked bootloaders must not be led to it).
+     */
     public static final class Manager {
         public final String pkg, label;
         Manager(String pkg, String label) { this.pkg = pkg; this.label = label; }
@@ -27,7 +31,7 @@ public final class RootManagers {
         new Manager("me.weishu.kernelsu", "KernelSU"),
         new Manager("com.rifsxd.ksunext", "KernelSU Next"),
         new Manager("me.bmax.apatch", "APatch"),
-        new Manager("com.topjohnwu.magisk", "Magisk"),
+        new Manager("com.topjohnwu.magisk", ""),
     };
 
     private RootManagers() {}

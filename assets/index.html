@@ -28659,7 +28659,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // status back when the app returns (rootGrantPending -> a fresh working-mode check that updates the gate). No grant mechanics live here: the
         // app only launches the manager and reads su status afterwards. The bridge answers ok only once the manager was started; reason 'launch'
         // means a manager is installed but Android did not start it, which is not the "install one" case (nothing is pending then either). Both of
-        // those answers carry the manager's name, so the toasts need no stand-in for it.
+        // those answers carry the manager's name, or null for a manager whose name is never shown (RootManagers), and then the toast says "your root manager".
         let rootGrantPending = false;
         function rootOpenManager() {
             if (!window.AndroidBridge || !window.AndroidBridge.openRootManager) { showToast(txT('This works in the app on a phone, not in a browser.')); return; }
@@ -28667,9 +28667,9 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Allow this app in {0}, then come back.', res.name));
+                showToast(res.name ? txF('Allow this app in {0}, then come back.', res.name) : txT('Allow this app in your root manager, then come back.'));
             } else if (res && res.reason === 'launch') {
-                showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
+                showToast(res.name ? txF('{0} could not be opened from here. Open it from your home screen.', res.name) : txT('Your root manager could not be opened from here. Open it from your home screen.'));
             } else if ((lastModesData || {}).rootAvailable) {
                 // su is on the phone, so it is rooted: the manager is most likely there under a package name the app does not know (Magisk's
                 // "Hide the Magisk app" gives it a random one). Telling the user to install a root manager would send them after one they have.
@@ -28687,9 +28687,9 @@ Type any command above (e.g. pm list packages -d)</div>
             try { res = JSON.parse(window.AndroidBridge.openRootManager() || '{}'); } catch (e) { res = {}; }
             if (res && res.ok) {
                 rootGrantPending = true;
-                showToast(txF('Opening {0} — manage which apps get Super User there.', res.name));
+                showToast(res.name ? txF('Opening {0} — manage which apps get Super User there.', res.name) : txT('Opening your root manager — manage which apps get Super User there.'));
             } else if (res && res.reason === 'launch') {
-                showToast(txF('{0} could not be opened from here. Open it from your home screen.', res.name));
+                showToast(res.name ? txF('{0} could not be opened from here. Open it from your home screen.', res.name) : txT('Your root manager could not be opened from here. Open it from your home screen.'));
             } else if (isRootActive()) {
                 // su already answers as root, so the phone has a manager the app cannot find by one of the four known package names (a Magisk
                 // hidden with "Hide the Magisk app", a renamed build): asking the user to install one would be wrong.
