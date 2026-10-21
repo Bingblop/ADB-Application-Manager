@@ -151,6 +151,13 @@ public class MonetProfileTest {
     eq("below -1 is held at -1", MonetProfile.contrast(-3f), -1.0);
     eq("just inside the range is kept", MonetProfile.contrast(0.999f), (double) 0.999f);
 
+    // ---- which wallpaper's colours getSystemPalette reports (T-079): the one set last, by WallpaperManager id, as SystemUI's getLatestWallpaperType
+    check("the lock wallpaper set after the home one (a higher id) is the latest", MonetProfile.lockWallpaperIsLatest(12, 7));
+    check("the home wallpaper set after the lock one is the latest", !MonetProfile.lockWallpaperIsLatest(7, 12));
+    check("no separate lock wallpaper (getWallpaperId answers -1): the home one", !MonetProfile.lockWallpaperIsLatest(-1, 3) && !MonetProfile.lockWallpaperIsLatest(-1, 0));
+    check("equal ids (one wallpaper set for both): the home one, as SystemUI's strict > has it", !MonetProfile.lockWallpaperIsLatest(5, 5));
+    check("neither readable (both -1): the home one", !MonetProfile.lockWallpaperIsLatest(-1, -1));
+
     sourceScan();
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
@@ -233,6 +240,16 @@ public class MonetProfileTest {
       check("source: the new fields come after the Android 12 check and before the palettes are read (in every answer with colours)",
           early >= 0 && put > early && put < pal.indexOf("int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};")
           && put < pal.indexOf("o.put(\"ok\", true);"));
+    }
+    if (pal != null) {
+      int lockId = pal.indexOf("wm.getWallpaperId(android.app.WallpaperManager.FLAG_LOCK)"), sysId = pal.indexOf("wm.getWallpaperId(android.app.WallpaperManager.FLAG_SYSTEM)");
+      int lockColors = pal.indexOf("wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_LOCK);"), sysColors = pal.indexOf("if (wc == null) wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);");
+      check("source (T-079): \"wallpaper\" comes from the wallpaper set last: both ids are read and compared through MonetProfile.lockWallpaperIsLatest",
+          lockId > 0 && sysId > lockId && pal.contains("if (MonetProfile.lockWallpaperIsLatest(wm.getWallpaperId(android.app.WallpaperManager.FLAG_LOCK), wm.getWallpaperId(android.app.WallpaperManager.FLAG_SYSTEM))) {"));
+      check("source (T-079): the lock colours only when it is the latest, else (or when it has none) the home wallpaper's",
+          lockColors > sysId && sysColors > lockColors && pal.indexOf("getWallpaperColors(") == pal.indexOf("getWallpaperColors(android.app.WallpaperManager.FLAG_LOCK)"));
+      check("source (T-079): still inside the API 27 check and its try (anything going wrong leaves \"wallpaper\" out)",
+          pal.indexOf("if (Build.VERSION.SDK_INT >= 27) {") < lockId && pal.lastIndexOf("try {", lockId) > pal.indexOf("if (Build.VERSION.SDK_INT >= 27) {") && pal.indexOf("} catch (Throwable ignored) {}", sysColors) > sysColors);
     }
     String bridge = bodyOf(m, "public String getSystemPalette() {");
     check("source: the bridge's getSystemPalette answers with systemPaletteJson()", bridge != null && bridge.contains("return systemPaletteJson();"));

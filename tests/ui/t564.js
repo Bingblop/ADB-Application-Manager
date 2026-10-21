@@ -53,13 +53,19 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   let c = await card();
   check('1. without Super User: the card group is there with one locked row', c.shown && c.title === 'Root-only theme controls' && c.rows === 1 && c.locked, JSON.stringify(c));
   check('   it is the last card of the Theme panel, right after "How this works"', await ev(() => { const cards = Array.from(document.querySelectorAll('#ovlThemePanel > .color-card')); const i = cards.findIndex(x => /How this works/.test(x.querySelector('.color-card-title').innerText)); return i >= 0 && cards[i + 1] && cards[i + 1].id === 'ovlRootCard' && cards.length === i + 2; }));
-  check('   the row is a Root Features locked row: the name and its line, a disabled Locked button, the caption Needs Super User, no switch', c.name === 'Pure black backgrounds True black dark backgrounds, panels in a few dark greys. Light mode is unchanged.' && c.lockBtn && c.lockBtn.text === 'Locked' && c.lockBtn.disabled && c.lock === 'Needs Super User' && !c.sw, JSON.stringify(c));
+  check('   the row is a Root Features locked row: the name and its line, a disabled Locked button, the caption Needs Super User, no switch', c.name === 'Pure black backgrounds True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors, except that its darkest text becomes pure black.' && c.lockBtn && c.lockBtn.text === 'Locked' && c.lockBtn.disabled && c.lock === 'Needs Super User' && !c.sw, JSON.stringify(c));
   check('   the line under it says why', c.note === 'Shizuku and ADB cannot write these colors; Root can.', c.note);
   check('   the hint under Apply says nothing about the overlay', c.rootHint === '' && USUAL.test(c.hint), JSON.stringify([c.hint, c.rootHint]));
   check('   nothing of the card is interactive (its only button is disabled)', await ev(() => Array.from(document.querySelectorAll('#ovlRootCards button')).every(x => x.disabled) && document.querySelectorAll('#ovlRootCards button').length === 1));
   await ev(() => { kvSet('ovl_black', true); kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now() }); ovlRender(); });      // remembered from a rooted session: still locked, still no call
   c = await card();
   check('   a switch and an overlay remembered from a rooted session change nothing while locked', c.locked && c.rootHint === '', JSON.stringify([c.locked, c.rootHint]));
+  check('   the line under it also says the overlay from that session is still written (T-078: without Super User it stays on)', c.note === 'Shizuku and ADB cannot write these colors; Root can.\nThe pure black overlay is written on this phone.', JSON.stringify(c.note));
+  await reset(); dialogs.length = 0; answer = false; await page.locator('#ovlResetBtn').click(); await sleep(200); answer = true;
+  check('   Default\'s question says the overlay stays on, since switching it off needs Super User; cancelled, nothing is written', dialogs.length === 1 && /Tonal Spot style again\.\n\nThe overlay stays on: switching it off needs Super User\.$/.test(dialogs[0]) && (await calls()).fab.length === 0 && (await calls()).apply.length === 0, JSON.stringify(dialogs));
+  await ev(() => { kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now(), pending: true, style: 'FIDELITY' }); ovlRender(); }); c = await card();
+  check('   a pending theme record: the line says the theme overlay may be written', c.note === 'Shizuku and ADB cannot write these colors; Root can.\nThe theme overlay may be written on this phone.', JSON.stringify(c.note));
+  await ev(() => { kvSet('ovl_root_applied', { ids: ['com.android.shell:aam_monet'], t: Date.now() }); ovlRender(); });
   await reset(); await apply();
   let k = await calls();
   check('   Apply writes the theme setting as before and never calls overlayFabricate', k.apply.length === 1 && k.fab.length === 0 && (await snack()) === 'Theme applied' && (await undoShown()), JSON.stringify([k.apply.length, k.fab.length, await snack()]));
@@ -118,6 +124,41 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('4. Undo switches the overlay off first (a disable plan with the remembered id), then puts the theme back', k.fab.length === 1 && k.fab[0].action === 'disable' && JSON.stringify(k.fab[0].ids) === '["' + AAM + '"]' && k.restore.length === 1 && k.restoreUndo[0] === true, JSON.stringify([k.fab, k.restore]));
   check('   the overlay is forgotten (kv cleared) and listed off; no new Undo', (await kv('ovl_root_applied')) === null && (await ev(() => window.__ovl.find(x => x.id === 'com.android.shell:aam_monet').state)) === 0 && (await snack()) === '' && (await toast()) === 'Theme put back', JSON.stringify([await kv('ovl_root_applied'), await toast()]));
 
+  // 4b) T-069: Undo puts back this app's overlay as it was before the Apply: a Pure black overlay written days ago, rewritten by an Apply
+  //     of another colour, is written again after the old theme is back (not switched off)
+  const listedOn = () => ev(id => { const o = window.__ovl.find(x => x.id === id); return o ? o.state : -9; }, AAM);
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() - 86400000, black: true }); window.__ovl.find(x => x.id === id).state = 1; ovlPickColor('E91E63'); ovlRender(); }, AAM);
+  await reset(); await apply();
+  check('4b. Pure black written days ago, switch on, Apply of another colour: the overlay is written again (the same 11 entries)', (await calls()).fab.length === 1 && (await calls()).fab[0].action === 'fabricate' && (await calls()).fab[0].entries.length === 11, JSON.stringify((await calls()).fab.map(f => f.action)));
+  await reset(); await undo();
+  k = await calls();
+  check('    its Undo puts the old theme back, then writes that Pure black overlay again (no disable): the record says pure black, written; the overlay is listed on; the card says so', k.restore.length === 1 && k.restoreUndo[0] === true && k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 11 && ((await kv('ovl_root_applied')) || {}).black === true && ((await kv('ovl_root_applied')) || {}).pending !== true && (await listedOn()) === 1 && (await card()).note === 'The pure black overlay is written on this phone.' && (await toast()) === 'Theme put back', JSON.stringify([k.fab.map(f => f.action), await kv('ovl_root_applied'), await toast()]));
+  // a style's overlay from before, written by this version (the record keeps the source colour, the mode and the contrast): Undo writes
+  // that style's colours again, from the record's own choices
+  await ev(() => { kvSet('ovl_root_style', 'FIDELITY'); ovlPickColor('6750A4'); ovlRender(); }); await reset(); await apply();
+  const fid = await kv('ovl_root_applied');
+  check('    Fidelity with Pure black written: the record keeps what a rebuild needs (the source colour 6750A4, the mode, the contrast)', !!fid && fid.style === 'FIDELITY' && fid.black === true && fid.seed === '6750A4' && fid.dark === true && fid.contrast === 0, JSON.stringify(fid));
+  const fidPlan = (await calls()).fab[0];
+  await ev(() => { kvSet('ovl_root_style', ''); ovlPickColor('E91E63'); ovlRender(); }); await reset(); await apply();
+  check('    then More styles Off and another colour: Apply writes Pure black alone', (await calls()).fab.length === 1 && (await calls()).fab[0].entries.length === 11 && ((await kv('ovl_root_applied')) || {}).style === '');
+  await reset(); await undo();
+  k = await calls();
+  check('    its Undo writes the Fidelity overlay from before again, entry for entry, and the record is Fidelity with Pure black again', k.restore.length === 1 && k.fab.length === 1 && k.fab[0].action === 'fabricate' && JSON.stringify(k.fab[0].entries) === JSON.stringify(fidPlan.entries) && ((await kv('ovl_root_applied')) || {}).style === 'FIDELITY' && ((await kv('ovl_root_applied')) || {}).black === true, JSON.stringify([k.fab.map(f => f.action + ':' + (f.entries || []).length), await kv('ovl_root_applied')]));
+  // an older record of a style without those choices cannot be rebuilt: Undo switches the overlay off, as before, and says so
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() - 86400000, black: false, style: 'FIDELITY' }); ovlRender(); }, AAM);
+  await reset(); await apply(); await reset(); await undo();
+  k = await calls();
+  check('    an older Fidelity record without the source colour: its Undo switches the overlay off first, puts the theme back, and the message says the overlay from before could not be written again', k.fab.length === 1 && k.fab[0].action === 'disable' && k.restore.length === 1 && (await kv('ovl_root_applied')) === null && (await toast()) === 'Theme put back. The overlay from before could not be written again, so it is off.', JSON.stringify([k.fab.map(f => f.action), await toast()]));
+  // a record from before that is still waiting for its write's answer (pending: maybe written, never confirmed) is not written again as
+  // if it had been on (T-069 fixup): switched off first, the theme back, the same message
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() - 60000, pending: true, black: true }); ovlRender(); }, AAM);
+  await reset(); await apply();
+  check('    a pending Pure black record before the Apply: the Apply writes and confirms its own overlay', (await calls()).fab.length === 1 && (await calls()).fab[0].action === 'fabricate' && ((await kv('ovl_root_applied')) || {}).pending !== true);
+  await reset(); await undo();
+  k = await calls();
+  check('    its Undo does not rebuild the pending record: the overlay is switched off first, the theme put back, the message says the overlay from before is off', k.fab.length === 1 && k.fab[0].action === 'disable' && k.restore.length === 1 && (await kv('ovl_root_applied')) === null && (await toast()) === 'Theme put back. The overlay from before could not be written again, so it is off.', JSON.stringify([k.fab.map(f => f.action), await toast()]));
+  await ev(id => { kvSet('ovl_root_applied', null); window.__ovl.find(x => x.id === id).state = 0; ovlPickColor('6750A4'); ovlRender(); }, AAM);
+
   // 5) the switch off after a write: Apply removes it
   await reset(); await apply();
   check('5. a second Apply writes it again (the same plan) and remembers it', (await calls()).fab.length === 1 && (await calls()).fab[0].action === 'fabricate' && (await calls()).fab[0].entries.length === 11 && !!(await kv('ovl_root_applied')));
@@ -131,6 +172,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   now nothing follows the theme: the hint is plain, the line gone', c.rootHint === '' && c.note === '' && !c.sw.on, JSON.stringify(c));
   await reset(); await apply();
   check('   Apply with the switch off and nothing written does not call the bridge at all', (await calls()).fab.length === 0 && (await calls()).apply.length === 1);
+  // 5b) T-067: the switch is taken when Apply is tapped: flipped while the button reads Applying… (it stays usable), it changes nothing of
+  //     this Apply and counts for the next one
+  await ev(() => { window.__delay = 400; }); await reset();
+  await page.locator('#ovlApplyBtn').click(); await sleep(80);
+  let busyFlip = await ev(() => ({ busy: ovlBusy, disabled: document.getElementById('ovlBlackSw').disabled === true }));
+  await page.locator('#ovlBlackSw').click();
+  await settle(); await sleep(100);
+  k = await calls();
+  check('5b. off when Apply is tapped, switched on while it is busy: no overlay is written (no bridge call); the switch is on for the next Apply', busyFlip.busy && !busyFlip.disabled && k.apply.length === 1 && k.fab.length === 0 && (await kv('ovl_black')) === true && (await kv('ovl_root_applied')) === null, JSON.stringify([busyFlip, k.fab]));
+  await reset();
+  await page.locator('#ovlApplyBtn').click(); await sleep(80);
+  await page.locator('#ovlBlackSw').click();
+  await settle(); await sleep(100);
+  k = await calls();
+  check('    on when Apply is tapped, switched off while it is busy: the pure black overlay is written all the same (11 entries) and remembered; the switch is off for the next Apply', k.apply.length === 1 && k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 11 && ((await kv('ovl_root_applied')) || {}).black === true && (await kv('ovl_black')) === false, JSON.stringify([k.fab.map(f => f.action), await kv('ovl_root_applied'), await kv('ovl_black')]));
+  await ev(() => { window.__delay = 20; kvSet('ovl_root_applied', null); window.__ovl.find(x => x.id === 'com.android.shell:aam_monet').state = 0; ovlRender(); });
 
   // 6) Android 13: one overlay per colour
   await ev(() => { window.__sdk = 33; ovlReadPalette(); kvSet('ovl_black', true); ovlRender(); }); await reset();
@@ -147,17 +204,44 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   both are forgotten and listed off; the switch stays as the person set it (on); the bar offers the old theme', (await kv('ovl_root_applied')) === null && (await ev(() => window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).every(o => o.state === 0))) && (await kv('ovl_black')) === true && (await snack()) === 'Theme reset to the default', JSON.stringify([await kv('ovl_root_applied'), await snack()]));
   await reset();
   await undo();
-  check('   its Undo puts the theme back and writes no overlay', (await calls()).restore.length === 1 && (await calls()).fab.length === 0 && (await kv('ovl_root_applied')) === null);
+  k = await calls();
+  check('   its Undo (T-069) puts the theme back, then writes the pure black overlay Default switched off again (its two entries on Android 13); the record says pure black with both ids', k.restore.length === 1 && k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 2 && JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '_neutral1_900","' + AAM + '_neutral2_900"]' && ((await kv('ovl_root_applied')) || {}).black === true, JSON.stringify([k.fab.map(f => f.action), await kv('ovl_root_applied')]));
+  await ev(() => { kvSet('ovl_root_applied', null); window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).forEach(o => { o.state = 0; }); });
   dialogs.length = 0; answer = false; await reset();
   await page.locator('#ovlResetBtn').click(); await sleep(200);
   check('   with nothing written the question does not mention the overlay; Cancel changes nothing', dialogs.length === 1 && !/pure black/.test(dialogs[0]) && (await calls()).restore.length === 0 && (await calls()).fab.length === 0, dialogs[0]);
   answer = true;
 
+  // 6b) T-071: an update from Android 13 to 14. The 13-era record names one overlay per colour; the first write on 14 is the one overlay
+  //     aam_monet. The earlier ids the list still shows on stay in the record, so switching Pure black off later switches them off too;
+  //     earlier ids the list shows off (or does not list) are not kept
+  const N1 = AAM + '_neutral1_900', N2 = AAM + '_neutral2_900';
+  const seed13 = state => ev(([n1, n2, st]) => {
+    kvSet('ovl_root_applied', { ids: [n1, n2], t: Date.now() - 86400000, black: true, profile: 'P12' });
+    window.__ovl.filter(o => o.id === n1 || o.id === n2).forEach(o => { o.state = st; });
+    const m = window.__ovl.find(o => o.id === 'com.android.shell:aam_monet'); if (m) m.state = 0;
+    window.__sdk = 34; ovlReadPalette(); kvSet('ovl_black', true); ovlRender();
+  }, [N1, N2, state]);
+  await seed13(1); await sleep(200); await reset();
+  await apply();
+  k = await calls();
+  let rec13 = await kv('ovl_root_applied');
+  check('6b. after an update to Android 14, the first Pure black write (11 entries, one overlay) keeps the 13-era ids the list still shows on', k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 11 && !!rec13 && JSON.stringify(rec13.ids) === JSON.stringify([AAM, N1, N2]) && rec13.pending !== true && (await toast()) === 'Pure black overlay written', JSON.stringify([k.fab.map(f => f.action), rec13]));
+  await page.locator('#ovlBlackSw').click(); await sleep(80); await reset();
+  await apply();
+  k = await calls();
+  check('    the switch off and Apply: the disable names all three, and none of them is listed on afterwards', k.fab.length === 1 && k.fab[0].action === 'disable' && JSON.stringify(k.fab[0].ids) === JSON.stringify([AAM, N1, N2]) && (await kv('ovl_root_applied')) === null && (await ev(() => window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).every(o => o.state === 0))), JSON.stringify(k.fab));
+  await seed13(0); await sleep(200); await reset();
+  await apply();
+  rec13 = await kv('ovl_root_applied');
+  check('    13-era ids the list shows off (Android dropped them at boot) are not kept: the record names aam_monet alone', !!rec13 && JSON.stringify(rec13.ids) === JSON.stringify([AAM]), JSON.stringify(rec13));
+  await ev(() => { kvSet('ovl_root_applied', null); window.__ovl.filter(o => o.id.startsWith('com.android.shell:aam_monet')).forEach(o => { o.state = 0; }); window.__sdk = 33; ovlReadPalette(); ovlRender(); });
+
   // 8) failures
   await ev(() => { window.__sdk = 34; ovlReadPalette(); window.__fabDeny = 'Android did not take the colours'; }); await reset();
   await apply();
   let s = await sheet();
-  check('8. refused colours: a sheet with the reason, the advice and what Android reports for each colour; a toast', s.shown && s.title === 'Could not write the pure black overlay' && /Monet · root overlay/.test(s.body) && /did not take the colours/.test(s.body) && /kept its own colours/.test(s.body) && /What Android reports for each color:/.test(s.body) && /android:color\/system_neutral1_900 → #ff1b1b1b/.test(s.body) && (await toast()) === 'The pure black overlay was not written', JSON.stringify(s));
+  check('8. refused colours (listed on, Android shows its own): the sheet and the toast say the overlay is on but its colours did not take, with the reason, the advice and what Android reports for each colour', s.shown && s.title === 'The pure black overlay is on, but Android shows its own colors' && /Monet · root overlay/.test(s.body) && /did not take the colours/.test(s.body) && /kept its own colours/.test(s.body) && /What Android reports for each color:/.test(s.body) && /android:color\/system_neutral1_900 → #ff1b1b1b/.test(s.body) && (await toast()) === 'The pure black overlay is on, but Android shows its own colors' && (await card()).note === 'The pure black overlay is written on this phone.', JSON.stringify(s));
   check('   the overlay is listed on all the same, so it stays remembered for Revert and Undo; the theme bar still offers Undo', JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '"]' && (await snack()) === 'Theme applied' && (await undoShown()));
   await closeAll();
   await ev(() => { window.__fabDeny = null; window.__fabNeedsRoot = true; kvSet('ovl_root_applied', null); }); await reset();
@@ -193,10 +277,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await sleep(2600);
   check('   and the overlay list is read again shortly (after 2.5 s)', (await calls()).list === 1, String((await calls()).list));
   // a disable whose overlays Android does not list at all (the write never ran: the app restarted first): the Java side calls it a
-  // refusal, but nothing of this app's is on, so the record goes and the next Apply does not try again
+  // refusal, but nothing of this app's is on, so the record goes, the next Apply does not try again, and it counts as removed (T-073)
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), pending: true }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: -2, ids: [id], error: 'That overlay is not listed any more (' + id + ')', list: [['android.theme.customization.accent_color', 'android', 1], [id + '_other', 'android', 1]] }, 'disable', null, null); }, AAM);
   s = await sheet();
-  check('   a disable of an overlay Android does not list: the sheet says so, and the overlay is forgotten (nothing of it is on)', s.shown && s.title === 'Could not remove the pure black overlay' && /not listed any more/.test(s.body) && (await kv('ovl_root_applied')) === null && (await card()).note === '', JSON.stringify(s));
+  check('   a disable of an overlay Android does not list: nothing of it is on, so the toast says removed, no failure sheet, and the overlay is forgotten', !s.shown && (await toast()) === 'Pure black overlay removed' && (await kv('ovl_root_applied')) === null && (await card()).note === '', JSON.stringify([s.shown, await toast()]));
+  // listed but off is the same; listed on is a real failure and keeps the sheet
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: 0, ids: [id], error: 'x', list: [[id, 'android', 0]] }, 'disable', null, null); }, AAM);
+  s = await sheet();
+  check('   a disable whose overlay is listed off: removed, no sheet, record cleared', !s.shown && (await toast()) === 'Pure black overlay removed' && (await kv('ovl_root_applied')) === null, JSON.stringify([s.shown, await toast()]));
+  await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, state: 1, ids: [id], error: 'Android did not switch it off (' + id + ')', list: [[id, 'android', 1]] }, 'disable', null, null); }, AAM);
+  s = await sheet();
+  check('   a disable whose overlay is still listed on: the failure toast and sheet, the record kept', s.shown && s.title === 'Could not remove the pure black overlay' && (await toast()) === 'The pure black overlay was not removed' && JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '"]', JSON.stringify([s.title, await toast()]));
   await closeAll();
   await ev(id => { kvSet('ovl_root_applied', { ids: [id], t: Date.now() }); ovlRootDone({ req: 1, op: 'disable', ok: false, unknown: true, ids: [id], error: 'No answer from the device' }, 'disable', null, null); }, AAM);
   check('   a disable without an answer keeps the overlay remembered (it may still be on)', JSON.stringify(((await kv('ovl_root_applied')) || {}).ids) === '["' + AAM + '"]');
@@ -279,6 +370,125 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const r4b = await p4.evaluate(() => ({ fab: window.__ovlCalls.fab, restore: window.__ovlCalls.restore.length, applied: kvGet('ovl_root_applied', null), note: document.getElementById('ovlRootNote').innerText }));
   check('    its Undo switches the overlay off first (the disable plan with the remembered id), then puts the old theme back; nothing is remembered any more', r4b.fab.length === 1 && r4b.fab[0].action === 'disable' && JSON.stringify(r4b.fab[0].ids) === '["' + AAM + '"]' && r4b.restore === 1 && r4b.applied === null && r4b.note === '', JSON.stringify(r4b));
   await p4.close();
+
+  // 13b) T-068: a restart before the theme's own answer. The overlay half of that Apply (what its tap planned, with its choices) is kept in
+  //      the resume record; once the theme reads back as written, the restarted page completes that Apply: the overlay is written, with the
+  //      usual toast. Read back as not written: nothing is written, and a toast says so
+  const KEY = 'theme_customization_overlay_packages';
+  const openWith = async (kvs, init) => {
+    const p = await b.newPage({ viewport: { width: 360, height: 800 } });
+    p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(k => { window.__kvInit = JSON.parse(k); }, kvs);
+    await p.addInitScript(sdb.initScript); await p.addInitScript(ovl.initScript);
+    await p.addInitScript(init.fn, init.arg);
+    return p;
+  };
+  // tap Apply with Pure black on and a theme bridge that never answers; the phone's setting as written (the value the mock would write) or not
+  const tapLost = async () => {
+    const p = await openWith(JSON.stringify({ ovl_black: 'true' }), { fn: () => { window.__root = true; }, arg: null });
+    await p.goto(URL); await p.waitForTimeout(500);
+    await p.evaluate(() => switchView('overlays')); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.__ovlNoAnswer = true; });
+    await p.locator('#ovlApplyBtn').click(); await p.waitForTimeout(150);
+    const out = await p.evaluate(() => {
+      const a = window.__ovlCalls.apply[0] || {}, st = a.style || 'TONAL_SPOT';
+      const value = a.source === 'preset' ? JSON.stringify({ 'android.theme.customization.system_palette': a.hex, 'android.theme.customization.color_source': 'preset', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() })
+        : JSON.stringify({ 'android.theme.customization.color_source': 'home_wallpaper', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() });
+      return { kv: JSON.stringify(window.AndroidBridge.__kv), value, resume: kvGet('ovl_resume', null), fab: window.__ovlCalls.fab.length };
+    });
+    await p.close();                                             // the restart, before the theme's answer
+    return out;
+  };
+  const restarted = async (lost, written) => {
+    const p = await openWith(lost.kv, { fn: ([key, v]) => { window.__root = true; window.__toasts = []; if (v) window.__db.secure[key] = v; }, arg: [KEY, written ? lost.value : null] });
+    await p.addInitScript(() => { const hook = () => { if (typeof showToast !== 'function') { setTimeout(hook, 5); return; } const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; }; hook(); });
+    await p.goto(URL); await p.waitForTimeout(1900);
+    await settle(p); await p.waitForTimeout(100);
+    const r = await p.evaluate(() => ({ view: currentViewName(), snack: document.getElementById('sdbSnack').classList.contains('show') ? document.getElementById('sdbSnackMsg').innerText : '', fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null), done: (kvGet('ovl_resume', null) || {}).done === true, note: document.getElementById('ovlRootNote').innerText }));
+    return { p, r };
+  };
+  let lost = await tapLost();
+  check('13b. Apply with Pure black on, the theme\'s answer lost to a restart: the resume record keeps what the tap planned for the overlay (fabricate) and its choices (Pure black on); nothing was written yet', lost.fab === 0 && !!lost.resume && lost.resume.kind === 'apply' && lost.resume.root === 'fabricate' && !!lost.resume.at && lost.resume.at.black === true && lost.resume.done === false, JSON.stringify(lost.resume));
+  let rs = await restarted(lost, true);
+  check('    after the restart, the theme read back as written: that Apply\'s overlay is written (the 11-entry plan) with the usual toast, the Undo bar is back, the record says written and the resume record is done', rs.r.view === 'overlays' && rs.r.snack === 'Theme changed' && JSON.stringify(rs.r.fab) === '["fabricate:11"]' && rs.r.toasts.includes('Pure black overlay written') && !!rs.r.applied && rs.r.applied.black === true && rs.r.applied.pending !== true && rs.r.done && rs.r.note === 'The pure black overlay is written on this phone.', JSON.stringify(rs.r));
+  await rs.p.close();
+  lost = await tapLost();
+  rs = await restarted(lost, false);
+  check('    the theme read back as not written: no overlay is written, and a toast says the colors were not written and to tap Apply theme again', JSON.stringify(rs.r.fab) === '[]' && rs.r.toasts.includes('The colors were not written. Tap Apply theme again.') && rs.r.applied === null && rs.r.note === '', JSON.stringify(rs.r));
+  await rs.p.close();
+  // the theme's answer is unknown (no answer from the shell): after the usual "No answer" the theme is looked at again in 2.5 s; written,
+  // the overlay of this Apply follows; not written, the toast
+  for (const applied of [true, false]) {
+    const p = await openWith(JSON.stringify({ ovl_black: 'true' }), { fn: () => { window.__root = true; window.__toasts = []; }, arg: null });
+    await p.addInitScript(() => { const hook = () => { if (typeof showToast !== 'function') { setTimeout(hook, 5); return; } const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; }; hook(); });
+    await p.goto(URL); await p.waitForTimeout(500);
+    await p.evaluate(() => switchView('overlays')); await p.waitForTimeout(400);
+    await p.evaluate(a => { window.__themeUnknown = { apply: a }; }, applied);
+    await p.locator('#ovlApplyBtn').click(); await p.waitForTimeout(300);
+    const mid = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.length, toasts: window.__toasts.slice() }));
+    await p.waitForTimeout(2900); await settle(p); await p.waitForTimeout(100);
+    const u = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null) }));
+    if (applied) check('    no answer to the theme write, the setting written all the same: "No answer" first and no overlay yet; once the theme reads back as written, the overlay of this Apply is written with the usual toast', mid.fab === 0 && mid.toasts.includes('No answer: the theme may still change') && JSON.stringify(u.fab) === '["fabricate:11"]' && u.toasts.includes('Pure black overlay written') && !!u.applied && u.applied.black === true, JSON.stringify([mid, u]));
+    else check('    no answer and the setting not written: no overlay, and the toast says the colors were not written', mid.fab === 0 && JSON.stringify(u.fab) === '[]' && u.toasts.includes('The colors were not written. Tap Apply theme again.') && u.applied === null, JSON.stringify([mid, u]));
+    await p.close();
+  }
+  // T-069: the Undo a restart brings back puts back the overlay from before too (the resume record keeps it as prev)
+  {
+    const prevRec = { ids: [AAM], t: Date.now() - 86400000, black: true };
+    const kvs = JSON.stringify({ ovl_black: 'true', ovl_root_applied: JSON.stringify({ ids: [AAM], t: Date.now(), black: true }), ovl_resume: JSON.stringify({ t: Date.now(), sub: 'theme', undo: '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"TONAL_SPOT"}', kind: 'apply', done: true, n: 0, prev: prevRec }) });
+    const p = await openWith(kvs, { fn: () => { window.__root = true; }, arg: null });
+    await p.goto(URL); await p.waitForTimeout(1900);
+    await p.evaluate(() => { window.__ovlCalls.fab.length = 0; window.__ovlCalls.restore.length = 0; });
+    await undo(p);
+    const ru = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), restore: window.__ovlCalls.restore.length, applied: kvGet('ovl_root_applied', null) }));
+    check('    the Undo a restart brings back, with a Pure black overlay written before that Apply: the old theme back, then that overlay written again (no disable)', JSON.stringify(ru.fab) === '["fabricate:11"]' && ru.restore === 1 && !!ru.applied && ru.applied.black === true, JSON.stringify(ru));
+    await p.close();
+  }
+  // T-069 fixup: that Undo's own theme answer lost (a restart first, or no answer). The overlay from before is kept in the resume record with
+  // the theme value the Undo writes; once the theme reads back as put back, the restarted page writes that overlay (the Undo the user
+  // tapped); read back as not put back, nothing is written and the toast says the theme was not changed
+  {
+    const OLD = '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"TONAL_SPOT"}';
+    const NEW = '{"android.theme.customization.system_palette":"E91E63","android.theme.customization.color_source":"preset","android.theme.customization.theme_style":"TONAL_SPOT","_applied_timestamp":1700000000000}';
+    const prevRec = { ids: [AAM], t: Date.now() - 86400000, black: true };
+    const kvs = JSON.stringify({ ovl_black: 'true', ovl_root_applied: JSON.stringify({ ids: [AAM], t: Date.now(), black: true }), ovl_resume: JSON.stringify({ t: Date.now(), sub: 'theme', undo: OLD, kind: 'apply', done: true, n: 0, prev: prevRec }) });
+    const toastHook = () => { const hook = () => { if (typeof showToast !== 'function') { setTimeout(hook, 5); return; } const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; }; hook(); };
+    const tapUndoLost = async () => {
+      const p = await openWith(kvs, { fn: ([key, v]) => { window.__root = true; window.__db.secure[key] = v; }, arg: [KEY, NEW] });
+      await p.goto(URL); await p.waitForTimeout(1900);
+      await p.evaluate(() => { window.__ovlCalls.fab.length = 0; window.__ovlCalls.restore.length = 0; window.__ovlNoAnswer = true; });
+      await p.locator('#sdbSnackUndo').click(); await p.waitForTimeout(150);
+      const out = await p.evaluate(() => ({ kv: JSON.stringify(window.AndroidBridge.__kv), resume: kvGet('ovl_resume', null), fab: window.__ovlCalls.fab.length, restore: window.__ovlCalls.restore.slice() }));
+      await p.close();                                           // the restart, before the theme's answer
+      return out;
+    };
+    let lu = await tapUndoLost();
+    check('13c. Undo with a Pure black overlay to put back, its theme answer lost to a restart: the resume record keeps the theme value it writes and that overlay\'s choices; nothing of the overlay was written yet', lu.fab === 0 && JSON.stringify(lu.restore) === JSON.stringify([OLD]) && !!lu.resume && lu.resume.kind === 'undo' && lu.resume.done === false && lu.resume.target === OLD && !!lu.resume.restore && lu.resume.restore.black === true, JSON.stringify(lu.resume));
+    for (const putBack of [true, false]) {
+      const p = await openWith(lu.kv, { fn: ([key, v]) => { window.__root = true; window.__toasts = []; window.__db.secure[key] = v; }, arg: [KEY, putBack ? OLD : NEW] });
+      await p.addInitScript(toastHook);
+      await p.goto(URL); await p.waitForTimeout(1900);
+      await settle(p); await p.waitForTimeout(100);
+      const r = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null), done: (kvGet('ovl_resume', null) || {}).done === true }));
+      if (putBack) check('    after the restart, the theme read back as put back: the overlay from before is written (the 11-entry plan, no disable) with the usual toasts, the record says written, the resume record is done', JSON.stringify(r.fab) === '["fabricate:11"]' && r.toasts.includes('Pure black overlay written') && r.toasts.includes('Theme put back') && !!r.applied && r.applied.black === true && r.applied.pending !== true && r.done, JSON.stringify(r));
+      else check('    the theme read back as not put back (the Undo did not take): nothing is written, the Apply\'s record stays, the toast says the theme was not changed', JSON.stringify(r.fab) === '[]' && r.toasts.includes('The theme was not changed') && !!r.applied && r.applied.black === true && r.done, JSON.stringify(r));
+      await p.close();
+    }
+    // no answer to the Undo's theme write (unknown): the theme is looked at again, and the overlay follows only when it reads back as put back
+    for (const putBack of [true, false]) {
+      const p = await openWith(kvs, { fn: ([key, v]) => { window.__root = true; window.__toasts = []; window.__db.secure[key] = v; }, arg: [KEY, NEW] });
+      await p.addInitScript(toastHook);
+      await p.goto(URL); await p.waitForTimeout(1900);
+      await p.evaluate(a => { window.__ovlCalls.fab.length = 0; window.__ovlCalls.restore.length = 0; window.__themeUnknown = { apply: a }; }, putBack);
+      await p.locator('#sdbSnackUndo').click(); await p.waitForTimeout(300);
+      const mid = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.length, toasts: window.__toasts.slice() }));
+      await p.waitForTimeout(2900); await settle(p); await p.waitForTimeout(100);
+      const u = await p.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => f.action + (f.entries ? ':' + f.entries.length : '')), toasts: window.__toasts.slice(), applied: kvGet('ovl_root_applied', null) }));
+      if (putBack) check('    no answer to the Undo\'s theme write, the setting put back all the same: "No answer" first and no overlay yet; then the overlay from before is written with the usual toasts', mid.fab === 0 && mid.toasts.includes('No answer: the theme may still change') && JSON.stringify(u.fab) === '["fabricate:11"]' && u.toasts.includes('Pure black overlay written') && u.toasts.includes('Theme put back') && !!u.applied && u.applied.black === true && u.applied.pending !== true, JSON.stringify([mid, u]));
+      else check('    no answer and the setting not put back: nothing is written, the toast says the theme was not changed', mid.fab === 0 && JSON.stringify(u.fab) === '[]' && u.toasts.includes('The theme was not changed'), JSON.stringify([mid, u]));
+      await p.close();
+    }
+  }
 
   // 14) layout at 320 px, unlocked and locked, dark and light
   for (const theme of ['dark', 'light']) {

@@ -126,7 +126,9 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   const byRes = plan => Object.fromEntries(((plan && plan.entries) || []).map(e => [e.resource.replace(RES, ''), e.argb]));
   const pinsOff = (plan, pins) => { const r = byRes(plan); return Object.keys(pins).filter(k => r[k] !== pins[k]).map(k => k + ' ' + r[k] + ' != ' + pins[k]); };
   const sameAs = (plan, style, seed, opts) => ev(([entries, style, seed, opts]) => { let want; try { want = MonetPlan.entries(style, seed, opts || undefined); } catch (e) { return 'throws: ' + e.message; } if (!entries || want.length !== entries.length) return 'count ' + (entries || []).length + ' vs ' + want.length; const have = Object.fromEntries(entries.map(e => [e.resource, e.argb])); const off = want.filter(e => have[e.resource] !== e.argb).map(e => e.resource + ' ' + have[e.resource] + ' != ' + e.argb); return off.length ? off.slice(0, 5).join('; ') : 'same'; }, [plan && plan.entries, style, seed, opts || null]);
-  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T') : 'null'; };
+  // T-069: a record with a style also keeps the source colour, the mode and the contrast (seed, dark, contrast) for the Undo; t564 checks them,
+  // and the record strings compared here leave them out
+  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T').replace(/,"seed":"[0-9A-F]{6}","dark":(?:true|false),"contrast":-?[0-9.e+-]+/, '') : 'null'; };
   const o16 = (spec, more) => Object.assign({ spec: spec || '2021', dark: true, profile: 'P16', contrast: 0 }, more || {});
   const o14 = (spec, more) => Object.assign({ spec: spec || '2021', dark: true, profile: 'P14', contrast: 0 }, more || {});
   // every AndroidBridge method, counted (name and arguments)
@@ -365,9 +367,9 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   }, AAM);
   check('F1. records: one from before the accents reads as none set (and so do PR 2\'s pure black one and one without a style); the accents are read back; a value that is not RRGGBB in capitals counts as not set', JSON.stringify(readsRec) === JSON.stringify(['null/null', 'E91E63/00897B', 'null/FFD600', 'null/null', 'null/null', 'null/null', 'null/null', 'null/null']), JSON.stringify(readsRec));
   await setAcc('E91E63', null);
-  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'TONAL_SPOT', accents: { secondary: 'E91E63' }, profile: 'P16', build: b }); }, [AAM, B16]);
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'TONAL_SPOT', accents: { secondary: 'E91E63' }, profile: 'P15Q2', build: b }); }, [AAM, B16]);
   await reset(); await phone({ sdk: 36, profile: 'P16', build: B16b }); a = await acc(); let stale = await ev(() => document.getElementById('ovlRootStale').innerText);
-  check('F2. Tonal Spot at 2021 written with Secondary E91E63 on the old build, still set, the phone on another build: the note says Android was updated; nothing is written by itself', stale === STALE && a.hint === HINT.list && a.said === SAID.sec && (await calls()).fab.length === 0, JSON.stringify([stale, a.hint]));
+  check('F2. Tonal Spot at 2021 written with Secondary E91E63 on the old build (15 QPR2), still set, the phone on another build and profile (16.0): the note says Android was updated; nothing is written by itself', stale === STALE && a.hint === HINT.list && a.said === SAID.sec && (await calls()).fab.length === 0, JSON.stringify([stale, a.hint]));
   await setAcc('', null); a = await acc(); stale = await ev(() => document.getElementById('ovlRootStale').innerText);
   check('   the secondary cleared (Apply would leave Tonal Spot to Android and switch the overlay off): no such note; the hint says Apply removes it', stale === '' && a.hint === 'Also removes the theme overlay.' && a.said === '', JSON.stringify([stale, a.hint]));
   await setAcc('E91E63', null); await reset(); await apply(); stale = await ev(() => document.getElementById('ovlRootStale').innerText);

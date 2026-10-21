@@ -799,9 +799,20 @@ style the palette is worked out with:
   (`cmd overlay fabricate`, which Android's overlay service accepts from root alone, so ADB and Shizuku get locked rows, as on
   the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
   also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
-  Android 12 and 13 only the two darkest neutral shades, one overlay each), reads the list and the colors back to judge it, and
-  **Undo**, **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
-  fabricated overlay). Not yet tried on a rooted phone.
+  Android 12 and 13 only the two darkest neutral shades, one overlay each; light mode keeps its colors, except that its darkest text
+  becomes pure black: the two shade 900 entries belong to both modes, and Android's light theme takes its main text from neutral1 900), reads the list and the colors back to judge it (listed
+  on with a color that comes back as Android's: the toast and the sheet's title say *The pure black overlay is on, but Android shows
+  its own colors*, or *The theme overlay is on, but Android shows its own colors* with a style's colors, and the record is kept), and
+  **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
+  fabricated overlay). **Undo** (the bar after Apply or Default, also after a restart) puts back what was there before the
+  change: the old theme and this app's overlay as it was, switched off when there was none, written again when there was one
+  (a record with a style's colours keeps the source color, the mode and the contrast for this; one from an earlier version
+  without them, or one still waiting for its own write's answer, is switched off, and the message says so; when the Undo's
+  theme answer is lost to a restart, the overlay follows once the theme reads back as put back). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
+  while it reads Applying… counts for the next Apply only. When the theme's own answer is lost (the app restarted first, or no
+  answer), the resume record keeps that Apply's overlay half and its choices: once the theme reads back as written, the overlay is
+  written as that tap would have; read back as not written, nothing is written and a toast says *The colors were not written. Tap
+  Apply theme again.* Not yet tried on a rooted phone.
 - **Which Android versions:** each Android release builds its theme colors its own way (the shade rule, the list of
   roles and their names, the write order, the color spec), so the app computes the root colors for the build family the phone is
   and writes them with that release's names in its order; everything else is locked (fail closed). `MonetProfile` (Java, no
@@ -823,15 +834,18 @@ style the palette is worked out with:
   `ro.build.version.oneui` is not set (another build of Android) is decided by its names. An older APK that reports no profile counts as *Update the
   app* on SDK 35 and up. Lock order: *Update the app* (no overlay bridge), the version lock, *Needs Super User*. A locked card's
   note says only whether an overlay written before is still on; with Super User, Apply (a disable), **Default** and **Undo**
-  switch it off. On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
+  switch it off. Without Super User the note is *Shizuku and ADB cannot write these colors; Root can.* with the *is written* / *may be
+  written* line under it when an overlay is still on, and **Default** (which then writes the theme setting only) ends its question with *The overlay stays
+  on: switching it off needs Super User.* On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
   49.6), with no chroma cap, from the scheme of the mode the phone is in at Apply; SystemUI's own 21 or 22 custom colors (clock,
   shade, notification, widget and others) are not written and keep Android's values for the list style. Phone makers can change
   Android's color engine and names; none of this was checked on a phone.
 - **Contrast and Android updates:** a style's roles and fixed colors are computed at the phone's contrast read when **Apply theme**
   is tapped (the palettes, the preview and Pure black do not depend on it); after changing the contrast in Settings, tap Apply
   again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
-  phone's are both known and differ, the record carries a style's colors and Apply would write a style's colors (Pure black alone is the
-  same on every build and gives none), a note under the card reads *Android was updated after
+  phone's are both known and differ, the record's profile is not the phone's (a monthly update within one profile gives no note: the
+  colors depend on the profile, not the build, so Apply would write the same entries), the record carries a style's colors and Apply
+  would write a style's colors (Pure black alone is the same on every build and gives none), a note under the card reads *Android was updated after
   these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. After an update to a
   locked release the rows lock instead and the overlay stays on (an overlay's entries whose names the new release lacks are
   skipped, read in idmap2) until it is switched off.
@@ -852,8 +866,8 @@ style the palette is worked out with:
   The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
   Apache-2.0); on 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast. A grey custom
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
-  *From Google blue: #808080 is too grey for this style*. **2021** then Apply, **Undo** and **Default** switch the overlay off. Not yet
-  tried on a rooted phone.
+  *From Google blue: #808080 is too grey for this style*. **2021** then Apply (with More styles on Off, Pure black off, the Intensity
+  sliders at 100 and no accent set) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
 - **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
@@ -864,15 +878,16 @@ style the palette is worked out with:
   Content with MCU main's TemperatureCache, checked against those releases' SystemUI and libmonet compiled and run; CMF from part 2,
   see Color spec; Android 14 to 17 accept Monochrome as a theme style, none Fidelity or Content, and 17's code has a CMF case that it
   does not accept as a style) from the custom color, else the wallpaper's
-  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first wallpaper color Android
-  reports that is not almost grey), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
+  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first main color Android
+  reports for the wallpaper set last, lock or home by WallpaperManager id as SystemUI does, that is not almost grey; SystemUI ranks
+  the whole color map by hue, which apps cannot read, so this may differ from the color Android picks), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
   list style Color spec recolors) shows the five rows (13 shades each) and names the source.
   **Apply theme** still writes the theme setting from the style list first and then the overlay on top: 165 colors on Android 14 and
   15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
   what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
   `accents` when a Secondary or tertiary accent is set, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
-  Messages then speak of the *theme overlay*; **Off** then Apply, **Undo** and **Default** switch it off. Spritz in the style list is the
+  Messages then speak of the *theme overlay*; **Off** then Apply and **Default** switch it off; **Undo** puts back the overlay from before (off when there was none). Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
 - **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
   styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
@@ -899,8 +914,12 @@ style the palette is worked out with:
   chroma). Measured WCAG contrast (`MonetPlan.roles()`, saturation at 100, contrast 0, seeds 6750A4 1B6EF3 B5651D 00FF00 808080
   FFDE3F, light and dark; P14 and P16 equal), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07 for the
   nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for CMF;
-  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42. **Reset** then Apply,
-  **Undo** and **Default** switch the overlay off as for More styles. Not yet tried on a rooted phone.
+  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42 (for these two pairs the
+  drop is mostly in light mode at 200). Accent text does not follow bgLight while the panels do, so its worst cases are at the other
+  ends: primary on surface_container_highest 4.96 / 3.76 / 5.05 at 2021, 4.84 / 3.72 / 5.00 at 2025, 4.95 / 3.74 / 4.14 for CMF (0 in
+  light mode, CMF's 200 in dark mode); inverse_primary on inverse_surface (P16) 4.96 / 3.76 / 5.44 at 2021 (0 in dark mode), 6.04 /
+  5.76 / 5.60 at 2025, 6.06 / 5.77 / 5.59 for CMF. **Reset** then Apply,
+  **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
 - **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14, 15 QPR1/QPR2 or
   16.0, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
   overlay bridge or when `monet.js` has no `MonetPlan.lib.accentsOf`; the locked row keeps its line): the row's line *Your own colors for
@@ -930,7 +949,7 @@ style the palette is worked out with:
   names the accents (*Secondary accent: your color.*, *Tertiary accent: your color.*, *Secondary and tertiary accents: your colors.*).
   Apply takes the colors at the tap; the preview follows them as they are stored. With none set, the plans, hints and records are the
   ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
-  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Undo** and **Default** switch the overlay off as for More
+  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Default** and **Undo** act as for More
   styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,

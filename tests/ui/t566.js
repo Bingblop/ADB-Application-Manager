@@ -80,7 +80,9 @@ const AAM = 'com.android.shell:aam_monet';
   const byRes = plan => Object.fromEntries(((plan && plan.entries) || []).map(e => [e.resource, e.argb]));
   // the plan's entries against MonetPlan.entries(style, seed, opts) in the page: the same resources, each with the same value
   const sameAs = (plan, style, seed, opts) => ev(([entries, style, seed, opts]) => { const want = MonetPlan.entries(style, seed, opts || undefined); if (!entries || want.length !== entries.length) return 'count ' + (entries || []).length + ' vs ' + want.length; const have = Object.fromEntries(entries.map(e => [e.resource, e.argb])); const off = want.filter(e => have[e.resource] !== e.argb).map(e => e.resource + ' ' + have[e.resource] + ' != ' + e.argb); return off.length ? off.slice(0, 5).join('; ') : 'same'; }, [plan && plan.entries, style, seed, opts || null]);
-  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T') : 'null'; };
+  // T-069: a record with a style also keeps the source colour, the mode and the contrast (seed, dark, contrast) for the Undo; t564 checks them,
+  // and the record strings compared here leave them out
+  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T').replace(/,"seed":"[0-9A-F]{6}","dark":(?:true|false),"contrast":-?[0-9.e+-]+/, '') : 'null'; };
   await ev(() => { window.__toasts = []; const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; });
 
   // ---- (a) the maths, in the page context ----
@@ -287,6 +289,29 @@ const AAM = 'com.android.shell:aam_monet';
   await page.waitForFunction(() => window.__ovlCalls.fab.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {}); await settle(); await sleep(100);
   k = await calls();
   check('   the other way round: Rainbow at the tap, Tonal Spot picked before the answer: the setting gets RAINBOW and the overlay written before is switched off (a disable, no fabricate); the record is cleared', k.apply.length === 1 && k.apply[0].style === 'RAINBOW' && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null, JSON.stringify([k.apply, k.fab.map(f => f.action), await rec()]));
+  // C7c (T-067): so are the Color spec and the More style: a radio picked while the button reads Applying… is stored (the controls stay
+  // usable), changes nothing of this Apply, and counts for the next one
+  const busyPick = async fn => {
+    await reset(); await page.locator('#ovlApplyBtn').click();
+    const live = await ev(fn);
+    await page.waitForFunction(() => !ovlBusy && sdbReqs.size === 0 && window.__ovlCalls.apply.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {}); await sleep(100);
+    return live;
+  };
+  let live = await busyPick(() => { const busy = ovlBusy; ovlPickSpec('2021'); return busy; });
+  k = await calls(); plan = k.fab[0] || {};
+  check('C7c. spec 2025 with Tonal Spot when Apply is tapped, 2021 picked while it is busy: the overlay is still Tonal Spot\'s 2025 plan and the record says 2025; 2021 is stored for the next Apply', live && k.fab.length === 1 && plan.action === 'fabricate' && (await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true })) === 'same' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","spec":"2025","build":"' + BUILD + '"}' && (await kv('ovl_spec')) === '2021', JSON.stringify([live, k.fab.map(f => f.action), await sameAs(plan, 'TONAL_SPOT', '6750A4', { spec: '2025', dark: true }), await rec(), await kv('ovl_spec')]));
+  live = await busyPick(() => { const busy = ovlBusy; ovlPickSpec('2025'); return busy; });
+  k = await calls();
+  check('   2021 at the tap (nothing to write, the overlay from before on), 2025 picked while busy: the overlay is switched off, no 2025 colours are written', live && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null, JSON.stringify([live, k.fab.map(f => f.action), await rec()]));
+  await ev(() => { ovlPickSpec('2026'); ovlPickRootStyle('CMF'); });
+  live = await busyPick(() => { const busy = ovlBusy; ovlPickSpec('2025'); return busy; });
+  k = await calls(); plan = k.fab[0] || {};
+  check('   CMF at 2026 when Apply is tapped, 2025 picked while busy (which sets More styles to Off): the CMF plan is written, the record says CMF and 2026', live && k.fab.length === 1 && plan.action === 'fabricate' && (await sameAs(plan, 'CMF', '6750A4', { spec: '2026', dark: true })) === 'same' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"CMF","spec":"2026","build":"' + BUILD + '"}' && (await kv('ovl_root_style')) === '', JSON.stringify([live, k.fab.map(f => f.action), await sameAs(plan, 'CMF', '6750A4', { spec: '2026', dark: true }), await rec()]));
+  await ev(() => { ovlPickSpec('2021'); });
+  live = await busyPick(() => { const busy = ovlBusy; ovlPickRootStyle('FIDELITY'); return busy; });
+  k = await calls();
+  check('   More styles Off at 2021 when Apply is tapped, Fidelity picked while busy: the CMF overlay is switched off, no Fidelity colours are written; Fidelity is stored', live && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null && (await kv('ovl_root_style')) === 'FIDELITY', JSON.stringify([live, k.fab.map(f => f.action), await rec()]));
+  await ev(() => { ovlPickRootStyle('OFF'); ovlPickSpec('2025'); });
   await ev(() => { window.__delay = 20; });
   // C8: a grey seed at 2025 is Google blue's plan
   await ev(() => { ovlPickColor('808080'); }); await reset(); await apply(); plan = (await calls()).fab[0] || {};

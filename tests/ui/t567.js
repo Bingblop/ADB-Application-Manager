@@ -113,7 +113,9 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   const byRes = plan => Object.fromEntries(((plan && plan.entries) || []).map(e => [e.resource.replace(RES, ''), e.argb]));
   const pinsOff = (plan, pins) => { const r = byRes(plan); return Object.keys(pins).filter(k => r[k] !== pins[k]).map(k => k + ' ' + r[k] + ' != ' + pins[k]); };
   const sameAs = (plan, style, seed, opts) => ev(([entries, style, seed, opts]) => { const want = MonetPlan.entries(style, seed, opts || undefined); if (!entries || want.length !== entries.length) return 'count ' + (entries || []).length + ' vs ' + want.length; const have = Object.fromEntries(entries.map(e => [e.resource, e.argb])); const off = want.filter(e => have[e.resource] !== e.argb).map(e => e.resource + ' ' + have[e.resource] + ' != ' + e.argb); return off.length ? off.slice(0, 5).join('; ') : 'same'; }, [plan && plan.entries, style, seed, opts || null]);
-  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T') : 'null'; };
+  // T-069: a record with a style also keeps the source colour, the mode and the contrast (seed, dark, contrast) for the Undo; t564 checks them,
+  // and the record strings compared here leave them out
+  const rec = async () => { const a = await kv('ovl_root_applied'); return a ? JSON.stringify(a).replace(/"t":\d+/, '"t":T').replace(/,"seed":"[0-9A-F]{6}","dark":(?:true|false),"contrast":-?[0-9.e+-]+/, '') : 'null'; };
   const waitFab = () => page.waitForFunction(() => window.__ovlCalls.fab.length === 1, null, { timeout: 8000, polling: 20 }).catch(() => {});
   await ev(() => { window.__toasts = []; const real = showToast; window.showToast = function (m) { window.__toasts.push(m); return real.apply(this, arguments); }; });
   await ev(() => { const b = window.AndroidBridge, real = b.themeApply; b.themeApply = function () { window.__palAtTap = window.__ovlCalls.palette - window.__palBefore; return real.apply(this, arguments); }; });
@@ -266,7 +268,9 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   await phone({ sdk: 36, profile: 'P16', build: B16 }); await reset(); await apply(); c = await card();
   check('F1. written on this build: no note about another build', c.stale === '' && (await rec()).includes('"build":"' + B16 + '"'), JSON.stringify([c.stale, await rec()]));
   await reset(); await phone({ sdk: 36, profile: 'P16', build: B16b }); c = await card(); k = await calls();
-  check('F2. the phone now runs another build (a system update, still P16): the note says Android was updated and to tap Apply theme; nothing is written by itself (no overlay call)', c.stale === STALE && c.note === 'The theme overlay is written on this phone.' && c.hint === 'Also writes the Fidelity colors with root, in place of the style above.' && k.fab.length === 0 && k.apply.length === 0, JSON.stringify([c.stale, k.fab.length]));
+  check('F2. the phone now runs another build of the same profile (a monthly update, still P16): no note, since Apply would write the same colours; nothing is written by itself', c.stale === '' && c.note === 'The theme overlay is written on this phone.' && c.hint === 'Also writes the Fidelity colors with root, in place of the style above.' && k.fab.length === 0 && k.apply.length === 0, JSON.stringify([c.stale, k.fab.length]));
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P15Q2', build: b }); ovlRender(); }, [AAM, B16]); c = await card(); k = await calls();
+  check('   colours computed for another profile (written on 15 QPR2, the phone now on 16.0): the note says Android was updated and to tap Apply theme; nothing is written by itself (no overlay call)', c.stale === STALE && c.note === 'The theme overlay is written on this phone.' && k.fab.length === 0 && k.apply.length === 0, JSON.stringify([c.stale, k.fab.length]));
   await ev(() => { switchView('home'); }); await sleep(150); await ev(() => { switchView('overlays'); }); await sleep(300); c = await card();
   check('   it is there when the tab is opened again', c.stale === STALE, c.stale);
   await ev(() => { kvSet('ovl_root_style', ''); ovlRender(); }); c = await card();
@@ -284,15 +288,15 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P16', build: b }); ovlRender(); }, [AAM, B16]); c = await card();
   check('   a style written on the old build, Pure black alone on now (Apply would write no style): no such note', c.stale === '' && c.hint === 'Also writes the pure black overlay with root.', JSON.stringify([c.stale, c.hint]));
   await ev(() => { kvSet('ovl_black', false); kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); });
-  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P16', build: b }); ovlRender(); }, [AAM, B16]); c = await card();
-  check('F3. back to the record of the old build on the new one: the note shows', c.stale === STALE, c.stale);
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P15Q2', build: b }); ovlRender(); }, [AAM, B16]); c = await card();
+  check('F3. back to the record of the old build and profile on the new one: the note shows', c.stale === STALE, c.stale);
   await reset(); await apply(); c = await card(); k = await calls();
   check('   Apply writes the colours for this build: the record keeps the new build and the note goes', k.fab.length === 1 && k.fab[0].action === 'fabricate' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P16","build":"' + B16b + '"}' && c.stale === '', JSON.stringify([await rec(), c.stale]));
 
   // ---- the new words in another language (assets/lang/de.js) ----
   await ev(() => I18N.set('de')); await sleep(600);
   const de = await ev(([a, b, c]) => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return [x[a] || '', x[b] || '', x[c] || '']; }, [NOT_YET, ONE_UI, STALE]);
-  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P16', build: b }); }, [AAM, B16]);
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P15Q2', build: b }); }, [AAM, B16]);
   await phone({ sdk: 36, profile: 'P16', build: B16b }); await sleep(200); const deStale = (await card()).stale;
   await phone({ sdk: 36, profile: 'P16Q1', build: B16b }); await sleep(200); const deNotYet = await card();
   await phone({ sdk: 36, profile: 'unknown', reason: 'oneUi', build: B16b }); await sleep(200); const deOneUi = await card();

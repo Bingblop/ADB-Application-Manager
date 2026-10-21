@@ -5043,12 +5043,22 @@ public class MainActivity extends Activity {
                 for (int tone : tones) a.put(colorHex(systemColor("system_" + n + "_" + tone)));
                 o.put(n, a);
             }
-            // "wallpaper": up to three RRGGBB, the system wallpaper's primary, secondary and tertiary colours (API 27+, no permission;
-            // the seed the page's root-only styles fall back to when the theme setting names no colour). Anything going wrong leaves it out.
+            // "wallpaper": up to three RRGGBB, the primary, secondary and tertiary colours of the wallpaper set most recently (API 27+, no
+            // permission; the seed the page's root-only styles fall back to when the theme setting names no colour). Lock or home is chosen
+            // as SystemUI does (MonetProfile.lockWallpaperIsLatest: the higher WallpaperManager id); a lock wallpaper without colours of its
+            // own falls back to the home one. These are WallpaperColors' main colours, ranked by chroma and population; SystemUI ranks the
+            // whole colour map by hue (ColorScheme.getSeedColors), and that map is not public (getAllColors is @hide), so the colour can
+            // differ from the one Android picks. Anything going wrong leaves it out.
             if (Build.VERSION.SDK_INT >= 27) {
                 try {
                     android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(this);
-                    android.app.WallpaperColors wc = wm == null ? null : wm.getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+                    android.app.WallpaperColors wc = null;
+                    if (wm != null) {
+                        if (MonetProfile.lockWallpaperIsLatest(wm.getWallpaperId(android.app.WallpaperManager.FLAG_LOCK), wm.getWallpaperId(android.app.WallpaperManager.FLAG_SYSTEM))) {
+                            wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_LOCK);
+                        }
+                        if (wc == null) wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+                    }
                     if (wc != null) {
                         JSONArray w = new JSONArray();
                         Color[] picks = {wc.getPrimaryColor(), wc.getSecondaryColor(), wc.getTertiaryColor()};
