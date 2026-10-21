@@ -800,7 +800,10 @@ style the palette is worked out with:
   the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
   also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
   Android 12 and 13 only the two darkest neutral shades, one overlay each; light mode keeps its colors, except that its darkest text
-  becomes pure black: the two shade 900 entries belong to both modes, and Android's light theme takes its main text from neutral1 900), reads the list and the colors back to judge it (listed
+  becomes pure black: the two shade 900 entries belong to both modes, and Android's light theme takes its main text from neutral1 900;
+  on 16 QPR1 and QPR2 the two shades are written as `system_neutral1_900_dark` and `system_neutral2_900_dark` only, so light mode keeps
+  every color there: `ovlBuildBlackPlan(sdk, qpr)`, 11 entries either way, and the subtitle drops "except that its darkest text becomes
+  pure black"), reads the list and the colors back to judge it (listed
   on with a color that comes back as Android's: the toast and the sheet's title say *The pure black overlay is on, but Android shows
   its own colors*, or *The theme overlay is on, but Android shows its own colors* with a style's colors, and the record is kept), and
   **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
@@ -825,10 +828,21 @@ style the palette is worked out with:
   measured against libmonet android14-qpr3, Fidelity and Content differ in about 1 in 10 role values at contrast 0 (on-colors and the
   light outline), Monochrome in the light outline only, about 4 in 10 at a higher contrast; shades and Pure black are the same), 15 QPR1 (`P15Q1`, 165
   entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
-  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint). Locked, all six rows, with Super User or without:
-  15.0, 16 QPR1, 16 QPR2, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
-  libmonet, 16 QPR1/QPR2 compute at spec 2025 with changes of their own and write `_light`/`_dark` palette names, 17 at 2026
-  with the fixed colors in both modes), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
+  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint), and 16 QPR1 (`P16Q1`) and 16 QPR2 (`P16Q2`) since T-049 PR 9:
+  SystemUI computes them with AOSP libmonet at spec 2025 for every style (monet.js part 2 with each branch's libmonet rules where they
+  differ from MCU main's 2025), and the app writes what SystemUI writes there, in its qpr2 order: the 65 palette shades as
+  `system_<row>_<shade>_light` (light scheme) and `_dark` (dark scheme), 55 roles (the 50 plus primary_dim, secondary_dim,
+  tertiary_dim, error_dim and palette_key_color_error) light and dark, and the 12 fixed colors from the light scheme: 252 entries,
+  both modes in one Apply; never the unsuffixed palette aliases (the Java side refuses them on P16Q1/P16Q2), no error shades, no
+  custom colors. `OverlayRules.MAX_FAB_ENTRIES` is 320. After the write the Java side looks up by name there
+  (`system_accent1_600_light`, `_dark`, `system_primary_light`, `system_surface_dark`, `system_primary_dim_dark`, those the plan has,
+  then the plan's first others up to four), and the plan keeps SystemUI's order. Measured: SystemUI's DynamicColors and TonalPalette
+  of each branch compiled with its libmonet and run, nine styles (all but CMF, which libmonet lacks and which stays MCU main's 2026),
+  71 seeds, contrast 0/0.5/1, light and dark, specs 2021 and 2025: 0 differences in values, names and order. Not run on a QPR phone
+  with root. Locked, all six rows, with Super User or without:
+  15.0, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
+  libmonet, 17 computes at 2026 with the fixed colors in both modes; an APK from before PR 9, which reports 16 QPR1/QPR2 as
+  `notYet`, keeps them locked too), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
   with its own service, by other developers' reports, not checked); a Samsung phone whose One UI version cannot be read (getprop
   fails or times out and `SEM_PLATFORM_INT` gives none) is locked the same way, and that answer is not kept, while one whose
   `ro.build.version.oneui` is not set (another build of Android) is decided by its names. An older APK that reports no profile counts as *Update the
@@ -837,27 +851,42 @@ style the palette is worked out with:
   switch it off. Without Super User the note is *Shizuku and ADB cannot write these colors; Root can.* with the *is written* / *may be
   written* line under it when an overlay is still on, and **Default** (which then writes the theme setting only) ends its question with *The overlay stays
   on: switching it off needs Super User.* On 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
-  49.6), with no chroma cap, from the scheme of the mode the phone is in at Apply; SystemUI's own 21 or 22 custom colors (clock,
+  49.6), with no chroma cap, from the scheme of the mode the phone is in at Apply (on 16 QPR1 and QPR2 the same integers, no yellow
+  tone-99 averaging, `_light` from the light scheme and `_dark` from the dark one); SystemUI's own 21 or 22 custom colors (clock,
   shade, notification, widget and others) are not written and keep Android's values for the list style. Phone makers can change
   Android's color engine and names; none of this was checked on a phone.
 - **Contrast and Android updates:** a style's roles and fixed colors are computed at the phone's contrast read when **Apply theme**
-  is tapped (the palettes, the preview and Pure black do not depend on it); after changing the contrast in Settings, tap Apply
-  again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
+  is tapped (the palettes, the preview and Pure black do not depend on it; on 16 QPR1 and QPR2 both modes' roles at that contrast);
+  after changing the contrast in Settings, tap Apply again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
   phone's are both known and differ, the record's profile is not the phone's (a monthly update within one profile gives no note: the
   colors depend on the profile, not the build, so Apply would write the same entries), the record carries a style's colors and Apply
   would write a style's colors (Pure black alone is the same on every build and gives none), a note under the card reads *Android was updated after
-  these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. After an update to a
+  these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. The note has no light/dark part
+  (decision 9 of PR 9: on 16 QPR1 and QPR2 the overlay holds both modes, so a mode change makes nothing stale; the Color spec note's
+  mode sentence is left out there). After 16.0 to QPR, a 16.0 overlay's unsuffixed palette entries override the aliases in both modes
+  (read, not tried) until Apply rewrites or switches off the overlay. After an update to a
   locked release the rows lock instead and the overlay stays on (an overlay's entries whose names the new release lacks are
   skipped, read in idmap2) until it is switched off.
 - **Color spec** (the second control of that card, between Pure black and More styles; Super User on Android 14, 15 QPR1/QPR2 or
-  16.0, locked like More styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app*
+  16 (16.0, QPR1, QPR2), locked like More styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app*
   without the overlay bridge or the spec maths): **2021** (the colors Android computes itself; the default, and what Android 14,
-  15 and 16.0 build their own theme with, 15.0 with an older libmonet; 16 QPR1/QPR2 build theirs at 2025 with changes of their
-  own and 17 at 2026, where the card is locked), **2025** (Google's newer tuning of the same styles) and **2026** (the 2025 tuning,
-  plus the CMF style), kept in `ovl_spec`. Google's own
+  15 and 16.0 build their own theme with, 15.0 with an older libmonet; 17 builds its at 2026, where the card is locked), **2025**
+  (Google's newer tuning of the same styles) and **2026** (the 2025 tuning, plus the CMF style), kept in `ovl_spec`. On 16 QPR1 and
+  QPR2 (`ovlQpr`: `MonetPlan.lib.LIBMONET` has the profile) the phone's own spec is 2025 (`ovlNativeSpec`), the default when none
+  is stored, and the row reads *With root, 2021 recolors every style. CMF needs 2026.* with **2021** *The colors earlier Android
+  versions compute.*, **2025** *The colors Android computes itself.* and **2026** *The 2025 colors, plus the CMF style.*; libmonet's
+  rule (`MonetPlan.specFor(style, spec, profile)`) gives every style but CMF 2021 at 2021 and 2025 at 2025 and 2026 (Rainbow, Fruit
+  Salad, Fidelity, Content and Monochrome: 2025 roles on 2021 palettes). There a list style at 2025/2026 with nothing else set
+  is native (theme setting only), and at 2021 its 2021 colors are written (*Also writes this style's 2021 colors with root, in
+  place of Android's.*, its pure black form, and *Also writes this style's 2021 colors with root, adjusted by the Intensity
+  sliders.* / *…, adjusted by the Intensity sliders, and pure black with root.*), 244 entries: spec 2021 has no primary_dim,
+  secondary_dim, tertiary_dim or error_dim (libmonet's ColorSpec2021 gives null), so Android keeps its 2025 values for those four.
+  The note under 2025/2026 there is *Android computes these colors itself: a style of the list above is written with root only at
+  2021, or with Intensity, an accent or Accurate shades off.* A stored spec survives an update (2021 picked on 16.0 writes 2021 on
+  QPR). Google's own
   rule (Material Color Utilities' `maybeFallbackSpecVersion`) gives the newer colors to Tonal Spot, Vibrant, Expressive and Spritz only
-  (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021 (16 QPR's libmonet gives
-  every style its 2025 roles). At 2025 or 2026, with one
+  (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021 (on 16 QPR1/QPR2
+  libmonet's rule above). At 2025 or 2026, with one
   of those four in the style list and More styles on **Off**, **Apply theme** writes the theme setting as before and then that style's 2025
   colors over Android's with root, the same 165 or 177 colors and overlay as More styles (a More style chosen wins); the hint reads *Also writes
   this style's 2025 colors with root, in place of Android's.* From 2025 the base palettes of Tonal Spot and Expressive differ between light
@@ -866,9 +895,9 @@ style the palette is worked out with:
   The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
   Apache-2.0); on 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast. A grey custom
   color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
-  *From Google blue: #808080 is too grey for this style*. **2021** then Apply (with More styles on Off, Pure black off, the Intensity
+  *From Google blue: #808080 is too grey for this style*. **2021** (**2025** on 16 QPR1/QPR2) then Apply (with More styles on Off, Pure black off, the Intensity
   sliders at 100, no accent set and Accurate shades on) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
-- **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16.0, a locked row reading *Needs Android 14* on
+- **More styles** (the third control of that card; Super User on Android 14, 15 QPR1/QPR2 or 16 (16.0, QPR1, QPR2), a locked row reading *Needs Android 14* on
   12 and 13 and the version locks above elsewhere):
   **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
   chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for, and,
@@ -883,13 +912,14 @@ style the palette is worked out with:
   the whole color map by hue, which apps cannot read, so this may differ from the color Android picks), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
   list style Color spec recolors) shows the five rows (13 shades each) and names the source.
   **Apply theme** still writes the theme setting from the style list first and then the overlay on top: 165 colors on Android 14 and
-  15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), with each release's names in
+  15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), 252 on 16 QPR1 and QPR2
+  (244 at spec 2021; Fidelity, Content and Monochrome follow the chosen spec there), with each release's names in
   its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
   what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
   `accents` when a Secondary or tertiary accent is set, `accurate: false` when Accurate shades was off, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
   Messages then speak of the *theme overlay*; **Off** then Apply and **Default** switch it off; **Undo** puts back the overlay from before (off when there was none). Spritz in the style list is the
   style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
-- **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like More
+- **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14, 15 QPR1/QPR2 or 16 (16.0, QPR1, QPR2), locked like More
   styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
   when `monet.js` has no `MonetPlan.lib.adjustOf`; the locked row keeps its line): three native range sliders, **Accent saturation**,
   **Background saturation** and **Background lightness**, 0 to 200 % in steps of 5, 100 % when never moved, the row's line *100% leaves
@@ -921,7 +951,7 @@ style the palette is worked out with:
   5.76 / 5.60 at 2025, 6.06 / 5.77 / 5.59 for CMF. **Reset** then Apply,
   **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
 - **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14, 15 QPR1/QPR2 or
-  16.0, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
+  16 (16.0, QPR1, QPR2), locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
   overlay bridge or when `monet.js` has no `MonetPlan.lib.accentsOf`; the locked row keeps its line): the row's line *Your own colors for
   the second and third accent. The main color stays as it is.* and two entries, **Secondary accent** and **Tertiary accent**, each the
   color bubble of Settings' Granular Color Pickers (the swatch and `#RRGGBB` when set, a dashed empty circle and *From the style* when
@@ -951,7 +981,7 @@ style the palette is worked out with:
   ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
   custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Default** and **Undo** act as for More
   styles. Not yet tried on a rooted phone.
-- **Accurate shades** (the sixth control of that card, under the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like
+- **Accurate shades** (the sixth control of that card, under the accents; Super User on Android 14, 15 QPR1/QPR2 or 16 (16.0, QPR1, QPR2), locked like
   the accents: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge
   or when `monet.js` has no `MonetPlan.lib.accurateOf`; the locked row keeps its line, and a stored off counts as on while locked): a
   switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: the pale accent colors
@@ -971,7 +1001,11 @@ style the palette is worked out with:
   `control_activated` (all), and for Monochrome its greys at 90 (light `on_primary`, `on_tertiary`, the two `on_*_fixed_variant`; dark
   `on_secondary_container`, `tertiary`); at 2025/2026 only what lands on 90 (light `control_activated`, some containers and fixed
   colors for some seeds, `inverse_primary` with Expressive on P15Q2/P16, dark `secondary`/`tertiary` with Vibrant at 2025); at
-  contrast 0.5 most of these move off tone 90. `palette_key_color_*` did not land on 90 for any seed checked. Example: 6750A4, Tonal
+  contrast 0.5 most of these move off tone 90. `palette_key_color_*` did not land on 90 for any seed checked. On P16Q1/P16Q2 (measured separately, six seeds, contrast 0): at
+  2021 the same kinds; at 2025/2026 light `secondary_container`/`secondary_fixed` with every style, `control_activated`,
+  `primary_container`, `primary_fixed` with Tonal Spot, Expressive, Rainbow and Spritz, and for some seeds `inverse_primary`,
+  `secondary_fixed_dim`, `tertiary_fixed_dim`, dark `secondary`/`tertiary` (Vibrant), `tertiary`/`primary`/`surface_tint` (Rainbow),
+  `tertiary_dim` (Tonal Spot); the QPR lookups never change. Example: 6750A4, Tonal
   Spot, 2021, every profile: accent1_100 E9DDFF becomes B3A2E1, and so do light `primary_container`, dark `on_primary_container`,
   `primary_fixed` and light `control_activated`; light `secondary_container` E8DEF8 becomes B0A7C0, light `tertiary_container`
   FFD9E3 becomes D29DAD; light `primary` 65558F and the neutral rows stay. At 2025 (P15Q2) light `secondary_container` changes the
