@@ -13,11 +13,13 @@
 // 14.0: the roles _dark then _light as createDynamicOverlay writes them, the four lookups moved first), the shades Android 14's (t565's P14 pins),
 // roles and fixed colours pinned from the a14q oracle at contrast 0 and 0.5, where 10 and 42 of the 100 differ from 14.0's (P14's); the
 // mode at Apply changes nothing at 2021. Content and Monochrome at contrast 0 (outline_light differs from 14.0's); Tonal Spot written at
-// 2021 for a tertiary accent at contrast 0 and 1 (its primary, secondary, neutral and error side pinned); Vibrant with the Intensity
+// 2021 for a tertiary accent at contrast 0 and 1 (its primary, secondary, neutral and error side pinned; all 165 values, the accent's
+// included, equal to monet.js with P14Q and the accent, this app's rule with no Android reference); Vibrant with the Intensity
 // sliders. (d) 2025 and 2026 give what P14 gives (no Android reference: 14 never builds them); Fidelity at 2025 keeps its 2021 a14q colours.
 // (e) Pure black: unsuffixed, alone and over a style. (f) The accent picker starts at the oracle's key colour (Android 14's palettes, as on
 // 14.0). (g) The record and the note for colours written on another build: a 14.0 record (no profile) on QPR2, a QPR2 record after a
-// monthly update to QPR3 (no note), a QPR record on 15.0. (h) Undo, Default and the resume path. (i) The credit line in German.
+// monthly update to QPR3 (no note), a QPR record on 15.0, a record without a profile written on QPR2 by an APK from before PR 12 (no
+// note on QPR2, the note after the update to QPR3). (h) Undo, Default and the resume path. (i) The credit line in German.
 // Every role and fixed-colour value pinned below comes from an oracle kept outside the repository and not from this app's code: AOSP
 // external/libmonet android14-qpr*-release (tree 9e15d1a7, the same on qpr1, qpr2, qpr3 and d2) compiled as it is, driven as
 // ThemeOverlayController android14-qpr3-release drives it (dynamicSchemeFromStyle; createDynamicOverlay: the 44 roles of DynamicColors.kt
@@ -227,10 +229,13 @@ const Q_FID_GREEN_KEY2 = '038E00', Q_TS_KEY3 = '996A79';
   await ev(() => { kvSet('ovl_root_style', 'MONOCHROMATIC'); ovlPickColor('6750A4'); ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('C5. Monochrome (More styles) 6750A4 at 2021: 165 in order; ' + Object.keys(Q_MONO_0).length + ' values pinned from the a14q oracle: outline_light 0xFF777777 (t565\'s 14.0 pin ' + P14_MONO_OUTLINE_LIGHT + '), the rest as on 14.0 (the key colours 0xFF070707)', sameOrder(plan, PLAN_ORDER) && pinsOff(plan, Q_MONO_0).length === 0 && (await p14('MONOCHROMATIC', '6750A4', 0)).outline_light === P14_MONO_OUTLINE_LIGHT, pinsOff(plan, Q_MONO_0).join('; '));
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_accent_tertiary', 'FFD600'); ovlPickStyle('TONAL_SPOT'); ovlRender(); }); c = await card(); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
-  check('C6. Tonal Spot 6750A4 in the list at 2021 with a tertiary accent, contrast 0: written (the hint says its colors, the accents line names the tertiary one); the setting (TONAL_SPOT), then 165 in order; ' + Object.keys(Q_TS_0).length + ' values the accent leaves alone pinned from the a14q oracle (outline_light 0xFF7A757F, 14.0\'s 0xFF77737D); the record keeps the accent', c.hint === 'Also writes this style\'s colors with root.' && c.said === 'Tertiary accent: your color.' && k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && sameOrder(plan, PLAN_ORDER) && pinsOff(plan, Q_TS_0).length === 0 && (await p14('TONAL_SPOT', '6750A4', 0, { accents: { tertiary: 'FFD600' } })).outline_light === '0xFF77737D' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","accents":{"tertiary":"FFD600"},"profile":"P14Q","build":"' + BQ2 + '"}', JSON.stringify([c.hint, c.said, pinsOff(plan, Q_TS_0), await rec()]));
+  const tsAcc = c => ({ spec: '2021', dark: true, profile: 'P14Q', contrast: c, accents: { tertiary: 'FFD600' } });
+  const ts0 = await sameAs(plan, 'TONAL_SPOT', '6750A4', tsAcc(0));
+  check('C6. Tonal Spot 6750A4 in the list at 2021 with a tertiary accent, contrast 0: written (the hint says its colors, the accents line names the tertiary one); the setting (TONAL_SPOT), then 165 in order; ' + Object.keys(Q_TS_0).length + ' values the accent leaves alone pinned from the a14q oracle (outline_light 0xFF7A757F, 14.0\'s 0xFF77737D); all 165, those the accent changes included, equal to MonetPlan.entries with P14Q and the accent (this app\'s rule, no Android reference: ' + ts0 + '); the record keeps the accent', c.hint === 'Also writes this style\'s colors with root.' && c.said === 'Tertiary accent: your color.' && k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && sameOrder(plan, PLAN_ORDER) && pinsOff(plan, Q_TS_0).length === 0 && ts0 === 'same' && (await p14('TONAL_SPOT', '6750A4', 0, { accents: { tertiary: 'FFD600' } })).outline_light === '0xFF77737D' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","accents":{"tertiary":"FFD600"},"profile":"P14Q","build":"' + BQ2 + '"}', JSON.stringify([c.hint, c.said, pinsOff(plan, Q_TS_0), await rec()]));
   await ev(() => { window.__contrast = 1; }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   r14 = await p14('TONAL_SPOT', '6750A4', 1, { accents: { tertiary: 'FFD600' } });
-  check('C7. the same at contrast 1: ' + Object.keys(Q_TS_1).length + ' values pinned from the a14q oracle (on_primary_container_dark 0xFF000000, 14.0\'s ' + r14.on_primary_container_dark + '; on_surface_variant_light 0xFF25232B; primary_fixed_dim 0xFF322359; the surfaces at their fixed tones)', sameOrder(plan, PLAN_ORDER) && pinsOff(plan, Q_TS_1).length === 0 && ['on_primary_container_dark', 'on_surface_variant_light', 'primary_fixed_dim', 'on_error_dark'].every(n => r14[n] !== Q_TS_1[n]), pinsOff(plan, Q_TS_1).join('; '));
+  const ts1 = await sameAs(plan, 'TONAL_SPOT', '6750A4', tsAcc(1));
+  check('C7. the same at contrast 1: ' + Object.keys(Q_TS_1).length + ' values pinned from the a14q oracle (on_primary_container_dark 0xFF000000, 14.0\'s ' + r14.on_primary_container_dark + '; on_surface_variant_light 0xFF25232B; primary_fixed_dim 0xFF322359; the surfaces at their fixed tones); all 165 equal to MonetPlan.entries with P14Q, contrast 1 and the accent (' + ts1 + ')', sameOrder(plan, PLAN_ORDER) && pinsOff(plan, Q_TS_1).length === 0 && ts1 === 'same' && ['on_primary_container_dark', 'on_surface_variant_light', 'primary_fixed_dim', 'on_error_dark'].every(n => r14[n] !== Q_TS_1[n]), pinsOff(plan, Q_TS_1).join('; '));
   await ev(() => { window.__contrast = 0; kvSet('ovl_accent_tertiary', ''); ovlRender(); });
   const ADJ = { accentSat: 150, bgSat: 50, bgLight: 120 }, adjOpts = p => ({ spec: '2021', dark: true, profile: p, contrast: 0, adjust: ADJ });
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_adj_accent_sat', 150); kvSet('ovl_adj_bg_sat', 50); kvSet('ovl_adj_bg_light', 120); ovlPickStyle('VIBRANT'); ovlPickColor('6750A4'); ovlRender(); });
@@ -282,6 +287,12 @@ const Q_FID_GREEN_KEY2 = '038E00', Q_TS_KEY3 = '996A79';
   check('   the phone updated to 14 QPR2 (P14Q): the note shows (10 of Fidelity\'s roles differ at contrast 0)', c.stale === STALE, c.stale);
   await reset(); await apply(); c = await card();
   check('   Apply writes them for QPR2: the record says P14Q and its build, and the note goes', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P14Q","build":"' + BQ2 + '"}' && c.stale === '', JSON.stringify([await rec(), c.stale]));
+  // a record with no profile written on a QPR build by an APK from before PR 12 (which reported P14 there), read by this one on QPR2
+  await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', build: b }); }, [AAM, BQ2]);
+  await phone({ sdk: 34, profile: 'P14Q', build: BQ2 }); c = await card();
+  check('G3. a record without a profile written on 14 QPR2 (an APK from before PR 12), read on the same build as P14Q: no note (same build)', c.stale === '', c.stale);
+  await phone({ sdk: 34, profile: 'P14Q', build: BQ3 }); c = await card();
+  check('   the phone then updated to 14 QPR3 (P14Q): the note shows (the record says P14, the phone P14Q)', c.stale === STALE, c.stale);
 
   // ---- (h) Undo, Default and the resume path ----
   await phone({ sdk: 34, profile: 'P14Q', build: BQ2, contrast: 0 }); await ev(() => { kvSet('ovl_root_applied', null); kvSet('ovl_root_style', 'FIDELITY'); ovlPickColor('6750A4'); ovlRender(); }); await reset(); await apply();

@@ -251,8 +251,9 @@
  *   values/colors.xml on the three branches. P14's rules on P14Q (what the file gave every Android 14 phone before), android15-release's
  *   rules, upstream's 2021, a15's surface curves, the (1, 1, 3, 4.5) and (3, 4.5, 7, 7) curves, a tone delta of 10, no Albers step,
  *   Albers against the other mode's background, upstream's on_*_container rules, the bisection key colour, the fixed colours from the
- *   dark scheme and the roles written light first each make the oracle check fail (for the six seeds: 29,470, 16,128, 20,390,
- *   16,272, 3,794, 1,632, 694, 294, 342, 3,412, 1,372, 7,776 and 125,356 of 75,600 entries). Every other profile's results are those
+ *   dark scheme and the roles written light first each make the oracle check fail (for the six seeds, values that differ: 29,470,
+ *   16,128, 20,390, 16,272, 3,794, 1,632, 694, 294, 342, 3,412, 1,372, 7,776 and 58,828 of 75,600 entries, the last one with
+ *   66,528 of the 75,600 names out of place as well). Every other profile's results are those
  *   of the file before P14Q, byte for byte (no profile and the eight others, every style and spec, the six seeds, light and dark, no
  *   contrast, 0 and 0.5, six option settings: 282,378 results; PROFILES aside, which now names P14Q), and every P14Q result equals
  *   P14's at 2025, 2026 and CMF (throws included), and at 2021 in palettes() and the 65 shades of entries(). Not run on a device.

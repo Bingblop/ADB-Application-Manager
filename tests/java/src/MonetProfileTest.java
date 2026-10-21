@@ -51,7 +51,7 @@ public class MonetProfileTest {
 
     // ---- the profiles the page computes (reason ok)
     eq("Android 14: P14 by the SDK level alone", of(34, A14, ""), "P14/ok");
-    eq("Android 14: names of later releases change nothing (no probe on 34)", of(34, names(INV, NOTIF, RING, DIM, RED), ""), "P14/ok");
+    eq("Android 14: the colour names of later releases change nothing (only the boolean probe counts on 34)", of(34, names(INV, NOTIF, RING, DIM, RED), ""), "P14/ok");
     eq("Android 14: a probe read that failed changes nothing", of(34, null, ""), "P14/ok");
     eq("Android 14 QPR1-QPR3: config_repairModeSupported", of(34, A14Q, ""), "P14Q/ok");
     eq("Android 14 QPR: names of later releases beside it change nothing", of(34, names(REPAIR, INV, NOTIF, RING, DIM, RED, FIX), ""), "P14Q/ok");

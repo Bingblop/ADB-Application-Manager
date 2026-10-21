@@ -830,7 +830,7 @@ style the palette is worked out with:
   T-050 / T-049 PR 12: SDK 34 with `config_repairModeSupported`, a plain `values/config.xml` entry and java-symbol from
   android14-qpr1-release on, absent on android14-release; no color name tells 14.0 from QPR1/QPR2. Read in AOSP: on 19 branch heads
   and all 71 `android-14.0.0_rN` tags of frameworks/base the name is present exactly where SystemUI's ThemeOverlayController imports
-  libmonet (56 tags with, 15 without; the whole 14.0 core/res tree has no such name); not checked on phone makers' builds. The QPR
+  libmonet (55 tags with, 16 without; the whole 14.0 core/res tree has no such name); not checked on phone makers' builds. The QPR
   SystemUI computes the 44 roles and 12 fixed colors with libmonet android14-qpr1/qpr2/qpr3-release (one tree, 9e15d1a7, not pinned
   by the manifests) through `MaterialDynamicColors(isExtendedFidelity = false)` (`Flags.COLOR_FIDELITY` is an unreleasedFlag, taken
   as off: inferred, not checked on a phone), roles `_dark` then `_light`, fixed from the light scheme; ColorScheme.kt and Shades.java
@@ -844,7 +844,7 @@ style the palette is worked out with:
   light and dark: 8,946 plans, 894,600 role and fixed entries, 0 differences in values and names, shades equal to P14's (the raw seed
   000000 in Vibrant/Expressive differs on a hue breakpoint, which `seed()` makes unreachable). P14Q against P14, six seeds, 2021: at
   contrast 0 only `outline_light` with the six list styles and Monochrome, about 1 in 10 role and fixed values with Fidelity and
-  Content (on-colors, `outline_light`, dark primary/tertiary containers); 34-42 in 100 at contrast 0.5 and 1. Not run on an Android 14
+  Content (on-colors, `outline_light`, dark primary/tertiary containers); 34-43 in 100 at contrast 0.5 and 1. Not run on an Android 14
   phone with root), 15.0
   (`P15`, since T-049 PR 11: SDK 35 with `system_on_theme_app_ring_light`, which 15 QPR1 renamed `system_theme_notif_light`; the
   names, layout, lookups, native spec 2021, routing, Pure black, record and stale note of P15Q1; SystemUI computes its roles with

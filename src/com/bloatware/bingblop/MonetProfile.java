@@ -35,7 +35,7 @@ import java.util.Set;
  * plain {@code <bool>} entry and a java-symbol (Android 14 has no per-entry resource flag); not anywhere in android14-release's core/res.
  * On the 19 Android 14 branch heads read it is there exactly where SystemUI's ThemeOverlayController imports libmonet (qpr1, qpr2, qpr3,
  * qpr3-d1, d2 and their -sN branches) and on none of the 14.0 lines (release, s1, s2, security, platform, gsi, d1); of the 71
- * android-14.0.0_rN tags of frameworks/base, the 56 that have it all import libmonet there and the 15 without it do not.</li>
+ * android-14.0.0_rN tags of frameworks/base, the 55 that have it all import libmonet there and the 16 without it do not.</li>
  * </ul>
  * An SDK 34 phone without it (or whose lookup throws) stays {@link #P14}, as every SDK 34 phone was before.
  *
