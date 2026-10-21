@@ -13,10 +13,12 @@
 // colours' _light and _dark differ); the values are 17's, not QPR2's (Fidelity falls back to 2021 there); the lookups the Java side
 // makes include system_primary_fixed_dark; the mode at Apply changes nothing. (d) Spec 2025 written as an overlay: Fidelity at 2025 (264,
 // the same values, the record says 2025) and Tonal Spot FFDE3F at 2025 with an accent (its fixed colours _light from the light scheme,
-// _dark from the dark one; the hint without a spec, since its colours are Android's own plus the accent); CMF only at 2026, pinned.
+// _dark from the dark one; the hint without a spec, since its colours are Android's own plus the accent); the accent 1B6EF3 there gives
+// accent2 the oracle's accent1 of Tonal Spot 1B6EF3, each mode its own; CMF only at 2026, pinned.
 // (e) Spec 2021: Tonal Spot is written (its 2021 colours over Android's), 256 entries: the four *_dim roles, which 2021 does not define,
-// are left out; values pinned at contrast 0 and 0.5; Fidelity at 2021 likewise; Rainbow at 2021 with an Intensity slider is written with
-// the sentence without a spec. (f) Pure black writes only _dark names, alone and over a style. (g) The preview and the accent picker's
+// are left out; values pinned at contrast 0 and 0.5; Vibrant, Expressive and Spritz likewise (pinned at 0); Fidelity at 2021 likewise;
+// Rainbow at 2021 with an Intensity slider is written with the sentence without a spec. Accent saturation at 0 turns the accent shades of
+// both modes grey; Accurate shades off gives shade 100 and the tone-90 fixed colours of each mode that mode's shade 300 (oracle pins). (f) Pure black writes only _dark names, alone and over a style. (g) The preview and the accent picker's
 // start at the phone's own spec. (h) The record (profile, build) and the note for colours written on another build: a QPR2 record on 17,
 // a monthly update, a mode change. (i) Undo, Default, an Undo back to a 2021 write, the resume path after a restart. (j) The new words in
 // German. (k) The mock's name check mirrors OverlayRules: an unsuffixed fixed colour is refused on P17 only.
@@ -91,6 +93,23 @@ const TSY_0 = { accent1_100_light: '0xFFF6E292', accent1_100_dark: '0xFFF3E2A2',
   primary_fixed_light: '0xFFF6E292', primary_fixed_dark: '0xFFF3E2A2' };
 const CMF_0 = { accent1_500_light: '0xFF8069BF', accent3_500_dark: '0xFF7E6EA9', neutral1_900_light: '0xFF1D1A24', primary_light: '0xFF5B4497', primary_dark: '0xFFA890E9',
   surface_dark: '0xFF0F0D16', primary_fixed_light: '0xFF6750A4', primary_fixed_dark: '0xFF6750A4', on_surface_variant_dark: '0xFFB0A7C0', primary_dim_dark: '0xFFA890E9' };
+// a secondary accent 1B6EF3 over TSY at 2025: accent2 is the primary palette of the same style's scheme built from 1B6EF3, each mode its
+// own (monet.js's accent rule), so its pins are the oracle's accent1 of TONAL_SPOT 1B6EF3 at 2025 (light and dark differ from shade 200 on)
+const ACC_1B = { accent2_100_light: '0xFFD9E2FF', accent2_100_dark: '0xFFD9E2FF', accent2_200_light: '0xFFB3C6F9', accent2_200_dark: '0xFFB8C6EE', accent2_500_light: '0xFF6476A5',
+  accent2_500_dark: '0xFF69769B', accent2_700_light: '0xFF334671', accent2_700_dark: '0xFF394668', accent2_900_light: '0xFF021943', accent2_900_dark: '0xFF0B1A3A' };
+// TSY at 2025 without the accent (the oracle): accent2 and the secondary roles the accent must change in both modes
+const TSY_NOACC = { accent2_200_light: '0xFFD1C6A1', accent2_200_dark: '0xFFD1C6A1', secondary_light: '0xFF675F41', secondary_dark: '0xFFD1C6A1' };
+// TSY at 2026 (the oracle): shade 300 of the three accent rows, light and dark, the colour Accurate shades off gives shade 100 and the
+// fixed colours taken at tone 90 (primary_fixed, secondary_fixed); tertiary_fixed (0xFFFDC891) is not taken at tone 90 there
+const TSY26_300 = { accent1_300_light: '0xFFBDAB61', accent1_300_dark: '0xFFBAAB70', accent2_300_light: '0xFFB5AB88', accent2_300_dark: '0xFFB5AB88', accent3_300_light: '0xFFD3A26E', accent3_300_dark: '0xFFD3A26E' };
+// the 2021 colours of Vibrant, Expressive and Spritz 6750A4 (the oracle, contrast 0); each value differs from the oracle's 2026 one
+const V21_0 = {
+  VIBRANT: { primary_light: '0xFF6F19FF', primary_dark: '0xFFCFBCFF', accent3_500_dark: '0xFF936994', primary_fixed_dark: '0xFFE9DDFF', on_surface_variant_dark: '0xFFCBC3D5' },
+  EXPRESSIVE: { primary_light: '0xFF006B5A', primary_dark: '0xFF79D7C0', accent3_500_dark: '0xFF8D6B9A', primary_fixed_dark: '0xFF95F4DC', on_surface_variant_dark: '0xFFCFC2D3' },
+  SPRITZ: { primary_light: '0xFF615C6B', primary_dark: '0xFFCBC3D5', accent3_500_dark: '0xFF7B748A', primary_fixed_dark: '0xFFE7DFF2', on_surface_variant_dark: '0xFFC9C5C7' } };
+// a grey's colour at each shade's tone (shade s: tone (1000 - s) / 10), from CIE L* (L* = tone) to sRGB, worked out apart from this app:
+// Accent saturation at 0 makes the three accent palettes chroma 0
+const GREY = { 100: '0xFFE2E2E2', 200: '0xFFC6C6C6', 300: '0xFFABABAB', 400: '0xFF919191', 500: '0xFF777777', 600: '0xFF5E5E5E', 700: '0xFF474747', 800: '0xFF303030', 900: '0xFF1B1B1B' };
 // Pure black's 11 entries on 17: _dark names only
 const BLACK_DARK = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 'surface_dark', 'surface_dim_dark', 'surface_container_lowest_dark', 'surface_container_low_dark',
   'surface_container_dark', 'surface_container_high_dark', 'surface_container_highest_dark', 'surface_bright_dark'];
@@ -205,10 +224,13 @@ const BLACK_DARK = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark',
   check('D2. Tonal Spot FFDE3F at 2025 with a secondary accent (so it is written): the hint says this style\'s colors (they are Android\'s own, plus the accent) and the accent\'s sentence follows; 264 in order; ' + Object.keys(TSY_0).length + ' accent1 / neutral / primary / fixed values pinned from the oracle (the accent touches accent2 and the secondary roles only): accent1_100 and primary_fixed _light 0xFFF6E292 from the light scheme, _dark 0xFFF3E2A2 from the dark one',
     c.hint === 'Also writes this style\'s colors with root.' && c.accHint !== '' && sameOrder(plan, A17_ORDER) && pinsOff(plan, TSY_0).length === 0 && TSY_0.primary_fixed_light !== TSY_0.primary_fixed_dark, JSON.stringify([c.hint, c.accHint, pinsOff(plan, TSY_0)]));
   check('   the record keeps the spec chosen (2025) and the accent', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","spec":"2025","accents":{"secondary":"00A0FF"},"profile":"P17","build":"' + B17 + '"}', await rec());
-  let p = await preview();
+  let p = await preview(), r;
   check('   the preview in dark mode shows the dark scheme\'s accent1 (shade 100 #F3E2A2, 500 #847741)', p.rows === 5 && p.accent1[3] === '#F3E2A2' && p.accent1[7] === '#847741', JSON.stringify(p.accent1));
   await ev(() => { window.__dark = false; ovlRender(); }); p = await preview();
   check('   in light mode the light scheme\'s (#F6E292, #867732)', p.rows === 5 && p.accent1[3] === '#F6E292' && p.accent1[7] === '#867732', JSON.stringify(p.accent1));
+  await ev(() => { window.__dark = true; kvSet('ovl_accent_secondary', '1B6EF3'); ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {}; r = byRes(plan);
+  check('D2b. the same with the secondary accent 1B6EF3 (each mode\'s scheme takes the accent from its own mode): 264 in order; ' + Object.keys(ACC_1B).length + ' accent2 values, _light and _dark, are the oracle\'s accent1 of Tonal Spot 1B6EF3 at 2025 (they differ between the modes from shade 200 on); accent1 / neutral / primary / fixed still the oracle\'s without the accent; accent2_200 and secondary _light and _dark all moved from the plan without it',
+    sameOrder(plan, A17_ORDER) && pinsOff(plan, ACC_1B).length === 0 && ACC_1B.accent2_200_light !== ACC_1B.accent2_200_dark && pinsOff(plan, TSY_0).length === 0 && Object.keys(TSY_NOACC).every(n => r[n] && r[n] !== TSY_NOACC[n]), JSON.stringify([pinsOff(plan, ACC_1B), pinsOff(plan, TSY_0), Object.keys(TSY_NOACC).map(n => n + ' ' + r[n])]));
   await ev(() => { window.__dark = true; kvSet('ovl_accent_secondary', ''); kvSet('ovl_spec', '2026'); kvSet('ovl_root_style', 'CMF'); ovlPickColor('6750A4'); ovlRender(); }); c = await card();
   await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('D3. CMF (More styles) 6750A4 at 2026: the hint names CMF; 264 in order; ' + Object.keys(CMF_0).length + ' values pinned from the oracle (libmonet a17\'s SchemeCmf)', c.hint === 'Also writes the CMF colors with root, in place of the style above.' && sameOrder(plan, A17_ORDER) && pinsOff(plan, CMF_0).length === 0, JSON.stringify([c.hint, pinsOff(plan, CMF_0)]));
@@ -221,7 +243,12 @@ const BLACK_DARK = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark',
   check('   ' + Object.keys(TS21_0).length + ' values pinned from the oracle at 2021, contrast 0; the record says Tonal Spot (2021 is not written into a record), P17', pinsOff(plan, TS21_0).length === 0 && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","profile":"P17","build":"' + B17 + '"}', JSON.stringify([pinsOff(plan, TS21_0), await rec()]));
   await ev(() => { window.__contrast = 0.5; }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('E2. at contrast 0.5: 256 in order; ' + Object.keys(TS21_05).length + ' values pinned from the oracle at 0.5 (fixed _light and _dark differ)', sameOrder(plan, A17_ORDER_2021) && pinsOff(plan, TS21_05).length === 0, pinsOff(plan, TS21_05).join('; '));
-  await ev(() => { window.__contrast = 0; kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {};
+  for (const st of ['VIBRANT', 'EXPRESSIVE', 'SPRITZ']) {
+    await ev(s => { window.__contrast = 0; ovlPickStyle(s); ovlRender(); }, st); c = await card(); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
+    check('   ' + st + ' in the list at 2021: not native either: the same hint; Apply writes the setting (' + st + '), then 256 entries in order; ' + Object.keys(V21_0[st]).length + ' values pinned from the oracle at 2021 (each differs from its 2026 one); the record says ' + st,
+      c.hint === 'Also writes this style\'s 2021 colors with root, in place of Android\'s.' && k.apply.length === 1 && k.apply[0].style === st && sameOrder(plan, A17_ORDER_2021) && pinsOff(plan, V21_0[st]).length === 0 && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"' + st + '","profile":"P17","build":"' + B17 + '"}', JSON.stringify([c.hint, names(plan).length, pinsOff(plan, V21_0[st]), await rec()]));
+  }
+  await ev(() => { window.__contrast = 0; ovlPickStyle('TONAL_SPOT'); kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   const fid21Pins = Object.fromEntries(Object.entries(FID_0).filter(([n]) => !DIMS.some(d => n.startsWith(d))));
   check('E3. Fidelity (More styles) at 2021: 256 entries in order, the hint names Fidelity, the record has no spec; its other values are those of 2026 (' + Object.keys(fid21Pins).length + ' pins: Fidelity falls back to 2021 at 2026 too)', sameOrder(plan, A17_ORDER_2021) && c.hint === 'Also writes the Fidelity colors with root, in place of the style above.' && pinsOff(plan, fid21Pins).length === 0 && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P17","build":"' + B17 + '"}', JSON.stringify([names(plan).length, c.hint, pinsOff(plan, fid21Pins), await rec()]));
   await ev(() => { kvSet('ovl_root_style', ''); ovlPickStyle('RAINBOW'); kvSet('ovl_adj_accent_sat', 150); ovlRender(); }); c = await card(); const hR = c.hint;
@@ -231,13 +258,23 @@ const BLACK_DARK = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark',
   await ev(() => { kvSet('ovl_adj_accent_sat', 100); ovlRender(); });
   check('E4. Rainbow at 2021 with an Intensity slider (written for the slider; its 2021 colours are Android\'s own): "' + hR + '", with Pure black "' + hRb + '", 256 entries; Tonal Spot at 2021 with the slider: "' + hT + '"',
     hR === 'Also writes this style\'s colors with root, adjusted by the Intensity sliders.' && hRb === 'Also writes this style\'s colors, adjusted by the Intensity sliders, and pure black with root.' && names(plan).length === 256 && hT === 'Also writes this style\'s 2021 colors with root, adjusted by the Intensity sliders.', JSON.stringify([hR, hRb, names(plan).length, hT]));
+  await ev(() => { kvSet('ovl_spec', '2026'); ovlPickStyle('TONAL_SPOT'); ovlPickColor('FFDE3F'); kvSet('ovl_adj_accent_sat', 0); window.__dark = true; ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {}; r = byRes(plan);
+  const notGrey = ['accent1', 'accent2', 'accent3'].map(row => Object.keys(GREY).map(sh => [row + '_' + sh + '_light', row + '_' + sh + '_dark'].filter(n => r[n] !== GREY[sh])).flat()).flat();
+  check('E5. Tonal Spot FFDE3F at 2026 with Accent saturation at 0 (written for the slider; at 100 its colours are Android\'s own and differ between the modes): 264 in order; shades 100 to 900 of the three accent rows, _light and _dark, are the greys of their tones (worked out from L*, 0xFFE2E2E2 at shade 100 to 0xFF1B1B1B at 900); the neutral rows stay the oracle\'s (neutral1_900_light, neutral1_10_light)',
+    sameOrder(plan, A17_ORDER) && notGrey.length === 0 && r.neutral1_900_light === TSY_0.neutral1_900_light && r.neutral1_10_light === TSY_0.neutral1_10_light, JSON.stringify([notGrey, r.neutral1_900_light]));
+  await ev(() => { kvSet('ovl_adj_accent_sat', 100); kvSet('ovl_accurate_shades', '0'); ovlRender(); }); c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {}; r = byRes(plan);
+  const acc0 = ['1', '2', '3'].map(i => ['light', 'dark'].filter(m => r['accent' + i + '_100_' + m] !== TSY26_300['accent' + i + '_300_' + m]).map(m => i + m)).flat();
+  check('E6. the same with Accurate shades off (and the slider back at 100): written (the hint: this style\'s colors); 264 in order; shade 300 of each accent row the oracle\'s, _light and _dark (accent1_300 0xFFBDAB61 light, 0xFFBAAB70 dark); shade 100 of each row takes its own mode\'s shade 300; primary_fixed_light and _dark and secondary_fixed _light and _dark (tone 90 there) the tone-70 colour of their mode; tertiary_fixed (not tone 90) and the neutral rows unchanged',
+    c.hint === 'Also writes this style\'s colors with root.' && sameOrder(plan, A17_ORDER) && pinsOff(plan, TSY26_300).length === 0 && acc0.length === 0 && r.primary_fixed_light === TSY26_300.accent1_300_light && r.primary_fixed_dark === TSY26_300.accent1_300_dark && r.secondary_fixed_light === TSY26_300.accent2_300_light && r.secondary_fixed_dark === TSY26_300.accent2_300_dark && r.tertiary_fixed_light === '0xFFFDC891' && r.tertiary_fixed_dark === '0xFFFDC891' && r.neutral1_900_light === TSY_0.neutral1_900_light,
+    JSON.stringify([c.hint, pinsOff(plan, TSY26_300), acc0, r.primary_fixed_light, r.primary_fixed_dark, r.secondary_fixed_light, r.tertiary_fixed_light]));
+  await ev(() => { kvSet('ovl_accurate_shades', '1'); ovlPickColor('6750A4'); ovlRender(); });
 
   // ---- (f) Pure black on 17 ----
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_spec', '2026'); kvSet('ovl_black', true); ovlPickStyle('TONAL_SPOT'); ovlRender(); });
   c = await card(); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
   check('F1. P17, Pure black alone (Tonal Spot at 2026 is native): the hint names pure black; 11 entries, all _dark names (system_neutral1_900_dark, system_neutral2_900_dark, the nine dark roles), black and the greys', c.hint === 'Also writes the pure black overlay with root.' && JSON.stringify(names(plan)) === JSON.stringify(BLACK_DARK.map(n => RES + n)) && byRes(plan).neutral1_900_dark === '0xFF000000' && byRes(plan).surface_container_dark === '0xFF181818' && byRes(plan).surface_bright_dark === '0xFF2C2C2C', JSON.stringify(names(plan)));
   check('   the record: black, no style, P17, the build', (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":true,"style":"","profile":"P17","build":"' + B17 + '"}', await rec());
-  await ev(() => { kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {}; let r = byRes(plan);
+  await ev(() => { kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {}; r = byRes(plan);
   check('F2. Pure black over Fidelity on P17: still 264 in SystemUI\'s order; the dark shades and backgrounds black, surface_container_dark grey; the _light values stay the oracle\'s (neutral1_900_light 0xFF1D1B20, surface_light 0xFFFDF7FF), the rest Fidelity\'s (primary_dark, primary_fixed_dark)', sameOrder(plan, A17_ORDER) && ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 'surface_dark'].every(n => r[n] === '0xFF000000') && r.surface_container_dark === '0xFF181818' && r.neutral1_900_light === FID_0.neutral1_900_light && r.surface_light === FID_0.surface_light && r.primary_dark === FID_0.primary_dark && r.primary_fixed_dark === FID_0.primary_fixed_dark && r.neutral2_900_light !== '0xFF000000', JSON.stringify([r.neutral1_900_light, r.neutral2_900_light, r.surface_light]));
   await ev(() => { kvSet('ovl_black', false); });
 

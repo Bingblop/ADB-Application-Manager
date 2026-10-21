@@ -21,7 +21,8 @@ import java.util.Set;
  * <li>system_primary_dim_light: android16-qpr1-release, android16-qpr2-release and android17-release;</li>
  * <li>system_semantic_red_container_high_light: android16-qpr2-release only (android17-release does not have it);</li>
  * <li>system_primary_fixed_light: android17-release only (android16-qpr2-release and every earlier branch have the unsuffixed
- * system_primary_fixed only; 17 adds the _light and _dark names and makes the unsuffixed one an alias of _light).</li>
+ * system_primary_fixed only; 17 adds the _light and _dark names and makes the unsuffixed one an alias of _light in values/ and of _dark in
+ * values-night/).</li>
  * </ul>
  * None of them is in android14-release. They are plain {@code <color>} entries (no feature flag on the entry), so a build of that branch
  * has them. That a phone maker's build keeps them, and that getIdentifier finds a name the SDK does not publish, was not checked on a
@@ -72,9 +73,10 @@ public final class MonetProfile {
 
     /**
      * Whether SystemUI on this profile writes the 12 fixed colours as {@code system_primary_fixed_light} and {@code _dark} (and so on), each
-     * from its own mode's scheme, and the unsuffixed {@code system_primary_fixed} is an alias of the {@code _light} name (Android 17: core/res
-     * values/colors.xml, and values-night/colors_dynamic.xml points the dark materialColor*Fixed at {@code _dark}; TOC assignColorsToOverlay
-     * has no fixed branch any more). There the overlay this app writes takes the suffixed fixed names (OverlayRules.fabricatePlanProblem
+     * from its own mode's scheme, and the unsuffixed {@code system_primary_fixed} is an alias of the {@code _light} name in core/res
+     * values/colors.xml and of the {@code _dark} name in values-night/colors.xml (Android 17; values-night/colors_dynamic.xml also points the
+     * dark materialColor*Fixed at {@code _dark}; TOC assignColorsToOverlay has no fixed branch any more), so an overlay on the unsuffixed
+     * name would show one colour over both of SystemUI's. There the overlay this app writes takes the suffixed fixed names (OverlayRules.fabricatePlanProblem
      * refuses an unsuffixed one).
      */
     public static boolean suffixedFixed(String profile) {

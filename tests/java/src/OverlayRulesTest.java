@@ -1016,7 +1016,7 @@ public class OverlayRulesTest {
         // the QPR plan (unsuffixed fixed colours) is refused on 17, at its first fixed entry
         String prQ17 = OverlayRules.fabricatePlanProblem("P17", qpr);
         is("17: the QPR plan's unsuffixed fixed colour is refused, named by its number (" + prQ17 + ")", prQ17 != null && prQ17.startsWith("Entry 241 ") && prQ17.contains("fixed color without _light or _dark"));
-        // each of the 12 unsuffixed fixed names (an alias of _light there) is refused on 17 only
+        // each of the 12 unsuffixed fixed names (an alias of _light, or of _dark in night mode, there) is refused on 17 only
         eq("the 12 fixed names", fixed.length, 12);
         for (String f : fixed) {
             List<OverlayRules.FabEntry> withFixed = new ArrayList<OverlayRules.FabEntry>(a17); withFixed.add(fe("android:color/system_" + f, "0xFF000000"));

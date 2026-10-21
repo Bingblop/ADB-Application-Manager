@@ -917,7 +917,8 @@ final class OverlayRules {
     private static final Pattern FAB_PALETTE_ALIAS = Pattern.compile("android:color/system_(accent[1-3]|neutral[12]|error)_[0-9]+");
     /**
      * One of the 12 fixed colours by its unsuffixed name (system_primary_fixed, system_on_tertiary_fixed_variant): on Android 17 an alias of
-     * the _light name (core/res values/colors.xml).
+     * the _light name in core/res values/colors.xml and of the _dark name in values-night/colors.xml, so an overlay on it would show one
+     * colour over both of SystemUI's.
      */
     private static final Pattern FAB_FIXED_ALIAS = Pattern.compile("android:color/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)");
 

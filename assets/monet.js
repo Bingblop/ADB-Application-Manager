@@ -241,7 +241,7 @@
  *   frameworks/base packages/SystemUI/src/com/android/systemui/theme/ThemeOverlayController.java: createOverlays (:688-706) as on
  *     QPR2; assignColorsToOverlay (:708-718) has no fixed branch, so every colour, the fixed ones included, is written as _light (light
  *     scheme) then _dark (dark scheme). core/res values/colors.xml defines system_primary_fixed_light and _dark (:677, :810) and makes
- *     the unsuffixed fixed names aliases of _light (:936-937). So entries() gives 130 palette entries, 110 role entries and 24 fixed
+ *     the unsuffixed fixed names aliases of _light (:936-937); values-night/colors.xml makes them aliases of _dark (:63-74). So entries() gives 130 palette entries, 110 role entries and 24 fixed
  *     entries: 264, in that order, then SystemUI's custom colours (27 on 17), which are not included. At spec 2021 the four dim roles
  *     are left out (256), as on QPR (the brief's choice: libmonet's ColorSpec2021 has no dim colours); at 2025 and 2026 they are
  *     written for every style, as SystemUI writes them.
@@ -3224,7 +3224,7 @@
     }
     // the profiles whose ThemeOverlayController writes the fixed colours as _light (light scheme) and _dark (dark scheme), like the roles:
     // Android 17 (its assignColorsToOverlay has no fixed branch, TOC android17-release :708-718; core/res makes the unsuffixed names
-    // aliases of _light). Every other profile writes them unsuffixed from the light scheme
+    // aliases of _light in values/ and of _dark in values-night/). Every other profile writes them unsuffixed from the light scheme
     const FIXED_BOTH_MODES = { P17: true };
     // ThemeOverlayController (frameworks/base, android15-qpr1-release, android15-qpr2-release, android16-release) writes the neutral
     // overlay (neutral1, neutral2) before the accent one (accent1-3), each row in the order of a HashMap of SHADE_KEYS (TonalPalette's

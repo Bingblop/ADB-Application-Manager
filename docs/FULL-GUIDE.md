@@ -846,7 +846,9 @@ style the palette is worked out with:
   SPEC_2026 for every style and libmonet android17-release falls back as MCU's rule does (CMF keeps 2026; Tonal Spot, Vibrant,
   Expressive and Spritz 2026 to 2025; the rest 2021); monet.js part 2 takes the a17 rules where they differ from MCU main 2026
   (Expressive's primary, control_activated / control_normal / text_primary_inverse from spec 2025 on, the 2021 'darker' polarity) and
-  libmonet's own SchemeCmf (it differs from MCU main's CMF in 1,271 of 51,120 values). The app writes what SystemUI writes there, in
+  libmonet's own SchemeCmf (CMF on 17 differs from MCU main's CMF in 1,271 of 51,120 values: 1,268 are
+  control_activated, control_normal and text_primary_inverse, the role changes above, which every style gets, and only 3, all
+  inverse_primary, are not (a yellow's tone 99, which libmonet a17 does not average); the CMF palettes are the same). The app writes what SystemUI writes there, in
   TOC a17's order: the 65 shades `_light`/`_dark`, the 55 roles light and dark and the 12 fixed colors `_light` (light scheme) and
   `_dark` (dark scheme), 264 entries, both modes in one Apply; the unsuffixed fixed names are aliases there (values/colors.xml to
   `_light`, values-night/colors.xml to `_dark`) and are never written (the Java side refuses them and the unsuffixed shades on
