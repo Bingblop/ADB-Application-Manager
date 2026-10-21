@@ -14,9 +14,10 @@
 // *_dim roles, which 2021 does not define, are left out; values pinned at contrast 0 and 0.5. (e) Pure black on QPR writes only _dark
 // names (system_neutral1_900_dark and system_neutral2_900_dark, the nine dark roles), alone and over a style; the _light values stay the
 // light scheme's. (f) A list style at 2025 with an accent (Tonal Spot FFDE3F): the _light shades come from the light scheme and the _dark
-// shades from the dark one (they differ at 2025); the preview shows the mode the phone is in. (g) The record (profile, build) and the note
+// shades from the dark one (they differ at 2025); the preview shows the mode the phone is in; Vibrant FFDE3F, whose yellow palettes take
+// tone 99 without averaging; the accent picker starts at the key colour of the phone's own spec. (g) The record (profile, build) and the note
 // for colours written on another build: a QPR1 record on QPR2, a 16.0 record on QPR2, a monthly update, a mode change (no note). (h) Undo
-// and Default with a QPR overlay. (i) The new words in German.
+// and Default with a QPR overlay, an Undo back to a 2021 write (no spec in its record), the resume path after a restart. (i) The new words in German.
 // Every hex value pinned below comes from an oracle kept outside the repository and not from this app's code: each branch's SystemUI
 // DynamicColors.java and TonalPalette.java (frameworks/libs/systemui monet, android16-qpr1-release / android16-qpr2-release) compiled on
 // that branch's external/libmonet, with ThemeOverlayController's createOverlays / assignColorsToOverlay transcribed (pr9-oracle Q16Dump);
@@ -85,11 +86,19 @@ const Q2_TS21_0 = { accent1_100_light: '0xFFE9DDFF', accent1_500_light: '0xFF7E6
 const Q2_TS21_05 = { primary_light: '0xFF3C2D63', primary_dark: '0xFFE3D6FF', on_surface_variant_light: '0xFF38353D', on_surface_variant_dark: '0xFFE0DAE5', primary_container_dark: '0xFF9887C5',
   outline_dark: '0xFFB5B0BB', primary_fixed: '0xFF74649F', on_primary_fixed: '0xFFFFFFFF', secondary_fixed_dim: '0xFF585267', surface_container_dark: '0xFF29272D' };
 const Q1_TS21_0 = { primary_light: '0xFF65558F', primary_dark: '0xFFCFBDFE', on_surface_variant_dark: '0xFFCAC4CF', control_normal_dark: '0xFFCAC4CF', primary_fixed: '0xFFE9DDFF' };
+const Q1_TS21_05 = { primary_light: '0xFF3C2D63', primary_dark: '0xFFE3D6FF', on_surface_variant_light: '0xFF38353D', on_surface_variant_dark: '0xFFE0DAE5', primary_container_dark: '0xFF9887C5',
+  outline_dark: '0xFFB5B0BB', control_normal_dark: '0xFFCAC4CF', primary_fixed: '0xFF74649F', on_primary_fixed: '0xFFFFFFFF', secondary_fixed_dim: '0xFF585267', surface_container_dark: '0xFF29272D' };
 const Q2_CON_0 = { accent1_500_light: '0xFFB2631B', accent3_500_dark: '0xFF767D0E', primary_light: '0xFF944C00', primary_dark: '0xFFFB9D51', surface_dark: '0xFF140D08',
   on_surface_variant_dark: '0xFFB7A8A0', primary_dim_dark: '0xFFEB9046', primary_fixed: '0xFFFB9D51', on_primary_fixed: '0xFF2F1400' };
 const Q1_CON_0 = { on_surface_variant_dark: '0xFF9E9189', control_normal_dark: '0xFF9E9189', primary_light: '0xFF944C00' };
 const Q2_TSY_0 = { accent1_100_light: '0xFFF6E292', accent1_100_dark: '0xFFF3E2A2', accent1_500_light: '0xFF867732', accent1_500_dark: '0xFF847741', neutral1_900_light: '0xFF1E1B15',
   primary_light: '0xFF6D5F1C', primary_dark: '0xFFD6C689', surface_light: '0xFFFFF9EE', surface_dark: '0xFF100E08', on_surface_variant_dark: '0xFFB1AB99' };
+// TVY: VIBRANT FFDE3F at 2025, contrast 0 (qpr2): its tertiary (hue 122.2) and both neutral palettes (hue 108.2) are yellow, and libmonet's
+// getHct gives their tone 99 (shade 10, and the roles at tone 99) without upstream's averaging of tones 98 and 100 (that would give
+// 0xFFFFFDED for the neutrals and 0xFFFAFFE3 for the tertiary); the roles from the golden's R rows, the shades Hct.from(hue, chroma, 99) on
+// its P rows (the secondary accent of (f) touches accent2 and the secondary roles only, so none of these)
+const Q2_TVY_0 = { background_light: '0xFFFFFBFF', surface_light: '0xFFFFFBFF', surface_bright_light: '0xFFFFFBFF', tertiary_container_light: '0xFFD8F56F', on_surface_dark: '0xFFFCF6B1',
+  neutral1_10_light: '0xFFFFFBFF', neutral1_10_dark: '0xFFFFFBFF', neutral2_10_light: '0xFFFFFBFF', accent3_10_light: '0xFFFBFFE0', accent3_10_dark: '0xFFFBFFE0', accent3_500_light: '0xFF698000' };
 // Pure black's 11 entries on QPR: _dark names only
 const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 'surface_dark', 'surface_dim_dark', 'surface_container_lowest_dark', 'surface_container_low_dark',
   'surface_container_dark', 'surface_container_high_dark', 'surface_container_highest_dark', 'surface_bright_dark'];
@@ -213,6 +222,9 @@ const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 
   check('D2. at contrast 0.5: ' + Object.keys(Q2_TS21_05).length + ' values pinned from the oracle at 0.5', pinsOff(plan, Q2_TS21_05).length === 0 && names(plan).length === 244, pinsOff(plan, Q2_TS21_05).join('; '));
   await phone({ sdk: 36, profile: 'P16Q1', build: BQ1, contrast: 0 }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('   P16Q1 at 2021, contrast 0: 244 in order; ' + Object.keys(Q1_TS21_0).length + ' values pinned from the qpr1 oracle (at 2021 QPR1 and QPR2 agree: on_surface_variant_dark 0xFFCAC4CF)', sameOrder(plan, QPR_ORDER_2021) && pinsOff(plan, Q1_TS21_0).length === 0, pinsOff(plan, Q1_TS21_0).join('; '));
+  await ev(() => { window.__contrast = 0.5; }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
+  check('   P16Q1 at 2021, contrast 0.5: 244 in order; ' + Object.keys(Q1_TS21_05).length + ' values pinned from the qpr1 oracle at 0.5', sameOrder(plan, QPR_ORDER_2021) && pinsOff(plan, Q1_TS21_05).length === 0, pinsOff(plan, Q1_TS21_05).join('; '));
+  await ev(() => { window.__contrast = 0; });
   await ev(() => { kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {};
   check('   Fidelity (More styles) at 2021 follows the spec: 244 entries, the hint names Fidelity, the record has no spec', names(plan).length === 244 && sameOrder(plan, QPR_ORDER_2021) && c.hint === 'Also writes the Fidelity colors with root, in place of the style above.' && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P16Q1","build":"' + BQ1 + '"}', JSON.stringify([names(plan).length, c.hint, await rec()]));
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_black', true); ovlRender(); }); c = await card();
@@ -244,7 +256,13 @@ const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 
   check('   the preview in dark mode shows the dark scheme\'s accent1 (shade 100 #F3E2A2, 500 #847741)', p.rows === 5 && p.accent1[3] === '#F3E2A2' && p.accent1[7] === '#847741', JSON.stringify(p.accent1));
   await ev(() => { window.__dark = false; ovlRender(); }); p = await preview();
   check('   in light mode the light scheme\'s (#F6E292, #867732)', p.rows === 5 && p.accent1[3] === '#F6E292' && p.accent1[7] === '#867732', JSON.stringify(p.accent1));
-  await ev(() => { window.__dark = true; kvSet('ovl_accent_secondary', ''); ovlPickColor('6750A4'); ovlRender(); });
+  await ev(() => { window.__dark = true; ovlPickStyle('VIBRANT'); ovlRender(); }); await reset(); await apply(); plan = (await calls()).fab[0] || {};
+  check('F2. Vibrant FFDE3F at 2025 with the same accent: ' + Object.keys(Q2_TVY_0).length + ' values pinned from the qpr2 oracle on its yellow palettes at tone 99 (shade 10 and background / surface: 0xFFFFFBFF, no averaging of tones 98 and 100)', sameOrder(plan, QPR_ORDER) && pinsOff(plan, Q2_TVY_0).length === 0, pinsOff(plan, Q2_TVY_0).join('; '));
+  await ev(() => { window.__dark = true; kvSet('ovl_accent_secondary', ''); ovlPickColor('6750A4'); ovlPickStyle('TONAL_SPOT'); ovlRender(); });
+  const sheet = () => ev(() => ({ open: document.getElementById('colorPickModal').classList.contains('show'), sub: document.getElementById('cpSub').innerText, hex: document.getElementById('cpHex1').value }));
+  await ev(() => { kvSet('ovl_spec', null); ovlRender(); ovlAccOpen('tertiary'); }); await sleep(150); let sh = await sheet(); await ev(() => closeColorPicker());
+  await ev(() => { kvSet('ovl_spec', '2021'); ovlRender(); ovlAccOpen('tertiary'); }); await sleep(150); const sh21 = await sheet(); await ev(() => { closeColorPicker(); kvSet('ovl_spec', '2025'); ovlRender(); });
+  check('F3. P16Q2, Tonal Spot 6750A4 in the list, dark, no spec stored (2025, native): the Tertiary accent\'s picker starts at the key colour Android\'s own 2025 scheme gives (#956989, qpr2 oracle), not the 2021 one; at 2021 (written with root) at #996A79 (qpr2 oracle at SPEC_2021)', sh.open && /#956989 /.test(sh.sub) && sh.hex.toUpperCase().includes('956989') && sh21.open && /#996A79 /.test(sh21.sub), JSON.stringify([sh, sh21]));
 
   // ---- (g) the record and the note for colours written on another build ----
   await ev(() => { kvSet('ovl_root_style', 'FIDELITY'); kvSet('ovl_spec', '2025'); kvSet('ovl_root_applied', null); });
@@ -272,8 +290,46 @@ const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 
   await ev(() => { kvSet('ovl_root_style', 'CONTENT'); ovlPickColor('B5651D'); ovlRender(); }); await reset(); await apply();
   await reset(); await page.locator('#sdbSnackUndo').click(); await settle(); await sleep(150); k = await calls(); plan = k.fab[0] || {};
   check('H1. Undo of a Content write after a Fidelity one on P16Q2: the theme is put back and Fidelity\'s 252 entries are written again, as they were', k.restore.length === 1 && k.fab.length === 1 && plan.action === 'fabricate' && JSON.stringify(plan.entries) === JSON.stringify(first) && (await rec()).includes('"style":"FIDELITY"'), JSON.stringify([k.restore.length, k.fab.length, names(plan).length]));
+  await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_spec', '2021'); ovlPickStyle('TONAL_SPOT'); ovlPickColor('6750A4'); ovlRender(); }); await reset(); await apply();
+  const first21 = ((await calls()).fab[0] || {}).entries || [];
+  await ev(() => { kvSet('ovl_spec', null); kvSet('ovl_root_style', 'FIDELITY'); ovlRender(); }); await reset(); await apply(); const fid = ((await calls()).fab[0] || {}).entries || [];
+  await reset(); await page.locator('#sdbSnackUndo').click(); await settle(); await sleep(150); k = await calls(); plan = k.fab[0] || {};
+  check('H1b. Undo of a Fidelity write (2025, 252) made after a Tonal Spot one at 2021 (244, its record has no spec), with no spec stored now (the page\'s default is 2025 on QPR): the 244 entries of the 2021 write are written again, as they were', first21.length === 244 && fid.length === 252 && k.fab.length === 1 && plan.action === 'fabricate' && names(plan).length === 244 && JSON.stringify(plan.entries) === JSON.stringify(first21) && (await rec()).includes('"style":"TONAL_SPOT"') && !(await rec()).includes('"spec"'), JSON.stringify([first21.length, fid.length, k.fab.length, names(plan).length, await rec()]));
   await reset(); dialogs.length = 0; await page.locator('#ovlResetBtn').click(); await settle(); await sleep(100); k = await calls();
   check('H2. Default with the overlay on: the question says it is switched off too; the setting is reset and the overlay disabled; the record is cleared', dialogs.length === 1 && dialogs[0].includes('The theme overlay is switched off too.') && k.restore.length === 1 && k.fab.length === 1 && k.fab[0].action === 'disable' && (await kv('ovl_root_applied')) === null, JSON.stringify([dialogs, k.fab]));
+
+  // the resume path (T-068): an Apply of Fidelity at 2025 on P16Q2 whose theme answer is lost to a restart; the restarted page, the theme read
+  // back as written, completes that Apply's overlay half with the 252-entry plan in SystemUI's order (as t564 13b does with Pure black)
+  const KEY = 'theme_customization_overlay_packages';
+  const qpr = () => { window.__root = true; window.__sdk = 36; window.__profile = 'P16Q2'; window.__build = 'google/mock/mock:16/BP4A.251205.006/14401865:user/release-keys'; window.__dark = true; window.__contrast = 0; };
+  const openWith = async (kvs, fn, arg) => {
+    const p2 = await b.newPage({ viewport: { width: 360, height: 800 } });
+    p2.on('pageerror', e => errors.push(e.message));
+    await p2.addInitScript(k => { window.__kvInit = JSON.parse(k); }, kvs);
+    await p2.addInitScript(sdb.initScript); await p2.addInitScript(ovl.initScript); await p2.addInitScript(qpr); await p2.addInitScript(fn, arg);
+    return p2;
+  };
+  const p1 = await openWith(JSON.stringify({ ovl_root_style: '"FIDELITY"', ovl_spec: '"2025"' }), () => {}, null);
+  await p1.goto(URL); await p1.waitForTimeout(500);
+  await p1.evaluate(() => switchView('overlays')); await p1.waitForTimeout(400);
+  await p1.evaluate(() => { window.__ovlNoAnswer = true; });
+  await p1.locator('#ovlApplyBtn').click(); await p1.waitForTimeout(150);
+  const lost = await p1.evaluate(() => {
+    const a = window.__ovlCalls.apply[0] || {}, st = a.style || 'TONAL_SPOT';
+    const value = a.source === 'preset' ? JSON.stringify({ 'android.theme.customization.system_palette': a.hex, 'android.theme.customization.color_source': 'preset', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() })
+      : JSON.stringify({ 'android.theme.customization.color_source': 'home_wallpaper', 'android.theme.customization.theme_style': st, _applied_timestamp: Date.now() });
+    return { kv: JSON.stringify(window.AndroidBridge.__kv), value, resume: kvGet('ovl_resume', null), fab: window.__ovlCalls.fab.length };
+  });
+  await p1.close();
+  const p2 = await openWith(lost.kv, ([key, v]) => { window.__db.secure[key] = v; }, [KEY, lost.value]);
+  await p2.goto(URL); await p2.waitForTimeout(1900);
+  await p2.waitForFunction(() => !ovlBusy && sdbReqs.size === 0, null, { timeout: 8000, polling: 25 }).catch(() => {}); await p2.waitForTimeout(100);
+  const rs = await p2.evaluate(() => ({ fab: window.__ovlCalls.fab.map(f => ({ action: f.action, names: (f.entries || []).map(e => e.resource) })), applied: kvGet('ovl_root_applied', null), done: (kvGet('ovl_resume', null) || {}).done === true }));
+  await p2.close();
+  const rf = rs.fab[0] || { names: [] };
+  check('H3. the resume path on P16Q2: Fidelity at 2025 tapped, the theme answer lost to a restart (nothing written yet, the resume record plans the overlay); the restarted page, the theme read back as written, writes that overlay: 252 entries in SystemUI\'s order; the record says Fidelity, 2025, P16Q2; the resume record is done',
+    lost.fab === 0 && !!lost.resume && lost.resume.root === 'fabricate' && rs.fab.length === 1 && rf.action === 'fabricate' && JSON.stringify(rf.names) === JSON.stringify(QPR_ORDER) && !!rs.applied && rs.applied.style === 'FIDELITY' && rs.applied.spec === '2025' && rs.applied.profile === 'P16Q2' && rs.done,
+    JSON.stringify([lost.fab, lost.resume && lost.resume.root, rs.fab.map(f => f.action + ':' + f.names.length), rs.applied, rs.done]));
 
   // ---- (i) the new words in German ----
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_spec', '2021'); ovlPickStyle('TONAL_SPOT'); ovlPickColor('6750A4'); ovlRender(); });

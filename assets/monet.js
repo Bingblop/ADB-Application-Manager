@@ -159,7 +159,7 @@
  *   outline_light), the seven styles SystemUI accepts (Monochrome among them) in outline_light only (6 of 672); at contrast 0.5 and 1
  *   about 40 % differ. Not handled yet.
  *
- * Profiles P16Q1 and P16Q2, provenance (AOSP, Apache-2.0; libmonet Copyright 2022-2025 Google LLC, SystemUI Copyright (C)
+ * Profiles P16Q1 and P16Q2, provenance (AOSP, Apache-2.0; libmonet Copyright 2021-2025 Google LLC, SystemUI Copyright (C)
  * 2019-2024 The Android Open Source Project, both covered by the notices at the top of this file): what SystemUI writes on Android
  * 16 QPR1 and QPR2, read at the branch heads refs/heads/android16-qpr1-release and android16-qpr2-release.
  *   external/libmonet (android16-qpr1-release d965376ed6506ecbc422b95431b73011e19a7b55, android16-qpr2-release

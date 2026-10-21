@@ -38612,13 +38612,14 @@ Type any command above (e.g. pm list packages -d)</div>
             return Object.keys(out).length ? out : null;
         }
         // where the colour picker starts for an entry that is not set: the colour the style gives that row now (its palette's key colour; the
-        // style Apply would write without the accents and the sliders, or the list style Android computes itself), from the source colour the
-        // preview uses; the source colour itself when the maths cannot say
+        // style Apply would write without the accents and the sliders, or the list style Android computes itself, at the phone's own spec:
+        // 2025 on 16 QPR1 and QPR2, 2021 elsewhere), from the source colour the preview uses; the source colour itself when the maths cannot say
         function ovlAccStart(o) {
             const seed = ovlRootSeed().hex;
             try {
                 const pick = ovlRootPlanOn(ovlStyle, null, null), style = pick.style || ovlStyle;
-                const p = MonetPlan.palettes(style, seed, ovlRootOpts(pick.style ? pick.spec : '2021', systemPrefersDark(), ovlContrast(), null, null));
+                const spec = pick.style ? pick.spec : (ovlSpecApiOk() ? ovlSpecFor(style, ovlNativeSpec()) : '2021');
+                const p = MonetPlan.palettes(style, seed, ovlRootOpts(spec, systemPrefersDark(), ovlContrast(), null, null));
                 const k = p && p[o.row] ? String(p[o.row].key) : '';
                 if (/^[0-9A-Fa-f]{6}$/.test(k)) return k.toUpperCase();
             } catch (e) {}

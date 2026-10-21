@@ -838,7 +838,9 @@ style the palette is worked out with:
   (`system_accent1_600_light`, `_dark`, `system_primary_light`, `system_surface_dark`, `system_primary_dim_dark`, those the plan has,
   then the plan's first others up to four), and the plan keeps SystemUI's order. Measured: SystemUI's DynamicColors and TonalPalette
   of each branch compiled with its libmonet and run, nine styles (all but CMF, which libmonet lacks and which stays MCU main's 2026),
-  71 seeds, contrast 0/0.5/1, light and dark, specs 2021 and 2025: 0 differences in values, names and order. Not run on a QPR phone
+  71 seeds, contrast 0/0.5/1, light and dark, specs 2021 and 2025: 0 differences in values, names and order, except that at 2021
+  the four *_dim roles are left out on purpose (SystemUI's MaterialDynamicColors takes them from ColorSpec2025 at any spec and
+  would write all 252; the app writes 244 there by design, and the oracle drops the four to compare). Not run on a QPR phone
   with root. Locked, all six rows, with Super User or without:
   15.0, 17 and any build that matches no row (*Not supported on this Android version yet*: 15.0 uses an older
   libmonet, 17 computes at 2026 with the fixed colors in both modes; an APK from before PR 9, which reports 16 QPR1/QPR2 as
