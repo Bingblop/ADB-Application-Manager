@@ -1,6 +1,9 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"Accurate shades": "Tons precisos",
+"Accurate shades: off.": "Tons precisos: desativado.",
+"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "Ativado: cada tom de destaque mantém sua própria luminosidade. Desativado: o tom 100 de cada destaque recebe a cor mais escura do tom 300.",
 "Also writes this style's colors and pure black with root.": "Também grava as cores deste estilo e o preto puro com Root.",
 "Also writes this style's colors with root.": "Também grava as cores deste estilo com Root.",
 "From the style": "Do estilo",

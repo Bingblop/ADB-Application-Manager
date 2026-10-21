@@ -1,6 +1,9 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Accurate shades": "درجات دقيقة",
+"Accurate shades: off.": "درجات دقيقة: متوقفة.",
+"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "تشغيل: تحتفظ كل درجة من درجات التمييز بدرجتها الخاصة. إيقاف: تأخذ الدرجة 100 من كل لون تمييز اللون الأغمق للدرجة 300.",
 "Also writes this style's colors and pure black with root.": "يكتب أيضًا ألوان هذا النمط والأسود الخالص عبر Root.",
 "Also writes this style's colors with root.": "يكتب أيضًا ألوان هذا النمط عبر Root.",
 "From the style": "من النمط",

@@ -145,7 +145,7 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   await phone({ sdk: 34, build: B14 });
   let a = await acc();
   check('A1. without Super User (Android 14): Secondary and tertiary accents is a locked row of the Root Features kind (Locked, Needs Super User) with its line, no entries', lockedAs(a, 'Needs Super User') && a.name === TITLE + ' ' + SUB && a.lockBtn.text === 'Locked', JSON.stringify(a));
-  check('   its container sits under Intensity and above the notes, inside the Root-only theme controls card', await ev(() => { const box = document.getElementById('ovlRootAccents'); return !!box && !!box.closest('#ovlRootCard') && box.previousElementSibling.id === 'ovlRootAdjust' && box.nextElementSibling.id === 'ovlRootNote'; }));
+  check('   its container sits under Intensity and above the notes, inside the Root-only theme controls card', await ev(() => { const box = document.getElementById('ovlRootAccents'); return !!box && !!box.closest('#ovlRootCard') && box.previousElementSibling.id === 'ovlRootAdjust' && box.nextElementSibling.id === 'ovlRootAccurate' && box.nextElementSibling.nextElementSibling.id === 'ovlRootNote'; }));
   await setAcc('E91E63', '00897B'); a = await acc();
   check('   colours stored from a rooted session (E91E63, 00897B) count for nothing: still locked, no hint, no plan style, ovlRootAccOn() null', lockedAs(a, 'Needs Super User') && a.hint === '' && a.said === '' && (await ev(() => typeof ovlRootAccOn === 'function' && ovlRootAccOn() === null && ovlRootPlanOn('TONAL_SPOT').style === '')), JSON.stringify(a));
   const handlers = () => ev(() => {

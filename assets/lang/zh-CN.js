@@ -1,6 +1,9 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Accurate shades": "精确色阶",
+"Accurate shades: off.": "精确色阶：关闭。",
+"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "开启：每个强调色阶保持自己的色调。关闭：每个强调色的色阶 100 改用色阶 300 较深的颜色。",
 "Also writes this style's colors and pure black with root.": "同时通过 Root 写入此样式的颜色和纯黑。",
 "Also writes this style's colors with root.": "同时通过 Root 写入此样式的颜色。",
 "From the style": "来自样式",

@@ -1,6 +1,9 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Accurate shades": "정확한 색조",
+"Accurate shades: off.": "정확한 색조: 꺼짐.",
+"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "켜짐: 각 강조 색조가 고유한 톤을 유지합니다. 꺼짐: 각 강조 색상의 색조 100이 더 어두운 색조 300의 색상을 사용합니다.",
 "Also writes this style's colors and pure black with root.": "이 스타일의 색상과 순수한 검은색도 Root로 기록합니다.",
 "Also writes this style's colors with root.": "이 스타일의 색상도 Root로 기록합니다.",
 "From the style": "스타일에서",

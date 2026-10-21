@@ -1,6 +1,9 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"Accurate shades": "Tonos precisos",
+"Accurate shades: off.": "Tonos precisos: desactivado.",
+"On: every accent shade keeps its own tone. Off: shade 100 of each accent takes the darker color of shade 300.": "Activado: cada tono de acento conserva su propia luminosidad. Desactivado: el tono 100 de cada acento toma el color más oscuro del tono 300.",
 "Also writes this style's colors and pure black with root.": "También escribe los colores de este estilo y el negro puro con Root.",
 "Also writes this style's colors with root.": "También escribe los colores de este estilo con Root.",
 "From the style": "Del estilo",
