@@ -46,7 +46,7 @@ x: {
 "Intensity": "강도",
 "Set all three to 100%": "세 가지 모두 100%로 설정",
 "Android was updated after these colors were written. Tap Apply theme to write them for this version.": "이 색상을 기록한 뒤 Android가 업데이트되었습니다. 이 버전에 맞게 기록하려면 테마 적용을 탭하세요.",
-"Not supported on One UI": "One UI에서는 지원 안 됨",
+"On One UI these colors reach Google apps and other apps that use Android's Monet colors. Samsung's own apps may keep Samsung's palette, and changing the Color palette in Samsung's settings can replace them; apply again if it does.": "One UI에서는 이 색상이 Google 앱과 Android의 Monet 색상을 사용하는 다른 앱에 적용됩니다. Samsung 자체 앱은 Samsung 팔레트를 유지할 수 있으며, Samsung 설정에서 색상 팔레트를 바꾸면 이 색상이 대체될 수 있습니다. 그런 경우 다시 적용하세요.",
 "Not supported on this Android version yet": "이 Android 버전에서는 아직 지원 안 됨",
 "Also writes the CMF colors and pure black with root, in place of the style above.": "Root로 CMF 색상과 순수한 검은색도 위 스타일 대신 기록합니다.",
 "Also writes the CMF colors with root, in place of the style above.": "Root로 CMF 색상도 위 스타일 대신 기록합니다.",

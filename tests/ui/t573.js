@@ -4,8 +4,8 @@
 // on_primary/secondary/tertiary/error_container roles at light tone 10 with ContrastCurve(4.5, 7, 11, 21), and the key colour from a walk
 // out from tone 50. (a) Live on P15 (MonetProfile.java reports it ok from this PR on): every row can be used; the lines are the ones of
 // Android 14 to 16.0 (Pure black's with light mode's darkest text, Color spec's four styles, 2021 the phone's own and chosen with nothing
-// stored, no note under it). Still locked: 15.0 as an APK from before this PR reports it (notYet), an SDK 35 build without its colour
-// names (unknown), One UI on 15, an older APK without a profile (Update the app); without Super User: Needs Super User. (b) Native routing
+// stored, no note under it); a One UI phone on 15 too, with the One UI note (PR 13). Still locked: 15.0 as an APK from before this PR reports it (notYet), an SDK 35 build without its colour
+// names (unknown), an older APK without a profile (Update the app); without Super User: Needs Super User. (b) Native routing
 // at 2021: every list style with nothing else set is the theme setting only; at 2025 Rainbow and Fruit Salad stay native (2025 gives them
 // 2021) and Tonal Spot is written. (c) Fidelity (More styles) at 2021: 165 entries, names and order equal to the list below made by hand
 // from SystemUI's write order on android15-release (TOC createOverlays / assignColorsToOverlay: neutral1, neutral2, accent1-3 in its
@@ -32,7 +32,8 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
+// PR 13: the note the root theme card shows on One UI only (One UI no longer locks the card)
+const ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -154,12 +155,20 @@ const A15_FID_GREEN_KEY2 = '038E00';
   const LOCKS = [
     ['15.0 as an APK from before PR 11 reports it (P15, notYet)', { sdk: 35, profile: 'P15', reason: 'notYet', build: B15 }, NOT_YET],
     ['an SDK 35 build without its colour names (unknown)', { sdk: 35, profile: 'unknown', build: B15 }, NOT_YET],
-    ['a One UI phone on Android 15 (unknown, oneUi)', { sdk: 35, profile: 'unknown', reason: 'oneUi', build: B15 }, ONE_UI],
     ['an older APK that reports no profile on Android 15', { sdk: 35, profile: null, build: null }, 'Update the app']
   ];
   for (const [label, o, why] of LOCKS) {
     await phone(o); c = await card(); await reset(); await apply(); const k = await calls();
     check('A2. ' + label + ': locked with "' + why + '", nothing in the card can be used, no hint, no preview; Apply writes the theme setting only', lockedAll(c, why) && !c.preview && c.hint === '' && k.apply.length === 1 && k.fab.length === 0, JSON.stringify([c.black, c.live, k.fab.length]));
+  }
+  // PR 13: a One UI phone on this build is served by its Android version (the One UI lock is gone): live as any phone of the build, with the
+  // One UI note; the same build without One UI has no note
+  {
+    const oneUiNote = () => ev(() => { const e = document.getElementById('ovlRootOneUi'); return e && e.style.display !== 'none' ? e.innerText : ''; });
+    await ev(() => { window.__oneUi = '8.5'; kvSet('ovl_root_applied', null); }); await phone({ sdk: 35, profile: 'P15', build: B15 }); const o = await card(); const on = await oneUiNote(); await reset(); await apply(); const k = await calls();
+    check('A2b. a One UI phone on Android 15.0 (P15) with Super User: every row is live, as on any phone of that build; the One UI note shows; Apply writes the overlay', !o.black.locked && !o.spec.locked && !o.more.locked && JSON.stringify(o.live) === LIVE && o.chips === 65 && on === ONE_UI_NOTE && k.fab.length === 1 && k.fab[0].action === 'fabricate', JSON.stringify([o.live, o.chips, on, k.fab.length]));
+    await ev(() => { window.__oneUi = ''; kvSet('ovl_root_applied', null); }); await phone({ sdk: 35, profile: 'P15', build: B15 }); const off = await oneUiNote();
+    check('   the same build without One UI: no One UI note', off === '', off);
   }
   await setRoot(false); await phone({ sdk: 35, profile: 'P15', build: B15 }); c = await card();
   check('A3. P15 without Super User: Needs Super User (as on every profile this app computes), its lines, the note about Root', lockedAll(c, 'Needs Super User') && c.black.sub === BLACK_SUB && c.spec.sub === SPEC_SUB && c.note === 'Shizuku and ADB cannot write these colors; Root can.', JSON.stringify(c));

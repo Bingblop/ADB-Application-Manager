@@ -5997,8 +5997,8 @@
                      the More styles radio group with its preview (Android 14 and newer; CMF only at spec 2026) in ovlRootMore, the Intensity sliders
                      (Android 14 and newer) in ovlRootAdjust, the Secondary and tertiary accents (two colours from the colour picker; Android 14 and
                      newer) in ovlRootAccents, the Accurate shades switch (on by default; Android 14 and newer) in ovlRootAccurate. All six
-                     are locked on an Android build this app cannot compute the colours for (ovlProfileState). Under them, the note on what is written (ovlRootNote) and the one for colours written on another build of
-                     Android (ovlRootStale). -->
+                     are locked on an Android build this app cannot compute the colours for (ovlProfileState). Under them, the note on what is written (ovlRootNote), the one for colours written on another build of
+                     Android (ovlRootStale) and, on One UI only, the note on which apps follow the colours there (ovlRootOneUi, PR 13). -->
                 <div class="color-card" id="ovlRootCard">
                     <div class="color-card-title">Root-only theme controls</div>
                     <div class="color-card-subtitle" style="margin-bottom:0;">Written into Android as a color overlay, which only Root can do. Apply writes it along with the theme.</div>
@@ -6010,6 +6010,7 @@
                     <div id="ovlRootAccurate"></div>
                     <div class="sdb-note" id="ovlRootNote"></div>
                     <div class="sdb-note" id="ovlRootStale" style="display:none;"></div>
+                    <div class="sdb-note" id="ovlRootOneUi" style="display:none;"></div>
                 </div>
             </div>
 
@@ -38477,11 +38478,13 @@ Type any command above (e.g. pm list packages -d)</div>
         // system_primary_light, system_surface_dark, system_primary_dim_dark, and on 17 system_primary_fixed_dark), and the plan keeps
         // SystemUI's write order
         const OVL_ROOT_LEAD = ['accent1_600', 'neutral1_500', 'primary_light', 'surface_dark'];
-        // the reasons the three rows give on a phone whose colours this app cannot compute (ovlProfileState), and the note for colours written
+        // the reason the rows give on a phone whose colours this app cannot compute (ovlProfileState), and the note for colours written
         // on another build of Android (ovlRootStaleNote)
-        const OVL_LOCK_ONE_UI = 'Not supported on One UI';
         const OVL_LOCK_NOT_YET = 'Not supported on this Android version yet';
         const OVL_STALE_NOTE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
+        // PR 13 (the owner's decision): One UI is served by its Android version like any other phone, and the card says this on One UI only
+        // (getSystemPalette's oneUi; ovlRenderRootOneUi). Inferred from how overlays work, not measured on a phone.
+        const OVL_ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
         // the toast when an Apply's overlay half could not be completed after its theme answer was lost (ovlFinishApply, T-068)
         const OVL_ROOT_NOT_WRITTEN = 'The colors were not written. Tap Apply theme again.';
         // the message of an Undo whose overlay from before could not be written again (an older record without its choices: ovlUndoChange, T-069)
@@ -38523,7 +38526,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlBlackOn() { return kvGet('ovl_black', false) === true; }
         function ovlMonetOk() { return typeof MonetPlan === 'object' && !!MonetPlan && typeof MonetPlan.entries === 'function'; }
         // The Android build family the root colours are computed for, from getSystemPalette (MonetProfile.java: profile, and profileReason ok,
-        // notYet, oneUi or unknown): { id, lock }, lock '' where this page may write root colours. Unlocked, each only with the reason ok: P12
+        // notYet or unknown; a One UI phone is decided by its Android version like any other since PR 13): { id, lock }, lock '' where this page may write root colours. Unlocked, each only with the reason ok: P12
         // (Android 12 and 13: Pure black only, as before), P14 and the families monet.js computes (MonetPlan.PROFILES: Android 15 QPR1, 15 QPR2,
         // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, 17 from PR 10, 15.0 from PR 11 and 14 QPR1 to QPR3 from PR 12, which MonetProfile.java
         // reports ok from those PRs on; 15.0 takes 15 QPR1's paths here: not ovlQpr, native spec 2021, the OVL_ROOT_LEAD entries first).
@@ -38531,7 +38534,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // paths, lines and 165 names as P14, only monet.js's role maths differ; without the colour maths at all (monet.js not loaded) it
         // is live as P14 is, Pure black alone (the style rows say Update the app), while a monet.js that does not name it locks it (that
         // file would refuse the profile). Locked, all three
-        // rows with Super User or without: a phone with a One UI version (Samsung builds its theme with its own service); a family the app knows
+        // rows with Super User or without: a family the app knows
         // but an older APK reports as not computed yet (15.0, 16 QPR1, QPR2 and 17 as an APK from before PR 11, PR 9 or PR 10 reports them,
         // notYet; no family is notYet from PR 11 on), or none it
         // knows (fail closed: an Android above 17, or 17 without its colour names, MonetProfile.java's unknown); an older APK,
@@ -38541,7 +38544,6 @@ Type any command above (e.g. pm list packages -d)</div>
             const p = ovlPalette, sdk = ovlSdk();
             if (!p || typeof p.profile !== 'string') return sdk >= 35 ? { id: '', lock: 'Update the app' } : { id: sdk === 34 ? 'P14' : 'P12', lock: '' };
             const id = p.profile;
-            if (p.profileReason === 'oneUi') return { id, lock: OVL_LOCK_ONE_UI };
             const computed = id === 'P12' || id === 'P14' || (id === 'P14Q' && !ovlMonetOk()) || (ovlMonetOk() && Array.isArray(MonetPlan.PROFILES) && MonetPlan.PROFILES.includes(id));
             return { id, lock: p.profileReason === 'ok' && computed ? '' : OVL_LOCK_NOT_YET };
         }
@@ -38916,6 +38918,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!a || !a.style || !a.build || !now || a.build === now || a.profile === ovlProfileState().id) return '';
             return ovlRootFollowUp('apply', ovlStyle) === 'fabricate' && ovlRootPlanOn(ovlStyle).style ? OVL_STALE_NOTE : '';
         }
+        // On One UI only (getSystemPalette reports oneUi there: the version, or '?' on a Samsung phone whose version could not be read), the note
+        // on which apps follow these colours; whenever the card shows, locked or not
+        function ovlRenderRootOneUi() {
+            const el = document.getElementById('ovlRootOneUi');
+            if (!el) return;
+            const p = ovlPalette, text = ovlThemeSupported() && p && typeof p.oneUi === 'string' && p.oneUi.trim() !== '' ? OVL_ONE_UI_NOTE : '';
+            el.innerText = text;
+            el.style.display = text ? '' : 'none';
+        }
+
         function ovlRenderRootStale() {
             const el = document.getElementById('ovlRootStale');
             if (!el) return;
@@ -39143,12 +39155,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const drawAdj = html => { ovlAdjMoving = null; if (adjBox) adjBox.innerHTML = html; };
             const drawAcc = html => { if (accBox) accBox.innerHTML = html; };
             const drawAccu = html => { if (accuBox) accuBox.innerHTML = html; };
-            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); drawAdj(''); drawAcc(''); drawAccu(''); say(''); ovlRenderRootStale(); return; }      // hidden with the rest of Material You
+            if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); drawAdj(''); drawAcc(''); drawAccu(''); say(''); ovlRenderRootStale(); ovlRenderRootOneUi(); return; }      // hidden with the rest of Material You
             card.style.display = '';
             const bridge = ovlRootBridgeOk(), lock = bridge ? ovlRootLock() : '';
             if (!bridge || lock || !isRootActive()) {
                 // locked: the same rows as a Root Feature that waits on root; an app too old to write overlays says so instead; so does a phone whose
-                // colours this app cannot compute (ovlProfileState: One UI, an Android build not supported yet, an older APK on Android 15 and newer),
+                // colours this app cannot compute (ovlProfileState: an Android build not supported yet, an older APK on Android 15 and newer),
                 // with Super User or without (root would not unlock them), and the note then says only whether an overlay written before is still
                 // on the phone (Revert and the Undo switch it off, and so does Apply: nothing can be on there)
                 const reason = !bridge ? 'Update the app' : lock || null;
@@ -39162,7 +39174,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 // off); its own line, so each sentence is looked up in the dictionaries as it is
                 const was = bridge ? ovlRootApplied() : null, w = was ? ovlRootWords(was.style) : null, wasLine = was ? (was.pending ? w.maybe : w.on) : '';
                 say(!bridge ? 'This version of the app cannot write color overlays. Update it, then come back.' : lock ? wasLine : 'Shizuku and ADB cannot write these colors; Root can.' + (wasLine ? '\n' + wasLine : ''));
-                ovlRenderRootStale();
+                ovlRenderRootStale(); ovlRenderRootOneUi();
                 return;
             }
             // on 16 QPR1 and QPR2 (ovlQpr) the Pure black, Color spec and spec note lines are their QPR ones: Pure black leaves light mode
@@ -39235,7 +39247,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const applied = ovlRootApplied(), words = ovlRootWords(applied ? applied.style : '');
             say(!applied ? '' : applied.pending ? words.maybe : words.on);
-            ovlRenderRootStale();
+            ovlRenderRootStale(); ovlRenderRootOneUi();
         }
 
         // the preview under More styles, whenever Apply would write a style's colours (ovlRootPlanStyle: a More style, or the list style at spec
@@ -39501,7 +39513,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     + (acc ? ' <span id="ovlApplyHintAccents">' + escapeHtml(acc) + '</span>' : '') + (accu ? ' <span id="ovlApplyHintAccurate">' + escapeHtml(accu) + '</span>' : '');
             }
             ovlRenderRootPreview();                 // the root style's preview follows the colour, the source and the list style as they are changed
-            ovlRenderRootStale();                   // and the note on colours written on another build, which shows while Apply would write them again
+            ovlRenderRootStale(); ovlRenderRootOneUi();                   // and the note on colours written on another build, which shows while Apply would write them again
         }
 
         function ovlRenderRecent() {

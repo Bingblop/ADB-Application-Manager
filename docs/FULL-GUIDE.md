@@ -825,9 +825,14 @@ style the palette is worked out with:
   Android classes) decides from the SDK level, which of six framework color names `getIdentifier(name, "color", "android")`
   finds (`system_inverse_surface_light`, `system_theme_notif_light`, `system_on_theme_app_ring_light`, `system_primary_dim_light`,
   `system_semantic_red_container_high_light`, `system_primary_fixed_light`), whether `getIdentifier("config_repairModeSupported", "bool",
-  "android")` finds the framework boolean (`BOOL_PROBES`, the same try, no root, no shell; only its name counts, not its value) and the One UI version; `getSystemPalette` reports it as `profile` and
-  `profileReason`, with `build` (`Build.FINGERPRINT`) and `contrast` (`UiModeManager.getContrast()` on Android 14+, held to
-  [-1, 1], 0 when it cannot be read). Live: Android 12 and 13 (`P12`, Pure black only), 14.0 (`P14`: SDK 34 without
+  "android")` finds the framework boolean (`BOOL_PROBES`, the same try, no root, no shell; only its name counts, not its value); `getSystemPalette` reports it as `profile` and
+  `profileReason`, with `build` (`Build.FINGERPRINT`), `contrast` (`UiModeManager.getContrast()` on Android 14+, held to
+  [-1, 1], 0 when it cannot be read) and, on One UI only, `oneUi` (the version, or `?` when a Samsung phone's could not be read:
+  getprop fails or times out and `SEM_PLATFORM_INT` gives none; that answer is not kept). Since PR 13 One UI is decided like any other
+  phone, by its SDK level and names (Android 16 with One UI 8.5 is the P16 family by its names); `oneUi` only shows the card's
+  note *On One UI these colors reach Google apps and other apps that use Android's Monet colors. Samsung's own apps may keep
+  Samsung's palette, and changing the Color palette in Samsung's settings can replace them; apply again if it does.* (inferred from
+  how overlays work, not measured on a Samsung phone with root). Live: Android 12 and 13 (`P12`, Pure black only), 14.0 (`P14`: SDK 34 without
   `config_repairModeSupported`, or with names that could not be read: Android 14.0's own maths, part 1, the answer every SDK 34 phone
   had before T-049 PR 12, and what an APK from before PR 12 still reports on every Android 14 build), 14 QPR1-QPR3 (`P14Q`, since
   T-050 / T-049 PR 12: SDK 34 with `config_repairModeSupported`, a plain `values/config.xml` entry and java-symbol from
@@ -895,10 +900,8 @@ style the palette is worked out with:
   Locked, all six rows, with Super User or without:
   any SDK above 37 and any build that matches no row (*Not supported on this Android version yet*; an APK from before PR 9,
   which reports 16 QPR1/QPR2 as `notYet`, keeps them locked too, one from before PR 10 keeps 17 locked the same way and one from
-  before PR 11 keeps 15.0 locked, one from before PR 12 reports every Android 14 build as P14; no current profile is `notYet`), and any phone with a One UI version (*Not supported on One UI*: Samsung builds its theme
-  with its own service, by other developers' reports, not checked); a Samsung phone whose One UI version cannot be read (getprop
-  fails or times out and `SEM_PLATFORM_INT` gives none) is locked the same way, and that answer is not kept, while one whose
-  `ro.build.version.oneui` is not set (another build of Android) is decided by its names. An older APK that reports no profile counts as *Update the
+  before PR 11 keeps 15.0 locked, one from before PR 12 reports every Android 14 build as P14; no current profile is `notYet`). A phone with One UI is not locked for being One UI: it gets the card of
+  its Android version (see above). An older APK that reports no profile counts as *Update the
   app* on SDK 35 and up. Lock order: *Update the app* (no overlay bridge), the version lock, *Needs Super User*. A locked card's
   note says only whether an overlay written before is still on; with Super User, Apply (a disable), **Default** and **Undo**
   switch it off. Without Super User the note is *Shizuku and ADB cannot write these colors; Root can.* with the *is written* / *may be

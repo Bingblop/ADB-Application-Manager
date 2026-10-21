@@ -11,9 +11,9 @@ import java.util.Set;
 
 /**
  * MonetProfile, which Android build family builds the theme colours (findings T-049, T-050): every release row (supported, not supported yet),
- * One UI (and a Samsung phone whose One UI version could not be read), unknown SDK levels, missing names, the order of the probe tests,
- * every combination of the probe names, the contrast value; and (source scans) how MainActivity looks the names up and reads One UI, and
- * what getSystemPalette reports (profile, profileReason, build, contrast).
+ * unknown SDK levels, missing names, the order of the probe tests, every combination of the probe names, the contrast value, the One UI value
+ * (which only shows the page's note: One UI is decided like any other build since PR 13); and (source scans) how MainActivity looks the
+ * names up and reads One UI, and what getSystemPalette reports (profile, profileReason, build, contrast, oneUi).
  */
 public class MonetProfileTest {
   static int fails = 0, n = 0;
@@ -33,7 +33,7 @@ public class MonetProfileTest {
       // android17-release has primary_fixed_light and no longer semantic_red (core/res values/colors.xml of each branch, read 2026-10-21)
       A17 = names(NOTIF, INV, DIM, FIX);
 
-  static String of(int sdk, Set<String> present, String oneUi) { return MonetProfile.of(sdk, present, oneUi).toString(); }
+  static String of(int sdk, Set<String> present) { return MonetProfile.of(sdk, present).toString(); }
 
   public static void main(String[] args) throws Exception {
     // ---- the names themselves
@@ -50,74 +50,70 @@ public class MonetProfileTest {
     check("no name is both a colour and a boolean probe", !MonetProfile.PROBES.contains(REPAIR));
 
     // ---- the profiles the page computes (reason ok)
-    eq("Android 14: P14 by the SDK level alone", of(34, A14, ""), "P14/ok");
-    eq("Android 14: the colour names of later releases change nothing (only the boolean probe counts on 34)", of(34, names(INV, NOTIF, RING, DIM, RED), ""), "P14/ok");
-    eq("Android 14: a probe read that failed changes nothing", of(34, null, ""), "P14/ok");
-    eq("Android 14 QPR1-QPR3: config_repairModeSupported", of(34, A14Q, ""), "P14Q/ok");
-    eq("Android 14 QPR: names of later releases beside it change nothing", of(34, names(REPAIR, INV, NOTIF, RING, DIM, RED, FIX), ""), "P14Q/ok");
+    eq("Android 14: P14 by the SDK level alone", of(34, A14), "P14/ok");
+    eq("Android 14: the colour names of later releases change nothing (only the boolean probe counts on 34)", of(34, names(INV, NOTIF, RING, DIM, RED)), "P14/ok");
+    eq("Android 14: a probe read that failed changes nothing", of(34, null), "P14/ok");
+    eq("Android 14 QPR1-QPR3: config_repairModeSupported", of(34, A14Q), "P14Q/ok");
+    eq("Android 14 QPR: names of later releases beside it change nothing", of(34, names(REPAIR, INV, NOTIF, RING, DIM, RED, FIX)), "P14Q/ok");
     eq("Android 14 without the boolean stays P14 (fail closed to today's answer), with or without colour names",
-        of(34, names(), "") + " " + of(34, names(INV, NOTIF, RING, DIM, RED, FIX), "") + " " + of(34, null, ""), "P14/ok P14/ok P14/ok");
+        of(34, names()) + " " + of(34, names(INV, NOTIF, RING, DIM, RED, FIX)) + " " + of(34, null), "P14/ok P14/ok P14/ok");
     eq("Android 14: a name close to the boolean's counts for nothing",
-        of(34, names("config_repairModeSupport", "config_RepairModeSupported", "repairModeSupported", "config_repairModeSupported "), ""), "P14/ok");
-    eq("the boolean on any other SDK level changes nothing", of(33, A14Q, "") + " " + of(35, A14Q, "") + " " + of(35, names(REPAIR, RING), "") + " "
-        + of(36, names(REPAIR, INV), "") + " " + of(37, names(REPAIR, FIX), "") + " " + of(37, A14Q, "") + " " + of(38, A14Q, "") + " " + of(30, A14Q, ""),
+        of(34, names("config_repairModeSupport", "config_RepairModeSupported", "repairModeSupported", "config_repairModeSupported ")), "P14/ok");
+    eq("the boolean on any other SDK level changes nothing", of(33, A14Q) + " " + of(35, A14Q) + " " + of(35, names(REPAIR, RING)) + " "
+        + of(36, names(REPAIR, INV)) + " " + of(37, names(REPAIR, FIX)) + " " + of(37, A14Q) + " " + of(38, A14Q) + " " + of(30, A14Q),
         "P12/ok unknown/unknown P15/ok P16/ok P17/ok unknown/unknown unknown/unknown unknown/unknown");
-    eq("One UI on Android 14 QPR: locked as on 14.0", of(34, A14Q, "6.1") + " " + of(34, A14Q, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi unknown/oneUi");
-    eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/ok");
-    eq("Android 15 QPR1: theme_notif without inverse_surface", of(35, A15Q1, ""), "P15Q1/ok");
-    eq("Android 15 QPR2: inverse_surface", of(35, A15Q2, ""), "P15Q2/ok");
-    eq("Android 16.0: inverse_surface without primary_dim", of(36, A16, ""), "P16/ok");
-    eq("Android 16 QPR1: primary_dim without semantic_red", of(36, A16Q1, ""), "P16Q1/ok");
-    eq("Android 16 QPR2: semantic_red", of(36, A16Q2, ""), "P16Q2/ok");
-    eq("Android 17 (37): primary_fixed_light", of(37, A17, ""), "P17/ok");
-    eq("Android 17: primary_fixed_light alone is enough", of(37, names(FIX), ""), "P17/ok");
-    eq("Android 17: with semantic_red too (a build that kept it)", of(37, names(NOTIF, INV, DIM, RED, FIX), ""), "P17/ok");
-    eq("Android 12 (31): Pure black only, as before", of(31, A14, ""), "P12/ok");
-    eq("Android 12L (32)", of(32, A14, null), "P12/ok");
-    eq("Android 13 (33)", of(33, null, ""), "P12/ok");
+    eq("Android 15.0: on_theme_app_ring", of(35, A15), "P15/ok");
+    eq("Android 15 QPR1: theme_notif without inverse_surface", of(35, A15Q1), "P15Q1/ok");
+    eq("Android 15 QPR2: inverse_surface", of(35, A15Q2), "P15Q2/ok");
+    eq("Android 16.0: inverse_surface without primary_dim", of(36, A16), "P16/ok");
+    eq("Android 16 QPR1: primary_dim without semantic_red", of(36, A16Q1), "P16Q1/ok");
+    eq("Android 16 QPR2: semantic_red", of(36, A16Q2), "P16Q2/ok");
+    eq("Android 17 (37): primary_fixed_light", of(37, A17), "P17/ok");
+    eq("Android 17: primary_fixed_light alone is enough", of(37, names(FIX)), "P17/ok");
+    eq("Android 17: with semantic_red too (a build that kept it)", of(37, names(NOTIF, INV, DIM, RED, FIX)), "P17/ok");
+    eq("Android 12 (31): Pure black only, as before", of(31, A14), "P12/ok");
+    eq("Android 12L (32)", of(32, A14), "P12/ok");
+    eq("Android 13 (33)", of(33, null), "P12/ok");
 
     // ---- recognised, not computed yet (reason notYet): no profile gives it any more (Android 15.0 was the last)
     eq("the notYet key stays as the page reads it", MonetProfile.REASON_NOT_YET, "notYet");
-    eq("Android 15.0 is not on 34 or 36", of(34, A15, "") + " " + of(36, A15, ""), "P14/ok unknown/unknown");
-    eq("Android 15.0 with names of no other release beside it", of(35, names(RING, DIM, RED, FIX), ""), "P15/ok");
+    eq("Android 15.0 is not on 34 or 36", of(34, A15) + " " + of(36, A15), "P14/ok unknown/unknown");
+    eq("Android 15.0 with names of no other release beside it", of(35, names(RING, DIM, RED, FIX)), "P15/ok");
 
     // ---- unknown SDK levels and missing names (fail closed)
-    eq("37 without primary_fixed_light: unknown (Android 16 QPR2's names)", of(37, A16Q2, ""), "unknown/unknown");
-    eq("37 with no names: unknown", of(37, A14, ""), "unknown/unknown");
-    eq("37 with every name but primary_fixed_light: unknown", of(37, names(INV, NOTIF, RING, DIM, RED), ""), "unknown/unknown");
-    eq("37 when the names could not be read: unknown", of(37, null, ""), "unknown/unknown");
-    eq("SDK 38 with Android 17's names: unknown", of(38, A17, ""), "unknown/unknown");
-    eq("SDK 36 with Android 17's names is still read as 16 QPR1 (no 36 row looks at primary_fixed_light)", of(36, A17, ""), "P16Q1/ok");
-    eq("SDK 35 with primary_fixed_light only: unknown", of(35, names(FIX), ""), "unknown/unknown");
-    eq("SDK 38: unknown", of(38, A16Q2, ""), "unknown/unknown");
-    eq("SDK 38 with no names", of(38, A14, ""), "unknown/unknown");
-    eq("SDK 40", of(40, A16, ""), "unknown/unknown");
-    eq("the largest int", of(Integer.MAX_VALUE, A16, ""), "unknown/unknown");
-    eq("below Android 12 (30): unknown", of(30, A14, ""), "unknown/unknown");
-    eq("SDK 0 and a negative level: unknown", of(0, A14, "") + " " + of(-1, A14, ""), "unknown/unknown unknown/unknown");
-    eq("35 without any probe name: unknown, not Android 15.0", of(35, A14, ""), "unknown/unknown");
-    eq("36 without any probe name: unknown, not Android 16.0", of(36, A14, ""), "unknown/unknown");
-    eq("36 with theme_notif only (no inverse_surface): unknown", of(36, names(NOTIF), ""), "unknown/unknown");
-    eq("36 with the Android 15.0 name only: unknown", of(36, A15, ""), "unknown/unknown");
-    eq("35 with only Android 16 QPR names: unknown", of(35, names(DIM, RED), ""), "unknown/unknown");
-    eq("35 when the names could not be read: unknown", of(35, null, ""), "unknown/unknown");
-    eq("36 when the names could not be read: unknown", of(36, null, ""), "unknown/unknown");
-    eq("a name that is not a probe counts for nothing", of(36, names("system_error_0", "system_primary_fixed"), ""), "unknown/unknown");
+    eq("37 without primary_fixed_light: unknown (Android 16 QPR2's names)", of(37, A16Q2), "unknown/unknown");
+    eq("37 with no names: unknown", of(37, A14), "unknown/unknown");
+    eq("37 with every name but primary_fixed_light: unknown", of(37, names(INV, NOTIF, RING, DIM, RED)), "unknown/unknown");
+    eq("37 when the names could not be read: unknown", of(37, null), "unknown/unknown");
+    eq("SDK 38 with Android 17's names: unknown", of(38, A17), "unknown/unknown");
+    eq("SDK 36 with Android 17's names is still read as 16 QPR1 (no 36 row looks at primary_fixed_light)", of(36, A17), "P16Q1/ok");
+    eq("SDK 35 with primary_fixed_light only: unknown", of(35, names(FIX)), "unknown/unknown");
+    eq("SDK 38: unknown", of(38, A16Q2), "unknown/unknown");
+    eq("SDK 38 with no names", of(38, A14), "unknown/unknown");
+    eq("SDK 40", of(40, A16), "unknown/unknown");
+    eq("the largest int", of(Integer.MAX_VALUE, A16), "unknown/unknown");
+    eq("below Android 12 (30): unknown", of(30, A14), "unknown/unknown");
+    eq("SDK 0 and a negative level: unknown", of(0, A14) + " " + of(-1, A14), "unknown/unknown unknown/unknown");
+    eq("35 without any probe name: unknown, not Android 15.0", of(35, A14), "unknown/unknown");
+    eq("36 without any probe name: unknown, not Android 16.0", of(36, A14), "unknown/unknown");
+    eq("36 with theme_notif only (no inverse_surface): unknown", of(36, names(NOTIF)), "unknown/unknown");
+    eq("36 with the Android 15.0 name only: unknown", of(36, A15), "unknown/unknown");
+    eq("35 with only Android 16 QPR names: unknown", of(35, names(DIM, RED)), "unknown/unknown");
+    eq("35 when the names could not be read: unknown", of(35, null), "unknown/unknown");
+    eq("36 when the names could not be read: unknown", of(36, null), "unknown/unknown");
+    eq("a name that is not a probe counts for nothing", of(36, names("system_error_0", "system_primary_fixed")), "unknown/unknown");
 
-    // ---- One UI: Samsung builds its theme with its own service, at every SDK level and with any names
-    eq("One UI 6.1.1 on Android 14", of(34, A14, "6.1.1"), "unknown/oneUi");
-    eq("One UI 7.0 with Android 15 QPR2's names", of(35, A15Q2, "7.0"), "unknown/oneUi");
-    eq("One UI 7.0 with Android 15.0's names", of(35, A15, "7.0"), "unknown/oneUi");
-    eq("One UI 8.0 with Android 16.0's names", of(36, A16, "8.0"), "unknown/oneUi");
-    eq("One UI 9.0 on 37", of(37, A16Q2, "9.0"), "unknown/oneUi");
-    eq("One UI 9.0 on 37 with Android 17's names", of(37, A17, "9.0"), "unknown/oneUi");
-    eq("a Samsung phone whose One UI could not be read, on 37 with Android 17's names", of(37, A17, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi");
-    eq("One UI on Android 13 (Pure black too)", of(33, A14, "5.1"), "unknown/oneUi");
-    eq("One UI when the names could not be read", of(36, null, "8.0"), "unknown/oneUi");
-    eq("a version with spaces around it is still One UI", of(36, A16, " 8.5 "), "unknown/oneUi");
-    eq("an empty, blank or missing version is not One UI", of(36, A16, "") + " " + of(36, A16, "   ") + " " + of(36, A16, null), "P16/ok P16/ok P16/ok");
-
-    // ---- the One UI value MainActivity decides with (MonetProfile.oneUi): a Samsung phone whose version could not be read is One UI
+    // ---- One UI (PR 13): no short-circuit any more; of() takes no One UI value, so a One UI phone gets the profile of its SDK level and names
+    // like any other phone (Android 16 One UI 8.5 -> P16 family by its names), and a build this app does not know stays locked
+    check("of() takes the SDK level and the names only (no One UI parameter)", ofArity() == 2);
+    eq("One UI 6.1 on Android 14 and 14 QPR (the names a Samsung build of those branches would have): P14 and P14Q", of(34, A14) + " " + of(34, A14Q), "P14/ok P14Q/ok");
+    eq("One UI 7.0 on Android 15 QPR2's names: P15Q2, as any other phone", of(35, A15Q2), "P15Q2/ok");
+    eq("One UI 8.0 on Android 16.0's names: P16", of(36, A16), "P16/ok");
+    eq("One UI 8.5 on Android 16 with 16 QPR1 or QPR2 names: the P16 family by its names", of(36, A16Q1) + " " + of(36, A16Q2), "P16Q1/ok P16Q2/ok");
+    eq("One UI 5.1 on Android 13: P12 (Pure black)", of(33, A14), "P12/ok");
+    eq("a One UI build this app does not know stays locked: 37 without Android 17's name, 36 whose names match no release or could not be read, 38",
+        of(37, A16Q2) + " " + of(36, names(NOTIF)) + " " + of(36, null) + " " + of(38, A17), "unknown/unknown unknown/unknown unknown/unknown unknown/unknown");
+    // ---- the One UI value getSystemPalette reports for the page's note (MonetProfile.oneUi): a Samsung phone whose version could not be read is One UI
     eq("not a Samsung: no One UI, whatever was read", MonetProfile.oneUi(false, "", false) + "|" + MonetProfile.oneUi(false, "8.0", true) + "|" + MonetProfile.oneUi(false, null, false), "||");
     eq("a Samsung with a version read: that version", MonetProfile.oneUi(true, "6.1.1", false) + "|" + MonetProfile.oneUi(true, "8.0", true), "6.1.1|8.0");
     eq("... trimmed", MonetProfile.oneUi(true, " 8.5 ", false), "8.5");
@@ -125,28 +121,26 @@ public class MonetProfileTest {
     eq("a Samsung without a version, the property not read (getprop failed or timed out): the marker", MonetProfile.oneUi(true, "", false), MonetProfile.ONE_UI_UNREAD);
     eq("... the same for a null or blank version", MonetProfile.oneUi(true, null, false) + MonetProfile.oneUi(true, "  ", false), MonetProfile.ONE_UI_UNREAD + MonetProfile.ONE_UI_UNREAD);
     check("the marker is not blank", MonetProfile.ONE_UI_UNREAD != null && !MonetProfile.ONE_UI_UNREAD.trim().isEmpty());
-    eq("the marker locks as One UI on every profile the page computes (fail closed)", of(34, A14, MonetProfile.oneUi(true, "", false)) + " " + of(35, A15Q1, MonetProfile.ONE_UI_UNREAD) + " "
-        + of(35, A15Q2, MonetProfile.ONE_UI_UNREAD) + " " + of(36, A16, MonetProfile.ONE_UI_UNREAD) + " " + of(36, null, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi unknown/oneUi unknown/oneUi unknown/oneUi unknown/oneUi");
-    eq("a Samsung phone without One UI (property not set) is decided by its names like any other", of(36, A16, MonetProfile.oneUi(true, "", true)) + " " + of(34, A14, MonetProfile.oneUi(true, null, true)), "P16/ok P14/ok");
+    check("there is no One UI reason any more", !hasField("REASON_ONE_UI"));
 
     // ---- the order of the tests: on 35 inverse_surface, then theme_notif, then on_theme_app_ring; on 36 QPR2, then QPR1, then 16.0
-    eq("35: inverse_surface wins over theme_notif and on_theme_app_ring", of(35, names(INV, NOTIF, RING), ""), "P15Q2/ok");
-    eq("35: inverse_surface alone is enough for 15 QPR2", of(35, names(INV), ""), "P15Q2/ok");
-    eq("35: theme_notif wins over on_theme_app_ring", of(35, names(NOTIF, RING), ""), "P15Q1/ok");
-    eq("35: inverse_surface with on_theme_app_ring", of(35, names(INV, RING), ""), "P15Q2/ok");
-    eq("35: on_theme_app_ring alone is enough for 15.0", of(35, names(RING), ""), "P15/ok");
-    eq("36: semantic_red wins over primary_dim and inverse_surface", of(36, names(RED, DIM, INV), ""), "P16Q2/ok");
-    eq("36: semantic_red alone", of(36, names(RED), ""), "P16Q2/ok");
-    eq("36: primary_dim wins over inverse_surface", of(36, names(DIM, INV), ""), "P16Q1/ok");
-    eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/ok");
-    eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING), ""), "P16/ok");
+    eq("35: inverse_surface wins over theme_notif and on_theme_app_ring", of(35, names(INV, NOTIF, RING)), "P15Q2/ok");
+    eq("35: inverse_surface alone is enough for 15 QPR2", of(35, names(INV)), "P15Q2/ok");
+    eq("35: theme_notif wins over on_theme_app_ring", of(35, names(NOTIF, RING)), "P15Q1/ok");
+    eq("35: inverse_surface with on_theme_app_ring", of(35, names(INV, RING)), "P15Q2/ok");
+    eq("35: on_theme_app_ring alone is enough for 15.0", of(35, names(RING)), "P15/ok");
+    eq("36: semantic_red wins over primary_dim and inverse_surface", of(36, names(RED, DIM, INV)), "P16Q2/ok");
+    eq("36: semantic_red alone", of(36, names(RED)), "P16Q2/ok");
+    eq("36: primary_dim wins over inverse_surface", of(36, names(DIM, INV)), "P16Q1/ok");
+    eq("36: primary_dim alone", of(36, names(DIM)), "P16Q1/ok");
+    eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING)), "P16/ok");
 
     // ---- every combination of the seven names (six colours, one boolean) at SDK 29..40: a known id, a known reason, ok exactly for the ten
     // computed profiles (no notYet),
     // never an exception, and names that are not probes never change the answer
     List<String> ids = Arrays.asList("P12", "P14", "P14Q", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
     List<String> okIds = Arrays.asList("P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
-    List<String> reasons = Arrays.asList("ok", "notYet", "oneUi", "unknown");
+    List<String> reasons = Arrays.asList("ok", "notYet", "unknown");
     int bad = 0, combos = 0;
     List<String> firstBad = new ArrayList<String>();
     for (int sdk = 29; sdk <= 40; sdk++) {
@@ -156,16 +150,15 @@ public class MonetProfileTest {
         if ((mask & 64) != 0) set.add(REPAIR);
         combos++;
         MonetProfile.Result r;
-        try { r = MonetProfile.of(sdk, set, ""); } catch (RuntimeException e) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + ": " + e); continue; }
+        try { r = MonetProfile.of(sdk, set); } catch (RuntimeException e) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + ": " + e); continue; }
         Set<String> more = new HashSet<String>(set);
         more.add("system_error_0");
         more.add("system_accent1_500");
-        MonetProfile.Result r2 = MonetProfile.of(sdk, more, "");
+        MonetProfile.Result r2 = MonetProfile.of(sdk, more);
         boolean good = r != null && ids.contains(r.profile) && reasons.contains(r.reason) && !"oneUi".equals(r.reason)
             && r.ok() == okIds.contains(r.profile) && r.ok() == "ok".equals(r.reason)
             && ("unknown".equals(r.profile) == "unknown".equals(r.reason))
             && r.toString().equals(r2.toString())
-            && MonetProfile.of(sdk, set, "6.0").toString().equals("unknown/oneUi")
             && ("P17".equals(r.profile) == (sdk == 37 && set.contains(FIX)))
             && ("P14Q".equals(r.profile) == (sdk == 34 && set.contains(REPAIR)))
             && ("P14".equals(r.profile) == (sdk == 34 && !set.contains(REPAIR)))
@@ -176,12 +169,11 @@ public class MonetProfileTest {
     }
     eq("every combination of the names at SDK 29..40 (" + combos + "): consistent " + firstBad, bad, 0);
     eq("... 12 levels times 128 sets", combos, 12 * 128);
-    check("the result names its profile and reason", MonetProfile.of(36, A16, "").profile.equals("P16") && MonetProfile.of(36, A16, "").reason.equals("ok"));
-    check("ok() is true on 15.0, false with One UI", MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(35, A15, "7.0").ok() && !MonetProfile.of(35, A15, MonetProfile.ONE_UI_UNREAD).ok());
-    check("ok() is false for a profile that is not computed", !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
-    check("ok() is true on 16 QPR1 and QPR2", MonetProfile.of(36, A16Q1, "").ok() && MonetProfile.of(36, A16Q2, "").ok());
-    check("ok() is true on 17 with its name, false without it", MonetProfile.of(37, A17, "").ok() && !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(37, null, "").ok());
-    check("16 QPR1 and QPR2 stay locked on One UI", "unknown/oneUi".equals(of(36, A16Q1, "8.0")) && "unknown/oneUi".equals(of(36, A16Q2, MonetProfile.ONE_UI_UNREAD)));
+    check("the result names its profile and reason", MonetProfile.of(36, A16).profile.equals("P16") && MonetProfile.of(36, A16).reason.equals("ok"));
+    check("ok() is true on 15.0", MonetProfile.of(35, A15).ok());
+    check("ok() is false for a profile that is not computed, true on 14", !MonetProfile.of(37, A16Q2).ok() && !MonetProfile.of(38, A16).ok() && MonetProfile.of(34, A14).ok());
+    check("ok() is true on 16 QPR1 and QPR2", MonetProfile.of(36, A16Q1).ok() && MonetProfile.of(36, A16Q2).ok());
+    check("ok() is true on 17 with its name, false without it", MonetProfile.of(37, A17).ok() && !MonetProfile.of(37, A16Q2).ok() && !MonetProfile.of(37, null).ok());
 
     // ---- which profiles write the palette shades as _light and _dark (16 QPR1, QPR2 and 17), and the fixed colours too (17 only)
     check("suffixed palettes on P16Q1, P16Q2 and P17", MonetProfile.suffixedPalettes(MonetProfile.P16Q1) && MonetProfile.suffixedPalettes("P16Q2") && MonetProfile.suffixedPalettes(MonetProfile.P17));
@@ -227,6 +219,16 @@ public class MonetProfileTest {
     return null;
   }
 
+  static int ofArity() {
+    int a = -1;
+    for (java.lang.reflect.Method mt : MonetProfile.class.getMethods()) if (mt.getName().equals("of")) a = a < 0 ? mt.getParameterTypes().length : -2;
+    return a;
+  }
+
+  static boolean hasField(String name) {
+    try { MonetProfile.class.getField(name); return true; } catch (NoSuchFieldException e) { return false; }
+  }
+
   static String read(File f) throws Exception { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
 
   static String bodyOf(String src, String sig) {
@@ -257,17 +259,23 @@ public class MonetProfileTest {
       check("source: ... inside the try whose catch gives no names (P14 on 34)", look.indexOf("try {") < col && bool < look.indexOf("catch (Throwable t) {"));
       check("source: the boolean names are not looked up as colours, nor the colour names as booleans",
           !look.contains("MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, \"color\"") && !look.contains("MonetProfile.PROBES) if (res.getIdentifier(name, \"bool\""));
-      check("source: it decides with the SDK level, the names found and the One UI value of MonetProfile.oneUi (Samsung, the version, the property read)",
-          look.contains("String version = oneUiVersion(unset);") && look.contains("String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);")
-          && look.contains("MonetProfile.of(Build.VERSION.SDK_INT, present, oneUi)") && !look.contains("oneUiVersion())"));
+      check("source: it decides with the SDK level and the names found only, never with One UI (PR 13)",
+          look.contains("MonetProfile.of(Build.VERSION.SDK_INT, present)") && !look.contains("oneUi") && !look.contains("isSamsung()"));
       check("source: a lookup that throws gives no names (unknown on 35 and 36) and is not kept",
-          look.contains("catch (Throwable t) {") && look.contains("return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUi);")
+          look.contains("catch (Throwable t) {") && look.contains("return MonetProfile.of(Build.VERSION.SDK_INT, null);")
           && look.indexOf("monetProfileCache = r;") > look.indexOf("catch (Throwable t) {"));
-      check("source: an answer from a One UI version that could not be read is not kept (the next call reads again)",
-          look.contains("if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetProfileCache = r;"));
       check("source: the answer is worked out once (kept in a volatile field)", look.contains("MonetProfile.Result r = monetProfileCache;")
           && look.contains("if (r != null) return r;") && m.contains("private volatile MonetProfile.Result monetProfileCache;"));
     }
+    String note = bodyOf(m, "private String monetOneUi() {");
+    check("source: MainActivity has monetOneUi() (the One UI value for the card's note)", note != null);
+    if (note != null) {
+      check("source: it reads the One UI value of MonetProfile.oneUi (Samsung, the version, the property read)",
+          note.contains("String version = oneUiVersion(unset);") && note.contains("String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);"));
+      check("source: an answer from a One UI version that could not be read is not kept (the next call reads again)",
+          note.contains("if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetOneUiCache = oneUi;") && m.contains("private volatile String monetOneUiCache;"));
+    }
+    check("source: MonetProfile has no One UI reason or short-circuit", !mp.contains("REASON_ONE_UI") && !mp.contains("\"oneUi\";"));
     String ver = bodyOf(m, "private String oneUiVersion(boolean[] propertyUnset) {");
     check("source: MainActivity has oneUiVersion(boolean[])", ver != null);
     if (ver != null) {
@@ -295,6 +303,9 @@ public class MonetProfileTest {
       int early = pal.indexOf("if (Build.VERSION.SDK_INT < 31) {"), put = pal.indexOf("o.put(\"profile\", profile.profile);");
       check("source: getSystemPalette reports profile and profileReason from monetProfile()", pal.contains("MonetProfile.Result profile = monetProfile();")
           && put > 0 && pal.contains("o.put(\"profileReason\", profile.reason);"));
+      check("source: ... and oneUi (monetOneUi()) only when it is not blank",
+          pal.contains("String oneUi = monetOneUi();") && pal.contains("if (!oneUi.isEmpty()) o.put(\"oneUi\", oneUi);")
+          && pal.indexOf("o.put(\"oneUi\", oneUi);") < pal.indexOf("o.put(\"ok\", true);"));
       check("source: ... and build (Build.FINGERPRINT, never null) and contrast (systemContrast())",
           pal.contains("o.put(\"build\", Build.FINGERPRINT == null ? \"\" : Build.FINGERPRINT);") && pal.contains("o.put(\"contrast\", systemContrast());"));
       check("source: the new fields come after the Android 12 check and before the palettes are read (in every answer with colours)",

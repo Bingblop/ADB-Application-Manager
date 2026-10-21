@@ -7,8 +7,6 @@ A2. Super User on Android 13 (P12): a locked row saying Needs Android 14, as the
    the stored off counts for nothing there (no hint); the handler changes nothing and calls no AndroidBridge method: true ["0",0]
 A3. Super User, Android 16 QPR1 (P16Q1): locked with "Not supported on this Android version yet", as the accents and Intensity: true ["Not supported on this Android version yet","Not supported on this Android version yet","Not supported on this Android version yet",""]
    the handler changes nothing and calls no AndroidBridge method; Apply writes the theme setting only: true []
-A3. Super User, a One UI phone on Android 14: locked with "Not supported on One UI", as the accents and Intensity: true ["Not supported on One UI","Not supported on One UI","Not supported on One UI",""]
-   the handler changes nothing and calls no AndroidBridge method; Apply writes the theme setting only: true []
 A3. Super User, an older APK on Android 16 (no profile): locked with "Update the app", as the accents and Intensity: true ["Update the app","Update the app","Update the app",""]
    the handler changes nothing and calls no AndroidBridge method; Apply writes the theme setting only: true []
 A4. an APK without overlayFabricate, Super User on Android 14: Update the app, as the other rows: true ["Update the app","Update the app","Update the app"]

@@ -1,7 +1,7 @@
 // Root colours per Android build family (T-049): the Overlays tab's root-only theme controls compute the colours for the family the phone
 // is (getSystemPalette's profile, MonetProfile.java) at its contrast setting, and lock on every family this app cannot compute exactly.
 // (a) Locks: Android 15.0 (P15) as an APK from before T-049 PR 11 reports it (notYet; t573 has it live), 16 QPR1 and QPR2 (P16Q1, P16Q2) as an APK from before PR 9 reports them (notYet; t571 has them live), 17 (P17) as an APK from before PR 10 reports it (notYet; t572 has it live), an Android this app does not know (unknown), a profile it is
-// told is fine but cannot compute, a phone with a One UI version, and an older APK that reports no profile on Android 15 and 16: the three
+// told is fine but cannot compute, and an older APK that reports no profile on Android 15 and 16: the three
 // rows (Pure black, Color spec, More styles) are locked with their reason, with Super User and without; nothing in the card can be used,
 // the stored choices count for nothing (no hint, no preview, the handlers change nothing) and Apply writes the theme setting only, without
 // asking the bridge for the palette (where the contrast comes from) when tapped. An older
@@ -15,7 +15,9 @@
 // Monochrome in More styles. (d) Android 15 QPR1 (P15Q1): 165 entries with Android 14's 44 names in its
 // order; Android 15 QPR2 (P15Q2): 177; Android 14 (P14): PR 3's plan. (e) The record: profile (when it is not P14) and build; old records
 // read as P14 without a build. (f) The note for colours written on another build ("Android was updated..."): when it shows and when not;
-// nothing runs by itself; Apply writes them for the build the phone runs and the note goes. (g) The new words in German.
+// nothing runs by itself; Apply writes them for the build the phone runs and the note goes. (g) The new words in German. (h) One UI (PR 13):
+// a One UI phone is served by its Android version (live with Super User, Needs Super User without), with the One UI note on the card; no
+// note on another phone; no "One UI" lock left in the page or its translations.
 // Every value pinned below comes from an oracle kept outside the repository (SysuiDump.java): ThemeOverlayController's write sequence and
 // resource names (android16-release; android15-qpr1-release for P15Q1), transcribed, run with SystemUI's monet classes of that branch
 // compiled on its libmonet (a16; a15-qpr2 for P15Q1). Content and Monochrome come from SystemUI's own ColorScheme (its Content and
@@ -30,7 +32,7 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
+const ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -103,6 +105,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
     return { shown: c.style.display !== 'none', black: row('ovlRootCards'), spec: row('ovlRootSpec'), more: row('ovlRootMore'), live: live.filter(e => !e.classList.contains('ovl-chip')).map(e => e.id || (e.dataset && (e.dataset.style || e.dataset.spec)) || e.className), chips,
       note: document.getElementById('ovlRootNote').innerText, stale: stale && stale.style.display !== 'none' ? stale.innerText : '', hint: (document.getElementById('ovlApplyHintRoot') || { innerText: '' }).innerText, preview: !!pv && pv.innerHTML !== '' };
   });
+  const oneUiNote = () => ev(() => { const e = document.getElementById('ovlRootOneUi'); return e && e.style.display !== 'none' ? e.innerText : ''; });
   const lockedAll = (c, reason) => c.shown && ['black', 'spec', 'more'].every(k => c[k].locked && c[k].lock === reason) && c.live.length === 0 && c.chips === 0;
   const LIVE = '["ovlBlackSw","2021","2025","2026","OFF","FIDELITY","CONTENT","MONOCHROMATIC","ovlAdjAccentSat","ovlAdjBgSat","ovlAdjBgLight","ovlAccSecondary","ovlAccTertiary","ovlAccurateSw"]';
   const preview = () => ev(() => { const pv = document.getElementById('ovlRootPreview'); const rows = pv ? Array.from(pv.querySelectorAll('.ovl-pal')) : []; return { rows: rows.length, accent1: rows[0] ? Array.from(rows[0].querySelectorAll('.ovl-chip')).map(c => c.dataset.hex) : [] }; });
@@ -136,8 +139,6 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
     ['an Android this app does not know (SDK 38: unknown)', { sdk: 38, build: B16 }, NOT_YET],
     ['a profile reported ok that this app cannot compute (P16Q3, ok)', { sdk: 36, profile: 'P16Q3', reason: 'ok', build: B16 }, NOT_YET],
     ['P16 with a reason other than ok (notYet)', { sdk: 36, profile: 'P16', reason: 'notYet', build: B16 }, NOT_YET],
-    ['a One UI phone on Android 14 (unknown, oneUi)', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
-    ['a One UI phone on Android 16 (unknown, oneUi)', { sdk: 36, profile: 'unknown', reason: 'oneUi', build: B16 }, ONE_UI],
     ['an older APK on Android 15 (no profile, build or contrast)', { sdk: 35, profile: null, build: null, contrast: null }, 'Update the app'],
     ['an older APK on Android 16 (no profile, build or contrast)', { sdk: 36, profile: null, build: null, contrast: null }, 'Update the app']
   ];
@@ -153,8 +154,8 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   check('A2. without Super User the profile\'s reason shows, not Needs Super User (root would not unlock it), and no note about Root', lockedAll(c, NOT_YET) && c.note === '', JSON.stringify(c));
   await phone({ sdk: 36, profile: 'P16', build: B16 }); c = await card();
   check('   P16 without Super User: Needs Super User, as before, with its note', lockedAll(c, 'Needs Super User') && c.note === 'Shizuku and ADB cannot write these colors; Root can.', JSON.stringify(c));
-  await phone({ sdk: 36, profile: 'unknown', reason: 'oneUi', build: B16 }); c = await card();
-  check('   a One UI phone without Super User: Not supported on One UI', lockedAll(c, ONE_UI), JSON.stringify(c));
+  await ev(() => { window.__oneUi = '8.0'; }); await phone({ sdk: 36, profile: 'P16', build: B16 }); c = await card(); const oneUiOff = await oneUiNote(); await ev(() => { window.__oneUi = ''; });
+  check('   a One UI phone on Android 16.0 without Super User: Needs Super User with its note, as any P16 phone, and the One UI note', lockedAll(c, 'Needs Super User') && c.note === 'Shizuku and ADB cannot write these colors; Root can.' && oneUiOff === ONE_UI_NOTE, JSON.stringify([c, oneUiOff]));
   await setRoot(true);
   // an older APK on Android 14 reports no profile: Android 14's colours, as before
   await ev(() => { kvSet('ovl_black', false); kvSet('ovl_spec', '2021'); }); await phone({ sdk: 34, profile: null, build: null, contrast: null }); c = await card();
@@ -295,12 +296,34 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
 
   // ---- the new words in another language (assets/lang/de.js) ----
   await ev(() => I18N.set('de')); await sleep(600);
-  const de = await ev(([a, b, c]) => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return [x[a] || '', x[b] || '', x[c] || '']; }, [NOT_YET, ONE_UI, STALE]);
+  const de = await ev(([a, b, c]) => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return [x[a] || '', x[b] || '', x[c] || '']; }, [NOT_YET, ONE_UI_NOTE, STALE]);
   await ev(([id, b]) => { kvSet('ovl_root_applied', { ids: [id], t: Date.now(), black: false, style: 'FIDELITY', profile: 'P15Q2', build: b }); }, [AAM, B16]);
   await phone({ sdk: 36, profile: 'P16', build: B16b }); await sleep(200); const deStale = (await card()).stale;
   await phone({ sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16b }); await sleep(200); const deNotYet = await card();
-  await phone({ sdk: 36, profile: 'unknown', reason: 'oneUi', build: B16b }); await sleep(200); const deOneUi = await card();
-  check('G1. in German: the note on another build and both lock reasons read as assets/lang/de.js has them', de.every(t => t !== '') && de[0] !== NOT_YET && deStale === de[2] && lockedAll(deNotYet, de[0]) && lockedAll(deOneUi, de[1]), JSON.stringify([de, deStale, deNotYet.black.lock, deOneUi.black.lock]));
+  await ev(() => { window.__oneUi = '8.5'; }); await phone({ sdk: 36, profile: 'P16', build: B16b }); await sleep(200); const deOneUi = await oneUiNote(); await ev(() => { window.__oneUi = ''; });
+  check('G1. in German: the note on another build, the lock reason and the One UI note read as assets/lang/de.js has them', de.every(t => t !== '') && de[0] !== NOT_YET && de[1] !== ONE_UI_NOTE && deStale === de[2] && lockedAll(deNotYet, de[0]) && deOneUi === de[1], JSON.stringify([de, deStale, deNotYet.black.lock, deOneUi]));
+  await ev(() => I18N.set('en')); await sleep(600);
+
+  // ---- (h) One UI (PR 13): served by its Android version, with the One UI note ----
+  await ev(() => { kvSet('ovl_root_applied', null); kvSet('ovl_black', true); kvSet('ovl_root_style', 'FIDELITY'); kvSet('ovl_spec', '2021'); });
+  for (const [label, v, o] of [['One UI 8.0 on Android 16.0 (P16)', '8.0', { sdk: 36, profile: 'P16', build: B16 }], ['One UI 6.1 on Android 14 (P14)', '6.1', { sdk: 34, profile: 'P14', build: B14 }],
+    ['a Samsung phone whose One UI version could not be read (?), on Android 16.0', '?', { sdk: 36, profile: 'P16', build: B16 }]]) {
+    await ev(x => { window.__oneUi = x; }, v); await phone(o); c = await card(); const note = await oneUiNote(); await reset(); await apply(); k = await calls();
+    check('H1. ' + label + ' with Super User: every row is live as on any phone of that Android version, the hint names Fidelity and pure black, the One UI note shows; Apply writes the overlay', !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && note === ONE_UI_NOTE && k.fab.length === 1 && k.fab[0].action === 'fabricate', JSON.stringify([c.live, c.hint, note, k.fab.length]));
+    await ev(() => kvSet('ovl_root_applied', null));
+  }
+  await ev(() => { window.__oneUi = '8.0'; }); await phone({ sdk: 38, build: B16 }); c = await card(); const unk = await oneUiNote();
+  check('H2. One UI on an Android this app does not know (SDK 38): still locked with "' + NOT_YET + '"; the One UI note shows there too (the card shows)', lockedAll(c, NOT_YET) && unk === ONE_UI_NOTE, JSON.stringify([c.black, unk]));
+  await ev(() => { window.__oneUi = ''; }); await phone({ sdk: 36, profile: 'P16', build: B16 }); const none = await oneUiNote();
+  await ev(() => { window.__oneUi = null; }); await phone({ sdk: 36, profile: 'P16', build: B16 }); const old = await oneUiNote();
+  check('H3. not One UI (no oneUi in the answer, or an older APK): no One UI note', none === '' && old === '', JSON.stringify([none, old]));
+  await ev(() => { window.__oneUi = '8.0'; window.__sdk = 30; ovlReadPalette(); ovlRender(); }); await sleep(150); const below12 = await oneUiNote(); await ev(() => { window.__oneUi = ''; });
+  check('H4. below Android 12 (the card is hidden with the rest of Material You): no One UI note', below12 === '', below12);
+  const fs = require('fs'), path = require('path'), assets = path.join(__dirname, '..', '..', 'assets');
+  const texts = [path.join(assets, 'index.html')].concat(fs.readdirSync(path.join(assets, 'lang')).filter(f => f.endsWith('.js')).map(f => path.join(assets, 'lang', f)));
+  const lockLeft = texts.filter(f => fs.readFileSync(f, 'utf8').includes(['Not supported on', 'One UI'].join(' '))).map(f => path.basename(f));
+  const reasonLeft = fs.readFileSync(texts[0], 'utf8').includes("profileReason === 'oneUi'");
+  check('H5. no One UI lock reason in the page or any of its 13 translation files, and the page no longer reads a oneUi reason', texts.length === 14 && lockLeft.length === 0 && !reasonLeft, JSON.stringify([texts.length, lockLeft, reasonLeft]));
 
   check('no page errors', errors.length === 0, JSON.stringify(errors));
   await b.close();

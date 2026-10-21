@@ -36,7 +36,7 @@ module.exports.initScript = function () {
   window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
   window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
   // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
-  // MonetProfile.of does without One UI and without the colour and boolean names (31-33 P12, 34 P14, anything else unknown; 14 QPR1 to
+  // MonetProfile.of does without the colour and boolean names (31-33 P12, 34 P14, anything else unknown; 14 QPR1 to
   // QPR3, P14Q, is set as a string), a string is reported as it is, null leaves profile and profileReason out (an older APK);
   // __profileReason: undefined is 'ok' for P12 P14 P14Q P15 P15Q1 P15Q2 P16 P16Q1 P16Q2 P17 (16 QPR1 and QPR2 from T-049 PR 9 on, 17 from
   // PR 10 on, 15.0 from PR 11 on, 14 QPR1 to QPR3 from PR 12 on; an APK from before reported 15.0, 16 QPR1, QPR2 and 17 'notYet', which a
@@ -46,6 +46,9 @@ module.exports.initScript = function () {
   window.__profileReason = undefined;
   window.__build = 'google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys';
   window.__contrast = 0;
+  // PR 13: the One UI value getSystemPalette reports (MonetProfile.oneUi: the version, '?' when a Samsung phone's could not be read), left
+  // out when '' or null (not One UI, or an older APK); it only shows the card's One UI note, the profile follows __sdk and __profile as above
+  window.__oneUi = '';
 
   // a believable palette for a seed colour: tones of one hue (the real Monet engine does far more, this is only to see colours move)
   function hexToHsl(hex) {
@@ -177,6 +180,7 @@ module.exports.initScript = function () {
     }
     if (window.__build !== null) o.build = window.__build;
     if (window.__contrast !== null) o.contrast = window.__contrast;
+    if (typeof window.__oneUi === 'string' && window.__oneUi !== '') o.oneUi = window.__oneUi;
     return JSON.stringify(o);
   };
   // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise

@@ -24,7 +24,6 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const SUB = '100% leaves Android\'s colors as they are.';
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -133,7 +132,6 @@ const PINS = [
   await ev(() => { kvSet('ovl_black', false); kvSet('ovl_root_applied', null); ovlRender(); });
   const LOCKS = [
     ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
-    ['a One UI phone on Android 14', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
     ['an older APK on Android 16 (no profile)', { sdk: 36, profile: null, build: null }, 'Update the app']
   ];
   for (const [label, o, reason] of LOCKS) {

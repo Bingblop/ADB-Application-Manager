@@ -4,7 +4,7 @@
 // style); with no spec stored, 2025 is the one chosen (2021 on Android 16.0, as before). Still locked: 15.0 as an APK from before PR 11
 // reports it (notYet; t573 has it live), 17 as an APK from before PR 10
 // reports it (notYet; t572 has it live), an Android this app does not know, QPR1 and QPR2 as an APK from before PR 9 reports them
-// (notYet), One UI on a QPR build. (b) Native routing: the list style at
+// (notYet). A One UI phone on a QPR2 build is live, with the One UI note (PR 13). (b) Native routing: the list style at
 // the phone's spec (2025, and 2026, which gives every list style 2025 there) with nothing else set is the theme setting only (no overlay,
 // no hint, no preview), Rainbow included; the spec note is the QPR one, without the light / dark sentence. (c) Fidelity (More styles) at
 // 2025 on P16Q2 and P16Q1: 252 entries, names and order equal to the list below made by hand from SystemUI's write order (TOC qpr2
@@ -33,7 +33,8 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
+// PR 13: the note the root theme card shows on One UI only (One UI no longer locks the card)
+const ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -168,12 +169,20 @@ const BLACK_QPR = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark', 
     ['Android 17 (P17)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B16 }, NOT_YET],
     ['an Android this app does not know (SDK 38: unknown)', { sdk: 38, build: B16 }, NOT_YET],
     ['16 QPR1 as an APK from before PR 9 reports it (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: BQ1 }, NOT_YET],
-    ['16 QPR2 as an APK from before PR 9 reports it (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: BQ2 }, NOT_YET],
-    ['a One UI phone on a QPR2 build (unknown, oneUi)', { sdk: 36, profile: 'unknown', reason: 'oneUi', build: BQ2 }, ONE_UI]
+    ['16 QPR2 as an APK from before PR 9 reports it (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: BQ2 }, NOT_YET]
   ];
   for (const [label, o, reason] of LOCKS) {
     await phone(o); c = await card(); await reset(); await apply(); const k = await calls();
     check('A2. ' + label + ': still locked with "' + reason + '", nothing in the card can be used, no hint, no preview; Apply writes the theme setting only', lockedAll(c, reason) && !c.preview && c.hint === '' && k.apply.length === 1 && k.fab.length === 0, JSON.stringify([c.black, c.live, k.fab.length]));
+  }
+  // PR 13: a One UI phone on this build is served by its Android version (the One UI lock is gone): live as any phone of the build, with the
+  // One UI note; the same build without One UI has no note
+  {
+    const oneUiNote = () => ev(() => { const e = document.getElementById('ovlRootOneUi'); return e && e.style.display !== 'none' ? e.innerText : ''; });
+    await ev(() => { window.__oneUi = '8.5'; kvSet('ovl_root_applied', null); }); await phone({ sdk: 36, profile: 'P16Q2', build: BQ2 }); const o = await card(); const on = await oneUiNote(); await reset(); await apply(); const k = await calls();
+    check('A2b. a One UI phone on Android 16 QPR2 (P16Q2) with Super User: every row is live, as on any phone of that build; the One UI note shows; Apply writes the overlay', !o.black.locked && !o.spec.locked && !o.more.locked && JSON.stringify(o.live) === LIVE && o.chips === 65 && on === ONE_UI_NOTE && k.fab.length === 1 && k.fab[0].action === 'fabricate', JSON.stringify([o.live, o.chips, on, k.fab.length]));
+    await ev(() => { window.__oneUi = ''; kvSet('ovl_root_applied', null); }); await phone({ sdk: 36, profile: 'P16Q2', build: BQ2 }); const off = await oneUiNote();
+    check('   the same build without One UI: no One UI note', off === '', off);
   }
   await setRoot(false); await phone({ sdk: 36, profile: 'P16Q2', build: BQ2 }); c = await card();
   check('A3. P16Q2 without Super User: Needs Super User (as on every profile this app computes), its QPR lines, the note about Root', lockedAll(c, 'Needs Super User') && c.black.sub === BLACK_SUB_QPR && c.spec.sub === SPEC_SUB_QPR && c.note === 'Shizuku and ADB cannot write these colors; Root can.', JSON.stringify(c));

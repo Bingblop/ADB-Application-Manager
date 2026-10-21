@@ -27,7 +27,6 @@ const TITLE = 'Accurate shades';
 const SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.';
 const OFF = 'Accurate shades: off.';
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
 const KV = 'ovl_accurate_shades';
@@ -145,7 +144,6 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   check('   the stored off counts for nothing there (no hint); the handler changes nothing and calls no AndroidBridge method', a.hint === '' && a.off === '' && h === '["0",0]', h);
   const LOCKS = [
     ['Android 16 QPR1 (P16Q1)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
-    ['a One UI phone on Android 14', { sdk: 34, profile: 'unknown', reason: 'oneUi', build: B14 }, ONE_UI],
     ['an older APK on Android 16 (no profile)', { sdk: 36, profile: null, build: null }, 'Update the app']
   ];
   for (const [label, o, reason] of LOCKS) {

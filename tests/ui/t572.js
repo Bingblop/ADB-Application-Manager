@@ -3,7 +3,7 @@
 // Pure black line is the QPR one (light mode untouched), the Color spec line, its three specs and the note under them are the 17 ones
 // (2026 is the phone's own spec; 2025 gives the same colours without CMF; 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz);
 // with no spec stored, 2026 is the one chosen. Still locked: an Android above 17 (unknown), 17 without its colour names (unknown), 17 as
-// an APK from before PR 10 reports it (notYet), One UI on 17, and without Super User. (b) Native routing: the list style at 2026 and at
+// an APK from before PR 10 reports it (notYet), and without Super User; a One UI phone on 17 is live, with the One UI note (PR 13). (b) Native routing: the list style at 2026 and at
 // 2025 (which the oracle shows give every style the same colours) with nothing else set is the theme setting only (no overlay, no hint,
 // no preview); Rainbow and Fruit Salad at 2021 too (2026 gives them 2021). (c) Fidelity (More styles) at 2026 on P17: 264 entries, names
 // and order equal to the list below made by hand from SystemUI's write order (TOC android17-release createOverlays /
@@ -34,7 +34,8 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NOT_YET = 'Not supported on this Android version yet';
-const ONE_UI = 'Not supported on One UI';
+// PR 13: the note the root theme card shows on One UI only (One UI no longer locks the card)
+const ONE_UI_NOTE = 'On One UI these colors reach Google apps and other apps that use Android\'s Monet colors. Samsung\'s own apps may keep Samsung\'s palette, and changing the Color palette in Samsung\'s settings can replace them; apply again if it does.';
 const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
 const AAM = 'com.android.shell:aam_monet';
 const RES = 'android:color/system_';
@@ -177,12 +178,20 @@ const BLACK_DARK = ['neutral1_900_dark', 'neutral2_900_dark', 'background_dark',
     ['an Android above 17 (SDK 38: unknown)', { sdk: 38, build: B17 }, NOT_YET],
     ['SDK 40 (unknown)', { sdk: 40, build: B17 }, NOT_YET],
     ['17 without its colour names (SDK 37, MonetProfile\'s probe not found: unknown)', { sdk: 37, profile: 'unknown', reason: 'unknown', build: B17 }, NOT_YET],
-    ['17 as an APK from before PR 10 reports it (P17, notYet)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B17 }, NOT_YET],
-    ['a One UI phone on 17 (unknown, oneUi)', { sdk: 37, profile: 'unknown', reason: 'oneUi', build: B17 }, ONE_UI]
+    ['17 as an APK from before PR 10 reports it (P17, notYet)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B17 }, NOT_YET]
   ];
   for (const [label, o, why] of LOCKS) {
     await phone(o); c = await card(); await reset(); await apply(); const k = await calls();
     check('A2. ' + label + ': still locked with "' + why + '", nothing in the card can be used, no hint, no preview; Apply writes the theme setting only', lockedAll(c, why) && !c.preview && c.hint === '' && k.apply.length === 1 && k.fab.length === 0 && c.black.sub === BLACK_SUB, JSON.stringify([c.black, c.live, k.fab.length]));
+  }
+  // PR 13: a One UI phone on this build is served by its Android version (the One UI lock is gone): live as any phone of the build, with the
+  // One UI note; the same build without One UI has no note
+  {
+    const oneUiNote = () => ev(() => { const e = document.getElementById('ovlRootOneUi'); return e && e.style.display !== 'none' ? e.innerText : ''; });
+    await ev(() => { window.__oneUi = '8.5'; kvSet('ovl_root_applied', null); }); await phone({ sdk: 37, profile: 'P17', build: B17 }); const o = await card(); const on = await oneUiNote(); await reset(); await apply(); const k = await calls();
+    check('A2b. a One UI phone on Android 17 (P17) with Super User: every row is live, as on any phone of that build; the One UI note shows; Apply writes the overlay', !o.black.locked && !o.spec.locked && !o.more.locked && JSON.stringify(o.live) === LIVE && o.chips === 65 && on === ONE_UI_NOTE && k.fab.length === 1 && k.fab[0].action === 'fabricate', JSON.stringify([o.live, o.chips, on, k.fab.length]));
+    await ev(() => { window.__oneUi = ''; kvSet('ovl_root_applied', null); }); await phone({ sdk: 37, profile: 'P17', build: B17 }); const off = await oneUiNote();
+    check('   the same build without One UI: no One UI note', off === '', off);
   }
   await setRoot(false); await phone({ sdk: 37, profile: 'P17', build: B17 }); c = await card();
   check('A3. P17 without Super User: Needs Super User (as on every profile this app computes), its 17 lines, the note about Root', lockedAll(c, 'Needs Super User') && c.black.sub === BLACK_SUB_QPR && c.spec.sub === SPEC_SUB_A17 && c.note === 'Shizuku and ADB cannot write these colors; Root can.', JSON.stringify(c));

@@ -9,8 +9,12 @@ import java.util.Set;
  * Which Android build family (a profile) builds the phone's theme colours, so the page can compute what that build's SystemUI writes,
  * with that build's resource names, and refuse every build it cannot compute (findings T-049, T-050). No Android classes: MainActivity
  * looks each name of {@link #PROBES} up with getIdentifier(name, "color", "android") and each name of {@link #BOOL_PROBES} with
- * getIdentifier(name, "bool", "android"), reads the One UI version and passes both here with the SDK level; tested on a computer
+ * getIdentifier(name, "bool", "android") and passes the names found here with the SDK level; tested on a computer
  * (tests/java/src/MonetProfileTest.java). getSystemPalette reports the answer to the page as "profile" and "profileReason".
+ *
+ * <p>One UI is decided like any other build, by its SDK level and its names (the owner's decision, PR 13): Samsung's builds keep Android's
+ * Monet colours, which Google apps and other apps that use them read. That Samsung's own apps may keep Samsung's palette is inferred from how
+ * overlays work, not measured on a phone; {@link #oneUi} only tells the page whether to show its note about it.
  *
  * <p>The probes are colour names of the framework's resources (frameworks/base core/res/res/values/colors.xml) that exist on some
  * releases only, read in AOSP's branch of each release:
@@ -101,7 +105,7 @@ public final class MonetProfile {
         return P17.equals(profile);
     }
 
-    /** Anything else: One UI, an SDK level this app does not know, or an SDK level whose names match no release. */
+    /** Anything else: an SDK level this app does not know, or an SDK level whose names match no release. */
     public static final String UNKNOWN = "unknown";
 
     // ---- the reason keys ("profileReason" in getSystemPalette)
@@ -109,8 +113,6 @@ public final class MonetProfile {
     public static final String REASON_OK = "ok";
     /** A known Android release whose colours the app cannot compute yet (no profile gives it now; the page still handles the key). */
     public static final String REASON_NOT_YET = "notYet";
-    /** A phone with a One UI version: Samsung builds its theme with its own service. */
-    public static final String REASON_ONE_UI = "oneUi";
     /** No release matched (or the names could not be read). */
     public static final String REASON_UNKNOWN = "unknown";
 
@@ -160,15 +162,13 @@ public final class MonetProfile {
 
     /**
      * The decision. {@code sdk} is Build.VERSION.SDK_INT, {@code present} the names of {@link #PROBES} and {@link #BOOL_PROBES} the phone
-     * has (null when they could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without
-     * one; {@link #oneUi} gives it, {@link #ONE_UI_UNREAD} for a Samsung phone whose version could not be read).
-     * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first. On 34 the quarterly-update
+     * has (null when they could not be read: then nothing is known). A One UI phone is decided by the same rule as any other.
+     * The order of the tests is part of the rule: per SDK level the newest release first. On 34 the quarterly-update
      * name gives {@link #P14Q}; without it, or when the names could not be read, the answer stays {@link #P14} (the answer every SDK 34 phone
      * had before). On 37 the Android 17 name must be there: a 37 build without it, or whose names could not be read, is unknown (fail
      * closed), and so is every SDK level after 37.
      */
-    public static Result of(int sdk, Set<String> present, String oneUi) {
-        if (oneUi != null && !oneUi.trim().isEmpty()) return new Result(UNKNOWN, REASON_ONE_UI);
+    public static Result of(int sdk, Set<String> present) {
         if (sdk >= 31 && sdk <= 33) return ok(P12);
         if (sdk == 34) return present != null && present.contains(PROBE_REPAIR_MODE) ? ok(P14Q) : ok(P14);
         if (present == null) return unknown();
@@ -191,15 +191,16 @@ public final class MonetProfile {
         return unknown();                                            // below Android 12 (no Material You) and every SDK level after 37
     }
 
-    /** The One UI value {@link #oneUi} gives a Samsung phone whose version could not be read: not blank, so {@link #of} treats it as One UI. */
+    /** The One UI value {@link #oneUi} gives a Samsung phone whose version could not be read: not blank, so the page counts it as One UI. */
     public static final String ONE_UI_UNREAD = "?";
 
     /**
-     * The One UI value to decide with. {@code samsung}: Build.MANUFACTURER or Build.BRAND is samsung; {@code version}: the One UI version
+     * The One UI value getSystemPalette reports as "oneUi" (the page shows its One UI note on the root theme card when it is not blank; it
+     * no longer decides the profile). {@code samsung}: Build.MANUFACTURER or Build.BRAND is samsung; {@code version}: the One UI version
      * read ("6.1.1"; "" or null when none was); {@code propertyUnset}: getprop ro.build.version.oneui ran and printed nothing (the property
      * is not set; false when getprop failed, timed out or printed something that is not a version). A version read is the answer. A Samsung
      * phone without one gives "" only when the property is not set (a Samsung phone running another build of Android); when it could not be
-     * read, {@link #ONE_UI_UNREAD}, which counts as One UI (fail closed; MainActivity does not keep that answer, so the next call reads
+     * read, {@link #ONE_UI_UNREAD}, which counts as One UI (the note shows; MainActivity does not keep that answer, so the next call reads
      * again). Any other phone: "".
      */
     public static String oneUi(boolean samsung, String version, boolean propertyUnset) {
