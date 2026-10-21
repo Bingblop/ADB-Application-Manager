@@ -16,10 +16,13 @@ import java.util.Set;
  * releases only, read in AOSP's branch of each release:
  * <ul>
  * <li>system_on_theme_app_ring_light: android15-release only (15 QPR1 renamed it system_theme_notif_light);</li>
- * <li>system_theme_notif_light: android15-qpr1-release and every later branch read (15 QPR2, 16.0, 16 QPR1, 16 QPR2);</li>
+ * <li>system_theme_notif_light: android15-qpr1-release and every later branch read (15 QPR2, 16.0, 16 QPR1, 16 QPR2, 17);</li>
  * <li>system_inverse_surface_light: android15-qpr2-release, android16-release and later;</li>
- * <li>system_primary_dim_light: android16-qpr1-release and android16-qpr2-release;</li>
- * <li>system_semantic_red_container_high_light: android16-qpr2-release only.</li>
+ * <li>system_primary_dim_light: android16-qpr1-release, android16-qpr2-release and android17-release;</li>
+ * <li>system_semantic_red_container_high_light: android16-qpr2-release only (android17-release does not have it);</li>
+ * <li>system_primary_fixed_light: android17-release only (android16-qpr2-release and every earlier branch have the unsuffixed
+ * system_primary_fixed only; 17 adds the _light and _dark names and makes the unsuffixed one an alias of _light in values/ and of _dark in
+ * values-night/).</li>
  * </ul>
  * None of them is in android14-release. They are plain {@code <color>} entries (no feature flag on the entry), so a build of that branch
  * has them. That a phone maker's build keeps them, and that getIdentifier finds a name the SDK does not publish, was not checked on a
@@ -48,21 +51,36 @@ public final class MonetProfile {
     public static final String P16Q1 = "P16Q1";
     /** Android 16 QPR2 (SDK 36 with system_semantic_red_container_high_light): as {@link #P16Q1}, with QPR2's own role changes (libmonet android16-qpr2-release). */
     public static final String P16Q2 = "P16Q2";
+    /**
+     * Android 17 (SDK 37 with system_primary_fixed_light): spec 2026, 55 roles, and SystemUI writes every palette shade, role and fixed colour
+     * as {@code _light} and {@code _dark} (libmonet android17-release).
+     */
+    public static final String P17 = "P17";
 
     // ---- profiles recognised but not computed yet (reason REASON_NOT_YET)
     /** Android 15.0 (SDK 35 with system_on_theme_app_ring_light): older role maths. */
     public static final String P15 = "P15";
-    /** Android 17 (SDK 37): spec 2026, fixed colours in both modes. */
-    public static final String P17 = "P17";
 
     /**
      * Whether SystemUI on this profile writes the palette shades as {@code system_<row>_<shade>_light} and {@code _dark} (each from its own
-     * mode's scheme) and leaves the unsuffixed {@code system_<row>_<shade>} names as aliases of them (Android 16 QPR1 and QPR2: core/res
+     * mode's scheme) and leaves the unsuffixed {@code system_<row>_<shade>} names as aliases of them (Android 16 QPR1, QPR2 and 17: core/res
      * values/colors_dynamic.xml and values-night/colors_dynamic.xml). The overlay this app writes there takes the suffixed names
      * (OverlayRules.fabricatePlanProblem refuses an unsuffixed palette name) and is looked up by them (OverlayRules.lookupEntries).
      */
     public static boolean suffixedPalettes(String profile) {
-        return P16Q1.equals(profile) || P16Q2.equals(profile);
+        return P16Q1.equals(profile) || P16Q2.equals(profile) || P17.equals(profile);
+    }
+
+    /**
+     * Whether SystemUI on this profile writes the 12 fixed colours as {@code system_primary_fixed_light} and {@code _dark} (and so on), each
+     * from its own mode's scheme, and the unsuffixed {@code system_primary_fixed} is an alias of the {@code _light} name in core/res
+     * values/colors.xml and of the {@code _dark} name in values-night/colors.xml (Android 17; values-night/colors_dynamic.xml also points the
+     * dark materialColor*Fixed at {@code _dark}; TOC assignColorsToOverlay has no fixed branch any more), so an overlay on the unsuffixed
+     * name would show one colour over both of SystemUI's. There the overlay this app writes takes the suffixed fixed names (OverlayRules.fabricatePlanProblem
+     * refuses an unsuffixed one).
+     */
+    public static boolean suffixedFixed(String profile) {
+        return P17.equals(profile);
     }
 
     /** Anything else: One UI, an SDK level this app does not know, or an SDK level whose names match no release. */
@@ -84,10 +102,11 @@ public final class MonetProfile {
     public static final String PROBE_ON_THEME_APP_RING = "system_on_theme_app_ring_light";
     public static final String PROBE_PRIMARY_DIM = "system_primary_dim_light";
     public static final String PROBE_SEMANTIC_RED = "system_semantic_red_container_high_light";
+    public static final String PROBE_PRIMARY_FIXED = "system_primary_fixed_light";
 
     /** Every name {@link #of} looks at: MainActivity checks each with getIdentifier and passes the ones that exist. */
     public static final List<String> PROBES = Collections.unmodifiableList(Arrays.asList(
-            PROBE_INVERSE_SURFACE, PROBE_THEME_NOTIF, PROBE_ON_THEME_APP_RING, PROBE_PRIMARY_DIM, PROBE_SEMANTIC_RED));
+            PROBE_INVERSE_SURFACE, PROBE_THEME_NOTIF, PROBE_ON_THEME_APP_RING, PROBE_PRIMARY_DIM, PROBE_SEMANTIC_RED, PROBE_PRIMARY_FIXED));
 
     /** A profile id and why it is (or is not) usable. */
     public static final class Result {
@@ -114,13 +133,13 @@ public final class MonetProfile {
      * The decision. {@code sdk} is Build.VERSION.SDK_INT, {@code present} the names of {@link #PROBES} the phone has (null when they
      * could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without one; {@link #oneUi} gives
      * it, {@link #ONE_UI_UNREAD} for a Samsung phone whose version could not be read).
-     * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first.
+     * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first. On 37 the Android 17 name must
+     * be there: a 37 build without it, or whose names could not be read, is unknown (fail closed), and so is every SDK level after 37.
      */
     public static Result of(int sdk, Set<String> present, String oneUi) {
         if (oneUi != null && !oneUi.trim().isEmpty()) return new Result(UNKNOWN, REASON_ONE_UI);
         if (sdk >= 31 && sdk <= 33) return ok(P12);
         if (sdk == 34) return ok(P14);
-        if (sdk == 37) return notYet(P17);
         if (present == null) return unknown();
         if (sdk == 35) {
             if (present.contains(PROBE_INVERSE_SURFACE)) return ok(P15Q2);
@@ -132,6 +151,10 @@ public final class MonetProfile {
             if (present.contains(PROBE_SEMANTIC_RED)) return ok(P16Q2);
             if (present.contains(PROBE_PRIMARY_DIM)) return ok(P16Q1);
             if (present.contains(PROBE_INVERSE_SURFACE)) return ok(P16);
+            return unknown();
+        }
+        if (sdk == 37) {
+            if (present.contains(PROBE_PRIMARY_FIXED)) return ok(P17);
             return unknown();
         }
         return unknown();                                            // below Android 12 (no Material You) and every SDK level after 37

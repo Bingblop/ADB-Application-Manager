@@ -1,6 +1,10 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"The same colors as 2026, without the CMF style.": "2026과 같은 색상이며, CMF 스타일은 없습니다.",
+"The colors Android computes itself, plus the CMF style.": "Android가 직접 계산하는 색상에 CMF 스타일을 더한 것입니다.",
+"With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.": "Root를 사용하면 2021이 Tonal Spot, Vibrant, Expressive, Spritz의 색을 바꿉니다. CMF에는 2026이 필요합니다.",
+"Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.": "Android가 이 색상을 직접 계산합니다. 위 목록의 스타일은 강도, 강조 색상, 정확한 색조 끔을 사용할 때, 또는 Tonal Spot, Vibrant, Expressive, Spritz가 2021일 때만 Root로 기록됩니다.",
 "True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "다크 모드 배경은 완전한 검은색, 패널은 몇 가지 어두운 회색으로 바뀝니다. 라이트 모드는 색상을 유지합니다.",
 "The colors earlier Android versions compute.": "이전 Android 버전이 계산하는 색상입니다.",
 "The 2025 colors, plus the CMF style.": "2025 색상에 CMF 스타일을 더한 것입니다.",

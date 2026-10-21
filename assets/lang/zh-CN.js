@@ -1,6 +1,10 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"The same colors as 2026, without the CMF style.": "与 2026 相同的颜色，但没有 CMF 样式。",
+"The colors Android computes itself, plus the CMF style.": "Android 自己计算的颜色，外加 CMF 样式。",
+"With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.": "使用 Root 时，2021 会为 Tonal Spot、Vibrant、Expressive 和 Spritz 重新着色。CMF 需要 2026。",
+"Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.": "这些颜色由 Android 自己计算：上方列表中的样式只有在使用“强度”、强调色或关闭“精确色阶”时，或 Tonal Spot、Vibrant、Expressive 和 Spritz 在 2021 时，才会通过 Root 写入。",
 "True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "深色背景为纯黑，面板使用几种深灰色。浅色模式保留其颜色。",
 "The colors earlier Android versions compute.": "早期 Android 版本计算的颜色。",
 "The 2025 colors, plus the CMF style.": "2025 版颜色，外加 CMF 样式。",

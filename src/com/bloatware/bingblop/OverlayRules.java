@@ -867,17 +867,18 @@ final class OverlayRules {
     static final String FAB_FILE = "/data/system/aam_monet.xml";
     static final String FAB_HEREDOC = "AAM_OVL_EOF";
     /**
-     * The most entries a plan may have. Android 16 QPR1 and QPR2 take the most: 65 palette shades as {@code _light} and as {@code _dark}
-     * (130), the 55 roles as {@code _light} and {@code _dark} (110) and the 12 fixed colours, 252 in all, and 296 with the 22 custom colours
-     * pairs SystemUI also writes there (not written yet); 320 leaves a margin. The Android 14+ form puts the whole plan in one file written
+     * The most entries a plan may have. Android 17 takes the most: 65 palette shades as {@code _light} and as {@code _dark} (130), the 55
+     * roles as {@code _light} and {@code _dark} (110) and the 12 fixed colours as {@code _light} and {@code _dark} (24), 264 in all, and 318
+     * with the 27 custom colour pairs SystemUI also writes there (not written yet). Android 16 QPR1 and QPR2 write the fixed colours once,
+     * unsuffixed: 252, and 296 with their 22 custom colour pairs. 320 leaves a margin. The Android 14+ form puts the whole plan in one file written
      * by a heredoc inside the {@code su -c} argument: 320 entries make about 24,000 characters, far under the 131,072 bytes Linux allows one
      * argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
      */
     static final int MAX_FAB_ENTRIES = 320;
-    /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first); see {@link #lookupEntries(String, List)} for Android 16 QPR1 and QPR2. */
+    /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first); see {@link #lookupEntries(String, List)} for Android 16 QPR1, QPR2 and 17. */
     static final int FAB_LOOKUPS = 4;
     /**
-     * What is looked up after a write on a profile whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1 and QPR2),
+     * What is looked up after a write on a profile whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1, QPR2 and 17),
      * where the plan follows SystemUI's own order and so does not start with the entries that matter most: a palette shade from the light
      * and from the dark scheme (by their suffixed names, so the answer does not depend on the mode system_server resolves the unsuffixed
      * alias in), a light and a dark role (with Pure black on, system_surface_dark is black, and that is what the lookup must see), and a role
@@ -886,6 +887,17 @@ final class OverlayRules {
     static final List<String> QPR_LOOKUPS = java.util.Collections.unmodifiableList(java.util.Arrays.asList(
             "android:color/system_accent1_600_light", "android:color/system_accent1_600_dark", "android:color/system_primary_light",
             "android:color/system_surface_dark", "android:color/system_primary_dim_dark"));
+    /**
+     * What is looked up after a write on Android 17 (MonetProfile.suffixedFixed): {@link #QPR_LOOKUPS}, then a fixed colour by its
+     * {@code _dark} name, which only 17 has (there SystemUI writes the fixed colours from each mode's scheme). Each is looked up when the plan
+     * has it.
+     */
+    static final List<String> P17_LOOKUPS;
+    static {
+        List<String> l = new ArrayList<String>(QPR_LOOKUPS);
+        l.add("android:color/system_primary_fixed_dark");
+        P17_LOOKUPS = java.util.Collections.unmodifiableList(l);
+    }
     static final String LOOKUP_MARK = "@@OVL-LOOKUP ";            // + the resource + "@@", on a line of its own
     static final String LOOKUP_END = "@@OVL-LOOKUP-END@@";
     /** The first Android with Material You (the plan's resources exist from here). */
@@ -901,8 +913,14 @@ final class OverlayRules {
     /** What a lookup prints for a colour: Integer.toHexString pads nothing, so an alpha below 0x10 prints fewer than eight digits. */
     private static final Pattern LOOKUP_COLOR = Pattern.compile("#[0-9a-f]{1,8}");
     private static final String FAB_RESOURCE_PREFIX = "android:color/system_";
-    /** A palette shade by its unsuffixed name (system_accent1_500, system_error_0): on Android 16 QPR1 and QPR2 an alias of the _light or _dark name. */
+    /** A palette shade by its unsuffixed name (system_accent1_500, system_error_0): on Android 16 QPR1, QPR2 and 17 an alias of the _light or _dark name. */
     private static final Pattern FAB_PALETTE_ALIAS = Pattern.compile("android:color/system_(accent[1-3]|neutral[12]|error)_[0-9]+");
+    /**
+     * One of the 12 fixed colours by its unsuffixed name (system_primary_fixed, system_on_tertiary_fixed_variant): on Android 17 an alias of
+     * the _light name in core/res values/colors.xml and of the _dark name in values-night/colors.xml, so an overlay on it would show one
+     * colour over both of SystemUI's.
+     */
+    private static final Pattern FAB_FIXED_ALIAS = Pattern.compile("android:color/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)");
 
     /** One entry of a plan: a framework colour resource and the colour it is to show. */
     static final class FabEntry {
@@ -926,10 +944,12 @@ final class OverlayRules {
 
     /**
      * {@link #fabricatePlanProblem(List)} for the phone's build family ({@code profile}: MonetProfile's id, null when not known). On a profile
-     * whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1 and QPR2) an unsuffixed palette shade
+     * whose palettes are suffixed (MonetProfile.suffixedPalettes: Android 16 QPR1, QPR2 and 17) an unsuffixed palette shade
      * ({@code system_accent1_500}, {@code system_error_0}) is refused too: there it is an alias of the {@code _light} and {@code _dark}
      * names, and an overlay on the alias would show one colour in both modes over SystemUI's two (the plan writes the suffixed names, as
-     * SystemUI does). That is the only name this checks per profile: a name the build does not have is skipped by Android, not refused.
+     * SystemUI does). On a profile whose fixed colours are suffixed (MonetProfile.suffixedFixed: Android 17) an unsuffixed fixed colour
+     * ({@code system_primary_fixed}) is refused for the same reason. Those are the only names this checks per profile: a name the build does
+     * not have is skipped by Android, not refused.
      */
     static String fabricatePlanProblem(String profile, List<FabEntry> plan) {
         if (plan == null || plan.isEmpty()) return "The plan has no entries";
@@ -944,6 +964,11 @@ final class OverlayRules {
         if (MonetProfile.suffixedPalettes(profile)) {
             for (int i = 0; i < plan.size(); i++) {
                 if (FAB_PALETTE_ALIAS.matcher(plan.get(i).resource).matches()) return "Entry " + (i + 1) + " names a palette color without _light or _dark, which this Android version does not take";
+            }
+        }
+        if (MonetProfile.suffixedFixed(profile)) {
+            for (int i = 0; i < plan.size(); i++) {
+                if (FAB_FIXED_ALIAS.matcher(plan.get(i).resource).matches()) return "Entry " + (i + 1) + " names a fixed color without _light or _dark, which this Android version does not take";
             }
         }
         return null;
@@ -1019,14 +1044,14 @@ final class OverlayRules {
 
     /**
      * The entries looked up after the write on the phone's build family. On a profile whose palettes are suffixed
-     * (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has, in that order, then the plan's first other entries
-     * until there are {@link #FAB_LOOKUPS} (a plan with Pure black only has one of them): at most five. Elsewhere (and with no profile)
-     * the first {@link #FAB_LOOKUPS} of the plan, as before.
+     * (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has (of {@link #P17_LOOKUPS} on Android 17), in that
+     * order, then the plan's first other entries until there are {@link #FAB_LOOKUPS} (a plan with Pure black only has one of them): at most
+     * five (six on Android 17). Elsewhere (and with no profile) the first {@link #FAB_LOOKUPS} of the plan, as before.
      */
     static List<FabEntry> lookupEntries(String profile, List<FabEntry> plan) {
         if (!MonetProfile.suffixedPalettes(profile)) return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
         List<FabEntry> out = new ArrayList<FabEntry>();
-        for (String want : QPR_LOOKUPS) {
+        for (String want : MonetProfile.suffixedFixed(profile) ? P17_LOOKUPS : QPR_LOOKUPS) {
             for (FabEntry e : plan) {
                 if (want.equals(e.resource)) {
                     out.add(e);

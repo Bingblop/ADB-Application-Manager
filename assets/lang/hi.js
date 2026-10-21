@@ -1,6 +1,10 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"The same colors as 2026, without the CMF style.": "2026 वाले ही रंग, CMF स्टाइल के बिना।",
+"The colors Android computes itself, plus the CMF style.": "वे रंग जिनकी गणना Android खुद करता है, साथ में CMF स्टाइल।",
+"With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.": "Root से 2021, Tonal Spot, Vibrant, Expressive और Spritz के रंग बदलता है। CMF के लिए 2026 चाहिए।",
+"Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.": "Android ये रंग खुद गणना करता है: ऊपर की सूची का कोई स्टाइल Root से सिर्फ़ तीव्रता, किसी एक्सेंट या बंद सटीक शेड के साथ लिखा जाता है, या Tonal Spot, Vibrant, Expressive और Spritz के लिए 2021 पर।",
 "True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "डार्क बैकग्राउंड असली काला, पैनल कुछ गहरे ग्रे रंगों में। लाइट मोड अपने रंग रखता है।",
 "The colors earlier Android versions compute.": "वे रंग जिनकी गणना Android के पुराने वर्शन करते हैं।",
 "The 2025 colors, plus the CMF style.": "2025 वाले रंग, साथ में CMF स्टाइल।",

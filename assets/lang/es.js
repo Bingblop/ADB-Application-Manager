@@ -1,6 +1,10 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"The same colors as 2026, without the CMF style.": "Los mismos colores que 2026, sin el estilo CMF.",
+"The colors Android computes itself, plus the CMF style.": "Los colores que calcula el propio Android, más el estilo CMF.",
+"With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.": "Con Root, 2021 cambia los colores de Tonal Spot, Vibrant, Expressive y Spritz. CMF necesita 2026.",
+"Android computes these colors itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for Tonal Spot, Vibrant, Expressive and Spritz.": "Android calcula estos colores por sí mismo: un estilo de la lista de arriba solo se escribe con Root con Intensidad, un acento o Tonos precisos desactivado, o en 2021 para Tonal Spot, Vibrant, Expressive y Spritz.",
 "True black dark backgrounds, panels in a few dark greys. Light mode keeps its colors.": "Fondos oscuros en negro verdadero, paneles en unos pocos grises oscuros. El modo claro conserva sus colores.",
 "The colors earlier Android versions compute.": "Los colores que calculan las versiones anteriores de Android.",
 "The 2025 colors, plus the CMF style.": "Los colores de 2025, más el estilo CMF.",

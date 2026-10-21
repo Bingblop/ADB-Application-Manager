@@ -38,8 +38,8 @@ module.exports.initScript = function () {
   // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
   // MonetProfile.of does without One UI and without the colour names (31-33 P12, 34 P14, anything else unknown), a string is reported as it
   // is, null leaves profile and profileReason out (an older APK); __profileReason: undefined is 'ok' for P12 P14 P15Q1 P15Q2 P16 P16Q1 P16Q2
-  // (16 QPR1 and QPR2 from T-049 PR 9 on; an APK from before reported them 'notYet', which a script sets explicitly), 'notYet' for P15 P17
-  // and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
+  // P17 (16 QPR1 and QPR2 from T-049 PR 9 on, 17 from PR 10 on; an APK from before reported them 'notYet', which a script sets explicitly),
+  // 'notYet' for P15 and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
   // are, and left out when null.
   window.__profile = undefined;
   window.__profileReason = undefined;
@@ -172,7 +172,7 @@ module.exports.initScript = function () {
       const sdk = window.__sdk, p = typeof window.__profile === 'string' ? window.__profile : sdk >= 31 && sdk <= 33 ? 'P12' : sdk === 34 ? 'P14' : 'unknown';
       o.profile = p;
       o.profileReason = typeof window.__profileReason === 'string' ? window.__profileReason
-        : ['P12', 'P14', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2'].includes(p) ? 'ok' : ['P15', 'P17'].includes(p) ? 'notYet' : 'unknown';
+        : ['P12', 'P14', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'ok' : ['P15'].includes(p) ? 'notYet' : 'unknown';
     }
     if (window.__build !== null) o.build = window.__build;
     if (window.__contrast !== null) o.contrast = window.__contrast;
@@ -188,16 +188,20 @@ module.exports.initScript = function () {
   // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
   // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
   // four), judged from those, as window.onOverlayFab(json). T-049 PR 9: at most 320 entries (OverlayRules.MAX_FAB_ENTRIES); on the profile the
-  // mock reports, when it is P16Q1 or P16Q2 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
-  // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four.
+  // mock reports, when it is P16Q1, P16Q2 or P17 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
+  // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four. PR 10: on
+  // P17 (MonetProfile.suffixedFixed) also an unsuffixed fixed colour (the 12 names exactly) is refused, and the lookups are
+  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six.
   const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
   const FAB_MAX = 320;
   const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
-  const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2';
+  const P17_LOOKUPS = QPR_LOOKUPS.concat([FAB_RES + 'primary_fixed_dark']);
+  const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2' || window.__profile === 'P17';
+  const suffixedFixed = () => window.__profile === 'P17';
   function lookupEntries(es) {
     if (!suffixed()) return es.slice(0, 4);
     const out = [];
-    for (const want of QPR_LOOKUPS) { const e = es.find(x => x.resource === want); if (e) out.push(e); }
+    for (const want of suffixedFixed() ? P17_LOOKUPS : QPR_LOOKUPS) { const e = es.find(x => x.resource === want); if (e) out.push(e); }
     for (const e of es) { if (out.length >= 4) break; if (!out.includes(e)) out.push(e); }
     return out;
   }
@@ -219,6 +223,7 @@ module.exports.initScript = function () {
         seen.add(e.resource);
       }
       if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
+      if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';

@@ -77,6 +77,9 @@ Other components
   15 QPR2 and 16.0 the colours of More styles at the 2021 spec too (with its Fidelity and Content cases and TemperatureCache). The names and
   the order the colours are written in on each Android release follow that release's SystemUI theme code (Android Open Source Project,
   Apache-2.0). The file's header names the files taken, what part 2 shares with part 1 and what it leaves out.
+  On Android 16 QPR1, 16 QPR2 and 17 the per-release rules (where they differ from MCU main) are ported from the Android Open Source
+  Project's external/libmonet (Google LLC; branches android16-qpr1-release, android16-qpr2-release and android17-release) - Apache-2.0;
+  the file's header names the branch and the files for each.
 * RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
 * Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
 
