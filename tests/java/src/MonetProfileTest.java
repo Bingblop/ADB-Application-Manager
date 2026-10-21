@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * MonetProfile, which Android build family builds the theme colours (finding T-049): every release row (supported, not supported yet),
+ * MonetProfile, which Android build family builds the theme colours (findings T-049, T-050): every release row (supported, not supported yet),
  * One UI (and a Samsung phone whose One UI version could not be read), unknown SDK levels, missing names, the order of the probe tests,
  * every combination of the probe names, the contrast value; and (source scans) how MainActivity looks the names up and reads One UI, and
  * what getSystemPalette reports (profile, profileReason, build, contrast).
@@ -21,12 +21,14 @@ public class MonetProfileTest {
   static void eq(String what, Object got, Object want) { n++; if (want == null ? got != null : !want.equals(got)) { fails++; System.out.println("FAIL " + what + ": got <" + got + "> want <" + want + ">"); } }
 
   static final String INV = MonetProfile.PROBE_INVERSE_SURFACE, NOTIF = MonetProfile.PROBE_THEME_NOTIF, RING = MonetProfile.PROBE_ON_THEME_APP_RING,
-      DIM = MonetProfile.PROBE_PRIMARY_DIM, RED = MonetProfile.PROBE_SEMANTIC_RED, FIX = MonetProfile.PROBE_PRIMARY_FIXED;
+      DIM = MonetProfile.PROBE_PRIMARY_DIM, RED = MonetProfile.PROBE_SEMANTIC_RED, FIX = MonetProfile.PROBE_PRIMARY_FIXED,
+      REPAIR = MonetProfile.PROBE_REPAIR_MODE;
 
   static Set<String> names(String... a) { return new HashSet<String>(Arrays.asList(a)); }
 
   // the probe names each AOSP branch's core/res/res/values/colors.xml has (read in the branches, see MonetProfile's header)
-  static final Set<String> A14 = names(), A15 = names(RING), A15Q1 = names(NOTIF), A15Q2 = names(NOTIF, INV), A16 = names(NOTIF, INV),
+  // A14Q: android14-qpr1/qpr2/qpr3-release have the boolean config_repairModeSupported (values/config.xml) and no probe colour
+  static final Set<String> A14 = names(), A14Q = names(REPAIR), A15 = names(RING), A15Q1 = names(NOTIF), A15Q2 = names(NOTIF, INV), A16 = names(NOTIF, INV),
       A16Q1 = names(NOTIF, INV, DIM), A16Q2 = names(NOTIF, INV, DIM, RED),
       // android17-release has primary_fixed_light and no longer semantic_red (core/res values/colors.xml of each branch, read 2026-10-21)
       A17 = names(NOTIF, INV, DIM, FIX);
@@ -41,11 +43,26 @@ public class MonetProfileTest {
     boolean frozen = false;
     try { MonetProfile.PROBES.add("x"); } catch (UnsupportedOperationException e) { frozen = true; }
     check("the probe list cannot be changed", frozen);
+    eq("the boolean probe names (looked up as bool, not as colour)", MonetProfile.BOOL_PROBES, Arrays.asList("config_repairModeSupported"));
+    boolean frozenB = false;
+    try { MonetProfile.BOOL_PROBES.add("x"); } catch (UnsupportedOperationException e) { frozenB = true; }
+    check("the boolean probe list cannot be changed", frozenB);
+    check("no name is both a colour and a boolean probe", !MonetProfile.PROBES.contains(REPAIR));
 
     // ---- the profiles the page computes (reason ok)
     eq("Android 14: P14 by the SDK level alone", of(34, A14, ""), "P14/ok");
     eq("Android 14: names of later releases change nothing (no probe on 34)", of(34, names(INV, NOTIF, RING, DIM, RED), ""), "P14/ok");
     eq("Android 14: a probe read that failed changes nothing", of(34, null, ""), "P14/ok");
+    eq("Android 14 QPR1-QPR3: config_repairModeSupported", of(34, A14Q, ""), "P14Q/ok");
+    eq("Android 14 QPR: names of later releases beside it change nothing", of(34, names(REPAIR, INV, NOTIF, RING, DIM, RED, FIX), ""), "P14Q/ok");
+    eq("Android 14 without the boolean stays P14 (fail closed to today's answer), with or without colour names",
+        of(34, names(), "") + " " + of(34, names(INV, NOTIF, RING, DIM, RED, FIX), "") + " " + of(34, null, ""), "P14/ok P14/ok P14/ok");
+    eq("Android 14: a name close to the boolean's counts for nothing",
+        of(34, names("config_repairModeSupport", "config_RepairModeSupported", "repairModeSupported", "config_repairModeSupported "), ""), "P14/ok");
+    eq("the boolean on any other SDK level changes nothing", of(33, A14Q, "") + " " + of(35, A14Q, "") + " " + of(35, names(REPAIR, RING), "") + " "
+        + of(36, names(REPAIR, INV), "") + " " + of(37, names(REPAIR, FIX), "") + " " + of(37, A14Q, "") + " " + of(38, A14Q, "") + " " + of(30, A14Q, ""),
+        "P12/ok unknown/unknown P15/ok P16/ok P17/ok unknown/unknown unknown/unknown unknown/unknown");
+    eq("One UI on Android 14 QPR: locked as on 14.0", of(34, A14Q, "6.1") + " " + of(34, A14Q, MonetProfile.ONE_UI_UNREAD), "unknown/oneUi unknown/oneUi");
     eq("Android 15.0: on_theme_app_ring", of(35, A15, ""), "P15/ok");
     eq("Android 15 QPR1: theme_notif without inverse_surface", of(35, A15Q1, ""), "P15Q1/ok");
     eq("Android 15 QPR2: inverse_surface", of(35, A15Q2, ""), "P15Q2/ok");
@@ -124,17 +141,19 @@ public class MonetProfileTest {
     eq("36: primary_dim alone", of(36, names(DIM), ""), "P16Q1/ok");
     eq("36: inverse_surface with the Android 15.0 name is still 16.0", of(36, names(INV, RING), ""), "P16/ok");
 
-    // ---- every combination of the six names at SDK 29..40: a known id, a known reason, ok exactly for the nine computed profiles (no notYet),
+    // ---- every combination of the seven names (six colours, one boolean) at SDK 29..40: a known id, a known reason, ok exactly for the ten
+    // computed profiles (no notYet),
     // never an exception, and names that are not probes never change the answer
-    List<String> ids = Arrays.asList("P12", "P14", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
-    List<String> okIds = Arrays.asList("P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
+    List<String> ids = Arrays.asList("P12", "P14", "P14Q", "P15Q1", "P15Q2", "P16", "P15", "P16Q1", "P16Q2", "P17", "unknown");
+    List<String> okIds = Arrays.asList("P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "P17");
     List<String> reasons = Arrays.asList("ok", "notYet", "oneUi", "unknown");
     int bad = 0, combos = 0;
     List<String> firstBad = new ArrayList<String>();
     for (int sdk = 29; sdk <= 40; sdk++) {
-      for (int mask = 0; mask < 64; mask++) {
+      for (int mask = 0; mask < 128; mask++) {
         Set<String> set = new HashSet<String>();
         for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) set.add(MonetProfile.PROBES.get(i));
+        if ((mask & 64) != 0) set.add(REPAIR);
         combos++;
         MonetProfile.Result r;
         try { r = MonetProfile.of(sdk, set, ""); } catch (RuntimeException e) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + ": " + e); continue; }
@@ -148,12 +167,15 @@ public class MonetProfileTest {
             && r.toString().equals(r2.toString())
             && MonetProfile.of(sdk, set, "6.0").toString().equals("unknown/oneUi")
             && ("P17".equals(r.profile) == (sdk == 37 && set.contains(FIX)))
+            && ("P14Q".equals(r.profile) == (sdk == 34 && set.contains(REPAIR)))
+            && ("P14".equals(r.profile) == (sdk == 34 && !set.contains(REPAIR)))
             && ("P15".equals(r.profile) == (sdk == 35 && set.contains(RING) && !set.contains(NOTIF) && !set.contains(INV)))
             && !"notYet".equals(r.reason);
         if (!good) { bad++; if (firstBad.size() < 3) firstBad.add(sdk + "/" + set + " -> " + r); }
       }
     }
     eq("every combination of the names at SDK 29..40 (" + combos + "): consistent " + firstBad, bad, 0);
+    eq("... 12 levels times 128 sets", combos, 12 * 128);
     check("the result names its profile and reason", MonetProfile.of(36, A16, "").profile.equals("P16") && MonetProfile.of(36, A16, "").reason.equals("ok"));
     check("ok() is true on 15.0, false with One UI", MonetProfile.of(35, A15, "").ok() && !MonetProfile.of(35, A15, "7.0").ok() && !MonetProfile.of(35, A15, MonetProfile.ONE_UI_UNREAD).ok());
     check("ok() is false for a profile that is not computed", !MonetProfile.of(37, A16Q2, "").ok() && !MonetProfile.of(38, A16, "").ok() && !MonetProfile.of(34, A14, "1.0").ok());
@@ -163,10 +185,10 @@ public class MonetProfileTest {
 
     // ---- which profiles write the palette shades as _light and _dark (16 QPR1, QPR2 and 17), and the fixed colours too (17 only)
     check("suffixed palettes on P16Q1, P16Q2 and P17", MonetProfile.suffixedPalettes(MonetProfile.P16Q1) && MonetProfile.suffixedPalettes("P16Q2") && MonetProfile.suffixedPalettes(MonetProfile.P17));
-    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "unknown", "", "p16q1", "P16Q", "P16Q3", "p17", "P18", "P17 "}) check("no suffixed palettes on " + p, !MonetProfile.suffixedPalettes(p));
+    for (String p : new String[] {"P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "unknown", "", "p16q1", "P16Q", "P16Q3", "p17", "P18", "P17 "}) check("no suffixed palettes on " + p, !MonetProfile.suffixedPalettes(p));
     check("no suffixed palettes without a profile", !MonetProfile.suffixedPalettes(null));
     check("suffixed fixed colours on P17", MonetProfile.suffixedFixed("P17"));
-    for (String p : new String[] {"P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown", "", "p17", "P18", "P17 "}) check("no suffixed fixed colours on " + p, !MonetProfile.suffixedFixed(p));
+    for (String p : new String[] {"P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown", "", "p17", "P18", "P17 "}) check("no suffixed fixed colours on " + p, !MonetProfile.suffixedFixed(p));
     check("no suffixed fixed colours without a profile", !MonetProfile.suffixedFixed(null));
 
     // ---- the contrast getSystemPalette reports
@@ -228,6 +250,13 @@ public class MonetProfileTest {
     if (look != null) {
       check("source: it looks every probe name up as a colour of package android, present when the id is not 0",
           look.contains("for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, \"color\", \"android\") != 0) present.add(name);"));
+      int col = look.indexOf("for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, \"color\", \"android\") != 0) present.add(name);");
+      int bool = look.indexOf("for (String name : MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, \"bool\", \"android\") != 0) present.add(name);");
+      check("source: it looks every boolean probe name up as a bool of package android (no root, no shell), into the same set, after the colours",
+          bool > col && col > 0 && look.indexOf("getIdentifier(name, \"bool\", \"android\")") == look.lastIndexOf("getIdentifier(name, \"bool\", \"android\")"));
+      check("source: ... inside the try whose catch gives no names (P14 on 34)", look.indexOf("try {") < col && bool < look.indexOf("catch (Throwable t) {"));
+      check("source: the boolean names are not looked up as colours, nor the colour names as booleans",
+          !look.contains("MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, \"color\"") && !look.contains("MonetProfile.PROBES) if (res.getIdentifier(name, \"bool\""));
       check("source: it decides with the SDK level, the names found and the One UI value of MonetProfile.oneUi (Samsung, the version, the property read)",
           look.contains("String version = oneUiVersion(unset);") && look.contains("String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);")
           && look.contains("MonetProfile.of(Build.VERSION.SDK_INT, present, oneUi)") && !look.contains("oneUiVersion())"));

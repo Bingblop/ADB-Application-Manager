@@ -944,6 +944,11 @@ public class OverlayRulesTest {
         throwsIae("and builds no script", () -> OverlayRules.fabricateScript(34, full166));
         eq("the 165-entry plan: no per-profile refusal off QPR", OverlayRules.fabricatePlanProblem("P16", full) + "|" + OverlayRules.fabricatePlanProblem("P15Q2", full) + "|" + OverlayRules.fabricatePlanProblem("P14", full), "null|null|null");
         eq("165 entries on 34 with profile P14: the same script as without one", OverlayRules.fabricateScript(34, "P14", full, "/tmp/x.xml"), f165);
+        // Android 14 QPR1-QPR3 (P14Q) writes the same 165 names as 14.0: the same checks, the same script, the plan's first four looked up
+        eq("the 165-entry plan passes on P14Q", OverlayRules.fabricatePlanProblem("P14Q", full), null);
+        eq("165 entries on 34 with profile P14Q: the same script as with P14 and as without a profile", OverlayRules.fabricateScript(34, "P14Q", full, "/tmp/x.xml"), f165);
+        eq("P14Q: the plan's first four entries are looked up, as on P14", OverlayRules.lookupEntries("P14Q", full), new ArrayList<OverlayRules.FabEntry>(full.subList(0, 4)));
+        eq("P14Q and P14 look up the same entries", OverlayRules.lookupEntries("P14Q", full), OverlayRules.lookupEntries("P14", full));
         // Android 15.0 (P15) writes the same 165 names as 15 QPR1: the same checks, the same script, the plan's first four looked up
         eq("the 165-entry plan passes on P15 and P15Q1", OverlayRules.fabricatePlanProblem("P15", full) + "|" + OverlayRules.fabricatePlanProblem("P15Q1", full), "null|null");
         String f165p15 = OverlayRules.fabricateScript(35, "P15", full, "/tmp/x.xml");
@@ -963,7 +968,7 @@ public class OverlayRulesTest {
         for (String mode : new String[] {"light", "dark"}) for (String r : rolesQ) qpr.add(fe("android:color/system_" + r + "_" + mode, mode.equals("light") ? "0xFF101010" : "0xFFEEEEEE"));
         for (String r : fixed) qpr.add(fe("android:color/system_" + r, "0xFF202020"));
         eq("QPR: a plan of 252 entries", qpr.size(), 252);
-        for (String prof : new String[] {"P16Q1", "P16Q2", null, "P16", "P14"}) eq("QPR plan passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, qpr), null);
+        for (String prof : new String[] {"P16Q1", "P16Q2", null, "P16", "P14", "P14Q"}) eq("QPR plan passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, qpr), null);
         OverlayRules.fabricatePlanOk("P16Q2", qpr);
         eq("QPR plan on 36: one overlay", OverlayRules.fabricateIds(36, qpr).toString(), "[" + FAB + "]");
         // an unsuffixed palette shade (an alias of _light/_dark there) is refused on QPR only, named by its number
@@ -974,7 +979,7 @@ public class OverlayRulesTest {
                 is("QPR alias " + alias + " refused on " + prof, pr != null && pr.startsWith("Entry 253 ") && pr.contains("_light or _dark"));
                 throwsIae("QPR alias " + alias + " builds no script on " + prof, () -> OverlayRules.fabricateScript(36, prof, withAlias, "/tmp/x.xml"));
             }
-            for (String prof : new String[] {null, "P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "unknown"}) eq("alias " + alias + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withAlias), null);
+            for (String prof : new String[] {null, "P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "unknown"}) eq("alias " + alias + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withAlias), null);
         }
         is("QPR: Android 14's pure black (unsuffixed neutral1_900) refused on P16Q1", OverlayRules.fabricatePlanProblem("P16Q1", black) != null && OverlayRules.fabricatePlanProblem("P16Q1", black).startsWith("Entry 1 "));
         for (String ok : new String[] {"accent1_600_light", "neutral2_900_dark", "error_dim_dark", "primary_fixed", "neutral1_900_light", "accent1_500x", "accent4_500", "neutral3_10", "surface_dark", "palette_key_color_error_light"}) eq("QPR: not an alias, allowed: " + ok, OverlayRules.fabricatePlanProblem("P16Q2", plan("android:color/system_" + ok, "0xFF000000")), null);
@@ -1016,7 +1021,7 @@ public class OverlayRulesTest {
         for (OverlayRules.FabEntry e : qpr) if (!e.resource.contains("_fixed")) a17.add(e);
         for (String mode : new String[] {"light", "dark"}) for (String r : fixed) a17.add(fe("android:color/system_" + r + "_" + mode, mode.equals("light") ? "0xFF202020" : "0xFF303030"));
         eq("17: a plan of 264 entries (130 + 110 + 24)", a17.size(), 264);
-        for (String prof : new String[] {"P17", "P16Q1", "P16Q2", null, "P16", "P14"}) eq("17 plan passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, a17), null);
+        for (String prof : new String[] {"P17", "P16Q1", "P16Q2", null, "P16", "P14", "P14Q"}) eq("17 plan passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, a17), null);
         OverlayRules.fabricatePlanOk("P17", a17);
         eq("17 plan on 37: one overlay", OverlayRules.fabricateIds(37, a17).toString(), "[" + FAB + "]");
         // the QPR plan (unsuffixed fixed colours) is refused on 17, at its first fixed entry
@@ -1029,7 +1034,7 @@ public class OverlayRulesTest {
             String pr = OverlayRules.fabricatePlanProblem("P17", withFixed);
             is("17: unsuffixed " + f + " refused", pr != null && pr.startsWith("Entry 265 ") && pr.contains("fixed color without _light or _dark"));
             throwsIae("17: unsuffixed " + f + " builds no script", () -> OverlayRules.fabricateScript(37, "P17", withFixed, "/tmp/x.xml"));
-            for (String prof : new String[] {null, "P12", "P14", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown"}) eq("unsuffixed " + f + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withFixed), null);
+            for (String prof : new String[] {null, "P12", "P14", "P14Q", "P15", "P15Q1", "P15Q2", "P16", "P16Q1", "P16Q2", "unknown"}) eq("unsuffixed " + f + " allowed on " + prof, OverlayRules.fabricatePlanProblem(prof, withFixed), null);
         }
         for (String ok : new String[] {"primary_fixed_light", "on_tertiary_fixed_variant_dark", "primary_fixed_dim_dark", "primary_fixed_variant", "on_primary_fixed_dim", "quaternary_fixed", "primary_fixedx", "fixed", "primary_dim_dark", "accent1_600_light"})
             eq("17: not an unsuffixed fixed or palette name, allowed: " + ok, OverlayRules.fabricatePlanProblem("P17", plan("android:color/system_" + ok, "0xFF000000")), null);
