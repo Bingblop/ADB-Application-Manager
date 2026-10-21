@@ -187,7 +187,8 @@
  *     choice: upstream's main, with no a15 rule, as there is no a15 reference to compare with); that is, wherever the style's spec after
  *     upstream's fallback (specFor) is not 2021. A style that falls back to 2021 at 2025 or 2026 (Rainbow, Fruit Salad, Fidelity,
  *     Content, Monochrome) is computed at 2021, so with a15's rules, as at 2021 itself. The palettes the accents and the Intensity
- *     sliders build for a P15 scheme at 2021 take a15's key colour too (MCU.TonalPaletteA15; not measured: no phone has those options).
+ *     sliders build for a P15 scheme at 2021 take a15's key colour too (MCU.TonalPaletteA15; SystemUI has no such options, so there is
+ *     no output of its to compare; the key colour of one slider-built palette was checked against libmonet a15's TonalPalette, t573 C7).
  *   What the oracle run showed (scripts on this container): SystemUI's own ColorScheme.java, TonalPalette.java and DynamicColors.java
  *   of android15-release compiled with libmonet android15-release (stubs only for Android classes the computation does not reach) and
  *   driven by the six functions above, transcribed (the harness of P15Q1's check), against entries(style, seed, { spec: '2021', dark,
@@ -1458,7 +1459,7 @@
     // branches are left out), one source colour, any contrast level. Part 1's colour utilities, ViewingConditions and HctSolver are
     // shared (equal to main bit for bit); what this part keeps of its own, and why, is in the header. For profile P14 the API sends
     // every scheme whose spec falls back to 2021 (upstream's maybeFallbackSpecVersion) to part 1, so this part serves 2025 and 2026;
-    // for P15Q1, P15Q2 and P16 it serves every spec, 2021 included.
+    // for P15, P15Q1, P15Q2 and P16 it serves every spec, 2021 included (P15 with libmonet android15-release's two differences at 2021).
     // ==========================================================================================================================
     const MCU = (function () {
         // ---------- dynamiccolor/variant.ts (the same names and values as part 1's Variant, plus CMF) ----------
@@ -3057,7 +3058,7 @@
 
     // ==========================================================================================================================
     // The API. Profile P14 (the default): a style at a spec that falls back to 2021 (upstream's rule, specFor below) is computed by
-    // part 1 exactly as in PR 3, a style whose spec stays 2025 or 2026, and CMF at any spec, by part 2. P15Q1, P15Q2, P16: part 2.
+    // part 1 exactly as in PR 3, a style whose spec stays 2025 or 2026, and CMF at any spec, by part 2. P15, P15Q1, P15Q2, P16: part 2.
     // ==========================================================================================================================
     const SPECS = ['2021', '2025', '2026'];
     const API_STYLES = STYLES.concat(['CMF']);
@@ -3111,9 +3112,10 @@
         return Hct.fromInt(argb).chroma < MIN_CHROMA ? GOOGLE_BLUE : argb;
     }
     // ---------- The profiles: which Android build's SystemUI the output follows (the page detects it, MonetProfile.java) ----------
-    // P14: Android 14 (part 1 at 2021, as in PR 3; also what no profile gives). P15Q1, P15Q2, P16: Android 15 QPR1, 15 QPR2 and 16.0,
-    // whose SystemUI computes spec 2021 with external/libmonet (android15-qpr2-release, the same tree as android15-qpr1-release, and
-    // android16-release): part 2 at 2021, the other specs as for P14. P16Q1, P16Q2: Android 16 QPR1 and QPR2, whose SystemUI computes
+    // P14: Android 14 (part 1 at 2021, as in PR 3; also what no profile gives). P15, P15Q1, P15Q2, P16: Android 15.0, 15 QPR1, 15 QPR2
+    // and 16.0, whose SystemUI computes spec 2021 with external/libmonet (android15-release for P15; android15-qpr2-release, the same
+    // tree as android15-qpr1-release, and android16-release for the others): part 2 at 2021 (P15 with android15-release's two
+    // differences, LIBMONET_A15), the other specs as for P14. P16Q1, P16Q2: Android 16 QPR1 and QPR2, whose SystemUI computes
     // with external/libmonet android16-qpr1-release / android16-qpr2-release, which defaults to spec 2025 for every style: part 2 with
     // libmonet's rules (MCU.ColorSpecDelegateLibmonet, specFor). P17: Android 17, whose SystemUI computes with external/libmonet
     // android17-release at spec 2026 for every style (which falls back to 2025 or 2021 as upstream's main does): part 2 with that
@@ -3332,8 +3334,9 @@
         return MCU.Hct.from(palette.hue, palette.chroma, palette.mapTone ? palette.mapTone(tone) : tone).toInt();
     }
     // P14: part 1's DynamicScheme at 2021, part 2's otherwise (its own Hct of the seed; SchemeCmf throws for a spec other than 2026).
-    // P15Q1, P15Q2, P16: part 2 at every spec (2021 included). Each at the contrast asked for, its secondary and tertiary palettes
-    // replaced by opts.accents, then its palettes adjusted by opts.adjust, then (opts.accurate false) its accent palettes wrapped.
+    // P15, P15Q1, P15Q2, P16: part 2 at every spec (2021 included; P15 at 2021 with libmonet android15-release's rules, LIBMONET_A15).
+    // Each at the contrast asked for, its secondary and tertiary palettes replaced by opts.accents, then its palettes adjusted by
+    // opts.adjust, then (opts.accurate false) its accent palettes wrapped.
     function scheme(style, color, isDark, opts) {
         const variant = variantOf(style), spec = specOf(opts), profile = profileOf(opts), contrast = contrastOf(opts), adj = adjustOf(opts), acc = accentsOf(opts), argb = seed(style, color);
         const accurate = accurateOf(opts), dark = !!isDark;
@@ -3363,7 +3366,7 @@
         return spec[role]().getArgb(s);
     }
     // P14: the palettes of the light scheme (PR 3), at 2025 and 2026 of the scheme of the mode opts.dark names, with part 1's shades.
-    // P15Q1, P15Q2, P16: of the scheme of the mode opts.dark names, with Android 15/16's shades. Shades in SHADE_KEYS order; with
+    // P15, P15Q1, P15Q2, P16: of the scheme of the mode opts.dark names, with Android 15/16's shades. Shades in SHADE_KEYS order; with
     // opts.accurate false, accentN's shade 100 is its shade 300 (hue, chroma and key stay the palette's: the switch changes colours read
     // from it, not the palette's key colour).
     function palettes(style, color, opts) {
@@ -3387,7 +3390,7 @@
     // P14, 165 entries: the 65 shades (part 1's rule) of the light scheme's palettes, at 2025 and 2026 of the scheme for opts.dark (as
     // Android 16's ThemeOverlayController takes them from the mode the phone is in), accent1-3 then neutral1-2 in SHADE_KEYS order; the
     // 44 roles of the dark scheme, then of the light one; the 12 fixed colours of the light scheme.
-    // P15Q1 (165) and P15Q2 and P16 (177): the 65 shades (Android 15/16's rule) of the scheme for opts.dark, neutral1-2 then accent1-3,
+    // P15 and P15Q1 (165) and P15Q2 and P16 (177): the 65 shades (Android 15/16's rule) of the scheme for opts.dark, neutral1-2 then accent1-3,
     // each row in SHADE_WRITE_ORDER; each role _light then _dark (44 roles in Android 14's order, or 50 sorted by name); the 12 fixed
     // colours of the light scheme (in Android 14's order, or sorted by name). P16Q1, P16Q2 (252, 244 at 2021) and P17 (264, 256 at
     // 2021): each shade (accent1-3, neutral1-2, SHADE_KEYS order) and each role _light (light scheme) then _dark (dark scheme); the 12

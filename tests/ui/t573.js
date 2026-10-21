@@ -12,7 +12,8 @@
 // shade order, unsuffixed; Android 14's 44 roles _light and _dark; the 12 fixed colours unsuffixed; the four lookups moved first), values
 // pinned from the a15 oracle at contrast 0 and 0.5; the four on_*_container roles are not 15 QPR1's for the same seed (P15Q1 pins from
 // libmonet android15-qpr2-release); the mode at Apply changes nothing at 2021. Content; Monochrome, whose key colours are the walk's
-// 0xFF070707 (the bisection gives 0xFF777777); Tonal Spot written at 2021 for a tertiary accent (its primary and secondary side pinned).
+// 0xFF070707 (the bisection gives 0xFF777777); Tonal Spot written at 2021 for a tertiary accent (its primary and secondary side pinned);
+// Vibrant written at 2021 with the Intensity sliders, whose rebuilt neutral palette takes the a15 key colour (the walk) too.
 // (d) 2025 written: Tonal Spot at 2025 gives what 15 QPR1 gives (no a15 reference for 2025: 15.0 never builds it), its 65 shades from
 // the mode the phone is in (the note under 2025 says to tap Apply again after switching); Fidelity at 2025 keeps its 2021 a15 colours;
 // CMF at 2026 is 15 QPR1's. (e) Pure black: unsuffixed, as on Android 14 to 16.0, alone and over a style. (f) The accent picker starts at
@@ -84,6 +85,11 @@ const A15_TS_0 = { accent1_100: '0xFFE9DDFF', accent1_500: '0xFF7E6EA9', neutral
   on_primary_container_light: '0xFF201047', on_primary_container_dark: '0xFFE9DDFF', on_secondary_container_light: '0xFF1E192B', on_secondary_container_dark: '0xFFE8DEF8',
   palette_key_color_primary_light: '0xFF7E6EA9', palette_key_color_secondary_dark: '0xFF7B748A', primary_fixed: '0xFFE9DDFF' };
 const Q1_TS_0_ON = { on_primary_container_light: '0xFF4D3D75', on_secondary_container_light: '0xFF4A4458' };
+// VIB: VIBRANT 6750A4 at 2021, dark, contrast 0, Intensity 150 / 50 / 120. The sliders rebuild the neutral palette at hue 298.98, chroma 5
+// (10 x 50 %); libmonet android15-release's TonalPalette.fromHueAndChroma(298.98, 5).getKeyColor() is 0xFF7C787E (pr11-oracle/acc: KeyA15
+// run on the compiled a15 library; the bisection gives 0xFF79767B). palette_key_color_neutral is that key colour's tone read through
+// Background lightness 120 (this app's rule, no Android reference): 0xFF817D83, 0xFF7E7B81 from the bisection's key (15 QPR1's)
+const A15_VIB_ADJ_KEYN = 'FF7C787E', VIB_ADJ = { palette_key_color_neutral_light: '0xFF817D83', palette_key_color_neutral_dark: '0xFF817D83' }, Q1_VIB_ADJ_KEYN = '0xFF7E7B81';
 // the a15 key colour of Fidelity 00FF00's secondary palette (the oracle's palette_key_color_secondary: 0xFF038E00)
 const A15_FID_GREEN_KEY2 = '038E00';
 (async () => {
@@ -178,7 +184,7 @@ const A15_FID_GREEN_KEY2 = '038E00';
   await phone({ sdk: 35, profile: 'P15', build: B15, contrast: 0 }); await reset(); await apply(); k = await calls(); let plan = k.fab[0] || {};
   check('C1. P15, Fidelity 6750A4 at 2021, dark mode, contrast 0: overlayFabricate with 165 entries, the four lookups first and then SystemUI\'s order (the list made by hand: neutral1, neutral2, accent1-3 in its shade order, unsuffixed; Android 14\'s 44 roles _light then _dark; the 12 fixed colours unsuffixed); no resource twice', k.fab.length === 1 && plan.action === 'fabricate' && names(plan).length === 165 && new Set(names(plan)).size === 165 && sameOrder(plan, PLAN_ORDER), JSON.stringify([plan.action, names(plan).length, names(plan).slice(0, 6)]));
   check('   no palette shade or fixed colour with _light or _dark, no error palette shade, none of the six roles 15 QPR2 added; the Java side\'s lookups are the first four', foreign(plan).length === 0 && !names(plan).some(r => /_(inverse_surface|inverse_on_surface|inverse_primary|shadow|scrim|surface_tint)_(light|dark)$/.test(r)) && JSON.stringify(names(plan).slice(0, 4)) === JSON.stringify(LEAD), JSON.stringify(foreign(plan)));
-  check('   ' + Object.keys(A15_FID_0).length + ' values pinned from the a15 oracle: the shades, primary_light 0xFF4F378A, the four on_*_container roles at light tone 10 (on_primary_container_light 0xFFFFFFFF, on_secondary_container_light 0xFF473E5F), the key colour, the fixed colours', pinsOff(plan, A15_FID_0).length === 0, pinsOff(plan, A15_FID_0).join('; '));
+  check('   ' + Object.keys(A15_FID_0).length + ' values pinned from the a15 oracle: the shades, primary_light 0xFF4F378A, the four on_*_container roles with a15\'s ContrastCurve(4.5, 7, 11, 21) (Fidelity takes foregroundTone for on_primary and on_secondary; light tone 10 applies to the list styles, see C6) (on_primary_container_light 0xFFFFFFFF, on_secondary_container_light 0xFF473E5F), the key colour, the fixed colours', pinsOff(plan, A15_FID_0).length === 0, pinsOff(plan, A15_FID_0).join('; '));
   check('   those on_*_container values are not 15 QPR1\'s for the same seed (libmonet android15-qpr2-release: on_primary_container_light 0xFFE0D2FF, on_secondary_container_light 0xFF645A7D, ...), and MonetPlan.entries with P15Q1 gives 15 QPR1\'s; the record says Fidelity, no spec, P15, the build', Object.keys(Q1_FID_0_ON).every(n => Q1_FID_0_ON[n] !== A15_FID_0[n] && byRes(plan)[n] === A15_FID_0[n]) && (await ev(([q]) => { const r = Object.fromEntries(MonetPlan.entries('FIDELITY', '6750A4', { spec: '2021', dark: true, profile: 'P15Q1', contrast: 0 }).map(e => [e.resource.replace('android:color/system_', ''), e.argb])); return Object.keys(q).every(n => r[n] === q[n]); }, [Q1_FID_0_ON])) && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"FIDELITY","profile":"P15","build":"' + B15 + '"}', await rec());
   const toastsC1 = await ev(() => window.__toasts.slice());
   check('   the mock judged the four lookups (the plan\'s first four) and the write: "Theme overlay written"', toastsC1.includes('Theme overlay written'), JSON.stringify(toastsC1));
@@ -194,6 +200,15 @@ const A15_FID_GREEN_KEY2 = '038E00';
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_accent_tertiary', 'FFD600'); ovlPickStyle('TONAL_SPOT'); ovlRender(); }); c = await card(); await reset(); await apply(); k = await calls(); plan = k.fab[0] || {};
   check('C6. Tonal Spot 6750A4 in the list at 2021 with a tertiary accent: written (the hint says its colors, the accents line names the tertiary one); the setting (TONAL_SPOT), then 165 in order; ' + Object.keys(A15_TS_0).length + ' values the accent leaves alone pinned from the a15 oracle (on_primary_container_light 0xFF201047, 15 QPR1\'s 0xFF4D3D75; on_secondary_container_light 0xFF1E192B); the record keeps the accent', c.hint === 'Also writes this style\'s colors with root.' && c.said === 'Tertiary accent: your color.' && k.apply.length === 1 && k.apply[0].style === 'TONAL_SPOT' && sameOrder(plan, PLAN_ORDER) && pinsOff(plan, A15_TS_0).length === 0 && Object.keys(Q1_TS_0_ON).every(n => Q1_TS_0_ON[n] !== A15_TS_0[n]) && (await rec()) === '{"ids":["' + AAM + '"],"t":T,"black":false,"style":"TONAL_SPOT","accents":{"tertiary":"FFD600"},"profile":"P15","build":"' + B15 + '"}', JSON.stringify([c.hint, c.said, pinsOff(plan, A15_TS_0), await rec()]));
   await ev(() => { kvSet('ovl_accent_tertiary', ''); ovlRender(); });
+  const ADJ = { accentSat: 150, bgSat: 50, bgLight: 120 }, adjOpts = p => ({ spec: '2021', dark: true, profile: p, contrast: 0, adjust: ADJ });
+  await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_adj_accent_sat', 150); kvSet('ovl_adj_bg_sat', 50); kvSet('ovl_adj_bg_light', 120); ovlPickStyle('VIBRANT'); ovlPickColor('6750A4'); ovlRender(); });
+  c = await card(); await reset(); await apply(); plan = (await calls()).fab[0] || {}; const rV = byRes(plan);
+  const keyN = await ev(o => (MonetPlan.scheme('VIBRANT', '6750A4', true, o).neutralPalette.keyColor.toInt() >>> 0).toString(16).toUpperCase(), adjOpts('P15'));
+  const q1N = await ev(o => (MonetPlan.entries('VIBRANT', '6750A4', o).find(e => e.resource === 'android:color/system_palette_key_color_neutral_light') || {}).argb, adjOpts('P15Q1'));
+  check('C7. Vibrant 6750A4 in the list at 2021 with Intensity 150 / 50 / 120: written, 165 in order, MonetPlan.entries with P15 and the sliders; the neutral palette the sliders rebuild has the a15 key colour 0x' + A15_VIB_ADJ_KEYN + ' (libmonet android15-release\'s walk for its hue and chroma, not the bisection\'s 0xFF79767B), so palette_key_color_neutral is 0xFF817D83 in both modes, not 15 QPR1\'s ' + Q1_VIB_ADJ_KEYN,
+    sameOrder(plan, PLAN_ORDER) && (await sameAs(plan, 'VIBRANT', '6750A4', adjOpts('P15'))) === 'same' && keyN === A15_VIB_ADJ_KEYN && pinsOff(plan, VIB_ADJ).length === 0 && q1N === Q1_VIB_ADJ_KEYN && rV.palette_key_color_neutral_light !== q1N,
+    JSON.stringify([names(plan).length, keyN, pinsOff(plan, VIB_ADJ), q1N]));
+  await ev(() => { ['ovl_adj_accent_sat', 'ovl_adj_bg_sat', 'ovl_adj_bg_light'].forEach(k => { delete window.AndroidBridge.__kv[k]; }); ovlRender(); });
 
   // ---- (d) 2025 and 2026 on 15.0 ----
   await ev(() => { kvSet('ovl_root_style', ''); kvSet('ovl_spec', '2025'); ovlPickStyle('TONAL_SPOT'); ovlPickColor('6750A4'); window.__dark = true; ovlRender(); }); c = await card();

@@ -129,7 +129,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
   let c = await card();
   check('A0. Android 16.0 (P16) with Super User: the six rows are live (the two switches, the two radio groups, the three Intensity sliders and the two accent entries can be used, and the preview\'s 65 swatches; Intensity\'s Reset is disabled at 100 %), the hint names Fidelity and pure black', c.shown && !c.black.locked && !c.spec.locked && !c.more.locked && JSON.stringify(c.live) === LIVE && c.chips === 65 && c.hint === 'Also writes the Fidelity colors and pure black with root, in place of the style above.' && c.preview, JSON.stringify(c));
   const LOCKS = [
-    ['Android 15.0 (P15, notYet)', { sdk: 35, profile: 'P15', reason: 'notYet', build: B15 }, NOT_YET],
+    ['15.0 as an APK from before PR 11 reports it (P15, notYet)', { sdk: 35, profile: 'P15', reason: 'notYet', build: B15 }, NOT_YET],
     ['Android 16 QPR1 (P16Q1, notYet)', { sdk: 36, profile: 'P16Q1', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 16 QPR2 (P16Q2, notYet)', { sdk: 36, profile: 'P16Q2', reason: 'notYet', build: B16 }, NOT_YET],
     ['Android 17 (P17, notYet)', { sdk: 37, profile: 'P17', reason: 'notYet', build: B16 }, NOT_YET],
