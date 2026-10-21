@@ -954,29 +954,45 @@ style the palette is worked out with:
 - **Accurate shades** (the sixth control of that card, under the accents; Super User on Android 14, 15 QPR1/QPR2 or 16.0, locked like
   the accents: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge
   or when `monet.js` has no `MonetPlan.lib.accurateOf`; the locked row keeps its line, and a stored off counts as on while locked): a
-  switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: shade 100 of each
-  accent takes the darker color of shade 300.* Kept in `ovl_accurate_shades` (`'0'` is off, `'1'` on; nothing or any other value is on).
-  Flipping it redraws the preview and the hint, writes nothing and runs nothing in the background. The maths is `opts.accurate` in
-  `assets/monet.js`, both parts, a rule written for this project (Android and Material Color Utilities have no such option): `false`
-  gives, in each of accent1, accent2 and accent3, `system_accentN_100` (tone 90) the value of `system_accentN_300` (tone 70) of the
-  same row, after everything else has made the shades (the accents, the Intensity sliders, the profile's shade rule with P14's chroma
-  cap); `true`, `null` or left out change nothing (byte for byte the results from before the option); any other value throws. Nothing
-  else changes: the other shades, the neutral rows, every role and fixed color (`primary_container` is still tone 90 of the primary
-  palette), `palette_key_color_*`, and palettes()' hue, chroma and key; scheme() only checks the value. Example: 6750A4, Tonal Spot,
-  light, every profile: accent1_100 E9DDFF becomes B3A2E1, primary_container_light stays E9DDFF. So on Android 14+, where most apps take
-  role colors, the switch shows only where an app or the system reads `system_accentN_100` itself; which screens do is not known.
-  The page's own Colors in use reads those shades (`getSystemPalette`); the app's own Material You look (`materialYouScheme`) does not
-  read accent shade 100. ColorBlendr's switch of the same name, read in its source and not run, also changes what its roles read from
-  the swapped index (the containers in light mode, the on-containers in dark mode, primary_fixed and secondary_fixed, its
-  m3_ref_palette 90 references); this app does not. With the switch off, **Apply theme** writes a style's colors with root: a More
-  style as before, with the swap (Monochrome too: E2E2E2 becomes ABABAB), else the list style at the spec Google's rule gives it (2021
-  included); the first sentence of the hint is the one the accents brought (*Also writes this style's colors with root.* and its pure
-  black form at 2021, else the 2025, adjusted or More style one), and a last sentence, after the accents' one, says *Accurate shades:
-  off.* Apply takes the value at the tap (a tap, a resume record or a record without it counts as on); the record gains
-  `accurate: false` only when it has a style and the switch was off, and Undo writes an overlay from before with the record's value,
-  not the switch's. With the switch on, the plans, hints and records are the ones from before. Pure black names none of the three
-  shades. The overlay check after a write reads accent1_600, not a shade 100. Turning it on then Apply, **Default** and **Undo** act as
-  for More styles. Not yet tried on a rooted phone.
+  switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: the pale accent colors
+  (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.* Kept in
+  `ovl_accurate_shades` (`'0'` is off, `'1'` on; nothing or any other value is on). Flipping it redraws the preview and the hint, writes
+  nothing and runs nothing in the background. The maths is `opts.accurate` in `assets/monet.js`, both parts, a rule written for this
+  project (Android and Material Color Utilities have no such option): `false` makes the scheme's primary, secondary and tertiary
+  palettes (after the accents and the Intensity sliders) answer tone 90 with their tone-70 color, so everything taken from them at
+  exactly tone 90 gets the tone-70 color: `system_accentN_100` (which equals `system_accentN_300` on every profile; P14's shade rule
+  with its chroma cap is unchanged) and every role, fixed and `palette_key_color_*` color whose computed tone is exactly 90. Tones are
+  not changed: contrast still moves a role's tone first, and the tone rules that read a palette (Fidelity/Content's containers) read
+  it as it is with the switch on. Neutral, neutral variant and error palettes never change; palettes() still reports each palette's
+  own hue, chroma and key. `true`, `null` or left out change nothing (byte for byte the results from before the option); any other
+  value throws. Which roles that is (measured on six seeds, no accents or sliders, every profile): at 2021 the light containers
+  (`primary/secondary/tertiary_container`; Fidelity/Content only `secondary_container` for 2 of 6 seeds, on P15Q1/P15Q2/P16 but not
+  P14), the dark on-containers, the three `_fixed` colors (all but Monochrome; `tertiary_fixed` like the other two) and light
+  `control_activated` (all), and for Monochrome its greys at 90 (light `on_primary`, `on_tertiary`, the two `on_*_fixed_variant`; dark
+  `on_secondary_container`, `tertiary`); at 2025/2026 only what lands on 90 (light `control_activated`, some containers and fixed
+  colors for some seeds, `inverse_primary` with Expressive on P15Q2/P16, dark `secondary`/`tertiary` with Vibrant at 2025); at
+  contrast 0.5 most of these move off tone 90. `palette_key_color_*` did not land on 90 for any seed checked. Example: 6750A4, Tonal
+  Spot, 2021, every profile: accent1_100 E9DDFF becomes B3A2E1, and so do light `primary_container`, dark `on_primary_container`,
+  `primary_fixed` and light `control_activated`; light `secondary_container` E8DEF8 becomes B0A7C0, light `tertiary_container`
+  FFD9E3 becomes D29DAD; light `primary` 65558F and the neutral rows stay. At 2025 (P15Q2) light `secondary_container` changes the
+  same way while `primary_container` (D4C3FD, not at 90) stays. Text contrast falls with it (WCAG ratio, same example): light
+  `on_primary_container` on `primary_container` 7.26 to 4.09 (P14: 13.25 to 7.48), dark 7.26 to 4.09 on every profile. Where this
+  shows is inferred, not measured: Material 3 components put `secondary_container` behind tonal buttons, selected chips and the
+  navigation bar's indicator and `primary_container` behind FABs, so apps following Material You's role colors would show it in
+  light mode at 2021; apps reading `system_accentN_100` show the darker shade. Which screens do is not known. The page's own Colors
+  in use reads those shades (`getSystemPalette`); the app's own Material You look (`materialYouScheme`) reads accent shades 200 and
+  600 and the neutral rows only, so it does not change. ColorBlendr's switch of the same name, read in its source and not run,
+  changes the same kind of colors (shade 100 and what its roles read at that tone); one difference: it leaves `tertiary_fixed` light,
+  this app does not. With the switch off, **Apply theme** writes a style's colors with root: a More style as before, with the
+  darker colors (Monochrome too: E2E2E2 becomes ABABAB), else the list style at the spec Google's rule gives it (2021 included); the
+  first sentence of the hint is the one the accents brought (*Also writes this style's colors with root.* and its pure black form at
+  2021, else the 2025, adjusted or More style one), and a last sentence, after the accents' one, says *Accurate shades: off.* Apply
+  takes the value at the tap (a tap, a resume record or a record without it counts as on); the record gains `accurate: false` only
+  when it has a style and the switch was off, and Undo writes an overlay from before with the record's value, not the switch's. With
+  the switch on, the plans, hints and records are the ones from before. The preview shows the shades only (shade 100 in shade 300's
+  color), not the roles. Pure black names only neutral shades and dark backgrounds and surfaces, none of which the switch changes.
+  The overlay check after a write reads accent1_600, neutral1_500, primary_light and surface_dark, none of which change. Turning it on
+  then Apply, **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
