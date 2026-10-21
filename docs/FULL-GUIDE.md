@@ -113,7 +113,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, freeze, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, an in-app browser for sites with a browser check, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
 | **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
-| **Root Features** | The features that need Super User (root), right before About: the state of root for this app (ACTIVE, AVAILABLE, DENIED, NOT FOUND), **Request Super User** and **Open root manager** on a rooted phone (KernelSU, KernelSU Next, APatch or Magisk; the grant is approved in the manager), **Super User for apps** (its **Open manager** opens the installed manager the way its home-screen icon does, not on its list of apps with root: you go to that list in the manager) and **App components** (enable or disable single parts of an app, which Android allows to root and refuses to the shell user). Locked but never hidden without root; this app roots nothing |
+| **Root Features** | The features that need Super User (root), right before About: the state of root for this app (ACTIVE, AVAILABLE, DENIED, NOT FOUND), **Request Super User** and **Open root manager** on a rooted phone (with its root manager, such as KernelSU, KernelSU Next or APatch; the grant is approved in the manager), **Super User for apps** (its **Open manager** opens the installed manager the way its home-screen icon does, not on its list of apps with root: you go to that list in the manager) and **App components** (enable or disable single parts of an app, which Android allows to root and refuses to the shell user). Locked but never hidden without root; this app roots nothing |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
@@ -653,11 +653,14 @@ that expect it there, never into the file itself. Already-added servers are list
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
 | **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS |
 | **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt. Shizuku not running while ADB TCP or Wireless Debugging is connected: **Start Shizuku (ADB)** runs the start script the Shizuku app wrote into its own data folder (`/sdcard/Android/data/<Shizuku package>/start.sh`, the same command Shizuku shows for a computer) through that connection, then checks that Shizuku answers; if it does not, the script's own output is shown. Open the Shizuku app once first, or the script does not exist yet |
-| **Root** | su (Magisk / KernelSU / APatch) | Requested on demand |
+| **Root** | su on a phone that is already rooted (a root manager such as KernelSU or APatch) | Requested on demand. This app never roots a phone or installs a root manager |
 | **Read-Only** | — | Inspect only |
 
 Every mode card has a **Use This Mode** button, so you can switch at any time, including while ADB TCP 5555
 is enabled. Status checks never change the selected mode.
+
+**Root needs a phone that is already rooted.** Never try to root a phone whose bootloader is locked (most US carrier Samsung
+phones cannot be unlocked): flashing a root tool onto a locked phone can leave it unable to start.
 
 **ADB key:** each install generates its own private ADB key (nothing is bundled in the APK). Working Modes
 shows its fingerprint, which matches the phone's "Allow USB debugging?" prompt, with Copy and Regenerate.

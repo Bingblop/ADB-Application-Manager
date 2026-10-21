@@ -7,15 +7,16 @@
 // (false either way, a no changes nothing). Coming back from Open root manager with another mode chosen asks to switch to Root (T-017): a no changes
 // nothing, a yes goes the way of Request Super User (selectWorkingMode('root'); a refusal puts the mode chosen before back, T-052); with Root
 // already chosen nothing is asked. Open root manager that finds no known manager says
-// it was not found by its usual name while su is on the phone (a hidden Magisk, T-018; with Magisk tap Request Super User first, with another
-// manager allow the app first, T-059), and asks to install one only without su; so does Open manager
+// it was not found by its usual name while su is on the phone (a manager installed under another name, T-018; with a manager that lists an app only
+// after it asked su, Request Super User first, otherwise allow the app first, T-059), and without su says root needs a phone that is already rooted
+// and this app does not root phones (never "install one"); so does Open manager
 // on the unlocked Super User for apps row while root is ACTIVE (T-025). The note says to tap Request Super User first when the app is not in the
-// manager's list (Magisk lists an app only after it has asked su, T-019).
+// manager's list (some managers list an app only after it has asked su, T-019).
 // Then the Help Guide (T-029): its Root Features topic names the Features card, the Super User for apps row
 // with Open manager and the Open root manager hand-off (no "later version" of the card), and Open manager is described as what openRootManager is, a
 // plain launch intent (the manager's start screen, not its list of apps with root), in the in-app guide and in FULL-GUIDE.md alike. Its Getting
-// Super User topic quotes the hidden-manager toast word for word, and says the app is not in Magisk's list only until it has asked once (T-059).
-// No topic recommends Magisk's "Once", which covers a single su request while the app runs a new su for every command (T-053). No topic calls
+// Super User topic quotes the hidden-manager toast word for word, and says the app is not in such a manager's list only until it has asked once (T-059).
+// No topic recommends a "once" grant, which covers a single su request while the app runs a new su for every command (T-053). No topic calls
 // NOT FOUND final: KernelSU (Next) and APatch show su only to the apps they allow, and Open root manager is the way out (T-057). T-058: after
 // the undo (deny in the manager, choose another mode) the chip reads DENIED when the app already read the refusal, until Check Status; the guide's
 // undo and recipe say so, and the recipe's step 3 quotes the Switch-to-Root question its way back brings.
@@ -222,18 +223,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await comeBack();
   check('   with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch', dialogs.length === 0 && (await ev(() => window.__calls.selectWorkingMode.length)) === 0, JSON.stringify(dialogs));
   check('   the note says to come back and let the app switch to Root', /then come back and let the app switch to Root\./.test(await text('#rfManagerNote')));
-  // T-019: Magisk lists an app in its Superuser screen only after the app has asked su once, and su is asked only through Root; the note says so
-  check('   the note says what to do when the app is not in the manager\'s list (Magisk): Request Super User first', /If this app is not in its list \(Magisk lists an app only after it has asked for su\), tap Request Super User first\./.test(await text('#rfManagerNote')), await text('#rfManagerNote'));
+  // T-019: some managers list an app only after the app has asked su once, and su is asked only through Root; the note says so
+  check('   the note says what to do when the app is not in the manager\'s list: Request Super User first', /If this app is not in its list \(some root managers list an app only after it has asked for su\), tap Request Super User first\./.test(await text('#rfManagerNote')), await text('#rfManagerNote'));
   await setMode('shizuku', true); dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
   await ev(() => { rootGrantPending = false; window.__rootMgr = { ok: false }; window.__calls.openRootManager = 0; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
   const hiddenMgrToast = await text('#toastMsg');
-  // T-059: in the order that works: Magisk lists an app only after it has asked su (the note above), so with Magisk Request Super User comes first;
-  // another manager lists every app, so it is allowed there first
-  check('   with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(a hidden Magisk app, for example\)\. With Magisk, tap Request Super User first and allow this app when Magisk asks\. With another manager, open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
-  await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'Magisk' }; });
+  // T-059: in the order that works: a manager that lists an app only after it has asked su (the note above) needs Request Super User first;
+  // a manager that lists every app is allowed there first
+  check('   with su on the phone but no known manager (installed under another name) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); Request Super User first with a manager that lists an app only after it asked, otherwise allow the app first (T-059)', (await ev(() => window.__calls.openRootManager)) === 1 && (await ev(() => rootGrantPending === false)) && /^Your root manager was not found by its usual name \(it may be installed under a different name\)\. If it lists an app only after the app has asked for su, tap Request Super User first and allow this app when it asks\. Otherwise open it yourself, allow this app, then tap Request Super User\.$/.test(await text('#toastMsg')), await text('#toastMsg'));
+  await ev(() => { window.__rootMgr = { ok: false, reason: 'launch', name: 'APatch' }; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
-  check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'Magisk could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
+  check('   a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending', (await toastText()) === 'APatch could not be opened from here. Open it from your home screen.' && (await ev(() => rootGrantPending === false)), await toastText());
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   // the way back when this app was never hidden (split screen or freeform: the manager opened beside it): the activity resuming (onAppResume) and
   // the window getting focus back also read the status fresh, once, while a hand-off is pending - and not without one. Shizuku is the chosen mode
@@ -274,7 +275,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked', (await disp('#rootGate')) === 'flex' && (await tag()) === 'inactive NOT FOUND' && /No su was found/.test(await text('#rootGateDesc')) && (await lockedRow()), await tag());
   await ev(() => { window.__rootMgr = { ok: false }; rootGrantPending = false; });
   await page.click('#rfOpenManagerBtn'); await sleep(50);
-  check('   Open root manager with no su and no manager: the install message, nothing pending', (await text('#toastMsg')) === 'No root manager was found. Install KernelSU, APatch or Magisk, then come back.' && (await ev(() => rootGrantPending === false)), await text('#toastMsg'));
+  check('   Open root manager with no su and no manager: root needs a phone that is already rooted and this app does not root phones (never "install one"), nothing pending', (await text('#toastMsg')) === 'No root manager was found. Root features need a phone that is already rooted; this app does not root phones.' && (await ev(() => rootGrantPending === false)), await text('#toastMsg'));
   await ev(() => { window.__rootMgr = { ok: true, name: 'KernelSU' }; });
   await ev(() => switchView('about')); await sleep(50);
   dialogs = []; await ev(() => { window.__calls.selectWorkingMode = []; });
@@ -331,18 +332,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const gTab = plain['tab-rootfeatures'] || '', gSuApps = plain['rootfeatures-su-apps'] || '';
   check('7. the guide\'s Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card', /The "Features" card/.test(gTab) && /Super User for apps/.test(gTab) && /Open manager/.test(gTab) && /Open root manager/.test(gTab) && !/later version|until then the card says so/i.test(gTab), gTab.slice(0, 160));
   check('   its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return', /opens the way its icon on the home screen opens it/.test(gSuApps) && /not on its list of apps with root/.test(gSuApps) && /Come back\. The app checks its own root status again/.test(gSuApps), gSuApps.slice(0, 160));
-  // T-059: the hidden-manager paragraph quotes the toast as the page shows it, and "not in Magisk's list" holds only until the app has asked su
-  // once: the same paragraph names DENIED (su asked and refused), so it says what to do when Magisk then says no without asking
+  // T-059: the hidden-manager paragraph quotes the toast as the page shows it, and "not in that manager's list" holds only until the app has asked su
+  // once: the same paragraph names DENIED (su asked and refused), so it says what to do when the manager then says no without asking
   const gGrant = plain['rootfeatures-grant'] || '';
-  check('   its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk\'s list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)', hiddenMgrToast.length > 0 && gGrant.includes('"' + hiddenMgrToast + '"') && /until this app has asked once, it is not in Magisk's list/.test(gGrant) && /\(a chip that reads DENIED means it has\) and Magisk now says no without showing its question/.test(gGrant) && !/so the app is not in its list yet/.test(gGrant), (gGrant.match(/Because the phone has.{0,200}/) || [''])[0]);
-  // T-053: Magisk saves no policy for "Once" (it covers a single su request), and this app runs a new su for every command, so a "Once" grant
-  // would bring Magisk's question back at every root action. The Risky box, Way A step 3 and the recipe recommend a time limit (or Forever taken
-  // back later) instead, and What you are getting into says what Once covers
+  check('   its Getting Super User topic quotes the hidden-manager message word for word; not in that manager\'s list only until the app has asked once, and what to do at DENIED when the manager says no without asking (T-059)', hiddenMgrToast.length > 0 && gGrant.includes('"' + hiddenMgrToast + '"') && /until this app has asked once, it is not in that manager's list/.test(gGrant) && /\(a chip that reads DENIED means it has\) and the manager now says no without showing its question/.test(gGrant) && !/so the app is not in its list yet/.test(gGrant), (gGrant.match(/Because the phone has.{0,200}/) || [''])[0]);
+  // T-053: a "once" grant covers a single su request, and this app runs a new su for every command, so it would bring the manager's question back
+  // at every root action. The Risky box, Way A step 3 and the recipe recommend a time limit where the manager offers one (or a lasting grant taken
+  // back later) instead, and What you are getting into says what a once grant covers
   const gRecipe = plain['recipe-root-features'] || '';
-  const onceAdvice = /pick "Once"|"Once" is the careful answer|"Once" is asked for again next time/;
-  check('   T-053 no topic recommends Magisk\'s "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action',
-    [gTab, gGrant, gRecipe].every(s => !onceAdvice.test(s)) && [gTab, gGrant, gRecipe].every(s => /"60 mins"/.test(s)) && /"Once" covers one request only/.test(gGrant) && /Magisk would ask again for every action/.test(gGrant) && /"Once"[^.]*covers this one request only/.test(gRecipe),
-    JSON.stringify([gTab, gGrant, gRecipe].map(s => (s.match(/.{0,80}"Once".{0,120}/) || [''])[0])));
+  const onceAdvice = /pick "once"|"once" is the careful answer|"once" is asked for again next time/i;
+  check('   T-053 no topic recommends a "once" grant: the Risky box, Way A and the recipe name a time limit ("60 mins") or a lasting grant taken back in the manager, and say a once grant covers one request, so the manager would ask again for every action',
+    [gTab, gGrant, gRecipe].every(s => !onceAdvice.test(s)) && [gTab, gGrant, gRecipe].every(s => /"60 mins"/.test(s)) && /A "once" grant covers one request only/.test(gGrant) && /the manager would ask again for every action/.test(gGrant) && /"once" grant covers this one request only/.test(gRecipe),
+    JSON.stringify([gTab, gGrant, gRecipe].map(s => (s.match(/.{0,80}"once".{0,120}/) || [''])[0])));
   // T-057: KernelSU (Next) and APatch show su only to the apps they allow, so before this app is allowed the chip can read NOT FOUND on a rooted
   // phone, and Open root manager (which finds those managers by package name, whatever su says) is the way out. No topic calls NOT FOUND final
   const gMode = plain['mode-root'] || '', gTrouble = plain['troubleshooting'] || '';
@@ -363,6 +364,28 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     JSON.stringify([(gGrant.match(/Undo\..{0,300}/) || [''])[0], (gRecipe.match(/If the manager did not ask.{0,300}/) || [''])[0]]));
   const fullRow = (fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').match(/^\| \*\*Root Features\*\* \|.*$/m) || [''])[0];
   check('   FULL-GUIDE.md\'s Root Features row says the same (not "opens the manager\'s list of apps with root")', /\*\*Super User for apps\*\*/.test(fullRow) && /not on its list of apps with root/.test(fullRow) && !/opens the manager's list/.test(fullRow), fullRow);
+
+  // PR 13 (Kyle 2026-10-21): no word a user reads names Magisk, nothing tells the user to install a root manager, and the guide warns once, where it
+  // first explains root, never to try rooting a phone whose bootloader is locked. Code comments may name it, so they are stripped first; detection
+  // (RootManagers.java, the SD Maid markers) is Java and JSON data, not page text
+  const stripComments = s => s.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
+  const pageText = stripComments(pageSrc);
+  const guideAll = Object.values(plain).join(' ');
+  const langDir = path.join(REPO, 'assets', 'lang');
+  const langSrc = fs.readdirSync(langDir).filter(f => f.endsWith('.js')).map(f => fs.readFileSync(path.join(langDir, f), 'utf8'));
+  const fullGuide = fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8');
+  const checklist = fs.readFileSync(path.join(REPO, 'docs', 'DEVICE-TEST-CHECKLIST.md'), 'utf8');
+  const magiskIn = [['page', pageText], ['guide', guideAll], ['FULL-GUIDE.md', fullGuide], ['DEVICE-TEST-CHECKLIST.md', checklist]].concat(langSrc.map((s, i) => ['lang ' + i, s])).filter(x => /magisk/i.test(x[1])).map(x => x[0]);
+  check('   PR 13: "Magisk" (any case) is in no page string, translation, guide topic, FULL-GUIDE.md or the device checklist (code comments aside)', magiskIn.length === 0, magiskIn.join(', '));
+  const installAdvice = /\binstall(?:ing)?\s+(?:KernelSU|APatch|Magisk|a root manager|your root manager|a manager|one,? then come back)/i;
+  const advising = [['page', pageText], ['guide', guideAll], ['FULL-GUIDE.md', fullGuide]].filter(x => installAdvice.test(x[1])).map(x => x[0] + ': ' + x[1].match(installAdvice)[0]);
+  check('   nothing tells the user to install a root manager (page, guide, FULL-GUIDE.md); the no-manager toast says root needs a phone that is already rooted and this app does not root phones',
+    advising.length === 0 && pageText.split("txT('No root manager was found. Root features need a phone that is already rooted; this app does not root phones.')").length === 3, advising.join(' | '));
+  const gModeRoot = plain['mode-root'] || '', gGlossary = guideAll;
+  check('   the guide warns where it first explains root (Root mode): never try to root a phone whose bootloader is locked, it can leave the phone unable to start, the app only uses root that is already there; the glossary has a root manager entry that says so and no Magisk entry',
+    /Never try to root a phone whose bootloader is locked/.test(gModeRoot) && /leave it unable to start/.test(gModeRoot) && /only uses root that is already on the phone/.test(gModeRoot)
+      && /root manager\s*The app on a rooted phone that decides which apps may use root, such as KernelSU or APatch\. This app never installs one and never roots a phone/.test(gGlossary) && /bootloader is locked can leave the phone unable to start/.test(gGlossary),
+    (gModeRoot.match(/Locked bootloader.{0,200}/) || [''])[0]);
 
   check('8. no page errors', errors.length === 0, errors.join(' | '));
   console.log('errors: ' + JSON.stringify(errors));

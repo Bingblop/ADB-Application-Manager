@@ -29,8 +29,8 @@ ok      a yes switches to Root (selectWorkingMode("root")); su was allowed in th
 ok      T-052: a yes that su refuses puts Shizuku back (selectWorkingMode "root", then setWorkingMode "shizuku"): chosen and privileged again, the badge reads Shizuku, the tag DENIED, and the toast says the mode stays
 ok      with Root already chosen (DENIED) the fresh check is the whole of it: no question, no switch
 ok      the note says to come back and let the app switch to Root
-ok      the note says what to do when the app is not in the manager's list (Magisk): Request Super User first
-ok      with su on the phone but no known manager (a hidden Magisk) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); with Magisk Request Super User first, with another manager allow the app first (T-059)
+ok      the note says what to do when the app is not in the manager's list: Request Super User first
+ok      with su on the phone but no known manager (installed under another name) it calls the bridge, marks nothing pending, and says the manager was not found by its usual name instead of asking to install one (T-018); Request Super User first with a manager that lists an app only after it asked, otherwise allow the app first (T-059)
 ok      a manager that is installed but did not start (reason launch): not the install message, the could-not-open one, nothing pending
 ok      back without being hidden, by the activity resuming (onAppResume): a fresh status read, and the pending mark is spent
 ok      onAppResume with nothing pending reads nothing fresh
@@ -43,7 +43,7 @@ ok      su denies the switch: the prompt follows, naming the feature; a yes keep
 ok      after the denial the tag says DENIED and the gate says why
 ok      T-043: the denied switch puts Shizuku back (setWorkingMode("shizuku") after selectWorkingMode("root")): chosen and privileged again, the badge reads Shizuku
 ok   4. (C) no su: the gate shows with the reason, the tag is grey NOT FOUND, the features are locked
-ok      Open root manager with no su and no manager: the install message, nothing pending
+ok      Open root manager with no su and no manager: root needs a phone that is already rooted and this app does not root phones (never "install one"), nothing pending
 ok      promptRootThenOpen from another tab: no switch is tried, the prompt is asked (no feature name: the question alone), a yes opens the tab, false
 ok      a no: nothing opens, false
 ok      T-046: the tab switched off: no question, the toast says it is turned off and where to turn it on, nothing opens, false
@@ -56,11 +56,14 @@ ok      Request Super User asks su through selectWorkingMode("root") (the path o
 ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the two locked feature buttons are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
 ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
-ok      its Getting Super User topic quotes the hidden-manager message word for word; not in Magisk's list only until the app has asked once, and what to do at DENIED when Magisk says no without asking (T-059)
-ok      T-053 no topic recommends Magisk's "Once": the Risky box, Way A and the recipe name a time limit ("60 mins") or Forever taken back in Magisk, and say Once covers one request, so Magisk would ask again for every action
+ok      its Getting Super User topic quotes the hidden-manager message word for word; not in that manager's list only until the app has asked once, and what to do at DENIED when the manager says no without asking (T-059)
+ok      T-053 no topic recommends a "once" grant: the Risky box, Way A and the recipe name a time limit ("60 mins") or a lasting grant taken back in the manager, and say a once grant covers one request, so the manager would ask again for every action
 ok      T-057 NOT FOUND is not final with KernelSU or APatch: the chip table, If it does not work, the recipe, Root mode and Troubleshooting say su is shown only to allowed apps and point to Open root manager; a renamed build that gets "No root manager was found" is covered
 ok      T-058 the undo (Getting Super User, the recipe step 5): AVAILABLE, or DENIED once the app has seen the refusal, Check Status clears it, the rows lock either way; the recipe's step 3 quotes the Switch-to-Root question, step 1 names DENIED
 ok      FULL-GUIDE.md's Root Features row says the same (not "opens the manager's list of apps with root")
+ok      PR 13: "Magisk" (any case) is in no page string, translation, guide topic, FULL-GUIDE.md or the device checklist (code comments aside)
+ok      nothing tells the user to install a root manager (page, guide, FULL-GUIDE.md); the no-manager toast says root needs a phone that is already rooted and this app does not root phones
+ok      the guide warns where it first explains root (Root mode): never try to root a phone whose bootloader is locked, it can leave the phone unable to start, the app only uses root that is already there; the glossary has a root manager entry that says so and no Magisk entry
 ok   8. no page errors
 errors: []
 all passed
